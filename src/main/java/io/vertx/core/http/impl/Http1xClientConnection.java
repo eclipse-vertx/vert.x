@@ -348,9 +348,12 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
     @Override
     public void doFetch(long amount) {
-      if (!queue.fetch(amount)) {
-        response.handleEnd(trailers);
+      synchronized (this) {
+        if (queue.fetch(amount) || !responseEnded) {
+          return;
+        }
       }
+      response.handleEnd(trailers);
     }
 
     @Override
