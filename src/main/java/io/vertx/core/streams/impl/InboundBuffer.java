@@ -106,13 +106,10 @@ public class InboundBuffer<E> {
     checkContext();
     Handler<E> handler;
     synchronized (this) {
-      if (emitting || demand == 0L) {
+      if (demand == 0L || emitting) {
         pending.add(element);
-        boolean writable = pending.size() < highWaterMark;
-        overflow |= !writable;
-        return writable;
+        return checkWritable();
       } else {
-        assert pending.size() == 0; // Try to break this...
         if (demand != Long.MAX_VALUE) {
           --demand;
         }
@@ -122,6 +119,17 @@ public class InboundBuffer<E> {
     }
     handleEvent(handler, element);
     return emitPending();
+  }
+
+  private boolean checkWritable() {
+    if (demand == Long.MAX_VALUE) {
+      return true;
+    } else {
+      long actual = pending.size() - demand;
+      boolean writable = actual < highWaterMark;
+      overflow |= !writable;
+      return writable;
+    }
   }
 
   /**
@@ -137,10 +145,8 @@ public class InboundBuffer<E> {
       for (E element : elements) {
         pending.add(element);
       }
-      if (emitting || demand == 0L) {
-        boolean writable = pending.size() < highWaterMark;
-        overflow |= !writable;
-        return writable;
+      if (demand == 0L || emitting) {
+        return checkWritable();
       } else {
         emitting = true;
       }
@@ -150,18 +156,16 @@ public class InboundBuffer<E> {
 
   private boolean emitPending() {
     E element;
-    Handler<E> handler;
+    Handler<E> h;
     while (true) {
       synchronized (this) {
+        int size = pending.size();
         if (demand == 0L) {
           emitting = false;
-          boolean writable = pending.size() < highWaterMark;
+          boolean writable = size < highWaterMark;
           overflow |= !writable;
           return writable;
-        }
-        int size = pending.size();
-        if (size == 0) {
-          checkCallDrainHandler();
+        } else if (size == 0) {
           emitting = false;
           return true;
         }
@@ -169,22 +173,9 @@ public class InboundBuffer<E> {
           demand--;
         }
         element = pending.poll();
-        handler = this.handler;
+        h = this.handler;
       }
-      handleEvent(handler, element);
-    }
-  }
-
-  private void checkCallDrainHandler() {
-    if (overflow) {
-      overflow = false;
-      context.runOnContext(v -> {
-        Handler<Void> drainHandler;
-        synchronized (InboundBuffer.this) {
-          drainHandler = this.drainHandler;
-        }
-        handleEvent(drainHandler, null);
-      });
+      handleEvent(h, element);
     }
   }
 
@@ -194,7 +185,9 @@ public class InboundBuffer<E> {
    * Calling this assumes {@code (demand > 0L && !pending.isEmpty()) == true}
    */
   private void drain() {
-    Handler<Void> emptyHandler = null;
+    int emitted = 0;
+    Handler<Void> drainHandler;
+    Handler<Void> emptyHandler;
     while (true) {
       E element;
       Handler<E> handler;
@@ -202,13 +195,19 @@ public class InboundBuffer<E> {
         int size = pending.size();
         if (size == 0) {
           emitting = false;
-          checkCallDrainHandler();
-          emptyHandler = this.emptyHandler;
+          if (overflow) {
+            overflow = false;
+            drainHandler = this.drainHandler;
+          } else {
+            drainHandler = null;
+          }
+          emptyHandler = emitted > 0 ? this.emptyHandler : null;
           break;
         } else if (demand == 0L) {
           emitting = false;
           return;
         }
+        emitted++;
         if (demand != Long.MAX_VALUE) {
           demand--;
         }
@@ -217,7 +216,12 @@ public class InboundBuffer<E> {
       }
       handleEvent(handler, element);
     }
-    handleEvent(emptyHandler, null);
+    if (drainHandler != null) {
+      handleEvent(drainHandler, null);
+    }
+    if (emptyHandler != null) {
+      handleEvent(emptyHandler, null);
+    }
   }
 
   private <T> void handleEvent(Handler<T> handler, T element) {
@@ -258,11 +262,7 @@ public class InboundBuffer<E> {
       if (demand < 0L) {
         demand = Long.MAX_VALUE;
       }
-      if (emitting) {
-        return this;
-      }
-      if (pending.isEmpty()) {
-        checkCallDrainHandler();
+      if (emitting || (pending.isEmpty() && !overflow)) {
         return this;
       }
       emitting = true;
