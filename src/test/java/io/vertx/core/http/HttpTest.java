@@ -2544,6 +2544,25 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testPauseResumeClientResponseWontCallEndHandlePrematurely() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(8192));
+    server.requestHandler(req -> {
+      req.response().end(expected);
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.bodyHandler(body -> {
+        assertEquals(expected, body);
+        testComplete();
+      });
+      // Check that pause resume won't call the end handler prematurely
+      resp.pause();
+      resp.resume();
+    });
+    await();
+  }
+
+  @Test
   public void testPauseClientResponse() {
     int numWrites = 10;
     int numBytes = 100;
