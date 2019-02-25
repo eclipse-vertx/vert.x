@@ -123,7 +123,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testFlowingRefill() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       buffer.handler(s -> {
         checkContext();
@@ -146,7 +146,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPauseWhenFull() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicInteger reads = new AtomicInteger();
       buffer.drainHandler(v2 -> {
@@ -171,7 +171,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPausedResume() {
     context.runOnContext(v -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       buffer.handler(s -> {
         checkContext();
@@ -195,7 +195,7 @@ public class InboundBufferTest extends VertxTestBase {
   public void testPausedDrain() {
     waitFor(2);
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger drained = new AtomicInteger();
       AtomicInteger emitted = new AtomicInteger();
       buffer.drainHandler(v2 -> {
@@ -222,7 +222,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPausedRequestLimited() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 2L);
+      buffer = new InboundBuffer<>(context, 3L);
       AtomicInteger events = new AtomicInteger();
       buffer.handler(s -> {
         checkContext();
@@ -257,7 +257,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPushReturnsTrueUntilHighWatermark() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 1L);
+      buffer = new InboundBuffer<>(context, 2L);
       buffer.pause();
       buffer.fetch(1);
       assertTrue(emit());
@@ -271,7 +271,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testHighWaterMark() {
     context.runOnContext(v -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       buffer.pause();
       fill();
       assertEquals(5, sequence.get());
@@ -334,7 +334,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testEmitInElementHandler() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicBoolean receiving = new AtomicBoolean();
       buffer.handler(s -> {
@@ -357,7 +357,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testDrainAfter() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicBoolean receiving = new AtomicBoolean();
       buffer.handler(s -> {
@@ -380,7 +380,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPauseInElementHandler() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       buffer.handler(s -> {
         events.incrementAndGet();
@@ -400,7 +400,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testEmitInDrainHandler() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicBoolean drained = new AtomicBoolean();
       AtomicBoolean draining = new AtomicBoolean();
@@ -410,7 +410,7 @@ public class InboundBufferTest extends VertxTestBase {
         draining.set(true);
         if (drained.compareAndSet(false, true)) {
           // Will with element which will trigger a new drain
-          emit();
+          assertTrue(emit());
         } else {
           assertEquals(11, events.get());
           testComplete();
@@ -437,7 +437,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testRefillQueueInHandlerTriggerDrainHandlerOnce() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicInteger drained = new AtomicInteger();
       buffer.drainHandler(v -> {
@@ -498,7 +498,7 @@ public class InboundBufferTest extends VertxTestBase {
   public void testBilto2() {
     waitFor(2);
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context, 5L);
       AtomicInteger drained = new AtomicInteger();
       AtomicBoolean draining = new AtomicBoolean();
       buffer.drainHandler(v2 -> {
@@ -695,6 +695,43 @@ public class InboundBufferTest extends VertxTestBase {
       buffer.pause();
       assertFalse(emit());
       buffer.resume();
+    });
+    await();
+  }
+
+  @Test
+  public void testPauseInHandlerSignalsFullImmediately() {
+    context.runOnContext(v -> {
+      buffer = new InboundBuffer<>(context, 0);
+      buffer.handler(elt -> {
+        checkContext();
+        buffer.pause();
+      });
+      assertFalse(emit());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testFetchShouldCallDrainHandlerWhenNotEmittingWithNoPendingElements() {
+    context.runOnContext(v1 -> {
+      buffer = new InboundBuffer<>(context, 0);
+      AtomicInteger drained = new AtomicInteger();
+      buffer.drainHandler(v2 -> {
+        assertEquals(0, drained.getAndIncrement());
+        testComplete();
+      });
+      buffer.handler(elt -> {
+        checkContext();
+        switch (elt) {
+          case 0:
+            buffer.pause();
+            break;
+        }
+      });
+      assertFalse(emit());
+      buffer.fetch(1);
     });
     await();
   }

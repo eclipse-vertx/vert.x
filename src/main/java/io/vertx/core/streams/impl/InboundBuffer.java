@@ -108,7 +108,7 @@ public class InboundBuffer<E> {
     synchronized (this) {
       if (emitting || demand == 0L) {
         pending.add(element);
-        boolean writable = pending.size() <= highWaterMark;
+        boolean writable = pending.size() < highWaterMark;
         overflow |= !writable;
         return writable;
       } else {
@@ -138,7 +138,7 @@ public class InboundBuffer<E> {
         pending.add(element);
       }
       if (emitting || demand == 0L) {
-        boolean writable = pending.size() <= highWaterMark;
+        boolean writable = pending.size() < highWaterMark;
         overflow |= !writable;
         return writable;
       } else {
@@ -153,16 +153,17 @@ public class InboundBuffer<E> {
     Handler<E> handler;
     while (true) {
       synchronized (this) {
+        if (demand == 0L) {
+          emitting = false;
+          boolean writable = pending.size() < highWaterMark;
+          overflow |= !writable;
+          return writable;
+        }
         int size = pending.size();
         if (size == 0) {
           checkCallDrainHandler();
           emitting = false;
           return true;
-        } else if (demand == 0L) {
-          emitting = false;
-          boolean writable = pending.size() <= highWaterMark;
-          overflow |= !writable;
-          return writable;
         }
         if (demand != Long.MAX_VALUE) {
           demand--;
@@ -257,7 +258,11 @@ public class InboundBuffer<E> {
       if (demand < 0L) {
         demand = Long.MAX_VALUE;
       }
-      if (emitting || pending.isEmpty()) {
+      if (emitting) {
+        return this;
+      }
+      if (pending.isEmpty()) {
+        checkCallDrainHandler();
         return this;
       }
       emitting = true;
@@ -369,7 +374,7 @@ public class InboundBuffer<E> {
    * @return whether the buffer is writable
    */
   public synchronized boolean isWritable() {
-    return pending.size() <= highWaterMark;
+    return pending.size() < highWaterMark;
   }
 
   /**
