@@ -30,20 +30,20 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
   protected VertxTracer getTracer() {
     return tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, Iterable tags) {
-        return tracer.receiveRequest(context, request, operation, headers, tags);
+      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
+        return tracer.receiveRequest(context, request, operation, headers, tagExtractor);
       }
       @Override
-      public void sendResponse(Context context, Object response, Object payload, Throwable failure, Iterable tags) {
-        tracer.sendResponse(context, response, payload, failure, tags);
+      public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
+        tracer.sendResponse(context, response, payload, failure, tagExtractor);
       }
       @Override
-      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, Iterable tags) {
-        return tracer.sendRequest(context, request, operation, headers, tags);
+      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
+        return tracer.sendRequest(context, request, operation, headers, tagExtractor);
       }
       @Override
-      public void receiveResponse(Context context, Object response, Object payload, Throwable failure, Iterable tags) {
-        tracer.receiveResponse(context, response, payload, failure, tags);
+      public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
+        tracer.receiveResponse(context, response, payload, failure, tagExtractor);
       }
     };
   }
@@ -55,14 +55,14 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, Iterable tags) {
+      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
         assertNull(context.getLocal(key));
         context.putLocal(key, val);
         assertTrue(seq.compareAndSet(0, 1));
         return request;
       }
       @Override
-      public void sendResponse(Context context, Object response, Object payload, Throwable failure, Iterable tags) {
+      public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         assertTrue(seq.compareAndSet(1, 2));
         assertNotNull(response);
         assertTrue(response instanceof HttpServerResponse);
@@ -99,14 +99,14 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, Iterable tags) {
+      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
         assertNull(context.getLocal(key));
         context.putLocal(key, val);
         assertTrue(seq.compareAndSet(0, 1));
         return request;
       }
       @Override
-      public void sendResponse(Context context, Object response, Object payload, Throwable failure, Iterable tags) {
+      public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         assertTrue(seq.compareAndSet(1, 2));
         assertNull(response);
         assertNotNull(failure);
@@ -144,14 +144,14 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object sendRequest(Context context, Object outbound, String operation, BiConsumer headers, Iterable tags) {
+      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("header-key","header-value");
-        return outbound;
+        return request;
       }
       @Override
-      public void receiveResponse(Context context, Object response, Object payload, Throwable failure, Iterable tags) {
+      public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(context.removeLocal(key));
         assertNotNull(response);
@@ -193,14 +193,14 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, Iterable tags) {
+      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("header-key","header-value");
         return request;
       }
       @Override
-      public void receiveResponse(Context context, Object response, Object payload, Throwable failure, Iterable tags) {
+      public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(context.removeLocal(key));
         assertNull(response);

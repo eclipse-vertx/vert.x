@@ -114,7 +114,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       List<Map.Entry<String, String>> tags = new ArrayList<>();
       tags.add(new AbstractMap.SimpleEntry<>("http.url", absoluteURI()));
       tags.add(new AbstractMap.SimpleEntry<>("http.method", method.name()));
-      trace = tracer.receiveRequest(context, this, method().name(), headers(), tags);
+      trace = tracer.receiveRequest(context, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     context.dispatch(this, handler);
   }
@@ -167,8 +167,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      List<Map.Entry<String, String>> tags = Collections.singletonList(new AbstractMap.SimpleEntry<>("http.status_code", "" + response.getStatusCode()));
-      tracer.sendResponse(context, failure == null ? response : null, trace, failure, tags);
+      tracer.sendResponse(context, failure == null ? response : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
     if (notify) {
       notifyException(new ClosedChannelException());

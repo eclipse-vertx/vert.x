@@ -16,7 +16,6 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -37,20 +36,20 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
   protected VertxTracer getTracer() {
     return tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, Iterable tags) {
-        return tracer.receiveRequest(context, request, operation, headers, tags);
+      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
+        return tracer.receiveRequest(context, request, operation, headers, tagExtractor);
       }
       @Override
-      public void sendResponse(Context context, Object response, Object payload, Throwable failure, Iterable tags) {
-        tracer.sendResponse(context, response, payload, failure, tags);
+      public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
+        tracer.sendResponse(context, response, payload, failure, tagExtractor);
       }
       @Override
-      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, Iterable tags) {
-        return tracer.sendRequest(context, request, operation, headers, tags);
+      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
+        return tracer.sendRequest(context, request, operation, headers, tagExtractor);
       }
       @Override
-      public void receiveResponse(Context context, Object response, Object payload, Throwable failure, Iterable tags) {
-        tracer.receiveResponse(context, response, payload, failure, tags);
+      public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
+        tracer.receiveResponse(context, response, payload, failure, tagExtractor);
       }
     };
   }
@@ -66,10 +65,11 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     final List<String> sendEvents = new CopyOnWriteArrayList<>();
     final List<String> receiveEvents = new CopyOnWriteArrayList<>();
 
-    private String bilto(Iterable<Map.Entry<String, String>> tags) {
-      for (Map.Entry<String, String> tag : tags) {
-        if (tag.getKey().equals("peer.service")) {
-          String value = tag.getValue();
+    private <T> String addressOf(T obj, TagExtractor<T> extractor) {
+      int len = extractor.len(obj);
+      for (int idx = 0;idx < len;idx++) {
+        if (extractor.name(obj, idx).equals("peer.service")) {
+          String value = extractor.value(obj, idx);
           if (value.startsWith("__vertx")) {
             value = "generated";
           }
@@ -80,15 +80,15 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     }
 
     @Override
-    public Object receiveRequest(Context context, Object request, String operation, Iterable<Map.Entry<String, String>> headers, Iterable<Map.Entry<String, String>> tags) {
+    public <R> Object receiveRequest(Context context, R request, String operation, Iterable<Map.Entry<String, String>> headers, TagExtractor<R> tagExtractor) {
       context.putLocal(receiveKey, receiveVal);
       Object body = ((Message)request).body();
-      receiveEvents.add("receiveRequest[" + bilto(tags) + "]");
+      receiveEvents.add("receiveRequest[" + addressOf(request, tagExtractor) + "]");
       return receiveTrace;
     }
 
     @Override
-    public void sendResponse(Context context, Object response, Object payload, Throwable failure, Iterable<Map.Entry<String, String>> tags) {
+    public <R> void sendResponse(Context context, R response, Object payload, Throwable failure, TagExtractor<R> tagExtractor) {
       assertSame(receiveTrace, payload);
       assertSame(receiveVal, context.getLocal(receiveKey));
       assertTrue(context.removeLocal(receiveKey));
@@ -96,15 +96,15 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     }
 
     @Override
-    public Object sendRequest(Context context, Object request, String operation, BiConsumer<String, String> headers, Iterable<Map.Entry<String, String>> tags) {
+    public <R> Object sendRequest(Context context, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
       assertSame(sendVal, context.getLocal(sendKey));
-      sendEvents.add("sendRequest[" + bilto(tags) + "]");
+      sendEvents.add("sendRequest[" + addressOf(request, tagExtractor) + "]");
       assertTrue(request instanceof Message<?>);
       return sendTrace;
     }
 
     @Override
-    public void receiveResponse(Context context, Object response, Object payload, Throwable failure, Iterable<Map.Entry<String, String>> tags) {
+    public <R> void receiveResponse(Context context, R response, Object payload, Throwable failure, TagExtractor<R> tagExtractor) {
       assertSame(sendTrace, payload);
       assertSame(sendVal, context.getLocal(sendKey));
       assertTrue(context.removeLocal(sendKey));

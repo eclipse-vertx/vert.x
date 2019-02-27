@@ -40,6 +40,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
 
@@ -401,7 +402,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           tags.add(new AbstractMap.SimpleEntry<>("http.url", req.absoluteURI()));
           tags.add(new AbstractMap.SimpleEntry<>("http.method", req.method().name()));
           BiConsumer<String, String> headers = (key, val) -> req.headers().add(key, val);
-          trace = tracer.sendRequest(request.stream.getContext(), request, request.method.name(), headers, tags);
+          trace = tracer.sendRequest(request.stream.getContext(), request, request.method.name(), headers, HttpUtils.CLIENT_REQUEST_TAG_EXTRACTOR);
         }
       }
     }
@@ -504,8 +505,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         }
         VertxTracer tracer = context.tracer();
         if (tracer != null) {
-          List<Map.Entry<String, String>> tags = Collections.singletonList(new AbstractMap.SimpleEntry<>("http.status_code", "" + response.statusCode()));
-          tracer.receiveResponse(context, response, trace, null, tags);
+          tracer.receiveResponse(context, response, trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
         }
         trailers = new HeadersAdaptor(trailer.trailingHeaders());
         if (queue.isEmpty() && !queue.isPaused()) {
@@ -891,7 +891,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
           metrics.requestReset(r.request.metric());
         }
         if (tracer != null) {
-          tracer.receiveResponse(r.context, null, r.trace, ConnectionBase.CLOSED_EXCEPTION, Collections.emptyList());
+          tracer.receiveResponse(r.context, null, r.trace, ConnectionBase.CLOSED_EXCEPTION, TagExtractor.empty());
         }
         if (list.isEmpty()) {
           list = new ArrayList<>();

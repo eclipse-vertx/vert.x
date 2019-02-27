@@ -21,6 +21,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.ReadStream;
 
@@ -390,10 +391,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           }
           VertxTracer tracer = handlerContext.tracer();
           if (tracer != null && !src) {
-            List<Map.Entry<String, String>> tags = Collections.singletonList(new AbstractMap.SimpleEntry<>("peer.service", message.address));
-            Object trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, tags);
+            Object trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
             handler.handle(message);
-            tracer.sendResponse(context, null, trace, null, Collections.emptyList());
+            tracer.sendResponse(context, null, trace, null, TagExtractor.empty());
           } else {
             handler.handle(message);
           }
