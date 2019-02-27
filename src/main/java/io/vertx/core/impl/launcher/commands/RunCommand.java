@@ -402,7 +402,6 @@ public class RunCommand extends BareCommand {
   protected void deploy() {
     deploy(mainVerticle, vertx, deploymentOptions, res -> {
       if (res.failed()) {
-        res.cause().printStackTrace();
         handleDeployFailed(res.cause());
       }
     });
