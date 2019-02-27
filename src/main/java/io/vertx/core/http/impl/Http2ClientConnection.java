@@ -269,7 +269,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         } else {
           failure = null;
         }
-        tracer.receiveResponse(context, failure == null ? response : null, trace, failure, failure == null ? Collections.singletonList(new AbstractMap.SimpleEntry<>("http.status_code", "" + response.statusCode())) : null);
+        tracer.receiveResponse(context, failure == null ? response : null, trace, failure, failure == null ? HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR : null);
       }
 
       // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
@@ -447,11 +447,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       request = req;
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
-        List<Map.Entry<String, String>> tags = new ArrayList<>();
-        tags.add(new AbstractMap.SimpleEntry<>("http.url", req.absoluteURI()));
-        tags.add(new AbstractMap.SimpleEntry<>("http.method", req.method().name()));
         BiConsumer<String, String> headers = (key, val) -> req.headers().add(key, val);
-        trace = tracer.sendRequest(context, request, request.method.name(), headers, tags);
+        trace = tracer.sendRequest(context, request, request.method.name(), headers, HttpUtils.CLIENT_REQUEST_TAG_EXTRACTOR);
       }
     }
 

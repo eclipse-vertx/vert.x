@@ -282,8 +282,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      List<Map.Entry<String, String>> tags = Collections.singletonList(new AbstractMap.SimpleEntry<>("http.status_code", "" + responseInProgress.response().getStatusCode()));
-      tracer.sendResponse(responseInProgress.context(), responseInProgress.response(), responseInProgress.trace(), null, tags);
+      tracer.sendResponse(responseInProgress.context(), responseInProgress.response(), responseInProgress.trace(), null, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
   }
 

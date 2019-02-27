@@ -31,6 +31,7 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.Serializable;
@@ -358,7 +359,7 @@ public class ClusteredEventBus extends EventBusImpl {
     VertxTracer tracer = sendContext.ctx.tracer();
     if (tracer != null && sendContext.message.src) {
       if (sendContext.replyHandler == null) {
-        tracer.receiveResponse(sendContext.ctx, null, trace, null, Collections.emptyList());
+        tracer.receiveResponse(sendContext.ctx, null, trace, null, TagExtractor.empty());
       } else {
         sendContext.replyHandler.trace = trace;
       }

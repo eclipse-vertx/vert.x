@@ -31,6 +31,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
 
@@ -38,7 +39,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
-import java.util.*;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
@@ -194,10 +194,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      List<Map.Entry<String, String>> tags = new ArrayList<>(2);
-      tags.add(new AbstractMap.SimpleEntry<>("http.url", absoluteURI()));
-      tags.add(new AbstractMap.SimpleEntry<>("http.method", method().name()));
-      trace = tracer.receiveRequest(context, this, method().name(), headers(), tags);
+      trace = tracer.receiveRequest(context, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
   }
 
@@ -615,7 +612,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      tracer.sendResponse(context, null, trace, err, Collections.emptyList());
+      tracer.sendResponse(context, null, trace, err, TagExtractor.empty());
     }
   }
 

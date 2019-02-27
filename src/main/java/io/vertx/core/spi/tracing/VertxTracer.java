@@ -27,10 +27,10 @@ public interface VertxTracer<I, O> {
    * @param request the request object
    * @param operation the request operation
    * @param headers a read-only view of the request headers
-   * @param tags the request tags
+   * @param tagExtractor the request tag extractor
    * @return the request trace
    */
-  default I receiveRequest(Context context, Object request, String operation, Iterable<Map.Entry<String, String>> headers, Iterable<Map.Entry<String, String>> tags) {
+  default <R> I receiveRequest(Context context, R request, String operation, Iterable<Map.Entry<String, String>> headers, TagExtractor<R> tagExtractor) {
     return null;
   }
 
@@ -41,9 +41,9 @@ public interface VertxTracer<I, O> {
    * @param response the response sent
    * @param payload the payload returned by {@link #receiveRequest}
    * @param failure the failure when not {@code null}
-   * @param tags the response tags
+   * @param tagExtractor the response tag extractor
    */
-  default void sendResponse(Context context, Object response, I payload, Throwable failure, Iterable<Map.Entry<String, String>> tags) {
+  default <R> void sendResponse(Context context, R response, I payload, Throwable failure, TagExtractor<R> tagExtractor) {
   }
 
   /**
@@ -53,10 +53,10 @@ public interface VertxTracer<I, O> {
    * @param request the request object
    * @param operation the request operation
    * @param headers a write only-view of the request headers
-   * @param tags the request tags
+   * @param tagExtractor the request tag extractor
    * @return the request trace
    */
-  default O sendRequest(Context context, Object request, String operation, BiConsumer<String, String> headers, Iterable<Map.Entry<String, String>> tags) {
+  default <R> O sendRequest(Context context, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
     return null;
   }
 
@@ -67,9 +67,9 @@ public interface VertxTracer<I, O> {
    * @param response the response sent
    * @param payload the payload returned by {@link #sendRequest}
    * @param failure the failure when not {@code null}
-   * @param tags the response tags
+   * @param tagExtractor the response tag extractor
    */
-  default void receiveResponse(Context context, Object response, O payload, Throwable failure, Iterable<Map.Entry<String, String>> tags) {
+  default <R> void receiveResponse(Context context, R response, O payload, Throwable failure, TagExtractor<R> tagExtractor) {
   }
 
   /**

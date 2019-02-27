@@ -13,6 +13,7 @@ package io.vertx.test.faketracer;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.Collections;
@@ -105,24 +106,24 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   }
 
   @Override
-  public Span receiveRequest(Context context, Object inbound, String operation, Iterable<Map.Entry<String, String>> headers, Iterable<Map.Entry<String, String>> tags) {
+  public <R> Span receiveRequest(Context context, R request, String operation, Iterable<Map.Entry<String, String>> headers, TagExtractor<R> tagExtractor) {
     Span serverSpan = getServerSpan(operation, headers);
     serverSpan.addTag("span_kind", "server");
-    addTags(serverSpan, tags);
+    addTags(serverSpan, request, tagExtractor);
     // Create scope
     return activate(context, serverSpan).span();
   }
 
   @Override
-  public void sendResponse(Context context, Object response, Span span, Throwable failure, Iterable<Map.Entry<String, String>> tags) {
+  public <R> void sendResponse(Context context, R response, Span span, Throwable failure, TagExtractor<R> tagExtractor) {
     if (span != null) {
-      addTags(span, tags);
+      addTags(span, response, tagExtractor);
       span.finish();
     }
   }
 
   @Override
-  public Span sendRequest(Context context, Object outbound, String operation, BiConsumer<String, String> headers, Iterable<Map.Entry<String, String>> tags) {
+  public <R> Span sendRequest(Context context, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
     Span span = activeSpan(context);
     if (span == null) {
       span = newTrace(operation);
@@ -130,22 +131,23 @@ public class FakeTracer implements VertxTracer<Span, Span> {
       span = span.createChild(operation);
     }
     span.addTag("span_kind", "client");
-    addTags(span, tags);
+    addTags(span, request, tagExtractor);
     encode(span, headers);
     return span;
   }
 
   @Override
-  public void receiveResponse(Context context, Object response, Span span, Throwable failure, Iterable<Map.Entry<String, String>> tags) {
+  public <R> void receiveResponse(Context context, R response, Span span, Throwable failure, TagExtractor<R> tagExtractor) {
     if (span != null) {
-      addTags(span, tags);
+      addTags(span, response, tagExtractor);
       span.finish();
     }
   }
 
-  private void addTags(Span span, Iterable<Map.Entry<String, String>> tags) {
-    for (Map.Entry<String, String> tag : tags) {
-      span.addTag(tag.getKey(), tag.getValue());
+  private <T> void addTags(Span span, T obj, TagExtractor<T> tagExtractor) {
+    int len = tagExtractor.len(obj);
+    for (int idx = 0;idx < len;idx++) {
+      span.addTag(tagExtractor.name(obj, idx), tagExtractor.value(obj, idx));
     }
   }
 

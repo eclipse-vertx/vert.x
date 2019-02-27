@@ -27,6 +27,7 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.*;
@@ -349,8 +350,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     VertxTracer tracer = sendContext.ctx.tracer();
     if (tracer != null && msg.src) {
       BiConsumer<String, String> biConsumer = (String key, String val) -> msg.headers().set(key, val);
-      List<Map.Entry<String, String>> tags = Collections.singletonList(new AbstractMap.SimpleEntry<>("peer.service", msg.address));
-      return tracer.sendRequest(sendContext.ctx, msg, msg.send ? "send" : "publish", biConsumer, tags);
+      return tracer.sendRequest(sendContext.ctx, msg, msg.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
     } else {
       return null;
     }
@@ -375,14 +375,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         sendContext.replyHandler.fail(failure);
       } else {
         if (tracer != null && sendContext.message.src) {
-          tracer.receiveResponse(sendContext.ctx, null, trace, failure, Collections.emptyList());
+          tracer.receiveResponse(sendContext.ctx, null, trace, failure, TagExtractor.empty());
         }
       }
     } else {
       VertxTracer tracer = sendContext.ctx.tracer();
       if (tracer != null && sendContext.message.src) {
         if (sendContext.replyHandler == null) {
-          tracer.receiveResponse(sendContext.ctx, null, trace, null, Collections.emptyList());
+          tracer.receiveResponse(sendContext.ctx, null, trace, null, TagExtractor.empty());
         } else {
           sendContext.replyHandler.trace = trace;
         }
@@ -471,7 +471,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       ContextInternal ctx = registration.handlerContext();
       VertxTracer tracer = ctx.tracer();
       if (tracer != null && registration.src) {
-        tracer.receiveResponse(ctx, reply, trace, failure, Collections.emptyList());
+        tracer.receiveResponse(ctx, reply, trace, failure, TagExtractor.empty());
       }
     }
 
