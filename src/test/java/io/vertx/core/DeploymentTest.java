@@ -36,6 +36,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 /**
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -296,6 +298,31 @@ public class DeploymentTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  @Test
+  public void testBlockingWorkerDeploymentNotification() throws Exception {
+    CountDownLatch successLatch = new CountDownLatch(1);
+    Verticle verticle = new AbstractVerticle() {
+      @Override
+      public void start(Future<Void> startFuture) throws Exception {
+        // notify verticle startup success before starting to block
+        startFuture.complete();
+        assertTrue(successLatch.await(3, SECONDS));
+      }
+    };
+    DeploymentOptions deploymentOptions = new DeploymentOptions();
+    deploymentOptions.setWorker(true);
+    vertx.deployVerticle(verticle, deploymentOptions, ar -> {
+      if (ar.succeeded()) {
+        // deployment startup notification propagated; release verticle so test finishes quickly
+        successLatch.countDown();
+        testComplete();
+      } else {
+        fail(ar.cause());
+      }
+    });
+    await(2, TimeUnit.SECONDS);
   }
 
   @Test

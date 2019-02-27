@@ -485,7 +485,6 @@ public class DeploymentManager {
         try {
           verticle.init(vertx, context);
           Future<Void> startFuture = Future.future();
-          verticle.start(startFuture);
           startFuture.setHandler(ar -> {
             if (ar.succeeded()) {
               if (parent != null) {
@@ -509,6 +508,7 @@ public class DeploymentManager {
               deployment.rollback(callingContext, completionHandler, context, ar.cause());
             }
           });
+          verticle.start(startFuture);
         } catch (Throwable t) {
           if (failureReported.compareAndSet(false, true))
             deployment.rollback(callingContext, completionHandler, context, t);
