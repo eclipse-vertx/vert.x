@@ -11,7 +11,9 @@
 
 package examples;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -671,6 +673,27 @@ public class HTTPExamples {
         // Do something
       }
     });
+  }
+
+  public void exampleAsynchronousHandshake(HttpServer server) {
+    server.websocketHandler(websocket -> {
+      Future<Integer> fut = Future.future();
+      websocket.setHandshake(fut);
+      authenticate(websocket, ar -> {
+        if (ar.succeeded()) {
+          // Terminate the handshake with the status code 101 (Switching Protocol)
+          // Reject the handshake with 401 (Unauthorized)
+          fut.complete(ar.succeeded() ? 101 : 401);
+        } else {
+          // Will send a 500 error
+          fut.fail(ar.cause());
+        }
+      });
+    });
+  }
+
+  private static void authenticate(ServerWebSocket ws, Handler<AsyncResult<Boolean>> handler) {
+
   }
 
   public void example53(HttpServer server) {
