@@ -105,7 +105,7 @@ public interface ServerWebSocket extends WebSocketBase {
   /**
    * Accept the WebSocket and terminate the WebSocket handshake.
    * <p/>
-   * This method should be called from the websocket handler to explicitely accept the websocker and
+   * This method should be called from the WebSocket handler to explicitly accept the WebSocket and
    * terminate the WebSocket handshake.
    */
   void accept();
@@ -113,8 +113,8 @@ public interface ServerWebSocket extends WebSocketBase {
   /**
    * Reject the WebSocket.
    * <p>
-   * Calling this method from the websocket handler when it is first passed to you gives you the opportunity to reject
-   * the websocket, which will cause the websocket handshake to fail by returning
+   * Calling this method from the WebSocket handler when it is first passed to you gives you the opportunity to reject
+   * the WebSocket, which will cause the WebSocket handshake to fail by returning
    * a {@literal 502} response code.
    * <p>
    * You might use this method, if for example you only want to accept WebSockets with a particular path.

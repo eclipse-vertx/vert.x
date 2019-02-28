@@ -26,7 +26,7 @@ import javax.security.cert.X509Certificate;
  * Base WebSocket implementation.
  * <p>
  * It implements both {@link ReadStream} and {@link WriteStream} so it can be used with
- * {@link io.vertx.core.streams.Pump} to pump data with flow control.
+ * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -61,7 +61,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase drainHandler(Handler<Void> handler);
 
   /**
-   * When a {@code Websocket} is created it automatically registers an event handler with the event bus - the ID of that
+   * When a {@code WebSocket} is created it automatically registers an event handler with the event bus - the ID of that
    * handler is given by this method.
    * <p>
    * Given this ID, a different event loop can send a binary frame to that event handler using the event bus and
@@ -73,7 +73,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   String binaryHandlerID();
 
   /**
-   * When a {@code Websocket} is created it automatically registers an event handler with the eventbus, the ID of that
+   * When a {@code WebSocket} is created it automatically registers an event handler with the eventbus, the ID of that
    * handler is given by {@code textHandlerID}.
    * <p>
    * Given this ID, a different event loop can send a text frame to that event handler using the event bus and
@@ -83,7 +83,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   String textHandlerID();
 
   /**
-   * Returns the websocket sub protocol selected by the websocket handshake.
+   * Returns the WebSocket sub protocol selected by the WebSocket handshake.
    * <p/>
    * On the server, the value will be {@code null} when the handler receives the websocket callback as the
    * handshake will not be completed yet.
@@ -138,13 +138,13 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase writeTextMessage(String text);
 
   /**
-   * Writes a ping to the connection. This will be written in a single frame. Ping frames may be at most 125 bytes (octets).
+   * Writes a ping frame to the connection. This will be written in a single frame. Ping frames may be at most 125 bytes (octets).
    * <p>
    * This method should not be used to write application data and should only be used for implementing a keep alive or
-   * to ensure the client is still responsive, see RFC 6455 Section 5.5.2.
+   * to ensure the client is still responsive, see RFC 6455 Section <a href="https://tools.ietf.org/html/rfc6455#section-5.5.2">section 5.5.2</a>.
    * <p>
-   * There is no pingHandler because RFC 6455 section 5.5.2 clearly states that the only response to a ping is a pong
-   * with identical contents.
+   * There is no handler for ping frames because RFC 6455  clearly
+   * states that the only response to a ping frame is a pong frame with identical contents.
    *
    * @param data the data to write, may be at most 125 bytes
    * @return a reference to this, so the API can be used fluently
@@ -153,13 +153,13 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase writePing(Buffer data);
 
   /**
-   * Writes a pong to the connection. This will be written in a single frame. Pong frames may be at most 125 bytes (octets).
+   * Writes a pong frame to the connection. This will be written in a single frame. Pong frames may be at most 125 bytes (octets).
    * <p>
    * This method should not be used to write application data and should only be used for implementing a keep alive or
-   * to ensure the client is still responsive, see RFC 6455 Section 5.5.2.
+   * to ensure the client is still responsive, see RFC 6455 <a href="https://tools.ietf.org/html/rfc6455#section-5.5.2">section 5.5.2</a>.
    * <p>
-   * There is no need to manually write a Pong, as the server and client both handle responding to a ping with a pong
-   * automatically and this is exposed to users.RFC 6455 Section 5.5.3 states that pongs may be sent unsolicited in order
+   * There is no need to manually write a pong frame, as the server and client both handle responding to a ping from with a pong from
+   * automatically and this is exposed to users. RFC 6455 <a href="https://tools.ietf.org/html/rfc6455#section-5.5.3">section 5.5.3</a> states that pongs may be sent unsolicited in order
    * to implement a one way heartbeat.
    *
    * @param data the data to write, may be at most 125 bytes
@@ -167,8 +167,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   WebSocketBase writePong(Buffer data);
-
-
 
   /**
    * Set a close handler. This will be called when the WebSocket is closed.
@@ -212,13 +210,13 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase binaryMessageHandler(@Nullable Handler<Buffer> handler);
 
   /**
-   * Set a pong message handler on the connection.  This handler will be invoked every time a pong message is received
-   * on the server, and can be used by both clients and servers since the RFC 6455 Sections 5.5.2 and 5.5.3 do not
+   * Set a pong frame handler on the connection.  This handler will be invoked every time a pong frame is received
+   * on the server, and can be used by both clients and servers since the RFC 6455 <a href="https://tools.ietf.org/html/rfc6455#section-5.5.2">section 5.5.2</a> and <a href="https://tools.ietf.org/html/rfc6455#section-5.5.3">section 5.5.3</a> do not
    * specify whether the client or server sends a ping.
    * <p>
    * Pong frames may be at most 125 bytes (octets).
    * <p>
-   * There is no ping handler since pings should immediately be responded to with a pong with identical content
+   * There is no ping handler since ping frames should immediately be responded to with a pong frame with identical content
    * <p>
    * Pong frames may be received unsolicited.
    *
@@ -241,9 +239,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   void close();
 
-  /*
+  /**
    * Close the WebSocket sending a close frame with specified status code. You can give a look at various close payloads
-   * here: <a href="https://tools.ietf.org/html/rfc6455#section-7.4.1">RFC6455 Section 7.4.1</a>
+   * here: RFC6455 <a href="https://tools.ietf.org/html/rfc6455#section-7.4.1">section 7.4.1</a>
    * <p/>
    * No more messages can be sent.
    *
@@ -251,9 +249,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   void close(short statusCode);
 
-  /*
+  /**
    * Close sending a close frame with specified status code and reason. You can give a look at various close payloads
-   * here: <a href="https://tools.ietf.org/html/rfc6455#section-7.4.1">RFC6455 Section 7.4.1</a>
+   * here: RFC6455 <a href="https://tools.ietf.org/html/rfc6455#section-7.4.1">section 7.4.1</a>
    * <p/>
    * No more messages can be sent.
    *
