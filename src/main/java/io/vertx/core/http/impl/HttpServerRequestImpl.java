@@ -434,7 +434,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     if (ws == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
-    ws.connectNow();
+    ws.tryHandshake(HttpResponseStatus.SWITCHING_PROTOCOLS);
     return ws;
   }
 

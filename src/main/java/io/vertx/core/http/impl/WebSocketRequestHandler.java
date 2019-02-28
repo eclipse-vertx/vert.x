@@ -18,9 +18,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  * An {@code Handler<HttpServerRequest>} decorator that handles {@code ServerWebSocket} dispatch to a WebSocket handler
@@ -96,16 +96,7 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
         return;
       }
       handlers.wsHandler.handle(ws);
-      if (!ws.isRejected()) {
-        try {
-          ws.connectNow();
-        } catch (Exception e) {
-          // Handshake failed
-          // log it ?
-        }
-      } else {
-        req.response().setStatusCode(ws.getRejectedStatus().code()).end();
-      }
+      ws.tryHandshake(SWITCHING_PROTOCOLS);
     } else {
       handlers.requestHandler.handle(req);
     }
