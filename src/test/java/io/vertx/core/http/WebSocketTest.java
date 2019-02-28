@@ -1255,6 +1255,73 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testAsyncAccept() {
+    AtomicBoolean resolved = new AtomicBoolean();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      Future<Integer> fut = Future.future();
+      ws.setHandshake(fut);
+      try {
+        ws.accept();
+        fail();
+      } catch (IllegalStateException ignore) {
+        // Expected
+      }
+      try {
+        ws.writeTextMessage("hello");
+        fail();
+      } catch (IllegalStateException ignore) {
+        // Expected
+      }
+      vertx.setTimer(500, id -> {
+        resolved.set(true);
+        fut.complete(101);
+      });
+    });
+    server.listen(onSuccess(s -> {
+      client.websocketStream(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", null).
+        handler(ws -> {
+          assertTrue(resolved.get());
+          testComplete();
+        });
+    }));
+    await();
+  }
+
+  @Test
+  public void testCloseAsyncPending() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      Future<Integer> fut = Future.future();
+      ws.setHandshake(fut);
+      ws.close();
+      assertTrue(fut.isComplete());
+      assertEquals(101, (int)fut.result());
+    });
+    server.listen(onSuccess(s -> {
+      client.websocketStream(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", null).
+        handler(ws -> {
+          ws.closeHandler(v -> {
+            testComplete();
+          });
+        });
+    }));
+    await();
+  }
+
+  @Test
+  public void testClose() throws Exception {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(WebSocketBase::close);
+    server.listen(onSuccess(s -> {
+      client.websocketStream(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", null).
+        handler(ws -> {
+          ws.closeHandler(v -> {
+            testComplete();
+          });
+        });
+    }));
+    await();
+  }
+
+  @Test
   public void testRequestEntityTooLarge() {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> fail());

@@ -101,11 +101,13 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   public void close() {
     synchronized (conn) {
-      checkClosed();
+      if (closed) {
+        return;
+      }
       closed = true;
-      unregisterHandlers();
-      conn.close();
     }
+    unregisterHandlers();
+    conn.close();
   }
 
   public void close(short statusCode) {

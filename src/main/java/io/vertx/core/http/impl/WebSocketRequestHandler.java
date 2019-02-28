@@ -21,6 +21,7 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
+import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 
 /**
  * An {@code Handler<HttpServerRequest>} decorator that handles {@code ServerWebSocket} dispatch to a WebSocket handler
@@ -96,7 +97,8 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
         return;
       }
       handlers.wsHandler.handle(ws);
-      ws.tryHandshake(SWITCHING_PROTOCOLS);
+      // Attempt to handshake
+      ws.tryHandshake(SC_SWITCHING_PROTOCOLS);
     } else {
       handlers.requestHandler.handle(req);
     }

@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -107,6 +108,8 @@ public interface ServerWebSocket extends WebSocketBase {
    * <p/>
    * This method should be called from the WebSocket handler to explicitly accept the WebSocket and
    * terminate the WebSocket handshake.
+   *
+   * @throws IllegalStateException when the WebSocket handshake is already set
    */
   void accept();
 
@@ -118,6 +121,8 @@ public interface ServerWebSocket extends WebSocketBase {
    * a {@literal 502} response code.
    * <p>
    * You might use this method, if for example you only want to accept WebSockets with a particular path.
+   *
+   * @throws IllegalStateException when the WebSocket handshake is already set
    */
   void reject();
 
@@ -125,6 +130,39 @@ public interface ServerWebSocket extends WebSocketBase {
    * Like {@link #reject()} but with a {@code status}.
    */
   void reject(int status);
+
+  /**
+   * Set an asynchronous result for the handshake, upon completion of the specified {@code future}, the
+   * WebSocket will either be
+   *
+   * <ul>
+   *   <li>accepted when the {@code future} succeeds with the HTTP {@literal 101} status code</li>
+   *   <li>rejected when the {@code future} is succeeds with an HTTP status code different than {@literal 101}</li>
+   *   <li>rejected when the {@code future} fails with the HTTP status code {@code 500}</li>
+   * </ul>
+   *
+   * The provided future might be completed by the WebSocket itself, e.g calling the {@link #close()} method
+   * will try to accept the handshake and close the WebSocket afterward. Thus it is advised to try to complete
+   * the {@code future} with {@link Future#tryComplete} or {@link Future#tryFail}.
+   * <p>
+   * This method should be called from the WebSocket handler to explicitly set an asynchronous handshake.
+   * <p>
+   * Calling this method will override the {@code future} completion handler.
+   *
+   * @param future the future to complete with
+   * @throws IllegalStateException when the WebSocket has already an asynchronous result
+   */
+  void setHandshake(Future<Integer> future);
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>
+   * The WebSocket handshake will be accepted when it hasn't yet been settled or when an asynchronous handshake
+   * is in progress.
+   */
+  @Override
+  void close();
 
   /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is

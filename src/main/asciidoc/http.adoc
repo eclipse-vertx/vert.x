@@ -1596,6 +1596,15 @@ You can choose to reject the WebSocket by calling {@link io.vertx.core.http.Serv
 {@link examples.HTTPExamples#example52}
 ----
 
+You can perform an asynchronous handshake by calling {@link io.vertx.core.http.ServerWebSocket#setHandshake} with a `Future`:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleAsynchronousHandshake}
+----
+
+NOTE: the WebSocket will be automatically accepted after the handler is called unless the WebSocket's handshake has been set
+
 ===== Upgrading to WebSocket
 
 The second way of handling WebSockets is to handle the HTTP Upgrade request that was sent from the client, and

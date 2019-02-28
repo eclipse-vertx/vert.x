@@ -40,6 +40,7 @@ import java.net.URISyntaxException;
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
@@ -434,7 +435,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     if (ws == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
-    ws.tryHandshake(HttpResponseStatus.SWITCHING_PROTOCOLS);
+    ws.accept();
     return ws;
   }
 

@@ -46,6 +46,9 @@ import static io.vertx.core.http.Http2Settings.*;
  */
 public final class HttpUtils {
 
+  static final int SC_SWITCHING_PROTOCOLS = 101;
+  static final int SC_BAD_GATEWAY = 502;
+
   static final StreamPriority DEFAULT_STREAM_PRIORITY = new StreamPriority() {
     @Override
     public StreamPriority setWeight(short weight) {
