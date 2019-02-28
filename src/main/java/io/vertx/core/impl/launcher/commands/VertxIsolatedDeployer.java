@@ -66,12 +66,13 @@ public class VertxIsolatedDeployer {
     return res -> {
       if (res.failed()) {
         Throwable cause = res.cause();
-        cause.printStackTrace();
         if (cause instanceof VertxException) {
           VertxException ve = (VertxException) cause;
           log.error(ve.getMessage());
-          if (ve.getCause() != null) {
+          if (ve.getCause() == null) {
             log.error(ve.getCause());
+          } else {
+            log.error(ve.getMessage(), ve.getCause());
           }
         } else {
           log.error("Failed in " + message, cause);

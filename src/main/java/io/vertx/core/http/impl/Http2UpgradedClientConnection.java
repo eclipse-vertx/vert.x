@@ -24,6 +24,8 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
@@ -36,6 +38,7 @@ import javax.security.cert.X509Certificate;
  */
 public class Http2UpgradedClientConnection implements HttpClientConnection {
 
+  private static final Logger log = LoggerFactory.getLogger(Http2UpgradedClientConnection.class);
   private HttpClientImpl client;
   private HttpClientConnection current;
 
@@ -151,7 +154,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                 listener.onConcurrencyChange(concurrency);
               } else {
                 // Handle me
-                ar.cause().printStackTrace();
+                log.error(ar.cause().getMessage(), ar.cause());
               }
             });
           });

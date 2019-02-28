@@ -267,8 +267,7 @@ public class BareCommand extends ClasspathHandler {
         return null;
       }
       if (result.get().failed()) {
-        log.error("Failed to form cluster");
-        result.get().cause().printStackTrace();
+        log.error("Failed to form cluster", result.get().cause());
         return null;
       }
       instance = result.get().result();
@@ -296,8 +295,7 @@ public class BareCommand extends ClasspathHandler {
           conf = new JsonObject(jsonFileOrString);
         } catch (DecodeException e2) {
           // The configuration is not printed for security purpose, it can contain sensitive data.
-          log.error("The -" + argName + " argument does not point to an existing file or is not a valid JSON object");
-          e2.printStackTrace();
+          log.error("The -" + argName + " argument does not point to an existing file or is not a valid JSON object", e2);
           return null;
         }
       }

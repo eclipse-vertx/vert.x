@@ -308,7 +308,7 @@ public abstract class ConnectionBase {
         if (future.isSuccess()) {
           sendFileRegion(file, offset + MAX_REGION_SIZE, length - MAX_REGION_SIZE, writeFuture);
         } else {
-          future.cause().printStackTrace();
+          log.error(future.cause().getMessage(), future.cause());
           writeFuture.setFailure(future.cause());
         }
       });
