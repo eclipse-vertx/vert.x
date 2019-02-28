@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -42,10 +43,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private final String query;
   private final Function<ServerWebSocketImpl, String> handshaker;
   private final MultiMap headers;
-
-  private boolean connected;
-  private boolean rejected;
-  private HttpResponseStatus rejectedStatus;
+  private HttpResponseStatus status;
 
   public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
                              Http1xConnectionBase conn, boolean supportsContinuation, Function<ServerWebSocketImpl, String> handshaker,
@@ -81,8 +79,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   @Override
   public void accept() {
     synchronized (conn) {
-      if (checkAccept()) {
-        throw new IllegalStateException("Websocket already rejected");
+      if (tryHandshake(SWITCHING_PROTOCOLS) != null) {
+        throw new IllegalStateException("WebSocket already rejected");
       }
     }
   }
@@ -98,16 +96,11 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   private void reject(HttpResponseStatus status) {
-    synchronized (conn) {
-      checkClosed();
-      if (handshaker == null) {
-        throw new IllegalStateException("Cannot reject websocket on the client side");
-      }
-      if (connected) {
-        throw new IllegalStateException("Cannot reject websocket, it has already been written to");
-      }
-      rejected = true;
-      rejectedStatus = status;
+    if (status.code() == SWITCHING_PROTOCOLS.code()) {
+      throw new IllegalArgumentException("Invalid WebSocket rejection status code: 101");
+    }
+    if (tryHandshake(status) != null) {
+      throw new IllegalStateException("Cannot reject WebSocket, it has already been written to");
     }
   }
 
@@ -126,7 +119,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
     synchronized (conn) {
       checkClosed();
       if (checkAccept()) {
-        throw new IllegalStateException("Cannot close websocket, it has been rejected");
+        throw new IllegalStateException("Cannot close WebSocket, it has been rejected");
       }
       super.close();
     }
@@ -136,55 +129,43 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   public ServerWebSocket writeFrame(WebSocketFrame frame) {
     synchronized (conn) {
       if (checkAccept()) {
-        throw new IllegalStateException("Cannot write to websocket, it has been rejected");
+        throw new IllegalStateException("Cannot write to WebSocket, it has been rejected");
       }
       return super.writeFrame(frame);
     }
   }
 
   private boolean checkAccept() {
-    if (handshaker != null) {
-      if (isRejected()) {
-        return true;
-      }
-      if (!connected && !closed) {
-        connect();
-      }
-    }
-    return false;
+    HttpResponseStatus ret = tryHandshake(SWITCHING_PROTOCOLS);
+    return ret != null && ret != SWITCHING_PROTOCOLS;
   }
 
-  private void connect() {
-    String res;
-    try {
-      res = handshaker.apply(this);
-    } catch (Exception e) {
-      HttpUtils.sendError(conn.channel(), BAD_REQUEST, "\"Connection\" header must be \"Upgrade\".");
-      throw e;
-    }
-    subProtocol(res);
-    connected = true;
-  }
-
-  // Connect if not already connected
-  void connectNow() {
+  /**
+   * Attempt to handshake to the specified {@code handshakeStatus} or report the status that was already sent.
+   * 
+   * @param handshakeStatus the desired status of the handshake
+   * @return {@code null} when the handshake has been done or the status that was already sent
+   */
+  HttpResponseStatus tryHandshake(HttpResponseStatus handshakeStatus) {
     synchronized (conn) {
-      if (!connected && !isRejected()) {
-        connect();
+      if (status == null) {
+        status = handshakeStatus;
+        if (handshakeStatus == SWITCHING_PROTOCOLS) {
+          String res;
+          try {
+            res = handshaker.apply(this);
+          } catch (Exception e) {
+            HttpUtils.sendError(conn.channel(), BAD_REQUEST, "\"Connection\" header must be \"Upgrade\".");
+            throw e;
+          }
+          subProtocol(res);
+        } else {
+          HttpUtils.sendError(conn.channel(), handshakeStatus);
+        }
+        return null;
+      } else {
+        return status;
       }
     }
   }
-
-  boolean isRejected() {
-    synchronized (conn) {
-      return rejected;
-    }
-  }
-
-  HttpResponseStatus getRejectedStatus() {
-    synchronized (conn) {
-      return rejectedStatus;
-    }
-  }
-
 }

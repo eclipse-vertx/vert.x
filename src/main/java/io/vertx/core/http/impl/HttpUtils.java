@@ -504,6 +504,10 @@ public final class HttpUtils {
       return Unpooled.copyShort(statusCode);
   }
 
+  static void sendError(Channel ch, HttpResponseStatus status) {
+    sendError(ch, status, status.reasonPhrase());
+  }
+
   static void sendError(Channel ch, HttpResponseStatus status, CharSequence err) {
     FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
     if (status.code() == METHOD_NOT_ALLOWED.code()) {
