@@ -48,7 +48,8 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private long size;
   private InboundBuffer<Buffer> pending;
-  private boolean complete;
+  private boolean ended;
+  private boolean completed;
   private boolean lazyCalculateSize;
 
   HttpServerFileUploadImpl(Context context, HttpServerRequest req, String name, String filename, String contentType,
@@ -64,11 +65,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     this.size = size;
     this.pending = new InboundBuffer<Buffer>(context)
       .drainHandler(v -> req.resume())
-      .emptyHandler(v -> {
-        if (complete) {
-          handleComplete();
-        }
-      });
+      .emptyHandler(v -> checkComplete());
     if (size == 0) {
       lazyCalculateSize = true;
     }
@@ -125,6 +122,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   @Override
   public HttpServerFileUpload resume() {
     pending.resume();
+    checkComplete();
     return this;
   }
 
@@ -171,37 +169,48 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     }
   }
 
-  synchronized void doReceiveData(Buffer data) {
+  private synchronized void doReceiveData(Buffer data) {
     if (!pending.write(data)) {
       req.pause();
     }
   }
 
-  synchronized void complete() {
-    if (pending.isEmpty()) {
-      handleComplete();
-    } else {
-      complete = true;
+  void end() {
+    synchronized (this) {
+      ended = true;
     }
+    checkComplete();
   }
 
-  private void handleComplete() {
-    lazyCalculateSize = false;
-    if (file == null) {
-      notifyEndHandler();
-    } else {
-      file.close(ar -> {
+  private void checkComplete() {
+    AsyncFile toClose;
+    synchronized (this) {
+      if (!pending.isEmpty() || pending.isPaused() || !ended || completed) {
+        return;
+      }
+      completed = true;
+      lazyCalculateSize = false;
+      toClose = file;
+    }
+    if (toClose != null) {
+      toClose.close(ar -> {
         if (ar.failed()) {
           notifyExceptionHandler(ar.cause());
         }
         notifyEndHandler();
       });
+    } else {
+      notifyEndHandler();
     }
   }
 
   private void notifyEndHandler() {
-    if (endHandler != null) {
-      endHandler.handle(null);
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = endHandler;
+    }
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 
@@ -209,5 +218,10 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     if (exceptionHandler != null) {
       exceptionHandler.handle(cause);
     }
+  }
+
+  @Override
+  public synchronized AsyncFile file() {
+    return file;
   }
 }
