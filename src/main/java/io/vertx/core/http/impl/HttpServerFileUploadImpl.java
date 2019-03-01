@@ -146,6 +146,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     context.owner().fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         file =  ar.result();
+        System.out.println("after streamToFileSystem succeeded, file=" + file);
         Pump p = Pump.pump(HttpServerFileUploadImpl.this, ar.result());
         p.start();
         resume();
@@ -187,6 +188,8 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private void handleComplete() {
     lazyCalculateSize = false;
+    assert file != null : "Issue: 2856, if it's null for zero file, can not close the file";
+
     if (file == null) {
       notifyEndHandler();
     } else {

@@ -2767,6 +2767,11 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testFormUploadZeroFile() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(0), true);
+  }
+
+  @Test
   public void testFormUploadSmallFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(100), false);
   }
