@@ -48,7 +48,7 @@ final class NettyFileUpload implements FileUpload {
   public void setContent(ByteBuf channelBuffer) throws IOException {
     completed = true;
     upload.receiveData(Buffer.buffer(channelBuffer));
-    upload.complete();
+    upload.end();
   }
 
   @Override
@@ -56,7 +56,7 @@ final class NettyFileUpload implements FileUpload {
     upload.receiveData(Buffer.buffer(channelBuffer));
     if (last) {
       completed = true;
-      upload.complete();
+      upload.end();
     }
   }
 

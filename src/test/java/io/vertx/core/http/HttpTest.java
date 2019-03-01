@@ -20,6 +20,7 @@ import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
+import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
@@ -2767,6 +2768,11 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testFormUploadEmptyFile() throws Exception {
+    testFormUploadFile("", false);
+  }
+
+  @Test
   public void testFormUploadSmallFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(100), false);
   }
@@ -2779,6 +2785,11 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testFormUploadLargeFile() throws Exception {
     testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), false);
+  }
+
+  @Test
+  public void testFormUploadEmptyFileStreamToDisk() throws Exception {
+    testFormUploadFile("", true);
   }
 
   @Test
@@ -2838,6 +2849,18 @@ public abstract class HttpTest extends HttpTestBase {
             }
             assertTrue(upload.isSizeAvailable());
             assertEquals(content.length(), upload.size());
+            AsyncFile file = upload.file();
+            if (streamToDisk) {
+              assertNotNull(file);
+              try {
+                file.flush();
+                fail("Was expecting uploaded file to be closed");
+              } catch (IllegalStateException ignore) {
+                // File has been closed
+              }
+            } else {
+              assertNull(file);
+            }
             complete();
           });
         });
