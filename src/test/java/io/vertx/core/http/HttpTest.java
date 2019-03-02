@@ -2774,17 +2774,17 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFormUploadSmallFile() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(100), false);
+    testFormUploadFile(TestUtils.randomAlphaString(100), false, false);
   }
 
   @Test
   public void testFormUploadMediumFile() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(20000), false);
+    testFormUploadFile(TestUtils.randomAlphaString(20000), false, false);
   }
 
   @Test
   public void testFormUploadLargeFile() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), false);
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), false, false);
   }
 
   @Test
@@ -2794,20 +2794,60 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFormUploadSmallFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(100), true);
+    testFormUploadFile(TestUtils.randomAlphaString(100), true, false);
   }
 
   @Test
   public void testFormUploadMediumFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true);
+    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, false);
   }
 
   @Test
   public void testFormUploadLargeFileStreamToDisk() throws Exception {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true);
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, false);
   }
 
-  private void testFormUploadFile(String contentStr, boolean streamToDisk) throws Exception {
+  @Test
+  public void testBrokenFormUploadEmptyFile() throws Exception {
+    testFormUploadFile("", true, true);
+  }
+
+  @Test
+  public void testBrokenFormUploadSmallFile() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(100), true, true);
+  }
+
+  @Test
+  public void testBrokenFormUploadMediumFile() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true);
+  }
+
+  @Test
+  public void testBrokenFormUploadLargeFile() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true);
+  }
+
+  @Test
+  public void testBrokenFormUploadEmptyFileStreamToDisk() throws Exception {
+    testFormUploadFile("", true, true);
+  }
+
+  @Test
+  public void testBrokenFormUploadSmallFileStreamToDisk() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(100), true, true);
+  }
+
+  @Test
+  public void testBrokenFormUploadMediumFileStreamToDisk() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true);
+  }
+
+  @Test
+  public void testBrokenFormUploadLargeFileStreamToDisk() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true);
+  }
+
+  private void testFormUploadFile(String contentStr, boolean streamToDisk, boolean abortClient) throws Exception {
 
     waitFor(2);
 
@@ -2839,16 +2879,23 @@ public abstract class HttpTest extends HttpTestBase {
             uploadedFileName = new File(testDir, UUID.randomUUID().toString()).getPath();
             upload.streamToFileSystem(uploadedFileName);
           }
+          AtomicInteger failures = new AtomicInteger();
+          upload.exceptionHandler(err -> failures.incrementAndGet());
           upload.endHandler(v -> {
-            if (streamToDisk) {
-              Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
-              assertEquals(content.length(), uploaded.length());
-              assertEquals(content, uploaded);
+            if (abortClient) {
+              assertEquals(1, failures.get());
             } else {
-              assertEquals(content, tot);
+              assertEquals(0, failures.get());
+              if (streamToDisk) {
+                Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
+                assertEquals(content.length(), uploaded.length());
+                assertEquals(content, uploaded);
+              } else {
+                assertEquals(content, tot);
+              }
+              assertTrue(upload.isSizeAvailable());
+              assertEquals(content.length(), upload.size());
             }
-            assertTrue(upload.isSizeAvailable());
-            assertEquals(content.length(), upload.size());
             AsyncFile file = upload.file();
             if (streamToDisk) {
               assertNotNull(file);
@@ -2873,30 +2920,39 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/form", onSuccess(resp -> {
-        // assert the response
-        assertEquals(200, resp.statusCode());
-        resp.bodyHandler(body -> {
-          assertEquals(0, body.length());
-        });
-        assertEquals(0, attributeCount.get());
+      HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/form", ar -> {
+        assertEquals(ar.failed(), abortClient);
+        if (ar.succeeded()) {
+          HttpClientResponse resp = ar.result();
+          // assert the response
+          assertEquals(200, resp.statusCode());
+          resp.bodyHandler(body -> {
+            assertEquals(0, body.length());
+          });
+          assertEquals(0, attributeCount.get());
+        }
         complete();
-      }));
+      });
 
       String boundary = "dLV9Wyq26L_-JQxk6ferf-RT153LhOO";
-      Buffer buffer = Buffer.buffer();
-      String body =
-          "--" + boundary + "\r\n" +
-              "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
-              "Content-Type: image/gif\r\n" +
-              "\r\n" +
-              contentStr + "\r\n" +
-              "--" + boundary + "--\r\n";
-
-      buffer.appendString(body);
-      req.headers().set("content-length", String.valueOf(buffer.length()));
+      String epi = "\r\n" +
+        "--" + boundary + "--\r\n";
+      String pro = "--" + boundary + "\r\n" +
+        "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+        "Content-Type: image/gif\r\n" +
+        "\r\n";
+      req.headers().set("content-length", "" + (pro + contentStr + epi).length());
       req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
-      req.write(buffer).end();
+      if (abortClient) {
+        req.connectionHandler(conn -> {
+          vertx.setTimer(100, id -> {
+            conn.close();
+          });
+        });
+        req.write(pro + contentStr.substring(0, contentStr.length() / 2));
+      } else {
+        req.end(pro + contentStr + epi);
+      }
     }));
 
     await();

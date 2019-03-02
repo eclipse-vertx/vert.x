@@ -561,9 +561,13 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   void handleException(Throwable t) {
     Handler<Throwable> handler = null;
     HttpServerResponseImpl resp = null;
+    InterfaceHttpData upload = null;
     synchronized (conn) {
       if (!isEnded()) {
         handler = exceptionHandler;
+        if (decoder != null) {
+          upload = decoder.currentPartialHttpData();
+        }
       }
       if (!response.ended()) {
         if (METRICS_ENABLED) {
@@ -574,6 +578,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
     if (resp != null) {
       resp.handleException(t);
+    }
+    if (upload instanceof NettyFileUpload) {
+      ((NettyFileUpload)upload).handleException(t);
     }
     if (handler != null) {
       handler.handle(t);

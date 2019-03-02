@@ -128,6 +128,16 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
     }
   }
 
+  public void handleException(Throwable err) {
+    Handler<Throwable> handler;
+    synchronized (this) {
+      handler = exceptionHandler;
+    }
+    if (handler != null) {
+      handler.handle(err);
+    }
+  }
+
   @Override
   public void setContent(ByteBuf channelBuffer) throws IOException {
     completed = true;

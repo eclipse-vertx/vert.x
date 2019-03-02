@@ -122,11 +122,18 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   private void notifyException(Throwable failure) {
     Handler<Throwable> handler;
+    InterfaceHttpData upload = null;
     synchronized (conn) {
       handler = exceptionHandler;
+      if (postRequestDecoder != null) {
+        upload = postRequestDecoder.currentPartialHttpData();
+      }
     }
     if (handler != null) {
       handler.handle(failure);
+    }
+    if (upload instanceof NettyFileUpload) {
+      ((NettyFileUpload)upload).handleException(failure);
     }
   }
 
