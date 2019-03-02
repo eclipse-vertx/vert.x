@@ -41,10 +41,10 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
   @Override
   public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
-    HttpServerFileUploadImpl upload = new HttpServerFileUploadImpl(context, request, name, filename, contentType, contentTransferEncoding, charset,
-        size);
-    NettyFileUpload nettyUpload = new NettyFileUpload(upload, name, filename, contentType,
+    NettyFileUpload nettyUpload = new NettyFileUpload(context, request, name, filename, contentType,
         contentTransferEncoding, charset);
+    HttpServerFileUploadImpl upload = new HttpServerFileUploadImpl(context, nettyUpload, name, filename, contentType, contentTransferEncoding, charset,
+      size);
     Handler<HttpServerFileUpload> uploadHandler = lazyUploadHandler.get();
     if (uploadHandler != null) {
       uploadHandler.handle(upload);

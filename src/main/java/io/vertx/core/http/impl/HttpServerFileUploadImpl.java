@@ -17,9 +17,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
-import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.streams.Pump;
-import io.vertx.core.streams.impl.InboundBuffer;
+import io.vertx.core.streams.ReadStream;
 
 import java.nio.charset.Charset;
 
@@ -34,7 +33,7 @@ import java.nio.charset.Charset;
  */
 class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
-  private final HttpServerRequest req;
+  private final ReadStream<Buffer> stream;
   private final Context context;
   private final String name;
   private final String filename;
@@ -42,32 +41,77 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   private final String contentTransferEncoding;
   private final Charset charset;
 
+  private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private AsyncFile file;
   private Handler<Throwable> exceptionHandler;
 
   private long size;
-  private InboundBuffer<Buffer> pending;
-  private boolean ended;
-  private boolean completed;
   private boolean lazyCalculateSize;
 
-  HttpServerFileUploadImpl(Context context, HttpServerRequest req, String name, String filename, String contentType,
+  HttpServerFileUploadImpl(Context context, ReadStream<Buffer> stream, String name, String filename, String contentType,
                            String contentTransferEncoding,
                            Charset charset, long size) {
     this.context = context;
-    this.req = req;
+    this.stream = stream;
     this.name = name;
     this.filename = filename;
     this.contentType = contentType;
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.size = size;
-    this.pending = new InboundBuffer<Buffer>(context)
-      .drainHandler(v -> req.resume())
-      .emptyHandler(v -> checkComplete());
     if (size == 0) {
       lazyCalculateSize = true;
+    }
+
+    stream.handler(this::handleData);
+    stream.endHandler(this::handleEnd);
+  }
+
+  private void handleData(Buffer data) {
+    Handler<Buffer> h;
+    synchronized (HttpServerFileUploadImpl.this) {
+      h = dataHandler;
+      if (lazyCalculateSize) {
+        this.size += data.length();
+      }
+    }
+    if (h != null) {
+      h.handle(data);
+    }
+  }
+
+  private void handleEnd(Void v) {
+    AsyncFile toClose;
+    synchronized (this) {
+      lazyCalculateSize = false;
+      toClose = file;
+    }
+    if (toClose != null) {
+      toClose.close(ar -> {
+        if (ar.failed()) {
+          notifyExceptionHandler(ar.cause());
+        }
+        notifyEndHandler();
+      });
+    } else {
+      notifyEndHandler();
+    }
+  }
+
+  private void notifyEndHandler() {
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = endHandler;
+    }
+    if (handler != null) {
+      handler.handle(null);
+    }
+  }
+
+  private void notifyExceptionHandler(Throwable cause) {
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(cause);
     }
   }
 
@@ -102,27 +146,26 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public HttpServerFileUpload handler(Handler<Buffer> handler) {
-    pending.handler(handler);
+  public synchronized HttpServerFileUpload handler(Handler<Buffer> handler) {
+    dataHandler = handler;
     return this;
   }
 
   @Override
   public HttpServerFileUpload pause() {
-    pending.pause();
+    stream.pause();
     return this;
   }
 
   @Override
   public HttpServerFileUpload fetch(long amount) {
-    pending.resume();
+    stream.fetch(amount);
     return this;
   }
 
   @Override
   public HttpServerFileUpload resume() {
-    pending.resume();
-    checkComplete();
+    stream.resume();
     return this;
   }
 
@@ -157,67 +200,6 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   @Override
   public synchronized boolean isSizeAvailable() {
     return !lazyCalculateSize;
-  }
-
-  synchronized void receiveData(Buffer data) {
-    if (data.length() != 0) {
-      // Can sometimes receive zero length packets from Netty!
-      if (lazyCalculateSize) {
-        size += data.length();
-      }
-      doReceiveData(data);
-    }
-  }
-
-  private synchronized void doReceiveData(Buffer data) {
-    if (!pending.write(data)) {
-      req.pause();
-    }
-  }
-
-  void end() {
-    synchronized (this) {
-      ended = true;
-    }
-    checkComplete();
-  }
-
-  private void checkComplete() {
-    AsyncFile toClose;
-    synchronized (this) {
-      if (!pending.isEmpty() || pending.isPaused() || !ended || completed) {
-        return;
-      }
-      completed = true;
-      lazyCalculateSize = false;
-      toClose = file;
-    }
-    if (toClose != null) {
-      toClose.close(ar -> {
-        if (ar.failed()) {
-          notifyExceptionHandler(ar.cause());
-        }
-        notifyEndHandler();
-      });
-    } else {
-      notifyEndHandler();
-    }
-  }
-
-  private void notifyEndHandler() {
-    Handler<Void> handler;
-    synchronized (this) {
-      handler = endHandler;
-    }
-    if (handler != null) {
-      handler.handle(null);
-    }
-  }
-
-  private void notifyExceptionHandler(Throwable cause) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(cause);
-    }
   }
 
   @Override
