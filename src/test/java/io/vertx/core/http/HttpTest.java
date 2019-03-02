@@ -2796,7 +2796,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFormUploadEmptyFile() throws Exception {
-    testFormUploadFile("", false);
+    testFormUploadFile("", false, false);
   }
 
   @Test
@@ -2816,7 +2816,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFormUploadEmptyFileStreamToDisk() throws Exception {
-    testFormUploadFile("", true);
+    testFormUploadFile("", true, false);
   }
 
   @Test
