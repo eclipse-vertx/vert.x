@@ -10,6 +10,7 @@
  */
 package io.vertx.core.streams.impl;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -76,13 +77,12 @@ public class PipeImpl<T> implements Pipe<T> {
       endOnSuccess = this.endOnSuccess;
       endOnFailure = this.endOnFailure;
     }
-    ws.drainHandler(v -> {
-      src.resume();
-    });
+    Handler<Void> drainHandler = v -> src.resume();
     src.handler(item -> {
       ws.write(item);
       if (ws.writeQueueFull()) {
         src.pause();
+        ws.drainHandler(drainHandler);
       }
     });
     ws.exceptionHandler(err -> result.tryFail(new WriteException(err)));
