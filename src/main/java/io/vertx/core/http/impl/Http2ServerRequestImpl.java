@@ -110,24 +110,34 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   void handleException(Throwable cause) {
-    Handler<Throwable> handler;
+    boolean notify;
     synchronized (conn) {
-      handler = ended ? null : exceptionHandler;
+      notify = !ended;
     }
-    if (handler != null) {
-      handler.handle(cause);
+    if (notify) {
+      notifyException(cause);
     }
     response.handleException(cause);
   }
 
-  @Override
-  void handleClose() {
+  private void notifyException(Throwable failure) {
     Handler<Throwable> handler;
     synchronized (conn) {
-      handler = streamEnded ? null : exceptionHandler;
+      handler = exceptionHandler;
     }
     if (handler != null) {
-      handler.handle(new ClosedChannelException());
+      handler.handle(failure);
+    }
+  }
+
+  @Override
+  void handleClose() {
+    boolean notify;
+    synchronized (conn) {
+      notify = !streamEnded;
+    }
+    if (notify) {
+      notifyException(new ClosedChannelException());
     }
     response.handleClose();
   }
@@ -187,13 +197,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   void handleReset(long errorCode) {
-    Handler<Throwable> handler;
+    boolean notify;
     synchronized (conn) {
-      handler = ended ? null : exceptionHandler;
+      notify = !ended;
       ended = true;
     }
-    if (handler != null) {
-      handler.handle(new StreamResetException(errorCode));
+    if (notify) {
+      notifyException(new StreamResetException(errorCode));
     }
     response.handleReset(errorCode);
   }
