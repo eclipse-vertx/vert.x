@@ -16,15 +16,14 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.*;
 import io.vertx.core.Future;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
@@ -2834,7 +2833,14 @@ public abstract class HttpTest extends HttpTestBase {
     testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true);
   }
 
+  @Test
+  public void testFormUploadLargeFileStreamToDiskWithClientException() throws Exception {
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true);
+  }
   private void testFormUploadFile(String contentStr, boolean streamToDisk) throws Exception {
+    testFormUploadFile(contentStr, streamToDisk, false);
+  }
+  private void testFormUploadFile(String contentStr, boolean streamToDisk, boolean clientException) throws Exception {
 
     waitFor(2);
 
@@ -2866,6 +2872,10 @@ public abstract class HttpTest extends HttpTestBase {
             uploadedFileName = new File(testDir, UUID.randomUUID().toString()).getPath();
             upload.streamToFileSystem(uploadedFileName);
           }
+          upload.exceptionHandler( t -> {
+            //TODO:when exception, should call this?
+            System.out.println("HttpTest.exceptionHandler, t=" + t);
+          });
           upload.endHandler(v -> {
             if (streamToDisk) {
               Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
@@ -2923,10 +2933,16 @@ public abstract class HttpTest extends HttpTestBase {
       buffer.appendString(body);
       req.headers().set("content-length", String.valueOf(buffer.length()));
       req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
-      req.write(buffer).end();
+      if(clientException){
+        req.write(buffer.getBuffer(0, buffer.length() / 2));
+		//TODO: how to simulate client exception ?
+        throw new RuntimeException("Client exception while uploading");
+      } else {
+        req.write(buffer).end();
+      }
     }));
 
-    await();
+    await(5, TimeUnit.SECONDS);
   }
 
   @Test

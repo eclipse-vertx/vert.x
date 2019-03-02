@@ -96,6 +96,7 @@ public class AsyncFileImpl implements AsyncFile {
       } else {
         ch = AsynchronousFileChannel.open(file, opts, vertx.getWorkerPool());
       }
+      System.out.println("AsyncFileImpl.AsyncFileImpl, file=" + file + ", ch=" + ch);
       if (options.isAppend()) writePos = ch.size();
     } catch (IOException e) {
       throw new FileSystemException(e);
@@ -116,6 +117,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public void close() {
+    System.out.println("AsyncFileImpl.close");
     closeInternal(null);
   }
 
@@ -482,6 +484,8 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
+    System.out.println("AsyncFileImpl.doClose");
+
     ContextInternal handlerContext = vertx.getOrCreateContext();
     handlerContext.executeBlockingInternal(res -> {
       try {
@@ -494,6 +498,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private synchronized void closeInternal(Handler<AsyncResult<Void>> handler) {
+    System.out.println("AsyncFileImpl.closeInternal");
     check();
 
     closed = true;
