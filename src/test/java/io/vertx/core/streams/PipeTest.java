@@ -48,13 +48,30 @@ public class PipeTest extends AsyncTestBase {
   }
 
   @Test
-  public void testEmptyStreamAsyncResolution() {
+  public void testEndStreamPrematurely() {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
+    src.write(o1);
     src.end();
     pipe.to(dst, onSuccess(v -> {
       assertTrue(dst.isEnded());
-      assertEquals(Collections.emptyList(), emitted);
+      assertEquals(Collections.singletonList(o1), emitted);
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testFailStreamPrematurely() {
+    FakeStream<Object> src = new FakeStream<>();
+    Pipe<Object> pipe = src.pipe();
+    src.write(o1);
+    Throwable failure = new Throwable();
+    src.fail(failure);
+    pipe.to(dst, onFailure(err -> {
+      assertSame(failure, err);
+      assertTrue(dst.isEnded());
+      assertEquals(Collections.singletonList(o1), emitted);
       testComplete();
     }));
     await();
