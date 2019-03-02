@@ -147,7 +147,8 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
     }
     if (pending.isEmpty() && overflow) {
       overflow = false;
-      Handler<Void> handler = this.drainHandler;
+      Handler<Void> handler = drainHandler;
+      drainHandler = null;
       if (handler != null) {
         handler.handle(null);
       }
