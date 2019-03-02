@@ -10,12 +10,10 @@
  */
 package io.vertx.core.streams.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
-import io.vertx.core.impl.NoStackTraceThrowable;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -34,8 +32,9 @@ public class PipeImpl<T> implements Pipe<T> {
     this.src = src;
     this.result = Future.<Void>future();
 
-    // Set handler now
+    // Set handlers now
     src.endHandler(result::tryComplete);
+    src.exceptionHandler(result::tryFail);
   }
 
   @Override
@@ -86,7 +85,6 @@ public class PipeImpl<T> implements Pipe<T> {
       }
     });
     ws.exceptionHandler(err -> result.tryFail(new WriteException(err)));
-    src.exceptionHandler(result::tryFail);
     src.resume();
     result.setHandler(ar -> {
       try {
