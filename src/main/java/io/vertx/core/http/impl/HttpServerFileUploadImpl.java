@@ -17,7 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
-import io.vertx.core.streams.Pump;
+import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
 import java.nio.charset.Charset;
@@ -60,48 +60,27 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.size = size;
-    if (size == 0) {
-      lazyCalculateSize = true;
-    }
+    this.lazyCalculateSize = size == 0;
 
     stream.handler(this::handleData);
-    stream.endHandler(this::handleEnd);
+    stream.endHandler(v -> this.handleEnd());
   }
 
   private void handleData(Buffer data) {
     Handler<Buffer> h;
     synchronized (HttpServerFileUploadImpl.this) {
       h = dataHandler;
-      if (lazyCalculateSize) {
-        this.size += data.length();
-      }
+      size += data.length();
     }
     if (h != null) {
       h.handle(data);
     }
   }
 
-  private void handleEnd(Void v) {
-    AsyncFile toClose;
-    synchronized (this) {
-      lazyCalculateSize = false;
-      toClose = file;
-    }
-    if (toClose != null) {
-      toClose.close(ar -> {
-        if (ar.failed()) {
-          notifyExceptionHandler(ar.cause());
-        }
-        notifyEndHandler();
-      });
-    } else {
-      notifyEndHandler();
-    }
-  }
-
-  private void notifyEndHandler() {
+  private void handleEnd() {
     Handler<Void> handler;
     synchronized (this) {
+      lazyCalculateSize = false;
       handler = endHandler;
     }
     if (handler != null) {
@@ -183,14 +162,24 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   @Override
   public HttpServerFileUpload streamToFileSystem(String filename) {
-    pause();
+    Pipe<Buffer> pipe = stream.pipe().endOnComplete(false);
     context.owner().fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         file =  ar.result();
-        Pump p = Pump.pump(HttpServerFileUploadImpl.this, ar.result());
-        p.start();
-        resume();
+        pipe.to(file, ar2 -> {
+          file.close(ar3 -> {
+            Throwable failure = ar2.failed() ? ar2.cause() : ar3.failed() ? ar3.cause() : null;
+            if (failure != null) {
+              notifyExceptionHandler(failure);
+            }
+            synchronized (HttpServerFileUploadImpl.this) {
+              size = file.getWritePos();
+            }
+            handleEnd();
+          });
+        });
       } else {
+        pipe.close();
         notifyExceptionHandler(ar.cause());
       }
     });

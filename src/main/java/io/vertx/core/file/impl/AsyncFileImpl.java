@@ -298,6 +298,11 @@ public class AsyncFileImpl implements AsyncFile {
     return this;
   }
 
+  @Override
+  public synchronized long getWritePos() {
+    return writePos;
+  }
+
   private synchronized void checkDrained() {
     if (drainHandler != null && writesOutstanding <= lwm) {
       Handler<Void> handler = drainHandler;
