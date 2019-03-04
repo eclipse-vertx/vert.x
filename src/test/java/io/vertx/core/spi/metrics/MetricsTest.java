@@ -77,33 +77,33 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testSendMessage() {
-    testBroadcastMessage(vertx, new Vertx[]{vertx}, false, true, false);
+    testBroadcastMessage(vertx, new Vertx[]{vertx}, false, new SentMessage(ADDRESS1, false, true, false));
   }
 
   @Test
   public void testSendMessageInCluster() {
     startNodes(2);
-    testBroadcastMessage(vertices[0], new Vertx[]{vertices[1]}, false, false, true);
+    testBroadcastMessage(vertices[0], new Vertx[]{vertices[1]}, false, new SentMessage(ADDRESS1, false, false, true));
   }
 
   @Test
   public void testPublishMessageToSelf() {
-    testBroadcastMessage(vertx, new Vertx[]{vertx}, true, true, false);
+    testBroadcastMessage(vertx, new Vertx[]{vertx}, true, new SentMessage(ADDRESS1, true, true, false));
   }
 
   @Test
   public void testPublishMessageToRemote() {
     startNodes(2);
-    testBroadcastMessage(vertices[0], new Vertx[]{vertices[1]}, true, false, true);
+    testBroadcastMessage(vertices[0], new Vertx[]{vertices[1]}, true, new SentMessage(ADDRESS1, true, false, true));
   }
 
   @Test
   public void testPublishMessageToCluster() {
     startNodes(2);
-    testBroadcastMessage(vertices[0], vertices, true, true, true);
+    testBroadcastMessage(vertices[0], vertices, true, new SentMessage(ADDRESS1, true, false, true), new SentMessage(ADDRESS1, true, true, false));
   }
 
-  private void testBroadcastMessage(Vertx from, Vertx[] to, boolean publish, boolean expectedLocal, boolean expectedRemote) {
+  private void testBroadcastMessage(Vertx from, Vertx[] to, boolean publish, SentMessage... expected) {
     FakeEventBusMetrics eventBusMetrics = FakeMetricsBase.getMetrics(from.eventBus());
     AtomicInteger broadcastCount = new AtomicInteger();
     AtomicInteger receiveCount = new AtomicInteger();
@@ -122,7 +122,7 @@ public class MetricsTest extends VertxTestBase {
       });
       consumer.handler(msg -> {
         if (receiveCount.incrementAndGet() == to.length) {
-          assertEquals(Arrays.asList(new SentMessage(ADDRESS1, publish, expectedLocal, expectedRemote)), eventBusMetrics.getSentMessages());
+          assertEquals(new HashSet<>(Arrays.asList(expected)), new HashSet<>(eventBusMetrics.getSentMessages()));
           testComplete();
         }
       });
@@ -423,7 +423,7 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitLatch(latch);
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
-    assertEquals(Collections.singletonList(ADDRESS1), metrics.getReplyFailureAddresses());
+    assertEquals(Collections.singletonList("__vertx.reply.1"), metrics.getReplyFailureAddresses());
     assertEquals(Collections.singletonList(ReplyFailure.NO_HANDLERS), metrics.getReplyFailures());
   }
 
@@ -939,7 +939,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testThreadPoolMetricsWithWorkerVerticle() {
+  public void testThreadPoolMetricsWithWorkerVerticle() throws Exception {
     AtomicInteger counter = new AtomicInteger();
     Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
@@ -955,6 +955,7 @@ public class MetricsTest extends VertxTestBase {
 
     AtomicInteger msg = new AtomicInteger();
 
+    CountDownLatch latch = new CountDownLatch(1);
     Verticle worker = new AbstractVerticle() {
       @Override
       public void start(Future<Void> done) throws Exception {
@@ -974,7 +975,7 @@ public class MetricsTest extends VertxTestBase {
               }
 
               if (counter.incrementAndGet() == count) {
-                testComplete();
+                latch.countDown();
               }
 
             } catch (InterruptedException e) {
@@ -993,9 +994,9 @@ public class MetricsTest extends VertxTestBase {
       }
     });
 
+    awaitLatch(latch);
+
     assertWaitUntil(() -> count + 1 == metrics.numberOfCompletedTasks());
-
-
 
     // The verticle deployment is also executed on the worker thread pool
     assertEquals(count + 1, metrics.numberOfSubmittedTask());

@@ -23,6 +23,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
+import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.verticles.SimpleServer;
@@ -53,6 +54,11 @@ import static io.vertx.test.core.TestUtils.*;
 public class Http1xTest extends HttpTest {
 
   @Override
+  protected HttpServerOptions createBaseServerOptions() {
+    return super.createBaseServerOptions().setHandle100ContinueAutomatically(true);
+  }
+
+  @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
     options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +
@@ -61,13 +67,6 @@ public class Http1xTest extends HttpTest {
       "127.0.0.1 host1\n" +
       "127.0.0.1 host2\n"));
     return options;
-  }
-
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    client = vertx.createHttpClient(new HttpClientOptions());
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST).setHandle100ContinueAutomatically(true));
   }
 
   @Test
@@ -1529,7 +1528,7 @@ public class Http1xTest extends HttpTest {
       theServer.requestHandler(req -> {
         Context ctx = Vertx.currentContext();
         if (context.get() != null) {
-          assertSame(ctx, context.get());
+          assertSameEventLoop(ctx, context.get());
         } else {
           context.set(ctx);
           contexts.add(ctx);
@@ -1932,7 +1931,7 @@ public class Http1xTest extends HttpTest {
         // This should warn in the log (console) as we are called back on the connection context
         // and not on the context doing the request
         // checker.accept(req4);
-        assertEquals(1, contexts.size());
+        assertEquals(1, contexts.stream().map(context -> ((ContextInternal)context).nettyEventLoop()).distinct().count());
         assertEquals(1, connections.size());
         assertNotSame(Vertx.currentContext(), ctx);
         testComplete();
@@ -1948,55 +1947,151 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testContexts() throws Exception {
-    Set<ContextInternal> contexts = new ConcurrentHashSet<>();
-    AtomicInteger cnt = new AtomicInteger();
-    AtomicReference<ContextInternal> serverRequestContext = new AtomicReference<>();
-    // Server connect handler should always be called with same context
+  public void testConnectErrorContext() throws Exception {
+
+  }
+
+  @Test
+  public void testRequestExceptionHandlerContext() throws Exception {
+    waitFor(2);
     server.requestHandler(req -> {
-      ContextInternal serverContext = ((VertxInternal) vertx).getContext();
-      if (serverRequestContext.get() != null) {
-        assertSame(serverRequestContext.get(), serverContext);
-      } else {
-        serverRequestContext.set(serverContext);
-      }
-      req.response().end();
+      req.response().close();
     });
+    startServer();
+    Context clientCtx = vertx.getOrCreateContext();
+    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
+      assertSameEventLoop(clientCtx, Vertx.currentContext());
+      complete();
+    }));
+    clientCtx.runOnContext(v -> {
+      req.sendHead();
+    });
+    req.exceptionHandler(err -> {
+      assertSameEventLoop(clientCtx, Vertx.currentContext());
+      complete();
+    });
+    await();
+  }
+
+  private void fill(Buffer buffer, WriteStream<Buffer> ws, Runnable done) {
+    if (ws.writeQueueFull()) {
+      done.run();
+    } else {
+      ws.write(buffer);
+      vertx.runOnContext(v -> {
+        fill(buffer, ws, done);
+      });
+    }
+  }
+
+  @Test
+  public void testContexts() throws Exception {
+    Buffer data = randomBuffer(1024);
+    AtomicInteger cnt = new AtomicInteger();
+    // Server connect handler should always be called with same context
+    Context serverCtx = vertx.getOrCreateContext();
     CountDownLatch latch = new CountDownLatch(1);
-    AtomicReference<ContextInternal> listenContext = new AtomicReference<>();
-    server.listen(ar -> {
-      assertTrue(ar.succeeded());
-      listenContext.set(((VertxInternal) vertx).getContext());
-      latch.countDown();
+    List<HttpServerRequest> requests = Collections.synchronizedList(new ArrayList<>());
+    Map<String, CompletionStage<Void>> requestResumeMap = new HashMap<>();
+    Map<String, CompletionStage<Void>> responseResumeMap = new HashMap<>();
+    serverCtx.runOnContext(v1 -> {
+      server.requestHandler(req -> {
+        req.pause();
+        requestResumeMap.get(req.path()).thenAccept(v -> {
+          req.resume();
+        });
+        assertSameEventLoop(serverCtx, Vertx.currentContext());
+        Buffer body = Buffer.buffer();
+        req.handler(chunk -> {
+          assertSameEventLoop(serverCtx, Vertx.currentContext());
+          body.appendBuffer(chunk);
+        });
+        req.endHandler(v2 -> {
+          assertSameEventLoop(serverCtx, Vertx.currentContext());
+          requests.add(req);
+          if (requests.size() == 4) {
+            requests.forEach(req_ ->{
+              HttpServerResponse resp = req_.response();
+              CompletableFuture<Void> cf = new CompletableFuture<>();
+              responseResumeMap.put(req_.path(), cf);
+              resp.setChunked(true);
+              fill(data, resp, () -> {
+                cf.complete(null);
+                resp.drainHandler(v -> {
+                  assertSameEventLoop(serverCtx, Vertx.currentContext());
+                  resp.end();
+                });
+              });
+            });
+          }
+        });
+      });
+      server.listen(onSuccess(s -> {
+        assertSameEventLoop(serverCtx, Vertx.currentContext());
+        latch.countDown();
+      }));
     });
     awaitLatch(latch);
     CountDownLatch latch2 = new CountDownLatch(1);
-    int numReqs = 16;
-    int numConns = 8;
-    // There should be a context per *endpoint*
+    int numReqs = 4;
+    int numConns = 4;
+    // There should be a context per *connection*
+    Set<Context> contexts = new ConcurrentHashSet<>();
+    Set<Thread> threads = new ConcurrentHashSet<>();
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(numConns));
+    Context clientCtx = vertx.getOrCreateContext();
     for (int i = 0; i < numReqs; i++) {
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+      int val = i;
+      CompletableFuture<Void> cf = new CompletableFuture<>();
+      String path = "/" + val;
+      requestResumeMap.put(path, cf);
+      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(resp -> {
+        assertSameEventLoop(clientCtx, Vertx.currentContext());
         assertEquals(200, resp.statusCode());
-        contexts.add(((VertxInternal) vertx).getContext());
-        if (cnt.incrementAndGet() == numReqs) {
-          int size = contexts.size();
-          // Some connections might get closed if response comes back quick enough hence the >=
-          assertEquals(1, size);
-          latch2.countDown();
-        }
-      })).exceptionHandler(this::fail).end();
+        contexts.add(Vertx.currentContext());
+        threads.add(Thread.currentThread());
+        resp.pause();
+        responseResumeMap.get(path).thenAccept(v -> {
+          resp.resume();
+        });
+        resp.handler(chunk -> {
+          assertSameEventLoop(clientCtx, Vertx.currentContext());
+        });
+        resp.exceptionHandler(this::fail);
+        resp.endHandler(v -> {
+          assertSameEventLoop(clientCtx, Vertx.currentContext());
+          if (cnt.incrementAndGet() == numReqs) {
+            assertEquals(4, contexts.size());
+            assertEquals(1, threads.size());
+            latch2.countDown();
+          }
+        });
+      })).setChunked(true).exceptionHandler(this::fail);
+      CountDownLatch drainLatch = new CountDownLatch(1);
+      req.drainHandler(v -> {
+        assertSameEventLoop(clientCtx, Vertx.currentContext());
+        drainLatch.countDown();
+      });
+      clientCtx.runOnContext(v -> {
+        req.sendHead(version -> {
+          assertSameEventLoop(clientCtx, Vertx.currentContext());
+          fill(data, req, () -> {
+            cf.complete(null);
+          });
+        });
+      });
+      awaitLatch(drainLatch);
+      req.end();
     }
-    awaitLatch(latch2);
+    awaitLatch(latch2, 40, TimeUnit.SECONDS);
     // Close should be in own context
     server.close(ar -> {
       assertTrue(ar.succeeded());
       ContextInternal closeContext = ((VertxInternal) vertx).getContext();
       assertFalse(contexts.contains(closeContext));
-      assertNotSame(serverRequestContext.get(), closeContext);
-      assertFalse(contexts.contains(listenContext.get()));
-      assertSame(serverRequestContext.get(), listenContext.get());
+      assertNotSame(serverCtx, closeContext);
+      assertFalse(contexts.contains(serverCtx));
       testComplete();
     });
 

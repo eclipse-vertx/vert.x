@@ -31,8 +31,11 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.tracing.TagExtractor;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -58,7 +61,6 @@ public class ClusteredEventBus extends EventBusImpl {
 
   private final ClusterManager clusterManager;
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
-  private final Context sendNoContext;
 
   private EventBusOptions options;
   private AsyncMultiMap<String, ClusterNodeInfo> subs;
@@ -73,7 +75,6 @@ public class ClusteredEventBus extends EventBusImpl {
     super(vertx);
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
-    this.sendNoContext = vertx.getOrCreateContext();
   }
 
   private NetServerOptions getServerOptions() {
@@ -175,11 +176,11 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
+  protected MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send, this);
+    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send, src, this);
     return msg;
   }
 
@@ -215,13 +216,10 @@ public class ClusteredEventBus extends EventBusImpl {
   @Override
   protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
     if (sendContext.options.isLocalOnly()) {
-      if (metrics != null) {
-        metrics.messageSent(sendContext.message.address(), !sendContext.message.isSend(), true, false);
-      }
-      deliverMessageLocally(sendContext);
-    } else if (Vertx.currentContext() == null) {
-      // Guarantees the order when there is no current context
-      sendNoContext.runOnContext(v -> {
+      super.sendOrPub(sendContext);
+    } else if (Vertx.currentContext() != sendContext.ctx) {
+      // Current event-loop might be null when sending from non vertx thread
+      sendContext.ctx.runOnContext(v -> {
         subs.get(sendContext.message.address(), ar -> onSubsReceived(ar, sendContext));
       });
     } else {
@@ -235,10 +233,7 @@ public class ClusteredEventBus extends EventBusImpl {
       if (serverIDs != null && !serverIDs.isEmpty()) {
         sendToSubs(serverIDs, sendContext);
       } else {
-        if (metrics != null) {
-          metrics.messageSent(sendContext.message.address(), !sendContext.message.isSend(), true, false);
-        }
-        deliverMessageLocally(sendContext);
+        super.sendOrPub(sendContext);
       }
     } else {
       log.error("Failed to send message", asyncResult.cause());
@@ -305,7 +300,7 @@ public class ClusteredEventBus extends EventBusImpl {
             size = buff.getInt(0);
             parser.fixedSizeMode(size);
           } else {
-            ClusteredMessage received = new ClusteredMessage();
+            ClusteredMessage received = new ClusteredMessage(false, ClusteredEventBus.this);
             received.readFromWire(buff, codecManager);
             if (metrics != null) {
               metrics.messageRead(received.address(), buff.length());
@@ -327,60 +322,48 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   private <T> void sendToSubs(ChoosableIterable<ClusterNodeInfo> subs, OutboundDeliveryContext<T> sendContext) {
-    String address = sendContext.message.address();
     if (sendContext.message.isSend()) {
       // Choose one
       ClusterNodeInfo ci = subs.choose();
       ServerID sid = ci == null ? null : ci.serverID;
       if (sid != null && !sid.equals(serverID)) {  //We don't send to this node
-        if (metrics != null) {
-          metrics.messageSent(address, false, false, true);
-        }
-        sendRemote(sid, sendContext.message);
+        sendRemote(sendContext, sid, sendContext.message);
       } else {
-        if (metrics != null) {
-          metrics.messageSent(address, false, true, false);
-        }
-        deliverMessageLocally(sendContext);
+        super.sendOrPub(sendContext);
       }
     } else {
       // Publish
-      boolean local = false;
-      boolean remote = false;
       for (ClusterNodeInfo ci : subs) {
         if (!ci.serverID.equals(serverID)) {  //We don't send to this node
-          remote = true;
-          sendRemote(ci.serverID, sendContext.message);
+          sendRemote(sendContext, ci.serverID, sendContext.message);
         } else {
-          local = true;
+          super.sendOrPub(sendContext);
         }
-      }
-      if (metrics != null) {
-        metrics.messageSent(address, true, local, remote);
-      }
-      if (local) {
-        deliverMessageLocally(sendContext);
       }
     }
   }
 
   private <T> void clusteredSendReply(ServerID replyDest, OutboundDeliveryContext<T> sendContext) {
     MessageImpl message = sendContext.message;
-    String address = message.address();
     if (!replyDest.equals(serverID)) {
-      if (metrics != null) {
-        metrics.messageSent(address, false, false, true);
-      }
-      sendRemote(replyDest, message);
+      sendRemote(sendContext, replyDest, message);
     } else {
-      if (metrics != null) {
-        metrics.messageSent(address, false, true, false);
-      }
-      deliverMessageLocally(sendContext);
+      super.sendOrPub(sendContext);
     }
   }
 
-  private void sendRemote(ServerID theServerID, MessageImpl message) {
+  private void sendRemote(OutboundDeliveryContext<?> sendContext, ServerID theServerID, MessageImpl message) {
+    Object trace = messageSent(sendContext, false, true);
+
+    // SAME CODE THAN IN PARENT!!!!
+    VertxTracer tracer = sendContext.ctx.tracer();
+    if (tracer != null && sendContext.message.src) {
+      if (sendContext.replyHandler == null) {
+        tracer.receiveResponse(sendContext.ctx, null, trace, null, TagExtractor.empty());
+      } else {
+        sendContext.replyHandler.trace = trace;
+      }
+    }
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.

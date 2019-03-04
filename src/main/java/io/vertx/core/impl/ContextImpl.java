@@ -13,19 +13,18 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Starter;
-import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.PoolMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -34,7 +33,7 @@ import java.util.concurrent.RejectedExecutionException;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-abstract class ContextImpl implements ContextInternal {
+abstract class ContextImpl extends AbstractContext {
 
   private static EventLoop getEventLoop(VertxInternal vertx) {
     EventLoopGroup group = vertx.getEventLoopGroup();
@@ -47,39 +46,37 @@ abstract class ContextImpl implements ContextInternal {
 
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
-  private static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
-  private static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
-  private static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
-  private static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
-  private static final boolean DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
+  static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
 
   protected final VertxInternal owner;
-  protected final String deploymentID;
+  protected final VertxTracer<?, ?> tracer;
   protected final JsonObject config;
-  private Deployment deployment;
-  private CloseHooks closeHooks;
+  private final Deployment deployment;
+  private final CloseHooks closeHooks;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
-  private ConcurrentMap<Object, Object> contextData;
+  private ConcurrentMap<Object, Object> data;
+  private ConcurrentMap<Object, Object> localData;
   private volatile Handler<Throwable> exceptionHandler;
-  protected final WorkerPool workerPool;
-  protected final WorkerPool internalBlockingPool;
+  final TaskQueue internalOrderedTasks;
+  final WorkerPool internalBlockingPool;
+  final WorkerPool workerPool;
   final TaskQueue orderedTasks;
-  protected final TaskQueue internalOrderedTasks;
 
-  protected ContextImpl(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
+  protected ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                         ClassLoader tccl) {
-    this(vertx, getEventLoop(vertx), internalBlockingPool, workerPool, deploymentID, config, tccl);
+    this(vertx, tracer, getEventLoop(vertx), internalBlockingPool, workerPool, deployment, tccl);
   }
 
-  protected ContextImpl(VertxInternal vertx, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config,
+  protected ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                         ClassLoader tccl) {
-    if (DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
+    if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
     }
-    this.deploymentID = deploymentID;
-    this.config = config;
+    this.tracer = tracer;
+    this.deployment = deployment;
+    this.config = deployment != null ? deployment.config() : new JsonObject();
     this.eventLoop = eventLoop;
     this.tccl = tccl;
     this.owner = vertx;
@@ -88,30 +85,6 @@ abstract class ContextImpl implements ContextInternal {
     this.orderedTasks = new TaskQueue();
     this.internalOrderedTasks = new TaskQueue();
     this.closeHooks = new CloseHooks(log);
-  }
-
-  static void setContext(ContextImpl context) {
-    Thread current = Thread.currentThread();
-    if (current instanceof VertxThread) {
-      setContext((VertxThread) current, context);
-    } else {
-      throw new IllegalStateException("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
-    }
-  }
-
-  private static void setContext(VertxThread thread, ContextImpl context) {
-    thread.setContext(context);
-    if (!DISABLE_TCCL) {
-      if (context != null) {
-        context.setTCCL();
-      } else {
-        Thread.currentThread().setContextClassLoader(null);
-      }
-    }
-  }
-
-  public void setDeployment(Deployment deployment) {
-    this.deployment = deployment;
   }
 
   public Deployment getDeployment() {
@@ -132,93 +105,14 @@ abstract class ContextImpl implements ContextInternal {
     VertxThreadFactory.unsetContext(this);
   }
 
-  abstract void executeAsync(Handler<Void> task);
-
-  abstract <T> void execute(T value, Handler<T> task);
-
-  @Override
-  public abstract boolean isEventLoopContext();
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T> T get(String key) {
-    return (T) contextData().get(key);
-  }
-
-  @Override
-  public void put(String key, Object value) {
-    contextData().put(key, value);
-  }
-
-  @Override
-  public boolean remove(String key) {
-    return contextData().remove(key) != null;
-  }
-
-  @Override
-  public boolean isWorkerContext() {
-    return !isEventLoopContext();
-  }
-
-  static boolean isOnVertxThread(boolean worker) {
-    Thread t = Thread.currentThread();
-    if (t instanceof VertxThread) {
-      VertxThread vt = (VertxThread) t;
-      return vt.isWorker() == worker;
-    }
-    return false;
-  }
-
-  // This is called to execute code where the origin is IO (from Netty probably).
-  // In such a case we should already be on an event loop thread (as Netty manages the event loops)
-  // but check this anyway, then execute directly
-  @Override
-  public final void executeFromIO(Handler<Void> task) {
-    executeFromIO(null, task);
-  }
-
-  @Override
-  public final <T> void executeFromIO(T value, Handler<T> task) {
-    if (THREAD_CHECKS) {
-      checkEventLoopThread();
-    }
-    execute(value, task);
-  }
-
-  private void checkEventLoopThread() {
-    Thread current = Thread.currentThread();
-    if (!(current instanceof VertxThread)) {
-      throw new IllegalStateException("Expected to be on Vert.x thread, but actually on: " + current);
-    } else if (((VertxThread) current).isWorker()) {
-      throw new IllegalStateException("Event delivered on unexpected worker thread " + current);
-    }
-  }
-
-  // Run the task asynchronously on this same context
-  @Override
-  public void runOnContext(Handler<Void> task) {
-    try {
-      executeAsync(task);
-    } catch (RejectedExecutionException ignore) {
-      // Pool is already shut down
-    }
-  }
-
   @Override
   public String deploymentID() {
-    return deploymentID;
+    return deployment != null ? deployment.deploymentID() : null;
   }
 
   @Override
   public JsonObject config() {
     return config;
-  }
-
-  @Override
-  public List<String> processArgs() {
-    // As we are maintaining the launcher and starter class, choose the right one.
-    List<String> processArgument = VertxCommandLauncher.getProcessArguments();
-    return processArgument != null ? processArgument : Starter.PROCESS_ARGS;
   }
 
   public EventLoop nettyEventLoop() {
@@ -231,27 +125,23 @@ abstract class ContextImpl implements ContextInternal {
 
   @Override
   public <T> void executeBlockingInternal(Handler<Future<T>> action, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(action, resultHandler, internalBlockingPool.executor(), internalOrderedTasks, internalBlockingPool.metrics());
+    executeBlocking(this, action, resultHandler, internalBlockingPool, internalOrderedTasks);
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(blockingCodeHandler, resultHandler, workerPool.executor(), ordered ? orderedTasks : null, workerPool.metrics());
-  }
-
-  @Override
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(blockingCodeHandler, true, resultHandler);
+    executeBlocking(this, blockingCodeHandler, resultHandler, workerPool, ordered ? orderedTasks : null);
   }
 
   @Override
   public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(blockingCodeHandler, resultHandler, workerPool.executor(), queue, workerPool.metrics());
+    executeBlocking(this, blockingCodeHandler, resultHandler, workerPool, queue);
   }
 
-  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler,
+  static <T> void executeBlocking(ContextInternal context, Handler<Future<T>> blockingCodeHandler,
       Handler<AsyncResult<T>> resultHandler,
-      Executor exec, TaskQueue queue, PoolMetrics metrics) {
+      WorkerPool workerPool, TaskQueue queue) {
+    PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     try {
       Runnable command = () -> {
@@ -265,7 +155,7 @@ abstract class ContextImpl implements ContextInternal {
         }
         Future<T> res = Future.future();
         try {
-          ContextImpl.setContext(this);
+          ContextInternal.setContext(context);
           blockingCodeHandler.handle(res);
         } catch (Throwable e) {
           res.tryFail(e);
@@ -278,9 +168,10 @@ abstract class ContextImpl implements ContextInternal {
           metrics.end(execMetric, res.succeeded());
         }
         if (resultHandler != null) {
-          res.setHandler(ar -> runOnContext(v -> resultHandler.handle(ar)));
+          res.setHandler(ar -> context.runOnContext(v -> resultHandler.handle(ar)));
         }
       };
+      Executor exec = workerPool.executor();
       if (queue != null) {
         queue.execute(command, exec);
       } else {
@@ -296,40 +187,33 @@ abstract class ContextImpl implements ContextInternal {
   }
 
   @Override
-  public synchronized ConcurrentMap<Object, Object> contextData() {
-    if (contextData == null) {
-      contextData = new ConcurrentHashMap<>();
-    }
-    return contextData;
+  public VertxTracer tracer() {
+    return tracer;
   }
 
-  <T> boolean executeTask(T arg, Handler<T> hTask) {
-    Thread th = Thread.currentThread();
-    if (!(th instanceof VertxThread)) {
-      throw new IllegalStateException("Uh oh! context executing with wrong thread! " + th);
+  @Override
+  public ClassLoader classLoader() {
+    return tccl;
+  }
+
+  @Override
+  public synchronized ConcurrentMap<Object, Object> contextData() {
+    if (data == null) {
+      data = new ConcurrentHashMap<>();
     }
-    VertxThread current = (VertxThread) th;
-    if (!DISABLE_TIMINGS) {
-      current.executeStart();
+    return data;
+  }
+
+  @Override
+  public synchronized ConcurrentMap<Object, Object> localContextData() {
+    if (localData == null) {
+      localData = new ConcurrentHashMap<>();
     }
-    try {
-      setContext(current, this);
-      hTask.handle(arg);
-      return true;
-    } catch (Throwable t) {
-      reportException(t);
-      return false;
-    } finally {
-      // We don't unset the context after execution - this is done later when the context is closed via
-      // VertxThreadFactory
-      if (!DISABLE_TIMINGS) {
-        current.executeEnd();
-      }
-    }
+    return localData;
   }
 
   public void reportException(Throwable t) {
-    Handler<Throwable> handler = this.exceptionHandler;
+    Handler<Throwable> handler = exceptionHandler;
     if (handler == null) {
       handler = owner.exceptionHandler();
     }
@@ -338,10 +222,6 @@ abstract class ContextImpl implements ContextInternal {
     } else {
       log.error("Unhandled exception", t);
     }
-  }
-
-  private void setTCCL() {
-    Thread.currentThread().setContextClassLoader(tccl);
   }
 
   @Override
@@ -366,5 +246,121 @@ abstract class ContextImpl implements ContextInternal {
       return 1;
     }
     return deployment.deploymentOptions().getInstances();
+  }
+
+  static abstract class Duplicated<C extends ContextImpl> extends AbstractContext {
+
+    protected final C delegate;
+    private final ContextInternal other;
+    private ConcurrentMap<Object, Object> localData;
+
+    public Duplicated(C delegate, ContextInternal other) {
+      this.delegate = delegate;
+      this.other = other;
+    }
+
+    @Override
+    public VertxTracer tracer() {
+      return delegate.tracer();
+    }
+
+    public final <T> void executeBlockingInternal(Handler<Future<T>> action, Handler<AsyncResult<T>> resultHandler) {
+      ContextImpl.executeBlocking(this, action, resultHandler, delegate.internalBlockingPool, delegate.internalOrderedTasks);
+    }
+
+    @Override
+    public final <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+      ContextImpl.executeBlocking(this, blockingCodeHandler, resultHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
+    }
+
+    @Override
+    public final <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
+      ContextImpl.executeBlocking(this, blockingCodeHandler, resultHandler, delegate.workerPool, queue);
+    }
+
+    @Override
+    public final <T> void schedule(T value, Handler<T> task) {
+      delegate.schedule(value, task);
+    }
+
+    @Override
+    public final String deploymentID() {
+      return delegate.deploymentID();
+    }
+
+    @Override
+    public final JsonObject config() {
+      return delegate.config();
+    }
+
+    @Override
+    public final int getInstanceCount() {
+      return delegate.getInstanceCount();
+    }
+
+    @Override
+    public final Context exceptionHandler(Handler<Throwable> handler) {
+      delegate.exceptionHandler(handler);
+      return this;
+    }
+
+    @Override
+    public final Handler<Throwable> exceptionHandler() {
+      return delegate.exceptionHandler();
+    }
+
+    @Override
+    public final void addCloseHook(Closeable hook) {
+      delegate.addCloseHook(hook);
+    }
+
+    @Override
+    public final void removeCloseHook(Closeable hook) {
+      delegate.removeCloseHook(hook);
+    }
+
+    @Override
+    public final EventLoop nettyEventLoop() {
+      return delegate.nettyEventLoop();
+    }
+
+    @Override
+    public final Deployment getDeployment() {
+      return delegate.getDeployment();
+    }
+
+    @Override
+    public final VertxInternal owner() {
+      return delegate.owner();
+    }
+
+    @Override
+    public final ClassLoader classLoader() {
+      return delegate.classLoader();
+    }
+
+    @Override
+    public final void reportException(Throwable t) {
+      delegate.reportException(t);
+    }
+
+    @Override
+    public final ConcurrentMap<Object, Object> contextData() {
+      return delegate.contextData();
+    }
+
+    @Override
+    public final ConcurrentMap<Object, Object> localContextData() {
+      if (other == null) {
+        synchronized (this) {
+          if (localData == null) {
+            localData = new ConcurrentHashMap<>();
+          }
+          return localData;
+        }
+      } else {
+        return other.localContextData();
+      }
+    }
   }
 }

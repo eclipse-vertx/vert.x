@@ -24,8 +24,12 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.spi.tracing.TagExtractor;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -48,6 +52,102 @@ public final class HttpUtils {
 
   static final int SC_SWITCHING_PROTOCOLS = 101;
   static final int SC_BAD_GATEWAY = 502;
+
+  static final TagExtractor<HttpServerRequest> SERVER_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpServerRequest>() {
+    @Override
+    public int len(HttpServerRequest req) {
+      return 2;
+    }
+    @Override
+    public String name(HttpServerRequest req, int index) {
+      switch (index) {
+        case 0:
+          return "http.url";
+        case 1:
+          return "http.method";
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+    @Override
+    public String value(HttpServerRequest req, int index) {
+      switch (index) {
+        case 0:
+          return req.absoluteURI();
+        case 1:
+          return req.method().name();
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+  };
+
+  static final TagExtractor<HttpServerResponse> SERVER_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpServerResponse>() {
+    @Override
+    public int len(HttpServerResponse resp) {
+      return 1;
+    }
+    @Override
+    public String name(HttpServerResponse resp, int index) {
+      if (index == 0) {
+        return "http.status_code";
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+    @Override
+    public String value(HttpServerResponse resp, int index) {
+      if (index == 0) {
+        return "" + resp.getStatusCode();
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+  };
+
+  static final TagExtractor<HttpClientRequest> CLIENT_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpClientRequest>() {
+    @Override
+    public int len(HttpClientRequest req) {
+      return 2;
+    }
+    @Override
+    public String name(HttpClientRequest req, int index) {
+      switch (index) {
+        case 0:
+          return "http.url";
+        case 1:
+          return "http.method";
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+    @Override
+    public String value(HttpClientRequest req, int index) {
+      switch (index) {
+        case 0:
+          return req.absoluteURI();
+        case 1:
+          return req.method().name();
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+  };
+
+  static final TagExtractor<HttpClientResponse> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpClientResponse>() {
+    @Override
+    public int len(HttpClientResponse resp) {
+      return 1;
+    }
+    @Override
+    public String name(HttpClientResponse resp, int index) {
+      if (index == 0) {
+        return "http.status_code";
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+    @Override
+    public String value(HttpClientResponse resp, int index) {
+      if (index == 0) {
+        return "" + resp.statusCode();
+      }
+      throw new IndexOutOfBoundsException("Invalid tag index " + index);
+    }
+  };
 
   static final StreamPriority DEFAULT_STREAM_PRIORITY = new StreamPriority() {
     @Override

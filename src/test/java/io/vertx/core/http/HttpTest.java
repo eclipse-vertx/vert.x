@@ -24,11 +24,9 @@ import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -62,14 +60,6 @@ public abstract class HttpTest extends HttpTestBase {
   public void setUp() throws Exception {
     super.setUp();
     testDir = testFolder.newFolder();
-  }
-
-  protected HttpServerOptions createBaseServerOptions() {
-    return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
-  }
-
-  protected HttpClientOptions createBaseClientOptions() {
-    return new HttpClientOptions();
   }
 
   @Test
@@ -1288,17 +1278,22 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testClientExceptionHandlerCalledWhenExceptionOnDataHandler() throws Exception {
+  public void testContextExceptionHandlerCalledWhenExceptionOnDataHandler() throws Exception {
     server.requestHandler(request -> {
       request.response().end("foo");
     }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
       // Exception handler should be called for any exceptions in the data handler
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        resp.handler(data -> {
-          throw new RuntimeException("should be caught");
+        RuntimeException cause = new RuntimeException("should be caught");
+        Vertx.currentContext().exceptionHandler(err -> {
+          if (err == cause) {
+            testComplete();
+          }
         });
-        resp.exceptionHandler(t -> testComplete());
-      })).exceptionHandler(error -> fail()).end();
+        resp.handler(data -> {
+          throw cause;
+        });
+      })).end();
     }));
     await();
   }
@@ -1310,11 +1305,16 @@ public abstract class HttpTest extends HttpTestBase {
     }).listen(DEFAULT_HTTP_PORT, onSuccess(s -> {
       // Exception handler should be called for any exceptions in the data handler
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        resp.bodyHandler(data -> {
-          throw new RuntimeException("should be caught");
+        RuntimeException cause = new RuntimeException("should be caught");
+        Vertx.currentContext().exceptionHandler(err -> {
+          if (err == cause) {
+            testComplete();
+          }
         });
-        resp.exceptionHandler(t -> testComplete());
-      })).exceptionHandler(error -> fail()).end();
+        resp.bodyHandler(data -> {
+          throw cause;
+        });
+      })).end();
     }));
     await();
   }
@@ -1939,7 +1939,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void test100ContinueHandledManually() throws Exception {
 
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions());
+    server = vertx.createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(false));
 
     Buffer toSend = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> {
@@ -1971,7 +1971,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void test100ContinueRejectedManually() throws Exception {
 
     server.close();
-    server = vertx.createHttpServer(createBaseServerOptions());
+    server = vertx.createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(false));
 
     server.requestHandler(req -> {
       req.response().setStatusCode(405).end();
@@ -2023,7 +2023,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testClientRequestExceptionHandlerCalledWhenExceptionOnDrainHandler() {
+  public void testContextExceptionHandlerCalledWhenExceptionOnDrainHandler() {
     pausingServer(resumeFuture -> {
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       req.setChunked(true);
@@ -2035,15 +2035,17 @@ public abstract class HttpTest extends HttpTestBase {
         req.write(buff);
         if (req.writeQueueFull()) {
           vertx.cancelTimer(id);
+          RuntimeException cause = new RuntimeException("error");
+          Context ctx = Vertx.currentContext();
+          ctx.exceptionHandler(err -> {
+            // Called a second times when testComplete is called and close the http client
+            if (err == cause) {
+              testComplete();
+            }
+          });
           req.drainHandler(v -> {
-            throw new RuntimeException("error");
-          })
-              .exceptionHandler(t -> {
-                // Called a second times when testComplete is called and close the http client
-                if (failed.compareAndSet(false, true)) {
-                  testComplete();
-                }
-              });
+            throw cause;
+          });
 
           // Tell the server to resume
           resumeFuture.complete();
@@ -3163,7 +3165,7 @@ public abstract class HttpTest extends HttpTestBase {
         server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
         server.requestHandler(req -> {
           req.response().end();
-          assertSame(ctx, Vertx.currentContext());
+          assertSameEventLoop(ctx, Vertx.currentContext());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
@@ -3176,7 +3178,7 @@ public abstract class HttpTest extends HttpTestBase {
           }
           client = vertx.createHttpClient(new HttpClientOptions());
           client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(res -> {
-            assertSame(ctx, Vertx.currentContext());
+            assertSameEventLoop(ctx, Vertx.currentContext());
             if (!worker) {
               assertSame(thr, Thread.currentThread());
             }
@@ -3417,7 +3419,9 @@ public abstract class HttpTest extends HttpTestBase {
   public void testServerConnectionHandler() throws Exception {
     AtomicInteger status = new AtomicInteger();
     AtomicReference<HttpConnection> connRef = new AtomicReference<>();
+    Context serverCtx = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
+      assertSameEventLoop(serverCtx, Vertx.currentContext());
       assertEquals(0, status.getAndIncrement());
       assertNull(connRef.getAndSet(conn));
     });
@@ -3426,9 +3430,7 @@ public abstract class HttpTest extends HttpTestBase {
       assertSame(connRef.get(), req.connection());
       req.response().end();
     });
-    CountDownLatch listenLatch = new CountDownLatch(1);
-    server.listen(onSuccess(s -> listenLatch.countDown()));
-    awaitLatch(listenLatch);
+    startServer(serverCtx, server);
     client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
       testComplete();
     });

@@ -12,18 +12,18 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.vertx.core.Context;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-interface HttpClientStream {
+public interface HttpClientStream {
 
   /**
    * @return the stream id, {@code 1} denotes the first stream, HTTP/1 is a simple sequence, HTTP/2
@@ -37,7 +37,7 @@ interface HttpClientStream {
   HttpVersion version();
 
   HttpConnection connection();
-  Context getContext();
+  ContextInternal getContext();
 
   void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority);
   void writeBuffer(ByteBuf buf, boolean end);

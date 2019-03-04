@@ -11,17 +11,20 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.Context;
-import io.vertx.core.Vertx;
+import io.netty.channel.EventLoopGroup;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class Http2TestBase extends HttpTestBase {
 
-  static HttpServerOptions createHttp2ServerOptions(int port, String host) {
+  public static HttpServerOptions createHttp2ServerOptions(int port, String host) {
     return new HttpServerOptions()
         .setPort(port)
         .setHost(host)
@@ -31,7 +34,7 @@ public class Http2TestBase extends HttpTestBase {
         .setKeyStoreOptions(Cert.SERVER_JKS.get());
   };
 
-  static HttpClientOptions createHttp2ClientOptions() {
+  public static HttpClientOptions createHttp2ClientOptions() {
     return new HttpClientOptions().
         setUseAlpn(true).
         setSsl(true).
@@ -41,24 +44,31 @@ public class Http2TestBase extends HttpTestBase {
 
   protected HttpServerOptions serverOptions;
   protected HttpClientOptions clientOptions;
+  protected List<EventLoopGroup> eventLoopGroups = new ArrayList<>();
 
   @Override
   public void setUp() throws Exception {
-    super.setUp();
+    eventLoopGroups.clear();
     serverOptions =  createHttp2ServerOptions(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST);
     clientOptions = createHttp2ClientOptions();
-    server = vertx.createHttpServer(serverOptions);
+    super.setUp();
   }
 
-  protected void assertOnIOContext(Context context) {
-    Context current = Vertx.currentContext();
-    assertNotNull(current);
-    assertEquals(context, current);
-    for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
-      if (elt.getMethodName().equals("executeFromIO")) {
-        return;
-      }
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    for (EventLoopGroup eventLoopGroup : eventLoopGroups) {
+      eventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS);
     }
-    fail("Not from IO");
+  }
+
+  @Override
+  protected HttpServerOptions createBaseServerOptions() {
+    return serverOptions;
+  }
+
+  @Override
+  protected HttpClientOptions createBaseClientOptions() {
+    return clientOptions;
   }
 }

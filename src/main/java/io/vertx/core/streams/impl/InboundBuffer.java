@@ -12,8 +12,9 @@ package io.vertx.core.streams.impl;
 
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxThread;
 
 import java.util.ArrayDeque;
 import java.util.Objects;
@@ -65,7 +66,7 @@ import java.util.Objects;
  */
 public class InboundBuffer<E> {
 
-  private final Context context;
+  private final ContextInternal context;
   private final ArrayDeque<E> pending;
   private final long highWaterMark;
   private long demand;
@@ -83,15 +84,16 @@ public class InboundBuffer<E> {
   public InboundBuffer(Context context, long highWaterMark) {
     Objects.requireNonNull(context, "context must not be null");
     Arguments.require(highWaterMark >= 0, "highWaterMark " + highWaterMark + " >= 0");
-    this.context = context;
+    this.context = (ContextInternal) context;
     this.highWaterMark = highWaterMark;
     this.demand = Long.MAX_VALUE;
     this.pending = new ArrayDeque<>();
   }
 
-  private void checkContext() {
-    if (context != Vertx.currentContext()) {
-      throw new IllegalStateException("This operation must be called from the context thread");
+  private void checkThread() {
+    Thread thread = Thread.currentThread();
+    if (!(thread instanceof VertxThread)) {
+      throw new IllegalStateException("This operation must be called from a Vert.x thread");
     }
   }
 
@@ -103,7 +105,7 @@ public class InboundBuffer<E> {
    * @return {@code true} when the buffer is full and the producer should stop writing
    */
   public boolean write(E element) {
-    checkContext();
+    checkThread();
     Handler<E> handler;
     synchronized (this) {
       if (demand == 0L || emitting) {
@@ -140,7 +142,7 @@ public class InboundBuffer<E> {
    * @return {@code true} if the buffer is full
    */
   public boolean write(Iterable<E> elements) {
-    checkContext();
+    checkThread();
     synchronized (this) {
       for (E element : elements) {
         pending.add(element);

@@ -35,6 +35,15 @@ public class SentMessage {
   }
 
   @Override
+  public int hashCode() {
+    int hashCode = address.hashCode();
+    hashCode = hashCode * 31 + (publish ? 1 : 0);
+    hashCode = hashCode * 31 + (local ? 1 : 0);
+    hashCode = hashCode * 31 + (remote ? 1 : 0);
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
     return "Message[address=" + address + ",publish=" + publish + ",local=" + local + ",remote=" + remote + "]";
   }

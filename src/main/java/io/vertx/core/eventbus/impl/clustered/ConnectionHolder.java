@@ -122,7 +122,7 @@ class ConnectionHolder {
         close();
       });
       ClusteredMessage pingMessage =
-        new ClusteredMessage<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true, eventBus);
+        new ClusteredMessage<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true, true, eventBus);
       Buffer data = pingMessage.encodeToWire();
       socket.write(data);
     });

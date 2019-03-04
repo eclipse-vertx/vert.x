@@ -11,18 +11,18 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
+import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.ReplyException;
-import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.tracing.TagExtractor;
+import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.*;
@@ -43,11 +43,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private final Vertx vertx;
   private final EventBusMetrics metrics;
   private final EventBusImpl eventBus;
-  private final String address;
-  private final String repliedAddress;
+  final String address;
+  final String repliedAddress;
   private final boolean localOnly;
-  private final Handler<AsyncResult<Message<T>>> asyncResultHandler;
-  private long timeoutID = -1;
+  protected final boolean src;
   private HandlerHolder<T> registered;
   private Handler<Message<T>> handler;
   private ContextInternal handlerContext;
@@ -61,23 +60,14 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private Object metric;
 
   public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, EventBusImpl eventBus, String address,
-                             String repliedAddress, boolean localOnly,
-                             Handler<AsyncResult<Message<T>>> asyncResultHandler, long timeout) {
+                             String repliedAddress, boolean localOnly, boolean src) {
     this.vertx = vertx;
     this.metrics = metrics;
     this.eventBus = eventBus;
     this.address = address;
     this.repliedAddress = repliedAddress;
     this.localOnly = localOnly;
-    this.asyncResultHandler = asyncResultHandler;
-    if (timeout != -1) {
-      timeoutID = vertx.setTimer(timeout, tid -> {
-        if (metrics != null) {
-          metrics.replyFailure(address, ReplyFailure.TIMEOUT);
-        }
-        sendAsyncResultFailure(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address + ", repliedAddress: " + repliedAddress);
-      });
-    }
+    this.src = src;
   }
 
   @Override
@@ -141,18 +131,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     doUnregister(completionHandler);
   }
 
-  public void sendAsyncResultFailure(ReplyFailure failure, String msg) {
-    unregister();
-    asyncResultHandler.handle(Future.failedFuture(new ReplyException(failure, msg)));
-  }
-
   private void doUnregister(Handler<AsyncResult<Void>> completionHandler) {
     Deque<Message<T>> discarded;
     Handler<Message<T>> discardHandler;
     synchronized (this) {
-      if (timeoutID != -1) {
-        vertx.cancelTimer(timeoutID);
-      }
       if (endHandler != null) {
         Handler<Void> theEndHandler = endHandler;
         Handler<AsyncResult<Void>> handler = completionHandler;
@@ -245,34 +227,19 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private void deliver(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    boolean local = true;
-    if (message instanceof ClusteredMessage) {
-      // A bit hacky
-      ClusteredMessage cmsg = (ClusteredMessage)message;
-      if (cmsg.isFromWire()) {
-        local = false;
-      }
-    }
     String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
     if (creditsAddress != null) {
       eventBus.send(creditsAddress, 1);
     }
-    try {
-      if (metrics != null) {
-        metrics.beginHandleMessage(metric, local);
-      }
-      theHandler.handle(message);
-      if (metrics != null) {
-        metrics.endHandleMessage(metric, null);
-      }
-    } catch (Exception e) {
-      log.error("Failed to handleMessage. address: " + message.address(), e);
-      if (metrics != null) {
-        metrics.endHandleMessage(metric, e);
-      }
-      context.reportException(e);
-    }
+    InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
+    deliveryCtx.context.dispatch(v -> {
+      deliveryCtx.next();
+    });
     checkNextTick();
+  }
+
+  ContextInternal handlerContext() {
+    return handlerContext;
   }
 
   private synchronized void checkNextTick() {
@@ -375,6 +342,83 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   public Object getMetric() {
     return metric;
+  }
+
+  protected class InboundDeliveryContext implements DeliveryContext<T> {
+
+    private final MessageImpl<?, T> message;
+    private final Iterator<Handler<DeliveryContext>> iter;
+    private final Handler<Message<T>> handler;
+    private final ContextInternal context;
+
+    private InboundDeliveryContext(MessageImpl<?, T> message, Handler<Message<T>> handler, ContextInternal context) {
+      this.message = message;
+      this.handler = handler;
+      this.iter = eventBus.receiveInterceptors();
+      this.context = message.src ? context : context.duplicate();
+    }
+
+    @Override
+    public Message<T> message() {
+      return message;
+    }
+
+    @Override
+    public void next() {
+      if (iter.hasNext()) {
+        try {
+          Handler<DeliveryContext> handler = iter.next();
+          if (handler != null) {
+            handler.handle(this);
+          } else {
+            next();
+          }
+        } catch (Throwable t) {
+          log.error("Failure in interceptor", t);
+        }
+      } else {
+        boolean local = true;
+        if (message instanceof ClusteredMessage) {
+          // A bit hacky
+          ClusteredMessage cmsg = (ClusteredMessage)message;
+          if (cmsg.isFromWire()) {
+            local = false;
+          }
+        }
+        try {
+          if (metrics != null) {
+            metrics.beginHandleMessage(metric, local);
+          }
+          VertxTracer tracer = handlerContext.tracer();
+          if (tracer != null && !src) {
+            Object trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
+            handler.handle(message);
+            tracer.sendResponse(context, null, trace, null, TagExtractor.empty());
+          } else {
+            handler.handle(message);
+          }
+          if (metrics != null) {
+            metrics.endHandleMessage(metric, null);
+          }
+        } catch (Exception e) {
+          log.error("Failed to handleMessage. address: " + message.address(), e);
+          if (metrics != null) {
+            metrics.endHandleMessage(metric, e);
+          }
+          context.reportException(e);
+        }
+      }
+    }
+
+    @Override
+    public boolean send() {
+      return message.isSend();
+    }
+
+    @Override
+    public Object body() {
+      return message.receivedBody;
+    }
   }
 
 }

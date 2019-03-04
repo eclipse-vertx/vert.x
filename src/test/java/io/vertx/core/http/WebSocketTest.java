@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -59,8 +60,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
-import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
+import static io.vertx.core.http.HttpTestBase.*;
 import static io.vertx.test.core.TestUtils.*;
 
 /**
@@ -2783,4 +2783,48 @@ public class WebSocketTest extends VertxTestBase {
         });
       }));
     await();
-  }}
+  }
+
+  @Test
+  public void testContext() throws Exception {
+    waitFor(2);
+    Context serverCtx = vertx.getOrCreateContext();
+    server = vertx.createHttpServer()
+      .websocketHandler(ws -> {
+        Context current = Vertx.currentContext();
+        assertSameEventLoop(serverCtx, current);
+        ws.handler(buff -> {
+          assertEquals(current, Vertx.currentContext());
+        });
+        ws.frameHandler(frame -> {
+          assertEquals(current, Vertx.currentContext());
+        });
+        ws.closeHandler(v -> {
+          assertEquals(current, Vertx.currentContext());
+        });
+        ws.endHandler(v -> {
+          assertEquals(current, Vertx.currentContext());
+          complete();
+        });
+      });
+    CountDownLatch latch = new CountDownLatch(1);
+    serverCtx.runOnContext(v -> {
+      server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(s -> latch.countDown()));
+    });
+    awaitLatch(latch);
+    Context clientCtx = vertx.getOrCreateContext();
+    clientCtx.runOnContext(v -> {
+      client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", ws -> {
+        assertEquals(clientCtx, Vertx.currentContext());
+        ws.write(Buffer.buffer("data"));
+        ws.pongHandler(pong -> {
+          assertEquals(clientCtx, Vertx.currentContext());
+          complete();
+          ws.close();
+        });
+        ws.writePing(Buffer.buffer("ping"));
+      });
+    });
+    await();
+  }
+}

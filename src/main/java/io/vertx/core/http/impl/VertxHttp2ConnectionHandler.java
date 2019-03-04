@@ -123,25 +123,21 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       ContextInternal ctx = connection.getContext();
       ctx.executeFromIO(v -> connection.handleClosed());
       if (removeHandler != null) {
-        removeHandler.handle(connection);
+        ctx.dispatch(connection, removeHandler);
       }
     }
   }
 
   @Override
   protected void onConnectionError(ChannelHandlerContext ctx, boolean outbound, Throwable cause, Http2Exception http2Ex) {
-    connection.getContext().executeFromIO(v -> {
-      connection.onConnectionError(cause);
-    });
+    connection.onConnectionError(cause);
     // Default behavior send go away
     super.onConnectionError(ctx, outbound, cause, http2Ex);
   }
 
   @Override
   protected void onStreamError(ChannelHandlerContext ctx, boolean outbound, Throwable cause, Http2Exception.StreamException http2Ex) {
-    connection.getContext().executeFromIO(v -> {
-      connection.onStreamError(http2Ex.streamId(), http2Ex);
-    });
+    connection.onStreamError(http2Ex.streamId(), http2Ex);
     // Default behavior reset stream
     super.onStreamError(ctx, outbound, cause, http2Ex);
   }

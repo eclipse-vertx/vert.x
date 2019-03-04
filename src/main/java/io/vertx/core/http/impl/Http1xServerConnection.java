@@ -35,6 +35,7 @@ import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.*;
 import java.util.function.Function;
@@ -123,6 +124,9 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       requestInProgress = req;
       if (responseInProgress == null) {
         responseInProgress = requestInProgress;
+        if (METRICS_ENABLED) {
+          req.reportRequestBegin();
+        }
         req.handleBegin();
       } else {
         // Deferred until the current response completion
@@ -276,6 +280,10 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       }
       bytesWritten = 0;
     }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      tracer.sendResponse(responseInProgress.context(), responseInProgress.response(), responseInProgress.trace(), null, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+    }
   }
 
   String getServerOrigin() {
@@ -316,7 +324,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       ws.registerHandler(vertx.eventBus());
       return handshaker.selectedSubprotocol();
     };
-    ws = new ServerWebSocketImpl(vertx, request.uri(), request.path(),
+    ws = new ServerWebSocketImpl(vertx, vertx.getOrCreateContext(), request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       f, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
@@ -387,7 +395,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     connectionMap.put(chctx.channel(), socket);
 
     // Flush out all pending data
-    endReadAndFlush();
+    flush();
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
     ChannelPipeline pipeline = chctx.pipeline();
@@ -421,14 +429,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
 
   @Override
   public void close() {
-    if (ws == null) {
-      super.close();
-    } else {
-      endReadAndFlush();
-      chctx
-        .writeAndFlush(new CloseWebSocketFrame(true, 0, 1000, null))
-        .addListener(ChannelFutureListener.CLOSE);
-    }
+    closeWithPayload(null);
   }
 
   @Override
@@ -436,10 +437,19 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (ws == null) {
       super.close();
     } else {
-      endReadAndFlush();
-      chctx
-        .writeAndFlush(new CloseWebSocketFrame(true, 0, byteBuf))
-        .addListener(ChannelFutureListener.CLOSE);
+      ChannelPromise promise = chctx.newPromise();
+      flush(promise);
+      promise.addListener((ChannelFutureListener) future -> {
+        CloseWebSocketFrame frame;
+        if (byteBuf == null) {
+          frame = new CloseWebSocketFrame(true, 0, 1000, null);
+        } else {
+          frame = new CloseWebSocketFrame(true, 0, byteBuf);
+        }
+        chctx
+          .writeAndFlush(frame)
+          .addListener(ChannelFutureListener.CLOSE);
+      });
     }
   }
 

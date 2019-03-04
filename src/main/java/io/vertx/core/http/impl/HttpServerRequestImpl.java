@@ -24,12 +24,15 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxThread;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.tracing.TagExtractor;
+import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -39,6 +42,8 @@ import java.net.URISyntaxException;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
+import static io.vertx.core.impl.ContextInternal.beginDispatch;
+import static io.vertx.core.impl.ContextInternal.endDispatch;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 
@@ -58,6 +63,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
   private final Http1xServerConnection conn;
+  private final ContextInternal context;
 
   private DefaultHttpRequest request;
   private io.vertx.core.http.HttpVersion version;
@@ -70,6 +76,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private HttpServerResponseImpl response;
   private HttpServerRequestImpl next;
   private Object metric;
+  private Object trace;
 
   private Handler<Buffer> dataHandler;
   private Handler<Throwable> exceptionHandler;
@@ -90,6 +97,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   HttpServerRequestImpl(Http1xServerConnection conn, DefaultHttpRequest request) {
     this.conn = conn;
+    this.context = conn.getContext().duplicate();
     this.request = request;
   }
 
@@ -103,6 +111,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     synchronized (conn) {
       this.request = request;
     }
+  }
+
+  ContextInternal context() {
+    return context;
   }
 
   private InboundBuffer<Buffer> pendingQueue() {
@@ -136,14 +148,18 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   void handleBegin() {
-    if (Metrics.METRICS_ENABLED) {
-      reportRequestBegin();
-    }
-    response = new HttpServerResponseImpl((VertxInternal) conn.vertx(), conn, request, metric);
+    response = new HttpServerResponseImpl((VertxInternal) conn.vertx(), context, conn, request, metric);
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
-    conn.requestHandler.handle(this);
+    VertxThread current = beginDispatch(context);
+    try {
+      conn.requestHandler.handle(this);
+    } catch(Throwable t) {
+      context.reportException(t);
+    } finally {
+      endDispatch(current);
+    }
   }
 
   void appendRequest(HttpServerRequestImpl next) {
@@ -170,9 +186,15 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  private void reportRequestBegin() {
+  void reportRequestBegin() {
     if (conn.metrics != null) {
+      ContextInternal prev = ContextInternal.setContext(context);
       metric = conn.metrics.requestBegin(conn.metric(), this);
+      ContextInternal.setContext(prev);
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      trace = tracer.receiveRequest(context, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
   }
 
@@ -184,6 +206,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   Object metric() {
     return metric;
+  }
+
+  Object trace() {
+    return trace;
   }
 
   @Override
@@ -510,7 +536,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         }
       }
       if (dataHandler != null) {
-        dataHandler.handle(data);
+        context.dispatch(data, dataHandler);
       }
     }
   }
@@ -530,7 +556,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (endHandler != null) {
-      endHandler.handle(null);
+      context.dispatch(null, endHandler);
     }
   }
 
@@ -571,7 +597,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       }
       if (!response.ended()) {
         if (METRICS_ENABLED) {
-          reportRequestReset();
+          reportRequestReset(t);
         }
         resp = response;
       }
@@ -583,13 +609,17 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       ((NettyFileUpload)upload).handleException(t);
     }
     if (handler != null) {
-      handler.handle(t);
+      context.dispatch(t, handler);
     }
   }
 
-  private void reportRequestReset() {
+  private void reportRequestReset(Throwable err) {
     if (conn.metrics != null) {
       conn.metrics.requestReset(metric);
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      tracer.sendResponse(context, null, trace, err, TagExtractor.empty());
     }
   }
 

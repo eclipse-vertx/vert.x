@@ -178,7 +178,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
     if (handler != null) {
-      pending.handler(handler);
+      pending.handler(msg -> context.dispatch(msg, handler));
     } else {
       pending.handler(NULL_MSG_HANDLER);
     }
@@ -329,7 +329,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   protected synchronized void handleInterestedOpsChanged() {
-    checkContext();
     callDrainHandler();
   }
 
@@ -367,7 +366,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   public synchronized void handleMessage(Object msg) {
-    checkContext();
     if (!pending.write(msg)) {
       doPause();
     }
@@ -390,7 +388,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         byteBuf = VertxHandler.safeBuffer(byteBuf, allocator);
         Buffer data = Buffer.buffer(byteBuf);
         reportBytesRead(data.length());
-        dataHandler.handle(data);
+        context.dispatch(data, dataHandler);
       }
     }
   }

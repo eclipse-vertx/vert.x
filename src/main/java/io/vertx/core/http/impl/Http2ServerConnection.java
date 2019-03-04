@@ -100,7 +100,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
     boolean writable = handler.encoder().flowController().isWritable(stream);
-    return new Http2ServerRequestImpl(this, stream, metrics, serverOrigin, headers, contentEncoding, writable, streamEnded);
+    return new Http2ServerRequestImpl(this, context.duplicate(), stream, metrics, serverOrigin, headers, contentEncoding, writable, streamEnded);
   }
 
   @Override
@@ -127,13 +127,12 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         req.response().writeContinue();
       }
       streams.put(streamId, req);
-      context.executeFromIO(req, requestHandler);
+      req.dispatch(requestHandler);
     } else {
       // Http server request trailer - not implemented yet (in api)
     }
     if (endOfStream) {
-      VertxHttp2Stream finalStream = stream;
-      context.executeFromIO(v -> finalStream.onEnd());
+      stream.onEnd();
     }
   }
 
@@ -176,20 +175,18 @@ public class Http2ServerConnection extends Http2ConnectionBase {
             String contentEncoding = HttpUtils.determineContentEncoding(headers_);
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
             boolean writable = handler.encoder().flowController().isWritable(promisedStream);
-            Push push = new Push(promisedStream, contentEncoding, method, path, writable, completionHandler);
+            Push push = new Push(promisedStream, context, contentEncoding, method, path, writable, completionHandler);
             push.priority(streamPriority);
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
-              context.executeFromIO(v -> push.complete());
+              push.complete();
             } else {
               pendingPushes.add(push);
             }
           }
         } else {
-          context.executeFromIO(v -> {
-            completionHandler.handle(Future.failedFuture(ar.cause()));
-          });
+          context.dispatch(Future.failedFuture(ar.cause()), completionHandler);
         }
       }
     });
@@ -209,12 +206,13 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     private final Future<HttpServerResponse> completionHandler;
 
     public Push(Http2Stream stream,
+                ContextInternal context,
                 String contentEncoding,
                 HttpMethod method,
                 String uri,
                 boolean writable,
                 Handler<AsyncResult<HttpServerResponse>> completionHandler) {
-      super(Http2ServerConnection.this, stream, writable);
+      super(Http2ServerConnection.this, context, stream, writable);
       this.method = method;
       this.uri = uri;
       this.contentEncoding = contentEncoding;
@@ -249,7 +247,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       if (response != null) {
         response.handleReset(errorCode);
       } else {
-        completionHandler.fail(new StreamResetException(errorCode));
+        context.dispatch(Future.failedFuture(new StreamResetException(errorCode)), completionHandler);
       }
     }
 
@@ -283,7 +281,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         if (METRICS_ENABLED && metrics != null) {
           response.metric(metrics.responsePushed(conn.metric(), method, uri, response));
         }
-        completionHandler.complete(response);
+        context.dispatch(Future.succeededFuture(response), completionHandler);
       }
     }
   }

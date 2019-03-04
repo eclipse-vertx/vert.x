@@ -59,6 +59,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private final VertxInternal vertx;
   private final Http1xServerConnection conn;
+  private final ContextInternal context;
   private HttpResponseStatus status;
   private final HttpVersion version;
   private final boolean keepAlive;
@@ -81,9 +82,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private long bytesWritten;
   private NetSocket netSocket;
 
-  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, DefaultHttpRequest request, Object requestMetric) {
+  HttpServerResponseImpl(final VertxInternal vertx, ContextInternal context, Http1xServerConnection conn, DefaultHttpRequest request, Object requestMetric) {
     this.vertx = vertx;
     this.conn = conn;
+    this.context = context;
     this.version = request.protocolVersion();
     this.headers = new VertxHttpHeaders();
     this.status = HttpResponseStatus.OK;
@@ -340,10 +342,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       written = true;
       conn.responseComplete();
       if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
+        context.dispatch(bodyEndHandler);
       }
       if (endHandler != null) {
-        endHandler.handle(null);
+        context.dispatch(endHandler);
       }
     }
   }
@@ -505,7 +507,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           handler = bodyEndHandler;
         }
         if (handler != null) {
-          ctx.executeFromIO(v -> {
+          context.executeFromIO(v -> {
             handler.handle(null);
           });
         }
@@ -525,7 +527,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   void handleDrained() {
     synchronized (conn) {
       if (drainHandler != null) {
-        drainHandler.handle(null);
+        context.dispatch(null, drainHandler);
       }
     }
   }
@@ -539,7 +541,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         handler = exceptionHandler;
       }
       if (handler != null) {
-        handler.handle(t);
+        context.dispatch(t, handler);
       }
     }
   }
@@ -558,13 +560,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION);
+      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (endHandler != null) {
-      endHandler.handle(null);
+      context.dispatch(endHandler);
     }
     if (closedHandler != null) {
-      closedHandler.handle(null);
+      context.dispatch(closedHandler);
     }
   }
 
@@ -596,7 +598,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
     }
     if (headersEndHandler != null) {
-      headersEndHandler.handle(null);
+      context.dispatch(headersEndHandler);
     }
     if (Metrics.METRICS_ENABLED) {
       reportResponseBegin();
@@ -606,7 +608,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private void reportResponseBegin() {
     if (conn.metrics != null) {
+      ContextInternal prev = ContextInternal.setContext(context);
       conn.metrics.responseBegin(requestMetric, this);
+      ContextInternal.setContext(prev);
     }
   }
 

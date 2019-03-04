@@ -13,7 +13,8 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
+
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -22,11 +23,11 @@ public class BenchmarkContext extends ContextImpl {
 
   public static BenchmarkContext create(Vertx vertx) {
     VertxImpl impl = (VertxImpl) vertx;
-    return new BenchmarkContext(impl, impl.internalBlockingPool, impl.workerPool, null, null, Thread.currentThread().getContextClassLoader());
+    return new BenchmarkContext(impl, impl.internalBlockingPool, impl.workerPool, null, Thread.currentThread().getContextClassLoader());
   }
 
-  public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, String deploymentID, JsonObject config, ClassLoader tccl) {
-    super(vertx, internalBlockingPool, workerPool, deploymentID, config, tccl);
+  public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
+    super(vertx, null, internalBlockingPool, workerPool, deployment, tccl);
   }
 
   @Override
@@ -36,11 +37,21 @@ public class BenchmarkContext extends ContextImpl {
 
   @Override
   protected <T> void execute(T value, Handler<T> task) {
-    executeTask(null, task);
+    dispatch(value, task);
+  }
+
+  @Override
+  public <T> void schedule(T value, Handler<T> task) {
+    task.handle(value);
   }
 
   @Override
   public boolean isEventLoopContext() {
     return false;
+  }
+
+  @Override
+  public ContextInternal duplicate(ContextInternal in) {
+    throw new UnsupportedOperationException();
   }
 }

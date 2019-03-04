@@ -385,7 +385,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         metrics.close();
       }
       if (handler != null) {
-        handler.handle(null);
+        context.dispatch(handler);
       }
     }
 
@@ -416,7 +416,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         }
       }
       if (handler != null) {
-        handler.handle(packet);
+        context.dispatch(packet, handler);
       }
     }
   }
