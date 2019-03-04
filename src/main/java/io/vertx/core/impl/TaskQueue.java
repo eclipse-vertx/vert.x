@@ -11,8 +11,8 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.LinkedList;
 import java.util.concurrent.Executor;

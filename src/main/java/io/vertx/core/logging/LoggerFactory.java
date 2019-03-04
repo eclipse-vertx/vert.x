@@ -35,31 +35,37 @@ public class LoggerFactory {
   }
 
   public static synchronized void initialise() {
-    LogDelegateFactory delegateFactory;
-
-    // If a system property is specified then this overrides any delegate factory which is set
-    // programmatically - this is primarily of use so we can configure the logger delegate on the client side.
-    // call to System.getProperty is wrapped in a try block as it will fail if the client runs in a secured
-    // environment
-    String className = JULLogDelegateFactory.class.getName();
+    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    String className;
     try {
       className = System.getProperty(LOGGER_DELEGATE_FACTORY_CLASS_NAME);
-    } catch (Exception e) {
+    } catch (Exception ignore) {
+      className = null;
     }
-
-    if (className != null) {
-      ClassLoader loader = Thread.currentThread().getContextClassLoader();
-      try {
-        Class<?> clz = loader.loadClass(className);
-        delegateFactory = (LogDelegateFactory) clz.newInstance();
-      } catch (Exception e) {
-        throw new IllegalArgumentException("Error instantiating transformer class \"" + className + "\"", e);
+    if (className != null && configureWith(className, false, loader)) {
+      return;
+    }
+    if (loader.getResource("vertx-default-jul-logging.properties") == null) {
+      if (configureWith("SLF4J", true, loader)
+        || configureWith("Log4j", true, loader)
+        || configureWith("Log4j2", true, loader)) {
+        return;
       }
-    } else {
-      delegateFactory = new JULLogDelegateFactory();
     }
+    configureWith("JUL", true, loader);
+  }
 
-    LoggerFactory.delegateFactory = delegateFactory;
+  private static boolean configureWith(String name, boolean shortName, ClassLoader loader) {
+    String loggerName = LoggerFactory.class.getName();
+    try {
+      Class<?> clazz = Class.forName(shortName ? "io.vertx.core.logging." + name + "LogDelegateFactory" : name, true, loader);
+      LogDelegateFactory factory = (LogDelegateFactory) clazz.newInstance();
+      factory.createDelegate(loggerName).debug("Using " + factory.getClass().getName());
+      delegateFactory = factory;
+      return true;
+    } catch (Throwable ignore) {
+      return false;
+    }
   }
 
   /**

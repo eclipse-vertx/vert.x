@@ -21,7 +21,7 @@ import io.vertx.core.impl.launcher.commands.CommandTestBase;
 import io.vertx.core.impl.launcher.commands.HttpTestVerticle;
 import io.vertx.core.impl.launcher.commands.RunCommandTest;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.launcher.DefaultCommand;
 import org.junit.After;
 import org.junit.Test;
