@@ -223,6 +223,9 @@ Set the trust options in jks format, aka Java truststore
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
+|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
+Set whether Netty pooled buffers are enabled
++++
 |===
 
 [[CopyOptions]]
@@ -375,6 +378,18 @@ Sets the value of max worker execute time, in link.
 +++
 |[[maxWorkerExecuteTimeUnit]]`@maxWorkerExecuteTimeUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the time unit of <code>maxWorkerExecuteTime</code>
++++
+|[[multiThreaded]]`@multiThreaded`|`Boolean`|+++
+Set whether the verticle(s) should be deployed as a multi-threaded worker verticle.
+ <p>
+ <strong>WARNING</strong>: Multi-threaded worker verticles are a deprecated feature.
+ <p>
+ Most applications will have no need for them. Because of the concurrency in these verticles you have to be
+ very careful to keep the verticle in a consistent state using standard Java techniques for multi-threaded
+ programming.
+ <p>
+ You can read the documentation that explains how you can replace this feature by the usage of custom worker
+ pools or <code>executeBlocking</code> calls.
 +++
 |[[worker]]`@worker`|`Boolean`|+++
 Set whether the verticle(s) should be deployed as a worker verticle
@@ -558,6 +573,9 @@ Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
++++
+|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
+Set whether Netty pooled buffers are enabled
 +++
 |===
 
@@ -874,6 +892,9 @@ Set whether the client will offer the WebSocket per-message deflate compression 
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
+|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
+Set whether Netty pooled buffers are enabled
++++
 |[[verifyHost]]`@verifyHost`|`Boolean`|+++
 Set whether hostname verification is enabled
 +++
@@ -914,6 +935,9 @@ Set <code>true</code> when the server accepts unmasked frame.
 Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
 +++
 |[[clientAuth]]`@clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|+++
+Set whether client auth is required
++++
+|[[clientAuthRequired]]`@clientAuthRequired`|`Boolean`|+++
 Set whether client auth is required
 +++
 |[[compressionLevel]]`@compressionLevel`|`Number (int)`|+++
@@ -1076,6 +1100,9 @@ Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
++++
+|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
+Set whether Netty pooled buffers are enabled
 +++
 |[[websocketAllowServerNoContext]]`@websocketAllowServerNoContext`|`Boolean`|+++
 Set whether the WebSocket server will accept the <code>server_no_context_takeover</code> parameter of the per-message
@@ -1290,6 +1317,9 @@ Set the trust options in jks format, aka Java truststore
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
+|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
+Set whether Netty pooled buffers are enabled
++++
 |===
 
 [[NetServerOptions]]
@@ -1308,6 +1338,9 @@ Set the ALPN usage.
 Set the accept back log
 +++
 |[[clientAuth]]`@clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|+++
+Set whether client auth is required
++++
+|[[clientAuthRequired]]`@clientAuthRequired`|`Boolean`|+++
 Set whether client auth is required
 +++
 |[[crlPaths]]`@crlPaths`|`Array of String`|+++
@@ -1403,6 +1436,9 @@ Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
++++
+|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
+Set whether Netty pooled buffers are enabled
 +++
 |===
 
@@ -1929,6 +1965,9 @@ Set the trust options in jks format, aka Java truststore
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
+|[[usePooledBuffers]]`@usePooledBuffers`|`Boolean`|+++
+Set whether Netty pooled buffers are enabled
++++
 |===
 
 [[VertxOptions]]
@@ -1984,6 +2023,9 @@ Sets the event bus configuration to configure the host, port, ssl...
 +++
 |[[eventLoopPoolSize]]`@eventLoopPoolSize`|`Number (int)`|+++
 Set the number of event loop threads to be used by the Vert.x instance.
++++
+|[[fileResolverCachingEnabled]]`@fileResolverCachingEnabled`|`Boolean`|+++
+Set whether the Vert.x file resolver uses caching for classpath resources.
 +++
 |[[fileSystemOptions]]`@fileSystemOptions`|`link:dataobjects.html#FileSystemOptions[FileSystemOptions]`|+++
 Set the file system options
