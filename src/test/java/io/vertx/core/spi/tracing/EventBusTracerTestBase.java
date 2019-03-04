@@ -16,6 +16,7 @@ import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -230,7 +231,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
-      vertx2.eventBus().send("the_address", "msg", new DeliveryOptions().setSendTimeout(1), onFailure(failure -> {
+      vertx2.eventBus().send("the_address", "msg", new DeliveryOptions().setSendTimeout(100), onFailure(failure -> {
       }));
     });
     waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 4);
