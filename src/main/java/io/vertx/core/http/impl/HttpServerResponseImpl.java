@@ -608,9 +608,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private void reportResponseBegin() {
     if (conn.metrics != null) {
-      ContextInternal prev = ContextInternal.setContext(context);
       conn.metrics.responseBegin(requestMetric, this);
-      ContextInternal.setContext(prev);
     }
   }
 

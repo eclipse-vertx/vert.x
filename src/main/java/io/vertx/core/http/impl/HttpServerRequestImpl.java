@@ -189,9 +189,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   void reportRequestBegin() {
     if (conn.metrics != null) {
-      ContextInternal prev = ContextInternal.setContext(context);
       metric = conn.metrics.requestBegin(conn.metric(), this);
-      ContextInternal.setContext(prev);
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
