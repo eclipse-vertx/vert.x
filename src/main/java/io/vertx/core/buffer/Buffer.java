@@ -17,6 +17,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.ServiceHelper;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
@@ -132,14 +133,23 @@ public interface Buffer extends ClusterSerializable, Shareable {
   String toString(Charset enc);
 
   /**
-   * Returns a Json object representation of the Buffer
+   * Returns a Json object representation of the Buffer.
    */
   JsonObject toJsonObject();
 
   /**
-   * Returns a Json array representation of the Buffer
+   * Returns a Json array representation of the Buffer.
    */
   JsonArray toJsonArray();
+
+  /**
+   * Returns a Json representation of the Buffer.
+   *
+   * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the buffer contains an array, object, string, ...etc
+   */
+  default Object toJson() {
+    return Json.decodeValue(this);
+  }
 
   /**
    * Returns the {@code byte} at position {@code pos} in the Buffer.

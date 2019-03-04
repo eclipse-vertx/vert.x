@@ -193,4 +193,45 @@ public class JsonMapperTest extends VertxTestBase {
     assertNull(Json.decodeValue(nullValue.toString(StandardCharsets.UTF_8), clazz));
     assertNull(Json.decodeValue(nullValue.toString(StandardCharsets.UTF_8), ref));
   }
+
+  @Test
+  public void testDecodeBufferUnknowContent() {
+    testDecodeUnknowContent(true);
+  }
+
+  @Test
+  public void testDecodeStringUnknowContent() {
+    testDecodeUnknowContent(false);
+  }
+
+  private void testDecodeUnknowContent(boolean asBuffer) {
+    String number = String.valueOf(1);
+    assertEquals(1, asBuffer ? Json.decodeValue(Buffer.buffer(number)) : Json.decodeValue(number));
+
+    String bool = Boolean.TRUE.toString();
+    assertEquals(true, asBuffer ? Json.decodeValue(Buffer.buffer(bool)) : Json.decodeValue(bool));
+
+    String text = "\"whatever\"";
+    assertEquals("whatever", asBuffer ? Json.decodeValue(Buffer.buffer(text)) : Json.decodeValue(text));
+
+    String nullText = "null";
+    assertNull(asBuffer ? Json.decodeValue(Buffer.buffer(nullText)) : Json.decodeValue(nullText));
+
+    JsonObject obj = new JsonObject().put("foo", "bar");
+    assertEquals(obj, asBuffer ? Json.decodeValue(obj.toBuffer()) : Json.decodeValue(obj.toString()));
+
+    JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj);
+    assertEquals(arr, asBuffer ? Json.decodeValue(arr.toBuffer()) : Json.decodeValue(arr.toString()));
+
+    String invalidText = "\"invalid";
+    try {
+      if (asBuffer) {
+        Json.decodeValue(Buffer.buffer(invalidText));
+      } else {
+        Json.decodeValue(invalidText);
+      }
+      fail();
+    } catch (DecodeException ignore) {
+    }
+  }
 }
