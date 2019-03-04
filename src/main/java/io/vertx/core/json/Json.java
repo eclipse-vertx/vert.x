@@ -126,6 +126,31 @@ public class Json {
   }
 
   /**
+   * Decode a given JSON string.
+   *
+   * @param str the JSON string.
+   *
+   * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the content is an array, object, string, ...etc
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
+  public static Object decodeValue(String str) throws DecodeException {
+    try {
+      Object value = mapper.readValue(str, Object.class);
+      if (value instanceof List) {
+        List list = (List) value;
+        return new JsonArray(list);
+      } else if (value instanceof Map) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> map = (Map<String, Object>) value;
+        return new JsonObject(map);
+      }
+      return value;
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode: " + e.getMessage());
+    }
+  }
+
+  /**
    * Decode a given JSON string to a POJO of the given type.
    * @param str the JSON string.
    * @param type the type to map to.
@@ -138,6 +163,31 @@ public class Json {
       return mapper.readValue(str, type);
     } catch (Exception e) {
       throw new DecodeException("Failed to decode: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Decode a given JSON buffer.
+   *
+   * @param buf the JSON buffer.
+   *
+   * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the buffer contains an array, object, string, ...etc
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
+  public static Object decodeValue(Buffer buf) throws DecodeException {
+    try {
+      Object value = mapper.readValue((InputStream) new ByteBufInputStream(buf.getByteBuf()), Object.class);
+      if (value instanceof List) {
+        List list = (List) value;
+        return new JsonArray(list);
+      } else if (value instanceof Map) {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> map = (Map<String, Object>) value;
+        return new JsonObject(map);
+      }
+      return value;
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode: " + e.getMessage());
     }
   }
 
