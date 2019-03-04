@@ -478,7 +478,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     void fail(ReplyException failure) {
       registration.unregister();
       if (metrics != null) {
-        metrics.replyFailure(registration.address, failure.failureType());
+        metrics.replyFailure(registration.repliedAddress, failure.failureType());
       }
       trace(null, failure);
       result.tryFail(failure);
