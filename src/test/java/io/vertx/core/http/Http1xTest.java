@@ -4081,15 +4081,22 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testPausedHttpServerRequestUnpauseTheConnectionAtRequestEnd() throws Exception {
+  public void testPausedHttpServerRequestPauseTheConnectionAtRequestEnd() throws Exception {
     int numRequests = 20;
     waitFor(numRequests);
     server.requestHandler(req -> {
+      int[] paused = new int[1];
       req.handler(buff -> {
         assertEquals("small", buff.toString());
         req.pause();
+        paused[0]++;
+        vertx.setTimer(10, id -> {
+          paused[0]--;
+          req.resume();
+        });
       });
       req.endHandler(v -> {
+        assertEquals(0, paused[0]);
         req.response().end();
       });
     });
@@ -4101,6 +4108,7 @@ public class Http1xTest extends HttpTest {
         complete();
       }).end("small");
     }
+    await();
   }
 
   @Test
