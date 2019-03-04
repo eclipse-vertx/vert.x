@@ -3399,7 +3399,7 @@ public class NetTest extends VertxTestBase {
       });
     });
     startServer();
-    client.connect(1234, "localhost", onSuccess(so -> {
+    client.connect(testAddress, "localhost", onSuccess(so -> {
       so.close();
     }));
     await();
