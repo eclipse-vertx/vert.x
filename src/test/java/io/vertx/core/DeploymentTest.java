@@ -1101,10 +1101,9 @@ public class DeploymentTest extends VertxTestBase {
     List<String> extraClasspath = Arrays.asList(dir);
     try {
       vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
-          setExtraClasspath(extraClasspath), ar -> {
-        assertTrue(ar.succeeded());
+          setExtraClasspath(extraClasspath), onSuccess(v -> {
         testComplete();
-      });
+      }));
       assertTrue(expectedSuccess);
       await();
     } catch (IllegalStateException e) {

@@ -19,6 +19,8 @@ import io.vertx.core.impl.WorkerPool;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -536,5 +538,26 @@ public class ContextTest extends VertxTestBase {
     assertSame(val, duplicated.getLocal("key"));
     duplicated.removeLocal("key");
     assertNull(ctx.getLocal("key"));
+  }
+
+  @Test
+  public void testReentrantDispatch() {
+    ClassLoader cl = new URLClassLoader(new URL[0]);
+    Thread.currentThread().setContextClassLoader(cl);
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ctx.runOnContext(v1 -> {
+      assertSame(ctx, Vertx.currentContext());
+      assertSame(cl, Thread.currentThread().getContextClassLoader());
+      int[] called = new int[1];
+      ctx.dispatch(v2 -> {
+        called[0]++;
+        assertSame(cl, Thread.currentThread().getContextClassLoader());
+      });
+      assertEquals(1, called[0]);
+      assertSame(ctx, Vertx.currentContext());
+      assertSame(cl, Thread.currentThread().getContextClassLoader());
+      testComplete();
+    });
+    await();
   }
 }

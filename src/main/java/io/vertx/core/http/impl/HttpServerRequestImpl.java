@@ -152,13 +152,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
-    VertxThread current = beginDispatch(context);
+    VertxThread current = VertxThread.current();
+    ContextInternal prev = current.beginDispatch(context);
     try {
       conn.requestHandler.handle(this);
     } catch(Throwable t) {
       context.reportException(t);
     } finally {
-      endDispatch(current);
+      current.endDispatch(prev);
     }
   }
 

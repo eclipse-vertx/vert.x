@@ -72,13 +72,14 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public final <T> void dispatch(T arg, Handler<T> task) {
-    VertxThread currentThread = ContextInternal.beginDispatch(this);
+    VertxThread currentThread = VertxThread.current();
+    ContextInternal prev = currentThread.beginDispatch(this);
     try {
       task.handle(arg);
     } catch (Throwable t) {
       reportException(t);
     } finally {
-      ContextInternal.endDispatch(currentThread);
+      currentThread.endDispatch(prev);
     }
   }
 
