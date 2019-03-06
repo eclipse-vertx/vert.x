@@ -365,9 +365,6 @@ completes, run the given handler that completes the given `future` (next).
 In this second case, the {@link io.vertx.core.Handler} should complete the `next` future to report its success or
 failure.
 
-You can use {@link io.vertx.core.Future#completer()} that completes a future with the operation result or
-failure. It avoids having to write the _traditional_: `if success then complete the future else fail the future`.
-
 == Verticles
 
 Vert.x comes with a simple, scalable, _actor-like_ deployment and concurrency model out of the box that
