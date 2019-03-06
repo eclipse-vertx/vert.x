@@ -115,10 +115,10 @@ public class CoreExamples {
 
   public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
     Future<HttpServer> httpServerFuture = Future.future();
-    httpServer.listen(httpServerFuture.completer());
+    httpServer.listen(httpServerFuture);
 
     Future<NetServer> netServerFuture = Future.future();
-    netServer.listen(netServerFuture.completer());
+    netServer.listen(netServerFuture);
 
     CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
       if (ar.succeeded()) {
@@ -167,16 +167,16 @@ public class CoreExamples {
     Future<Void> startFuture = Future.future();
 
     Future<Void> fut1 = Future.future();
-    fs.createFile("/foo", fut1.completer());
+    fs.createFile("/foo", fut1);
 
     fut1.compose(v -> {
       // When the file is created (fut1), execute this:
       Future<Void> fut2 = Future.future();
-      fs.writeFile("/foo", Buffer.buffer(), fut2.completer());
+      fs.writeFile("/foo", Buffer.buffer(), fut2);
       return fut2;
     }).compose(v -> {
               // When the file is written (fut2), execute this:
-              fs.move("/foo", "/bar", startFuture.completer());
+              fs.move("/foo", "/bar", startFuture);
             },
             // mark startFuture it as failed if any step fails.
             startFuture);
