@@ -43,11 +43,11 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     for (int i = 0; i < numAddresses; i++) {
       Future<Void> registrationFuture = Future.future();
       registrationFutures.add(registrationFuture);
-      vertx.eventBus().consumer(createAddress(id, i), msg -> msg.reply("pong")).completionHandler(registrationFuture.completer());
+      vertx.eventBus().consumer(createAddress(id, i), msg -> msg.reply("pong")).completionHandler(registrationFuture);
     }
     Future<Void> registrationFuture = Future.future();
     registrationFutures.add(registrationFuture);
-    vertx.eventBus().consumer("ping", this::ping).completionHandler(registrationFuture.completer());
+    vertx.eventBus().consumer("ping", this::ping).completionHandler(registrationFuture);
     CompositeFuture.all(registrationFutures).setHandler(ar -> {
       if (ar.succeeded()) {
         vertx.eventBus().send("control", "start");

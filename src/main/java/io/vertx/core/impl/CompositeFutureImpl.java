@@ -288,11 +288,6 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
   }
 
   @Override
-  public Handler<AsyncResult<CompositeFuture>> completer() {
-    return this;
-  }
-
-  @Override
   public void handle(AsyncResult<CompositeFuture> asyncResult) {
     if (asyncResult.succeeded()) {
       complete(this);

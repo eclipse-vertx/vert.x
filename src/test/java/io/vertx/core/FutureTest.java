@@ -930,12 +930,12 @@ public class FutureTest extends VertxTestBase {
     }
 
     DefaultCompleterTestFuture<Object> successFuture = new DefaultCompleterTestFuture<>();
-    successFuture.completer().handle(succeededAsyncResult);
+    successFuture.handle(succeededAsyncResult);
     assertTrue(successFuture.succeeded);
     assertEquals(succeededAsyncResult.result(), successFuture.result);
 
     DefaultCompleterTestFuture<Object> failureFuture = new DefaultCompleterTestFuture<>();
-    failureFuture.completer().handle(failedAsyncResult);
+    failureFuture.handle(failedAsyncResult);
     assertTrue(failureFuture.failed);
     assertEquals(failedAsyncResult.cause(), failureFuture.cause);
   }

@@ -364,14 +364,6 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
   void handle(AsyncResult<T> asyncResult);
 
   /**
-   * @return an handler completing this future
-   */
-  @CacheReturn
-  default Handler<AsyncResult<T>> completer() {
-    return this;
-  }
-
-  /**
    * Handles a failure of this Future by returning the result of another Future.
    * If the mapper fails, then the returned future will be failed with this failure.
    *
