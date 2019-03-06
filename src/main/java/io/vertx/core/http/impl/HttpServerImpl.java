@@ -17,12 +17,12 @@ import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.handler.codec.http.*;
-import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
+import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameServerExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
-import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -34,7 +34,6 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -573,6 +572,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           // of the actual server
           actualServer.actualClose(context, done);
         }
+      } else {
+        executeCloseDone(context, done, null);
       }
     }
     if (creatingContext != null) {
