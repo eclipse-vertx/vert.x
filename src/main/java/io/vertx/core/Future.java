@@ -360,7 +360,9 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
 
   /**
    * @return an handler completing this future
+   * @deprecated use this object instead since it extends {@code Handler<AsyncResult<T>>}
    */
+  @Deprecated
   @CacheReturn
   default Handler<AsyncResult<T>> completer() {
     return this;
