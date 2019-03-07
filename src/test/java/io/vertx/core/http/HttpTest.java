@@ -4660,6 +4660,30 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Test
+  public void testEndFromAnotherThread() throws Exception {
+
+    waitFor(2);
+
+    // Same with pipelining
+
+    server.requestHandler(req -> {
+      req.response().endHandler(v -> {
+        complete();
+      });
+      new Thread(() -> {
+        req.response().end();
+      }).start();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    }));
+
+    await();
+  }
+
   /*
   @Test
   public void testReset() throws Exception {
