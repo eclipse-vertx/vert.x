@@ -92,18 +92,18 @@ public final class VertxThread extends FastThreadLocalThread {
    * shall be used.
    *
    * @param context the context on which the task is dispatched on
-   * @return the current context that shall be restored
    */
-  public ContextInternal beginDispatch(ContextInternal context) {
+  public void beginDispatch(ContextInternal context) {
+    if (this.context != null) {
+      throw new IllegalStateException("Already dispatching");
+    }
     if (!ContextImpl.DISABLE_TIMINGS) {
       executeStart();
     }
     if (!DISABLE_TCCL) {
       setContextClassLoader(context != null ? context.classLoader() : null);
     }
-    ContextInternal prev = this.context;
     this.context = context;
-    return prev;
   }
 
   /**
@@ -111,15 +111,13 @@ public final class VertxThread extends FastThreadLocalThread {
    * <p>
    * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
    * shall be used.
-   *
-   * @param context the previous context thread to restore, might be {@code null}
    */
-  public void endDispatch(ContextInternal context) {
+  public void endDispatch() {
     // We don't unset the context after execution - this is done later when the context is closed via
     // VertxThreadFactory
-    this.context = context;
+    this.context = null;
     if (!DISABLE_TCCL) {
-      setContextClassLoader(context != null ? context.classLoader() : null);
+      setContextClassLoader(null);
     }
     if (!ContextImpl.DISABLE_TIMINGS) {
       executeEnd();

@@ -4662,12 +4662,12 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testEndFromAnotherThread() throws Exception {
-
-    waitFor(2);
-
-    // Same with pipelining
-
+    waitFor(3);
+    disableThreadChecks();
     server.requestHandler(req -> {
+      req.response().bodyEndHandler(v -> {
+        complete();
+      });
       req.response().endHandler(v -> {
         complete();
       });
@@ -4680,7 +4680,6 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(200, resp.statusCode());
       complete();
     }));
-
     await();
   }
 
