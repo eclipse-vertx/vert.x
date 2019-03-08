@@ -52,12 +52,20 @@ public class FileResolver {
   public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
 
-
+  /**
+   * Deprecated since setting the standard "java.io.tmpdir" is a better solution that adding another property
+   * that provides the same result.
+   * @deprecated to be removed on 4.0, use "java.io.tmpdir" instead.
+   */
+  @Deprecated
   public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
-  private static final String DEFAULT_CACHE_DIR_BASE = ".vertx";
+  // get the system default temp dir location (can be overriden by using the standard java system property)
+  // if not present default to the process start CWD
+  private static final String TMPDIR = System.getProperty("java.io.tmpdir", ".");
+  private static final String DEFAULT_CACHE_DIR_BASE = "vertx-cache";
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
-  private static final String CACHE_DIR_BASE = System.getProperty(CACHE_DIR_BASE_PROP_NAME, DEFAULT_CACHE_DIR_BASE);
+  private static final String CACHE_DIR_BASE = TMPDIR + File.separator + System.getProperty(CACHE_DIR_BASE_PROP_NAME, DEFAULT_CACHE_DIR_BASE);
   private static final String JAR_URL_SEP = "!/";
   private static final Pattern JAR_URL_SEP_PATTERN = Pattern.compile(JAR_URL_SEP);
 
