@@ -28,6 +28,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.VertxThread;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -127,7 +128,16 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
         if (METRICS_ENABLED) {
           req.reportRequestBegin();
         }
-        req.handleBegin();
+        VertxThread currentThread = VertxThread.current();
+        ContextInternal ctx = req.context;
+        ContextInternal prev = currentThread.beginDispatch(ctx);
+        try {
+          req.handleBegin();
+        } catch (Throwable t) {
+          ctx.reportException(t);
+        } finally {
+          currentThread.endDispatch(prev);
+        }
       } else {
         // Deferred until the current response completion
         req.pause();
@@ -152,7 +162,9 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (METRICS_ENABLED) {
       reportBytesRead(buffer);
     }
-    requestInProgress.handleContent(buffer);
+    requestInProgress.context.dispatch(v -> {
+      requestInProgress.handleContent(buffer);
+    });
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
       handleEnd();
@@ -165,7 +177,9 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
     HttpServerRequestImpl request = requestInProgress;
     requestInProgress = null;
-    request.handleEnd();
+    request.context.dispatch(v -> {
+      request.handleEnd();
+    });
   }
 
   synchronized void responseComplete() {
@@ -205,7 +219,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
           break;
       }
       if (ws != null) {
-        ws.handleFrame(frame);
+        ws.context.dispatch(frame, ws::handleFrame);
       }
     }
 
@@ -282,7 +296,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      tracer.sendResponse(responseInProgress.context(), responseInProgress.response(), responseInProgress.trace(), null, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+      tracer.sendResponse(responseInProgress.context, responseInProgress.response(), responseInProgress.trace(), null, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
   }
 
@@ -324,7 +338,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       ws.registerHandler(vertx.eventBus());
       return handshaker.selectedSubprotocol();
     };
-    ws = new ServerWebSocketImpl(vertx, vertx.getOrCreateContext(), request.uri(), request.path(),
+    ws = new ServerWebSocketImpl(vertx.getOrCreateContext(), request.uri(), request.path(),
       request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
       f, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
@@ -420,7 +434,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
       if (responseInProgress != null) {
-        responseInProgress.response().handleDrained();
+        responseInProgress.context.dispatch(v -> responseInProgress.response().handleDrained());
       } else if (ws != null) {
         ws.writable();
       }
@@ -471,13 +485,17 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       }
     }
     if (requestInProgress != null) {
-      requestInProgress.handleException(CLOSED_EXCEPTION);
+      requestInProgress.context.dispatch(v -> {
+        requestInProgress.handleException(CLOSED_EXCEPTION);
+      });
     }
     if (responseInProgress != null && responseInProgress != requestInProgress) {
-      responseInProgress.handleException(CLOSED_EXCEPTION);
+      responseInProgress.context.dispatch(v -> {
+        responseInProgress.handleException(CLOSED_EXCEPTION);
+      });
     }
     if (ws != null) {
-      ws.handleClosed();
+      ws.context.dispatch(v -> ws.handleClosed());
     }
     super.handleClosed();
   }
@@ -503,7 +521,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       responseInProgress.handleException(t);
     }
     if (ws != null) {
-      ws.handleException(t);
+      ws.context.dispatch(v -> ws.handleException(t));
     }
   }
 

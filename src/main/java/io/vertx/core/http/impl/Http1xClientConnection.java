@@ -216,7 +216,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       this.conn = conn;
       this.fut = Future.<HttpClientStream>future().setHandler(handler);
       this.id = id;
-      this.queue = new InboundBuffer<>(conn.context, 5);
+      this.queue = new InboundBuffer<>(context, 5);
     }
 
     private void append(StreamImpl s) {
@@ -627,23 +627,27 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
     StreamImpl stream;
     HttpClientResponseImpl response;
     HttpClientRequestImpl request;
-    Throwable err;
+    Exception err;
     synchronized (this) {
       stream = responseInProgress;
       request = stream.request;
+      HttpClientResponseImpl r = null;
+      Exception t = null;
       try {
-        response = stream.beginResponse(resp);
-        err = null;
+        r = stream.beginResponse(resp);
       } catch (Exception e) {
-        err = e;
-        response = null;
+        t = e;
       }
+      response = r;
+      err = t;
     }
-    if (response != null) {
-      request.handleResponse(response);
-    } else {
-      request.handleException(err);
-    }
+    stream.context.dispatch(v -> {
+      if (response != null) {
+        request.handleResponse(response);
+      } else {
+        request.handleException(err);
+      }
+    });
   }
 
   private void handleResponseChunk(Buffer buff) {
@@ -652,9 +656,11 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       resp = responseInProgress;
     }
     if (resp != null) {
-      if (!resp.handleChunk(buff)) {
-        doPause();
-      }
+      resp.context.dispatch(v -> {
+        if (!resp.handleChunk(buff)) {
+          doPause();
+        }
+      });
     }
   }
 
@@ -668,9 +674,11 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       }
       responseInProgress = stream.next;
     }
-    if (stream.endResponse(trailer)) {
-      checkLifecycle();
-    }
+    stream.context.dispatch(v -> {
+      if (stream.endResponse(trailer)) {
+        checkLifecycle();
+      }
+    });
   }
 
   private void handleRequestEnd(boolean recycle) {
@@ -842,7 +850,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
-      WebSocketImpl webSocket = new WebSocketImpl(vertx, Http1xClientConnection.this.getContext(), Http1xClientConnection.this, supportsContinuation,
+      WebSocketImpl webSocket = new WebSocketImpl(Http1xClientConnection.this.getContext(), Http1xClientConnection.this, supportsContinuation,
                                                   options.getMaxWebsocketFrameSize(),
                                                   options.getMaxWebsocketMessageSize());
       ws = webSocket;
@@ -862,8 +870,9 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   @Override
   public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
-      if (requestInProgress != null) {
-        requestInProgress.request.handleDrained();
+      StreamImpl current = requestInProgress;
+      if (current != null) {
+        current.context.dispatch(v -> current.request.handleDrained());
       } else if (ws != null) {
         ws.writable();
       }
@@ -872,7 +881,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
 
   synchronized void handleWsFrame(WebSocketFrameInternal frame) {
     if (ws != null) {
-      ws.handleFrame(frame);
+      context.dispatch(v -> ws.handleFrame(frame));
     }
   }
 
@@ -903,7 +912,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       ws.handleClosed();
     }
     for (StreamImpl stream : list) {
-      stream.handleException(CLOSED_EXCEPTION);
+      stream.context.dispatch(v -> stream.handleException(CLOSED_EXCEPTION));
     }
   }
 
@@ -966,7 +975,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       }
       requestInProgress = stream;
     }
-    stream.fut.complete(stream);
+    stream.context.dispatch(Future.succeededFuture(stream), stream.fut);
   }
 
   private void recycle() {

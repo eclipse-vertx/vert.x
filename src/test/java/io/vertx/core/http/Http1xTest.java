@@ -1918,7 +1918,9 @@ public class Http1xTest extends HttpTest {
     Set<Context> contexts = Collections.synchronizedSet(new HashSet<>());
     Set<HttpConnection> connections = Collections.synchronizedSet(new HashSet<>());
     Handler<AsyncResult<HttpClientResponse>> checker = onSuccess(response -> {
-      contexts.add(Vertx.currentContext());
+      Context current = Vertx.currentContext();
+      assertNotNull(current);
+      contexts.add(current);
       connections.add(response.request().connection());
     });
     HttpClientRequest req1 = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", checker)
@@ -1986,6 +1988,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testContexts() throws Exception {
+    int numReqs = 4;
     Buffer data = randomBuffer(1024);
     AtomicInteger cnt = new AtomicInteger();
     // Server connect handler should always be called with same context
@@ -2009,7 +2012,7 @@ public class Http1xTest extends HttpTest {
         req.endHandler(v2 -> {
           assertSameEventLoop(serverCtx, Vertx.currentContext());
           requests.add(req);
-          if (requests.size() == 4) {
+          if (requests.size() == numReqs) {
             requests.forEach(req_ ->{
               HttpServerResponse resp = req_.response();
               CompletableFuture<Void> cf = new CompletableFuture<>();
@@ -2033,7 +2036,6 @@ public class Http1xTest extends HttpTest {
     });
     awaitLatch(latch);
     CountDownLatch latch2 = new CountDownLatch(1);
-    int numReqs = 4;
     int numConns = 4;
     // There should be a context per *connection*
     Set<Context> contexts = new ConcurrentHashSet<>();
@@ -2052,9 +2054,7 @@ public class Http1xTest extends HttpTest {
         contexts.add(Vertx.currentContext());
         threads.add(Thread.currentThread());
         resp.pause();
-        responseResumeMap.get(path).thenAccept(v -> {
-          resp.resume();
-        });
+        responseResumeMap.get(path).thenAccept(v -> resp.resume());
         resp.handler(chunk -> {
           assertSameEventLoop(clientCtx, Vertx.currentContext());
         });
@@ -2062,7 +2062,7 @@ public class Http1xTest extends HttpTest {
         resp.endHandler(v -> {
           assertSameEventLoop(clientCtx, Vertx.currentContext());
           if (cnt.incrementAndGet() == numReqs) {
-            assertEquals(4, contexts.size());
+            assertEquals(numReqs, contexts.size());
             assertEquals(1, threads.size());
             latch2.countDown();
           }
@@ -3015,16 +3015,14 @@ public class Http1xTest extends HttpTest {
     client = vertx.createHttpClient(new HttpClientOptions()
         .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5).setHost("localhost").setPort(proxy.getPort())));
 
-    server.requestHandler(req -> {
-      req.response().end();
-    });
+    server.requestHandler(req -> req.response().end());
 
-    server.listen(onSuccess(s -> {
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertNotNull("request did not go through proxy", proxy.getLastUri());
-        testComplete();
-      })).exceptionHandler(th -> fail(th)).end();
+    startServer();
+
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+      assertEquals(200, resp.statusCode());
+      assertNotNull("request did not go through proxy", proxy.getLastUri());
+      testComplete();
     }));
     await();
   }
@@ -3042,12 +3040,12 @@ public class Http1xTest extends HttpTest {
       req.response().end();
     });
 
-    server.listen(onSuccess(s -> {
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertNotNull("request did not go through proxy", proxy.getLastUri());
-        testComplete();
-      })).exceptionHandler(th -> fail(th)).end();
+    startServer();
+
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+      assertEquals(200, resp.statusCode());
+      assertNotNull("request did not go through proxy", proxy.getLastUri());
+      testComplete();
     }));
     await();
   }

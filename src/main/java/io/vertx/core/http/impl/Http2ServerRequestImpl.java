@@ -146,7 +146,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       }
     }
     if (handler != null) {
-      context.dispatch(failure, handler);
+      handler.handle(failure);
     }
     if (upload instanceof NettyFileUpload) {
       ((NettyFileUpload)upload).handleException(failure);
@@ -178,7 +178,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   void handleCustomFrame(int type, int flags, Buffer buff) {
     if (customFrameHandler != null) {
-      context.dispatch(new HttpFrameImpl(type, flags, buff), customFrameHandler);
+      customFrameHandler.handle(new HttpFrameImpl(type, flags, buff));
     }
   }
 
@@ -192,7 +192,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       }
     }
     if (dataHandler != null) {
-      context.dispatch(data, dataHandler);
+      dataHandler.handle(data);
     }
   }
 
@@ -224,7 +224,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       }
     }
     if (endHandler != null) {
-      context.dispatch(endHandler);
+      endHandler.handle(null);
     }
   }
 
@@ -583,7 +583,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       }
     }
     if (handler != null && priorityChanged) {
-      context.dispatch(streamPriority, handler);
+      handler.handle(streamPriority);
     }
   }
 

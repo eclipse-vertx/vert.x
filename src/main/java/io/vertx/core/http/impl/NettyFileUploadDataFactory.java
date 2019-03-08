@@ -16,10 +16,8 @@ import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.FileUpload;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.impl.ContextInternal;
 
 import java.nio.charset.Charset;
 import java.util.function.Supplier;
@@ -48,7 +46,7 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
       size);
     Handler<HttpServerFileUpload> uploadHandler = lazyUploadHandler.get();
     if (uploadHandler != null) {
-      ((ContextInternal)context).dispatch(upload, uploadHandler);
+      uploadHandler.handle(upload);
     }
     return nettyUpload;
   }

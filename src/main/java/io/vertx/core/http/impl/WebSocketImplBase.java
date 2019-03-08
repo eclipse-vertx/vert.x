@@ -48,7 +48,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
   private final InboundBuffer<Buffer> pending;
-  private final ContextInternal context;
+  protected final ContextInternal context;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
@@ -62,8 +62,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   protected final Http1xConnectionBase conn;
   protected boolean closed;
 
-
-  WebSocketImplBase(VertxInternal vertx, ContextInternal context, Http1xConnectionBase conn, boolean supportsContinuation,
+  WebSocketImplBase(ContextInternal context, Http1xConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
     this.supportsContinuation = supportsContinuation;
     this.textHandlerID = "__vertx.ws." + UUID.randomUUID().toString();
@@ -296,7 +295,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       switch(frame.type()) {
         case PONG:
           if (pongHandler != null) {
-            context.dispatch(frame.binaryData(), pongHandler);
+            pongHandler.handle(frame.binaryData());
           }
           break;
         case TEXT:
@@ -304,7 +303,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         case BINARY:
         case CONTINUATION:
           if (frameHandler != null) {
-            context.dispatch(frame, frameHandler);
+            frameHandler.handle(frame);
           }
           break;
       }
@@ -456,10 +455,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       textHandlerRegistration = null;
     }
     if (closeHandler != null) {
-      context.dispatch(closeHandler);
+      closeHandler.handle(null);
     }
     if (endHandler != null) {
-      context.dispatch(endHandler);
+      endHandler.handle(null);
     }
   }
 
@@ -498,11 +497,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       if (handler != null) {
         checkClosed();
       }
-      if (handler == null) {
-        pending.handler(null);
-      } else {
-        pending.handler(buff -> context.dispatch(buff, handler));
-      }
+      pending.handler(handler);
       return (S) this;
     }
   }

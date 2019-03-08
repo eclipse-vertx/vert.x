@@ -342,10 +342,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       written = true;
       conn.responseComplete();
       if (bodyEndHandler != null) {
-        context.dispatch(bodyEndHandler);
+        bodyEndHandler.handle(null);
       }
       if (endHandler != null) {
-        context.dispatch(endHandler);
+        endHandler.handle(null);
       }
     }
   }
@@ -527,7 +527,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   void handleDrained() {
     synchronized (conn) {
       if (drainHandler != null) {
-        context.dispatch(null, drainHandler);
+        drainHandler.handle(null);
       }
     }
   }
@@ -541,7 +541,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         handler = exceptionHandler;
       }
       if (handler != null) {
-        context.dispatch(t, handler);
+        handler.handle(t);
       }
     }
   }
@@ -560,13 +560,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+      exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION);
     }
     if (endHandler != null) {
-      context.dispatch(endHandler);
+      endHandler.handle(null);
     }
     if (closedHandler != null) {
-      context.dispatch(closedHandler);
+      closedHandler.handle(null);
     }
   }
 
@@ -598,7 +598,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
     }
     if (headersEndHandler != null) {
-      context.dispatch(headersEndHandler);
+      headersEndHandler.handle(null);
     }
     if (Metrics.METRICS_ENABLED) {
       reportResponseBegin();

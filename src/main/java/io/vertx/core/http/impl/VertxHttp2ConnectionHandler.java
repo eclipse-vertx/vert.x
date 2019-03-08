@@ -120,10 +120,9 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
     super.channelInactive(chctx);
     if (connection != null) {
-      ContextInternal ctx = connection.getContext();
-      ctx.executeFromIO(v -> connection.handleClosed());
+      connection.handleClosed();
       if (removeHandler != null) {
-        ctx.dispatch(connection, removeHandler);
+        removeHandler.handle(connection);
       }
     }
   }

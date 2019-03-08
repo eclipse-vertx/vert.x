@@ -125,7 +125,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         fut = Future.failedFuture(e);
       }
     }
-    completionHandler.handle(fut);
+    sub.dispatch(fut, completionHandler);
   }
 
   private Http2ClientStream createStream(ContextInternal context, Http2Stream stream) {
@@ -149,7 +149,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         .setDependency(streamDependency)
         .setWeight(weight)
         .setExclusive(exclusive);
-      stream.handleHeaders(headers, streamPriority, endOfStream);
+      stream.context.dispatch(v -> {
+        stream.handleHeaders(headers, streamPriority, endOfStream);
+      });
     }
   }
 
@@ -157,7 +159,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     if (stream != null) {
-      stream.handleHeaders(headers, null, endOfStream);
+      stream.context.dispatch(v -> {
+        stream.handleHeaders(headers, null, endOfStream);
+      });
     }
   }
 
@@ -179,7 +183,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           pushReq.metric(metrics.responsePushed(queueMetric, metric(), localAddress(), remoteAddress(), pushReq));
         }
         streams.put(promisedStreamId, pushReq.getStream());
-        context.dispatch(pushReq, pushHandler);
+        stream.context.dispatch(pushReq, pushHandler);
         return;
       }
     }

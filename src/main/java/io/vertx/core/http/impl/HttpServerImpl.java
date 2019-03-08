@@ -238,9 +238,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                     }
                   } else {
                     HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ch.eventLoop());
-                    handler.context.executeFromIO(v -> {
-                      handler.handler.exceptionHandler.handle(ar.cause());
-                    });
+                    handler.context.executeFromIO(ar.cause(), handler.handler.exceptionHandler);
                   }
                 }));
                 if (options.isSni()) {
@@ -375,7 +373,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       }
       if (holder.handler.connectionHandler != null) {
         holder.context.executeFromIO(v -> {
-          holder.context.dispatch(conn, holder.handler.connectionHandler);
+          holder.handler.connectionHandler.handle(conn);
         });
       }
     });

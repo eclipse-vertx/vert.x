@@ -27,10 +27,10 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  */
 public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
 
-  public WebSocketImpl(VertxInternal vertx, ContextInternal context,
+  public WebSocketImpl(ContextInternal context,
                        Http1xClientConnection conn, boolean supportsContinuation,
                        int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
-    super(vertx, context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+    super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
   }
 
   @Override

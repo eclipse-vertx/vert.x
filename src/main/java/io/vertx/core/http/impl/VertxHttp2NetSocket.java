@@ -100,7 +100,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   void handleInterestedOpsChanged() {
     Handler<Void> handler = drainHandler();
     if (handler != null && !writeQueueFull()) {
-      context.dispatch(handler);
+      handler.handle(null);
     }
   }
 

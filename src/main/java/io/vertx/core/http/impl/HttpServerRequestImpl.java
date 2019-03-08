@@ -26,9 +26,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.VertxThread;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.tracing.TagExtractor;
@@ -42,8 +41,6 @@ import java.net.URISyntaxException;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
-import static io.vertx.core.impl.ContextInternal.beginDispatch;
-import static io.vertx.core.impl.ContextInternal.endDispatch;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 
@@ -63,7 +60,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
   private final Http1xServerConnection conn;
-  private final ContextInternal context;
+  final ContextInternal context;
 
   private DefaultHttpRequest request;
   private io.vertx.core.http.HttpVersion version;
@@ -113,10 +110,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  ContextInternal context() {
-    return context;
-  }
-
   private InboundBuffer<Buffer> pendingQueue() {
     if (pending == null) {
       pending = new InboundBuffer<>(conn.getContext(), 8);
@@ -152,15 +145,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
-    VertxThread current = VertxThread.current();
-    ContextInternal prev = current.beginDispatch(context);
-    try {
-      conn.requestHandler.handle(this);
-    } catch(Throwable t) {
-      context.reportException(t);
-    } finally {
-      current.endDispatch(prev);
-    }
+    conn.requestHandler.handle(this);
   }
 
   void appendRequest(HttpServerRequestImpl next) {
@@ -535,7 +520,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         }
       }
       if (dataHandler != null) {
-        context.dispatch(data, dataHandler);
+        dataHandler.handle(data);
       }
     }
   }
@@ -555,7 +540,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (endHandler != null) {
-      context.dispatch(null, endHandler);
+      endHandler.handle(null);
     }
   }
 
@@ -608,7 +593,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       ((NettyFileUpload)upload).handleException(t);
     }
     if (handler != null) {
-      context.dispatch(t, handler);
+      handler.handle(t);
     }
   }
 

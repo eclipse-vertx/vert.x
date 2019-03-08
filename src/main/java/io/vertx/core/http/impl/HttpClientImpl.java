@@ -972,7 +972,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       if (ar.succeeded()) {
         ar.result().createStream(ctx, handler);
       } else {
-        handler.handle(Future.failedFuture(ar.cause()));
+        ctx.dispatch(Future.failedFuture(ar.cause()), handler);
       }
     });
   }

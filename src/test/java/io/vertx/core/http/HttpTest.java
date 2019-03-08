@@ -1285,7 +1285,7 @@ public abstract class HttpTest extends HttpTestBase {
       // Exception handler should be called for any exceptions in the data handler
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
         RuntimeException cause = new RuntimeException("should be caught");
-        Vertx.currentContext().exceptionHandler(err -> {
+        resp.exceptionHandler(err -> {
           if (err == cause) {
             testComplete();
           }
@@ -1306,7 +1306,7 @@ public abstract class HttpTest extends HttpTestBase {
       // Exception handler should be called for any exceptions in the data handler
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
         RuntimeException cause = new RuntimeException("should be caught");
-        Vertx.currentContext().exceptionHandler(err -> {
+        resp.exceptionHandler(err -> {
           if (err == cause) {
             testComplete();
           }
@@ -2023,21 +2023,19 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testContextExceptionHandlerCalledWhenExceptionOnDrainHandler() {
+  public void testClientExceptionHandlerCalledWhenExceptionOnDrainHandler() {
     pausingServer(resumeFuture -> {
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       req.setChunked(true);
       assertFalse(req.writeQueueFull());
       req.setWriteQueueMaxSize(1000);
       Buffer buff = TestUtils.randomBuffer(10000);
-      AtomicBoolean failed = new AtomicBoolean();
       vertx.setPeriodic(1, id -> {
         req.write(buff);
         if (req.writeQueueFull()) {
           vertx.cancelTimer(id);
           RuntimeException cause = new RuntimeException("error");
-          Context ctx = Vertx.currentContext();
-          ctx.exceptionHandler(err -> {
+          req.exceptionHandler(err -> {
             // Called a second times when testComplete is called and close the http client
             if (err == cause) {
               testComplete();
@@ -4655,6 +4653,27 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(200, resp.statusCode());
         complete();
       })).end();
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testEndFromAnotherThread() throws Exception {
+    waitFor(2);
+    disableThreadChecks();
+    server.requestHandler(req -> {
+      req.response().endHandler(v -> {
+        complete();
+      });
+      new Thread(() -> {
+        req.response().end();
+      }).start();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
     }));
 
     await();

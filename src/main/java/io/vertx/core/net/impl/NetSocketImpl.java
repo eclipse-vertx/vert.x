@@ -69,9 +69,9 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final SSLHelper helper;
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
+  private final InboundBuffer<Object> pending;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
-  private InboundBuffer<Object> pending;
   private MessageConsumer registration;
   private boolean closed;
 
@@ -178,7 +178,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
     if (handler != null) {
-      pending.handler(msg -> context.dispatch(msg, handler));
+      pending.handler(handler);
     } else {
       pending.handler(NULL_MSG_HANDLER);
     }
@@ -328,8 +328,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  protected synchronized void handleInterestedOpsChanged() {
-    callDrainHandler();
+  protected void handleInterestedOpsChanged() {
+    context.dispatch(v -> callDrainHandler());
   }
 
   @Override
@@ -348,7 +348,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       consumer = registration;
       registration = null;
     }
-    checkEnd();
+    context.dispatch(v -> checkEnd());
     super.handleClosed();
     if (consumer != null) {
       consumer.unregister();
@@ -365,10 +365,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     handler.handle(null);
   }
 
-  public synchronized void handleMessage(Object msg) {
-    if (!pending.write(msg)) {
-      doPause();
-    }
+  public void handleMessage(Object msg) {
+    context.dispatch(msg, o -> {
+      if (!pending.write(msg)) {
+        doPause();
+      }
+    });
   }
 
   private class DataMessageHandler implements Handler<Object> {
@@ -388,7 +390,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         byteBuf = VertxHandler.safeBuffer(byteBuf, allocator);
         Buffer data = Buffer.buffer(byteBuf);
         reportBytesRead(data.length());
-        context.dispatch(data, dataHandler);
+        dataHandler.handle(data);
       }
     }
   }

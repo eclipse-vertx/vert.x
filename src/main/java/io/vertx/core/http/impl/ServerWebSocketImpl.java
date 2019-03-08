@@ -49,10 +49,10 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private Integer status;
   private Future<Integer> handshakeFuture;
 
-  public ServerWebSocketImpl(VertxInternal vertx, ContextInternal context, String uri, String path, String query, MultiMap headers,
+  public ServerWebSocketImpl(ContextInternal context, String uri, String path, String query, MultiMap headers,
                              Http1xConnectionBase conn, boolean supportsContinuation, Function<ServerWebSocketImpl, String> handshaker,
                              int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
-    super(vertx, context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+    super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.uri = uri;
     this.path = path;
     this.query = query;

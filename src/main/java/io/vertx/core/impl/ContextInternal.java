@@ -30,46 +30,6 @@ import java.util.concurrent.ConcurrentMap;
  */
 public interface ContextInternal extends Context {
 
-  /**
-   * Begin the dispatch of a context task.
-   * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, Handler)}
-   * shall be used.
-   *
-   * @param ctx the context on which the task is dispatched on
-   * @return the current vertx thread
-   * @throws IllegalStateException when the current thread is not a vertx thread
-   */
-  static VertxThread beginDispatch(ContextInternal ctx) {
-    Thread th = Thread.currentThread();
-    if (!(th instanceof VertxThread)) {
-      throw new IllegalStateException("Uh oh! context executing with wrong thread! " + th);
-    }
-    VertxThread current = (VertxThread) th;
-    if (!ContextImpl.DISABLE_TIMINGS) {
-      current.executeStart();
-    }
-    current.setContext(ctx);
-    return current;
-  }
-
-  /**
-   * End the dispatch of a context task.
-   * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, Handler)}
-   * shall be used.
-   *
-   * @param current the current vertx thread
-   */
-  static void endDispatch(VertxThread current) {
-    // We don't unset the context after execution - this is done later when the context is closed via
-    // VertxThreadFactory
-    current.setContext(null);
-    if (!ContextImpl.DISABLE_TIMINGS) {
-      current.executeEnd();
-    }
-  }
-
   static ContextInternal setContext(ContextInternal context) {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {

@@ -131,7 +131,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     C conn = getConnection();
-    context.schedule(null, v -> conn.handleInterestedOpsChanged());
+    context.schedule(v -> conn.handleInterestedOpsChanged());
   }
 
   @Override
@@ -159,7 +159,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
     if (removeHandler != null) {
       removeHandler.handle(conn);
     }
-    context.schedule(null, v -> conn.handleClosed());
+    context.schedule(v -> conn.handleClosed());
   }
 
   @Override
@@ -176,7 +176,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
     if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
-      context.executeFromIO(v -> conn.handleIdle());
+      context.schedule(v -> conn.handleIdle());
     } else {
       ctx.fireUserEventTriggered(evt);
     }

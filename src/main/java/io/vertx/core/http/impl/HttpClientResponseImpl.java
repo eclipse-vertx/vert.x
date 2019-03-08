@@ -12,14 +12,13 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 
 import java.util.ArrayList;
@@ -217,8 +216,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   void handleUnknownFrame(HttpFrame frame) {
     synchronized (conn) {
       if (customFrameHandler != null) {
-        ContextInternal ctx = (ContextInternal) stream.getContext();
-        ctx.dispatch(frame, customFrameHandler);
+        try {
+          customFrameHandler.handle(frame);
+        } catch (Throwable t) {
+          handleException(t);
+        }
       }
     }
   }
@@ -228,7 +230,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       request.dataReceived();
       bytesRead += data.length();
       if (dataHandler != null) {
-        ((ContextInternal)stream.getContext()).dispatch(data, dataHandler);
+        try {
+          dataHandler.handle(data);
+        } catch (Throwable t) {
+          handleException(t);
+        }
       }
     }
   }
@@ -244,7 +250,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     }
     if (handler != null) {
       try {
-        stream.getContext().dispatch(null, handler);
+        handler.handle(null);
       } catch (Throwable t) {
         handleException(t);
       }
@@ -259,8 +265,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         handler = log::error;
       }
     }
-    ContextInternal ctx = (ContextInternal) stream.getContext();
-    ctx.dispatch(e, handler);
+    handler.handle(e);
   }
 
   @Override
@@ -313,6 +318,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
         return;
       }
     }
-    stream.getContext().dispatch(streamPriority, handler);
+    handler.handle(streamPriority);
   }
 }

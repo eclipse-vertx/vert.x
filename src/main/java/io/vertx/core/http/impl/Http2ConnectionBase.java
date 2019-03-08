@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.*;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
@@ -135,7 +134,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       copy = new ArrayList<>(streams.values());
     }
     for (VertxHttp2Stream stream : copy) {
-      stream.handleException(cause);
+      stream.context.dispatch(v -> stream.handleException(cause));
     }
     handleException(cause);
   }
@@ -146,7 +145,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       stream = streams.get(streamId);
     }
     if (stream != null) {
-      stream.handleException(cause);
+      stream.context.dispatch(v -> stream.handleException(cause));
     }
   }
 
@@ -156,7 +155,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       stream = streams.get(s.id());
     }
     if (stream != null) {
-      context.schedule(null, v -> stream.onWritabilityChanged());
+      stream.context.dispatch(v -> stream.onWritabilityChanged());
     }
   }
 
@@ -168,7 +167,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         return;
       }
     }
-    removed.handleClose();
+    removed.context.dispatch(v -> removed.handleClose());
     checkShutdownHandler();
   }
 
@@ -194,7 +193,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
     if (handler != null) {
       Buffer buffer = Buffer.buffer(debugData);
-      context.dispatch(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer), handler);
+      context.dispatch(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
     }
     checkShutdownHandler();
     return true;
@@ -213,7 +212,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
           .setDependency(streamDependency)
           .setWeight(weight)
           .setExclusive(exclusive);
-        stream.handlePriorityChange(streamPriority);
+        stream.context.dispatch(v -> stream.handlePriorityChange(streamPriority));
       }
   }
 
@@ -269,7 +268,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     Handler<Buffer> handler = pingHandler;
     if (handler != null) {
       Buffer buff = Buffer.buffer().appendLong(data);
-      context.dispatch(buff, handler);
+      context.dispatch(v -> handler.handle(buff));
     }
   }
 
@@ -304,7 +303,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
     if (req != null) {
       Buffer buff = Buffer.buffer(safeBuffer(payload, ctx.alloc()));
-      req.handleCustomFrame(frameType, flags.value(), buff);
+      req.context.dispatch(v -> req.handleCustomFrame(frameType, flags.value(), buff));
     }
   }
 
@@ -317,7 +316,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         return;
       }
     }
-    req.onResetRead(errorCode);
+    req.context.dispatch(v -> req.onResetRead(errorCode));
   }
 
   @Override
@@ -330,12 +329,14 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (req != null) {
       data = safeBuffer(data, ctx.alloc());
       Buffer buff = Buffer.buffer(data);
-      int len = buff.length();
-      if (req.onDataRead(buff)) {
-        consumed[0] += len;
-      }
+      req.context.dispatch(v -> {
+        int len = buff.length();
+        if (req.onDataRead(buff)) {
+          consumed[0] += len;
+        }
+      });
       if (endOfStream) {
-        req.onEnd();
+        req.context.dispatch(v -> req.onEnd());
       }
     }
     return consumed[0];

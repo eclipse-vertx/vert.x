@@ -132,7 +132,8 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       // Http server request trailer - not implemented yet (in api)
     }
     if (endOfStream) {
-      stream.onEnd();
+      VertxHttp2Stream finalStream = stream;
+      finalStream.context.dispatch(v -> finalStream.onEnd());
     }
   }
 
@@ -180,7 +181,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
-              push.complete();
+              context.dispatch(v -> push.complete());
             } else {
               pendingPushes.add(push);
             }
@@ -234,7 +235,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     @Override
     void handleInterestedOpsChanged() {
       if (response != null) {
-        response.writabilityChanged();
+        context.dispatch(v -> response.writabilityChanged());
       }
     }
 
@@ -281,7 +282,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         if (METRICS_ENABLED && metrics != null) {
           response.metric(metrics.responsePushed(conn.metric(), method, uri, response));
         }
-        context.dispatch(Future.succeededFuture(response), completionHandler);
+        completionHandler.complete(response);
       }
     }
   }
