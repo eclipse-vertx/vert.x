@@ -342,10 +342,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       written = true;
       conn.responseComplete();
       if (bodyEndHandler != null) {
-        bodyEndHandler.handle(null);
+        context.dispatch(bodyEndHandler);
       }
       if (endHandler != null) {
-        endHandler.handle(null);
+        context.dispatch(endHandler);
       }
     }
   }
