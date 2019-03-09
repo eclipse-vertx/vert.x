@@ -13,12 +13,12 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -34,6 +34,27 @@ import java.util.concurrent.RejectedExecutionException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 abstract class ContextImpl extends AbstractContext {
+
+  /**
+   * Execute the {@code task} disabling the thread-local association for the duration
+   * of the execution. {@link Vertx#currentContext()} will return {@code null},
+   * @param task the task to execute
+   * @throws IllegalStateException if the current thread is not a Vertx thread
+   */
+  static void executeIsolated(Handler<Void> task) {
+    Thread currentThread = Thread.currentThread();
+    if (currentThread instanceof VertxThread) {
+      VertxThread vertxThread = (VertxThread) currentThread;
+      ContextInternal prev = vertxThread.beginDispatch(null);
+      try {
+        task.handle(null);
+      } finally {
+        vertxThread.endDispatch(prev);
+      }
+    } else {
+      task.handle(null);
+    }
+  }
 
   private static EventLoop getEventLoop(VertxInternal vertx) {
     EventLoopGroup group = vertx.getEventLoopGroup();
@@ -101,8 +122,6 @@ abstract class ContextImpl extends AbstractContext {
 
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
     closeHooks.run(completionHandler);
-    // Now remove context references from threads
-    VertxThreadFactory.unsetContext(this);
   }
 
   @Override
@@ -145,25 +164,18 @@ abstract class ContextImpl extends AbstractContext {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     try {
       Runnable command = () -> {
-        VertxThread current = (VertxThread) Thread.currentThread();
         Object execMetric = null;
         if (metrics != null) {
           execMetric = metrics.begin(queueMetric);
         }
-        if (!DISABLE_TIMINGS) {
-          current.executeStart();
-        }
         Future<T> res = Future.future();
-        try {
-          ContextInternal.setContext(context);
-          blockingCodeHandler.handle(res);
-        } catch (Throwable e) {
-          res.tryFail(e);
-        } finally {
-          if (!DISABLE_TIMINGS) {
-            current.executeEnd();
+        context.dispatch(res, f -> {
+          try {
+            blockingCodeHandler.handle(res);
+          } catch (Throwable e) {
+            res.tryFail(e);
           }
-        }
+        });
         if (metrics != null) {
           metrics.end(execMetric, res.succeeded());
         }

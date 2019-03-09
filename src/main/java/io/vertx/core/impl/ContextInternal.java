@@ -30,28 +30,6 @@ import java.util.concurrent.ConcurrentMap;
  */
 public interface ContextInternal extends Context {
 
-  static ContextInternal setContext(ContextInternal context) {
-    Thread current = Thread.currentThread();
-    if (current instanceof VertxThread) {
-      return ((VertxThread)current).setContext(context);
-    } else {
-      throw new IllegalStateException("Attempt to setContext on non Vert.x thread " + Thread.currentThread());
-    }
-  }
-
-  static boolean isOnWorkerThread() {
-    return ContextImpl.isOnVertxThread(true);
-  }
-
-  static boolean isOnEventLoopThread() {
-    return ContextImpl.isOnVertxThread(false);
-  }
-
-  static boolean isOnVertxThread() {
-    Thread t = Thread.currentThread();
-    return (t instanceof VertxThread);
-  }
-
   /**
    * Return the Netty EventLoop used by this Context. This can be used to integrate
    * a Netty Server with a Vert.x runtime, specially the Context part.

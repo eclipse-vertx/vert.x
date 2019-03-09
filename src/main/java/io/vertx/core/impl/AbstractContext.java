@@ -15,7 +15,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Starter;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
-import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
@@ -41,15 +40,6 @@ abstract class AbstractContext implements ContextInternal {
   @Override
   public boolean isWorkerContext() {
     return !isEventLoopContext();
-  }
-
-  static boolean isOnVertxThread(boolean worker) {
-    Thread t = Thread.currentThread();
-    if (t instanceof VertxThread) {
-      VertxThread vt = (VertxThread) t;
-      return vt.isWorker() == worker;
-    }
-    return false;
   }
 
   // This is called to execute code where the origin is IO (from Netty probably).

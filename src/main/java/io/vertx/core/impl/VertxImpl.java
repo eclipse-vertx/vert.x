@@ -505,7 +505,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public static Context context() {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
-      return ((VertxThread) current).getContext();
+      return ((VertxThread) current).context();
     }
     return null;
   }

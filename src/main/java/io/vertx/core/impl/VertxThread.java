@@ -48,25 +48,23 @@ public final class VertxThread extends FastThreadLocalThread {
     this.maxExecTimeUnit = maxExecTimeUnit;
   }
 
-  ContextInternal setContext(ContextInternal next) {
-    ContextInternal prev = context;
-    context = next;
-    if (!DISABLE_TCCL) {
-      setContextClassLoader(next != null ? next.classLoader() : null);
-    }
-    return prev;
-  }
-
-  ContextInternal getContext() {
+  /**
+   * @return the current context of this thread, this method must be called from the current thread
+   */
+  ContextInternal context() {
     return context;
   }
 
-  public final void executeStart() {
-    execStart = System.nanoTime();
+  private void executeStart() {
+    if (context == null) {
+      execStart = System.nanoTime();
+    }
   }
 
-  public final void executeEnd() {
-    execStart = 0;
+  private void executeEnd() {
+    if (context == null) {
+      execStart = 0;
+    }
   }
 
   public long startTime() {
@@ -112,16 +110,17 @@ public final class VertxThread extends FastThreadLocalThread {
    * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
    * shall be used.
    *
-   * @param context the previous context thread to restore, might be {@code null}
+   * @param prev the previous context thread to restore, might be {@code null}
    */
-  public void endDispatch(ContextInternal context) {
+  public void endDispatch(ContextInternal prev) {
     // We don't unset the context after execution - this is done later when the context is closed via
     // VertxThreadFactory
-    this.context = context;
+    context = prev;
     if (!DISABLE_TCCL) {
-      setContextClassLoader(context != null ? context.classLoader() : null);
+      setContextClassLoader(prev != null ? prev.classLoader() : null);
     }
     if (!ContextImpl.DISABLE_TIMINGS) {
       executeEnd();
     }
-  }}
+  }
+}

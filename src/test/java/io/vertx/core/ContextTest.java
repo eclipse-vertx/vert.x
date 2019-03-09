@@ -549,10 +549,18 @@ public class ContextTest extends VertxTestBase {
       assertSame(ctx, Vertx.currentContext());
       assertSame(cl, Thread.currentThread().getContextClassLoader());
       int[] called = new int[1];
+      VertxThread thread = VertxThread.current();
+      long start = thread.startTime();
       ctx.dispatch(v2 -> {
         called[0]++;
         assertSame(cl, Thread.currentThread().getContextClassLoader());
+        try {
+          Thread.sleep(2);
+        } catch (InterruptedException e) {
+          fail(e);
+        }
       });
+      assertEquals(start, thread.startTime());
       assertEquals(1, called[0]);
       assertSame(ctx, Vertx.currentContext());
       assertSame(cl, Thread.currentThread().getContextClassLoader());
