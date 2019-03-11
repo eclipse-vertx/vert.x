@@ -372,9 +372,14 @@ Buffer configuration is also supported:
 {@link examples.NetExamples#example22}
 ----
 
-PKCS8, PKCS1 and X.509 certificates wrapped in a PEM block formats are supported.
+Vert.x supports reading of unencrypted RSA and/or ECC based private keys from PKCS8 PEM files.
+RSA based private keys can also be read from PKCS1 PEM files.
+X.509 certificates can be read from PEM files containing a textual encoding of the certificate as defined by
+https://tools.ietf.org/html/rfc7468#section-5[RFC 7468, Section 5].
 
-WARNING: keep in mind that pem configuration, the private key is not crypted.
+WARNING: Keep in mind that the keys contained in an unencrypted PKCS8 or a PKCS1 PEM file can be extracted by
+anybody who can read the file. Thus, make sure to put proper access restrictions on such PEM files in order to
+prevent misuse.
 
 ==== Specifying trust for the server
 

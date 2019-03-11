@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,7 +16,9 @@ import io.vertx.core.buffer.Buffer;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
+import java.util.Arrays;
 
 /**
  * This code is copies and modifies over from net.oauth.java.jmeter:ApacheJMeter_oauth
@@ -27,6 +29,55 @@ import java.security.spec.RSAPrivateCrtKeySpec;
  * All credits go to the original author Zhihong Zhang (zhihong@gmail)
  */
 public class PrivateKeyParser {
+
+  /**
+   * ASN.1 OID for RSA public key.
+   */
+  private static final byte[] OID_RSA_PUBLIC_KEY = { 0x2A, (byte) 0x86, 0x48, (byte) 0x86, (byte) 0xF7, 0x0D, 0x01,
+          0x01, 0x01 };
+  /**
+   * ASN.1 OID for EC public key.
+   */
+  private static final byte[] OID_EC_PUBLIC_KEY = { 0x2A, (byte) 0x86, 0x48, (byte) 0xCE, 0x3D, 0x02, 0x01 };
+
+  /**
+   * Gets the algorithm used by a PKCS#8 encoded private key.
+   * 
+   * @param encodedKey The encoded private key.
+   * @return The algorithm name, either <em>RSA</em> or <em>EC</em>, depending on
+   *         the algorithm identifier found in the encoded key.
+   * @throws VertxException if the key is not PKCS#8 encoded or uses an unsupported
+   *         algorithm.
+   */
+  public static String getPKCS8EncodedKeyAlgorithm(byte[] encodedKey) {
+
+    DerParser parser = new DerParser(encodedKey);
+    Asn1Object sequence = parser.read();
+    if (sequence.getType() != DerParser.SEQUENCE) {
+      throw new VertxException("Invalid PKCS8 encoding: not a sequence");
+    }
+
+    parser = sequence.getParser();
+    BigInteger version = parser.read().getInteger();
+    if (version.intValue() != 0) {
+        throw new VertxException("Unsupported version, expected 0 but found " + version.intValue());
+    }
+
+    sequence = parser.read();
+    if (sequence.getType() != DerParser.SEQUENCE) {
+        throw new VertxException("Invalid PKCS8 encoding: could not read Algorithm Identifier");
+    }
+
+    parser = sequence.getParser();
+    byte[] algorithmIdentifier = parser.read().getObjectIdentifier();
+    if (Arrays.equals(OID_RSA_PUBLIC_KEY, algorithmIdentifier)) {
+        return "RSA";
+    } else if (Arrays.equals(OID_EC_PUBLIC_KEY, algorithmIdentifier)) {
+        return "EC";
+    } else {
+        throw new VertxException("Unsupported algorithm identifier");
+    }
+  }
 
   /**
    * Convert PKCS#1 encoded private key into RSAPrivateCrtKeySpec.
@@ -112,6 +163,7 @@ public class PrivateKeyParser {
     private final static int BIT_STRING = 0x03;
     private final static int OCTET_STRING = 0x04;
     private final static int NULL = 0x05;
+    private final static int OBJECT_IDENTIFIER = 0x06;
     private final static int REAL = 0x09;
     private final static int ENUMERATED = 0x0a;
 
@@ -311,6 +363,16 @@ public class PrivateKeyParser {
       }
 
       return new BigInteger(value);
+    }
+
+    public byte[] getObjectIdentifier() throws VertxException {
+
+      switch(type) {
+      case DerParser.OBJECT_IDENTIFIER:
+        return value;
+      default:
+        throw new VertxException("Invalid DER: object is not an Object Identifier");
+      }
     }
 
     /**
