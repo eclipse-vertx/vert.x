@@ -14,9 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
@@ -28,8 +26,6 @@ import io.vertx.core.impl.VertxInternal;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
-
-import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 
@@ -174,10 +170,9 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private void doHandshake() {
     Channel channel = conn.channel();
     try {
-      handshaker.handshake(channel, request.getRequest());
+      handshaker.handshake(channel, request.nettyRequest());
     } catch (Exception e) {
-      status = BAD_REQUEST.code();
-      HttpUtils.sendError(conn.channel(), BAD_REQUEST, "\"Connection\" header must be \"Upgrade\".");
+      request.response().setStatusCode(BAD_REQUEST.code()).end();
       throw e;
     } finally {
       request = null;

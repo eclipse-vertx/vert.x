@@ -626,7 +626,7 @@ public final class HttpUtils {
     ch.writeAndFlush(resp);
   }
 
-  static String getWebSocketLocation(HttpRequest req, boolean ssl) throws Exception {
+  static String getWebSocketLocation(HttpServerRequest req, boolean ssl) throws Exception {
     String prefix;
     if (ssl) {
       prefix = "ws://";

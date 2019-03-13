@@ -60,7 +60,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static io.vertx.core.http.HttpTestBase.*;
+import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
+import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
+import static io.vertx.core.http.HttpTestBase.DEFAULT_TEST_URI;
 import static io.vertx.test.core.TestUtils.*;
 
 /**
@@ -1202,18 +1204,29 @@ public class WebSocketTest extends VertxTestBase {
                                     boolean expectEvent,
                                     boolean upgradeRequest,
                                     int expectedStatus) {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
     if (upgradeRequest) {
-      server = vertx.createHttpServer().websocketHandler(ws -> {
-        // Check we can get notified
-        // handshake fails after this method returns and does not reject the ws
-        assertTrue(expectEvent);
-      });
+      server = vertx.createHttpServer()
+        .websocketHandler(ws -> {
+          // Check we can get notified
+          // handshake fails after this method returns and does not reject the ws
+          assertTrue(expectEvent);
+        })
+        .requestHandler(req -> {
+          req.response().end();
+        });
     } else {
+      AtomicBoolean first = new AtomicBoolean();
       server = vertx.createHttpServer().requestHandler(req -> {
-        try {
-          req.upgrade();
-        } catch (Exception e) {
-          // Expected
+        if (first.compareAndSet(false, true)) {
+          try {
+            req.upgrade();
+          } catch (Exception e) {
+            // Expected
+          }
+        } else {
+          req.response().end();
         }
       });
     }
@@ -1221,7 +1234,12 @@ public class WebSocketTest extends VertxTestBase {
       HttpClientRequest req = requestProvider.apply(onSuccess(resp -> {
         assertEquals(expectedStatus, resp.statusCode());
         resp.endHandler(v1 -> {
-          testComplete();
+          // Make another request to check the connection remains usable
+          client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp2 -> {
+            resp2.endHandler(v2 -> {
+              testComplete();
+            });
+          }));
         });
       }));
       req.end();
