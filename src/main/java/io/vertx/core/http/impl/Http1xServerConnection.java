@@ -414,7 +414,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       if (responseInProgress != null) {
         responseInProgress.response().handleDrained();
       } else if (ws != null) {
-        ws.writable();
+        ws.handleDrained();
       }
     }
   }

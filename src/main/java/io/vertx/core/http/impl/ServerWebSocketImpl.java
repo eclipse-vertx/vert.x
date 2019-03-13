@@ -43,6 +43,7 @@ import static io.vertx.core.http.impl.HttpUtils.SC_BAD_GATEWAY;
  */
 public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> implements ServerWebSocket {
 
+  private final Http1xServerConnection conn;
   private final String uri;
   private final String path;
   private final String query;
@@ -53,13 +54,14 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private Future<Integer> handshakeFuture;
 
   ServerWebSocketImpl(VertxInternal vertx,
-                      Http1xConnectionBase conn,
+                      Http1xServerConnection conn,
                       boolean supportsContinuation,
                       HttpServerRequestImpl request,
                       WebSocketServerHandshaker handshaker,
                       int maxWebSocketFrameSize,
                       int maxWebSocketMessageSize) {
     super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+    this.conn = conn;
     this.uri = request.uri();
     this.path = request.path();
     this.query = request.query();
@@ -176,6 +178,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
     } finally {
       request = null;
     }
+    conn.responseComplete();
     status = SWITCHING_PROTOCOLS.code();
     subProtocol(handshaker.selectedSubprotocol());
     // remove compressor as its not needed anymore once connection was upgraded to websockets

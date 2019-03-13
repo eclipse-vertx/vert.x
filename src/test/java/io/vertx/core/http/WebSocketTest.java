@@ -2800,4 +2800,52 @@ public class WebSocketTest extends VertxTestBase {
         });
       }));
     await();
-  }}
+  }
+
+  @Test
+  public void testDrainServerWebSocket() {
+    Future<Void> resume = Future.future();
+    server = vertx.createHttpServer()
+      .websocketHandler(ws -> {
+        while (!ws.writeQueueFull()) {
+          ws.writeFrame(WebSocketFrame.textFrame(randomAlphaString(512), true));
+        }
+        ws.drainHandler(v -> {
+          testComplete();
+        });
+        resume.complete();
+      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
+        client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", ws -> {
+          ws.pause();
+          resume.setHandler(onSuccess(v2 -> {
+            ws.resume();
+          }));
+        });
+      }));
+    await();
+  }
+
+  @Test
+  public void testDrainClientWebSocket() {
+    Future<Void> resume = Future.future();
+    server = vertx.createHttpServer()
+      .websocketHandler(ws -> {
+        ws.pause();
+        resume.setHandler(onSuccess(v2 -> {
+          ws.resume();
+        }));
+      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
+        client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", ws -> {
+          while (!ws.writeQueueFull()) {
+            ws.writeFrame(WebSocketFrame.textFrame(randomAlphaString(512), true));
+          }
+          ws.drainHandler(v -> {
+            testComplete();
+          });
+          resume.complete();
+        });
+      }));
+    await();
+  }
+
+}

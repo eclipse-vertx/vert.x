@@ -61,7 +61,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   protected final Http1xConnectionBase conn;
   protected boolean closed;
 
-
   WebSocketImplBase(VertxInternal vertx, Http1xConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
     this.supportsContinuation = supportsContinuation;
@@ -426,7 +425,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  void writable() {
+  void handleDrained() {
     if (drainHandler != null) {
       Handler<Void> dh = drainHandler;
       drainHandler = null;
