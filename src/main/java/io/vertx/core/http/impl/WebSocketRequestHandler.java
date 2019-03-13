@@ -13,12 +13,12 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
 import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
@@ -80,7 +80,7 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
    * Handle the request once we have the full body.
    */
   private void handle(HttpServerRequestImpl req, Buffer body) {
-    DefaultHttpRequest nettyReq = req.getRequest();
+    HttpRequest nettyReq = req.nettyRequest();
     nettyReq = new DefaultFullHttpRequest(
       nettyReq.protocolVersion(),
       nettyReq.method(),

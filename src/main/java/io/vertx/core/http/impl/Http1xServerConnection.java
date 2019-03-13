@@ -44,6 +44,7 @@ import java.util.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
+import static io.netty.handler.codec.http.HttpResponseStatus.UPGRADE_REQUIRED;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
@@ -300,11 +301,10 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (ws != null) {
       return ws;
     }
-    if (!(request.getRequest() instanceof FullHttpRequest)) {
+    if (!(request.nettyRequest() instanceof FullHttpRequest)) {
       throw new IllegalStateException();
     }
-    FullHttpRequest nettyReq = (FullHttpRequest) request.getRequest();
-    WebSocketServerHandshaker handshaker = createHandshaker(nettyReq);
+    WebSocketServerHandshaker handshaker = createHandshaker(request);
     if (handshaker == null) {
       return null;
     }
@@ -316,25 +316,31 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     return ws;
   }
 
-  private WebSocketServerHandshaker createHandshaker(HttpRequest request) {
+  private WebSocketServerHandshaker createHandshaker(HttpServerRequestImpl request) {
     // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
     // it doesn't send a normal 'Connection: Upgrade' header. Instead it
     // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
     Channel ch = channel();
-    String connectionHeader = request.headers().get(io.vertx.core.http.HttpHeaders.CONNECTION);
+    String connectionHeader = request.getHeader(io.vertx.core.http.HttpHeaders.CONNECTION);
     if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
-      HttpUtils.sendError(ch, BAD_REQUEST, "\"Connection\" header must be \"Upgrade\".");
+      request.response()
+        .setStatusCode(BAD_REQUEST.code())
+        .end("\"Connection\" header must be \"Upgrade\".");
       return null;
     }
-    if (request.method() != HttpMethod.GET) {
-      HttpUtils.sendError(ch, METHOD_NOT_ALLOWED, null);
+    if (request.method() != io.vertx.core.http.HttpMethod.GET) {
+      request.response()
+        .setStatusCode(METHOD_NOT_ALLOWED.code())
+        .end();
       return null;
     }
     String wsURL;
     try {
       wsURL = HttpUtils.getWebSocketLocation(request, isSsl());
     } catch (Exception e) {
-      HttpUtils.sendError(ch, BAD_REQUEST, "Invalid request URI");
+      request.response()
+        .setStatusCode(BAD_REQUEST.code())
+        .end("Invalid request URI");
       return null;
     }
 
@@ -343,10 +349,13 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
         options.getWebsocketSubProtocols(),
         options.getPerMessageWebsocketCompressionSupported() || options.getPerFrameWebsocketCompressionSupported(),
         options.getMaxWebsocketFrameSize(), options.isAcceptUnmaskedFrames());
-    WebSocketServerHandshaker shake = factory.newHandshaker(request);
+    WebSocketServerHandshaker shake = factory.newHandshaker(request.nettyRequest());
     if (shake == null) {
-      //log.error("Unrecognised websockets handshake");
-      WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
+      // See WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
+      request.response()
+        .putHeader(HttpHeaderNames.SEC_WEBSOCKET_VERSION, WebSocketVersion.V13.toHttpHeaderValue())
+        .setStatusCode(UPGRADE_REQUIRED.code())
+        .end();
     }
     return shake;
   }

@@ -16,7 +16,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.*;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -81,7 +80,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private long bytesWritten;
   private NetSocket netSocket;
 
-  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, DefaultHttpRequest request, Object requestMetric) {
+  HttpServerResponseImpl(final VertxInternal vertx, Http1xServerConnection conn, HttpRequest request, Object requestMetric) {
     this.vertx = vertx;
     this.conn = conn;
     this.version = request.protocolVersion();

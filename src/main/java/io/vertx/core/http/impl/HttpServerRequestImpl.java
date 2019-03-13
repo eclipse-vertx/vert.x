@@ -59,7 +59,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   private final Http1xServerConnection conn;
 
-  private DefaultHttpRequest request;
+  private HttpRequest request;
   private io.vertx.core.http.HttpVersion version;
   private io.vertx.core.http.HttpMethod method;
   private String rawMethod;
@@ -88,18 +88,22 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   private InboundBuffer<Buffer> pending;
 
-  HttpServerRequestImpl(Http1xServerConnection conn, DefaultHttpRequest request) {
+  HttpServerRequestImpl(Http1xServerConnection conn, HttpRequest request) {
     this.conn = conn;
     this.request = request;
   }
 
-  DefaultHttpRequest getRequest() {
+  /**
+   *
+   * @return
+   */
+  HttpRequest nettyRequest() {
     synchronized (conn) {
       return request;
     }
   }
 
-  void setRequest(DefaultHttpRequest request) {
+  void setRequest(HttpRequest request) {
     synchronized (conn) {
       this.request = request;
     }

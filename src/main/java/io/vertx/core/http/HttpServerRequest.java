@@ -300,10 +300,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Upgrade the connection to a WebSocket connection.
    * <p>
-   * This is an alternative way of handling WebSockets and can only be used if no websocket handlers are set on the
-   * Http server, and can only be used during the upgrade request during the WebSocket handshake.
+   * This is an alternative way of handling WebSockets and can only be used if no WebSocket handler is set on the
+   * {@code HttpServer}, and can only be used during the upgrade request during the WebSocket handshake.
    *
-   * @return  the WebSocket
+   * @return the WebSocket
+   * @throws IllegalStateException if the current request cannot be upgraded, when it happens an appropriate response
+   *                               is sent
    */
   ServerWebSocket upgrade();
 
