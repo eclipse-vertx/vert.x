@@ -371,7 +371,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public boolean isSSL() {
-    return conn.isSSL();
+    return conn.isSsl();
   }
 
   @Override
