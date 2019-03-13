@@ -39,7 +39,6 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.*;
-import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
@@ -328,19 +327,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (handshaker == null) {
       return null;
     }
-    Function<ServerWebSocketImpl, String> f = ws -> {
-      handshaker.handshake(chctx.channel(), nettyReq);
-      // remove compressor as its not needed anymore once connection was upgraded to websockets
-      ChannelHandler handler = chctx.pipeline().get(HttpChunkContentCompressor.class);
-      if (handler != null) {
-        chctx.pipeline().remove(handler);
-      }
-      ws.registerHandler(vertx.eventBus());
-      return handshaker.selectedSubprotocol();
-    };
-    ws = new ServerWebSocketImpl(vertx.getOrCreateContext(), request.uri(), request.path(),
-      request.query(), request.headers(), this, handshaker.version() != WebSocketVersion.V00,
-      f, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
+    ws = new ServerWebSocketImpl(vertx.getOrCreateContext(), this, handshaker.version() != WebSocketVersion.V00,
+      request, handshaker, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
       ws.setMetric(metrics.connected(metric(), request.metric(), ws));
     }
