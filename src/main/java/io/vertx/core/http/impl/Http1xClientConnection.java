@@ -874,7 +874,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       if (current != null) {
         current.context.dispatch(v -> current.request.handleDrained());
       } else if (ws != null) {
-        ws.writable();
+        ws.handleDrained();
       }
     }
   }
