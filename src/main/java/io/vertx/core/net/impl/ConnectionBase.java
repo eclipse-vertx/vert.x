@@ -291,7 +291,7 @@ public abstract class ConnectionBase {
   protected abstract void handleInterestedOpsChanged();
 
   protected boolean supportsFileRegion() {
-    return !isSSL();
+    return !isSsl();
   }
 
   public void reportBytesRead(long numberOfBytes) {
@@ -306,10 +306,6 @@ public abstract class ConnectionBase {
     if (metrics != null) {
       metrics.bytesWritten(metric(), remoteAddress(), numberOfBytes);
     }
-  }
-
-  public boolean isSSL() {
-    return chctx.pipeline().get(SslHandler.class) != null;
   }
 
   /**
@@ -367,9 +363,8 @@ public abstract class ConnectionBase {
   }
 
   public SSLSession sslSession() {
-    if (isSSL()) {
-      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
-      assert sslHandlerContext != null;
+    ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
+    if (sslHandlerContext != null) {
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession();
     } else {
@@ -378,11 +373,9 @@ public abstract class ConnectionBase {
   }
 
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    if (isSSL()) {
-      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
-      assert sslHandlerContext != null;
-      SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
-      return sslHandler.engine().getSession().getPeerCertificateChain();
+    SSLSession session = sslSession();
+    if (session != null) {
+      return session.getPeerCertificateChain();
     } else {
       return null;
     }

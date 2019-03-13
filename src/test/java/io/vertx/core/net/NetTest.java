@@ -48,6 +48,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -1525,8 +1526,12 @@ public class NetTest extends VertxTestBase {
       server.exceptionHandler(err -> complete());
       Handler<NetSocket> serverHandler = socket -> {
         indicatedServerName = socket.indicatedServerName();
+        SSLSession sslSession = socket.sslSession();
         if (socket.isSsl()) {
+          assertNotNull(sslSession);
           certificateChainChecker.accept(socket);
+        } else {
+          assertNull(sslSession);
         }
         AtomicBoolean upgradedServer = new AtomicBoolean();
         AtomicInteger upgradedServerCount = new AtomicInteger();

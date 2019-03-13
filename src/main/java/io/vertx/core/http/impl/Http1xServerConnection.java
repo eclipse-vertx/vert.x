@@ -363,7 +363,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     }
     String wsURL;
     try {
-      wsURL = HttpUtils.getWebSocketLocation(request, isSSL());
+      wsURL = HttpUtils.getWebSocketLocation(request, isSsl());
     } catch (Exception e) {
       HttpUtils.sendError(ch, BAD_REQUEST, "Invalid request URI");
       return null;
