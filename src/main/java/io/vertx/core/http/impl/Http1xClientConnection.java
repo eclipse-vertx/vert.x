@@ -823,7 +823,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
         // remove decompressor as its not needed anymore once connection was upgraded to websockets
         ctx.pipeline().remove(handler);
       }
-      WebSocketImpl webSocket = new WebSocketImpl(vertx, Http1xClientConnection.this, supportsContinuation,
+      WebSocketImpl webSocket = new WebSocketImpl(Http1xClientConnection.this, supportsContinuation,
                                                   options.getMaxWebsocketFrameSize(),
                                                   options.getMaxWebsocketMessageSize());
       ws = webSocket;

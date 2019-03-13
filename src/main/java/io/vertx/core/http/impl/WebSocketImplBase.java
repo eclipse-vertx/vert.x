@@ -61,8 +61,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   protected final Http1xConnectionBase conn;
   protected boolean closed;
 
-  WebSocketImplBase(VertxInternal vertx, Http1xConnectionBase conn, boolean supportsContinuation,
-                              int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
+  WebSocketImplBase(Http1xConnectionBase conn,
+                    boolean supportsContinuation,
+                    int maxWebSocketFrameSize,
+                    int maxWebSocketMessageSize) {
     this.supportsContinuation = supportsContinuation;
     this.textHandlerID = "__vertx.ws." + UUID.randomUUID().toString();
     this.binaryHandlerID = "__vertx.ws." + UUID.randomUUID().toString();

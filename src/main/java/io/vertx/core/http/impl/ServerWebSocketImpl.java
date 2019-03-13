@@ -53,14 +53,13 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private Integer status;
   private Future<Integer> handshakeFuture;
 
-  ServerWebSocketImpl(VertxInternal vertx,
-                      Http1xServerConnection conn,
+  ServerWebSocketImpl(Http1xServerConnection conn,
                       boolean supportsContinuation,
                       HttpServerRequestImpl request,
                       WebSocketServerHandshaker handshaker,
                       int maxWebSocketFrameSize,
                       int maxWebSocketMessageSize) {
-    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+    super(conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.conn = conn;
     this.uri = request.uri();
     this.path = request.path();

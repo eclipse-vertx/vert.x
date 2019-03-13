@@ -308,7 +308,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (handshaker == null) {
       return null;
     }
-    ws = new ServerWebSocketImpl(vertx, this, handshaker.version() != WebSocketVersion.V00,
+    ws = new ServerWebSocketImpl(this, handshaker.version() != WebSocketVersion.V00,
       request, handshaker, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
       ws.setMetric(metrics.connected(metric(), request.metric(), ws));
