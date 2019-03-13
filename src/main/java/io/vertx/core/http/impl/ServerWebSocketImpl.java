@@ -11,7 +11,13 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.ServerWebSocket;
@@ -26,6 +32,7 @@ import java.util.function.Function;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 import static io.vertx.core.http.impl.HttpUtils.SC_BAD_GATEWAY;
 
@@ -43,19 +50,25 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   private final String uri;
   private final String path;
   private final String query;
-  private final Function<ServerWebSocketImpl, String> handshaker;
+  private final WebSocketServerHandshaker handshaker;
   private final MultiMap headers;
+  private HttpServerRequestImpl request;
   private Integer status;
   private Future<Integer> handshakeFuture;
 
-  public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
-                             Http1xConnectionBase conn, boolean supportsContinuation, Function<ServerWebSocketImpl, String> handshaker,
-                             int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
+  ServerWebSocketImpl(VertxInternal vertx,
+                      Http1xConnectionBase conn,
+                      boolean supportsContinuation,
+                      HttpServerRequestImpl request,
+                      WebSocketServerHandshaker handshaker,
+                      int maxWebSocketFrameSize,
+                      int maxWebSocketMessageSize) {
     super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
-    this.uri = uri;
-    this.path = path;
-    this.query = query;
-    this.headers = headers;
+    this.uri = request.uri();
+    this.path = request.path();
+    this.query = request.query();
+    this.headers = request.headers();
+    this.request = request;
     this.handshaker = handshaker;
   }
 
@@ -148,22 +161,35 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
     synchronized (conn) {
       if (status == null) {
         if (sc == SC_SWITCHING_PROTOCOLS) {
-          String res;
-          try {
-            res = handshaker.apply(this);
-            status = sc;
-          } catch (Exception e) {
-            status = BAD_REQUEST.code();
-            HttpUtils.sendError(conn.channel(), BAD_REQUEST, "\"Connection\" header must be \"Upgrade\".");
-            throw e;
-          }
-          subProtocol(res);
+          doHandshake();
         } else {
           status = sc;
           HttpUtils.sendError(conn.channel(), HttpResponseStatus.valueOf(sc));
         }
       }
     }
+  }
+
+  private void doHandshake() {
+    Channel channel = conn.channel();
+    try {
+      handshaker.handshake(channel, request.getRequest());
+    } catch (Exception e) {
+      status = BAD_REQUEST.code();
+      HttpUtils.sendError(conn.channel(), BAD_REQUEST, "\"Connection\" header must be \"Upgrade\".");
+      throw e;
+    } finally {
+      request = null;
+    }
+    status = SWITCHING_PROTOCOLS.code();
+    subProtocol(handshaker.selectedSubprotocol());
+    // remove compressor as its not needed anymore once connection was upgraded to websockets
+    ChannelPipeline pipeline = channel.pipeline();
+    ChannelHandler handler = pipeline.get(HttpChunkContentCompressor.class);
+    if (handler != null) {
+      pipeline.remove(handler);
+    }
+    registerHandler(conn.getContext().owner().eventBus());
   }
 
   Boolean tryHandshake(int sc) {
