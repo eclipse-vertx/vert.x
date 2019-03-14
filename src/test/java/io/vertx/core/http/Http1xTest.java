@@ -3138,9 +3138,9 @@ public class Http1xTest extends HttpTest {
       awaitLatch(latch);
       client.close();
       client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setKeepAlive(keepAlive).setPipelining(pipelined));
-      HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
         fail();
-      });
+      }));
       post.setChunked(true).write(TestUtils.randomBuffer(1024));
       assertTrue(post.reset());
       client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
