@@ -623,6 +623,9 @@ public class DeploymentManager {
         status = ST_UNDEPLOYED;
         AtomicInteger undeployCount = new AtomicInteger();
         int numToUndeploy = verticles.size();
+        if (parent != null) {
+          parent.removeChild(this);
+        }
         for (VerticleHolder verticleHolder: verticles) {
           ContextImpl context = verticleHolder.context;
           context.runOnContext(v -> {
@@ -651,11 +654,6 @@ public class DeploymentManager {
               verticleHolder.verticle.stop(stopFuture);
             } catch (Throwable t) {
               stopFuture.fail(t);
-            } finally {
-              // Remove the deployment from any parents
-              if (parent != null) {
-                parent.removeChild(this);
-              }
             }
           });
         }
