@@ -3157,11 +3157,15 @@ public class Http1xTest extends HttpTest {
       HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         fail();
       });
-      post.setChunked(true).write(TestUtils.randomBuffer(1024));
-      assertTrue(post.reset());
-      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        assertEquals(1, numReq.get());
-        complete();
+      // There might be a race between the request write and the request reset
+      // so we do it on the context thread to avoid it
+      vertx.runOnContext(v -> {
+        post.setChunked(true).write(TestUtils.randomBuffer(1024));
+        assertTrue(post.reset());
+        client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+          assertEquals(1, numReq.get());
+          complete();
+        });
       });
       await();
     } finally {
