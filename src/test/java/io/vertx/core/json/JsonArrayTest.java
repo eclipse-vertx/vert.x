@@ -427,84 +427,61 @@ public class JsonArrayTest {
   public void testAddEnum() {
     assertSame(jsonArray, jsonArray.add(JsonObjectTest.SomeEnum.FOO));
     assertEquals(JsonObjectTest.SomeEnum.FOO.toString(), jsonArray.getString(0));
-    try {
-      jsonArray.add((JsonObjectTest.SomeEnum)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((JsonObjectTest.SomeEnum)null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
   public void testAddString() {
     assertSame(jsonArray, jsonArray.add("foo"));
     assertEquals("foo", jsonArray.getString(0));
-    try {
-      jsonArray.add((String)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((String)null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
   public void testAddCharSequence() {
     assertSame(jsonArray, jsonArray.add(new StringBuilder("bar")));
     assertEquals("bar", jsonArray.getString(0));
-    try {
-      jsonArray.add((CharSequence) null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((CharSequence) null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
   public void testAddInteger() {
     assertSame(jsonArray, jsonArray.add(123));
     assertEquals(Integer.valueOf(123), jsonArray.getInteger(0));
-    try {
-      jsonArray.add((Integer)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((Integer)null);
   }
 
   @Test
   public void testAddLong() {
     assertSame(jsonArray, jsonArray.add(123l));
     assertEquals(Long.valueOf(123l), jsonArray.getLong(0));
-    try {
-      jsonArray.add((Long)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((Long)null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
   public void testAddFloat() {
     assertSame(jsonArray, jsonArray.add(123f));
     assertEquals(Float.valueOf(123f), jsonArray.getFloat(0));
-    try {
-      jsonArray.add((Float)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((Float)null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
   public void testAddDouble() {
     assertSame(jsonArray, jsonArray.add(123d));
     assertEquals(Double.valueOf(123d), jsonArray.getDouble(0));
-    try {
-      jsonArray.add((Double)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((Double)null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
@@ -513,12 +490,9 @@ public class JsonArrayTest {
     assertEquals(true, jsonArray.getBoolean(0));
     jsonArray.add(false);
     assertEquals(false, jsonArray.getBoolean(1));
-    try {
-      jsonArray.add((Boolean)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((Boolean)null);
+    assertNull(jsonArray.getValue(2));
+    assertEquals(3, jsonArray.size());
   }
 
   @Test
@@ -526,12 +500,9 @@ public class JsonArrayTest {
     JsonObject obj = new JsonObject().put("foo", "bar");
     assertSame(jsonArray, jsonArray.add(obj));
     assertEquals(obj, jsonArray.getJsonObject(0));
-    try {
-      jsonArray.add((JsonObject)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((JsonObject)null);
+    assertNull(jsonArray.getJsonObject(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
@@ -539,12 +510,9 @@ public class JsonArrayTest {
     JsonArray arr = new JsonArray().add("foo");
     assertSame(jsonArray, jsonArray.add(arr));
     assertEquals(arr, jsonArray.getJsonArray(0));
-    try {
-      jsonArray.add((JsonArray)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((JsonArray)null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
@@ -553,12 +521,9 @@ public class JsonArrayTest {
     assertSame(jsonArray, jsonArray.add(bytes));
     assertArrayEquals(bytes, jsonArray.getBinary(0));
     assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(0));
-    try {
-      jsonArray.add((byte[])null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((byte[])null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
@@ -567,12 +532,9 @@ public class JsonArrayTest {
     assertSame(jsonArray, jsonArray.add(now));
     assertEquals(now, jsonArray.getInstant(0));
     assertEquals(now.toString(), jsonArray.getValue(0));
-    try {
-      jsonArray.add((Instant)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((Instant)null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
   }
 
   @Test
@@ -631,12 +593,9 @@ public class JsonArrayTest {
     assertSame(jsonArray, jsonArray.addAll(arr));
     assertEquals(arr.getString(0), jsonArray.getString(1));
     assertEquals(arr.getInteger(1), jsonArray.getInteger(2));
-    try {
-      jsonArray.add((JsonArray)null);
-      fail();
-    } catch (NullPointerException e) {
-      // OK
-    }
+    jsonArray.add((JsonArray)null);
+    assertNull(jsonArray.getValue(3));
+    assertEquals(4, jsonArray.size());
   }
 
   @Test
