@@ -278,8 +278,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Enum value) {
-    Objects.requireNonNull(value);
-    list.add(value.name());
+    list.add(value != null ? value.name() : null);
     return this;
   }
 
@@ -290,8 +289,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(CharSequence value) {
-    Objects.requireNonNull(value);
-    list.add(value.toString());
+    list.add(value != null ? value.toString() : null);
     return this;
   }
 
@@ -302,7 +300,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(String value) {
-    Objects.requireNonNull(value);
     list.add(value);
     return this;
   }
@@ -314,7 +311,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Integer value) {
-    Objects.requireNonNull(value);
     list.add(value);
     return this;
   }
@@ -326,7 +322,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Long value) {
-    Objects.requireNonNull(value);
     list.add(value);
     return this;
   }
@@ -338,7 +333,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Double value) {
-    Objects.requireNonNull(value);
     list.add(value);
     return this;
   }
@@ -350,7 +344,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Float value) {
-    Objects.requireNonNull(value);
     list.add(value);
     return this;
   }
@@ -362,7 +355,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Boolean value) {
-    Objects.requireNonNull(value);
     list.add(value);
     return this;
   }
@@ -384,7 +376,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(JsonObject value) {
-    Objects.requireNonNull(value);
     list.add(value);
     return this;
   }
@@ -396,7 +387,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(JsonArray value) {
-    Objects.requireNonNull(value);
     list.add(value);
     return this;
   }
@@ -410,8 +400,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(byte[] value) {
-    Objects.requireNonNull(value);
-    list.add(Base64.getEncoder().encodeToString(value));
+    list.add(value != null ? Base64.getEncoder().encodeToString(value) : null);
     return this;
   }
 
@@ -424,8 +413,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Instant value) {
-    Objects.requireNonNull(value);
-    list.add(ISO_INSTANT.format(value));
+    list.add(value != null ? ISO_INSTANT.format(value) : null);
     return this;
   }
 
@@ -436,7 +424,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Object value) {
-    Objects.requireNonNull(value);
     value = Json.checkAndCopy(value, false);
     list.add(value);
     return this;
@@ -449,7 +436,6 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray addAll(JsonArray array) {
-    Objects.requireNonNull(array);
     list.addAll(array.list);
     return this;
   }
