@@ -18,6 +18,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
@@ -270,14 +271,18 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer();
-    HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+    // There might be a race between the request write and the request reset
+    // so we do it on the context thread to avoid it
+    vertx.runOnContext(v -> {
+      HttpClientRequest post = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       fail();
-    });
-    post.setChunked(true).write(TestUtils.randomBuffer(1024));
-    assertTrue(post.reset());
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      assertEquals(1, numReq.get());
-      complete();
+      });
+      post.setChunked(true).write(TestUtils.randomBuffer(1024));
+      assertTrue(post.reset());
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(1, numReq.get());
+        complete();
+      });
     });
     await();
   }
