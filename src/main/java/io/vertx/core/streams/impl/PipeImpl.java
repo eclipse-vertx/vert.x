@@ -88,6 +88,18 @@ public class PipeImpl<T> implements Pipe<T> {
     src.resume();
     result.setHandler(ar -> {
       try {
+        src.handler(null);
+      } catch (Exception ignore) {
+      }
+      try {
+        src.exceptionHandler(null);
+      } catch (Exception ignore) {
+      }
+      try {
+        src.endHandler(null);
+      } catch (Exception ignore) {
+      }
+      try {
         if (ar.succeeded()) {
           if (endOnSuccess) {
             ws.end();

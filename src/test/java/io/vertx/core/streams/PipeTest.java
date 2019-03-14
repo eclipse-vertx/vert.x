@@ -40,6 +40,9 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     src.pipeTo(dst, onSuccess(v -> {
       assertTrue(dst.isEnded());
+      assertNull(src.handler());
+      assertNull(src.exceptionHandler());
+      assertNull(src.endHandler());
       assertEquals(Arrays.asList(o1, o2, o3), emitted);
       testComplete();
     }));
