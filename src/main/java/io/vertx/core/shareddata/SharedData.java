@@ -61,8 +61,10 @@ public interface SharedData {
   <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler);
 
   /**
-   * Get the {@link AsyncMap} with the specified name. When clustered, the map is <b>NOT</b> accessible to all nodes in the cluster only the
-   * instance which created the map can put and retrieve data from this map.
+   * Get the {@link AsyncMap} with the specified name.
+   * <p>
+   * When clustered, the map is <b>NOT</b> accessible to all nodes in the cluster.
+   * Only the instance which created the map can put and retrieve data from this map.
    *
    * @param name the name of the map
    * @param resultHandler the map will be returned asynchronously in this handler
