@@ -11,6 +11,8 @@
 
 package io.vertx.core.shareddata;
 
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsynchronousLockTest;
@@ -20,6 +22,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -52,6 +55,38 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
   private int mod(int idx, int size) {
     int i = idx % size;
     return i < 0 ? i + size : i;
+  }
+
+  @Test
+  public void testGetLocalLock() {
+    final Vertx node1 = getVertx();
+    final Vertx node2 = getVertx();
+    assertNotSame(node1, node2);
+    AtomicInteger checkpoint = new AtomicInteger(1);
+
+    CompositeFuture.all(Future.<Lock>future(fut -> {
+      node1.sharedData().getLocalLock("lock", fut);
+    }), Future.<Lock>future(fut -> {
+      node2.sharedData().getLocalLock("lock", fut);
+    })).compose(compFuture -> {
+      Lock lockNode1 = compFuture.result().resultAt(0);
+      Lock lockNode2 = compFuture.result().resultAt(1);
+      lockNode1.release();
+
+      return Future.<Lock>future(fut -> {
+        node2.sharedData().getLocalLockWithTimeout("lock", 250, fut);
+      }).otherwise(t -> {
+        assertEquals("Acquire lock should fail", "Timed out waiting to get lock", t.getMessage());
+        checkpoint.decrementAndGet();
+        return lockNode2;
+      });
+    }).setHandler(asyncLock -> {
+      assertTrue(asyncLock.succeeded());
+      assertEquals(0, checkpoint.get());
+      asyncLock.result().release();
+      testComplete();
+    });
+    await();
   }
 
   /**
