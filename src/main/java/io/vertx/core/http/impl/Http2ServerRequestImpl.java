@@ -16,7 +16,6 @@ import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
@@ -24,8 +23,10 @@ import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpConnection;
@@ -76,6 +77,9 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private Handler<Void> endHandler;
   private boolean streamEnded;
   private boolean ended;
+
+  private Buffer body;
+  private Promise<Buffer> bodyPromise;
 
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder postRequestDecoder;
@@ -132,6 +136,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   private void notifyException(Throwable failure) {
+    Promise<Buffer> bodyPromise;
     Handler<Throwable> handler;
     InterfaceHttpData upload = null;
     synchronized (conn) {
@@ -139,12 +144,18 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       if (postRequestDecoder != null) {
         upload = postRequestDecoder.currentPartialHttpData();
       }
+      bodyPromise = this.bodyPromise;
+      this.bodyPromise = null;
+      this.body = null;
     }
     if (handler != null) {
       handler.handle(failure);
     }
     if (upload instanceof NettyFileUpload) {
       ((NettyFileUpload)upload).handleException(failure);
+    }
+    if (bodyPromise != null) {
+      bodyPromise.tryFail(failure);
     }
   }
 
@@ -189,9 +200,14 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     if (dataHandler != null) {
       dataHandler.handle(data);
     }
+    if (body != null) {
+      body.appendBuffer(data);
+    }
   }
 
   void handleEnd(MultiMap trailers) {
+    Promise<Buffer> bodyPromise;
+    Buffer body;
     Handler<Void> handler;
     synchronized (conn) {
       streamEnded = true;
@@ -220,9 +236,16 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
         }
       }
       handler = endHandler;
+      body = this.body;
+      bodyPromise = this.bodyPromise;
+      this.body = null;
+      this.bodyPromise = null;
     }
     if (handler != null) {
       handler.handle(null);
+    }
+    if (body != null) {
+      bodyPromise.tryComplete(body);
     }
   }
 
@@ -510,6 +533,15 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   @Override
   public HttpConnection connection() {
     return conn;
+  }
+
+  @Override
+  public synchronized Future<Buffer> body() {
+    if (bodyPromise == null) {
+      bodyPromise = Promise.promise();
+      body = Buffer.buffer();
+    }
+    return bodyPromise.future();
   }
 
   @Override

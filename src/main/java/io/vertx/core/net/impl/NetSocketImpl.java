@@ -23,6 +23,7 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -135,41 +136,40 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public NetSocket write(Buffer data) {
-    write(data.getByteBuf(), null);
-    return this;
+  public Future<Void> write(Buffer data) {
+    Promise<Void> promise = Promise.promise();
+    write(data, promise);
+    return promise.future();
   }
 
   @Override
-  public NetSocket write(String str) {
-    return write(str, (Handler<AsyncResult<Void>>) null);
-  }
-
-  @Override
-  public NetSocket write(String str, Handler<AsyncResult<Void>> handler) {
+  public void write(String str, Handler<AsyncResult<Void>> handler) {
     write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8), handler);
-    return this;
   }
 
   @Override
-  public NetSocket write(String str, String enc) {
-    return write(str, enc, null);
+  public Future<Void> write(String str) {
+    Promise<Void> promise = Promise.promise();
+    write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8), promise);
+    return promise.future();
   }
 
   @Override
-  public NetSocket write(String str, String enc, Handler<AsyncResult<Void>> handler) {
-    if (enc == null) {
-      write(str);
-    } else {
-      write(Unpooled.copiedBuffer(str, Charset.forName(enc)), handler);
-    }
-    return this;
+  public Future<Void> write(String str, String enc) {
+    Promise<Void> promise = Promise.promise();
+    write(Unpooled.copiedBuffer(str, Charset.forName(enc)), promise);
+    return promise.future();
   }
 
   @Override
-  public NetSocket write(Buffer message, Handler<AsyncResult<Void>> handler) {
+  public void write(String str, String enc, Handler<AsyncResult<Void>> handler) {
+    Charset cs = enc != null ? Charset.forName(enc) : CharsetUtil.UTF_8;
+    write(Unpooled.copiedBuffer(str, cs), handler);
+  }
+
+  @Override
+  public void write(Buffer message, Handler<AsyncResult<Void>> handler) {
     write(message.getByteBuf(), handler);
-    return this;
   }
 
   private void write(ByteBuf buff, Handler<AsyncResult<Void>> handler) {
@@ -240,11 +240,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.drainHandler = drainHandler;
     vertx.runOnContext(v -> callDrainHandler()); //If the channel is already drained, we want to call it immediately
     return this;
-  }
-
-  @Override
-  public NetSocket sendFile(String filename, long offset, long length) {
-    return sendFile(filename, offset, length, null);
   }
 
   @Override
@@ -334,8 +329,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public void end() {
-    close();
+  public Future<Void> end() {
+    return close();
   }
 
   @Override

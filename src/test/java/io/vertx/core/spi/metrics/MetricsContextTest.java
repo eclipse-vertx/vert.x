@@ -145,7 +145,7 @@ public class MetricsContextTest extends VertxTestBase {
     ctx.runOnContext(v1 -> {
       HttpServer server = vertx.createHttpServer().requestHandler(req -> {
         HttpServerResponse response = req.response();
-        response.setStatusCode(200).setChunked(true).write("bye").end();
+        response.setStatusCode(200).setChunked(true).end("bye");
         response.close();
       });
       server.listen(8080, "localhost", onSuccess(s -> {
@@ -171,7 +171,7 @@ public class MetricsContextTest extends VertxTestBase {
       });
     })).exceptionHandler(err -> {
       fail(err.getMessage());
-    }).setChunked(true).write(Buffer.buffer("hello")).end();
+    }).setChunked(true).end(Buffer.buffer("hello"));
     await();
   }
 
@@ -346,7 +346,7 @@ public class MetricsContextTest extends VertxTestBase {
     server.requestHandler(req -> {
       req.endHandler(buf -> {
         HttpServerResponse resp = req.response();
-        resp.setChunked(true).write(Buffer.buffer("bye")).end();
+        resp.setChunked(true).end(Buffer.buffer("bye"));
         resp.close();
       });
     });
@@ -362,7 +362,7 @@ public class MetricsContextTest extends VertxTestBase {
       HttpClient client = vertx.createHttpClient();
       checker.accept(expectedThread.get(), expectedContext.get());
       HttpClientRequest req = client.put(8080, "localhost", "/");
-      req.handler(resp -> {
+      req.setHandler(resp -> {
         executeInVanillaThread(() -> {
           client.close();
           vertx.close(v2 -> {

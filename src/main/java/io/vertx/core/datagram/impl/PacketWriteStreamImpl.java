@@ -12,9 +12,10 @@
 package io.vertx.core.datagram.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -22,7 +23,7 @@ import io.vertx.core.streams.WriteStream;
  *
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
-class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<DatagramSocket>> {
+class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<Void>> {
 
   private DatagramSocketImpl datagramSocket;
   private Handler<Throwable> exceptionHandler;
@@ -36,7 +37,7 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
   }
 
   @Override
-  public void handle(AsyncResult<DatagramSocket> event) {
+  public void handle(AsyncResult<Void> event) {
     if (event.failed() && exceptionHandler != null) {
       exceptionHandler.handle(event.cause());
     }
@@ -49,20 +50,20 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
   }
 
   @Override
-  public PacketWriteStreamImpl write(Buffer data) {
-    datagramSocket.send(data, port, host, this);
-    return this;
+  public Future<Void> write(Buffer data) {
+    Promise<Void> promise = Promise.promise();
+    write(data, promise);
+    return promise.future();
   }
 
   @Override
-  public WriteStream<Buffer> write(Buffer data, Handler<AsyncResult<Void>> handler) {
+  public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
     datagramSocket.send(data, port, host, ar -> {
       PacketWriteStreamImpl.this.handle(ar);
       if (handler != null) {
         handler.handle(ar.mapEmpty());
       }
     });
-    return this;
   }
 
   @Override
@@ -81,8 +82,10 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
   }
 
   @Override
-  public void end() {
-    datagramSocket.close();
+  public Future<Void> end() {
+    Promise<Void> promide = Promise.promise();
+    end(promide);
+    return promide.future();
   }
 
   @Override

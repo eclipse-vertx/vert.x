@@ -944,7 +944,7 @@ IMPORTANT: `XXXNow` methods cannot receive an exception handler.
 
 Instead of providing a response handler in the call to create the client request object, alternatively, you can
 not provide a handler when the request is created and set it later on the request object itself, using
-{@link io.vertx.core.http.HttpClientRequest#handler(io.vertx.core.Handler)}, for example:
+{@link io.vertx.core.http.HttpClientRequest#setHandler(io.vertx.core.Handler)}, for example:
 
 [source,$lang]
 ----

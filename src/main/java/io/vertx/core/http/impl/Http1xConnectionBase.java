@@ -26,7 +26,9 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
@@ -126,8 +128,10 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
-  public void close() {
-    close(null);
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
   }
 
   @Override
@@ -205,7 +209,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   @Override
-  public HttpConnection updateSettings(Http2Settings settings) {
+  public Future<Void> updateSettings(Http2Settings settings) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support SETTINGS");
   }
 
@@ -231,6 +235,11 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
 
   @Override
   public HttpConnection pingHandler(@Nullable Handler<Buffer> handler) {
+    throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
+  }
+
+  @Override
+  public Future<Buffer> ping(Buffer data) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
   }
 }

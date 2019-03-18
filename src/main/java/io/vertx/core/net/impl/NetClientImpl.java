@@ -21,6 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -101,6 +102,34 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     if (idleTimeout > 0) {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, idleTimeout, idleTimeoutUnit));
     }
+  }
+
+  @Override
+  public Future<NetSocket> connect(int port, String host) {
+    Promise<NetSocket> promise = Promise.promise();
+    connect(port, host, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<NetSocket> connect(int port, String host, String serverName) {
+    Promise<NetSocket> promise = Promise.promise();
+    connect(port, host, serverName, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<NetSocket> connect(SocketAddress remoteAddress) {
+    Promise<NetSocket> promise = Promise.promise();
+    connect(remoteAddress, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<NetSocket> connect(SocketAddress remoteAddress, String serverName) {
+    Promise<NetSocket> promise = Promise.promise();
+    connect(remoteAddress, serverName, promise);
+    return promise.future();
   }
 
   public synchronized NetClient connect(int port, String host, Handler<AsyncResult<NetSocket>> connectHandler) {

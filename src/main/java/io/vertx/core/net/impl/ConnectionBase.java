@@ -209,8 +209,10 @@ public abstract class ConnectionBase {
   /**
    * Close the connection
    */
-  public void close() {
-    close(null);
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
   }
 
   /**

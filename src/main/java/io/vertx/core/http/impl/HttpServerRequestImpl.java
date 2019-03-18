@@ -19,8 +19,10 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
@@ -89,6 +91,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private boolean ended;
   private long bytesRead;
   private InboundBuffer<Object> pending;
+  private Buffer body;
+  private Promise<Buffer> bodyPromise;
 
   HttpServerRequestImpl(Http1xServerConnection conn, HttpRequest request) {
     this.conn = conn;
@@ -495,6 +499,15 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return conn;
   }
 
+  @Override
+  public synchronized Future<Buffer> body() {
+    if (bodyPromise == null) {
+      bodyPromise = Promise.promise();
+      body = Buffer.buffer();
+    }
+    return bodyPromise.future();
+  }
+
   private void onData(Buffer data) {
     Handler<Buffer> handler;
     synchronized (conn) {
@@ -507,6 +520,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         }
       }
       handler = dataHandler;
+      if (body != null) {
+        body.appendBuffer(data);
+      }
     }
     if (handler != null) {
       handler.handle(data);
@@ -528,15 +544,22 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   private void onEnd() {
     Handler<Void> handler;
+    Promise<Buffer> bodyPromise;
+    Buffer body;
     synchronized (conn) {
       if (decoder != null) {
         endDecode();
       }
       handler = endHandler;
+      bodyPromise = this.bodyPromise;
+      body = this.body;
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
       handler.handle(null);
+    }
+    if (body != null) {
+      bodyPromise.tryComplete(body);
     }
   }
 
@@ -568,6 +591,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     Handler<Throwable> handler = null;
     HttpServerResponseImpl resp = null;
     InterfaceHttpData upload = null;
+    Promise<Buffer> bodyPromise;
+    Buffer body;
     synchronized (conn) {
       if (!isEnded()) {
         handler = exceptionHandler;
@@ -581,6 +606,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
         }
         resp = response;
       }
+      bodyPromise = this.bodyPromise;
+      this.bodyPromise = null;
+      this.body = null;
     }
     if (resp != null) {
       resp.handleException(t);
@@ -590,6 +618,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
     if (handler != null) {
       handler.handle(t);
+    }
+    if (bodyPromise != null) {
+      bodyPromise.tryFail(t);
     }
   }
 

@@ -562,8 +562,8 @@ public class NetExamples {
       .setKeyCertOptions(certificate.keyCertOptions())
       .setTrustOptions(certificate.trustOptions());
 
-    NetServer server = vertx.createNetServer(serverOptions)
-      .connectHandler(socket -> socket.write("Hello!").end())
+    vertx.createNetServer(serverOptions)
+      .connectHandler(socket -> socket.end(Buffer.buffer("Hello!")))
       .listen(1234, "localhost");
 
     NetClientOptions clientOptions = new NetClientOptions()

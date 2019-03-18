@@ -14,6 +14,7 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
 
@@ -92,12 +93,14 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
-  public synchronized MessageProducer<T> write(T data) {
-    return write(data, null);
+  public synchronized Future<Void> write(T data) {
+    Promise<Void> promise = Promise.promise();
+    write(data, promise);
+    return promise.future();
   }
 
   @Override
-  public MessageProducer<T> write(T data, Handler<AsyncResult<Void>> handler) {
+  public void write(T data, Handler<AsyncResult<Void>> handler) {
     if (send) {
       doSend(data, null, handler);
     } else {
@@ -105,7 +108,6 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
       msg.writeHandler = handler;
       bus.sendOrPubInternal(msg, options, null);
     }
-    return this;
   }
 
   @Override
@@ -136,8 +138,8 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
-  public void end() {
-    close();
+  public Future<Void> end() {
+    return close();
   }
 
   @Override
@@ -146,8 +148,10 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
-  public void close() {
-    close(null);
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
   }
 
   @Override

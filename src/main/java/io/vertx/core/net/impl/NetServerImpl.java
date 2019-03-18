@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -291,18 +290,24 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     return;
   }
 
-  public synchronized void close() {
-    close(null);
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
   }
 
   @Override
-  public NetServer listen(int port, String host) {
-    return listen(port, host, null);
+  public Future<NetServer> listen(int port, String host) {
+    Promise<NetServer> promise = Promise.promise();
+    listen(port, host, promise);
+    return promise.future();
   }
 
   @Override
-  public NetServer listen(int port) {
-    return listen(port, "0.0.0.0", null);
+  public Future<NetServer> listen(int port) {
+    Promise<NetServer> promise = Promise.promise();
+    listen(port, "0.0.0.0", promise);
+    return promise.future();
   }
 
   @Override
@@ -311,8 +316,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   @Override
-  public NetServer listen(SocketAddress localAddress) {
-    return listen(localAddress, null);
+  public Future<NetServer> listen(SocketAddress localAddress) {
+    Promise<NetServer> promise = Promise.promise();
+    listen(localAddress, promise);
+    return promise.future();
   }
 
   @Override
@@ -326,9 +333,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   @Override
-  public NetServer listen() {
-    listen((Handler<AsyncResult<NetServer>>) null);
-    return this;
+  public Future<NetServer> listen() {
+    Promise<NetServer> promise = Promise.promise();
+    listen(promise);
+    return promise.future();
   }
 
   @Override

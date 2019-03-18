@@ -94,9 +94,6 @@ public abstract class HttpTest extends HttpTestBase {
       HttpClientRequest req = client.request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());
       assertTrue(req.setChunked(true) == req);
       assertTrue(req.sendHead() == req);
-      assertTrue(req.write("foo", "UTF-8") == req);
-      assertTrue(req.write("foo") == req);
-      assertTrue(req.write(Buffer.buffer("foo")) == req);
       testComplete();
     }));
 
@@ -479,8 +476,6 @@ public abstract class HttpTest extends HttpTestBase {
   public void testServerChaining() {
     server.requestHandler(req -> {
       assertTrue(req.response().setChunked(true) == req.response());
-      assertTrue(req.response().write("foo", "UTF-8") == req.response());
-      assertTrue(req.response().write("foo") == req.response());
       testComplete();
     });
 
@@ -495,7 +490,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testServerChainingSendFile() throws Exception {
     File file = setupFile("test-server-chaining.dat", "blah");
     server.requestHandler(req -> {
-      assertTrue(req.response().sendFile(file.getAbsolutePath()) == req.response());
+      assertTrue(req.response().sendFile(file.getAbsolutePath(), null) == req.response());
       assertTrue(req.response().ended());
       file.delete();
       testComplete();
@@ -716,7 +711,7 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> testComplete()))
           .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED)
           .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(postData.length()))
-          .write(postData).end();
+          .end(postData);
     }));
 
     await();
@@ -1273,7 +1268,9 @@ public abstract class HttpTest extends HttpTestBase {
   public void testClientExceptionHandlerCalledWhenServerTerminatesConnectionAfterPartialResponse() throws Exception {
     server.requestHandler(request -> {
       //Write partial response then close connection before completing it
-      request.response().setChunked(true).write("foo").close();
+      HttpServerResponse resp = request.response().setChunked(true);
+      resp.write("foo");
+      resp.close();
     }).listen(testAddress, onSuccess(s -> {
       // Exception handler should be called for any requests in the pipeline if connection is closed
       client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp ->
@@ -3111,7 +3108,7 @@ public abstract class HttpTest extends HttpTestBase {
         buffer.appendString("framework=" + URLEncoder.encode("vert x", "UTF-8") + "&runson=jvm", "UTF-8");
         req.headers().set("content-length", String.valueOf(buffer.length()));
         req.headers().set("content-type", "application/x-www-form-urlencoded");
-        req.write(buffer).end();
+        req.end(buffer);
       } catch (UnsupportedEncodingException e) {
         fail(e.getMessage());
       }
@@ -3155,7 +3152,7 @@ public abstract class HttpTest extends HttpTestBase {
       buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&pass+word=admin");
       req.headers().set("content-length", String.valueOf(buffer.length()));
       req.headers().set("content-type", "application/x-www-form-urlencoded");
-      req.write(buffer).end();
+      req.end(buffer);
     }));
 
     await();
@@ -3814,8 +3811,8 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(200, resp.statusCode());
       testComplete();
     })).setFollowRedirects(true)
-      .setChunked(true)
-      .write(buff1);
+      .setChunked(true);
+    req.write(buff1);
     awaitLatch(latch);
     req.end(buff2);
     await();
@@ -3879,8 +3876,8 @@ public abstract class HttpTest extends HttpTestBase {
         }
       }
     }).setFollowRedirects(true)
-      .setChunked(true)
-      .write(buff1);
+      .setChunked(true);
+    req.write(buff1);
     awaitLatch(latch);
     // Wait so we end the request while having received the server response (but we can't be notified)
     if (!expectFail) {
@@ -4052,10 +4049,9 @@ public abstract class HttpTest extends HttpTestBase {
     String baseURI = "https://localhost:8080";
     class MockReq implements HttpClientRequest {
       public HttpClientRequest exceptionHandler(Handler<Throwable> handler) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest write(Buffer data) { throw new UnsupportedOperationException(); }
+      public Future<Void> write(Buffer data) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setWriteQueueMaxSize(int maxSize) { throw new UnsupportedOperationException(); }
       public HttpClientRequest drainHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest handler(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest pause() { throw new UnsupportedOperationException(); }
       public HttpClientRequest resume() { throw new UnsupportedOperationException(); }
       public HttpClientRequest fetch(long amount) { throw new UnsupportedOperationException(); }
@@ -4077,21 +4073,21 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest write(String chunk) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest write(String chunk, String enc) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest write(Buffer data, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
+      public Future<Void> write(String chunk) { throw new UnsupportedOperationException(); }
+      public Future<Void> write(String chunk, String enc) { throw new UnsupportedOperationException(); }
+      public void write(Buffer data, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
+      public void write(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
+      public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest sendHead() { throw new UnsupportedOperationException(); }
       public HttpClientRequest sendHead(Handler<HttpVersion> completionHandler) { throw new UnsupportedOperationException(); }
-      public void end(String chunk) { throw new UnsupportedOperationException(); }
-      public void end(String chunk, String enc) { throw new UnsupportedOperationException(); }
+      public Future<Void> end(String chunk) { throw new UnsupportedOperationException(); }
+      public Future<Void> end(String chunk, String enc) { throw new UnsupportedOperationException(); }
       public void end(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public void end(Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
-      public void end() { throw new UnsupportedOperationException(); }
-      public void end(Buffer chunk) { throw new UnsupportedOperationException(); }
+      public Future<Void> end() { throw new UnsupportedOperationException(); }
+      public Future<Void> end(Buffer chunk) { throw new UnsupportedOperationException(); }
       public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
@@ -4100,8 +4096,17 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
-      @Override public HttpClientRequest setStreamPriority(StreamPriority streamPriority) { return this; }
-      @Override public StreamPriority getStreamPriority() { return null; }
+      public HttpClientRequest setStreamPriority(StreamPriority streamPriority) { return this; }
+      public StreamPriority getStreamPriority() { return null; }
+      public HttpClientRequest setHandler(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
+      public boolean isComplete() { throw new UnsupportedOperationException(); }
+      public Handler<AsyncResult<HttpClientResponse>> getHandler() { throw new UnsupportedOperationException(); }
+      public boolean tryComplete(HttpClientResponse result) { throw new UnsupportedOperationException(); }
+      public boolean tryFail(Throwable cause) { throw new UnsupportedOperationException(); }
+      public HttpClientResponse result() { throw new UnsupportedOperationException(); }
+      public Throwable cause() { throw new UnsupportedOperationException(); }
+      public boolean succeeded() { throw new UnsupportedOperationException(); }
+      public boolean failed() { throw new UnsupportedOperationException(); }
     }
     HttpClientRequest req = new MockReq();
     class MockResp implements HttpClientResponse {
@@ -4120,11 +4125,12 @@ public abstract class HttpTest extends HttpTestBase {
       public String getTrailer(String trailerName) { throw new UnsupportedOperationException(); }
       public MultiMap trailers() { throw new UnsupportedOperationException(); }
       public List<String> cookies() { throw new UnsupportedOperationException(); }
-      public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) { throw new UnsupportedOperationException(); }
       public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) { throw new UnsupportedOperationException(); }
       public NetSocket netSocket() { throw new UnsupportedOperationException(); }
       public HttpClientRequest request() { return req; }
       public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) { return this; }
+      public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) { throw new UnsupportedOperationException(); }
+      public Future<Buffer> body() { throw new UnsupportedOperationException(); }
     }
     MockResp resp = new MockResp();
     Function<HttpClientResponse, Future<HttpClientRequest>> handler = client.redirectHandler();
@@ -4538,8 +4544,7 @@ public abstract class HttpTest extends HttpTestBase {
       });
     })).exceptionHandler(this::fail)
       .putHeader("content-length", String.valueOf(length))
-      .write(expected)
-      .end();
+      .end(expected);
     await();
   }
 
@@ -5087,6 +5092,54 @@ public abstract class HttpTest extends HttpTestBase {
       });
     };
     task[0].run();
+    await();
+  }
+
+  @Test
+  public void testServerRequestBodyFuture() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1024));
+    server.requestHandler(req -> {
+      req.body(onSuccess(body -> {
+        assertEquals(expected, body);
+        req.response().end();
+      }));
+    });
+    startServer(testAddress);
+    HttpClientRequest req = client.request(
+      HttpMethod.PUT, testAddress,
+      new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI(DEFAULT_TEST_URI), onSuccess(resp -> {
+          testComplete();
+      }));
+    req.end(expected);
+    await();
+  }
+
+  @Test
+  public void testServerRequestBodyFutureFail() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1024));
+    server.requestHandler(req -> {
+      req.body(onFailure(err -> {
+        testComplete();
+      }));
+    });
+    startServer(testAddress);
+    HttpClientRequest req = client.request(
+      HttpMethod.PUT, testAddress,
+      new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI(DEFAULT_TEST_URI), ar -> {
+
+      }).setChunked(true);
+    req.connectionHandler(conn -> {
+      vertx.setTimer(100, id -> {
+        req.reset();
+      });
+    });
+    req.write(expected);
     await();
   }
 

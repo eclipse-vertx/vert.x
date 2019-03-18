@@ -10,6 +10,7 @@
  */
 package io.vertx.core.streams;
 
+import io.vertx.core.Future;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.fakestream.FakeStream;
 import org.junit.Test;
@@ -46,7 +47,10 @@ public class PipeTest extends AsyncTestBase {
       assertEquals(Arrays.asList(o1, o2, o3), emitted);
       testComplete();
     }));
-    src.write(o1).write(o2).write(o3).end();
+    src.write(o1);
+    src.write(o2);
+    src.write(o3);
+    src.end();
     await();
   }
 

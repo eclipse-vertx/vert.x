@@ -178,6 +178,7 @@ public interface Future<T> extends AsyncResult<T> {
     });
     return ret.future();
   }
+
   /**
    * Apply a {@code mapper} function on this future.<p>
    *
@@ -280,6 +281,7 @@ public interface Future<T> extends AsyncResult<T> {
     });
     return ret.future();
   }
+
   /**
    * Apply a {@code mapper} function on this future.<p>
    *

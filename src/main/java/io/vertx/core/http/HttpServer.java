@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
@@ -107,10 +108,9 @@ public interface HttpServer extends Measured {
    * <p>
    * The listen happens asynchronously and the server may not be listening until some time after the call has returned.
    *
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the listen operation result
    */
-  @Fluent
-  HttpServer listen();
+  Future<HttpServer> listen();
 
   /**
    * Tell the server to start listening. The server will listen on the port and host specified here,
@@ -121,10 +121,9 @@ public interface HttpServer extends Measured {
    * @param port  the port to listen on
    * @param host  the host to listen on
    *
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the listen operation result
    */
-  @Fluent
-  HttpServer listen(int port, String host);
+  Future<HttpServer> listen(int port, String host);
 
   /**
    * Like {@link #listen(int, String)} but supplying a handler that will be called when the server is actually
@@ -149,15 +148,19 @@ public interface HttpServer extends Measured {
   HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler);
 
   /**
+   * Like {@link #listen(SocketAddress, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpServer> listen(SocketAddress address);
+
+  /**
    * Like {@link #listen(int, String)} but the server will listen on host "0.0.0.0" and port specified here ignoring
    * any value in the {@link io.vertx.core.http.HttpServerOptions} that was used when creating the server.
    *
    * @param port  the port to listen on
    *
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the listen operation result
    */
-  @Fluent
-  HttpServer listen(int port);
+  Future<HttpServer> listen(int port);
 
   /**
    * Like {@link #listen(int)} but supplying a handler that will be called when the server is actually listening (or has failed).
@@ -180,8 +183,10 @@ public interface HttpServer extends Measured {
    * Close the server. Any open HTTP connections will be closed.
    * <p>
    * The close happens asynchronously and the server may not be closed until some time after the call has returned.
+   *
+   * @return a future completed with the result
    */
-  void close();
+  Future<Void> close();
 
   /**
    * Like {@link #close} but supplying a handler that will be called when the server is actually closed (or has failed).

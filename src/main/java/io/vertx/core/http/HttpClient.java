@@ -18,6 +18,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SocketAddress;
 
@@ -308,6 +309,15 @@ public interface HttpClient extends Measured {
   HttpClient getNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
+   * Like {@link #getNow(RequestOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> getNow(RequestOptions options) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    getNow(options, promise);
+    return promise.future();
+  }
+
+  /**
    * Sends an HTTP GET request to the server at the specified host and port, specifying a response handler to receive
    * the response
    * @param port  the port
@@ -318,6 +328,15 @@ public interface HttpClient extends Measured {
    */
   @Fluent
   HttpClient getNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #getNow(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> getNow(int port, String host, String requestURI) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    getNow(port, host, requestURI, promise);
+    return promise.future();
+  }
 
   /**
    * Sends an HTTP GET request to the server at the specified host and default port, specifying a response handler to receive
@@ -331,6 +350,15 @@ public interface HttpClient extends Measured {
   HttpClient getNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
+   * Like {@link #getNow(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> getNow(String host, String requestURI) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    getNow(host, requestURI, promise);
+    return promise.future();
+  }
+
+  /**
    * Sends an HTTP GET request  to the server at the default host and port, specifying a response handler to receive
    * the response
    * @param requestURI  the relative URI
@@ -339,6 +367,15 @@ public interface HttpClient extends Measured {
    */
   @Fluent
   HttpClient getNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #getNow(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> getNow(String requestURI) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    getNow(requestURI, promise);
+    return promise.future();
+  }
 
   /**
    * Create an HTTP POST request to send to the server with the specified options.
@@ -523,6 +560,15 @@ public interface HttpClient extends Measured {
   HttpClient headNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
+   * Like {@link #headNow(RequestOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> headNow(RequestOptions options) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    headNow(options, promise);
+    return promise.future();
+  }
+
+  /**
    * Sends an HTTP HEAD request to the server at the specified host and port, specifying a response handler to receive
    * the response
    * @param port  the port
@@ -533,6 +579,15 @@ public interface HttpClient extends Measured {
    */
   @Fluent
   HttpClient headNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #headNow(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> headNow(int port, String host, String requestURI) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    headNow(port, host, requestURI, promise);
+    return promise.future();
+  }
 
   /**
    * Sends an HTTP HEAD request to the server at the specified host and default port, specifying a response handler to receive
@@ -546,6 +601,15 @@ public interface HttpClient extends Measured {
   HttpClient headNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
+   * Like {@link #headNow(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> headNow(String host, String requestURI) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    headNow(host, requestURI, promise);
+    return promise.future();
+  }
+
+  /**
    * Sends an HTTP HEAD request  to the server at the default host and port, specifying a response handler to receive
    * the response
    * @param requestURI  the relative URI
@@ -554,6 +618,15 @@ public interface HttpClient extends Measured {
    */
   @Fluent
   HttpClient headNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #headNow(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> headNow(String requestURI) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    headNow(requestURI, promise);
+    return promise.future();
+  }
 
   /**
    * Create an HTTP OPTIONS request to send to the server with the specified options.
@@ -652,6 +725,15 @@ public interface HttpClient extends Measured {
   HttpClient optionsNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
+   * Like {@link #optionsNow(RequestOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> optionsNow(RequestOptions options) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    options(options, promise);
+    return promise.future();
+  }
+
+  /**
    * Sends an HTTP OPTIONS request to the server at the specified host and port, specifying a response handler to receive
    * the response
    * @param port  the port
@@ -662,6 +744,15 @@ public interface HttpClient extends Measured {
    */
   @Fluent
   HttpClient optionsNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #optionsNow(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> optionsNow(int port, String host, String requestURI) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    options(port, host, requestURI, promise);
+    return promise.future();
+  }
 
   /**
    * Sends an HTTP OPTIONS request to the server at the specified host and default port, specifying a response handler to receive
@@ -675,6 +766,15 @@ public interface HttpClient extends Measured {
   HttpClient optionsNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
 
   /**
+   * Like {@link #optionsNow(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> optionsNow(String host, String requestURI) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    options(host, requestURI, promise);
+    return promise.future();
+  }
+
+  /**
    * Sends an HTTP OPTIONS request  to the server at the default host and port, specifying a response handler to receive
    * the response
    * @param requestURI  the relative URI
@@ -683,6 +783,15 @@ public interface HttpClient extends Measured {
    */
   @Fluent
   HttpClient optionsNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #optionsNow(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> optionsNow(String requestURI) {
+    Promise<HttpClientResponse> promise = Promise.promise();
+    options(requestURI, promise);
+    return promise.future();
+  }
 
   /**
    * Create an HTTP PUT request to send to the server with the specified options.
@@ -866,12 +975,22 @@ public interface HttpClient extends Measured {
   void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
   /**
+   * Like {@link #webSocket(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<WebSocket> webSocket(int port, String host, String requestURI);
+
+  /**
    * Connect a WebSocket to the host and relative request URI and default port
    * @param host  the host
    * @param requestURI  the relative URI
    * @param handler  handler that will be called with the websocket when connected
    */
   void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Like {@link #webSocket(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<WebSocket> webSocket(String host, String requestURI);
 
   /**
    * Connect a WebSocket at the relative request URI using the default host and port
@@ -881,11 +1000,21 @@ public interface HttpClient extends Measured {
   void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
   /**
+   * Like {@link #webSocket(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<WebSocket> webSocket(String requestURI);
+
+  /**
    * Connect a WebSocket with the specified options.
    *
    * @param options  the request options
    */
   void webSocket(WebSocketConnectOptions options, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Like {@link #webSocket(WebSocketConnectOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<WebSocket> webSocket(WebSocketConnectOptions options);
 
   /**
    * Connect a WebSocket with the specified absolute url, with the specified headers, using
@@ -898,6 +1027,11 @@ public interface HttpClient extends Measured {
    * @param handler handler that will be called if websocket connection fails
    */
   void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Like {@link #webSocketAbs(String, MultiMap, WebsocketVersion, List, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols);
 
   /**
    * Set a connection handler for the client. This handler is called when a new connection is established.

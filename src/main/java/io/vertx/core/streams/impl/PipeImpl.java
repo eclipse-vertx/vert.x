@@ -21,8 +21,6 @@ import io.vertx.core.streams.WriteStream;
 
 public class PipeImpl<T> implements Pipe<T> {
 
-  private static final Handler<AsyncResult<Void>> NULL_HANDLER = ar -> {};
-
   private final Promise<Void> result;
   private final ReadStream<T> src;
   private boolean endOnSuccess = true;
@@ -55,11 +53,6 @@ public class PipeImpl<T> implements Pipe<T> {
     endOnSuccess = end;
     endOnFailure = end;
     return this;
-  }
-
-  @Override
-  public void to(WriteStream<T> ws) {
-    to(ws, NULL_HANDLER);
   }
 
   @Override

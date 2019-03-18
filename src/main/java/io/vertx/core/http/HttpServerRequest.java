@@ -13,6 +13,8 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -215,6 +217,24 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
     }
     return this;
   }
+
+  /**
+   * Same as {@link #body()} but with an {@code handler} called when the operation completes
+   */
+  default HttpServerRequest body(Handler<AsyncResult<Buffer>> handler) {
+    body().setHandler(handler);
+    return this;
+  }
+
+  /**
+   * Convenience method for receiving the entire request body in one piece.
+   * <p>
+   * This saves you having to manually set a dataHandler and an endHandler and append the chunks of the body until
+   * the whole body received. Don't use this if your request body is large - you could potentially run out of RAM.
+   *
+   * @return a future completed with the body result
+   */
+  Future<Buffer> body();
 
   /**
    * Get a net socket for the underlying connection of this request.

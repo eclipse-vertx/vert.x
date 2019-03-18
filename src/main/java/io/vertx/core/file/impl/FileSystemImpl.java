@@ -11,7 +11,9 @@
 
 package io.vertx.core.file.impl;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
@@ -77,9 +79,21 @@ public class FileSystemImpl implements FileSystem {
   }
 
   @Override
+  public Future<Void> copy(String from, String to) {
+    Promise<Void> promise = Promise.promise();
+    copy(from, to, promise);
+    return promise.future();
+  }
+
+  @Override
   public FileSystem copy(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
     copyInternal(from, to, options, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> copy(String from, String to, CopyOptions options) {
+    return copy(from, to, options);
   }
 
   public FileSystem copyBlocking(String from, String to) {
@@ -92,6 +106,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Void> copyRecursive(String from, String to, boolean recursive) {
+    Promise<Void> promise = Promise.promise();
+    copyRecursive(from, to, recursive, promise);
+    return promise.future();
+  }
+
   public FileSystem copyRecursiveBlocking(String from, String to, boolean recursive) {
     copyRecursiveInternal(from, to, recursive, null).perform();
     return this;
@@ -102,9 +123,23 @@ public class FileSystemImpl implements FileSystem {
   }
 
   @Override
+  public Future<Void> move(String from, String to) {
+    Promise<Void> promise = Promise.promise();
+    move(from, to, promise);
+    return promise.future();
+  }
+
+  @Override
   public FileSystem move(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
     moveInternal(from, to, options, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> move(String from, String to, CopyOptions options) {
+    Promise<Void> promise = Promise.promise();
+    move(from, to, options, promise);
+    return promise.future();
   }
 
   public FileSystem moveBlocking(String from, String to) {
@@ -117,6 +152,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Void> truncate(String path, long len) {
+    Promise<Void> promise = Promise.promise();
+    truncate(path, len, promise);
+    return promise.future();
+  }
+
   public FileSystem truncateBlocking(String path, long len) {
     truncateInternal(path, len, null).perform();
     return this;
@@ -125,6 +167,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem chmod(String path, String perms, Handler<AsyncResult<Void>> handler) {
     chmodInternal(path, perms, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> chmod(String path, String perms) {
+    Promise<Void> promise = Promise.promise();
+    chmod(path, perms, promise);
+    return promise.future();
   }
 
   public FileSystem chmodBlocking(String path, String perms) {
@@ -137,6 +186,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Void> chmodRecursive(String path, String perms, String dirPerms) {
+    Promise<Void> promise = Promise.promise();
+    chmodRecursive(path, perms, dirPerms, promise);
+    return promise.future();
+  }
+
   public FileSystem chmodRecursiveBlocking(String path, String perms, String dirPerms) {
     chmodInternal(path, perms, dirPerms, null).perform();
     return this;
@@ -145,6 +201,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem chown(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
     chownInternal(path, user, group, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> chown(String path, @Nullable String user, @Nullable String group) {
+    Promise<Void> promise = Promise.promise();
+    chown(path, user, group, promise);
+    return promise.future();
   }
 
   public FileSystem chownBlocking(String path, String user, String group) {
@@ -157,6 +220,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<FileProps> props(String path) {
+    Promise<FileProps> promise = Promise.promise();
+    props(path, promise);
+    return promise.future();
+  }
+
   public FileProps propsBlocking(String path) {
     return propsInternal(path, null).perform();
   }
@@ -166,6 +236,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<FileProps> lprops(String path) {
+    Promise<FileProps> promise = Promise.promise();
+    lprops(path, promise);
+    return promise.future();
+  }
+
   public FileProps lpropsBlocking(String path) {
     return lpropsInternal(path, null).perform();
   }
@@ -173,6 +250,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler) {
     linkInternal(link, existing, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> link(String link, String existing) {
+    Promise<Void> promise = Promise.promise();
+    link(link, existing, promise);
+    return promise.future();
   }
 
   public FileSystem linkBlocking(String link, String existing) {
@@ -185,6 +269,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Void> symlink(String link, String existing) {
+    Promise<Void> promise = Promise.promise();
+    symlink(link, existing, promise);
+    return promise.future();
+  }
+
   public FileSystem symlinkBlocking(String link, String existing) {
     symlinkInternal(link, existing, null).perform();
     return this;
@@ -193,6 +284,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem unlink(String link, Handler<AsyncResult<Void>> handler) {
     unlinkInternal(link, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> unlink(String link) {
+    Promise<Void> promise = Promise.promise();
+    unlink(link, promise);
+    return promise.future();
   }
 
   public FileSystem unlinkBlocking(String link) {
@@ -205,6 +303,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<String> readSymlink(String link) {
+    Promise<String> promise = Promise.promise();
+    readSymlink(link, promise);
+    return promise.future();
+  }
+
   public String readSymlinkBlocking(String link) {
     return readSymlinkInternal(link, null).perform();
   }
@@ -212,6 +317,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem delete(String path, Handler<AsyncResult<Void>> handler) {
     deleteInternal(path, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> delete(String path) {
+    Promise<Void> promise = Promise.promise();
+    delete(path, promise);
+    return promise.future();
   }
 
   public FileSystem deleteBlocking(String path) {
@@ -224,6 +336,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Void> deleteRecursive(String path, boolean recursive) {
+    Promise<Void> promise = Promise.promise();
+    deleteRecursive(path, recursive, promise);
+    return promise.future();
+  }
+
   public FileSystem deleteRecursiveBlocking(String path, boolean recursive) {
     deleteInternal(path, recursive, null).perform();
     return this;
@@ -232,6 +351,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem mkdir(String path, Handler<AsyncResult<Void>> handler) {
     mkdirInternal(path, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> mkdir(String path) {
+    Promise<Void> promise = Promise.promise();
+    mkdir(path, promise);
+    return promise.future();
   }
 
   public FileSystem mkdirBlocking(String path) {
@@ -244,6 +370,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Void> mkdirs(String path) {
+    Promise<Void> promise = Promise.promise();
+    mkdirs(path, promise);
+    return promise.future();
+  }
+
   public FileSystem mkdirsBlocking(String path) {
     mkdirInternal(path, true, null).perform();
     return this;
@@ -252,6 +385,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler) {
     mkdirInternal(path, perms, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> mkdir(String path, String perms) {
+    Promise<Void> promise = Promise.promise();
+    mkdir(path, perms, promise);
+    return promise.future();
   }
 
   public FileSystem mkdirBlocking(String path, String perms) {
@@ -264,6 +404,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Void> mkdirs(String path, String perms) {
+    Promise<Void> promise = Promise.promise();
+    mkdirs(path, perms, promise);
+    return promise.future();
+  }
+
   public FileSystem mkdirsBlocking(String path, String perms) {
     mkdirInternal(path, perms, true, null).perform();
     return this;
@@ -272,6 +419,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem readDir(String path, Handler<AsyncResult<List<String>>> handler) {
     readDirInternal(path, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<List<String>> readDir(String path) {
+    Promise<List<String>> promise = Promise.promise();
+    readDir(path, promise);
+    return promise.future();
   }
 
   public List<String> readDirBlocking(String path) {
@@ -283,6 +437,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<List<String>> readDir(String path, String filter) {
+    Promise<List<String>> promise = Promise.promise();
+    readDir(path, filter, promise);
+    return promise.future();
+  }
+
   public List<String> readDirBlocking(String path, String filter) {
     return readDirInternal(path, filter, null).perform();
   }
@@ -292,6 +453,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Buffer> readFile(String path) {
+    Promise<Buffer> promise = Promise.promise();
+    readFile(path, promise);
+    return promise.future();
+  }
+
   public Buffer readFileBlocking(String path) {
     return readFileInternal(path, null).perform();
   }
@@ -299,6 +467,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler) {
     writeFileInternal(path, data, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> writeFile(String path, Buffer data) {
+    Promise<Void> promise = Promise.promise();
+    writeFile(path, data, promise);
+    return promise.future();
   }
 
   public FileSystem writeFileBlocking(String path, Buffer data) {
@@ -311,6 +486,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<AsyncFile> open(String path, OpenOptions options) {
+    Promise<AsyncFile> promise = Promise.promise();
+    open(path, options, promise);
+    return promise.future();
+  }
+
   public AsyncFile openBlocking(String path, OpenOptions options) {
     return openInternal(path, options, null).perform();
   }
@@ -318,6 +500,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem createFile(String path, Handler<AsyncResult<Void>> handler) {
     createFileInternal(path, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<Void> createFile(String path) {
+    Promise<Void> promise = Promise.promise();
+    createFile(path, promise);
+    return promise.future();
   }
 
   public FileSystem createFileBlocking(String path) {
@@ -330,6 +519,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Void> createFile(String path, String perms) {
+    Promise<Void> promise = Promise.promise();
+    createFile(path, perms, promise);
+    return promise.future();
+  }
+
   public FileSystem createFileBlocking(String path, String perms) {
     createFileInternal(path, perms, null).perform();
     return this;
@@ -340,6 +536,13 @@ public class FileSystemImpl implements FileSystem {
     return this;
   }
 
+  @Override
+  public Future<Boolean> exists(String path) {
+    Promise<Boolean> promise = Promise.promise();
+    exists(path, promise);
+    return promise.future();
+  }
+
   public boolean existsBlocking(String path) {
     return existsInternal(path, null).perform();
   }
@@ -347,6 +550,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler) {
     fsPropsInternal(path, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<FileSystemProps> fsProps(String path) {
+    Promise<FileSystemProps> promise = Promise.promise();
+    fsProps(path, promise);
+    return promise.future();
   }
 
   public FileSystemProps fsPropsBlocking(String path) {
@@ -361,6 +571,13 @@ public class FileSystemImpl implements FileSystem {
   }
 
   @Override
+  public Future<String> createTempDirectory(String prefix) {
+    Promise<String> promise = Promise.promise();
+    createTempDirectory(prefix, promise);
+    return promise.future();
+  }
+
+  @Override
   public String createTempDirectoryBlocking(String prefix) {
     return createTempDirectoryInternal(null, prefix, null, null).perform();
   }
@@ -369,6 +586,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem createTempDirectory(String prefix, String perms, Handler<AsyncResult<String>> handler) {
     createTempDirectoryInternal(null, prefix, perms, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<String> createTempDirectory(String prefix, String perms) {
+    Promise<String> promise = Promise.promise();
+    createTempDirectory(prefix, perms, promise);
+    return promise.future();
   }
 
   @Override
@@ -383,6 +607,13 @@ public class FileSystemImpl implements FileSystem {
   }
 
   @Override
+  public Future<String> createTempDirectory(String dir, String prefix, String perms) {
+    Promise<String> promise = Promise.promise();
+    createTempDirectory(dir, prefix, perms, promise);
+    return promise.future();
+  }
+
+  @Override
   public String createTempDirectoryBlocking(String dir, String prefix, String perms) {
     return createTempDirectoryInternal(dir, prefix, perms, null).perform();
   }
@@ -391,6 +622,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem createTempFile(String prefix, String suffix, Handler<AsyncResult<String>> handler) {
     createTempFileInternal(null, prefix, suffix, null, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<String> createTempFile(String prefix, String suffix) {
+    Promise<String> promise = Promise.promise();
+    createTempFile(prefix, suffix, promise);
+    return promise.future();
   }
 
   @Override
@@ -405,6 +643,13 @@ public class FileSystemImpl implements FileSystem {
   }
 
   @Override
+  public Future<String> createTempFile(String prefix, String suffix, String perms) {
+    Promise<String> promise = Promise.promise();
+    createTempFile(prefix, suffix, perms, promise);
+    return promise.future();
+  }
+
+  @Override
   public String createTempFileBlocking(String prefix, String suffix, String perms) {
     return createTempFileInternal(null, prefix, suffix, perms, null).perform();
   }
@@ -414,6 +659,13 @@ public class FileSystemImpl implements FileSystem {
   public FileSystem createTempFile(String dir, String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler) {
     createTempFileInternal(dir, prefix, suffix, perms, handler).run();
     return this;
+  }
+
+  @Override
+  public Future<String> createTempFile(String dir, String prefix, String suffix, String perms) {
+    Promise<String> promise = Promise.promise();
+    createTempFile(dir, prefix, suffix, perms, promise);
+    return promise.future();
   }
 
   @Override

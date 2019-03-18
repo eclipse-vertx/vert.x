@@ -331,39 +331,41 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse write(Buffer chunk) {
+  public Future<Void> write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
-    write(buf, false, null);
-    return this;
+    Promise<Void> promise = Promise.promise();
+    write(buf, false, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpServerResponse write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+  public void write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
     ByteBuf buf = chunk.getByteBuf();
     write(buf, false, handler);
-    return this;
   }
 
   @Override
-  public HttpServerResponse write(String chunk, String enc) {
-    return write(Buffer.buffer(chunk, enc).getByteBuf());
+  public Future<Void> write(String chunk, String enc) {
+    Promise<Void> promise = Promise.promise();
+    write(chunk, enc, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpServerResponse write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+  public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
     write(Buffer.buffer(chunk, enc).getByteBuf(), false, handler);
-    return this;
   }
 
   @Override
-  public HttpServerResponse write(String chunk) {
-    return write(Buffer.buffer(chunk).getByteBuf());
+  public Future<Void> write(String chunk) {
+    Promise<Void> promise = Promise.promise();
+    write(chunk, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpServerResponse write(String chunk, Handler<AsyncResult<Void>> handler) {
+  public void write(String chunk, Handler<AsyncResult<Void>> handler) {
     write(Buffer.buffer(chunk).getByteBuf(), false, handler);
-    return this;
   }
 
   private Http2ServerResponseImpl write(ByteBuf chunk) {
@@ -372,8 +374,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end(String chunk) {
-    end(Buffer.buffer(chunk));
+  public Future<Void> end(String chunk) {
+    return end(Buffer.buffer(chunk));
   }
 
   @Override
@@ -382,8 +384,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end(String chunk, String enc) {
-    end(Buffer.buffer(chunk, enc));
+  public Future<Void> end(String chunk, String enc) {
+    return end(Buffer.buffer(chunk, enc));
   }
 
   @Override
@@ -392,8 +394,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end(Buffer chunk) {
-    end(chunk.getByteBuf(), null);
+  public Future<Void> end(Buffer chunk) {
+    Promise<Void> promose = Promise.promise();
+    end(chunk, promose);
+    return promose.future();
   }
 
   @Override
@@ -402,8 +406,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end() {
-    end((ByteBuf) null, null);
+  public Future<Void> end() {
+    Promise<Void> promise = Promise.promise();
+    end((ByteBuf) null, promise);
+    return promise.future();
   }
 
   @Override
@@ -552,11 +558,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       drainHandler = handler;
       return this;
     }
-  }
-
-  @Override
-  public HttpServerResponse sendFile(String filename, long offset, long length) {
-    return sendFile(filename, offset, length, null);
   }
 
   @Override

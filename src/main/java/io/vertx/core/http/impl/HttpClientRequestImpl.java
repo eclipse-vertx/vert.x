@@ -53,7 +53,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   private final VertxInternal vertx;
-  private final Promise<HttpClientResponse> responsePromise;
   private boolean chunked;
   private String hostHeader;
   private String rawMethod;
@@ -83,7 +82,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     this.chunked = false;
     this.vertx = vertx;
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
-    this.responsePromise = Promise.promise();
   }
 
   @Override
@@ -111,15 +109,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
     }
     return s.id();
-  }
-
-  @Override
-  public synchronized HttpClientRequest handler(Handler<AsyncResult<HttpClientResponse>> handler) {
-    if (handler != null) {
-      checkComplete();
-    }
-    responsePromise.future().setHandler(handler);
-    return this;
   }
 
   @Override
@@ -387,7 +376,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void handleNextRequest(HttpClientRequestImpl next, long timeoutMs) {
-    next.handler(responsePromise.future().getHandler());
+    next.setHandler(responsePromise.future().getHandler());
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
     next.pushHandler = pushHandler;
@@ -580,8 +569,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public void end(String chunk) {
-    end(chunk, (Handler<AsyncResult<Void>>) null);
+  public Future<Void> end(String chunk) {
+    Promise<Void> promise = Promise.promise();
+    end(chunk, promise);
+    return promise.future();
   }
 
   @Override
@@ -590,8 +581,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public void end(String chunk, String enc) {
-    end(chunk, enc, null);
+  public Future<Void> end(String chunk, String enc) {
+    Promise<Void> promise = Promise.promise();
+    end(chunk, enc, promise);
+    return promise.future();
   }
 
   @Override
@@ -601,8 +594,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public void end(Buffer chunk) {
-    write(chunk.getByteBuf(), true, null);
+  public Future<Void> end(Buffer chunk) {
+    Promise<Void> promise = Promise.promise();
+    write(chunk.getByteBuf(), true, promise);
+    return promise.future();
   }
 
   @Override
@@ -611,8 +606,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public void end() {
-    write(null, true, null);
+  public Future<Void> end() {
+    Promise<Void> promise = Promise.promise();
+    end(promise);
+    return promise.future();
   }
 
   @Override
@@ -621,38 +618,41 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public HttpClientRequest write(Buffer chunk) {
-    return write(chunk, null);
+  public Future<Void> write(Buffer chunk) {
+    Promise<Void> promise = Promise.promise();
+    write(chunk, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpClientRequest write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+  public void write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
     ByteBuf buf = chunk.getByteBuf();
     write(buf, false, handler);
-    return this;
   }
 
   @Override
-  public HttpClientRequest write(String chunk) {
-    return write(chunk, (Handler<AsyncResult<Void>>) null);
+  public Future<Void> write(String chunk) {
+    Promise<Void> promise = Promise.promise();
+    write(chunk, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler) {
+  public void write(String chunk, Handler<AsyncResult<Void>> handler) {
     write(Buffer.buffer(chunk).getByteBuf(), false, handler);
-    return this;
   }
 
   @Override
-  public HttpClientRequest write(String chunk, String enc) {
-    return write(chunk, enc, null);
+  public Future<Void> write(String chunk, String enc) {
+    Promise<Void> promise = Promise.promise();
+    write(chunk, enc, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+  public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(enc, "no null encoding accepted");
     write(Buffer.buffer(chunk, enc).getByteBuf(), false, handler);
-    return this;
   }
 
   private void write(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> h) {

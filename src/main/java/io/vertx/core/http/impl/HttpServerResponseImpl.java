@@ -21,6 +21,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -288,34 +289,39 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl write(Buffer chunk) {
-    ByteBuf buf = chunk.getByteBuf();
-    return write(buf, conn.voidPromise);
+  public Future<Void> write(Buffer chunk) {
+    Promise<Void> promise = Promise.promise();
+    write(chunk, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpServerResponse write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
-    return write(chunk.getByteBuf(), conn.toPromise(handler));
+  public void write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    write(chunk.getByteBuf(), conn.toPromise(handler));
   }
 
   @Override
-  public HttpServerResponseImpl write(String chunk, String enc) {
-    return write(Buffer.buffer(chunk, enc).getByteBuf(), conn.voidPromise);
+  public Future<Void> write(String chunk, String enc) {
+    Promise<Void> promise = Promise.promise();
+    write(chunk, enc, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpServerResponse write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    return write(Buffer.buffer(chunk, enc).getByteBuf(), conn.toPromise(handler));
+  public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    write(Buffer.buffer(chunk, enc).getByteBuf(), conn.toPromise(handler));
   }
 
   @Override
-  public HttpServerResponseImpl write(String chunk) {
-    return write(Buffer.buffer(chunk).getByteBuf(), conn.voidPromise);
+  public Future<Void> write(String chunk) {
+    Promise<Void> promise = Promise.promise();
+    write(chunk, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpServerResponse write(String chunk, Handler<AsyncResult<Void>> handler) {
-    return write(Buffer.buffer(chunk).getByteBuf(), conn.toPromise(handler));
+  public void write(String chunk, Handler<AsyncResult<Void>> handler) {
+    write(Buffer.buffer(chunk).getByteBuf(), conn.toPromise(handler));
   }
 
   @Override
@@ -325,8 +331,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end(String chunk) {
-    end(Buffer.buffer(chunk));
+  public Future<Void> end(String chunk) {
+    return end(Buffer.buffer(chunk));
   }
 
   @Override
@@ -335,8 +341,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end(String chunk, String enc) {
-    end(Buffer.buffer(chunk, enc));
+  public Future<Void> end(String chunk, String enc) {
+    return end(Buffer.buffer(chunk, enc));
   }
 
   @Override
@@ -345,8 +351,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end(Buffer chunk) {
-    end(chunk, conn.voidPromise);
+  public Future<Void> end(Buffer chunk) {
+    Promise<Void> promise = Promise.promise();
+    end(chunk, promise);
+    return promise.future();
   }
 
   @Override
@@ -401,19 +409,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void end() {
-    end(EMPTY_BUFFER);
+  public Future<Void> end() {
+    return end(EMPTY_BUFFER);
   }
 
   @Override
   public void end(Handler<AsyncResult<Void>> handler) {
     end(EMPTY_BUFFER, handler);
-  }
-
-  @Override
-  public HttpServerResponseImpl sendFile(String filename, long offset, long length) {
-    doSendFile(filename, offset, length, null);
-    return this;
   }
 
   @Override

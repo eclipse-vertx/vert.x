@@ -126,7 +126,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public void close() {
+  public Future<Void> close() {
     synchronized (conn) {
       checkClosed();
       if (status == null) {
@@ -137,7 +137,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
         }
       }
     }
-    super.close();
+    return super.close();
   }
 
   @Override

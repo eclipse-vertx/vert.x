@@ -14,6 +14,7 @@ package io.vertx.core.eventbus;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.WriteStream;
 
@@ -51,12 +52,6 @@ public interface MessageProducer<T> extends WriteStream<T> {
   MessageProducer<T> exceptionHandler(Handler<Throwable> handler);
 
   @Override
-  MessageProducer<T> write(T data);
-
-  @Fluent
-  MessageProducer<T> write(T data, Handler<AsyncResult<Void>> handler);
-
-  @Override
   MessageProducer<T> setWriteQueueMaxSize(int maxSize);
 
   @Override
@@ -78,9 +73,11 @@ public interface MessageProducer<T> extends WriteStream<T> {
 
   /**
    * Closes the producer, calls {@link #close()}
+   *
+   * @return a future completed with the result
    */
   @Override
-  void end();
+  Future<Void> end();
 
   /**
    * Closes the producer, calls {@link #close(Handler)}
@@ -90,8 +87,10 @@ public interface MessageProducer<T> extends WriteStream<T> {
 
   /**
    * Closes the producer, this method should be called when the message producer is not used anymore.
+   *
+   * @return a future completed with the result
    */
-  void close();
+  Future<Void> close();
 
   /**
    * Same as {@link #close()} but with an {@code handler} called when the operation completes

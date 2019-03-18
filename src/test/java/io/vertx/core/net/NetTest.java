@@ -903,7 +903,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testConnectInvalidConnectHandler() throws Exception {
-    assertNullPointerException(() -> client.connect(80, "localhost", null));
+    assertNullPointerException(() -> client.connect(80, "localhost", (Handler<AsyncResult<NetSocket>>) null));
   }
 
   @Test
@@ -2685,7 +2685,7 @@ public class NetTest extends VertxTestBase {
   private TestLoggerFactory testLogging() throws Exception {
 	return TestUtils.testLogging(() -> {
       server.connectHandler(so -> {
-        so.write("fizzbuzz").end();
+        so.end(Buffer.buffer("fizzbuzz"));
       });
       server.listen(testAddress, onSuccess(v1 -> {
         client.connect(testAddress, onSuccess(so -> {
@@ -3031,7 +3031,7 @@ public class NetTest extends VertxTestBase {
 
     server = vertx.createNetServer(serverOptions)
       .connectHandler(socket -> {
-        socket.write("123").end();
+        socket.end(Buffer.buffer("123"));
       })
       .listen(testAddress, onSuccess(s -> {
 
@@ -3060,7 +3060,8 @@ public class NetTest extends VertxTestBase {
   public void testWorkerClient() throws Exception {
     String expected = TestUtils.randomAlphaString(2000);
     server.connectHandler(so -> {
-      so.write(expected).close();
+      so.write(expected);
+      so.close();
     });
     startServer();
     vertx.deployVerticle(new AbstractVerticle() {
@@ -3110,7 +3111,8 @@ public class NetTest extends VertxTestBase {
       }
     }, new DeploymentOptions().setWorker(true), onSuccess(v -> {
       client.connect(testAddress, onSuccess(so -> {
-        so.write(expected).close();
+        so.write(expected);
+        so.close();
       }));
     }));
     await();
