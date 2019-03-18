@@ -700,7 +700,7 @@ public class MetricsTest extends VertxTestBase {
     awaitLatch(started);
     CountDownLatch closed = new CountDownLatch(1);
     HttpClientRequest req = client.get(8080, "localhost", "/somepath");
-    req.handler(onSuccess(resp -> {
+    req.setHandler(onSuccess(resp -> {
       resp.endHandler(v1 -> {
         HttpConnection conn = req.connection();
         conn.closeHandler(v2 -> {
@@ -783,7 +783,7 @@ public class MetricsTest extends VertxTestBase {
       client = vertx.createHttpClient();
       HttpClientRequest request = client.request(HttpMethod.CONNECT, 8080, host, "/");
       FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-      request.handler(onSuccess(resp -> {
+      request.setHandler(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         clientMetric.set(metrics.getMetric(request));
         assertNotNull(clientMetric.get());

@@ -2189,7 +2189,7 @@ public class Http1xTest extends HttpTest {
                 testComplete();
               });
             });
-          })).setChunked(true).write(Buffer.buffer("hello")).end();
+          })).setChunked(true).end(Buffer.buffer("hello"));
         }));
       }
     }, new DeploymentOptions().setWorker(true));
@@ -3733,7 +3733,8 @@ public class Http1xTest extends HttpTest {
     });
     startServer(testAddress);
     vertx.createNetClient().connect(testAddress, onSuccess(socket -> {
-      socket.write("GET / HTTP/1.1\r\n\r\n").close();
+      socket.write("GET / HTTP/1.1\r\n\r\n");
+      socket.close();
     }));
     await();
   }
@@ -3792,7 +3793,9 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testUnknownContentLengthIsSetToZeroWithHTTP_1_0() throws Exception {
     server.requestHandler(req -> {
-      req.response().write("Some-String").end();
+      HttpServerResponse resp = req.response();
+      resp.write("Some-String");
+      resp.end();
     });
     startServer(testAddress);
     client.close();
@@ -4303,7 +4306,8 @@ public class Http1xTest extends HttpTest {
     }).end(TestUtils.randomAlphaString(1024));
     HttpClientRequest req = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       testComplete();
-    }).setChunked(true).write(chunk1);
+    }).setChunked(true);
+    req.write(chunk1);
     awaitLatch(latch);
     req.end(chunk2);
     await();

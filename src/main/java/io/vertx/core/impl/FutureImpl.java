@@ -33,14 +33,14 @@ class FutureImpl<T> implements Promise<T>, Future<T> {
   /**
    * The result of the operation. This will be null if the operation failed.
    */
-  public T result() {
+  public synchronized T result() {
     return result;
   }
 
   /**
    * An exception describing failure. This will be null if the operation succeeded.
    */
-  public Throwable cause() {
+  public synchronized Throwable cause() {
     return throwable;
   }
 

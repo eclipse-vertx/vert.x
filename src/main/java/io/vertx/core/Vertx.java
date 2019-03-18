@@ -98,6 +98,15 @@ public interface Vertx extends Measured {
   }
 
   /**
+   * Same as {@link #clusteredVertx(VertxOptions, Handler)} but with an {@code handler} called when the operation completes
+   */
+  static Future<Vertx> clusteredVertx(VertxOptions options) {
+    Promise<Vertx> promise = Promise.promise();
+    factory.clusteredVertx(options, promise);
+    return promise.future();
+  }
+
+  /**
    * Gets the current context
    *
    * @return The current context or null if no current context
@@ -300,8 +309,10 @@ public interface Vertx extends Measured {
    * The instance cannot be used after it has been closed.
    * <p>
    * The actual close is asynchronous and may not complete until after the call has returned.
+   *
+   * @return a future completed with the result
    */
-  void close();
+  Future<Void> close();
 
   /**
    * Like {@link #close} but the completionHandler will be called when the close is complete
@@ -318,9 +329,10 @@ public interface Vertx extends Measured {
    * The actual deploy happens asynchronously and may not complete until after the call has returned.
    *
    * @param verticle  the verticle instance to deploy.
+   * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  void deployVerticle(Verticle verticle);
+  Future<String> deployVerticle(Verticle verticle);
 
   /**
    * Like {@link #deployVerticle(Verticle)} but the completionHandler will be notified when the deployment is complete.
@@ -342,16 +354,18 @@ public interface Vertx extends Measured {
    *
    * @param verticle  the verticle instance to deploy
    * @param options  the deployment options.
+   * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  void deployVerticle(Verticle verticle, DeploymentOptions options);
+  Future<String> deployVerticle(Verticle verticle, DeploymentOptions options);
 
   /**
    * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
    * default constructor of {@code verticleClass}.
+   * @return a future completed with the result
    */
   @GenIgnore
-  void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options);
+  Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options);
 
   /**
    * Like {@link #deployVerticle(Verticle, DeploymentOptions)} but {@link Verticle} instance is created by invoking the
@@ -361,9 +375,11 @@ public interface Vertx extends Measured {
    * It must not return the same instance twice.
    * <p>
    * Note that the supplier will be invoked on the caller thread.
+   *
+   * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
+  Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options);
 
   /**
    * Like {@link #deployVerticle(Verticle, Handler)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
@@ -403,8 +419,9 @@ public interface Vertx extends Measured {
    * For the rules on how factories are selected please consult the user manual.
    *
    * @param name  the name.
+   * @return a future completed with the result
    */
-  void deployVerticle(String name);
+  Future<String> deployVerticle(String name);
 
   /**
    * Like {@link #deployVerticle(String)} but the completionHandler will be notified when the deployment is complete.
@@ -426,8 +443,9 @@ public interface Vertx extends Measured {
    *
    * @param name  the name
    * @param options  the deployment options.
+   * @return a future completed with the result
    */
-  void deployVerticle(String name, DeploymentOptions options);
+  Future<String> deployVerticle(String name, DeploymentOptions options);
 
   /**
    * Like {@link #deployVerticle(String, Handler)} but {@link io.vertx.core.DeploymentOptions} are provided to configure the
@@ -445,8 +463,9 @@ public interface Vertx extends Measured {
    * The actual undeployment happens asynchronously and may not complete until after the method has returned.
    *
    * @param deploymentID  the deployment ID
+   * @return a future completed with the result
    */
-  void undeploy(String deploymentID);
+  Future<Void> undeploy(String deploymentID);
 
   /**
    * Like {@link #undeploy(String) } but the completionHandler will be notified when the undeployment is complete.
@@ -531,6 +550,24 @@ public interface Vertx extends Measured {
    * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
    */
   <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler);
+
+  /**
+   * Same as {@link #executeBlocking(Handler, boolean, Handler)} but with an {@code handler} called when the operation completes
+   */
+  default <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+    Promise<T> promise = Promise.promise();
+    executeBlocking(blockingCodeHandler, ordered, promise);
+    return promise.future();
+  }
+
+  /**
+   * Same as {@link #executeBlocking(Handler, Handler)} but with an {@code handler} called when the operation completes
+   */
+  default <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
+    Promise<T> promise = Promise.promise();
+    executeBlocking(blockingCodeHandler, promise);
+    return promise.future();
+  }
 
   /**
    * Return the Netty EventLoopGroup used by Vert.x

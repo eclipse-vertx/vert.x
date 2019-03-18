@@ -401,16 +401,7 @@ public class HTTPExamples {
         HttpClientResponse response = ar.result();
         System.out.println("Received response with status code " + response.statusCode());
       }
-    }).putHeader("content-length", "1000").putHeader("content-type", "text/plain").write(body).end();
-
-    // Or event more simply:
-
-    client.post("some-uri", ar -> {
-      if (ar.succeeded()) {
-        HttpClientResponse response = ar.result();
-        System.out.println("Received response with status code " + response.statusCode());
-      }
-    }).putHeader("content-type", "text/plain").end(body);
+    }).putHeader("content-length", "1000").putHeader("content-type", "text/plain").end(body);
 
   }
 
@@ -516,7 +507,7 @@ public class HTTPExamples {
   public void example43(HttpClient client) {
 
     HttpClientRequest request = client.post("some-uri");
-    request.handler(ar -> {
+    request.setHandler(ar -> {
       if (ar.succeeded()) {
         HttpClientResponse response = ar.result();
         System.out.println("Received response with status code " + response.statusCode());

@@ -439,7 +439,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     NetServer server = vertx.createNetServer(new NetServerOptions().setPort(1234).setHost(localhost.getHostAddress()));
     try {
       server.connectHandler(so -> {
-        so.write("hello").end();
+        so.end(Buffer.buffer("hello"));
       });
       server.listen(ar -> {
         if (ar.succeeded()) {

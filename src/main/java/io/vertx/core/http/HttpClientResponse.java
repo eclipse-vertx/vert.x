@@ -12,6 +12,8 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -120,6 +122,26 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    */
   @Fluent
   HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler);
+
+  /**
+   * Same as {@link #body()} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  default HttpClientResponse body(Handler<AsyncResult<Buffer>> handler) {
+    Future<Buffer> fut = body();
+    fut.setHandler(handler);
+    return this;
+  }
+
+  /**
+   * Convenience method for receiving the entire request body in one piece.
+   * <p>
+   * This saves you having to manually set a dataHandler and an endHandler and append the chunks of the body until
+   * the whole body received. Don't use this if your request body is large - you could potentially run out of RAM.
+   *
+   * @return a future completed with the body result
+   */
+  Future<Buffer> body();
 
   /**
    * Set an custom frame handler. The handler will get notified when the http stream receives an custom HTTP/2

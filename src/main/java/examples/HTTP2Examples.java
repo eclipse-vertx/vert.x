@@ -171,7 +171,7 @@ public class HTTP2Examples {
       System.out.println("Server pushed " + pushedRequest.path());
 
       // Set an handler for the response
-      pushedRequest.handler(pushedResponse -> {
+      pushedRequest.setHandler(pushedResponse -> {
         System.out.println("The response for the pushed request");
       });
     });

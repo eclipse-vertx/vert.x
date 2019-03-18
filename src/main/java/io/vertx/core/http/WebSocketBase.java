@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
@@ -51,12 +52,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
 
   @Override
   WebSocketBase endHandler(Handler<Void> endHandler);
-
-  @Override
-  WebSocketBase write(Buffer data);
-
-  @Fluent
-  WebSocketBase write(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
   WebSocketBase setWriteQueueMaxSize(int maxSize);
@@ -98,10 +93,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Write a WebSocket frame to the connection
    *
    * @param frame  the frame to write
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the result
    */
-  @Fluent
-  WebSocketBase writeFrame(WebSocketFrame frame);
+  Future<Void> writeFrame(WebSocketFrame frame);
 
   /**
    * Same as {@link #writeFrame(WebSocketFrame)} but with an {@code handler} called when the operation completes
@@ -113,10 +107,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Write a final WebSocket text frame to the connection
    *
    * @param text  The text to write
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the result
    */
-  @Fluent
-  WebSocketBase writeFinalTextFrame(String text);
+  Future<Void> writeFinalTextFrame(String text);
 
   /**
    * Same as {@link #writeFinalTextFrame(String, Handler)} but with an {@code handler} called when the operation completes
@@ -128,10 +121,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Write a final WebSocket binary frame to the connection
    *
    * @param data  The data to write
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the result
    */
-  @Fluent
-  WebSocketBase writeFinalBinaryFrame(Buffer data);
+  Future<Void> writeFinalBinaryFrame(Buffer data);
 
   /**
    * Same as {@link #writeFinalBinaryFrame(Buffer, Handler)} but with an {@code handler} called when the operation completes
@@ -144,10 +136,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * if it exceeds the maximum WebSocket frame size.
    *
    * @param data  the data to write
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the result
    */
-  @Fluent
-  WebSocketBase writeBinaryMessage(Buffer data);
+  Future<Void> writeBinaryMessage(Buffer data);
 
   /**
    * Same as {@link #writeBinaryMessage(Buffer)} but with an {@code handler} called when the operation completes
@@ -160,10 +151,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * if it exceeds the maximum WebSocket frame size.
    *
    * @param text  the data to write
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the result
    */
-  @Fluent
-  WebSocketBase writeTextMessage(String text);
+  Future<Void> writeTextMessage(String text);
 
   /**
    * Same as {@link #writeTextMessage(String)} but with an {@code handler} called when the operation completes
@@ -181,7 +171,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * states that the only response to a ping frame is a pong frame with identical contents.
    *
    * @param data the data to write, may be at most 125 bytes
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the result
    */
   @Fluent
   WebSocketBase writePing(Buffer data);
@@ -261,12 +251,16 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase pongHandler(@Nullable Handler<Buffer> handler);
 
   /**
+   * {@inheritDoc}
+   *
    * Calls {@link #close()}
    */
   @Override
-  void end();
+  Future<Void> end();
 
   /**
+   * {@inheritDoc}
+   *
    * Calls {@link #close(Handler)}
    */
   @Override
@@ -276,8 +270,10 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Close the WebSocket sending the default close frame.
    * <p/>
    * No more messages can be sent.
+   *
+   * @return a future completed with the result
    */
-  void close();
+  Future<Void> close();
 
   /**
    * Same as {@link #close()} but with an {@code handler} called when the operation completes
@@ -290,9 +286,10 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * <p/>
    * No more messages can be sent.
    *
-   * @param statusCode Status code
+   * @param statusCode the status code
+   * @return a future completed with the result
    */
-  void close(short statusCode);
+  Future<Void> close(short statusCode);
 
   /**
    * Same as {@link #close(short)} but with an {@code handler} called when the operation completes
@@ -305,10 +302,11 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * <p/>
    * No more messages can be sent.
    *
-   * @param statusCode Status code
+   * @param statusCode the status code
    * @param reason reason of closure
+   * @return a future completed with the result
    */
-  void close(short statusCode, @Nullable String reason);
+  Future<Void> close(short statusCode, @Nullable String reason);
 
   /**
    * Same as {@link #close(short, String)} but with an {@code handler} called when the operation completes

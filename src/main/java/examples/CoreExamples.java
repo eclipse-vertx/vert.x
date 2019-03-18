@@ -45,7 +45,7 @@ public class CoreExamples {
   }
 
   public void example3(HttpServerRequest request) {
-    request.response().putHeader("Content-Type", "text/plain").write("some text").end();
+    request.response().putHeader("Content-Type", "text/plain").end("some text");
   }
 
   public void example4(HttpServerRequest request) {

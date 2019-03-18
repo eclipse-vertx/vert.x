@@ -522,8 +522,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void close() {
-    close(null);
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
   }
 
   private void closeClusterManager(Handler<AsyncResult<Void>> completionHandler) {
@@ -605,8 +607,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle) {
-    deployVerticle(verticle, new DeploymentOptions(), null);
+  public Future<String> deployVerticle(Verticle verticle) {
+    Promise<String> promise = Promise.promise();
+    deployVerticle(verticle, new DeploymentOptions(), promise);
+    return promise.future();
   }
 
   @Override
@@ -620,24 +624,30 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void deployVerticle(Verticle verticle, DeploymentOptions options) {
-    deployVerticle(verticle, options, null);
+  public Future<String> deployVerticle(Verticle verticle, DeploymentOptions options) {
+    Promise<String> promise = Promise.promise();
+    deployVerticle(verticle, options, promise);
+    return promise.future();
   }
 
   @Override
-  public void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
+  public Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
+    Promise<String> promise = Promise.promise();
     deployVerticle(() -> {
       try {
         return verticleClass.newInstance();
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-    }, options);
+    }, options, promise);
+    return promise.future();
   }
 
   @Override
-  public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
-    deployVerticle(verticleSupplier, options, null);
+  public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
+    Promise<String> promise = Promise.promise();
+    deployVerticle(verticleSupplier, options, promise);
+    return promise.future();
   }
 
   @Override
@@ -675,13 +685,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void deployVerticle(String name) {
-    deployVerticle(name, new DeploymentOptions(), null);
+  public Future<String> deployVerticle(String name) {
+    Promise<String> promise = Promise.promise();
+    deployVerticle(name, new DeploymentOptions(), promise);
+    return promise.future();
   }
 
   @Override
-  public void deployVerticle(String name, DeploymentOptions options) {
-    deployVerticle(name, options, null);
+  public Future<String> deployVerticle(String name, DeploymentOptions options) {
+    Promise<String> promise = Promise.promise();
+    deployVerticle(name, options, promise);
+    return promise.future();
   }
 
   @Override
@@ -699,9 +713,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public void undeploy(String deploymentID) {
-    undeploy(deploymentID, res -> {
-    });
+  public Future<Void> undeploy(String deploymentID) {
+    Promise<Void> promise = Promise.promise();
+    undeploy(deploymentID, promise);
+    return promise.future();
   }
 
   @Override

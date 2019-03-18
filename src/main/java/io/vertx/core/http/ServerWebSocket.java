@@ -21,7 +21,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -57,43 +56,22 @@ public interface ServerWebSocket extends WebSocketBase {
   ServerWebSocket endHandler(Handler<Void> endHandler);
 
   @Override
-  ServerWebSocket write(Buffer data);
-
-  @Override
-  ServerWebSocket write(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  @Override
   ServerWebSocket setWriteQueueMaxSize(int maxSize);
 
   @Override
   ServerWebSocket drainHandler(Handler<Void> handler);
 
   @Override
-  ServerWebSocket writeFrame(WebSocketFrame frame);
-
-  @Override
   ServerWebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  ServerWebSocket writeFinalTextFrame(String text);
 
   @Override
   ServerWebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
-  ServerWebSocket writeFinalBinaryFrame(Buffer data);
-
-  @Override
   ServerWebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
-  ServerWebSocket writeBinaryMessage(Buffer data);
-
-  @Override
   ServerWebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  ServerWebSocket writeTextMessage(String text);
 
   @Override
   ServerWebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
@@ -192,7 +170,7 @@ public interface ServerWebSocket extends WebSocketBase {
    * is in progress.
    */
   @Override
-  void close();
+  Future<Void> close();
 
   /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is

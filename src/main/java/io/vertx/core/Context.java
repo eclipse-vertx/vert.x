@@ -138,6 +138,24 @@ public interface Context {
   <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler);
 
   /**
+   * Same as {@link #executeBlocking(Handler, boolean, Handler)} but with an {@code handler} called when the operation completes
+   */
+  default <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+    Promise<T> promise = Promise.promise();
+    executeBlocking(blockingCodeHandler, ordered, promise);
+    return promise.future();
+  }
+
+  /**
+   * Same as {@link #executeBlocking(Handler, Handler)} but with an {@code handler} called when the operation completes
+   */
+  default <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
+    Promise<T> promise = Promise.promise();
+    executeBlocking(blockingCodeHandler, promise);
+    return promise.future();
+  }
+
+  /**
    * If the context is associated with a Verticle deployment, this returns the deployment ID of that deployment.
    *
    * @return the deployment ID of the deployment or null if not a Verticle deployment

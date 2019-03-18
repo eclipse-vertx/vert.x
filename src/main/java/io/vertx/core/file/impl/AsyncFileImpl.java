@@ -117,8 +117,10 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public void close() {
-    closeInternal(null);
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    closeInternal(promise);
+    return promise.future();
   }
 
   @Override
@@ -127,8 +129,10 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public void end() {
-    close();
+  public Future<Void> end() {
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
   }
 
   @Override
@@ -150,18 +154,32 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
+  public Future<Buffer> read(Buffer buffer, int offset, long position, int length) {
+    Promise<Buffer> promise = Promise.promise();
+    read(buffer, offset, position, length, promise);
+    return promise.future();
+  }
+
+  @Override
   public AsyncFile fetch(long amount) {
     queue.fetch(amount);
     return this;
   }
 
   @Override
-  public AsyncFile write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler) {
+  public void write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(handler, "handler");
-    return doWrite(buffer, position, handler);
+    doWrite(buffer, position, handler);
   }
 
-  private synchronized AsyncFile doWrite(Buffer buffer, long position, Handler<AsyncResult<Void>> handler) {
+  @Override
+  public Future<Void> write(Buffer buffer, long position) {
+    Promise<Void> promise = Promise.promise();
+    write(buffer, position, promise);
+    return promise.future();
+  }
+
+  private synchronized void doWrite(Buffer buffer, long position, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(buffer, "buffer");
     Arguments.require(position >= 0, "position must be >= 0");
     check();
@@ -195,20 +213,20 @@ public class AsyncFileImpl implements AsyncFile {
       ByteBuffer bb = buf.nioBuffer();
       doWrite(bb, position, bb.limit(),  wrapped);
     }
-    return this;
   }
 
   @Override
-  public AsyncFile write(Buffer buffer) {
-    return write(buffer, null);
+  public Future<Void> write(Buffer buffer) {
+    Promise<Void> promise = Promise.promise();
+    write(buffer, promise);
+    return promise.future();
   }
 
   @Override
-  public synchronized AsyncFile write(Buffer buffer, Handler<AsyncResult<Void>> handler) {
+  public synchronized void write(Buffer buffer, Handler<AsyncResult<Void>> handler) {
     int length = buffer.length();
     doWrite(buffer, writePos, handler);
     writePos += length;
-    return this;
   }
 
   @Override
@@ -287,9 +305,10 @@ public class AsyncFileImpl implements AsyncFile {
 
 
   @Override
-  public AsyncFile flush() {
-    doFlush(null);
-    return this;
+  public Future<Void> flush() {
+    Promise<Void> promise = Promise.promise();
+    doFlush(promise);
+    return promise.future();
   }
 
   @Override

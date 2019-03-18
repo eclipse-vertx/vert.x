@@ -28,6 +28,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
@@ -405,10 +406,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void close() {
-    ChannelPromise promise = chctx.newPromise();
-    flush(promise);
-    promise.addListener((ChannelFutureListener) future -> shutdown(0L));
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    ChannelPromise channelPromise = toPromise(promise);
+    flush(channelPromise);
+    channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L));
+    return promise.future();
   }
 
   @Override
@@ -428,8 +431,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings) {
-    return updateSettings(settings, null);
+  public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
+    Promise<Void> promise = Promise.promise();
+    updateSettings(settings, promise);
+    return promise.future();
   }
 
   @Override
@@ -466,6 +471,13 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
         }
       }
     });
+  }
+
+  @Override
+  public Future<Buffer> ping(Buffer data) {
+    Promise<Buffer> promise = Promise.promise();
+    ping(data, promise);
+    return promise.future();
   }
 
   @Override

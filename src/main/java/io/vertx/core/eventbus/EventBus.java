@@ -15,7 +15,9 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.metrics.Measured;
 
 /**
@@ -71,6 +73,15 @@ public interface EventBus extends Measured {
   <T> EventBus request(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
+   * Like {@link #request(String, Object, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default <T> Future<Message<T>> request(String address, Object message) {
+    Promise<Message<T>> promise = Promise.promise();
+    request(address, message, promise);
+    return promise.future();
+  }
+
+  /**
    * Like {@link #request(String, Object, Handler)} but specifying {@code options} that can be used to configure the delivery.
    *
    * @param address  the address to send it to
@@ -81,6 +92,15 @@ public interface EventBus extends Measured {
    */
   @Fluent
   <T> EventBus request(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
+
+  /**
+   * Like {@link #request(String, Object, DeliveryOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default <T> Future<Message<T>> request(String address, Object message, DeliveryOptions options) {
+    Promise<Message<T>> promise = Promise.promise();
+    request(address, message, options, promise);
+    return promise.future();
+  }
 
   /**
    * Publish a message.<p>

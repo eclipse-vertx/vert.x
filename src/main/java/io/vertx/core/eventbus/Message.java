@@ -15,8 +15,10 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 
 /**
  * Represents a message that is received from the event bus in a handler.
@@ -100,6 +102,15 @@ public interface Message<T> {
   <R> void replyAndRequest(Object message, Handler<AsyncResult<Message<R>>> replyHandler);
 
   /**
+   * Like {@link #replyAndRequest(Object, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default <R> Future<Message<R>> replyAndRequest(Object message) {
+    Promise<Message<R>> promise = Promise.promise();
+    replyAndRequest(message, promise);
+    return promise.future();
+  }
+
+  /**
    * Like {@link #replyAndRequest(Object, Handler)} but specifying {@code options} that can be used
    * to configure the delivery.
    *
@@ -108,6 +119,15 @@ public interface Message<T> {
    * @param replyHandler  reply handler will be called when any reply from the recipient is received
    */
   <R> void replyAndRequest(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler);
+
+  /**
+   * Like {@link #replyAndRequest(Object, DeliveryOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default <R> Future<Message<R>> replyAndRequest(Object message, DeliveryOptions options) {
+    Promise<Message<R>> promise = Promise.promise();
+    replyAndRequest(message, options, promise);
+    return promise.future();
+  }
 
   /**
    * Signal to the sender that processing of this message failed.

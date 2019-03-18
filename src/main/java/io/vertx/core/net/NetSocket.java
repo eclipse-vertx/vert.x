@@ -13,7 +13,9 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -63,9 +65,6 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket endHandler(Handler<Void> endHandler);
 
   @Override
-  NetSocket write(Buffer data);
-
-  @Override
   NetSocket setWriteQueueMaxSize(int maxSize);
 
   @Override
@@ -86,50 +85,44 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Same as {@link #write(String)} but with an {@code handler} called when the operation completes
    */
-  @Fluent
-  NetSocket write(String str, Handler<AsyncResult<Void>> handler);
+  void write(String str, Handler<AsyncResult<Void>> handler);
 
   /**
    * Write a {@link String} to the connection, encoded in UTF-8.
    *
    * @param str  the string to write
-   * @return a reference to this, so the API can be used fluently
+   * @return a future result of the write
    */
-  @Fluent
-  NetSocket write(String str);
+  Future<Void> write(String str);
 
   /**
    * Same as {@link #write(String, String)} but with an {@code handler} called when the operation completes
    */
-  @Fluent
-  NetSocket write(String str, String enc, Handler<AsyncResult<Void>> handler);
+  void write(String str, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
    * Write a {@link String} to the connection, encoded using the encoding {@code enc}.
    *
    * @param str  the string to write
    * @param enc  the encoding to use
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the result
    */
-  @Fluent
-  NetSocket write(String str, String enc);
+  Future<Void> write(String str, String enc);
 
   /**
    * Like {@link #write(Object)} but with an {@code handler} called when the message has been written
    * or failed to be written.
    */
-  @Fluent
-  NetSocket write(Buffer message, Handler<AsyncResult<Void>> handler);
+  void write(Buffer message, Handler<AsyncResult<Void>> handler);
 
   /**
    * Tell the operating system to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
    * bypassing userspace altogether (where supported by the underlying operating system. This is a very efficient way to stream files.
    *
    * @param filename  file name of the file to send
-   * @return a reference to this, so the API can be used fluently
+   * @return a future result of the send operation
    */
-  @Fluent
-  default NetSocket sendFile(String filename) {
+  default Future<Void> sendFile(String filename) {
     return sendFile(filename, 0, Long.MAX_VALUE);
   }
 
@@ -139,10 +132,9 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    *
    * @param filename  file name of the file to send
    * @param offset offset
-   * @return a reference to this, so the API can be used fluently
+   * @return a future result of the send operation
    */
-  @Fluent
-  default NetSocket sendFile(String filename, long offset) {
+  default Future<Void> sendFile(String filename, long offset) {
     return sendFile(filename, offset, Long.MAX_VALUE);
   }
 
@@ -153,10 +145,13 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param filename  file name of the file to send
    * @param offset offset
    * @param length length
-   * @return a reference to this, so the API can be used fluently
+   * @return a future result of the send operation
    */
-  @Fluent
-  NetSocket sendFile(String filename, long offset, long length);
+  default Future<Void> sendFile(String filename, long offset, long length) {
+    Promise<Void> promise = Promise.promise();
+    sendFile(filename, offset, length, promise);
+    return promise.future();
+  }
 
   /**
    * Same as {@link #sendFile(String)} but also takes a handler that will be called when the send has completed or
@@ -212,20 +207,24 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
 
   /**
    * Calls {@link #close()}
+   *
+   * @return a future completed with the result
    */
   @Override
-  void end();
+  Future<Void> end();
 
   /**
-   * Calls {@link #end(Handler)}
+   * Calls {@link #end()}.
    */
   @Override
   void end(Handler<AsyncResult<Void>> handler);
 
   /**
    * Close the NetSocket
+   *
+   * @return a future completed with the result
    */
-  void close();
+  Future<Void> close();
 
   /**
    * Close the NetSocket and notify the {@code handler} when the operation completes.
@@ -251,6 +250,15 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket upgradeToSsl(Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #upgradeToSsl(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<Void> upgradeToSsl() {
+    Promise<Void> promise = Promise.promise();
+    upgradeToSsl(promise);
+    return promise.future();
+  }
+
+  /**
    * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
    *
    * @param serverName the server name
@@ -259,6 +267,15 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #upgradeToSsl(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<Void> upgradeToSsl(String serverName) {
+    Promise<Void> promise = Promise.promise();
+    upgradeToSsl(serverName, promise);
+    return promise.future();
+  }
 
   /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS.

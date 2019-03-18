@@ -15,7 +15,9 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.streams.impl.PipeImpl;
 
 /**
@@ -110,10 +112,12 @@ public interface ReadStream<T> extends StreamBase {
   }
 
   /**
-   * Like {@link #pipeTo(WriteStream, Handler)} but with no completion handler.
+   * Same as {@link #pipeTo(WriteStream, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default void pipeTo(WriteStream<T> dst) {
-    new PipeImpl<>(this).to(dst);
+  default Future<Void> pipeTo(WriteStream<T> dst) {
+    Promise<Void> promise = Promise.promise();
+    new PipeImpl<>(this).to(dst, promise);
+    return promise.future();
   }
 
   /**

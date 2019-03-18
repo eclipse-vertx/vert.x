@@ -88,7 +88,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
-  public DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler) {
     try {
       addListener(channel.joinGroup(InetAddress.getByName(multicastAddress)), handler);
     } catch (UnknownHostException e) {
@@ -98,7 +98,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
-  public DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<Void>> handler) {
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -115,7 +115,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
-  public DatagramSocket unlistenMulticastGroup(String multicastAddress, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket unlistenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler) {
     try {
       addListener(channel.leaveGroup(InetAddress.getByName(multicastAddress)), handler);
     } catch (UnknownHostException e) {
@@ -125,7 +125,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
-  public DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<Void>> handler) {
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -142,7 +142,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
-  public DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<Void>> handler) {
     try {
       InetAddress sourceAddress;
       if (sourceToBlock == null) {
@@ -159,7 +159,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
-  public DatagramSocket blockMulticastGroup(String multicastAddress, String sourceToBlock, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket blockMulticastGroup(String multicastAddress, String sourceToBlock, Handler<AsyncResult<Void>> handler) {
     try {
       addListener(channel.block(InetAddress.getByName(multicastAddress), InetAddress.getByName(sourceToBlock)), handler);
     } catch (UnknownHostException e) {
@@ -200,7 +200,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
           if (metrics != null && ar.succeeded()) {
             metrics.listening(local.host(), localAddress());
           }
-          handler.handle(ar);
+          handler.handle(ar.map(this));
         });
       } else {
         handler.handle(Future.failedFuture(res.cause()));
@@ -211,9 +211,9 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @SuppressWarnings("unchecked")
-  final void addListener(ChannelFuture future, Handler<AsyncResult<DatagramSocket>> handler) {
+  final void addListener(ChannelFuture future, Handler<AsyncResult<Void>> handler) {
     if (handler != null) {
-      future.addListener(new ChannelFutureListenerAdapter<>(context, this, handler));
+      future.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
     }
   }
 
@@ -254,7 +254,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
 
   @Override
   @SuppressWarnings("unchecked")
-  public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(packet, "no null packet accepted");
     Objects.requireNonNull(host, "no null host accepted");
     if (port < 0 || port > 65535) {
@@ -273,7 +273,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     return this;
   }
 
-  private void doSend(Buffer packet, InetSocketAddress addr, Handler<AsyncResult<DatagramSocket>> handler) {
+  private void doSend(Buffer packet, InetSocketAddress addr, Handler<AsyncResult<Void>> handler) {
     ChannelFuture future = channel.writeAndFlush(new DatagramPacket(packet.getByteBuf(), addr));
     addListener(future, handler);
   }
@@ -286,12 +286,12 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
-  public DatagramSocket send(String str, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket send(String str, int port, String host, Handler<AsyncResult<Void>> handler) {
     return send(Buffer.buffer(str), port, host, handler);
   }
 
   @Override
-  public DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<DatagramSocket>> handler) {
+  public DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<Void>> handler) {
     return send(Buffer.buffer(str, enc), port, host, handler);
   }
 
@@ -299,11 +299,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   public SocketAddress localAddress() {
     InetSocketAddress addr = channel.localAddress();
     return new SocketAddressImpl(addr);
-  }
-
-  @Override
-  public void close() {
-    close(null);
   }
 
   @Override
@@ -329,7 +324,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     return metrics;
   }
 
-  private void notifyException(final Handler<AsyncResult<DatagramSocket>> handler, final Throwable cause) {
+  private void notifyException(final Handler<AsyncResult<Void>> handler, final Throwable cause) {
     context.executeFromIO(v -> handler.handle(Future.failedFuture(cause)));
   }
 

@@ -43,43 +43,22 @@ public interface WebSocket extends WebSocketBase {
   WebSocket endHandler(Handler<Void> endHandler);
 
   @Override
-  WebSocket write(Buffer data);
-
-  @Override
-  WebSocket write(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  @Override
   WebSocket setWriteQueueMaxSize(int maxSize);
 
   @Override
   WebSocket drainHandler(Handler<Void> handler);
 
   @Override
-  WebSocket writeFrame(WebSocketFrame frame);
-
-  @Override
   WebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  WebSocket writeFinalTextFrame(String text);
 
   @Override
   WebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
-  WebSocket writeFinalBinaryFrame(Buffer data);
-
-  @Override
   WebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
-  WebSocket writeBinaryMessage(Buffer data);
-
-  @Override
   WebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
-
-  @Override
-  WebSocket writeTextMessage(String text);
 
   @Override
   WebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);

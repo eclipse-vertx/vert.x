@@ -14,7 +14,9 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
@@ -102,8 +104,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public void close() {
-    close(null);
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
   }
 
   @Override
@@ -112,8 +116,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public void close(short statusCode) {
-    close(statusCode, (Handler<AsyncResult<Void>>) null);
+  public Future<Void> close(short statusCode) {
+    Promise<Void> promise = Promise.promise();
+    close(statusCode, promise);
+    return promise.future();
   }
 
   @Override
@@ -122,8 +128,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public void close(short statusCode, String reason) {
-    close(statusCode, reason, null);
+  public Future<Void> close(short statusCode, String reason) {
+    Promise<Void> promise = Promise.promise();
+    close(statusCode, reason, promise);
+    return promise.future();
   }
 
   @Override
@@ -164,8 +172,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public S writeFinalTextFrame(String text) {
-    return writeFinalTextFrame(text, null);
+  public Future<Void> writeFinalTextFrame(String text) {
+    Promise<Void> promise = Promise.promise();
+    writeFinalTextFrame(text, promise);
+    return promise.future();
   }
 
   @Override
@@ -174,8 +184,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public S writeFinalBinaryFrame(Buffer data) {
-    return writeFinalBinaryFrame(data, null);
+  public Future<Void> writeFinalBinaryFrame(Buffer data) {
+    Promise<Void> promise = Promise.promise();
+    writeFinalBinaryFrame(data, promise);
+    return promise.future();
   }
 
   @Override
@@ -197,8 +209,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public S writeBinaryMessage(Buffer data) {
-    return writeBinaryMessage(data, null);
+  public Future<Void> writeBinaryMessage(Buffer data) {
+    Promise<Void> promise = Promise.promise();
+    writeBinaryMessage(data, promise);
+    return promise.future();
   }
 
   @Override
@@ -211,8 +225,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public S writeTextMessage(String text) {
-    return writeTextMessage(text, null);
+  public Future<Void> writeTextMessage(String text) {
+    Promise<Void> promise = Promise.promise();
+    writeTextMessage(text, promise);
+    return promise.future();
   }
 
   @Override
@@ -226,29 +242,32 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public S write(Buffer data) {
-    return write(data, null);
+  public Future<Void> write(Buffer data) {
+    Promise<Void> promise = Promise.promise();
+    write(data, promise);
+    return promise.future();
   }
 
   @Override
-  public S write(Buffer data, Handler<AsyncResult<Void>> handler) {
+  public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       checkClosed();
       writeFrame(WebSocketFrame.binaryFrame(data, true), handler);
-      return (S) this;
     }
   }
 
   @Override
   public S writePing(Buffer data) {
     if(data.length() > maxWebSocketFrameSize || data.length() > 125) throw new IllegalStateException("Ping cannot exceed maxWebSocketFrameSize or 125 bytes");
-    return writeFrame(WebSocketFrame.pingFrame(data));
+    writeFrame(WebSocketFrame.pingFrame(data), null);
+    return (S) this;
   }
 
   @Override
   public S writePong(Buffer data) {
     if(data.length() > maxWebSocketFrameSize || data.length() > 125) throw new IllegalStateException("Pong cannot exceed maxWebSocketFrameSize or 125 bytes");
-    return writeFrame(WebSocketFrame.pongFrame(data));
+    writeFrame(WebSocketFrame.pongFrame(data), null);
+    return (S) this;
   }
 
   /**
@@ -292,8 +311,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public S writeFrame(WebSocketFrame frame) {
-    return writeFrame(frame, null);
+  public Future<Void> writeFrame(WebSocketFrame frame) {
+    Promise<Void> promise = Promise.promise();
+    writeFrame(frame, promise);
+    return promise.future();
   }
 
   public S writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
@@ -619,8 +640,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public void end() {
-    close();
+  public Future<Void> end() {
+    return close();
   }
 
   @Override

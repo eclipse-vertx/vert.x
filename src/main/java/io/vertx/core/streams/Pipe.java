@@ -13,7 +13,9 @@ package io.vertx.core.streams;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 
 /**
  * Pipe data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
@@ -69,9 +71,13 @@ public interface Pipe<T> {
   Pipe<T> endOnComplete(boolean end);
 
   /**
-   * Like {@link #to(WriteStream, Handler)} but without a completion handler
+   * Same as {@link #to(WriteStream, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  void to(WriteStream<T> dst);
+  default Future<Void> to(WriteStream<T> dst) {
+    Promise<Void> promise = Promise.promise();
+    to(dst, promise);
+    return promise.future();
+  }
 
   /**
    * Start to pipe the elements to the destination {@code WriteStream}.

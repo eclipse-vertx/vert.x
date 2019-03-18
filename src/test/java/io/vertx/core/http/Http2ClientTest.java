@@ -695,7 +695,8 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       fail();
-    }).setChunked(true).write(Buffer.buffer("hello"));
+    }).setChunked(true);
+    req.write(Buffer.buffer("hello"));
     bufReceived.future().setHandler(ar -> {
       req.reset(10);
     });
@@ -766,7 +767,7 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals("/wibble?a=b", pushedReq.uri());
       assertEquals("/wibble", pushedReq.path());
       assertEquals("a=b", pushedReq.query());
-      pushedReq.handler(onSuccess(resp -> {
+      pushedReq.setHandler(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         Buffer content = Buffer.buffer();
         resp.handler(content::appendBuffer);
@@ -798,7 +799,7 @@ public class Http2ClientTest extends Http2TestBase {
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onFailure(resp -> {
     }));
     req.pushHandler(pushedReq -> {
-      pushedReq.handler(onSuccess(pushedResp -> {
+      pushedReq.setHandler(onSuccess(pushedResp -> {
         pushedResp.handler(buff -> {
           pushedReq.reset(Http2Error.CANCEL.code());
         });

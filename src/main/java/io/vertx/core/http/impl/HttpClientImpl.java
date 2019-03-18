@@ -175,6 +175,41 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
+  public Future<WebSocket> webSocket(int port, String host, String requestURI) {
+    Promise<WebSocket> promise = Promise.promise();
+    webSocket(port, host, requestURI, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<WebSocket> webSocket(String host, String requestURI) {
+    Promise<WebSocket> promise = Promise.promise();
+    webSocket(host, requestURI, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<WebSocket> webSocket(String requestURI) {
+    Promise<WebSocket> promise = Promise.promise();
+    webSocket(requestURI, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<WebSocket> webSocket(WebSocketConnectOptions options) {
+    Promise<WebSocket> promise = Promise.promise();
+    webSocket(options, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
+    Promise<WebSocket> promise = Promise.promise();
+    webSocketAbs(url, headers, version, subProtocols, promise);
+    return promise.future();
+  }
+
+  @Override
   public void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
     webSocket(new WebSocketConnectOptions().setURI(requestURI).setHost(host).setPort(port), handler);
   }
@@ -232,7 +267,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest requestAbs(HttpMethod method, SocketAddress serverAddress, String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
-    return requestAbs(method, serverAddress, absoluteURI).handler(responseHandler);
+    return requestAbs(method, serverAddress, absoluteURI).setHandler(responseHandler);
   }
 
   @Override
@@ -243,13 +278,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
-    return request(method, port, host, requestURI).handler(responseHandler);
+    return request(method, port, host, requestURI).setHandler(responseHandler);
   }
 
   @Override
   public HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     Objects.requireNonNull(responseHandler, "no null responseHandler accepted");
-    return request(method, serverAddress, port, host, requestURI).handler(responseHandler);
+    return request(method, serverAddress, port, host, requestURI).setHandler(responseHandler);
   }
 
   @Override
@@ -312,12 +347,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    return request(method, options).handler(responseHandler);
+    return request(method, options).setHandler(responseHandler);
   }
 
   @Override
   public HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    return request(method, serverAddress, options).handler(responseHandler);
+    return request(method, serverAddress, options).setHandler(responseHandler);
   }
 
   @Override
@@ -785,7 +820,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   private HttpClient requestNow(HttpMethod method, RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    createRequest(method, null, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null).handler(responseHandler).end();
+    createRequest(method, null, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null).setHandler(responseHandler).end();
     return this;
   }
 

@@ -13,9 +13,11 @@ package io.vertx.core.dns;
 
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.Promise;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -44,6 +46,15 @@ public interface DnsClient {
   DnsClient lookup(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
+   * Like {@link #lookup(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<@Nullable String> lookup(String name) {
+    Promise<String> promise = Promise.promise();
+    lookup(name, promise);
+    return promise.future();
+  }
+
+  /**
    * Try to lookup the A (ipv4) record for the given name. The first found will be used.
    *
    * @param name  the name to resolve
@@ -56,6 +67,15 @@ public interface DnsClient {
   DnsClient lookup4(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
+   * Like {@link #lookup4(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<@Nullable String> lookup4(String name) {
+    Promise<String> promise = Promise.promise();
+    lookup4(name, promise);
+    return promise.future();
+  }
+
+  /**
    * Try to lookup the AAAA (ipv6) record for the given name. The first found will be used.
    *
    * @param name  the name to resolve
@@ -66,6 +86,15 @@ public interface DnsClient {
    */
   @Fluent
   DnsClient lookup6(String name, Handler<AsyncResult<@Nullable String>> handler);
+
+  /**
+   * Like {@link #lookup6(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<@Nullable String> lookup6(String name) {
+    Promise<String> promise = Promise.promise();
+    lookup6(name, promise);
+    return promise.future();
+  }
 
   /**
    * Try to resolve all A (ipv4) records for the given name.
@@ -81,6 +110,15 @@ public interface DnsClient {
   DnsClient resolveA(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
+   * Like {@link #resolveA(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<List<String>> resolveA(String name) {
+    Promise<List<String>> promise = Promise.promise();
+    resolveA(name, promise);
+    return promise.future();
+  }
+
+  /**
    * Try to resolve all AAAA (ipv6) records for the given name.
    *
    * @param name  the name to resolve
@@ -94,6 +132,15 @@ public interface DnsClient {
   DnsClient resolveAAAA(String name, Handler<AsyncResult<List<String>>> handler);
 
   /**
+   * Like {@link #resolveAAAA(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<List<String>> resolveAAAA(String name) {
+    Promise<List<String>> promise = Promise.promise();
+    resolveAAAA(name, promise);
+    return promise.future();
+  }
+
+  /**
    * Try to resolve the CNAME record for the given name.
    *
    * @param name  the name to resolve the CNAME for
@@ -104,6 +151,15 @@ public interface DnsClient {
    */
   @Fluent
   DnsClient resolveCNAME(String name, Handler<AsyncResult<List<String>>> handler);
+
+  /**
+   * Like {@link #resolveCNAME(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<List<String>> resolveCNAME(String name) {
+    Promise<List<String>> promise = Promise.promise();
+    resolveCNAME(name, promise);
+    return promise.future();
+  }
 
   /**
    * Try to resolve the MX records for the given name.
@@ -119,6 +175,15 @@ public interface DnsClient {
   DnsClient resolveMX(String name, Handler<AsyncResult<List<MxRecord>>> handler);
 
   /**
+   * Like {@link #resolveMX(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<List<MxRecord>> resolveMX(String name) {
+    Promise<List<MxRecord>> promise = Promise.promise();
+    resolveMX(name, promise);
+    return promise.future();
+  }
+
+  /**
    * Try to resolve the TXT records for the given name.
    *
    * @param name  the name for which the TXT records should be resolved
@@ -129,6 +194,15 @@ public interface DnsClient {
    */
   @Fluent
   DnsClient resolveTXT(String name, Handler<AsyncResult<List<String>>> handler);
+
+  /**
+   * Like {@link #resolveTXT(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<List<String>> resolveTXT(String name) {
+    Promise<List<String>> promise = Promise.promise();
+    resolveTXT(name, promise);
+    return promise.future();
+  }
 
   /**
    * Try to resolve the PTR record for the given name.
@@ -143,6 +217,15 @@ public interface DnsClient {
   DnsClient resolvePTR(String name, Handler<AsyncResult<@Nullable String>> handler);
 
   /**
+   * Like {@link #resolvePTR(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<@Nullable String> resolvePTR(String name) {
+    Promise<String> promise = Promise.promise();
+    resolvePTR(name, promise);
+    return promise.future();
+  }
+
+  /**
    * Try to resolve the NS records for the given name.
    *
    * @param name  the name for which the NS records should be resolved
@@ -153,6 +236,15 @@ public interface DnsClient {
    */
   @Fluent
   DnsClient resolveNS(String name, Handler<AsyncResult<List<String>>> handler);
+
+  /**
+   * Like {@link #resolveNS(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<List<String>> resolveNS(String name) {
+    Promise<List<String>> promise = Promise.promise();
+    resolveNS(name, promise);
+    return promise.future();
+  }
 
   /**
    * Try to resolve the SRV records for the given name.
@@ -167,6 +259,15 @@ public interface DnsClient {
   DnsClient resolveSRV(String name, Handler<AsyncResult<List<SrvRecord>>> handler);
 
   /**
+   * Like {@link #resolveSRV(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<List<SrvRecord>> resolveSRV(String name) {
+    Promise<List<SrvRecord>> promise = Promise.promise();
+    resolveSRV(name, promise);
+    return promise.future();
+  }
+
+  /**
    * Try to do a reverse lookup of an IP address. This is basically the same as doing trying to resolve a PTR record
    * but allows you to just pass in the IP address and not a valid ptr query string.
    *
@@ -178,4 +279,13 @@ public interface DnsClient {
    */
   @Fluent
   DnsClient reverseLookup(String ipaddress, Handler<AsyncResult<@Nullable String>> handler);
+
+  /**
+   * Like {@link #reverseLookup(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<@Nullable String> reverseLookup(String ipaddress) {
+    Promise<String> promise = Promise.promise();
+    reverseLookup(ipaddress, promise);
+    return promise.future();
+  }
 }

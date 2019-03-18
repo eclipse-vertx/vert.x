@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -48,30 +49,16 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientRequest extends WriteStream<Buffer> {
+public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClientResponse> {
 
   @Override
   HttpClientRequest exceptionHandler(Handler<Throwable> handler);
-
-  /**
-   * @throws java.lang.IllegalStateException when no response handler is set
-   */
-  @Override
-  HttpClientRequest write(Buffer data);
-
-  /**
-   * Same as {@link #write(Buffer)} but with an {@code handler} called when the operation completes
-   */
-  @Fluent
-  HttpClientRequest write(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
   HttpClientRequest setWriteQueueMaxSize(int maxSize);
 
   @Override
   HttpClientRequest drainHandler(Handler<Void> handler);
-
-  HttpClientRequest handler(Handler<AsyncResult<HttpClientResponse>> handler);
 
   @Fluent
   HttpClientRequest setFollowRedirects(boolean followRedirects);
@@ -186,32 +173,31 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Write a {@link String} to the request body, encoded as UTF-8.
    *
-   * @return @return a reference to this, so the API can be used fluently
+   * @param chunk the data chunk
+   * @return a future completed with the result
    * @throws java.lang.IllegalStateException when no response handler is set
    */
-  @Fluent
-  HttpClientRequest write(String chunk);
+  Future<Void> write(String chunk);
 
   /**
    * Same as {@link #write(String)} but with an {@code handler} called when the operation completes
    */
-  @Fluent
-  HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler);
+  void write(String chunk, Handler<AsyncResult<Void>> handler);
 
   /**
    * Write a {@link String} to the request body, encoded using the encoding {@code enc}.
    *
-   * @return @return a reference to this, so the API can be used fluently
+   * @param chunk the data chunk
+   * @param enc the encoding
+   * @return a future completed with the result
    * @throws java.lang.IllegalStateException when no response handler is set
    */
-  @Fluent
-  HttpClientRequest write(String chunk, String enc);
+  Future<Void> write(String chunk, String enc);
 
   /**
    * Same as {@link #write(String,String)} but with an {@code handler} called when the operation completes
    */
-  @Fluent
-  HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler);
+  void write(String chunk, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}
@@ -249,9 +235,11 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding
    *
+   * @param chunk the data chunk
+   * @return a future completed with the result
    * @throws java.lang.IllegalStateException when no response handler is set
    */
-  void end(String chunk);
+  Future<Void> end(String chunk);
 
   /**
    * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
@@ -261,9 +249,12 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding
    *
+   * @param chunk the data chunk
+   * @param enc the encoding
+   * @return a future completed with the result
    * @throws java.lang.IllegalStateException when no response handler is set
    */
-  void end(String chunk, String enc);
+  Future<Void> end(String chunk, String enc);
 
   /**
    * Same as {@link #end(String,String)} but with an {@code handler} called when the operation completes
@@ -274,10 +265,11 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * Same as {@link #end()} but writes some data to the request body before ending. If the request is not chunked and
    * no other data has been written then the {@code Content-Length} header will be automatically set
    *
+   * @return a future completed with the result
    * @throws java.lang.IllegalStateException when no response handler is set
    */
   @Override
-  void end(Buffer chunk);
+  Future<Void> end(Buffer chunk);
 
   /**
    * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
@@ -291,10 +283,11 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * <p>
    * Once the request has ended, it cannot be used any more,
    *
+   * @return a future completed with the result
    * @throws java.lang.IllegalStateException when no response handler is set
    */
   @Override
-  void end();
+  Future<Void> end();
 
   /**
    * Same as {@link #end()} but with an {@code handler} called when the operation completes
@@ -331,7 +324,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *   <li>{@link HttpClientRequest#getHost()}</li>
    * </ul>
    *
-   * In addition the handler should call the {@link HttpClientRequest#handler} method to set an handler to
+   * In addition the handler should call the {@link HttpClientRequest#setHandler} method to set an handler to
    * process the response.<p/>
    *
    * @param handler the handler
@@ -430,4 +423,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
    */
   StreamPriority getStreamPriority();
+
+  @Override
+  HttpClientRequest setHandler(Handler<AsyncResult<HttpClientResponse>> handler);
 }

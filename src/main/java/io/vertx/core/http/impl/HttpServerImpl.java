@@ -159,8 +159,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public HttpServer listen() {
-    return listen(options.getPort(), options.getHost(), null);
+  public Future<HttpServer> listen() {
+    Promise<HttpServer> promise = Promise.promise();
+    listen(options.getPort(), options.getHost(), promise);
+    return promise.future();
   }
 
   @Override
@@ -169,13 +171,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public HttpServer listen(int port, String host) {
-    return listen(port, host, null);
+  public Future<HttpServer> listen(int port, String host) {
+    Promise<HttpServer> promise = Promise.promise();
+    listen(port, host, promise);
+    return promise.future();
   }
 
   @Override
-  public HttpServer listen(int port) {
-    return listen(port, "0.0.0.0", null);
+  public Future<HttpServer> listen(int port) {
+    Promise<HttpServer> promise = Promise.promise();
+    listen(port, "0.0.0.0", promise);
+    return promise.future();
   }
 
   @Override
@@ -185,6 +191,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
     return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
+  }
+
+  @Override
+  public Future<HttpServer> listen(SocketAddress address) {
+    Promise<HttpServer> promise = Promise.promise();
+    listen(address, promise);
+    return promise.future();
   }
 
   public synchronized HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
@@ -509,8 +522,10 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public void close() {
-    close(null);
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
   }
 
   @Override

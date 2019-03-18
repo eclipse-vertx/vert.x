@@ -2657,11 +2657,11 @@ public class Http2ServerTest extends Http2TestBase {
     client.close();
     client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
-    req.handler(onSuccess(resp -> {
+    req.setHandler(onSuccess(resp -> {
       assertEquals(HttpVersion.HTTP_2, resp.version());
       complete();
     })).exceptionHandler(this::fail).pushHandler(pushedReq -> {
-      pushedReq.handler(onSuccess(pushResp -> {
+      pushedReq.setHandler(onSuccess(pushResp -> {
         pushResp.bodyHandler(buff -> {
           assertEquals("the-pushed-response", buff.toString());
           complete();
@@ -2751,8 +2751,8 @@ public class Http2ServerTest extends Http2TestBase {
     }).putHeader("Upgrade", "h2c")
       .putHeader("Connection", "Upgrade,HTTP2-Settings")
       .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
-      .setChunked(true)
-      .write("some-data");
+      .setChunked(true);
+    request.write("some-data");
     closeRequest.thenAccept(v -> {
       request.connection().close();
     });

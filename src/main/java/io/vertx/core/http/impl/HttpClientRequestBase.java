@@ -11,7 +11,12 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientRequest;
+import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.net.SocketAddress;
 
@@ -35,6 +40,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutMs;
   private long lastDataReceived;
   protected Throwable exceptionOccurred;
+  protected final Promise<HttpClientResponse> responsePromise;
 
   HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
@@ -46,6 +52,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
     this.query = HttpUtils.parseQuery(uri);
     this.ssl = ssl;
+    this.responsePromise = Promise.promise();
   }
 
   protected abstract void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs);
@@ -156,5 +163,41 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     if (currentTimeoutTimerId != -1) {
       lastDataReceived = System.currentTimeMillis();
     }
+  }
+
+  @Override
+  public HttpClientRequest setHandler(Handler<AsyncResult<HttpClientResponse>> handler) {
+    responsePromise.future().setHandler(handler);
+    return this;
+  }
+
+  @Override
+  public boolean isComplete() {
+    return responsePromise.future().isComplete();
+  }
+
+  @Override
+  public Handler<AsyncResult<HttpClientResponse>> getHandler() {
+    return responsePromise.future().getHandler();
+  }
+
+  @Override
+  public HttpClientResponse result() {
+    return responsePromise.future().result();
+  }
+
+  @Override
+  public Throwable cause() {
+    return responsePromise.future().cause();
+  }
+
+  @Override
+  public boolean succeeded() {
+    return responsePromise.future().succeeded();
+  }
+
+  @Override
+  public boolean failed() {
+    return responsePromise.future().failed();
   }
 }

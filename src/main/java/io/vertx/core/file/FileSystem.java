@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 
@@ -54,6 +55,11 @@ public interface FileSystem {
   FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #copy(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> copy(String from, String to);
+
+  /**
    * Copy a file from the path {@code from} to path {@code to}, asynchronously.
    *
    * @param from    the path to copy from
@@ -64,6 +70,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem copy(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #copy(String, String, CopyOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> copy(String from, String to, CopyOptions options);
 
   /**
    * Blocking version of {@link #copy(String, String, Handler)}
@@ -89,6 +100,11 @@ public interface FileSystem {
   FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #copyRecursive(String, String, boolean, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> copyRecursive(String from, String to, boolean recursive);
+
+  /**
    * Blocking version of {@link #copyRecursive(String, String, boolean, Handler)}
    */
   @Fluent
@@ -108,6 +124,11 @@ public interface FileSystem {
   FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #move(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> move(String from, String to);
+
+  /**
    * Move a file from the path {@code from} to path {@code to}, asynchronously.
    *
    * @param from    the path to copy from
@@ -118,6 +139,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem move(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #move(String, String, CopyOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> move(String from, String to, CopyOptions options);
 
   /**
    * Blocking version of {@link #move(String, String, Handler)}
@@ -139,6 +165,11 @@ public interface FileSystem {
   FileSystem truncate(String path, long len, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #truncate(String, long, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> truncate(String path, long len);
+
+  /**
    * Blocking version of {@link #truncate(String, long, Handler)}
    */
   @Fluent
@@ -157,6 +188,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem chmod(String path, String perms, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #chmod(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> chmod(String path, String perms);
 
   /**
    * Blocking version of {@link #chmod(String, String, Handler) }
@@ -182,6 +218,11 @@ public interface FileSystem {
   FileSystem chmodRecursive(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #chmodRecursive(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> chmodRecursive(String path, String perms, String dirPerms);
+
+  /**
    * Blocking version of {@link #chmodRecursive(String, String, String, Handler)}
    */
   @Fluent
@@ -199,6 +240,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem chown(String path, @Nullable String user, @Nullable String group, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #chown(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> chown(String path, @Nullable String user, @Nullable String group);
 
   /**
    * Blocking version of {@link #chown(String, String, String, Handler)}
@@ -220,6 +266,11 @@ public interface FileSystem {
   FileSystem props(String path, Handler<AsyncResult<FileProps>> handler);
 
   /**
+   * Like {@link #props(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<FileProps> props(String path);
+
+  /**
    * Blocking version of {@link #props(String, Handler)}
    */
   FileProps propsBlocking(String path) ;
@@ -237,6 +288,11 @@ public interface FileSystem {
   FileSystem lprops(String path, Handler<AsyncResult<FileProps>> handler);
 
   /**
+   * Like {@link #lprops(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<FileProps> lprops(String path);
+
+  /**
    * Blocking version of {@link #lprops(String, Handler)}
    */
   FileProps lpropsBlocking(String path) ;
@@ -251,6 +307,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #link(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> link(String link, String existing);
 
   /**
    * Blocking version of {@link #link(String, String, Handler)}
@@ -270,6 +331,11 @@ public interface FileSystem {
   FileSystem symlink(String link, String existing, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #symlink(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> symlink(String link, String existing);
+
+  /**
    * Blocking version of {@link #link(String, String, Handler)}
    */
   @Fluent
@@ -284,6 +350,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem unlink(String link, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #unlink(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> unlink(String link);
 
   /**
    * Blocking version of {@link #unlink(String, Handler)}
@@ -302,6 +373,11 @@ public interface FileSystem {
   FileSystem readSymlink(String link, Handler<AsyncResult<String>> handler);
 
   /**
+   * Like {@link #readSymlink(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<String> readSymlink(String link);
+
+  /**
    * Blocking version of {@link #readSymlink(String, Handler)}
    */
   String readSymlinkBlocking(String link) ;
@@ -315,6 +391,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem delete(String path, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #delete(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> delete(String path);
 
   /**
    * Blocking version of {@link #delete(String, Handler)}
@@ -337,6 +418,11 @@ public interface FileSystem {
   FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #deleteRecursive(String, boolean, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> deleteRecursive(String path, boolean recursive);
+
+  /**
    * Blocking version of {@link #deleteRecursive(String, boolean, Handler)}
    */
   @Fluent
@@ -353,6 +439,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem mkdir(String path, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #mkdir(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> mkdir(String path);
 
   /**
    * Blocking version of {@link #mkdir(String, Handler)}
@@ -379,6 +470,11 @@ public interface FileSystem {
   FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #mkdir(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> mkdir(String path, String perms);
+
+  /**
    * Blocking version of {@link #mkdir(String, String, Handler)}
    */
   @Fluent
@@ -395,6 +491,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem mkdirs(String path, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #mkdirs(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> mkdirs(String path);
 
   /**
    * Blocking version of {@link #mkdirs(String, Handler)}
@@ -421,6 +522,11 @@ public interface FileSystem {
   FileSystem mkdirs(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #mkdirs(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> mkdirs(String path, String perms);
+
+  /**
    * Blocking version of {@link #mkdirs(String, String, Handler)}
    */
   @Fluent
@@ -437,6 +543,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem readDir(String path, Handler<AsyncResult<List<String>>> handler);
+
+  /**
+   * Like {@link #readDir(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<List<String>> readDir(String path);
 
   /**
    * Blocking version of {@link #readDir(String, Handler)}
@@ -460,6 +571,11 @@ public interface FileSystem {
   FileSystem readDir(String path, String filter, Handler<AsyncResult<List<String>>> handler);
 
   /**
+   * Like {@link #readDir(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<List<String>> readDir(String path, String filter);
+
+  /**
    * Blocking version of {@link #readDir(String, String, Handler)}
    */
   List<String> readDirBlocking(String path, String filter) ;
@@ -477,6 +593,11 @@ public interface FileSystem {
   FileSystem readFile(String path, Handler<AsyncResult<Buffer>> handler);
 
   /**
+   * Like {@link #readFile(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Buffer> readFile(String path);
+
+  /**
    * Blocking version of {@link #readFile(String, Handler)}
    */
   Buffer readFileBlocking(String path) ;
@@ -491,6 +612,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #writeFile(String, Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> writeFile(String path, Buffer data);
 
   /**
    * Blocking version of {@link #writeFile(String, Buffer, Handler)}
@@ -512,6 +638,11 @@ public interface FileSystem {
   FileSystem open(String path, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler);
 
   /**
+   * Like {@link #open(String, OpenOptions, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<AsyncFile> open(String path, OpenOptions options);
+
+  /**
    * Blocking version of {@link #open(String, io.vertx.core.file.OpenOptions, Handler)}
    */
   AsyncFile openBlocking(String path, OpenOptions options);
@@ -525,6 +656,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem createFile(String path, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #createFile(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> createFile(String path);
 
   /**
    * Blocking version of {@link #createFile(String, Handler)}
@@ -544,6 +680,11 @@ public interface FileSystem {
   FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler);
 
   /**
+   * Like {@link #createFile(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> createFile(String path, String perms);
+
+  /**
    * Blocking version of {@link #createFile(String, String, Handler)}
    */
   @Fluent
@@ -560,6 +701,11 @@ public interface FileSystem {
   FileSystem exists(String path, Handler<AsyncResult<Boolean>> handler);
 
   /**
+   * Like {@link #exists(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Boolean> exists(String path);
+
+  /**
    * Blocking version of {@link #exists(String, Handler)}
    */
   boolean existsBlocking(String path) ;
@@ -573,6 +719,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler);
+
+  /**
+   * Like {@link #fsProps(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<FileSystemProps> fsProps(String path);
 
   /**
    * Blocking version of {@link #fsProps(String, Handler)}
@@ -596,6 +747,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem createTempDirectory(String prefix, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Like {@link #createTempDirectory(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<String> createTempDirectory(String prefix);
 
   /**
    * Blocking version of {@link #createTempDirectory(String, Handler)}
@@ -625,6 +781,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem createTempDirectory(String prefix, String perms, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Like {@link #createTempDirectory(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<String> createTempDirectory(String prefix, String perms);
 
   /**
    * Blocking version of {@link #createTempDirectory(String, String, Handler)}
@@ -657,6 +818,11 @@ public interface FileSystem {
   FileSystem createTempDirectory(String dir, String prefix, String perms, Handler<AsyncResult<String>> handler);
 
   /**
+   * Like {@link #createTempDirectory(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<String> createTempDirectory(String dir, String prefix, String perms);
+
+  /**
    * Blocking version of {@link #createTempDirectory(String, String, String, Handler)}
    */
   String createTempDirectoryBlocking(String dir, String prefix, String perms);
@@ -683,6 +849,11 @@ public interface FileSystem {
   FileSystem createTempFile(String prefix, String suffix, Handler<AsyncResult<String>> handler);
 
   /**
+   * Like {@link #createTempFile(String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<String> createTempFile(String prefix, String suffix);
+
+  /**
    * Blocking version of {@link #createTempFile(String, String, Handler)}
    */
   String createTempFileBlocking(String prefix, String suffix);
@@ -706,6 +877,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem createTempFile(String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Like {@link #createTempFile(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<String> createTempFile(String prefix, String suffix, String perms);
 
   /**
    * Blocking version of {@link #createTempFile(String, String, String, Handler)}
@@ -738,6 +914,11 @@ public interface FileSystem {
    */
   @Fluent
   FileSystem createTempFile(String dir, String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler);
+
+  /**
+   * Like {@link #createTempFile(String, String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<String> createTempFile(String dir, String prefix, String suffix, String perms);
 
   /**
    * Blocking version of {@link #createTempFile(String, String, String, String, Handler)}

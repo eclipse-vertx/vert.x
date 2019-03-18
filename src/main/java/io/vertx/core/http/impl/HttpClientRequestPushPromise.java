@@ -14,9 +14,9 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.SocketAddress;
@@ -30,7 +30,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   private final Http2ClientConnection.Http2ClientStream stream;
   private final String rawMethod;
   private final MultiMap headers;
-  private final Promise<HttpClientResponse> responsePromise;
 
   public HttpClientRequestPushPromise(
       Http2ClientConnection conn,
@@ -48,7 +47,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     this.stream = new Http2ClientConnection.Http2ClientStream(conn, conn.getContext(), this, stream, false);
     this.rawMethod = rawMethod;
     this.headers = headers;
-    this.responsePromise = Promise.promise();
   }
 
   Http2ClientConnection.Http2ClientStream getStream() {
@@ -66,12 +64,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
-    return this;
-  }
-
-  @Override
-  public synchronized HttpClientRequest handler(Handler<AsyncResult<HttpClientResponse>> handler) {
-    responsePromise.future().setHandler(handler);
     return this;
   }
 
@@ -129,7 +121,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest write(Buffer data) {
+  public Future<Void> write(Buffer data) {
     throw new IllegalStateException();
   }
 
@@ -179,27 +171,27 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest write(String chunk) {
+  public Future<Void> write(String chunk) {
     throw new IllegalStateException();
   }
 
   @Override
-  public HttpClientRequest write(String chunk, String enc) {
+  public Future<Void> write(String chunk, String enc) {
     throw new IllegalStateException();
   }
 
   @Override
-  public HttpClientRequest write(Buffer data, Handler<AsyncResult<Void>> handler) {
+  public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
 
   @Override
-  public HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler) {
+  public void write(String chunk, Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
 
   @Override
-  public HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+  public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
 
@@ -219,7 +211,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public void end(String chunk) {
+  public Future<Void> end(String chunk) {
     throw new IllegalStateException();
   }
 
@@ -229,7 +221,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public void end(String chunk, String enc) {
+  public Future<Void> end(String chunk, String enc) {
     throw new IllegalStateException();
   }
 
@@ -239,7 +231,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public void end(Buffer chunk) {
+  public Future<Void> end(Buffer chunk) {
     throw new IllegalStateException();
   }
 
@@ -254,7 +246,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public void end() {
+  public Future<Void> end() {
     throw new IllegalStateException();
   }
 

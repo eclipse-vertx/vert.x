@@ -58,7 +58,9 @@ public class Http2Test extends HttpTest {
   public void testServerResponseWriteBufferFromOtherThread() throws Exception {
     server.requestHandler(req -> {
       runAsync(() -> {
-        req.response().write("hello ").end("world");
+        HttpServerResponse resp = req.response();
+        resp.write("hello ");
+        resp.end("world");
       });
     }).listen(testAddress, onSuccess(v -> {
       client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", onSuccess(resp -> {
@@ -119,7 +121,8 @@ public class Http2Test extends HttpTest {
       testComplete();
     })).setChunked(true).sendHead();
     awaitLatch(latch2); // The next write won't be buffered
-    req.write("hello ").end("world");
+    req.write("hello ");
+    req.end("world");
     await();
   }
 
@@ -656,7 +659,7 @@ public class Http2Test extends HttpTest {
     });
     request.pushHandler(pushReq -> {
       complete();
-      pushReq.handler(onSuccess(pushResp -> {
+      pushReq.setHandler(onSuccess(pushResp -> {
         assertEquals(pushStreamDependency, pushResp.request().getStreamPriority().getDependency());
         assertEquals(pushStreamWeight, pushResp.request().getStreamPriority().getWeight());
         complete();
@@ -687,7 +690,7 @@ public class Http2Test extends HttpTest {
     }));
     request.pushHandler(pushReq -> {
       complete();
-      pushReq.handler(onSuccess(pushResp -> {
+      pushReq.setHandler(onSuccess(pushResp -> {
         assertEquals(reqStreamDependency, pushResp.request().getStreamPriority().getDependency());
         assertEquals(reqStreamWeight, pushResp.request().getStreamPriority().getWeight());
         complete();

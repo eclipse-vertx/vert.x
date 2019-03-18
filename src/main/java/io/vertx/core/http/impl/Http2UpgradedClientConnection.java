@@ -66,8 +66,8 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public void close() {
-    current.close();
+  public Future<Void> close() {
+    return current.close();
   }
 
   @Override
@@ -344,7 +344,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpConnection updateSettings(Http2Settings settings) {
+  public Future<Void> updateSettings(Http2Settings settings) {
     return current.updateSettings(settings);
   }
 
@@ -366,6 +366,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   @Override
   public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
     return current.ping(data, pongHandler);
+  }
+
+  @Override
+  public Future<Buffer> ping(Buffer data) {
+    return current.ping(data);
   }
 
   @Override
