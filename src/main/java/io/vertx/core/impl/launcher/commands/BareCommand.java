@@ -13,6 +13,7 @@ package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.*;
 import io.vertx.core.cli.annotations.*;
+import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -212,17 +213,18 @@ public class BareCommand extends ClasspathHandler {
     Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
-      if (!Objects.equals(options.getClusterHost(), VertxOptions.DEFAULT_CLUSTER_HOST)) {
-        clusterHost = options.getClusterHost();
+      EventBusOptions eventBusOptions = options.getEventBusOptions();
+      if (!Objects.equals(eventBusOptions.getHost(), EventBusOptions.DEFAULT_CLUSTER_HOST)) {
+        clusterHost = eventBusOptions.getHost();
       }
-      if (options.getClusterPort() != VertxOptions.DEFAULT_CLUSTER_PORT) {
-        clusterPort = options.getClusterPort();
+      if (eventBusOptions.getPort() != EventBusOptions.DEFAULT_CLUSTER_PORT) {
+        clusterPort = eventBusOptions.getPort();
       }
-      if (!Objects.equals(options.getClusterPublicHost(), VertxOptions.DEFAULT_CLUSTER_PUBLIC_HOST)) {
-        clusterPublicHost = options.getClusterPublicHost();
+      if (!Objects.equals(eventBusOptions.getClusterPublicHost(), EventBusOptions.DEFAULT_CLUSTER_PUBLIC_HOST)) {
+        clusterPublicHost = eventBusOptions.getClusterPublicHost();
       }
-      if (options.getClusterPublicPort() != VertxOptions.DEFAULT_CLUSTER_PUBLIC_PORT) {
-        clusterPublicPort = options.getClusterPublicPort();
+      if (eventBusOptions.getClusterPublicPort() != EventBusOptions.DEFAULT_CLUSTER_PUBLIC_PORT) {
+        clusterPublicPort = eventBusOptions.getClusterPublicPort();
       }
       if (clusterHost == null) {
         clusterHost = getDefaultAddress();
@@ -236,11 +238,11 @@ public class BareCommand extends ClasspathHandler {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
 
-      options.setClustered(true)
-        .setClusterHost(clusterHost).setClusterPort(clusterPort)
+      eventBusOptions.setClustered(true)
+        .setHost(clusterHost).setPort(clusterPort)
         .setClusterPublicHost(clusterPublicHost);
       if (clusterPublicPort != -1) {
-        options.setClusterPublicPort(clusterPublicPort);
+        eventBusOptions.setClusterPublicPort(clusterPublicPort);
       }
       if (getHA()) {
         options.setHAEnabled(true);

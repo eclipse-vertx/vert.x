@@ -236,9 +236,7 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * @return the host, which can be configured from the {@link VertxOptions#setClusterHost(String)}, or using
-   * the {@code --cluster-host} command line option.
-   * @see NetServerOptions#getHost()
+   * @return the host
    */
   public String getHost() {
     return host;
@@ -511,9 +509,7 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * @return whether or not the event bus is clustered. This can be configured from the
-   * {@link VertxOptions#setClustered(boolean)} method or from the {@code --cluster} option from the command
-   * line.
+   * @return whether or not the event bus is clustered
    */
   public boolean isClustered() {
     return clustered;
@@ -573,8 +569,6 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * Get the value of cluster ping reply interval, in ms.
    * After sending a ping, if a pong is not received in this time, the node will be considered dead.
-   * <p>
-   * The value can be configured from {@link VertxOptions#setClusterPingInterval(long)}.
    *
    * @return the value of cluster ping reply interval
    */
@@ -599,8 +593,6 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * Get the value of cluster ping reply interval, in ms.
    * After sending a ping, if a pong is not received in this time, the node will be considered dead.
-   * <p>
-   * The value can be configured from {@link VertxOptions#setClusterPingReplyInterval(long)}}.
    *
    * @return the value of cluster ping reply interval
    */
@@ -623,9 +615,7 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * Get the public facing port to be used when clustering.
-   * <p>
-   * It can be configured using {@link VertxOptions#setClusterPublicHost(String)}
+   * Get the public facing host to be used when clustering.
    *
    * @return the public facing port
    */
@@ -652,8 +642,6 @@ public class EventBusOptions extends TCPSSLOptions {
 
   /**
    * Gets the public facing port to be used when clustering.
-   * <p>
-   * This can be configured from {@link VertxOptions#setClusterPublicPort(int)}.
    *
    * @return the public facing port
    */

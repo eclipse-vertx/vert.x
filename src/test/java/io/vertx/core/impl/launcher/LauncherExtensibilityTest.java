@@ -125,7 +125,7 @@ public class LauncherExtensibilityTest extends CommandTestBase {
 
       @Override
       public void beforeStartingVertx(VertxOptions options) {
-        options.setClustered(true);
+        options.getEventBusOptions().setClustered(true);
       }
 
       @Override
