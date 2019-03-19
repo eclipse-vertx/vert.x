@@ -15,10 +15,10 @@ import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.test.verticles.HAVerticle1;
-import io.vertx.test.verticles.HAVerticle2;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
+import io.vertx.test.verticles.HAVerticle1;
+import io.vertx.test.verticles.HAVerticle2;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -380,8 +380,11 @@ public class HATest extends VertxTestBase {
   }
 
   protected Vertx startVertx(String haGroup, int quorumSize, boolean ha) throws Exception {
-    VertxOptions options = new VertxOptions().setHAEnabled(ha).setClustered(true).
-      setClusterHost("localhost").setClusterManager(getClusterManager());
+    VertxOptions options = new VertxOptions()
+      .setHAEnabled(ha)
+      .setClusterManager(getClusterManager());
+    options.getEventBusOptions()
+      .setClustered(true).setHost("localhost");
     if (ha) {
       options.setQuorumSize(quorumSize);
       if (haGroup != null) {

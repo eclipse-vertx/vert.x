@@ -34,8 +34,8 @@ public class ClusteredEventBusStartFailureTest extends AsyncTestBase {
     String hostName = "zoom.zoom.zen.tld";
 
     VertxOptions options = new VertxOptions()
-      .setClusterManager(new FakeClusterManager())
-      .setClusterHost(hostName);
+      .setClusterManager(new FakeClusterManager());
+    options.getEventBusOptions().setHost(hostName);
 
     AtomicReference<AsyncResult<Vertx>> resultRef = new AtomicReference<>();
 

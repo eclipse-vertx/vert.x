@@ -14,9 +14,7 @@ Refer to the documentation of the cluster manager for further details.
 
 The event bus configuration needs to be consistent in all the cluster nodes.
 
-The {@link io.vertx.core.eventbus.EventBusOptions} also lets you specify whether or not the event bus is
-clustered, the port and host, as you would do with {@link io.vertx.core.VertxOptions#setClustered(boolean)},
- {@link io.vertx.core.VertxOptions#getClusterHost()} and {@link io.vertx.core.VertxOptions#getClusterPort()}.
+The {@link io.vertx.core.eventbus.EventBusOptions} also lets you specify whether or not the event bus is clustered, the port and host.
 
 When used in containers, you can also configure the public host and port:
 
