@@ -147,7 +147,9 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   // Make sure ping/pong works ok
   @Test
   public void testClusteredPong() throws Exception {
-    startNodes(2, new VertxOptions().setClusterPingInterval(500).setClusterPingReplyInterval(500));
+    VertxOptions options = new VertxOptions();
+    options.getEventBusOptions().setClusterPingInterval(500).setClusterPingReplyInterval(500);
+    startNodes(2, options);
     AtomicBoolean sending = new AtomicBoolean();
     MessageConsumer<String> consumer = vertices[0].eventBus().<String>consumer("foobar").handler(msg -> {
       if (!sending.get()) {

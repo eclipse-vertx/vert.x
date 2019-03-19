@@ -492,8 +492,8 @@ public class LauncherTest extends VertxTestBase {
     assertEquals(123, opts.getEventLoopPoolSize(), 0);
     assertEquals(123767667L, opts.getMaxEventLoopExecuteTime());
     assertEquals(true, opts.getMetricsOptions().isEnabled());
-    assertEquals(true, opts.isClustered());
-    assertEquals("mars", opts.getClusterPublicHost());
+    assertEquals(true, opts.getEventBusOptions().isClustered());
+    assertEquals("mars", opts.getEventBusOptions().getClusterPublicHost());
     assertEquals("somegroup", opts.getHAGroup());
     assertEquals(TimeUnit.SECONDS, opts.getMaxEventLoopExecuteTimeUnit());
   }
@@ -632,10 +632,10 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals("127.0.0.1", launcher.options.getClusterHost());
-    assertEquals(clusterPort, launcher.options.getClusterPort());
-    assertNull(launcher.options.getClusterPublicHost());
-    assertEquals(-1, launcher.options.getClusterPublicPort());
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getHost());
+    assertEquals(clusterPort, launcher.options.getEventBusOptions().getPort());
+    assertNull(launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(-1, launcher.options.getEventBusOptions().getClusterPublicPort());
   }
 
   @Test
@@ -645,10 +645,10 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster", "--cluster-host", "127.0.0.1", "--cluster-port", Integer.toString(clusterPort)};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals("127.0.0.1", launcher.options.getClusterHost());
-    assertEquals(clusterPort, launcher.options.getClusterPort());
-    assertNull(launcher.options.getClusterPublicHost());
-    assertEquals(-1, launcher.options.getClusterPublicPort());
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getHost());
+    assertEquals(clusterPort, launcher.options.getEventBusOptions().getPort());
+    assertNull(launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(-1, launcher.options.getEventBusOptions().getClusterPublicPort());
   }
 
   @Test
@@ -658,8 +658,8 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster", "--cluster-public-host", "127.0.0.1", "--cluster-public-port", Integer.toString(clusterPublicPort)};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals("127.0.0.1", launcher.options.getClusterPublicHost());
-    assertEquals(clusterPublicPort, launcher.options.getClusterPublicPort());
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(clusterPublicPort, launcher.options.getEventBusOptions().getClusterPublicPort());
   }
 
   @Test
@@ -677,10 +677,10 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals("127.0.0.1", launcher.options.getClusterHost());
-    assertEquals(newClusterPort, launcher.options.getClusterPort());
-    assertEquals("127.0.0.3", launcher.options.getClusterPublicHost());
-    assertEquals(newClusterPublicPort, launcher.options.getClusterPublicPort());
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getHost());
+    assertEquals(newClusterPort, launcher.options.getEventBusOptions().getPort());
+    assertEquals("127.0.0.3", launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(newClusterPublicPort, launcher.options.getEventBusOptions().getClusterPublicPort());
   }
 
   @Test
@@ -702,10 +702,10 @@ public class LauncherTest extends VertxTestBase {
     };
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals("127.0.0.1", launcher.options.getClusterHost());
-    assertEquals(newClusterPort, launcher.options.getClusterPort());
-    assertEquals("127.0.0.3", launcher.options.getClusterPublicHost());
-    assertEquals(newClusterPublicPort, launcher.options.getClusterPublicPort());
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getHost());
+    assertEquals(newClusterPort, launcher.options.getEventBusOptions().getPort());
+    assertEquals("127.0.0.3", launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(newClusterPublicPort, launcher.options.getEventBusOptions().getClusterPublicPort());
   }
 
   class MyLauncher extends Launcher {
@@ -751,10 +751,11 @@ public class LauncherTest extends VertxTestBase {
       beforeStartingVertxInvoked = true;
       this.options = options;
       if (clusterHost != null) {
-        options.setClusterHost(clusterHost);
-        options.setClusterPort(clusterPort);
-        options.setClusterPublicHost(clusterPublicHost);
-        options.setClusterPublicPort(clusterPublicPort);
+        options.getEventBusOptions()
+          .setHost(clusterHost)
+          .setPort(clusterPort)
+          .setClusterPublicHost(clusterPublicHost)
+          .setClusterPublicPort(clusterPublicPort);
         super.beforeStartingVertx(options);
       }
     }

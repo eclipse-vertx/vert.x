@@ -61,66 +61,66 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
-    assertFalse(options.isClustered());
-    assertEquals(options, options.setClustered(true));
-    assertTrue(options.isClustered());
-    assertEquals(0, options.getClusterPort());
-    assertEquals(options, options.setClusterPort(1234));
-    assertEquals(1234, options.getClusterPort());
+    assertFalse(options.getEventBusOptions().isClustered());
+    options.getEventBusOptions().setClustered(true);
+    assertTrue(options.getEventBusOptions().isClustered());
+    assertEquals(0, options.getEventBusOptions().getPort());
+    options.getEventBusOptions().setPort(1234);
+    assertEquals(1234, options.getEventBusOptions().getPort());
     try {
-      options.setClusterPort(-1);
+      options.getEventBusOptions().setPort(-1);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
     try {
-      options.setClusterPort(65536);
+      options.getEventBusOptions().setPort(65536);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
-    assertEquals(-1, options.getClusterPublicPort());
-    assertEquals(options, options.setClusterPublicPort(1234));
-    assertEquals(1234, options.getClusterPublicPort());
+    assertEquals(-1, options.getEventBusOptions().getClusterPublicPort());
+    options.getEventBusOptions().setClusterPublicPort(1234);
+    assertEquals(1234, options.getEventBusOptions().getClusterPublicPort());
     try {
-      options.setClusterPublicPort(-1);
+      options.getEventBusOptions().setClusterPublicPort(-1);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
     try {
-      options.setClusterPublicPort(65536);
+      options.getEventBusOptions().setClusterPublicPort(65536);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
       // OK
     }
-    assertEquals("localhost", options.getClusterHost());
+    assertEquals("localhost", options.getEventBusOptions().getHost());
     String randString = TestUtils.randomUnicodeString(100);
-    assertEquals(options, options.setClusterHost(randString));
-    assertEquals(randString, options.getClusterHost());
-    assertEquals(null, options.getClusterPublicHost());
+    options.getEventBusOptions().setHost(randString);
+    assertEquals(randString, options.getEventBusOptions().getHost());
+    assertEquals(null, options.getEventBusOptions().getClusterPublicHost());
     randString = TestUtils.randomUnicodeString(100);
-    assertEquals(options, options.setClusterPublicHost(randString));
-    assertEquals(randString, options.getClusterPublicHost());
-    assertEquals(20000, options.getClusterPingInterval());
+    options.getEventBusOptions().setClusterPublicHost(randString);
+    assertEquals(randString, options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(20000, options.getEventBusOptions().getClusterPingInterval());
     long randomLong = TestUtils.randomPositiveLong();
-    assertEquals(options, options.setClusterPingInterval(randomLong));
-    assertEquals(randomLong, options.getClusterPingInterval());
+    options.getEventBusOptions().setClusterPingInterval(randomLong);
+    assertEquals(randomLong, options.getEventBusOptions().getClusterPingInterval());
     try {
-      options.setClusterPingInterval(-1);
+      options.getEventBusOptions().setClusterPingInterval(-1);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
-      assertEquals(randomLong, options.getClusterPingInterval());
+      assertEquals(randomLong, options.getEventBusOptions().getClusterPingInterval());
     }
-    assertEquals(20000, options.getClusterPingReplyInterval());
+    assertEquals(20000, options.getEventBusOptions().getClusterPingReplyInterval());
     randomLong = TestUtils.randomPositiveLong();
-    assertEquals(options, options.setClusterPingReplyInterval(randomLong));
-    assertEquals(randomLong, options.getClusterPingReplyInterval());
+    options.getEventBusOptions().setClusterPingReplyInterval(randomLong);
+    assertEquals(randomLong, options.getEventBusOptions().getClusterPingReplyInterval());
     try {
-      options.setClusterPingReplyInterval(-1);
+      options.getEventBusOptions().setClusterPingReplyInterval(-1);
       fail("Should throw exception");
     } catch (IllegalArgumentException e) {
-      assertEquals(randomLong, options.getClusterPingReplyInterval());
+      assertEquals(randomLong, options.getEventBusOptions().getClusterPingReplyInterval());
     }
     assertEquals(1000, options.getBlockedThreadCheckInterval());
     rand = TestUtils.randomPositiveInt();
@@ -234,16 +234,16 @@ public class VertxOptionsTest extends VertxTestBase {
     TimeUnit maxWorkerExecuteTimeUnit = TimeUnit.MILLISECONDS;
     TimeUnit warningExceptionTimeUnit = TimeUnit.MINUTES;
     TimeUnit blockedThreadCheckIntervalUnit = TimeUnit.MINUTES;
-    options.setClusterPort(clusterPort);
-    options.setClusterPublicPort(clusterPublicPort);
+    options.getEventBusOptions().setPort(clusterPort);
+    options.getEventBusOptions().setClusterPublicPort(clusterPublicPort);
     options.setEventLoopPoolSize(eventLoopPoolSize);
     options.setInternalBlockingPoolSize(internalBlockingPoolSize);
     options.setWorkerPoolSize(workerPoolSize);
     options.setBlockedThreadCheckInterval(blockedThreadCheckInterval);
-    options.setClusterHost(clusterHost);
-    options.setClusterPublicHost(clusterPublicHost);
-    options.setClusterPingInterval(clusterPingInterval);
-    options.setClusterPingReplyInterval(clusterPingReplyInterval);
+    options.getEventBusOptions().setHost(clusterHost);
+    options.getEventBusOptions().setClusterPublicHost(clusterPublicHost);
+    options.getEventBusOptions().setClusterPingInterval(clusterPingInterval);
+    options.getEventBusOptions().setClusterPingReplyInterval(clusterPingReplyInterval);
     options.setMaxEventLoopExecuteTime(maxEventLoopExecuteTime);
     options.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     options.setHAEnabled(haEnabled);
@@ -259,16 +259,16 @@ public class VertxOptionsTest extends VertxTestBase {
     options.setBlockedThreadCheckIntervalUnit(blockedThreadCheckIntervalUnit);
 
     options = new VertxOptions(options);
-    assertEquals(clusterPort, options.getClusterPort());
-    assertEquals(clusterPublicPort, options.getClusterPublicPort());
-    assertEquals(clusterPingInterval, options.getClusterPingInterval());
-    assertEquals(clusterPingReplyInterval, options.getClusterPingReplyInterval());
+    assertEquals(clusterPort, options.getEventBusOptions().getPort());
+    assertEquals(clusterPublicPort, options.getEventBusOptions().getClusterPublicPort());
+    assertEquals(clusterPingInterval, options.getEventBusOptions().getClusterPingInterval());
+    assertEquals(clusterPingReplyInterval, options.getEventBusOptions().getClusterPingReplyInterval());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
     assertEquals(internalBlockingPoolSize, options.getInternalBlockingPoolSize());
     assertEquals(workerPoolSize, options.getWorkerPoolSize());
     assertEquals(blockedThreadCheckInterval, options.getBlockedThreadCheckInterval());
-    assertEquals(clusterHost, options.getClusterHost());
-    assertEquals(clusterPublicHost, options.getClusterPublicHost());
+    assertEquals(clusterHost, options.getEventBusOptions().getHost());
+    assertEquals(clusterPublicHost, options.getEventBusOptions().getClusterPublicHost());
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());
     assertEquals(haEnabled, options.isHAEnabled());
@@ -290,12 +290,12 @@ public class VertxOptionsTest extends VertxTestBase {
     VertxOptions json = new VertxOptions(new JsonObject());
     assertEquals(def.getEventLoopPoolSize(), json.getEventLoopPoolSize());
     assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
-    assertEquals(def.isClustered(), json.isClustered());
-    assertEquals(def.getClusterHost(), json.getClusterHost());
-    assertEquals(def.getClusterPublicHost(), json.getClusterPublicHost());
-    assertEquals(def.getClusterPublicPort(), json.getClusterPublicPort());
-    assertEquals(def.getClusterPingInterval(), json.getClusterPingInterval());
-    assertEquals(def.getClusterPingReplyInterval(), json.getClusterPingReplyInterval());
+    assertEquals(def.getEventBusOptions().isClustered(), json.getEventBusOptions().isClustered());
+    assertEquals(def.getEventBusOptions().getHost(), json.getEventBusOptions().getHost());
+    assertEquals(def.getEventBusOptions().getClusterPublicHost(), json.getEventBusOptions().getClusterPublicHost());
+    assertEquals(def.getEventBusOptions().getClusterPublicPort(), json.getEventBusOptions().getClusterPublicPort());
+    assertEquals(def.getEventBusOptions().getClusterPingInterval(), json.getEventBusOptions().getClusterPingInterval());
+    assertEquals(def.getEventBusOptions().getClusterPingReplyInterval(), json.getEventBusOptions().getClusterPingReplyInterval());
     assertEquals(def.getBlockedThreadCheckInterval(), json.getBlockedThreadCheckInterval());
     assertEquals(def.getMaxEventLoopExecuteTime(), json.getMaxEventLoopExecuteTime());
     assertEquals(def.getMaxWorkerExecuteTime(), json.getMaxWorkerExecuteTime());
@@ -314,16 +314,16 @@ public class VertxOptionsTest extends VertxTestBase {
   public void testJsonOptions() {
     VertxOptions options = new VertxOptions(new JsonObject());
 
-    assertEquals(0, options.getClusterPort());
-    assertEquals(-1, options.getClusterPublicPort());
-    assertEquals(20000, options.getClusterPingInterval());
-    assertEquals(20000, options.getClusterPingReplyInterval());
+    assertEquals(0, options.getEventBusOptions().getPort());
+    assertEquals(-1, options.getEventBusOptions().getClusterPublicPort());
+    assertEquals(20000, options.getEventBusOptions().getClusterPingInterval());
+    assertEquals(20000, options.getEventBusOptions().getClusterPingReplyInterval());
     assertEquals(2 * Runtime.getRuntime().availableProcessors(), options.getEventLoopPoolSize());
     assertEquals(20, options.getInternalBlockingPoolSize());
     assertEquals(20, options.getWorkerPoolSize());
     assertEquals(1000, options.getBlockedThreadCheckInterval());
-    assertEquals("localhost", options.getClusterHost());
-    assertNull(options.getClusterPublicHost());
+    assertEquals("localhost", options.getEventBusOptions().getHost());
+    assertNull(options.getEventBusOptions().getClusterPublicHost());
     assertEquals(null, options.getClusterManager());
     assertEquals(2000l * 1000000, options.getMaxEventLoopExecuteTime());
     assertEquals(1l * 60 * 1000 * 1000000, options.getMaxWorkerExecuteTime());
@@ -394,16 +394,16 @@ public class VertxOptionsTest extends VertxTestBase {
         put("warningExceptionTimeUnit", warningExceptionTimeUnit).
         put("blockedThreadCheckIntervalUnit", blockedThreadCheckIntervalUnit)
     );
-    assertEquals(clusterPort, options.getClusterPort());
-    assertEquals(clusterPublicPort, options.getClusterPublicPort());
-    assertEquals(clusterPublicHost, options.getClusterPublicHost());
-    assertEquals(clusterPingInterval, options.getClusterPingInterval());
-    assertEquals(clusterPingReplyInterval, options.getClusterPingReplyInterval());
+    assertEquals(clusterPort, options.getEventBusOptions().getPort());
+    assertEquals(clusterPublicPort, options.getEventBusOptions().getClusterPublicPort());
+    assertEquals(clusterPublicHost, options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(clusterPingInterval, options.getEventBusOptions().getClusterPingInterval());
+    assertEquals(clusterPingReplyInterval, options.getEventBusOptions().getClusterPingReplyInterval());
     assertEquals(eventLoopPoolSize, options.getEventLoopPoolSize());
     assertEquals(internalBlockingPoolSize, options.getInternalBlockingPoolSize());
     assertEquals(workerPoolSize, options.getWorkerPoolSize());
     assertEquals(blockedThreadCheckInterval, options.getBlockedThreadCheckInterval());
-    assertEquals(clusterHost, options.getClusterHost());
+    assertEquals(clusterHost, options.getEventBusOptions().getHost());
     assertEquals(null, options.getClusterManager());
     assertEquals(maxEventLoopExecuteTime, options.getMaxEventLoopExecuteTime());
     assertEquals(maxWorkerExecuteTime, options.getMaxWorkerExecuteTime());

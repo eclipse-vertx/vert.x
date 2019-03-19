@@ -11,20 +11,10 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.JksOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.PfxOptions;
-import io.vertx.core.net.TCPSSLOptions;
+import io.vertx.core.*;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingOptions;
@@ -165,8 +155,9 @@ public class VertxTestBase extends AsyncTestBase {
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      clusteredVertx(options.setClusterHost("localhost").setClusterPort(0).setClustered(true)
-        .setClusterManager(getClusterManager()), ar -> {
+      options.setClusterManager(getClusterManager())
+        .getEventBusOptions().setHost("localhost").setPort(0).setClustered(true);
+      clusteredVertx(options, ar -> {
           try {
             if (ar.failed()) {
               ar.cause().printStackTrace();

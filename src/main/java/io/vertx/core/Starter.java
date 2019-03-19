@@ -12,10 +12,10 @@
 package io.vertx.core;
 
 import io.vertx.core.impl.Args;
-import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.VertxMetricsFactory;
 
@@ -211,7 +211,7 @@ public class Starter {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
 
-      options.setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true);
+      options.getEventBusOptions().setClustered(true).setHost(clusterHost).setPort(clusterPort);
       if (ha) {
         String haGroup = args.map.get("-hagroup");
         int quorumSize = args.getInt("-quorum");
