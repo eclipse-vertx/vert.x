@@ -15,6 +15,8 @@ package io.vertx.core.file;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
+import java.io.File;
+
 import static io.vertx.core.file.impl.FileResolver.DISABLE_CP_RESOLVING_PROP_NAME;
 import static io.vertx.core.file.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
 
@@ -35,8 +37,20 @@ public class FileSystemOptions {
    */
   public static final boolean DEFAULT_CLASS_PATH_RESOLVING_ENABLED = !Boolean.getBoolean(DISABLE_CP_RESOLVING_PROP_NAME);
 
+
+  // get the system default temp dir location (can be overriden by using the standard java system property)
+  // if not present default to the process start CWD
+  private static final String TMPDIR = System.getProperty("java.io.tmpdir", ".");
+  private static final String DEFAULT_CACHE_DIR_BASE = "vertx-cache";
+
+  /**
+   * The default caching directory /$tempdir/vertx-cache if the tmp dir is missing then defaults to $CWD/vertx-cache
+   */
+  public static final String DEFAULT_FILE_CACHING_DIR = TMPDIR + File.separator + DEFAULT_CACHE_DIR_BASE;
+
   private boolean classPathResolvingEnabled = DEFAULT_CLASS_PATH_RESOLVING_ENABLED;
   private boolean fileCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
+  private String fileCacheDir = DEFAULT_FILE_CACHING_DIR;
 
   /**
    * Default constructor
@@ -52,6 +66,7 @@ public class FileSystemOptions {
   public FileSystemOptions(FileSystemOptions other) {
     this.classPathResolvingEnabled = other.isClassPathResolvingEnabled();
     this.fileCachingEnabled = other.isFileCachingEnabled();
+    this.fileCacheDir = other.getFileCacheDir();
   }
 
   /**
@@ -114,6 +129,27 @@ public class FileSystemOptions {
     this.fileCachingEnabled = fileCachingEnabled;
     return this;
   }
+
+  /**
+   * @return the configured file cache dir
+   */
+  public String getFileCacheDir() {
+    return this.fileCacheDir;
+  }
+
+  /**
+   * When vert.x reads a file that is packaged with the application it gets
+   * extracted to this directory first and subsequent reads will use the extracted
+   * file to get better IO performance.
+   *
+   * @param fileCacheDir the value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public FileSystemOptions setFileCacheDir(String fileCacheDir) {
+    this.fileCacheDir = fileCacheDir;
+    return this;
+  }
+
 
   @Override
   public String toString() {
