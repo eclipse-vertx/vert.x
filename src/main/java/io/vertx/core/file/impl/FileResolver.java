@@ -51,13 +51,9 @@ public class FileResolver {
 
   public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
-
-
   public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
-  private static final String DEFAULT_CACHE_DIR_BASE = ".vertx";
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
-  private static final String CACHE_DIR_BASE = System.getProperty(CACHE_DIR_BASE_PROP_NAME, DEFAULT_CACHE_DIR_BASE);
   private static final String JAR_URL_SEP = "!/";
   private static final Pattern JAR_URL_SEP_PATTERN = Pattern.compile(JAR_URL_SEP);
 
@@ -66,6 +62,7 @@ public class FileResolver {
   private Thread shutdownHook;
   private final boolean enableCaching;
   private final boolean enableCpResolving;
+  private final String fileCacheDir;
 
   public FileResolver() {
     this(new FileSystemOptions());
@@ -78,6 +75,8 @@ public class FileResolver {
   public FileResolver(FileSystemOptions fileSystemOptions) {
     this.enableCaching = fileSystemOptions.isFileCachingEnabled();
     this.enableCpResolving = fileSystemOptions.isClassPathResolvingEnabled();
+    this.fileCacheDir = fileSystemOptions.getFileCacheDir();
+
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
       cwd = new File(cwdOverride).getAbsoluteFile();
@@ -327,7 +326,7 @@ public class FileResolver {
   }
 
   private void setupCacheDir() {
-    String cacheDirName = CACHE_DIR_BASE + "/file-cache-" + UUID.randomUUID().toString();
+    String cacheDirName = fileCacheDir + "/file-cache-" + UUID.randomUUID().toString();
     cacheDir = new File(cacheDirName);
     if (!cacheDir.mkdirs()) {
       throw new IllegalStateException("Failed to create cache dir");
