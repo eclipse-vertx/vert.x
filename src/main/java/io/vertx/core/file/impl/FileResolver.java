@@ -51,13 +51,6 @@ public class FileResolver {
 
   public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
-
-  /**
-   * Deprecated since setting the standard "java.io.tmpdir" is a better solution that adding another property
-   * that provides the same result.
-   * @deprecated to be removed on 4.0, use "java.io.tmpdir" instead.
-   */
-  @Deprecated
   public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
@@ -82,8 +75,7 @@ public class FileResolver {
   public FileResolver(FileSystemOptions fileSystemOptions) {
     this.enableCaching = fileSystemOptions.isFileCachingEnabled();
     this.enableCpResolving = fileSystemOptions.isClassPathResolvingEnabled();
-    // todo: remove the system.getProperty() and leave just the fs options value in 4.0 when the deprecated field is removed
-    this.fileCacheDir = System.getProperty(CACHE_DIR_BASE_PROP_NAME, fileSystemOptions.getFileCacheDir());
+    this.fileCacheDir = fileSystemOptions.getFileCacheDir();
 
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {

@@ -17,8 +17,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.File;
 
-import static io.vertx.core.file.impl.FileResolver.DISABLE_CP_RESOLVING_PROP_NAME;
-import static io.vertx.core.file.impl.FileResolver.DISABLE_FILE_CACHING_PROP_NAME;
+import static io.vertx.core.file.impl.FileResolver.*;
 
 /**
  * Vert.x file system base configuration, this class can be extended by provider implementations to configure
@@ -44,9 +43,10 @@ public class FileSystemOptions {
   private static final String DEFAULT_CACHE_DIR_BASE = "vertx-cache";
 
   /**
-   * The default caching directory /$tempdir/vertx-cache if the tmp dir is missing then defaults to $CWD/vertx-cache
+   * The default file caching dir. If the system property {@code "vertx.cacheDirBase"} is set, then this is the value
+   * If not, then the system property {@code java.io.tmpdir} is taken or {code .} if not set. suffixed with {@code vertx-cache}.
    */
-  public static final String DEFAULT_FILE_CACHING_DIR = TMPDIR + File.separator + DEFAULT_CACHE_DIR_BASE;
+  public static final String DEFAULT_FILE_CACHING_DIR = System.getProperty(CACHE_DIR_BASE_PROP_NAME, TMPDIR + File.separator + DEFAULT_CACHE_DIR_BASE);
 
   private boolean classPathResolvingEnabled = DEFAULT_CLASS_PATH_RESOLVING_ENABLED;
   private boolean fileCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
@@ -156,6 +156,7 @@ public class FileSystemOptions {
     return "FileSystemOptions{" +
     "classPathResolvingEnabled=" + classPathResolvingEnabled +
     ", fileCachingEnabled=" + fileCachingEnabled +
+    ", fileCacheDir=" + fileCacheDir +
     '}';
   }
 }
