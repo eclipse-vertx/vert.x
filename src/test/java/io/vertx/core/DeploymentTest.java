@@ -1206,7 +1206,7 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testGetInstanceCount() throws Exception {
+  public void testGetInstanceCount() {
     class MultiInstanceVerticle extends AbstractVerticle {
       @Override
       public void start() {
@@ -1219,8 +1219,6 @@ public class DeploymentTest extends VertxTestBase {
       testComplete();
     });
     await();
-    Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    vertx.undeploy(deployment.deploymentID());
   }
 
   @Test
