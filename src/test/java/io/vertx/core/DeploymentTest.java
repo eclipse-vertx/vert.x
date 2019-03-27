@@ -1110,21 +1110,15 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testIsolationGroup1() throws Exception {
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
+  public void testIsolationGroup1() {
     List<String> isolatedClasses = Arrays.asList(TestVerticle.class.getCanonicalName());
-    try {
-      vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(),
-        new DeploymentOptions().setIsolationGroup("somegroup").setIsolatedClasses(isolatedClasses), ar -> {
-          assertTrue(ar.succeeded());
-          assertEquals(0, TestVerticle.instanceCount.get());
-          testComplete();
+    vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(),
+      new DeploymentOptions().setIsolationGroup("somegroup").setIsolatedClasses(isolatedClasses), ar -> {
+        assertTrue(ar.succeeded());
+        assertEquals(0, TestVerticle.instanceCount.get());
+        testComplete();
       });
-      assertTrue(expectedSuccess);
-      await();
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
-    }
+    await();
   }
 
   @Test
@@ -1177,20 +1171,14 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testExtraClasspathLoaderNotInParentLoader() throws Exception {
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
     String dir = createClassOutsideClasspath("MyVerticle");
     List<String> extraClasspath = Arrays.asList(dir);
-    try {
-      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
-          setExtraClasspath(extraClasspath), ar -> {
-        assertTrue(ar.succeeded());
-        testComplete();
-      });
-      assertTrue(expectedSuccess);
-      await();
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
-    }
+    vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
+      setExtraClasspath(extraClasspath), ar -> {
+      assertTrue(ar.succeeded());
+      testComplete();
+    });
+    await();
   }
 
   @Test
@@ -1552,30 +1540,24 @@ public class DeploymentTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<String> deploymentID1 = new AtomicReference<>();
     AtomicReference<String> deploymentID2 = new AtomicReference<>();
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
-    try {
-      vertx.deployVerticle(verticleID, new DeploymentOptions().
-        setIsolationGroup(group1).setIsolatedClasses(isolatedClasses), ar -> {
-        assertTrue(ar.succeeded());
-        deploymentID1.set(ar.result());
-        assertEquals(0, TestVerticle.instanceCount.get());
-        vertx.deployVerticle(verticleID,
-          new DeploymentOptions().setIsolationGroup(group2).setIsolatedClasses(isolatedClasses), ar2 -> {
+    vertx.deployVerticle(verticleID, new DeploymentOptions().
+      setIsolationGroup(group1).setIsolatedClasses(isolatedClasses), ar -> {
+      assertTrue(ar.succeeded());
+      deploymentID1.set(ar.result());
+      assertEquals(0, TestVerticle.instanceCount.get());
+      vertx.deployVerticle(verticleID,
+        new DeploymentOptions().setIsolationGroup(group2).setIsolatedClasses(isolatedClasses), ar2 -> {
           assertTrue(ar2.succeeded());
           deploymentID2.set(ar2.result());
           assertEquals(0, TestVerticle.instanceCount.get());
           latch.countDown();
         });
-      });
-      awaitLatch(latch);
-      // Wait until two entries in the map
-      assertWaitUntil(() -> countMap.size() == 2);
-      assertEquals(count1, countMap.get(deploymentID1.get()).intValue());
-      assertEquals(count2, countMap.get(deploymentID2.get()).intValue());
-      assertTrue(expectedSuccess);
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
-    }
+    });
+    awaitLatch(latch);
+    // Wait until two entries in the map
+    assertWaitUntil(() -> countMap.size() == 2);
+    assertEquals(count1, countMap.get(deploymentID1.get()).intValue());
+    assertEquals(count2, countMap.get(deploymentID2.get()).intValue());
   }
 
   private void assertDeployment(int instances, MyVerticle verticle, JsonObject config, AsyncResult<String> ar) {
