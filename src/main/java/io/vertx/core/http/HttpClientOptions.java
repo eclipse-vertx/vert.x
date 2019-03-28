@@ -507,6 +507,18 @@ public class HttpClientOptions extends ClientOptionsBase {
     return this;
   }
 
+  @Override
+  public HttpClientOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    super.setSslHandshakeTimeout(sslHandshakeTimeout);
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+    return this;
+  }
+
   /**
    * Get the maximum pool size for connections
    *

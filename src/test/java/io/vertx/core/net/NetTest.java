@@ -3407,7 +3407,8 @@ public class NetTest extends VertxTestBase {
     NetClientOptions clientOptions = new NetClientOptions()
       .setSsl(true)
       .setTrustAll(true)
-      .setSslHandshakeTimeout(200);
+      .setSslHandshakeTimeout(200)
+      .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
     client = vertx.createNetClient(clientOptions);
 
     server.connectHandler(s -> {
@@ -3432,7 +3433,8 @@ public class NetTest extends VertxTestBase {
       .setSsl(true)
       .setKeyStoreOptions(Cert.SERVER_JKS.get())
       // set 100ms to let the connection established
-      .setSslHandshakeTimeout(100);
+      .setSslHandshakeTimeout(100)
+      .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
     server = vertx.createNetServer(serverOptions);
 
     NetClientOptions clientOptions = new NetClientOptions()
@@ -3464,7 +3466,8 @@ public class NetTest extends VertxTestBase {
     NetClientOptions clientOptions = new NetClientOptions()
       .setSsl(false)
       .setTrustAll(true)
-      .setSslHandshakeTimeout(200);
+      .setSslHandshakeTimeout(200)
+      .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
     client = vertx.createNetClient(clientOptions);
 
     server.connectHandler(s -> {
@@ -3477,6 +3480,7 @@ public class NetTest extends VertxTestBase {
         assertFalse(socket.isSsl());
         socket.upgradeToSsl(v -> {
           // this handler will never be called because of failure of handshake
+          fail("this should never be called");
           assertFalse(socket.isSsl());
         });
         // wait a bit to make sure the above handler will not be called

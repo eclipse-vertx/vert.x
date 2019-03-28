@@ -288,6 +288,11 @@ public class NetServerOptions extends TCPSSLOptions {
     return (NetServerOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
   }
 
+  @Override
+  public NetServerOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    return (NetServerOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+  }
+
   /**
    * @return the value of accept backlog
    */

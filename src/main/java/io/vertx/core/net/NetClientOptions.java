@@ -360,4 +360,9 @@ public class NetClientOptions extends ClientOptionsBase {
   public NetClientOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
     return (NetClientOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
   }
+
+  @Override
+  public NetClientOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    return (NetClientOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+  }
 }
