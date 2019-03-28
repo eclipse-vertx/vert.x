@@ -97,9 +97,14 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final boolean DEFAULT_TCP_QUICKACK = false;
 
   /**
-   * The default value of SSL handshake timeout (in milliseconds) = 10000L
+   * The default value of SSL handshake timeout = 10
    */
-  public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10000L;
+  public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10L;
+
+  /**
+   * Default SSL handshake time unit = SECONDS
+   */
+  public static final TimeUnit DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
 
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
@@ -109,6 +114,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private TimeUnit idleTimeoutUnit;
   private boolean ssl;
   private long sslHandshakeTimeout;
+  private TimeUnit sslHandshakeTimeoutUnit;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
   private Set<String> enabledCipherSuites;
@@ -144,6 +150,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.idleTimeoutUnit = other.getIdleTimeoutUnit() != null ? other.getIdleTimeoutUnit() : DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     this.ssl = other.isSsl();
     this.sslHandshakeTimeout = other.sslHandshakeTimeout;
+    this.sslHandshakeTimeoutUnit = other.getSslHandshakeTimeoutUnit() != null ? other.getSslHandshakeTimeoutUnit() : DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
     this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().copy() : null;
     this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().copy() : null;
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledCipherSuites());
@@ -188,6 +195,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     idleTimeoutUnit = DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     ssl = DEFAULT_SSL;
     sslHandshakeTimeout = DEFAULT_SSL_HANDSHAKE_TIMEOUT;
+    sslHandshakeTimeoutUnit = DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
     enabledCipherSuites = new LinkedHashSet<>();
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
@@ -696,14 +704,14 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
-   * @return the SSL handshake timeout, in milliseconds.
+   * @return the SSL handshake timeout, in time unit specified by {@link #getSslHandshakeTimeoutUnit()}.
    */
   public long getSslHandshakeTimeout() {
     return sslHandshakeTimeout;
   }
 
   /**
-   * Set the SSL handshake timeout, in milliseconds.
+   * Set the SSL handshake timeout, default time unit is seconds.
    *
    * @param sslHandshakeTimeout the SSL handshake timeout to set, in milliseconds
    * @return a reference to this, so the API can be used fluently
@@ -714,6 +722,24 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     }
     this.sslHandshakeTimeout = sslHandshakeTimeout;
     return this;
+  }
+
+  /**
+   * Set the SSL handshake timeout unit. If not specified, default is seconds.
+   *
+   * @param sslHandshakeTimeoutUnit specify time unit.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    this.sslHandshakeTimeoutUnit = sslHandshakeTimeoutUnit;
+    return this;
+  }
+
+  /**
+   * @return the SSL handshake timeout unit.
+   */
+  public TimeUnit getSslHandshakeTimeoutUnit() {
+    return sslHandshakeTimeoutUnit;
   }
 
   @Override

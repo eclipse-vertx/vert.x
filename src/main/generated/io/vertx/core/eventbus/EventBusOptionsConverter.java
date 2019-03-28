@@ -193,6 +193,11 @@ import java.time.format.DateTimeFormatter;
             obj.setSslHandshakeTimeout(((Number)member.getValue()).longValue());
           }
           break;
+        case "sslHandshakeTimeoutUnit":
+          if (member.getValue() instanceof String) {
+            obj.setSslHandshakeTimeoutUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
         case "tcpCork":
           if (member.getValue() instanceof Boolean) {
             obj.setTcpCork((Boolean)member.getValue());
@@ -323,6 +328,9 @@ import java.time.format.DateTimeFormatter;
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
     json.put("sslHandshakeTimeout", obj.getSslHandshakeTimeout());
+    if (obj.getSslHandshakeTimeoutUnit() != null) {
+      json.put("sslHandshakeTimeoutUnit", obj.getSslHandshakeTimeoutUnit().name());
+    }
     json.put("tcpCork", obj.isTcpCork());
     json.put("tcpFastOpen", obj.isTcpFastOpen());
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());

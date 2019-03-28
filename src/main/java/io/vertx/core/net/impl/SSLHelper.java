@@ -43,6 +43,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -124,6 +125,7 @@ public class SSLHelper {
   private boolean ssl;
   private boolean sni;
   private long sslHandshakeTimeout;
+  private TimeUnit sslHandshakeTimeoutUnit;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
   private boolean trustAll;
@@ -146,6 +148,8 @@ public class SSLHelper {
   public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
+    this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
+    this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
     this.trustAll = options.isTrustAll();
@@ -165,6 +169,8 @@ public class SSLHelper {
   public SSLHelper(HttpServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
+    this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
+    this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
     this.clientAuth = options.getClientAuth();
@@ -183,6 +189,7 @@ public class SSLHelper {
     SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
     this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
+    this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
     this.trustAll = options.isTrustAll();
@@ -201,6 +208,7 @@ public class SSLHelper {
     SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
     this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
+    this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
     this.clientAuth = options.getClientAuth();
@@ -225,6 +233,10 @@ public class SSLHelper {
 
   public long getSslHandshakeTimeout() {
     return sslHandshakeTimeout;
+  }
+
+  public TimeUnit getSslHandshakeTimeoutUnit() {
+    return sslHandshakeTimeoutUnit;
   }
 
   public ClientAuth getClientAuth() {
