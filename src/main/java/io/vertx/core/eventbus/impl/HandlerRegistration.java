@@ -163,6 +163,11 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       if (result == null) {
         result = Future.failedFuture("Consumer unregistered before registration completed");
         callHandlerAsync(result, completionHandler);
+      } else {
+        EventBusMetrics metrics = eventBus.metrics;
+        if (metrics != null) {
+          metrics.handlerUnregistered(metric);
+        }
       }
     }
     if (discardHandler != null && discarded != null) {

@@ -255,6 +255,22 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
+  public void testClusterUnregistration() {
+    startNodes(1);
+    FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertices[0].eventBus());
+    MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1, ar -> {
+      fail("Should not receive message");
+    });
+    consumer.completionHandler(ar -> {
+      assertTrue(ar.failed());
+      assertEquals(Collections.emptyList(), metrics.getRegistrations());
+      testComplete();
+    });
+    consumer.unregister();
+    await();
+  }
+
+  @Test
   public void testHandlerProcessMessage() {
     testHandlerProcessMessage(vertx, vertx, 1);
   }
