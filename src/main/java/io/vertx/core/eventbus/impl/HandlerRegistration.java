@@ -135,6 +135,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     Deque<Message<T>> discarded;
     Handler<Message<T>> discardHandler;
     synchronized (this) {
+      handler = null;
       if (endHandler != null) {
         Handler<Void> theEndHandler = endHandler;
         Handler<AsyncResult<Void>> handler = completionHandler;
@@ -272,14 +273,17 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   @Override
-  public synchronized MessageConsumer<T> handler(Handler<Message<T>> handler) {
-    this.handler = handler;
-    if (this.handler != null && registered == null) {
-      registered = eventBus.addRegistration(address, this, repliedAddress != null, localOnly);
-    } else if (this.handler == null && registered != null) {
-      // This will set registered to false
-      this.unregister();
+  public synchronized MessageConsumer<T> handler(Handler<Message<T>> h) {
+    if (h != null) {
+      synchronized (this) {
+        handler = h;
+        if (registered == null) {
+          registered = eventBus.addRegistration(address, this, repliedAddress != null, localOnly);
+        }
+      }
+      return this;
     }
+    this.unregister();
     return this;
   }
 
