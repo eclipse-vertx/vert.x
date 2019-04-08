@@ -131,15 +131,14 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     doUnregister(completionHandler);
   }
 
-  private void doUnregister(Handler<AsyncResult<Void>> completionHandler) {
+  private void doUnregister(Handler<AsyncResult<Void>> doneHandler) {
     Deque<Message<T>> discarded;
     Handler<Message<T>> discardHandler;
     synchronized (this) {
-      handler = null;
       if (endHandler != null) {
         Handler<Void> theEndHandler = endHandler;
-        Handler<AsyncResult<Void>> handler = completionHandler;
-        completionHandler = ar -> {
+        Handler<AsyncResult<Void>> handler = doneHandler;
+        doneHandler = ar -> {
           theEndHandler.handle(null);
           if (handler != null) {
             handler.handle(ar);
@@ -155,10 +154,15 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       }
       discardHandler = this.discardHandler;
       if (holder != null) {
+        handler = null;
         registered = null;
-        eventBus.removeRegistration(holder, completionHandler);
+        eventBus.removeRegistration(holder, doneHandler);
       } else {
-        callCompletionHandlerAsync(completionHandler);
+        callHandlerAsync(Future.succeededFuture(), doneHandler);
+      }
+      if (result == null) {
+        result = Future.failedFuture("Consumer unregistered before registration completed");
+        callHandlerAsync(result, completionHandler);
       }
     }
     if (discardHandler != null && discarded != null) {
@@ -169,9 +173,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     }
   }
 
-  private void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
+  private void callHandlerAsync(AsyncResult<Void> result, Handler<AsyncResult<Void>> completionHandler) {
     if (completionHandler != null) {
-      vertx.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+      vertx.runOnContext(v -> completionHandler.handle(result));
     }
   }
 
@@ -180,17 +184,17 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   public synchronized void setResult(AsyncResult<Void> result) {
+    if (this.result != null) {
+      return;
+    }
     this.result = result;
-    if (completionHandler != null) {
-      if (metrics != null && result.succeeded()) {
+    if (result.failed()) {
+      log.error("Failed to propagate registration for handler " + handler + " and address " + address);
+    } else {
+      if (metrics != null) {
         metric = metrics.handlerRegistered(address, repliedAddress);
       }
-      Handler<AsyncResult<Void>> callback = completionHandler;
-      vertx.runOnContext(v -> callback.handle(result));
-    } else if (result.failed()) {
-      log.error("Failed to propagate registration for handler " + handler + " and address " + address);
-    } else if (metrics != null) {
-      metric = metrics.handlerRegistered(address, repliedAddress);
+      callHandlerAsync(result, completionHandler);
     }
   }
 

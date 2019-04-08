@@ -1399,5 +1399,22 @@ public class LocalEventBusTest extends EventBusTestBase {
     eb.send(ADDRESS1, "val0");
     await();
   }
+
+  @Test
+  public void testImmediateUnregistration() {
+    MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1);
+    AtomicInteger completionCount = new AtomicInteger();
+    consumer.completionHandler(ar -> {
+      int val = completionCount.getAndIncrement();
+      assertEquals(0, val);
+      assertTrue(ar.succeeded());
+      vertx.setTimer(10, id -> {
+        testComplete();
+      });
+    });
+    consumer.handler(msg -> {});
+    consumer.unregister();
+    await();
+  }
 }
 
