@@ -19,16 +19,14 @@ import io.vertx.core.spi.metrics.EventBusMetrics;
  */
 public class HandlerHolder<T> {
 
-  private final EventBusMetrics metrics;
   private final Context context;
   private final HandlerRegistration<T> handler;
   private final boolean replyHandler;
   private final boolean localOnly;
   private boolean removed;
 
-  public HandlerHolder(EventBusMetrics metrics, HandlerRegistration<T> handler, boolean replyHandler, boolean localOnly,
+  public HandlerHolder(HandlerRegistration<T> handler, boolean replyHandler, boolean localOnly,
                        Context context) {
-    this.metrics = metrics;
     this.context = context;
     this.handler = handler;
     this.replyHandler = replyHandler;
@@ -36,16 +34,13 @@ public class HandlerHolder<T> {
   }
 
   // We use a synchronized block to protect removed as it can be unregistered from a different thread
-  public boolean setRemoved() {
+  boolean setRemoved() {
     boolean unregistered = false;
     synchronized (this) {
       if (!removed) {
         removed = true;
         unregistered = true;
       }
-    }
-    if (metrics != null && unregistered) {
-      metrics.handlerUnregistered(handler.getMetric());
     }
     return unregistered;
   }
