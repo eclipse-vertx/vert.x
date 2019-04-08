@@ -332,4 +332,22 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     }));
     await();
   }
+
+  @Test
+  public void testImmediateUnregistration() {
+    startNodes(1);
+    MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1);
+    AtomicInteger completionCount = new AtomicInteger();
+    consumer.completionHandler(ar -> {
+      int val = completionCount.getAndIncrement();
+      assertEquals(0, val);
+      assertTrue(ar.failed());
+      vertx.setTimer(10, id -> {
+        testComplete();
+      });
+    });
+    consumer.handler(msg -> {});
+    consumer.unregister();
+    await();
+  }
 }
