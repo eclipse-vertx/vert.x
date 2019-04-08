@@ -80,6 +80,9 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   }
 
   public void handlerUnregistered(HandlerMetric handler) {
+    if (handler == null) {
+      throw new NullPointerException("Must not be null");
+    }
     registrations.remove(handler);
   }
 

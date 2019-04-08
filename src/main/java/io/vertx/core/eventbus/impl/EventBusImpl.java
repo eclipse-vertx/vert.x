@@ -268,7 +268,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
     registration.setHandlerContext(context);
 
-    HandlerHolder<T> holder = new HandlerHolder<>(metrics, registration, replyHandler, localOnly, context);
+    HandlerHolder<T> holder = new HandlerHolder<>(registration, replyHandler, localOnly, context);
 
     ConcurrentCyclicSequence<HandlerHolder> handlers = new ConcurrentCyclicSequence<HandlerHolder>().add(holder);
     ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
