@@ -870,23 +870,23 @@ public class HostnameResolutionTest extends VertxTestBase {
     };
   }
 
-  @Test
-  public void testRoundRobinInetAddressSelection() throws Exception {
+  private Set<String> selectInetAddresses(Boolean roundRobin) throws Exception {
     FakeDNSServer server = null;
     try {
-      server = new FakeDNSServer().store(questionRecord->new HashSet<>(
-        Arrays.asList(
-          createResourceRecord("vertx.io", "127.0.0.0"),
-          createResourceRecord("vertx.io", "127.0.0.1"))));
+      server = new FakeDNSServer().store(questionRecord->new HashSet<>(Arrays.asList(
+        createResourceRecord("vertx.io", "127.0.0.0"),
+        createResourceRecord("vertx.io", "127.0.0.1"))));
       server.port(FakeDNSServer.PORT);
       server.start();
       AddressResolverOptions options = new AddressResolverOptions();
-      options.setRoundRobinInetAddress(true);
+      if (roundRobin != null) {
+        options.setRoundRobinInetAddress(roundRobin);
+      }
       options.setOptResourceEnabled(false);
       InetSocketAddress dnsServerAddress = server.localAddress();
       options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
       AddressResolver resolver = new AddressResolver(vertx, options);
-      Set<String> actual = new HashSet<>();
+      Set<String> resolved = new HashSet<>();
       //due to the random nature of netty's round robin algorithm
       //the below outcome is generally non-deterministic and will fail once in about 2^100 runs (virtually never)
       for (int i = 0; i < 100; i++) {
@@ -898,15 +898,32 @@ public class HostnameResolutionTest extends VertxTestBase {
             result.completeExceptionally(ar.cause());
           }
         });
-        actual.add(result.get(10, TimeUnit.SECONDS).getHostAddress());
+        resolved.add(result.get(10, TimeUnit.SECONDS).getHostAddress());
       }
-      Set<String> expected = new HashSet<>(Arrays.asList("127.0.0.0","127.0.0.1"));
-      assertEquals(expected, actual);
+      return resolved;
     } finally {
       if (server != null) {
         server.stop();
       }
     }
+  }
+
+  @Test
+  public void testDefaultInetAddressSelection() throws Exception {
+    Set<String> resolved = selectInetAddresses(null);
+    assertEquals(1, resolved.size());
+  }
+
+  @Test
+  public void testRoundRobinOnInetAddressSelection() throws Exception {
+    Set<String> resolved = selectInetAddresses(true);
+    assertEquals(2, resolved.size());
+  }
+
+  @Test
+  public void testRoundRobinOffInetAddressSelection() throws Exception {
+    Set<String> resolved = selectInetAddresses(false);
+    assertEquals(1, resolved.size());
   }
 
   @Test
