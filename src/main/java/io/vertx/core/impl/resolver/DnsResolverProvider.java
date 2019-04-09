@@ -20,6 +20,7 @@ import io.netty.resolver.HostsFileEntriesResolver;
 import io.netty.resolver.HostsFileParser;
 import io.netty.resolver.NameResolver;
 import io.netty.resolver.ResolvedAddressTypes;
+import io.netty.resolver.RoundRobinInetAddressResolver;
 import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -132,10 +133,22 @@ public class DnsResolverProvider implements ResolverProvider {
 
     this.vertx = vertx;
     this.resolverGroup = new AddressResolverGroup<InetSocketAddress>() {
+
       @Override
       protected io.netty.resolver.AddressResolver<InetSocketAddress> newResolver(EventExecutor executor) throws Exception {
         ChannelFactory<DatagramChannel> channelFactory = () -> vertx.transport().datagramChannel();
         DnsAddressResolverGroup group = new DnsAddressResolverGroup(channelFactory, nameServerAddressProvider) {
+          @Override
+          protected final io.netty.resolver.AddressResolver<InetSocketAddress> newAddressResolver(EventLoop eventLoop,
+                                                                                                  NameResolver<InetAddress> resolver)
+            throws Exception {
+            if (options.isRoundRobinInetAddress()) {
+              return new RoundRobinInetAddressResolver(eventLoop, resolver).asAddressResolver();
+            } else {
+              return super.newAddressResolver(eventLoop, resolver);
+            }
+          }
+
           @Override
           protected NameResolver<InetAddress> newNameResolver(EventLoop eventLoop, ChannelFactory<? extends DatagramChannel> channelFactory, DnsServerAddressStreamProvider nameServerProvider) throws Exception {
             DnsNameResolverBuilder builder = new DnsNameResolverBuilder((EventLoop) executor);

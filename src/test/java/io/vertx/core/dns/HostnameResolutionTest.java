@@ -31,6 +31,10 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.FakeDNSServer;
+import org.apache.directory.server.dns.messages.RecordClass;
+import org.apache.directory.server.dns.messages.RecordType;
+import org.apache.directory.server.dns.messages.ResourceRecord;
+import org.apache.directory.server.dns.store.DnsAttribute;
 import org.junit.Test;
 
 import java.io.File;
@@ -41,9 +45,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -834,6 +840,74 @@ public class HostnameResolutionTest extends VertxTestBase {
     }
   }
 
+  private ResourceRecord createResourceRecord(String dnsName, String ipAddress) {
+    return new ResourceRecord() {
+
+      @Override
+      public String getDomainName() {
+        return dnsName;
+      }
+
+      @Override
+      public RecordType getRecordType() {
+        return RecordType.A;
+      }
+
+      @Override
+      public RecordClass getRecordClass() {
+        return RecordClass.IN;
+      }
+
+      @Override
+      public int getTimeToLive() {
+        return 100;
+      }
+
+      @Override
+      public String get(String s) {
+        return DnsAttribute.IP_ADDRESS.equals(s)? ipAddress : null;
+      }
+    };
+  }
+
+  @Test
+  public void testRoundRobinInetAddressSelection() throws Exception {
+    FakeDNSServer server = null;
+    try {
+      server = new FakeDNSServer().store(questionRecord->new HashSet<>(
+        Arrays.asList(
+          createResourceRecord("vertx.io", "127.0.0.0"),
+          createResourceRecord("vertx.io", "127.0.0.1"))));
+      server.port(FakeDNSServer.PORT);
+      server.start();
+      AddressResolverOptions options = new AddressResolverOptions();
+      options.setRoundRobinInetAddress(true);
+      options.setOptResourceEnabled(false);
+      InetSocketAddress dnsServerAddress = server.localAddress();
+      options.addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
+      AddressResolver resolver = new AddressResolver(vertx, options);
+      Set<String> actual = new HashSet<>();
+      //due to the random nature of netty's round robin algorithm
+      //the below outcome is generally non-deterministic and will fail once in about 2^100 runs (virtually never)
+      for (int i = 0; i < 100; i++) {
+        CompletableFuture<InetAddress> result = new CompletableFuture<>();
+        resolver.resolveHostname("vertx.io", ar -> {
+          if (ar.succeeded()) {
+            result.complete(ar.result());
+          } else {
+            result.completeExceptionally(ar.cause());
+          }
+        });
+        actual.add(result.get(10, TimeUnit.SECONDS).getHostAddress());
+      }
+      Set<String> expected = new HashSet<>(Arrays.asList("127.0.0.0","127.0.0.1"));
+      assertEquals(expected, actual);
+    } finally {
+      if (server != null) {
+        server.stop();
+      }
+    }
+  }
 
   @Test
   public void testServerFailover() throws Exception {
