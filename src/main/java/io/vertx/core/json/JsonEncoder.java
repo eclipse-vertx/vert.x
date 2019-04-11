@@ -1,7 +1,15 @@
 package io.vertx.core.json;
 
 /**
- * Primitive for conversion TARGET_TYPE -> JSON_TYPE
+ * Primitive for conversion TARGET_TYPE -> JSON_TYPE<br/>
+ * The TARGET_TYPE could be any type, while JSON_TYPE could be one of the following:
+ * <ul>
+ *     <li>{@link JsonObject}</li>
+ *     <li>{@link JsonArray}</li>
+ *     <li>{@link String}</li>
+ *     <li>{@link Number}</li>
+ *     <li>{@link Boolean}</li>
+ * </ul>
  *
  * @param <TARGET_TYPE>
  * @param <JSON_TYPE>

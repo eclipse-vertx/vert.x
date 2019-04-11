@@ -6,11 +6,11 @@ import java.util.Objects;
 
 public class MyIntegerPojo {
 
-  public static class MyIntegerPojoJsonCodec implements JsonCodec<MyIntegerPojo, Integer> {
+  public static class MyIntegerPojoJsonCodec implements JsonCodec<MyIntegerPojo, Number> {
 
     @Override
-    public MyIntegerPojo decode(Integer value) throws IllegalArgumentException {
-      return new MyIntegerPojo().setValue(value);
+    public MyIntegerPojo decode(Number value) throws IllegalArgumentException {
+      return new MyIntegerPojo().setValue(value.intValue());
     }
 
     @Override
