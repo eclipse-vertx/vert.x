@@ -19,6 +19,7 @@ import org.junit.Test;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -392,6 +393,57 @@ public class JsonPointerTest {
     JsonPointer child = JsonPointer.fromURI(URI.create("yaml/valid/refs/Circular.yaml#/properties/parent"));
     assertTrue(parent.isParent(child));
     assertFalse(child.isParent(parent));
+  }
+
+  @Test
+  public void testTracedQuery() {
+    JsonObject child2 = new JsonObject().put("child3", 1);
+    JsonArray child1 = new JsonArray().add(child2);
+    JsonObject root = new JsonObject().put("child1", child1);
+
+    JsonPointer pointer = JsonPointer
+      .create()
+      .append("child1")
+      .append("0")
+      .append("child3");
+
+    List<Object> traced = pointer.tracedQuery(root, JsonPointerIterator.JSON_ITERATOR).collect(Collectors.toList());
+    assertEquals(4, traced.size());
+    assertSame(root, traced.get(0));
+    assertSame(child1, traced.get(1));
+    assertSame(child2, traced.get(2));
+    assertEquals(1, traced.get(3));
+  }
+
+  @Test
+  public void testEmptyTracedQuery() {
+    JsonPointer pointer = JsonPointer
+      .create()
+      .append("child1")
+      .append("0")
+      .append("child3");
+
+    List<Object> traced = pointer.tracedQuery(null, JsonPointerIterator.JSON_ITERATOR).collect(Collectors.toList());
+    assertTrue(traced.isEmpty());
+  }
+
+  @Test
+  public void testNotFoundTracedQuery() {
+    JsonObject child2 = new JsonObject().put("child5", 1);
+    JsonArray child1 = new JsonArray().add(child2);
+    JsonObject root = new JsonObject().put("child1", child1);
+
+    JsonPointer pointer = JsonPointer
+      .create()
+      .append("child1")
+      .append("0")
+      .append("child3");
+
+    List<Object> traced = pointer.tracedQuery(root, JsonPointerIterator.JSON_ITERATOR).collect(Collectors.toList());
+    assertEquals(3, traced.size());
+    assertSame(root, traced.get(0));
+    assertSame(child1, traced.get(1));
+    assertSame(child2, traced.get(2));
   }
 
 }

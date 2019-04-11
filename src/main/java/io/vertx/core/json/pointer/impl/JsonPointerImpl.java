@@ -20,9 +20,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * @author Francesco Guardiani @slinkydeveloper
@@ -132,6 +134,11 @@ public class JsonPointerImpl implements JsonPointer {
   }
 
   @Override
+  public JsonPointer append(int i) {
+    return this.append(Integer.toString(i));
+  }
+
+  @Override
   public JsonPointer append(List<String> paths) {
     decodedTokens.addAll(paths);
     return this;
@@ -173,7 +180,7 @@ public class JsonPointerImpl implements JsonPointer {
     if (isRootPointer())
       return (iterator.isNull(value)) ? defaultValue : value;
     else {
-      value = walkTillLastElement(value, iterator, false);
+      value = walkTillLastElement(value, iterator, false, null);
       String lastKey = decodedTokens.get(decodedTokens.size() - 1);
       if (iterator.isObject(value)) {
         Object finalValue = iterator.getObjectParameter(value, lastKey, false);
@@ -191,11 +198,34 @@ public class JsonPointerImpl implements JsonPointer {
   }
 
   @Override
+  public Stream<Object> tracedQuery(Object objectToQuery, JsonPointerIterator iterator) {
+    Stream.Builder<Object> stream = Stream.builder();
+    if (isRootPointer() && !iterator.isNull(objectToQuery))
+      stream.add(objectToQuery);
+    else {
+      Object lastValue = walkTillLastElement(objectToQuery, iterator, false, stream::add);
+      if (!iterator.isNull(lastValue))
+        stream.add(lastValue);
+      String lastKey = decodedTokens.get(decodedTokens.size() - 1);
+      if (iterator.isObject(lastValue)) {
+        lastValue = iterator.getObjectParameter(lastValue, lastKey, false);
+      } else if (iterator.isArray(lastValue) && !"-".equals(lastKey)) {
+        try {
+          lastValue = iterator.getArrayElement(lastValue, Integer.parseInt(lastKey));
+        } catch (NumberFormatException e) { }
+      }
+      if (!iterator.isNull(lastValue))
+        stream.add(lastValue);
+    }
+    return stream.build();
+  }
+
+  @Override
   public Object write(Object valueToWrite, JsonPointerIterator iterator, Object newElement, boolean createOnMissing) {
     if (isRootPointer()) {
       return iterator.isNull(valueToWrite) ? null : newElement;
     } else {
-      Object walkedValue = walkTillLastElement(valueToWrite, iterator, createOnMissing);
+      Object walkedValue = walkTillLastElement(valueToWrite, iterator, createOnMissing, null);
       if (writeLastElement(walkedValue, iterator, newElement))
         return valueToWrite;
       else
@@ -203,14 +233,16 @@ public class JsonPointerImpl implements JsonPointer {
     }
   }
 
-  private Object walkTillLastElement(Object value, JsonPointerIterator iterator, boolean createOnMissing) {
+  private Object walkTillLastElement(Object value, JsonPointerIterator iterator, boolean createOnMissing, Consumer<Object> onNewValue) {
     for (int i = 0; i < decodedTokens.size() - 1; i++) {
       String k = decodedTokens.get(i);
       if (i == 0 && "".equals(k)) {
         continue; // Avoid errors with root empty string
       } else if (iterator.isObject(value)) {
+        if (onNewValue != null) onNewValue.accept(value);
         value = iterator.getObjectParameter(value, k, createOnMissing);
       } else if (iterator.isArray(value)) {
+        if (onNewValue != null) onNewValue.accept(value);
         try {
           value = iterator.getArrayElement(value, Integer.parseInt(k));
           if (iterator.isNull(value) && createOnMissing) {

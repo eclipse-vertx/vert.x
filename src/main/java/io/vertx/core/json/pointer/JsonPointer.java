@@ -19,6 +19,8 @@ import io.vertx.core.json.pointer.impl.JsonPointerImpl;
 
 import java.net.URI;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * Implementation of <a href="https://tools.ietf.org/html/rfc6901">RFC6901 Json Pointers</a>.
@@ -76,6 +78,15 @@ public interface JsonPointer {
    */
   @Fluent
   JsonPointer append(String path);
+
+  /**
+   * Append index path to JsonPointer
+   *
+   * @param i index
+   * @return
+   */
+  @Fluent
+  JsonPointer append(int i);
 
   /**
    * Append unescaped list of paths to JsonPointer <br/>
@@ -136,6 +147,17 @@ public interface JsonPointer {
    * @return null if pointer points to not existing value, otherwise the requested value
    */
   default @Nullable Object queryJsonOrDefault(Object object, Object defaultValue) {return queryOrDefault(object, JsonPointerIterator.JSON_ITERATOR, defaultValue); }
+
+  /**
+   * Query the provided object tracing each element walked during the query, including the first and the result (if any).<br/>
+   * The first element of the stream is objectToQuery and the last is the result, or the element before the first null was encountered
+   *
+   * @param objectToQuery the object to query
+   * @param iterator the json pointer iterator that provides the logic to access to the objectToQuery
+   * @return the stream of walked elements
+   */
+  @GenIgnore
+  Stream<Object> tracedQuery(Object objectToQuery, JsonPointerIterator iterator);
 
   /**
    * Write a value with the selected pointer. The path token "-" is handled as append to end of array <br/>
