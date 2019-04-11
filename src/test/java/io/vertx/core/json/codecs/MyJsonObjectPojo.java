@@ -41,7 +41,7 @@ public class MyJsonObjectPojo {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     MyJsonObjectPojo that = (MyJsonObjectPojo) o;
-    return value == that.value;
+    return Objects.equals(value, that.value);
   }
 
   @Override
