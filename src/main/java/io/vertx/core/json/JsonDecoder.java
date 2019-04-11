@@ -16,4 +16,6 @@ public interface JsonDecoder<TARGET_TYPE, JSON_TYPE> {
    * @throws IllegalArgumentException when it cannot decode the value
    */
   TARGET_TYPE decode(JSON_TYPE value) throws IllegalArgumentException;
+
+  Class<TARGET_TYPE> getTargetClass();
 }

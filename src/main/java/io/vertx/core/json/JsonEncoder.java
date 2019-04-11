@@ -16,4 +16,6 @@ public interface JsonEncoder<TARGET_TYPE, JSON_TYPE> {
    * @throws IllegalArgumentException when it cannot encode the value
    */
   JSON_TYPE encode(TARGET_TYPE value) throws IllegalArgumentException;
+
+  Class<TARGET_TYPE> getTargetClass();
 }
