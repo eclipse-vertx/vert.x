@@ -30,19 +30,6 @@ public class JsonCodecLoaderTest {
   }
 
   @Test
-  public void charCodecTest() {
-    MyCharPojo pojo = new MyCharPojo();
-    pojo.setValue('a');
-    assertEquals(encodeToBuffer('a'), jsonCodecLoader.encodeBuffer(pojo));
-    assertEquals(pojo, jsonCodecLoader.decodeBuffer(encodeToBuffer('a'), MyCharPojo.class));
-  }
-
-  @Test(expected = ClassCastException.class)
-  public void charCodecWrongTypeTest() {
-    jsonCodecLoader.decodeBuffer(encodeToBuffer(1), MyCharPojo.class);
-  }
-
-  @Test
   public void doubleCodecTest() {
     MyDoublePojo pojo = new MyDoublePojo();
     pojo.setValue(1.2d);
@@ -52,7 +39,7 @@ public class JsonCodecLoaderTest {
 
   @Test(expected = ClassCastException.class)
   public void doubleCodecWrongTypeTest() {
-    jsonCodecLoader.decodeBuffer(encodeToBuffer(1L), MyDoublePojo.class);
+    jsonCodecLoader.decodeBuffer(encodeToBuffer(""), MyDoublePojo.class);
   }
 
   @Test
@@ -65,7 +52,7 @@ public class JsonCodecLoaderTest {
 
   @Test(expected = ClassCastException.class)
   public void floatCodecWrongTypeTest() {
-    jsonCodecLoader.decodeBuffer(encodeToBuffer(1L), MyFloatPojo.class);
+    jsonCodecLoader.decodeBuffer(encodeToBuffer(""), MyFloatPojo.class);
   }
 
   @Test
@@ -78,7 +65,7 @@ public class JsonCodecLoaderTest {
 
   @Test(expected = ClassCastException.class)
   public void intCodecWrongTypeTest() {
-    jsonCodecLoader.decodeBuffer(encodeToBuffer(1.2), MyIntegerPojo.class);
+    jsonCodecLoader.decodeBuffer(encodeToBuffer(""), MyIntegerPojo.class);
   }
 
   @Test
@@ -91,7 +78,7 @@ public class JsonCodecLoaderTest {
 
   @Test(expected = ClassCastException.class)
   public void longCodecWrongTypeTest() {
-    jsonCodecLoader.decodeBuffer(encodeToBuffer(1.2), MyLongPojo.class);
+    jsonCodecLoader.decodeBuffer(encodeToBuffer(""), MyLongPojo.class);
   }
 
   @Test
@@ -104,7 +91,7 @@ public class JsonCodecLoaderTest {
 
   @Test(expected = ClassCastException.class)
   public void shortCodecWrongTypeTest() {
-    jsonCodecLoader.decodeBuffer(encodeToBuffer(1.2), MyShortPojo.class);
+    jsonCodecLoader.decodeBuffer(encodeToBuffer(""), MyShortPojo.class);
   }
 
   @Test

@@ -6,11 +6,11 @@ import java.util.Objects;
 
 public class MyDoublePojo {
 
-  public static class MyDoublePojoJsonCodec implements JsonCodec<MyDoublePojo, Double> {
+  public static class MyDoublePojoJsonCodec implements JsonCodec<MyDoublePojo, Number> {
 
     @Override
-    public MyDoublePojo decode(Double value) throws IllegalArgumentException {
-      return new MyDoublePojo().setValue(value);
+    public MyDoublePojo decode(Number value) throws IllegalArgumentException {
+      return new MyDoublePojo().setValue(value.doubleValue());
     }
 
     @Override

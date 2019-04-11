@@ -6,11 +6,11 @@ import java.util.Objects;
 
 public class MyLongPojo {
 
-  public static class MyLongPojoJsonCodec implements JsonCodec<MyLongPojo, Long> {
+  public static class MyLongPojoJsonCodec implements JsonCodec<MyLongPojo, Number> {
 
     @Override
-    public MyLongPojo decode(Long value) throws IllegalArgumentException {
-      return new MyLongPojo().setValue(value);
+    public MyLongPojo decode(Number value) throws IllegalArgumentException {
+      return new MyLongPojo().setValue(value.longValue());
     }
 
     @Override
