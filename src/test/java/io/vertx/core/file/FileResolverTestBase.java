@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  */
 public abstract class FileResolverTestBase extends VertxTestBase {
 
-  private final String cacheBaseDir = System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache";
+  private final String cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getAbsolutePath();
 
   protected FileResolver resolver;
 
