@@ -336,14 +336,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest fetch(long amount) {
     synchronized (conn) {
-      pendingQueue().fetch(amount);
-      return this;
-    }
-  }
-
-  @Override
-  public HttpServerRequest resume() {
-    synchronized (conn) {
       if (!isEnded()) {
         if (ended) {
           if (!pending.resume()) {
@@ -355,6 +347,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       }
       return this;
     }
+  }
+
+  @Override
+  public HttpServerRequest resume() {
+    return fetch(Long.MAX_VALUE);
   }
 
   @Override

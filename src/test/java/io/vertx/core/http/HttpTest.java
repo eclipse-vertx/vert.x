@@ -2735,7 +2735,16 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testHttpServerRequestPausedDuringLastChunk() throws Exception {
+  public void testHttpServerRequestPausedDuringLastChunk1() throws Exception {
+    testHttpServerRequestPausedDuringLastChunk(false);
+  }
+
+  @Test
+  public void testHttpServerRequestPausedDuringLastChunk2() throws Exception {
+    testHttpServerRequestPausedDuringLastChunk(true);
+  }
+
+  private void testHttpServerRequestPausedDuringLastChunk(boolean fetching) throws Exception {
     server.requestHandler(req -> {
       AtomicBoolean ended = new AtomicBoolean();
       AtomicBoolean paused = new AtomicBoolean();
@@ -2746,7 +2755,11 @@ public abstract class HttpTest extends HttpTestBase {
         vertx.setTimer(20, id -> {
           assertFalse(ended.get());
           paused.set(false);
-          req.resume();
+          if (fetching) {
+            req.fetch(1);
+          } else {
+            req.resume();
+          }
         });
       });
       req.endHandler(v -> {
@@ -2765,7 +2778,16 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testHttpClientResponsePausedDuringLastChunk() throws Exception {
+  public void testHttpClientResponsePausedDuringLastChunk1() throws Exception {
+    testHttpClientResponsePausedDuringLastChunk(false);
+  }
+
+  @Test
+  public void testHttpClientResponsePausedDuringLastChunk2() throws Exception {
+    testHttpClientResponsePausedDuringLastChunk(true);
+  }
+
+  private void testHttpClientResponsePausedDuringLastChunk(boolean fetching) throws Exception {
     server.requestHandler(req -> {
       req.response().end("small");
     });
@@ -2782,7 +2804,11 @@ public abstract class HttpTest extends HttpTestBase {
         vertx.setTimer(20, id -> {
           assertFalse(ended.get());
           paused.set(false);
-          resp.resume();
+          if (fetching) {
+            resp.fetch(1);
+          } else {
+            resp.resume();
+          }
         });
       });
       resp.endHandler(v -> {
