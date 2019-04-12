@@ -338,11 +338,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     synchronized (conn) {
       if (!isEnded()) {
         if (ended) {
-          if (!pending.resume()) {
+          if (!pending.fetch(amount)) {
             doEnd();
           }
         } else if (pending != null) {
-          pending.resume();
+          pending.fetch(amount);
         }
       }
       return this;
