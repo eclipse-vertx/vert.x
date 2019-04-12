@@ -28,7 +28,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.dns.impl.netty.Fix;
 import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.spi.resolver.ResolverProvider;
@@ -180,8 +179,6 @@ public class DnsResolverProvider implements ResolverProvider {
                 ndots = AddressResolver.DEFAULT_NDOTS_RESOLV_OPTION;
               }
               builder.ndots(ndots);
-            } else {
-              builder.searchDomains(Fix.DEFAULT_SEARCH_DOMAINS);
             }
             return builder.build();
           }
