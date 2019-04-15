@@ -1,6 +1,7 @@
 package io.vertx.test.core;
 
 import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.WriteStream;
 
@@ -30,15 +31,19 @@ public class CheckingSender {
   }
 
   public void send() {
-    if (countDown > 0) {
-      try {
-        stream.write(data);
-      } catch (Exception e) {
-        if (error == null) {
-          error = e;
-          return;
+    if (Vertx.currentContext() == context) {
+      if (countDown > 0) {
+        try {
+          stream.write(data);
+        } catch (Exception e) {
+          if (error == null) {
+            error = e;
+            return;
+          }
         }
+        context.owner().setTimer(1, id -> send());
       }
+    } else {
       context.runOnContext(v -> send());
     }
   }

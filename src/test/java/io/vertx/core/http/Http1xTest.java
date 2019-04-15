@@ -22,6 +22,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.CheckingSender;
@@ -4540,7 +4541,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testHttpServerRequestShouldExceptionHandlerWhenTheClosedHandlerIsCalled() {
+  public void testHttpServerRequestShouldCallExceptionHandlerWhenTheClosedHandlerIsCalled() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.setChunked(true);
@@ -4566,7 +4567,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testHttpClientRequestShouldExceptionHandlerWhenTheClosedHandlerIsCalled() throws Exception {
+  public void testHttpClientRequestShouldCallExceptionHandlerWhenTheClosedHandlerIsCalled() throws Exception {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
       vertx.setTimer(1000, id -> {
         req.response().close();
@@ -4575,19 +4576,21 @@ public class Http1xTest extends HttpTest {
     startServer();
     HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", resp -> {
     }).setChunked(true);
-    CountDownLatch latch = new CountDownLatch(1);
-    req.sendHead(version -> latch.countDown());
-    awaitLatch(latch);
     CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), req);
+    AtomicBoolean connected = new AtomicBoolean();
     req.exceptionHandler(err -> {
+      assertTrue(connected.get());
       Throwable failure = sender.close();
       if (failure != null) {
         fail(failure);
-      } else {
+      } else if (err == ConnectionBase.CLOSED_EXCEPTION) {
         testComplete();
       }
     });
-    sender.send();
+    req.sendHead(v -> {
+      connected.set(true);
+      sender.send();
+    });
     await();
   }
 
