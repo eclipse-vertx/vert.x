@@ -116,27 +116,3 @@ You get values from a JSON array using the `getXXX` methods, for example:
 ==== Encoding a JSON array to a String
 
 You use {@link io.vertx.core.json.JsonArray#encode} to encode the array to a String form.
-
-
-=== Json Pointers
-
-Vert.x provides an implementation of <a href="https://tools.ietf.org/html/rfc6901">Json Pointers from RFC6901</a>.
-You can use pointers both for querying and for writing. You can build your {@link io.vertx.core.json.pointer.JsonPointer} using
-a string, a URI or manually appending paths:
-
-[source,java]
-----
-{@link docoverride.json.Examples#example1Pointers}
-----
-
-After instantiating your pointer, you can use method {@link io.vertx.core.json.pointer.JsonPointer#queryJson(java.lang.Object)} to query
-a JsonObject/JsonArray. If you want to write inside a JsonObject/JsonArray use {@link io.vertx.core.json.pointer.JsonPointer#writeJson(java.lang.Object, java.lang.Object)}:
-
-[source,java]
-----
-{@link docoverride.json.Examples#example2Pointers}
-----
-
-Vert.x Json Pointer algorithm abstracts from the queried data structure. That means that using {@link io.vertx.core.json.pointer.JsonPointer}
-you can query your own data structures. To define the methods to access to these, you must implement {@link io.vertx.core.json.pointer.JsonPointerIterator}
-and provide an instance of it to query/write methods

@@ -198,14 +198,14 @@ public class JsonPointerImpl implements JsonPointer {
   }
 
   @Override
-  public Stream<Object> tracedQuery(Object objectToQuery, JsonPointerIterator iterator) {
-    Stream.Builder<Object> stream = Stream.builder();
+  public List<Object> tracedQuery(Object objectToQuery, JsonPointerIterator iterator) {
+    List<Object> list = new ArrayList<>();
     if (isRootPointer() && !iterator.isNull(objectToQuery))
-      stream.add(objectToQuery);
+      list.add(objectToQuery);
     else {
-      Object lastValue = walkTillLastElement(objectToQuery, iterator, false, stream::add);
+      Object lastValue = walkTillLastElement(objectToQuery, iterator, false, list::add);
       if (!iterator.isNull(lastValue))
-        stream.add(lastValue);
+        list.add(lastValue);
       String lastKey = decodedTokens.get(decodedTokens.size() - 1);
       if (iterator.isObject(lastValue)) {
         lastValue = iterator.getObjectParameter(lastValue, lastKey, false);
@@ -215,9 +215,9 @@ public class JsonPointerImpl implements JsonPointer {
         } catch (NumberFormatException e) { }
       }
       if (!iterator.isNull(lastValue))
-        stream.add(lastValue);
+        list.add(lastValue);
     }
-    return stream.build();
+    return list;
   }
 
   @Override

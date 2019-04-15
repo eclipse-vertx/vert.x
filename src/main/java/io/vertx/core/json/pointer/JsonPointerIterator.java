@@ -21,26 +21,26 @@ public interface JsonPointerIterator {
 
   /**
    * @param currentValue
-   * @return true if the current value is a queryable object
+   * @return {@code true} if the current value is a queryable object
    */
   boolean isObject(@Nullable Object currentValue);
 
   /**
    * @param currentValue
-   * @return true if the current value is a queryable array
+   * @return {@code true} if the current value is a queryable array
    */
   boolean isArray(@Nullable Object currentValue);
 
   /**
    * @param currentValue
-   * @return true if the current value is null/empty
+   * @return {@code true} if the current value is null/empty
    */
   boolean isNull(@Nullable Object currentValue);
 
   /**
    * @param currentValue
    * @param key object key
-   * @return true if current value is a queryable object that contains the specified key
+   * @return {@code true} if current value is a queryable object that contains the specified key
    */
   boolean objectContainsKey(@Nullable Object currentValue, String key);
 

@@ -757,6 +757,8 @@ include::datagrams.adoc[]
 
 include::dns.adoc[]
 
+include::json-pointers.adoc[]
+
 [[streams]]
 include::streams.adoc[]
 

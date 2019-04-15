@@ -130,37 +130,36 @@ public interface JsonPointer {
   Object queryOrDefault(Object objectToQuery, JsonPointerIterator iterator, Object defaultValue);
 
   /**
-   * Query the provided object. <br/>
-   * Note: if this pointer is a root pointer, this function returns the provided object
+   * Query the provided json element. <br/>
+   * Note: if this pointer is a root pointer, this function returns the provided json element
    *
-   * @param object the object to queryJson
+   * @param jsonElement the json element to query
    * @return null if pointer points to not existing value, otherwise the requested value
    */
-  default @Nullable Object queryJson(Object object) {return query(object, JsonPointerIterator.JSON_ITERATOR); }
+  default @Nullable Object queryJson(Object jsonElement) {return query(jsonElement, JsonPointerIterator.JSON_ITERATOR); }
 
   /**
-   * Query the provided object. If the query result is null, returns the default.<br/>
+   * Query the provided json element. If the query result is null, returns the default.<br/>
    * Note: if this pointer is a root pointer, this function returns the provided object
    *
-   * @param object the object to queryJson
+   * @param jsonElement the json element to query
    * @param defaultValue default value if query result is null
    * @return null if pointer points to not existing value, otherwise the requested value
    */
-  default @Nullable Object queryJsonOrDefault(Object object, Object defaultValue) {return queryOrDefault(object, JsonPointerIterator.JSON_ITERATOR, defaultValue); }
+  default @Nullable Object queryJsonOrDefault(Object jsonElement, Object defaultValue) {return queryOrDefault(jsonElement, JsonPointerIterator.JSON_ITERATOR, defaultValue); }
 
   /**
    * Query the provided object tracing each element walked during the query, including the first and the result (if any).<br/>
-   * The first element of the stream is objectToQuery and the last is the result, or the element before the first null was encountered
+   * The first element of the list is objectToQuery and the last is the result, or the element before the first null was encountered
    *
    * @param objectToQuery the object to query
    * @param iterator the json pointer iterator that provides the logic to access to the objectToQuery
    * @return the stream of walked elements
    */
-  @GenIgnore
-  Stream<Object> tracedQuery(Object objectToQuery, JsonPointerIterator iterator);
+  List<Object> tracedQuery(Object objectToQuery, JsonPointerIterator iterator);
 
   /**
-   * Write a value with the selected pointer. The path token "-" is handled as append to end of array <br/>
+   * Write a value in objectToWrite using this pointer. The path token "-" is handled as append to end of array <br/>
    * If you need to write in Vert.x json data structures, use {@link JsonPointer#writeJson(Object, Object)} (Object)}<br/>
    *
    * @param objectToWrite object to write
@@ -172,32 +171,32 @@ public interface JsonPointer {
   Object write(Object objectToWrite, JsonPointerIterator iterator, Object newElement, boolean createOnMissing);
 
   /**
-   * Write a value in the selected pointer. The path token "-" is handled as append to end of array. <br/>
+   * Write a value in jsonElement using this pointer. The path token "-" is handled as append to end of array. <br/>
    * This function does not support root pointers.
    *
-   * @param json json to query and write
+   * @param jsonElement json element to query and write
    * @param newElement json to insert
    * @return a reference to json if the write was completed, a reference to newElement if the pointer is a root pointer, null if the write failed
    */
-  default Object writeJson(Object json, Object newElement) { return writeJson(json, newElement, false); }
+  default Object writeJson(Object jsonElement, Object newElement) { return writeJson(jsonElement, newElement, false); }
 
   /**
-   * Write a value in the selected pointer. The path token "-" is handled as append to end of array. <br/>
+   * Write a value in jsonElement using this pointer. The path token "-" is handled as append to end of array. <br/>
    * This function does not support root pointers.
    *
-   * @param json json to query and write
+   * @param jsonElement json to query and write
    * @param newElement json to insert
    * @param createOnMissing create JsonObject when missing a object key or an array index
    * @return a reference to json if the write was completed, a reference to newElement if the pointer is a root pointer, null if the write failed
    */
-  default Object writeJson(Object json, Object newElement, boolean createOnMissing) {
-    return write(json, JsonPointerIterator.JSON_ITERATOR, newElement, createOnMissing);
+  default Object writeJson(Object jsonElement, Object newElement, boolean createOnMissing) {
+    return write(jsonElement, JsonPointerIterator.JSON_ITERATOR, newElement, createOnMissing);
   }
 
   /**
    * Copy a JsonPointer
    *
-   * @return
+   * @return a copy of this pointer
    */
   JsonPointer copy();
 

@@ -407,7 +407,7 @@ public class JsonPointerTest {
       .append("0")
       .append("child3");
 
-    List<Object> traced = pointer.tracedQuery(root, JsonPointerIterator.JSON_ITERATOR).collect(Collectors.toList());
+    List<Object> traced = pointer.tracedQuery(root, JsonPointerIterator.JSON_ITERATOR);
     assertEquals(4, traced.size());
     assertSame(root, traced.get(0));
     assertSame(child1, traced.get(1));
@@ -423,7 +423,7 @@ public class JsonPointerTest {
       .append("0")
       .append("child3");
 
-    List<Object> traced = pointer.tracedQuery(null, JsonPointerIterator.JSON_ITERATOR).collect(Collectors.toList());
+    List<Object> traced = pointer.tracedQuery(null, JsonPointerIterator.JSON_ITERATOR);
     assertTrue(traced.isEmpty());
   }
 
@@ -439,7 +439,7 @@ public class JsonPointerTest {
       .append("0")
       .append("child3");
 
-    List<Object> traced = pointer.tracedQuery(root, JsonPointerIterator.JSON_ITERATOR).collect(Collectors.toList());
+    List<Object> traced = pointer.tracedQuery(root, JsonPointerIterator.JSON_ITERATOR);
     assertEquals(3, traced.size());
     assertSame(root, traced.get(0));
     assertSame(child1, traced.get(1));
