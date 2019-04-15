@@ -11,6 +11,7 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
@@ -57,10 +58,12 @@ public abstract class ConnectionBase {
   protected final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
-  private boolean read;
-  private boolean needsFlush;
   private int writeInProgress;
   private Object metric;
+
+  // State accessed exclusively from the event loop thread
+  private boolean read;
+  private boolean needsFlush;
 
   protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
     this.vertx = vertx;
@@ -83,50 +86,95 @@ public abstract class ConnectionBase {
     return (VertxHandler) chctx.handler();
   }
 
-  protected synchronized final void endReadAndFlush() {
+  /**
+   * This method is exclusively called by {@code VertxHandler} to signal read completion on the event-loop thread.
+   */
+  final void endReadAndFlush() {
     if (read) {
       read = false;
-      if (needsFlush && writeInProgress == 0) {
+      if (needsFlush) {
         needsFlush = false;
         chctx.flush();
       }
     }
   }
 
-  private void write(Object msg, ChannelPromise promise) {
-    if (read || writeInProgress > 0) {
-      needsFlush = true;
-      chctx.write(msg, promise);
-    } else {
-      needsFlush = false;
+  /**
+   * This method is exclusively called by {@code VertxHandler} to signal read on the event-loop thread.
+   */
+  final void setRead() {
+    read = true;
+  }
+
+  /**
+   * This method is exclusively called on the event-loop thread
+   *
+   * @param msg the messsage to write
+   * @param flush {@code true} to perform a write and flush operation
+   * @param promise the promise receiving the completion event
+   */
+  private void write(Object msg, boolean flush, ChannelPromise promise) {
+    needsFlush = !flush;
+    if (flush) {
       chctx.writeAndFlush(msg, promise);
+    } else {
+      chctx.write(msg, promise);
     }
   }
 
-  public synchronized void writeToChannel(Object msg, ChannelPromise promise) {
-    // Make sure we serialize all the messages as this method can be called from various threads:
-    // two "sequential" calls to writeToChannel (we can say that as it is synchronized) should preserve
-    // the message order independently of the thread. To achieve this we need to reschedule messages
-    // not on the event loop or if there are pending async message for the channel.
-    if (chctx.executor().inEventLoop() && writeInProgress == 0) {
-      write(msg, promise);
-    } else {
-      queueForWrite(msg, promise);
+  public void writeToChannel(Object msg, ChannelPromise promise) {
+    synchronized (this) {
+      if (!chctx.executor().inEventLoop() || writeInProgress > 0) {
+        // Make sure we serialize all the messages as this method can be called from various threads:
+        // two "sequential" calls to writeToChannel (we can say that as it is synchronized) should preserve
+        // the message order independently of the thread. To achieve this we need to reschedule messages
+        // not on the event loop or if there are pending async message for the channel.
+        queueForWrite(msg, promise);
+        return;
+      }
     }
+    // On the event loop thread
+    write(msg, !read, promise);
   }
 
   private void queueForWrite(Object msg, ChannelPromise promise) {
     writeInProgress++;
-    context.runOnContext(v -> {
-      synchronized (ConnectionBase.this) {
-        writeInProgress--;
-        write(msg, promise);
+    chctx.executor().execute(() -> {
+      boolean flush;
+      synchronized (this) {
+        flush = --writeInProgress == 0 && !read;
       }
+      write(msg, flush, promise);
     });
   }
 
   public void writeToChannel(Object obj) {
     writeToChannel(obj, voidPromise);
+  }
+
+  /**
+   * Asynchronous flush.
+   */
+  public final void flush() {
+    flush(voidPromise);
+  }
+
+  /**
+   * Asynchronous flush.
+   *
+   * @param promise the promise resolved when flush occurred
+   */
+  public final void flush(ChannelPromise promise) {
+    if (chctx.executor().inEventLoop()) {
+      if (needsFlush) {
+        needsFlush = false;
+        chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
+      } else {
+        promise.setSuccess();
+      }
+    } else {
+      chctx.executor().execute(() -> flush(promise));
+    }
   }
 
   // This is a volatile read inside the Netty channel implementation
@@ -139,8 +187,9 @@ public abstract class ConnectionBase {
    */
   public void close() {
     // make sure everything is flushed out on close
-    endReadAndFlush();
-    chctx.channel().close();
+    ChannelPromise promise = chctx.newPromise();
+    flush(promise);
+    promise.addListener((ChannelFutureListener) future -> chctx.channel().close());
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
@@ -304,7 +353,7 @@ public abstract class ConnectionBase {
         if (future.isSuccess()) {
           sendFileRegion(file, offset + MAX_REGION_SIZE, length - MAX_REGION_SIZE, writeFuture);
         } else {
-          future.cause().printStackTrace();
+          log.error(future.cause().getMessage(), future.cause());
           writeFuture.setFailure(future.cause());
         }
       });
@@ -381,13 +430,6 @@ public abstract class ConnectionBase {
     InetSocketAddress addr = (InetSocketAddress) chctx.channel().localAddress();
     if (addr == null) return null;
     return new SocketAddressImpl(addr);
-  }
-
-  final void handleRead(Object msg) {
-    synchronized (this) {
-      read = true;
-    }
-    handleMessage(msg);
   }
 
   public void handleMessage(Object msg) {

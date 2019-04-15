@@ -387,7 +387,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     connectionMap.put(chctx.channel(), socket);
 
     // Flush out all pending data
-    endReadAndFlush();
+    flush();
 
     // remove old http handlers and replace the old handler with one that handle plain sockets
     ChannelPipeline pipeline = chctx.pipeline();
@@ -421,14 +421,7 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
 
   @Override
   public void close() {
-    if (ws == null) {
-      super.close();
-    } else {
-      endReadAndFlush();
-      chctx
-        .writeAndFlush(new CloseWebSocketFrame(true, 0, 1000, null))
-        .addListener(ChannelFutureListener.CLOSE);
-    }
+    closeWithPayload(null);
   }
 
   @Override
@@ -436,10 +429,19 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
     if (ws == null) {
       super.close();
     } else {
-      endReadAndFlush();
-      chctx
-        .writeAndFlush(new CloseWebSocketFrame(true, 0, byteBuf))
-        .addListener(ChannelFutureListener.CLOSE);
+      ChannelPromise promise = chctx.newPromise();
+      flush(promise);
+      promise.addListener((ChannelFutureListener) future -> {
+        CloseWebSocketFrame frame;
+        if (byteBuf == null) {
+          frame = new CloseWebSocketFrame(true, 0, 1000, null);
+        } else {
+          frame = new CloseWebSocketFrame(true, 0, byteBuf);
+        }
+        chctx
+          .writeAndFlush(frame)
+          .addListener(ChannelFutureListener.CLOSE);
+      });
     }
   }
 
