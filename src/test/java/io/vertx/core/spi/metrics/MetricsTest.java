@@ -262,7 +262,6 @@ public class MetricsTest extends VertxTestBase {
       fail("Should not receive message");
     });
     consumer.completionHandler(ar -> {
-      assertTrue(ar.failed());
       assertEquals(Collections.emptyList(), metrics.getRegistrations());
       testComplete();
     });
