@@ -4873,6 +4873,36 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  // This test check that ending an HttpClientRequest will not hold a lock when sending Netty messages
+  // holding suck lock might deadlock when the ChannelOutboundBuffer is full and becomes drained
+  // doing an HttpClientRequest reentrant during the drain
+  @Repeat(times = 30)
+  @Test
+  public void testClientRequestEndDeadlock() throws Exception {
+    server.requestHandler(req -> req.endHandler(v -> req.response().end()));
+    startServer();
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v1 -> {
+      HttpClientRequest request = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v2 -> {
+          testComplete();
+        });
+      })
+        .exceptionHandler(this::fail)
+        .setChunked(true);
+      new Thread(() -> {
+        Buffer s = randomBuffer(256);
+        while (!request.writeQueueFull()) {
+          request.write(s);
+        }
+        ctx.runOnContext(v2 -> {
+          request.end();
+        });
+      }).start();
+    });
+    await();
+  }
+
   /*
   @Test
   public void testReset() throws Exception {
