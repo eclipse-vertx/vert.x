@@ -208,7 +208,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     Handler<Message<T>> theHandler;
     ContextInternal ctx;
     synchronized (this) {
-      if (demand == 0L) {
+      if (registered == null) {
+        return;
+      } else if (demand == 0L) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
         } else {
