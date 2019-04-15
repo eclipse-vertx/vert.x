@@ -24,6 +24,7 @@ import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
@@ -4702,6 +4703,35 @@ public abstract class HttpTest extends HttpTestBase {
       complete();
     }));
 
+    await();
+  }
+
+  // This test check that ending an HttpClientRequest will not hold a lock when sending Netty messages
+  // holding suck lock might deadlock when the ChannelOutboundBuffer is full and becomes drained
+  // doing an HttpClientRequest reentrant during the drain
+  @Repeat(times = 30)
+  @Test
+  public void testClientRequestEndDeadlock() throws Exception {
+    server.requestHandler(req -> req.endHandler(v -> req.response().end()));
+    startServer();
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v1 -> {
+      HttpClientRequest request = client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        resp.endHandler(v2 -> {
+          testComplete();
+        });
+      }))
+        .setChunked(true);
+      new Thread(() -> {
+        Buffer s = randomBuffer(256);
+        while (!request.writeQueueFull()) {
+          request.write(s);
+        }
+        ctx.runOnContext(v2 -> {
+          request.end();
+        });
+      }).start();
+    });
     await();
   }
 

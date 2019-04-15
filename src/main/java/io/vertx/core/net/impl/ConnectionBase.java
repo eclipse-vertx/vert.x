@@ -87,13 +87,6 @@ public abstract class ConnectionBase {
   }
 
   /**
-   * This method is exclusively called by {@code VertxHandler} to signal read on the event-loop thread.
-   */
-  final void setRead() {
-    read = true;
-  }
-
-  /**
    * This method is exclusively called by {@code VertxHandler} to signal read completion on the event-loop thread.
    */
   final void endReadAndFlush() {
@@ -107,6 +100,13 @@ public abstract class ConnectionBase {
   }
 
   /**
+   * This method is exclusively called by {@code VertxHandler} to signal read on the event-loop thread.
+   */
+  final void setRead() {
+    read = true;
+  }
+
+  /**
    * This method is exclusively called on the event-loop thread
    *
    * @param msg the messsage to write
@@ -114,12 +114,11 @@ public abstract class ConnectionBase {
    * @param promise the promise receiving the completion event
    */
   private void write(Object msg, boolean flush, ChannelPromise promise) {
-    if (read || !flush) {
-      needsFlush = true;
-      chctx.write(msg, promise);
-    } else {
-      needsFlush = false;
+    needsFlush = !flush;
+    if (flush) {
       chctx.writeAndFlush(msg, promise);
+    } else {
+      chctx.write(msg, promise);
     }
   }
 
@@ -135,15 +134,15 @@ public abstract class ConnectionBase {
       }
     }
     // On the event loop thread
-    write(msg, true, promise);
+    write(msg, !read, promise);
   }
 
   private void queueForWrite(Object msg, ChannelPromise promise) {
     writeInProgress++;
     chctx.executor().execute(() -> {
       boolean flush;
-      synchronized (ConnectionBase.this) {
-        flush = --writeInProgress == 0;
+      synchronized (this) {
+        flush = --writeInProgress == 0 && !read;
       }
       write(msg, flush, promise);
     });
@@ -167,14 +166,12 @@ public abstract class ConnectionBase {
    */
   public final void flush(ChannelPromise promise) {
     if (chctx.executor().inEventLoop()) {
-      synchronized (this) {
-        if (needsFlush) {
-          needsFlush = false;
-          chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
-          return;
-        }
+      if (needsFlush) {
+        needsFlush = false;
+        chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
+      } else {
+        promise.setSuccess();
       }
-      promise.setSuccess();
     } else {
       chctx.executor().execute(() -> flush(promise));
     }
