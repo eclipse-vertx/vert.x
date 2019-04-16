@@ -25,7 +25,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
+public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
 
   public WebSocketImpl(ContextInternal context,
                        Http1xClientConnection conn, boolean supportsContinuation,

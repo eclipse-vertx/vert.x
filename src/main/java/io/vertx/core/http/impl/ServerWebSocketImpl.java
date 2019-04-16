@@ -42,7 +42,7 @@ import static io.vertx.core.http.impl.HttpUtils.SC_BAD_GATEWAY;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> implements ServerWebSocket {
+public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> implements ServerWebSocket {
 
   private final Http1xServerConnection conn;
   private final String uri;
@@ -139,7 +139,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   }
 
   @Override
-  public ServerWebSocket writeFrame(WebSocketFrame frame) {
+  public ServerWebSocketImpl writeFrame(WebSocketFrame frame) {
     synchronized (conn) {
       Boolean check = checkAccept();
       if (check == null) {

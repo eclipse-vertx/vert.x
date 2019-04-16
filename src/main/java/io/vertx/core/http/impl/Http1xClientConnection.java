@@ -31,7 +31,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -60,7 +59,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class Http1xClientConnection extends Http1xConnectionBase implements HttpClientConnection {
+class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> implements HttpClientConnection {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
@@ -75,8 +74,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
   private final HttpVersion version;
 
   private WebSocketClientHandshaker handshaker;
-  private WebSocketImpl ws;
-  private boolean closeFrameSent;
 
   private StreamImpl requestInProgress;                          // The request being sent
   private StreamImpl responseInProgress;                         // The request waiting for a response
@@ -578,31 +575,7 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       HttpObject obj = (HttpObject) msg;
       handleHttpMessage(obj);
     } else if (msg instanceof WebSocketFrame) {
-      WebSocketFrameInternal frame = decodeFrame((WebSocketFrame) msg);
-      switch (frame.type()) {
-        case BINARY:
-        case CONTINUATION:
-        case TEXT:
-        case PONG:
-          handleWsFrame(frame);
-          break;
-        case PING:
-          // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-          chctx.writeAndFlush(new PongWebSocketFrame(frame.getBinaryData().copy()));
-          break;
-        case CLOSE:
-          handleWsFrame(frame);
-          if (!closeFrameSent) {
-            // Echo back close frame and close the connection once it was written.
-            // This is specified in the WebSockets RFC 6455 Section  5.4.1
-            CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
-            chctx.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
-            closeFrameSent = true;
-          }
-          break;
-        default:
-          throw new IllegalStateException("Invalid type: " + frame.type());
-      }
+      handleWsFrame((WebSocketFrame) msg);
     } else {
       throw new IllegalStateException("Invalid object " + msg);
     }
@@ -876,12 +849,6 @@ class Http1xClientConnection extends Http1xConnectionBase implements HttpClientC
       } else if (ws != null) {
         ws.handleDrained();
       }
-    }
-  }
-
-  synchronized void handleWsFrame(WebSocketFrameInternal frame) {
-    if (ws != null) {
-      context.dispatch(v -> ws.handleFrame(frame));
     }
   }
 

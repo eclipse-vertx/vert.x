@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
@@ -28,6 +29,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
@@ -39,7 +41,10 @@ import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.core.http.HttpConnection {
+abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends ConnectionBase implements io.vertx.core.http.HttpConnection {
+
+  protected S ws;
+  private boolean closeFrameSent;
 
   Http1xConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
     super(vertx, chctx, context);
@@ -68,7 +73,7 @@ abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.c
     }
   }
 
-  WebSocketFrameInternal decodeFrame(WebSocketFrame msg) {
+  private WebSocketFrameInternal decodeFrame(WebSocketFrame msg) {
     ByteBuf payload = safeBuffer(msg, chctx.alloc());
     boolean isFinal = msg.isFinalFragment();
     FrameType frameType;
@@ -89,6 +94,35 @@ abstract class Http1xConnectionBase extends ConnectionBase implements io.vertx.c
     }
     return new WebSocketFrameImpl(frameType, payload, isFinal);
   }
+
+  void handleWsFrame(WebSocketFrame msg) {
+    WebSocketFrameInternal frame = decodeFrame(msg);
+    S w;
+    synchronized (this) {
+      switch (frame.type()) {
+        case PING:
+          // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
+          chctx.writeAndFlush(new PongWebSocketFrame(frame.getBinaryData().copy()));
+          break;
+        case CLOSE:
+          synchronized (this) {
+            if (!closeFrameSent) {
+              // Echo back close frame and close the connection once it was written.
+              // This is specified in the WebSockets RFC 6455 Section  5.4.1
+              CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
+              chctx.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
+              closeFrameSent = true;
+            }
+          }
+          break;
+      }
+      w = ws;
+    }
+    if (w != null) {
+      w.context.dispatch(frame, ((WebSocketImplBase)w)::handleFrame);
+    }
+  }
+
 
   abstract public void closeWithPayload(ByteBuf byteBuf);
 
