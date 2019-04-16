@@ -1198,7 +1198,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
           } else {
             Throwable t = ar.cause();
             if (shouldPass) {
-              t.printStackTrace();
               HttpTLSTest.this.fail("Should not throw exception");
             } else {
               complete();
