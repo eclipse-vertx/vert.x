@@ -1251,6 +1251,39 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPipeliningPauseRequest() throws Exception {
+    int n = 10;
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
+    server.requestHandler(req -> {
+      AtomicBoolean paused = new AtomicBoolean();
+      paused.set(true);
+      req.pause();
+      req.bodyHandler(buff -> {
+        assertFalse(paused.get());
+        req.response().end();
+      });
+      vertx.setTimer(30, id -> {
+        paused.set(false);
+        req.resume();
+      });
+    });
+    startServer();
+    AtomicInteger remaining = new AtomicInteger(n);
+    for (int i = 0;i < n;i++) {
+      HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        resp.endHandler(v -> {
+          if (remaining.decrementAndGet() == 0) {
+            testComplete();
+          }
+        });
+      }));
+      req.end(TestUtils.randomAlphaString(16));
+    }
+    await();
+  }
+
+  @Test
   public void testServerPipeliningConnectionConcurrency() throws Exception {
     int n = 5;
     boolean[] processing = {false};

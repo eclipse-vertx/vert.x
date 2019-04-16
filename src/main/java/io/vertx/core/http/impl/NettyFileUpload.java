@@ -38,12 +38,11 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
   private Charset charset;
   private boolean completed;
   private long maxSize = -1;
-
   private final HttpServerRequest request;
-  private final InboundBuffer<Buffer> pending;
-  private boolean ended;
+  private final InboundBuffer<Object> pending;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
+  private Handler<Buffer> dataHandler;
 
   NettyFileUpload(Context context, HttpServerRequest request, String name, String filename, String contentType, String contentTransferEncoding, Charset charset) {
     this.name = name;
@@ -51,11 +50,22 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
     this.contentType = contentType;
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
-
     this.request = request;
-    this.pending = new InboundBuffer<Buffer>(context)
+    this.pending = new InboundBuffer<>(context)
       .drainHandler(v -> request.resume())
-      .emptyHandler(v -> checkComplete());
+      .handler(buff -> {
+        if (buff == InboundBuffer.END_SENTINEL) {
+          Handler<Void> handler = endHandler();
+          if (handler != null) {
+            handler.handle(null);
+          }
+        } else {
+          Handler<Buffer> handler = handler();
+          if (handler != null) {
+            handler.handle((Buffer) buff);
+          }
+        }
+      });
   }
 
   @Override
@@ -64,9 +74,13 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
     return this;
   }
 
+  private Handler<Buffer> handler() {
+    return dataHandler;
+  }
+
   @Override
-  public NettyFileUpload handler(Handler<Buffer> handler) {
-    pending.handler(handler);
+  public synchronized NettyFileUpload handler(Handler<Buffer> handler) {
+    dataHandler = handler;
     return this;
   }
 
@@ -84,8 +98,11 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
   @Override
   public NettyFileUpload fetch(long amount) {
     pending.fetch(amount);
-    checkComplete();
     return this;
+  }
+
+  private synchronized Handler<Void> endHandler() {
+    return endHandler;
   }
 
   @Override
@@ -103,29 +120,7 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
   }
 
   private void end() {
-    synchronized (this) {
-      ended = true;
-    }
-    checkComplete();
-  }
-
-  private void checkComplete() {
-    synchronized (this) {
-      if (!pending.isEmpty() || pending.isPaused() || !ended) {
-        return;
-      }
-    }
-    notifyEndHandler();
-  }
-
-  private void notifyEndHandler() {
-    Handler<Void> handler;
-    synchronized (this) {
-      handler = endHandler;
-    }
-    if (handler != null) {
-      handler.handle(null);
-    }
+    pending.write(InboundBuffer.END_SENTINEL);
   }
 
   public void handleException(Throwable err) {

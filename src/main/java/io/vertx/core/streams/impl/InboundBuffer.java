@@ -66,6 +66,11 @@ import java.util.Objects;
  */
 public class InboundBuffer<E> {
 
+  /**
+   * A reusable sentinel for signaling the end of a stream.
+   */
+  public static final Object END_SENTINEL = new Object();
+
   private final ContextInternal context;
   private final ArrayDeque<E> pending;
   private final long highWaterMark;

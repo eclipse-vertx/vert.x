@@ -73,6 +73,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private MessageConsumer registration;
+  private Handler<Object> messageHandler;
   private boolean closed;
 
   public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextInternal context,
@@ -87,10 +88,22 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
+    this.messageHandler = NULL_MSG_HANDLER;
     pending = new InboundBuffer<>(context);
     pending.drainHandler(v -> doResume());
-    pending.handler(NULL_MSG_HANDLER);
-    pending.emptyHandler(v -> checkEnd());
+    pending.handler(obj -> {
+      if (obj == InboundBuffer.END_SENTINEL) {
+        Handler<Void> handler = endHandler();
+        if (handler != null) {
+          handler.handle(null);
+        }
+      } else {
+        Handler<Object> handler = messageHandler();
+        if (handler != null) {
+          handler.handle(obj);
+        }
+      }
+    });
   }
 
   synchronized void registerEventBusHandler() {
@@ -175,13 +188,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     return this;
   }
 
+  private synchronized Handler<Object> messageHandler() {
+    return messageHandler;
+  }
+
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
-    if (handler != null) {
-      pending.handler(handler);
-    } else {
-      pending.handler(NULL_MSG_HANDLER);
-    }
+    messageHandler = handler;
     return this;
   }
 
@@ -193,9 +206,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocket fetch(long amount) {
-    if (!pending.fetch(amount)) {
-      checkEnd();
-    }
+    pending.fetch(amount);
     return this;
   }
 
@@ -213,6 +224,10 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public boolean writeQueueFull() {
     return isNotWritable();
+  }
+
+  private synchronized Handler<Void> endHandler() {
+    return endHandler;
   }
 
   @Override
@@ -348,21 +363,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       consumer = registration;
       registration = null;
     }
-    context.dispatch(v -> checkEnd());
+    pending.write(InboundBuffer.END_SENTINEL);
     super.handleClosed();
     if (consumer != null) {
       consumer.unregister();
     }
-  }
-
-  private void checkEnd() {
-    Handler<Void> handler;
-    synchronized (this) {
-      if (!closed || pending.isPaused() || (handler = endHandler) == null) {
-        return;
-      }
-    }
-    handler.handle(null);
   }
 
   public void handleMessage(Object msg) {
