@@ -225,15 +225,17 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   void handleChunk(Buffer data) {
+    Handler<Buffer> handler;
     synchronized (conn) {
       request.dataReceived();
       bytesRead += data.length();
-      if (dataHandler != null) {
-        try {
-          dataHandler.handle(data);
-        } catch (Throwable t) {
-          handleException(t);
-        }
+      handler = dataHandler;
+    }
+    if (handler != null) {
+      try {
+        handler.handle(data);
+      } catch (Throwable t) {
+        handleException(t);
       }
     }
   }

@@ -193,12 +193,12 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     private final int id;
     private final Http1xClientConnection conn;
     private final Future<HttpClientStream> fut;
+    private final InboundBuffer<Object> queue;
     private HttpClientRequestImpl request;
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
     private boolean reset;
-    private InboundBuffer<Buffer> queue;
     private MultiMap trailers;
     private StreamImpl next;
 
@@ -345,12 +345,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
     @Override
     public void doFetch(long amount) {
-      synchronized (this) {
-        if (queue.fetch(amount) || !responseEnded) {
-          return;
-        }
-      }
-      response.handleEnd(trailers);
+      queue.fetch(amount);
     }
 
     @Override
@@ -460,10 +455,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           }
         }
       }
-      queue.handler(buf -> response.handleChunk(buf));
-      queue.emptyHandler(v -> {
-        if (responseEnded) {
+      queue.handler(buf -> {
+        if (buf == InboundBuffer.END_SENTINEL) {
           response.handleEnd(trailers);
+        } else {
+          response.handleChunk((Buffer) buf);
         }
       });
       queue.drainHandler(v -> {
@@ -486,9 +482,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           }
         }
         trailers = new HeadersAdaptor(trailer.trailingHeaders());
-        if (queue.isEmpty() && !queue.isPaused()) {
-          response.handleEnd(trailers);
-        }
+        conn.close |= !conn.options.isKeepAlive();
+        conn.doResume();
+      }
+      queue.write(InboundBuffer.END_SENTINEL);
+      synchronized (conn) {
         responseEnded = true;
         conn.close |= !conn.options.isKeepAlive();
         conn.doResume();
