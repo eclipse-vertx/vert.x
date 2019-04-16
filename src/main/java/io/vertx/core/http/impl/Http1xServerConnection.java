@@ -26,7 +26,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -70,7 +69,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerConnection extends Http1xConnectionBase implements HttpConnection {
+public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocketImpl> implements HttpConnection {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerConnection.class);
 
@@ -79,9 +78,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   private boolean requestFailed;
   private long bytesRead;
   private long bytesWritten;
-
-  private ServerWebSocketImpl ws;
-  private boolean closeFrameSent;
 
   private HttpServerRequestImpl requestInProgress;
   private HttpServerRequestImpl responseInProgress;
@@ -136,8 +132,8 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
       handleEnd();
     } else if (msg instanceof HttpContent) {
       handleContent(msg);
-    } else {
-      handleOther(msg);
+    } else if (msg instanceof WebSocketFrame) {
+      handleWsFrame((WebSocketFrame) msg);
     }
   }
 
@@ -183,49 +179,6 @@ public class Http1xServerConnection extends Http1xConnectionBase implements Http
   private void handleNext(HttpServerRequestImpl request) {
     responseInProgress = request;
     getContext().runOnContext(v -> responseInProgress.handlePipelined());
-  }
-
-  private void handleOther(Object msg) {
-    if (msg instanceof WebSocketFrame) {
-      WebSocketFrameInternal frame = decodeFrame((WebSocketFrame) msg);
-      switch (frame.type()) {
-        case PING:
-          // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-          chctx.writeAndFlush(new PongWebSocketFrame(frame.getBinaryData()));
-          return;
-        case CLOSE:
-          if (!closeFrameSent) {
-            // Echo back close frame and close the connection once it was written.
-            // This is specified in the WebSockets RFC 6455 Section  5.4.1
-            CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
-            chctx.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
-            closeFrameSent = true;
-          }
-          break;
-      }
-      if (ws != null) {
-        ws.handleFrame(frame);
-      }
-    }
-
-    if (msg instanceof PingWebSocketFrame) {
-      PingWebSocketFrame frame = (PingWebSocketFrame) msg;
-      // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
-      frame.content().retain();
-      chctx.writeAndFlush(new PongWebSocketFrame(frame.content()));
-      return;
-    } else if (msg instanceof CloseWebSocketFrame) {
-      if (!closeFrameSent) {
-        CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
-        // Echo back close frame and close the connection once it was written.
-        // This is specified in the WebSockets RFC 6455 Section  5.4.1
-        CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(frame.statusCode(), frame.reasonText());
-        chctx.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
-        closeFrameSent = true;
-      }
-    }
-
-
   }
 
   @Override
