@@ -19,7 +19,6 @@ import org.junit.Test;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -31,7 +30,7 @@ public class JsonPointerTest {
   @Test
   public void testParsing() {
     JsonPointer pointer = JsonPointer.from("/hello/world");
-    assertEquals("/hello/world", pointer.build());
+    assertEquals("/hello/world", pointer.toString());
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -42,28 +41,28 @@ public class JsonPointerTest {
   @Test
   public void testEncodingParsing() {
     JsonPointer pointer = JsonPointer.create().append("hell/o").append("worl~d");
-    assertEquals("/hell~1o/worl~0d", pointer.build());
+    assertEquals("/hell~1o/worl~0d", pointer.toString());
   }
 
   @Test
   public void testURIParsing() {
     JsonPointer pointer = JsonPointer.fromURI(URI.create("http://www.example.org#/hello/world"));
-    assertEquals("/hello/world", pointer.build());
-    assertEquals(URI.create("http://www.example.org#/hello/world"), pointer.buildURI());
+    assertEquals("/hello/world", pointer.toString());
+    assertEquals(URI.create("http://www.example.org#/hello/world"), pointer.toURI());
   }
 
   @Test
   public void testURIEncodedParsing() {
     JsonPointer pointer = JsonPointer.fromURI(URI.create("http://www.example.org#/hello/world/%5Ea"));
-    assertEquals("/hello/world/^a", pointer.build());
-    assertEquals(URI.create("http://www.example.org#/hello/world/%5Ea"), pointer.buildURI());
+    assertEquals("/hello/world/^a", pointer.toString());
+    assertEquals(URI.create("http://www.example.org#/hello/world/%5Ea"), pointer.toURI());
   }
 
   @Test
   public void testURIJsonPointerEncodedParsing() {
     JsonPointer pointer = JsonPointer.fromURI(URI.create("http://www.example.org#/hell~1o/worl~0d"));
-    assertEquals("/hell~1o/worl~0d", pointer.build());
-    assertEquals(URI.create("http://www.example.org#/hell~1o/worl~0d"), pointer.buildURI());
+    assertEquals("/hell~1o/worl~0d", pointer.toString());
+    assertEquals(URI.create("http://www.example.org#/hell~1o/worl~0d"), pointer.toURI());
   }
 
   @Test
@@ -72,20 +71,20 @@ public class JsonPointerTest {
     keys.add("hello");
     keys.add("world");
     JsonPointer pointer = new JsonPointerImpl(URI.create("#"), keys);
-    assertEquals("/hello/world", pointer.build());
+    assertEquals("/hello/world", pointer.toString());
   }
 
   @Test
   public void testURIBuilding() {
     JsonPointer pointer = JsonPointer.create().append("hello").append("world");
-    assertEquals(URI.create("#/hello/world"), pointer.buildURI());
+    assertEquals(URI.create("#/hello/world"), pointer.toURI());
   }
 
   @Test
   public void testEmptyBuilding() {
     JsonPointer pointer = JsonPointer.create();
-    assertEquals("", pointer.build());
-    assertEquals(URI.create("#"), pointer.buildURI());
+    assertEquals("", pointer.toString());
+    assertEquals(URI.create("#"), pointer.toURI());
   }
 
   @Test

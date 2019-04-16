@@ -47,19 +47,20 @@ public interface JsonPointer {
   boolean isParent(JsonPointer child);
 
   /**
-   * Alias for toString()
+   * Build a <a href="https://tools.ietf.org/html/rfc6901#section-5">string representation</a> of the JSON Pointer
    *
    * @return
    */
-  String build();
+  @Override
+  String toString();
 
   /**
-   * Build a URI representation of the JSON Pointer
+   * Build a <a href="https://tools.ietf.org/html/rfc6901#section-6">URI representation</a> of the JSON Pointer
    *
    * @return
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  URI buildURI();
+  URI toURI();
 
   /**
    * Returns the underlying URI without the fragment
@@ -115,7 +116,7 @@ public interface JsonPointer {
    * @param iterator the json pointer iterator that provides the logic to access to the objectToQuery
    * @return null if pointer points to not existing value, otherwise the requested value
    */
-  default @Nullable Object query(Object objectToQuery, JsonPointerIterator iterator) { return queryOrDefault(objectToQuery, iterator, null); };
+  default @Nullable Object query(Object objectToQuery, JsonPointerIterator iterator) { return queryOrDefault(objectToQuery, iterator, null); }
 
   /**
    * Query the provided readable json pointer iterator. If the query result is null, returns the default. <br/>

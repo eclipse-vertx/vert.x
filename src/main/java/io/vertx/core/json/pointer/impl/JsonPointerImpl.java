@@ -104,7 +104,7 @@ public class JsonPointerImpl implements JsonPointer {
   }
 
   @Override
-  public String build() {
+  public String toString() {
     if (isRootPointer())
       return "";
     else
@@ -112,7 +112,7 @@ public class JsonPointerImpl implements JsonPointer {
   }
 
   @Override
-  public URI buildURI() {
+  public URI toURI() {
     if (isRootPointer()) {
       return replaceFragment(this.startingUri, "");
     } else
@@ -153,11 +153,6 @@ public class JsonPointerImpl implements JsonPointer {
   @Override
   public JsonPointer copy() {
     return new JsonPointerImpl(this.startingUri, this.decodedTokens);
-  }
-
-  @Override
-  public String toString() {
-    return this.buildURI().toString();
   }
 
   @Override
