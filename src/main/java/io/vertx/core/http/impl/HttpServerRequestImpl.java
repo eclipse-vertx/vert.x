@@ -42,7 +42,6 @@ import java.net.URISyntaxException;
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
-import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
@@ -89,8 +88,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
-
-  private InboundBuffer<Buffer> pending;
+  private InboundBuffer<Object> pending;
 
   HttpServerRequestImpl(Http1xServerConnection conn, HttpRequest request) {
     this.conn = conn;
@@ -114,66 +112,63 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  private InboundBuffer<Buffer> pendingQueue() {
+  private InboundBuffer<Object> pendingQueue() {
     if (pending == null) {
       pending = new InboundBuffer<>(conn.getContext(), 8);
       pending.drainHandler(v -> conn.doResume());
-      pending.emptyHandler(v -> {
-        if (ended) {
-          doEnd();
+      pending.handler(buffer -> {
+        if (buffer == InboundBuffer.END_SENTINEL) {
+          onEnd();
+        } else {
+          onData((Buffer) buffer);
         }
       });
-      pending.handler(this::handleData);
     }
     return pending;
   }
 
-  private void enqueueData(Buffer chunk) {
-    // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-    if (!pendingQueue().write(chunk)) {
-      // We only pause when we are actively called by the connection
-      conn.doPause();
-    }
-  }
-
   void handleContent(Buffer buffer) {
-    if (pending != null) {
-      enqueueData(buffer);
+    InboundBuffer<Object> queue;
+    synchronized (conn) {
+      queue = pending;
+    }
+    if (queue != null) {
+      // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+      if (!queue.write(buffer)) {
+        // We only pause when we are actively called by the connection
+        conn.doPause();
+      }
     } else {
-      handleData(buffer);
+      onData(buffer);
     }
   }
 
-  void handleBegin() {
+  void handleBegin(Handler<HttpServerRequest> handler) {
     response = new HttpServerResponseImpl((VertxInternal) conn.vertx(), context, conn, request, metric);
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
-    conn.requestHandler.handle(this);
+    handler.handle(this);
   }
 
-  void appendRequest(HttpServerRequestImpl next) {
+  /**
+   * Enqueue a pipelined request.
+   *
+   * @param request the enqueued request
+   */
+  void enqueue(HttpServerRequestImpl request) {
     HttpServerRequestImpl current = this;
     while (current.next != null) {
       current = current.next;
     }
-    current.next = next;
+    current.next = request;
   }
 
-  HttpServerRequestImpl nextRequest() {
+  /**
+   * @return the next request following this one
+   */
+  HttpServerRequestImpl next() {
     return next;
-  }
-
-  void handlePipelined() {
-    boolean end = ended;
-    ended = false;
-    handleBegin();
-    if (pending != null && pending.isPaused()) {
-      pending.resume();
-    }
-    if (end) {
-      handleEnd();
-    }
   }
 
   void reportRequestBegin() {
@@ -336,9 +331,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      if (!isEnded()) {
-        pendingQueue().pause();
-      }
+      pendingQueue().pause();
       return this;
     }
   }
@@ -346,15 +339,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest fetch(long amount) {
     synchronized (conn) {
-      if (!isEnded()) {
-        if (ended) {
-          if (!pending.fetch(amount)) {
-            doEnd();
-          }
-        } else if (pending != null) {
-          pending.fetch(amount);
-        }
-      }
+      pendingQueue().fetch(amount);
       return this;
     }
   }
@@ -510,7 +495,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return conn;
   }
 
-  private void handleData(Buffer data) {
+  private void onData(Buffer data) {
+    Handler<Buffer> handler;
     synchronized (conn) {
       bytesRead += data.length();
       if (decoder != null) {
@@ -520,28 +506,37 @@ public class HttpServerRequestImpl implements HttpServerRequest {
           handleException(e);
         }
       }
-      if (dataHandler != null) {
-        dataHandler.handle(data);
-      }
+      handler = dataHandler;
+    }
+    if (handler != null) {
+      handler.handle(data);
     }
   }
 
   void handleEnd() {
+    InboundBuffer<Object> queue;
     synchronized (conn) {
       ended = true;
-      if (isEnded()) {
-        doEnd();
-      }
+      queue = pending;
+    }
+    if (queue != null) {
+      queue.write(InboundBuffer.END_SENTINEL);
+    } else {
+      onEnd();
     }
   }
 
-  private void doEnd() {
-    if (decoder != null) {
-      endDecode();
+  private void onEnd() {
+    Handler<Void> handler;
+    synchronized (conn) {
+      if (decoder != null) {
+        endDecode();
+      }
+      handler = endHandler;
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
-    if (endHandler != null) {
-      endHandler.handle(null);
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 

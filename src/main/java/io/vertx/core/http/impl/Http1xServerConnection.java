@@ -110,7 +110,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return metrics;
   }
 
-  public synchronized void handleMessage(Object msg) {
+  public void handleMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       DefaultHttpRequest request = (DefaultHttpRequest) msg;
       if (request.decoderResult() != DecoderResult.SUCCESS) {
@@ -118,26 +118,28 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         return;
       }
       HttpServerRequestImpl req = new HttpServerRequestImpl(this, request);
-      requestInProgress = req;
-      if (responseInProgress == null) {
+      synchronized (this) {
+        requestInProgress = req;
+        if (responseInProgress != null) {
+          // Deferred until the current response completion
+          responseInProgress.enqueue(req);
+          req.pause();
+          return;
+        }
         responseInProgress = requestInProgress;
         if (METRICS_ENABLED) {
           req.reportRequestBegin();
         }
-        VertxThread currentThread = VertxThread.current();
-        ContextInternal ctx = req.context;
-        ContextInternal prev = currentThread.beginDispatch(ctx);
-        try {
-          req.handleBegin();
-        } catch (Throwable t) {
-          ctx.reportException(t);
-        } finally {
-          currentThread.endDispatch(prev);
-        }
-      } else {
-        // Deferred until the current response completion
-        req.pause();
-        responseInProgress.appendRequest(req);
+      }
+      VertxThread currentThread = VertxThread.current();
+      ContextInternal ctx = req.context;
+      ContextInternal prev = currentThread.beginDispatch(ctx);
+      try {
+        req.handleBegin(requestHandler);
+      } catch (Throwable t) {
+        ctx.reportException(t);
+      } finally {
+        currentThread.endDispatch(prev);
       }
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       handleEnd();
@@ -155,11 +157,15 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       return;
     }
     Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content(), chctx.alloc()));
-    if (METRICS_ENABLED) {
-      reportBytesRead(buffer);
+    HttpServerRequestImpl request;
+    synchronized (this) {
+      if (METRICS_ENABLED) {
+        reportBytesRead(buffer);
+      }
+      request = requestInProgress;
     }
-    requestInProgress.context.dispatch(v -> {
-      requestInProgress.handleContent(buffer);
+    request.context.dispatch(v -> {
+      request.handleContent(buffer);
     });
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
@@ -168,11 +174,14 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   private void handleEnd() {
-    if (METRICS_ENABLED) {
-      reportRequestComplete();
+    HttpServerRequestImpl request;
+    synchronized (this) {
+      if (METRICS_ENABLED) {
+        reportRequestComplete();
+      }
+      request = requestInProgress;
+      requestInProgress = null;
     }
-    HttpServerRequestImpl request = requestInProgress;
-    requestInProgress = null;
     request.context.dispatch(v -> {
       request.handleEnd();
     });
@@ -184,16 +193,19 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
     HttpServerRequestImpl request = responseInProgress;
     responseInProgress = null;
-    HttpServerRequestImpl next = request.nextRequest();
+    HttpServerRequestImpl next = request.next();
     if (next != null) {
       // Handle pipelined request
       handleNext(next);
     }
   }
 
-  private void handleNext(HttpServerRequestImpl request) {
-    responseInProgress = request;
-    getContext().runOnContext(v -> responseInProgress.handlePipelined());
+  private void handleNext(HttpServerRequestImpl next) {
+    responseInProgress = next;
+    getContext().runOnContext(v -> {
+      next.resume();
+      next.handleBegin(requestHandler);
+    });
   }
 
   @Override
