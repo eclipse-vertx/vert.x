@@ -1184,7 +1184,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
         });
         req.exceptionHandler(t -> {
           if (shouldPass) {
-            t.printStackTrace();
             HttpTLSTest.this.fail("Should not throw exception");
           } else {
             complete();
