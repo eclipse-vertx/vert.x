@@ -121,7 +121,12 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     AsyncTestBase.assertWaitUntil(() -> metrics.endpoints().isEmpty());
     assertEquals(null, metrics.connectionCount("localhost:8080"));
     AsyncTestBase.assertWaitUntil(() -> !serverMetric.get().socket.connected.get());
-    AsyncTestBase.assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
+    try {
+      AsyncTestBase.assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
+    } catch (Exception e) {
+      System.out.println(contentLength + " == " + serverMetric.get().socket.bytesRead.get());
+      throw e;
+    }
     AsyncTestBase.assertWaitUntil(() -> contentLength  == serverMetric.get().socket.bytesWritten.get());
     AsyncTestBase.assertWaitUntil(() -> !clientMetric.get().socket.connected.get());
     assertEquals(contentLength, clientMetric.get().socket.bytesRead.get());

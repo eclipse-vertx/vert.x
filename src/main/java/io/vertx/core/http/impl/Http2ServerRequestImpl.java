@@ -171,34 +171,38 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   void handleEnd(MultiMap trailers) {
-    streamEnded = true;
-    ended = true;
-    conn.reportBytesRead(bytesRead);
-    if (postRequestDecoder != null) {
-      try {
-        postRequestDecoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-        while (postRequestDecoder.hasNext()) {
-          InterfaceHttpData data = postRequestDecoder.next();
-          if (data instanceof Attribute) {
-            Attribute attr = (Attribute) data;
-            try {
-              formAttributes().add(attr.getName(), attr.getValue());
-            } catch (Exception e) {
-              // Will never happen, anyway handle it somehow just in case
-              handleException(e);
+    Handler<Void> handler;
+    synchronized (conn) {
+      streamEnded = true;
+      ended = true;
+      conn.reportBytesRead(bytesRead);
+      if (postRequestDecoder != null) {
+        try {
+          postRequestDecoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
+          while (postRequestDecoder.hasNext()) {
+            InterfaceHttpData data = postRequestDecoder.next();
+            if (data instanceof Attribute) {
+              Attribute attr = (Attribute) data;
+              try {
+                formAttributes().add(attr.getName(), attr.getValue());
+              } catch (Exception e) {
+                // Will never happen, anyway handle it somehow just in case
+                handleException(e);
+              }
             }
           }
+        } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
+          // ignore this as it is expected
+        } catch (Exception e) {
+          handleException(e);
+        } finally {
+          postRequestDecoder.destroy();
         }
-      } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
-        // ignore this as it is expected
-      } catch (Exception e) {
-        handleException(e);
-      } finally {
-        postRequestDecoder.destroy();
       }
+      handler = endHandler;
     }
-    if (endHandler != null) {
-      endHandler.handle(null);
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 

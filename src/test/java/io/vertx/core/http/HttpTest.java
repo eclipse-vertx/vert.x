@@ -4276,7 +4276,93 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testServerResponseCloseHandlerNotHoldingLock() throws Exception {
+  public void testEventHandlersNotHoldingLock() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      HttpConnection conn = req.connection();
+      switch (req.path()) {
+        case "/0":
+          req.handler(chunk -> {
+            assertFalse(Thread.holdsLock(conn));
+          });
+          req.endHandler(v -> {
+            assertFalse(Thread.holdsLock(conn));
+            req.response().end(TestUtils.randomAlphaString(256));
+          });
+          break;
+        case "/1":
+          AtomicBoolean paused = new AtomicBoolean();
+          req.pause();
+          paused.set(true);
+          vertx.runOnContext(v -> {
+            paused.set(false);
+            req.resume();
+          });
+          req.handler(chunk -> {
+            assertFalse(Thread.holdsLock(conn));
+            assertFalse(paused.get());
+            paused.set(true);
+            req.pause();
+            vertx.runOnContext(v -> {
+              paused.set(false);
+              req.resume();
+            });
+          });
+          req.endHandler(v -> {
+            assertFalse(Thread.holdsLock(conn));
+            assertFalse(paused.get());
+            req.response().end(TestUtils.randomAlphaString(256));
+          });
+          break;
+      }
+    });
+    startServer();
+    for (int i = 0;i < 2;i++) {
+      client.post(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/" + i, resp -> {
+        assertEquals(200, resp.statusCode());
+        HttpConnection conn = resp.request().connection();
+        switch (resp.request().path()) {
+          case "/0":
+            resp.handler(chunk -> {
+              assertFalse(Thread.holdsLock(conn));
+            });
+            resp.endHandler(v -> {
+              assertFalse(Thread.holdsLock(conn));
+              complete();
+            });
+            break;
+          case "/1":
+            AtomicBoolean paused = new AtomicBoolean();
+            resp.pause();
+            paused.set(true);
+            vertx.runOnContext(v -> {
+              paused.set(false);
+              resp.resume();
+            });
+            resp.handler(chunk -> {
+              assertFalse(Thread.holdsLock(conn));
+              assertFalse(paused.get());
+              paused.set(true);
+              resp.pause();
+              vertx.runOnContext(v -> {
+                paused.set(false);
+                resp.resume();
+              });
+            });
+            resp.endHandler(v -> {
+              assertFalse(Thread.holdsLock(conn));
+              assertFalse(paused.get());
+              complete();
+            });
+            break;
+        }
+      }).end(TestUtils.randomAlphaString(256));
+    }
+    await();
+  }
+
+  @Test
+  public void testEventHandlersNotHoldingLockOnClose() throws Exception {
     waitFor(7);
     server.requestHandler(req -> {
       HttpConnection conn = req.connection();
