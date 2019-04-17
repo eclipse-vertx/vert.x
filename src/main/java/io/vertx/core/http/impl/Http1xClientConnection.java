@@ -482,8 +482,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           }
         }
         trailers = new HeadersAdaptor(trailer.trailingHeaders());
-        conn.close |= !conn.options.isKeepAlive();
-        conn.doResume();
       }
       queue.write(InboundBuffer.END_SENTINEL);
       synchronized (conn) {
