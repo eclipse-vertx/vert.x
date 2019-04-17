@@ -122,8 +122,8 @@ abstract class ContextImpl implements ContextInternal {
     closeHooks.add(hook);
   }
 
-  public void removeCloseHook(Closeable hook) {
-    closeHooks.remove(hook);
+  public boolean removeCloseHook(Closeable hook) {
+    return closeHooks.remove(hook);
   }
 
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
