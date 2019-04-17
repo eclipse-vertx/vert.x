@@ -501,8 +501,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           tracer.receiveResponse(context, response, trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
         }
         trailers = new HeadersAdaptor(trailer.trailingHeaders());
-        conn.close |= !conn.options.isKeepAlive();
-        conn.doResume();
       }
       queue.write(InboundBuffer.END_SENTINEL);
       synchronized (conn) {
