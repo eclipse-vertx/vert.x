@@ -116,8 +116,8 @@ abstract class ContextImpl extends AbstractContext {
     closeHooks.add(hook);
   }
 
-  public void removeCloseHook(Closeable hook) {
-    closeHooks.remove(hook);
+  public boolean removeCloseHook(Closeable hook) {
+    return closeHooks.remove(hook);
   }
 
   public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
@@ -327,8 +327,8 @@ abstract class ContextImpl extends AbstractContext {
     }
 
     @Override
-    public final void removeCloseHook(Closeable hook) {
-      delegate.removeCloseHook(hook);
+    public final boolean removeCloseHook(Closeable hook) {
+      return delegate.removeCloseHook(hook);
     }
 
     @Override

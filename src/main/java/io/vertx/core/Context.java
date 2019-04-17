@@ -266,6 +266,6 @@ public interface Context {
   void addCloseHook(Closeable hook);
 
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  void removeCloseHook(Closeable hook);
+  boolean removeCloseHook(Closeable hook);
 
 }

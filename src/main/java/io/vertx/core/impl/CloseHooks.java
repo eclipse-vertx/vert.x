@@ -52,10 +52,13 @@ class CloseHooks {
    * Remove an existing hook.
    *
    * @param hook the hook to remove
+   * @return {@code} true if the hook was removed
    */
-  synchronized void remove(Closeable hook) {
+  synchronized boolean remove(Closeable hook) {
     if (closeHooks != null) {
-      closeHooks.remove(hook);
+      return closeHooks.remove(hook);
+    } else {
+      return false;
     }
   }
 

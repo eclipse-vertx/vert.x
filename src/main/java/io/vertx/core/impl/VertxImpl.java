@@ -67,7 +67,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -388,8 +387,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public boolean cancelTimer(long id) {
     InternalTimerHandler handler = timeouts.remove(id);
     if (handler != null) {
-      handler.context.removeCloseHook(handler);
-      return handler.cancel();
+      handler.cancel();
+      return true;
     } else {
       return false;
     }
@@ -882,66 +881,69 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return haManager;
   }
 
-  private class InternalTimerHandler implements Handler<Void>, Closeable {
-    final Handler<Long> handler;
-    final boolean periodic;
-    final long timerID;
-    final ContextInternal context;
-    final java.util.concurrent.Future<?> future;
-    final AtomicBoolean cancelled;
+  /**
+   * Timers are stored in the {@link #timeouts} map at creation time.
+   * <p/>
+   * Timers are removed from the {@link #timeouts} map when they are cancelled or are fired. The thread
+   * removing the timer successfully owns the timer termination (i.e cancel or timer) to avoid race conditions
+   * between timeout and cancellation.
+   * <p/>
+   * This class does not rely on the internal {@link #future} for the termination to handle the worker case
+   * since the actual timer {@link #handler} execution is scheduled when the {@link #future} executes.
+   */
+  private class InternalTimerHandler implements Handler<Void>, Closeable, Runnable {
 
-    boolean cancel() {
-      if (cancelled.compareAndSet(false, true)) {
-        future.cancel(false);
-        return true;
-      } else {
-        return false;
-      }
-    }
+    private final Handler<Long> handler;
+    private final boolean periodic;
+    private final long timerID;
+    private final ContextInternal context;
+    private final java.util.concurrent.Future<?> future;
 
     InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, long delay, ContextInternal context) {
       this.context = context;
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
-      this.cancelled = new AtomicBoolean();
       EventLoop el = context.nettyEventLoop();
-      Runnable toRun = () -> context.runOnContext(this);
       if (periodic) {
-        future = el.scheduleAtFixedRate(toRun, delay, delay, TimeUnit.MILLISECONDS);
+        future = el.scheduleAtFixedRate(this, delay, delay, TimeUnit.MILLISECONDS);
       } else {
-        future = el.schedule(toRun, delay, TimeUnit.MILLISECONDS);
+        future = el.schedule(this, delay, TimeUnit.MILLISECONDS);
       }
     }
 
+    @Override
+    public void run() {
+      context.executeFromIO(this);
+    }
+
     public void handle(Void v) {
-      if (!cancelled.get()) {
+      if (periodic) {
+        if (timeouts.containsKey(timerID)) {
+          handler.handle(timerID);
+        }
+      } else if (timeouts.remove(timerID) != null) {
         try {
           handler.handle(timerID);
         } finally {
-          if (!periodic) {
-            // Clean up after it's fired
-            cleanupNonPeriodic();
-          }
+          // Clean up after it's fired
+          context.removeCloseHook(this);
         }
       }
     }
 
-    private void cleanupNonPeriodic() {
-      VertxImpl.this.timeouts.remove(timerID);
-      ContextInternal context = getContext();
-      if (context != null) {
-        context.removeCloseHook(this);
-      }
+    private void cancel() {
+      future.cancel(false);
+      context.removeCloseHook(this);
     }
 
     // Called via Context close hook when Verticle is undeployed
     public void close(Handler<AsyncResult<Void>> completionHandler) {
-      VertxImpl.this.timeouts.remove(timerID);
-      cancel();
+      if (timeouts.remove(timerID) != null) {
+        future.cancel(false);
+      }
       completionHandler.handle(Future.succeededFuture());
     }
-
   }
 
   /*
