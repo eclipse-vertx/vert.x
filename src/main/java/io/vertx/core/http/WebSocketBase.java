@@ -276,6 +276,11 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return true if this {@link io.vertx.core.http.HttpConnection} is encrypted via SSL/TLS.
    */
   boolean isSsl();
+  
+  /**
+   * @return true if this socket is closed.
+   */
+  boolean isClosed();
 
   /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is

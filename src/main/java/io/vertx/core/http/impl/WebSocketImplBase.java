@@ -278,7 +278,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  boolean isClosed() {
+  @Override
+  public boolean isClosed() {
     synchronized (conn) {
       return closed;
     }
