@@ -16,6 +16,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.StreamPriority;
@@ -122,8 +124,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeFrame(stream, (byte) type, (short) flags, payload);
   }
 
-  void writeHeaders(Http2Headers headers, boolean end) {
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+  void writeHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), handler);
   }
 
   private void writePriorityFrame(StreamPriority priority) {
@@ -132,6 +134,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   void writeData(ByteBuf chunk, boolean end) {
     conn.handler.writeData(stream, chunk, end, null);
+  }
+
+  void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+    conn.handler.writeData(stream, chunk, end, handler);
   }
 
   void writeReset(long code) {

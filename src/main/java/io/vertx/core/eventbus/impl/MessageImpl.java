@@ -38,6 +38,7 @@ public class MessageImpl<U, V> implements Message<V> {
   protected U sentBody;
   protected V receivedBody;
   protected boolean send;
+  protected Handler<AsyncResult<Void>> writeHandler;
 
   public MessageImpl(boolean src, EventBusImpl bus) {
     this.bus = bus;
@@ -46,7 +47,8 @@ public class MessageImpl<U, V> implements Message<V> {
 
   public MessageImpl(String address, String replyAddress, MultiMap headers, U sentBody,
                      MessageCodec<U, V> messageCodec,
-                     boolean send, boolean src, EventBusImpl bus) {
+                     boolean send, boolean src, EventBusImpl bus,
+                     Handler<AsyncResult<Void>> writeHandler) {
     this.messageCodec = messageCodec;
     this.address = address;
     this.replyAddress = replyAddress;
@@ -55,6 +57,7 @@ public class MessageImpl<U, V> implements Message<V> {
     this.send = send;
     this.bus = bus;
     this.src = src;
+    this.writeHandler = writeHandler;
   }
 
   protected MessageImpl(MessageImpl<U, V> other, boolean src) {
@@ -75,6 +78,7 @@ public class MessageImpl<U, V> implements Message<V> {
       this.receivedBody = messageCodec.transform(other.sentBody);
     }
     this.send = other.send;
+    this.writeHandler = other.writeHandler;
   }
 
   public MessageImpl<U, V> copyBeforeReceive(boolean src) {
@@ -131,7 +135,7 @@ public class MessageImpl<U, V> implements Message<V> {
   @Override
   public <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (replyAddress != null) {
-      MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName());
+      MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName(), null);
       bus.sendReply(reply, this, options, replyHandler);
     }
   }
@@ -143,6 +147,10 @@ public class MessageImpl<U, V> implements Message<V> {
 
   public void setReplyAddress(String replyAddress) {
     this.replyAddress = replyAddress;
+  }
+
+  public Handler<AsyncResult<Void>> writeHandler() {
+    return writeHandler;
   }
 
   public MessageCodec<U, V> codec() {

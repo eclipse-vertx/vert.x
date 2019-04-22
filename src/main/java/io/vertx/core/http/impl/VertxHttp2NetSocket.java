@@ -209,24 +209,30 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket write(String str) {
-    return write(str, null);
+    return write(str, null, null);
+  }
+
+  @Override
+  public NetSocket write(String str, Handler<AsyncResult<Void>> handler) {
+    return write(str, null, handler);
   }
 
   @Override
   public NetSocket write(String str, String enc) {
-    synchronized (conn) {
-      Charset cs = enc != null ? Charset.forName(enc) : CharsetUtil.UTF_8;
-      writeData(Unpooled.copiedBuffer(str, cs), false);
-      return this;
-    }
+    return write(str, enc, null);
+  }
+
+  @Override
+  public NetSocket write(String str, String enc, Handler<AsyncResult<Void>> handler) {
+    Charset cs = enc != null ? Charset.forName(enc) : CharsetUtil.UTF_8;
+    writeData(Unpooled.copiedBuffer(str, cs), false, handler);
+    return this;
   }
 
   @Override
   public NetSocket write(Buffer message, Handler<AsyncResult<Void>> handler) {
-    synchronized (conn) {
-      conn.handler.writeData(stream, message.getByteBuf(), false, handler);
-      return this;
-    }
+    conn.handler.writeData(stream, message.getByteBuf(), false, handler);
+    return this;
   }
 
   @Override
@@ -300,21 +306,27 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public void end() {
-    synchronized (conn) {
-      writeData(Unpooled.EMPTY_BUFFER, true);
-    }
+    writeData(Unpooled.EMPTY_BUFFER, true);
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    writeData(Unpooled.EMPTY_BUFFER, true, handler);
   }
 
   @Override
   public void end(Buffer buffer) {
-    synchronized (conn) {
-      writeData(buffer.getByteBuf(), true);
-    }
+    writeData(buffer.getByteBuf(), true);
   }
 
   @Override
   public void close() {
     end();
+  }
+
+  @Override
+  public void close(Handler<AsyncResult<Void>> handler) {
+    end(handler);
   }
 
   @Override

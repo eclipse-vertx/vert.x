@@ -403,32 +403,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
   }
 
-  @Override
-  public void close() {
-    closeWithPayload(null);
-  }
-
-  @Override
-  public void closeWithPayload(ByteBuf byteBuf) {
-    if (ws == null) {
-      super.close();
-    } else {
-      ChannelPromise promise = chctx.newPromise();
-      flush(promise);
-      promise.addListener((ChannelFutureListener) future -> {
-        CloseWebSocketFrame frame;
-        if (byteBuf == null) {
-          frame = new CloseWebSocketFrame(true, 0, 1000, null);
-        } else {
-          frame = new CloseWebSocketFrame(true, 0, byteBuf);
-        }
-        chctx
-          .writeAndFlush(frame)
-          .addListener(ChannelFutureListener.CLOSE);
-      });
-    }
-  }
-
   void write100Continue() {
     chctx.writeAndFlush(new DefaultFullHttpResponse(HTTP_1_1, CONTINUE));
   }

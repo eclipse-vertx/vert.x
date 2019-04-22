@@ -30,6 +30,8 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import static io.vertx.core.http.HttpHeaders.*;
@@ -64,6 +66,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> completionHandler;
   private Long reset;
   private ByteBuf pendingChunks;
+  private List<Handler<AsyncResult<Void>>> pendingHandlers;
   private int pendingMaxSize = -1;
   private int followRedirects;
   private long written;
@@ -537,25 +540,34 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
 
       if (pendingChunks != null) {
+        List<Handler<AsyncResult<Void>>> handlers = pendingHandlers;
         ByteBuf pending = pendingChunks;
         pendingChunks = null;
-
+        pendingHandlers = null;
+        Handler<AsyncResult<Void>> handler;
+        if (handlers != null) {
+          handler = ar -> {
+            handlers.forEach(h -> h.handle(ar));
+          };
+        } else {
+          handler = null;
+        }
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true, priority);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true, priority, handler);
           stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false, priority);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false, priority, handler);
         }
       } else {
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true, priority);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true, priority, null);
           stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false, priority);
+          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false, priority, null);
         }
       }
       this.connecting = false;
@@ -572,44 +584,81 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public void end(String chunk) {
-    end(Buffer.buffer(chunk));
+    end(chunk, (Handler<AsyncResult<Void>>) null);
+  }
+
+  @Override
+  public void end(String chunk, Handler<AsyncResult<Void>> handler) {
+    end(Buffer.buffer(chunk), handler);
   }
 
   @Override
   public void end(String chunk, String enc) {
+    end(chunk, enc, null);
+  }
+
+  @Override
+  public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(enc, "no null encoding accepted");
-    end(Buffer.buffer(chunk, enc));
+    end(Buffer.buffer(chunk, enc), handler);
   }
 
   @Override
   public void end(Buffer chunk) {
-    write(chunk.getByteBuf(), true);
+    write(chunk.getByteBuf(), true, null);
+  }
+
+  @Override
+  public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    write(chunk.getByteBuf(), true, handler);
   }
 
   @Override
   public void end() {
-    write(null, true);
+    write(null, true, null);
   }
 
   @Override
-  public HttpClientRequestImpl write(Buffer chunk) {
+  public void end(Handler<AsyncResult<Void>> handler) {
+    write(null, true, handler);
+  }
+
+  @Override
+  public HttpClientRequest write(Buffer chunk) {
+    return write(chunk, null);
+  }
+
+  @Override
+  public HttpClientRequest write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
     ByteBuf buf = chunk.getByteBuf();
-    write(buf, false);
+    write(buf, false, handler);
     return this;
   }
 
   @Override
-  public HttpClientRequestImpl write(String chunk) {
-    return write(Buffer.buffer(chunk));
+  public HttpClientRequest write(String chunk) {
+    return write(chunk, (Handler<AsyncResult<Void>>) null);
   }
 
   @Override
-  public HttpClientRequestImpl write(String chunk, String enc) {
-    Objects.requireNonNull(enc, "no null encoding accepted");
-    return write(Buffer.buffer(chunk, enc));
+  public HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler) {
+    write(Buffer.buffer(chunk).getByteBuf(), false, handler);
+    return this;
   }
 
-  private void write(ByteBuf buff, boolean end) {
+  @Override
+  public HttpClientRequest write(String chunk, String enc) {
+    return write(chunk, enc, null);
+  }
+
+  @Override
+  public HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    Objects.requireNonNull(enc, "no null encoding accepted");
+    write(Buffer.buffer(chunk, enc).getByteBuf(), false, handler);
+    return this;
+  }
+
+  private void write(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> h) {
     HttpClientStream s;
     synchronized (this) {
       checkComplete();
@@ -646,6 +695,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             }
             pending.addComponent(true, buff);
           }
+          if (h != null) {
+            if (pendingHandlers == null) {
+              pendingHandlers = new ArrayList<>();
+            }
+            pendingHandlers.add(h);
+          }
         }
         if (end) {
           tryComplete();
@@ -657,7 +712,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         return;
       }
     }
-    s.writeBuffer(buff, end);
+    s.writeBuffer(buff, end, h);
     if (end) {
       s.reportBytesWritten(written); // MUST BE READ UNDER SYNCHRONIZATION
     }

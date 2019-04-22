@@ -16,7 +16,9 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
@@ -139,7 +141,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public ServerWebSocketImpl writeFrame(WebSocketFrame frame) {
+  public ServerWebSocketImpl writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       Boolean check = checkAccept();
       if (check == null) {
@@ -148,7 +150,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       if (!check) {
         throw new IllegalStateException("Cannot write to WebSocket, it has been rejected");
       }
-      return super.writeFrame(frame);
+      return super.writeFrame(frame, handler);
     }
   }
 

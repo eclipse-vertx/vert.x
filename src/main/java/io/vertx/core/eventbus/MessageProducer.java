@@ -53,6 +53,9 @@ public interface MessageProducer<T> extends WriteStream<T> {
   @Override
   MessageProducer<T> write(T data);
 
+  @Fluent
+  MessageProducer<T> write(T data, Handler<AsyncResult<Void>> handler);
+
   @Override
   MessageProducer<T> setWriteQueueMaxSize(int maxSize);
 
@@ -80,7 +83,18 @@ public interface MessageProducer<T> extends WriteStream<T> {
   void end();
 
   /**
+   * Closes the producer, calls {@link #close(Handler)}
+   */
+  @Override
+  void end(Handler<AsyncResult<Void>> handler);
+
+  /**
    * Closes the producer, this method should be called when the message producer is not used anymore.
    */
   void close();
+
+  /**
+   * Same as {@link #close()} but with an {@code handler} called when the operation completes
+   */
+  void close(Handler<AsyncResult<Void>> handler);
 }

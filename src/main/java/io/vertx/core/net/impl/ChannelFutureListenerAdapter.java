@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.datagram.impl;
+package io.vertx.core.net.impl;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -21,19 +21,20 @@ import io.vertx.core.impl.ContextInternal;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-final class DatagramChannelFutureListener<T> implements ChannelFutureListener {
+public final class ChannelFutureListenerAdapter<T> implements ChannelFutureListener {
+
   private final Handler<AsyncResult<T>> handler;
   private final T result;
   private final ContextInternal context;
 
-  DatagramChannelFutureListener(T result, Handler<AsyncResult<T>> handler, ContextInternal context) {
+  public ChannelFutureListenerAdapter(ContextInternal context, T result, Handler<AsyncResult<T>> handler) {
     this.handler = handler;
     this.result = result;
     this.context = context;
   }
 
   @Override
-  public void operationComplete(final ChannelFuture future) throws Exception {
+  public void operationComplete(ChannelFuture future) {
     Future<T> res = future.isSuccess() ? Future.succeededFuture(result) : Future.failedFuture(future.cause());
     context.executeFromIO(res, handler);
   }

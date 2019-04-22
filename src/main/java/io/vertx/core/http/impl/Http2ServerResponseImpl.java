@@ -66,6 +66,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private boolean chunked;
   private boolean headWritten;
   private boolean ended;
+  private boolean closed;
   private HttpResponseStatus status = HttpResponseStatus.OK;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
@@ -119,7 +120,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     Handler<Void> closeHandler;
     synchronized (conn) {
       boolean failed = !ended;
-      ended = true;
+      closed = true;
       if (METRICS_ENABLED && metric != null) {
         // Null in case of push response : handle this case
         conn.reportBytesWritten(bytesWritten);
@@ -154,7 +155,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
       if (handler != null) {
-        checkEnded();
+        checkValid();
       }
       exceptionHandler = handler;
       return this;
@@ -274,7 +275,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse putTrailer(String name, String value) {
     synchronized (conn) {
-      checkEnded();
+      checkValid();
       trailers().set(name, value);
       return this;
     }
@@ -283,7 +284,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse putTrailer(CharSequence name, CharSequence value) {
     synchronized (conn) {
-      checkEnded();
+      checkValid();
       trailers().set(name, value);
       return this;
     }
@@ -292,7 +293,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse putTrailer(String name, Iterable<String> values) {
     synchronized (conn) {
-      checkEnded();
+      checkValid();
       trailers().set(name, values);
       return this;
     }
@@ -301,7 +302,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value) {
     synchronized (conn) {
-      checkEnded();
+      checkValid();
       trailers().set(name, value);
       return this;
     }
@@ -311,7 +312,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse closeHandler(Handler<Void> handler) {
     synchronized (conn) {
       if (handler != null) {
-        checkEnded();
+        checkValid();
       }
       closeHandler = handler;
       return this;
@@ -322,7 +323,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse endHandler(@Nullable Handler<Void> handler) {
     synchronized (conn) {
       if (handler != null) {
-        checkEnded();
+        checkValid();
       }
       endHandler = handler;
       return this;
@@ -333,7 +334,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse writeContinue() {
     synchronized (conn) {
       checkHeadWritten();
-      stream.writeHeaders(new DefaultHttp2Headers().status("100"), false);
+      stream.writeHeaders(new DefaultHttp2Headers().status("100"), false, null);
       ctx.flush();
       return this;
     }
@@ -342,7 +343,15 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
-    return write(buf);
+    write(buf, false, null);
+    return this;
+  }
+
+  @Override
+  public HttpServerResponse write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    ByteBuf buf = chunk.getByteBuf();
+    write(buf, false, handler);
+    return this;
   }
 
   @Override
@@ -351,12 +360,24 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public HttpServerResponse write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    write(Buffer.buffer(chunk, enc).getByteBuf(), false, handler);
+    return this;
+  }
+
+  @Override
   public HttpServerResponse write(String chunk) {
     return write(Buffer.buffer(chunk).getByteBuf());
   }
 
+  @Override
+  public HttpServerResponse write(String chunk, Handler<AsyncResult<Void>> handler) {
+    write(Buffer.buffer(chunk).getByteBuf(), false, handler);
+    return this;
+  }
+
   private Http2ServerResponseImpl write(ByteBuf chunk) {
-    write(chunk, false);
+    write(chunk, false, null);
     return this;
   }
 
@@ -366,22 +387,42 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public void end(String chunk, Handler<AsyncResult<Void>> handler) {
+    end(Buffer.buffer(chunk), handler);
+  }
+
+  @Override
   public void end(String chunk, String enc) {
     end(Buffer.buffer(chunk, enc));
   }
 
   @Override
+  public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    end(Buffer.buffer(chunk, enc));
+  }
+
+  @Override
   public void end(Buffer chunk) {
-    end(chunk.getByteBuf());
+    end(chunk.getByteBuf(), null);
+  }
+
+  @Override
+  public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    end(chunk.getByteBuf(), handler);
   }
 
   @Override
   public void end() {
-    end((ByteBuf) null);
+    end((ByteBuf) null, null);
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    end((ByteBuf) null, handler);
   }
 
   NetSocket netSocket() {
-    checkEnded();
+    checkValid();
     synchronized (conn) {
       if (netSocket != null) {
         return netSocket;
@@ -396,10 +437,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     return netSocket;
   }
 
-  private void end(ByteBuf chunk) {
-    synchronized (conn) {
-      write(chunk, true);
-    }
+  private void end(ByteBuf chunk, Handler<AsyncResult<Void>> handler) {
+    write(chunk, true, handler);
   }
 
   private void sanitizeHeaders() {
@@ -425,7 +464,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       headWritten = true;
       headers.status(Integer.toString(status.code())); // Could be optimized for usual case ?
-      stream.writeHeaders(headers, end);
+      stream.writeHeaders(headers, end, null);
       if (end) {
         ctx.flush();
       }
@@ -435,11 +474,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  void write(ByteBuf chunk, boolean end) {
+  void write(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
     Handler<Void> bodyEndHandler;
     Handler<Void> endHandler;
     synchronized (conn) {
-      checkEnded();
+      if (ended) {
+        throw new IllegalStateException("Response has already been written");
+      }
       ended |= end;
       boolean hasBody = false;
       if (chunk != null) {
@@ -455,10 +496,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       boolean sent = checkSendHeaders(end && !hasBody && trailers == null);
       if (hasBody || (!sent && end)) {
-        stream.writeData(chunk, end && trailers == null);
+        stream.writeData(chunk, end && trailers == null, handler);
       }
       if (end && trailers != null) {
-        stream.writeHeaders(trailers, true);
+        stream.writeHeaders(trailers, true, null);
       }
       bodyEndHandler = this.bodyEndHandler;
       endHandler = this.endHandler;
@@ -476,7 +517,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse writeCustomFrame(int type, int flags, Buffer payload) {
     synchronized (conn) {
-      checkEnded();
+      checkValid();
       checkSendHeaders(false);
       stream.writeFrame(type, flags, payload.getByteBuf());
       ctx.flush();
@@ -484,9 +525,12 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private void checkEnded() {
+  private void checkValid() {
     if (ended) {
       throw new IllegalStateException("Response has already been written");
+    }
+    if (closed) {
+      throw new IllegalStateException("Response is closed");
     }
   }
 
@@ -499,7 +543,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public boolean writeQueueFull() {
     synchronized (conn) {
-      checkEnded();
+      checkValid();
       return stream.isNotWritable();
     }
   }
@@ -507,7 +551,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse setWriteQueueMaxSize(int maxSize) {
     synchronized (conn) {
-      checkEnded();
+      checkValid();
       // It does not seem to be possible to configure this at the moment
     }
     return this;
@@ -517,7 +561,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse drainHandler(Handler<Void> handler) {
     synchronized (conn) {
       if (handler != null) {
-        checkEnded();
+        checkValid();
       }
       drainHandler = handler;
       return this;
@@ -532,7 +576,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
     synchronized (conn) {
-      checkEnded();
+      checkValid();
 
       Context resultCtx = resultHandler != null ? stream.vertx.getOrCreateContext() : null;
 
@@ -658,7 +702,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       throw new IllegalStateException("Response has already been written");
     }
     */
-    checkEnded();
+    checkValid();
     stream.writeReset(code);
     ctx.flush();
   }
@@ -679,7 +723,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       if (push) {
         throw new IllegalStateException("A push response cannot promise another push");
       }
-      checkEnded();
+      checkValid();
       conn.sendPush(stream.id(), host, method, headers, path, stream.priority(), handler);
       return this;
     }

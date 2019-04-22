@@ -11,6 +11,9 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
@@ -20,6 +23,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.spi.metrics.EventBusMetrics;
@@ -68,7 +72,7 @@ class ConnectionHolder {
         connected(res.result());
       } else {
         log.warn("Connecting to server " + serverID + " failed", res.cause());
-        close();
+        close(res.cause());
       }
     });
   }
@@ -80,7 +84,7 @@ class ConnectionHolder {
       if (metrics != null) {
         metrics.messageWritten(message.address(), data.length());
       }
-      socket.write(data);
+      socket.write(data, message.writeHandler());
     } else {
       if (pending == null) {
         if (log.isDebugEnabled()) {
@@ -93,11 +97,27 @@ class ConnectionHolder {
   }
 
   void close() {
+    close(ConnectionBase.CLOSED_EXCEPTION);
+  }
+
+  private void close(Throwable cause) {
     if (timeoutID != -1) {
       vertx.cancelTimer(timeoutID);
     }
     if (pingTimeoutID != -1) {
       vertx.cancelTimer(pingTimeoutID);
+    }
+    synchronized (this) {
+      ClusteredMessage<?, ?> msg;
+      if (pending != null) {
+        Future<Void> failure = Future.failedFuture(cause);
+        while ((msg = pending.poll()) != null) {
+          Handler<AsyncResult<Void>> handler = msg.writeHandler();
+          if (handler != null) {
+            handler.handle(failure);
+          }
+        }
+      }
     }
     try {
       client.close();
@@ -122,7 +142,7 @@ class ConnectionHolder {
         close();
       });
       ClusteredMessage pingMessage =
-        new ClusteredMessage<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true, true, eventBus);
+        new ClusteredMessage<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true, true, eventBus, null);
       Buffer data = pingMessage.encodeToWire();
       socket.write(data);
     });
@@ -131,7 +151,9 @@ class ConnectionHolder {
   private synchronized void connected(NetSocket socket) {
     this.socket = socket;
     connected = true;
-    socket.exceptionHandler(t -> close());
+    socket.exceptionHandler(err -> {
+      close(err);
+    });
     socket.closeHandler(v -> close());
     socket.handler(data -> {
       // Got a pong back
@@ -149,7 +171,7 @@ class ConnectionHolder {
         if (metrics != null) {
           metrics.messageWritten(message.address(), data.length());
         }
-        socket.write(data);
+        socket.write(data, message.writeHandler());
       }
     }
     pending = null;

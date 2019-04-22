@@ -189,6 +189,21 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public HttpClientRequest write(Buffer data, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) {
     throw new IllegalStateException();
   }
@@ -209,12 +224,27 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public void end(String chunk, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public void end(String chunk, String enc) {
     throw new IllegalStateException();
   }
 
   @Override
+  public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public void end(Buffer chunk) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
 
@@ -225,6 +255,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public void end() {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
 

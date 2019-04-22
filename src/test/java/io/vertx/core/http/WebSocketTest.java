@@ -16,7 +16,6 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -69,6 +68,9 @@ import static io.vertx.test.core.TestUtils.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class WebSocketTest extends VertxTestBase {
+
+  private static final String TEST_REASON = "I'm moving away!";
+  private static final short TEST_STATUS_CODE = (short)1001;
 
   private HttpClient client;
   private HttpServer server;
@@ -1375,23 +1377,27 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   private void testWriteMessage(int size, WebsocketVersion version) {
+    waitFor(2);
     String path = "/some/path";
     byte[] expected = TestUtils.randomByteArray(size);
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
-      ws.writeBinaryMessage(Buffer.buffer(expected));
+      AtomicInteger count = new AtomicInteger();
+      ws.writeBinaryMessage(Buffer.buffer(expected), onSuccess(v -> {
+        assertEquals(1, count.incrementAndGet());
+        complete();
+      }));
       ws.close();
     });
-    server.listen(ar -> {
-      assertTrue(ar.succeeded());
+    server.listen(onSuccess(s -> {
       client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, null, version, ws -> {
         Buffer actual = Buffer.buffer();
         ws.handler(actual::appendBuffer);
         ws.closeHandler(v -> {
           assertArrayEquals(expected, actual.getBytes(0, actual.length()));
-          testComplete();
+          complete();
         });
       });
-    });
+    }));
     await();
   }
 
@@ -2406,27 +2412,37 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testCloseStatusCodeFromServer() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(2);
+  public void testCloseStatusCodeFromServer() {
+    waitFor(2);
+    testCloseStatusCodeFromServer(ServerWebSocket::close);
+  }
+
+  @Test
+  public void testCloseStatusCodeFromServerWithHandler() {
+    waitFor(3);
+    testCloseStatusCodeFromServer(ws -> ws.close(onSuccess(v -> complete())));
+  }
+
+  private void testCloseStatusCodeFromServer(Consumer<ServerWebSocket> closeOp) {
     client = vertx.createHttpClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
-          latch.countDown();
+          complete();
         });
-        vertx.setTimer(1000, (ar) -> socket.close());
+        vertx.setTimer(100, id -> closeOp.accept(socket));
       })
-      .listen(ar -> {
+      .listen(onSuccess(s -> {
         client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
           ws.frameHandler(frame -> {
             assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
             assertEquals(1000, frame.closeStatusCode());
             assertNull(frame.closeReason());
-            latch.countDown();
+            complete();
           });
         });
-    });
-    awaitLatch(latch);
+      }));
+    await();
   }
 
   @Test
@@ -2454,87 +2470,100 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testCloseFrame() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(3);
+  public void testCloseFrame() {
+    waitFor(3);
     client = vertx.createHttpClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
-          latch.countDown();
+          complete();
         });
         socket.frameHandler(frame -> {
           if (frame.isText()) {
             assertIllegalStateException(frame::closeStatusCode);
+            complete();
           } else {
-            assertEquals(frame.closeReason(), "It was a good talk");
-            assertEquals(frame.closeStatusCode(), 1001);
+            assertEquals(frame.closeReason(), TEST_REASON);
+            assertEquals(frame.closeStatusCode(), TEST_STATUS_CODE);
+            complete();
           }
-          latch.countDown();
         });
       })
-      .listen(ar -> {
+      .listen(onSuccess(s -> {
         client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
           ws.writeTextMessage("Hello");
-          ws.close((short)1001, "It was a good talk");
+          ws.close(TEST_STATUS_CODE, TEST_REASON);
         });
-      });
-    awaitLatch(latch);
+      }));
+    await();
   }
 
   @Test
-  public void testCloseCustomPayloadFromServer() throws InterruptedException {
-    final String REASON = "I'm moving away!";
-    final short STATUS_CODE = (short)1001;
+  public void testCloseCustomPayloadFromServer() {
+    waitFor(2);
+    testCloseCustomPayloadFromServer(ws -> ws.close(TEST_STATUS_CODE, TEST_REASON));
+  }
 
-    CountDownLatch latch = new CountDownLatch(2);
+  @Test
+  public void testCloseCustomPayloadFromServerWithHandler() {
+    waitFor(3);
+    testCloseCustomPayloadFromServer(ws -> ws.close(TEST_STATUS_CODE, TEST_REASON, onSuccess(v -> complete())));
+  }
+
+  private void testCloseCustomPayloadFromServer(Consumer<ServerWebSocket> closeOp) {
     client = vertx.createHttpClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
-          latch.countDown();
+          complete();
         });
-        vertx.setTimer(1000, (ar) -> socket.close(STATUS_CODE, REASON));
+        vertx.setTimer(100, (ar) -> closeOp.accept(socket));
       })
-      .listen(ar -> {
+      .listen(onSuccess(s -> {
         client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
           ws.frameHandler(frame -> {
-            assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
-            assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
-            assertEquals(REASON, frame.closeReason());
-            assertEquals(STATUS_CODE, frame.closeStatusCode());
-            latch.countDown();
+            assertEquals(TEST_REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
+            assertEquals(TEST_STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+            assertEquals(TEST_REASON, frame.closeReason());
+            assertEquals(TEST_STATUS_CODE, frame.closeStatusCode());
+            complete();
           });
         });
-      });
-    awaitLatch(latch);
+      }));
+    await();
   }
 
   @Test
-  public void testCloseCustomPayloadFromClient() throws InterruptedException {
-    final String REASON = "I'm moving away!";
-    final short STATUS_CODE = (short)1001;
+  public void testCloseCustomPayloadFromClient() {
+    waitFor(2);
+    testCloseCustomPayloadFromClient(ws -> ws.close(TEST_STATUS_CODE, TEST_REASON));
+  }
 
-    CountDownLatch latch = new CountDownLatch(2);
+  @Test
+  public void testCloseCustomPayloadFromClientWithHandler() {
+    waitFor(3);
+    testCloseCustomPayloadFromClient(ws -> ws.close(TEST_STATUS_CODE, TEST_REASON, onSuccess(v -> complete())));
+  }
+
+  private void testCloseCustomPayloadFromClient(Consumer<WebSocket> closeOp) {
     client = vertx.createHttpClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
-          latch.countDown();
+          complete();
         });
         socket.frameHandler(frame -> {
-          assertEquals(REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
-          assertEquals(STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
-          assertEquals(REASON, frame.closeReason());
-          assertEquals(STATUS_CODE, frame.closeStatusCode());
-          latch.countDown();
+          assertEquals(TEST_REASON, frame.binaryData().getByteBuf().readerIndex(2).toString(StandardCharsets.UTF_8));
+          assertEquals(TEST_STATUS_CODE, frame.binaryData().getByteBuf().getShort(0));
+          assertEquals(TEST_REASON, frame.closeReason());
+          assertEquals(TEST_STATUS_CODE, frame.closeStatusCode());
+          complete();
         });
       })
-      .listen(ar -> {
-        client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", ws -> {
-          ws.close(STATUS_CODE, REASON);
-        });
-      });
-    awaitLatch(latch);
+      .listen(onSuccess(s -> {
+        client.websocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", closeOp::accept);
+      }));
+    await();
   }
 
   @Test
@@ -2860,6 +2889,48 @@ public class WebSocketTest extends VertxTestBase {
             testComplete();
           });
           resume.complete();
+        });
+      }));
+    await();
+  }
+
+  @Test
+  public void testWriteHandlerSuccess() {
+    waitFor(2);
+    server = vertx.createHttpServer()
+      .websocketHandler(ws -> {
+        ws.handler(buff -> {
+          complete();
+        });
+      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
+        client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", ws -> {
+          ws.write(Buffer.buffer("foo"), onSuccess(v -> {
+            complete();
+          }));
+        });
+      }));
+    await();
+  }
+
+  @Test
+  public void testWriteHandlerFailure() {
+    CompletableFuture<Void> close = new CompletableFuture<>();
+    server = vertx.createHttpServer()
+      .websocketHandler(ws -> {
+        ws.pause();
+        close.whenComplete((v, err) -> {
+          ws.close();
+        });
+      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
+        Buffer buffer = TestUtils.randomBuffer(1024);
+        client.websocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", ws -> {
+          while (!ws.writeQueueFull()) {
+            ws.write(buffer);
+          }
+          ws.write(buffer, onFailure(err -> {
+            testComplete();
+          }));
+          close.complete(null);
         });
       }));
     await();

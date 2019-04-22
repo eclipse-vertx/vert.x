@@ -52,7 +52,7 @@ public abstract class ConnectionBase {
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
-  private final VoidChannelPromise voidPromise;
+  public final VoidChannelPromise voidPromise;
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
   protected final ContextInternal context;
@@ -122,6 +122,30 @@ public abstract class ConnectionBase {
     }
   }
 
+  /**
+   * Provide a promise that will call the {@code handler} upon completion.
+   * When the {@code handler} is {@code null} {@link #voidPromise} is returned.
+   *
+   * @param handler the handler
+   * @return a promise
+   */
+  public final ChannelPromise toPromise(Handler<AsyncResult<Void>> handler) {
+    return handler == null ? voidPromise : wrap(handler);
+  }
+
+  private ChannelPromise wrap(Handler<AsyncResult<Void>> handler) {
+    ChannelPromise promise = chctx.newPromise();
+    promise.addListener((fut) -> {
+        if (fut.isSuccess()) {
+          handler.handle(Future.succeededFuture());
+        } else {
+          handler.handle(Future.failedFuture(fut.cause()));
+        }
+      }
+    );
+    return promise;
+  }
+
   public void writeToChannel(Object msg, ChannelPromise promise) {
     synchronized (this) {
       if (!chctx.executor().inEventLoop() || writeInProgress > 0) {
@@ -186,10 +210,23 @@ public abstract class ConnectionBase {
    * Close the connection
    */
   public void close() {
+    close(null);
+  }
+
+  /**
+   * Close the connection and notifies the {@code handler}
+   */
+  public void close(Handler<AsyncResult<Void>> handler) {
     // make sure everything is flushed out on close
-    ChannelPromise promise = chctx.newPromise();
+    ChannelPromise promise = chctx
+      .newPromise()
+      .addListener((ChannelFutureListener) f -> {
+      ChannelFuture closeFut = chctx.channel().close();
+      if (handler != null) {
+        closeFut.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
+      }
+    });
     flush(promise);
-    promise.addListener((ChannelFutureListener) future -> chctx.channel().close());
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {

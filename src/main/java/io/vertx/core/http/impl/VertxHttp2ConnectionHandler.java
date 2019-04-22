@@ -23,7 +23,6 @@ import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextInternal;
 
 import java.util.function.Function;
 
@@ -187,23 +186,23 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   //
 
-  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive) {
+  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive, Handler<AsyncResult<Void>> handler) {
     EventExecutor executor = chctx.executor();
+    ChannelPromise promise = createPromise(handler);
     if (executor.inEventLoop()) {
-      _writeHeaders(stream, headers, end, streamDependency, weight, exclusive);
+      _writeHeaders(stream, headers, end, streamDependency, weight, exclusive, promise);
     } else {
       executor.execute(() -> {
-        _writeHeaders(stream, headers, end, streamDependency, weight, exclusive);
+        _writeHeaders(stream, headers, end, streamDependency, weight, exclusive, promise);
       });
     }
   }
 
-  private void _writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive) {
-    encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, exclusive, 0, end, chctx.newPromise());
+  private void _writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, int streamDependency, short weight, boolean exclusive, ChannelPromise promise) {
+    encoder().writeHeaders(chctx, stream.id(), headers, streamDependency, weight, exclusive, 0, end, promise);
   }
 
-  void writeData(Http2Stream stream, ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
-    EventExecutor executor = chctx.executor();
+  private ChannelPromise createPromise(Handler<AsyncResult<Void>> handler) {
     ChannelPromise promise = chctx.newPromise();
     if (handler != null) {
       promise.addListener((future) -> {
@@ -214,6 +213,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         }
       });
     }
+    return promise;
+  }
+
+  void writeData(Http2Stream stream, ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+    EventExecutor executor = chctx.executor();
+    ChannelPromise promise = createPromise(handler);
     if (executor.inEventLoop()) {
       _writeData(stream, chunk, end, promise);
     } else {

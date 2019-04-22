@@ -47,6 +47,12 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   @Override
   AsyncFile write(Buffer data);
 
+  /**
+   * Same as {@link #write(Buffer)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  AsyncFile write(Buffer data, Handler<AsyncResult<Void>> handler);
+
   @Override
   AsyncFile setWriteQueueMaxSize(int maxSize);
 
@@ -64,6 +70,12 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Override
   void end();
+
+  /**
+   * Close the file, see {@link #close(Handler)}.
+   */
+  @Override
+  void end(Handler<AsyncResult<Void>> handler);
 
   /**
    * Close the file. The actual close happens asynchronously.

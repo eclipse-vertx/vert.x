@@ -127,7 +127,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   @Override
   public void unregister(Handler<AsyncResult<Void>> completionHandler) {
-    Objects.requireNonNull(completionHandler);
     doUnregister(completionHandler);
   }
 

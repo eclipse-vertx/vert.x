@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
@@ -28,10 +29,10 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   public static final String CREDIT_ADDRESS_HEADER_NAME = "__vertx.credit";
 
   private final Vertx vertx;
-  private final EventBus bus;
+  private final EventBusImpl bus;
   private final boolean send;
   private final String address;
-  private final Queue<T> pending = new ArrayDeque<>();
+  private final Queue<MessageImpl<T, ?>> pending = new ArrayDeque<>();
   private final MessageConsumer<Integer> creditConsumer;
   private DeliveryOptions options;
   private int maxSize = DEFAULT_WRITE_QUEUE_MAX_SIZE;
@@ -40,7 +41,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   public MessageProducerImpl(Vertx vertx, String address, boolean send, DeliveryOptions options) {
     this.vertx = vertx;
-    this.bus = vertx.eventBus();
+    this.bus = (EventBusImpl) vertx.eventBus();
     this.address = address;
     this.send = send;
     this.options = options;
@@ -67,13 +68,13 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public MessageProducer<T> send(T message) {
-    doSend(message, null);
+    doSend(message, null, null);
     return this;
   }
 
   @Override
   public <R> MessageProducer<T> send(T message, Handler<AsyncResult<Message<R>>> replyHandler) {
-    doSend(message, replyHandler);
+    doSend(message, replyHandler, null);
     return this;
   }
 
@@ -92,10 +93,17 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public synchronized MessageProducer<T> write(T data) {
+    return write(data, null);
+  }
+
+  @Override
+  public MessageProducer<T> write(T data, Handler<AsyncResult<Void>> handler) {
     if (send) {
-      doSend(data, null);
+      doSend(data, null, handler);
     } else {
-      bus.publish(address, data, options);
+      MessageImpl msg = bus.createMessage(false, true, address, options.getHeaders(), data, options.getCodecName(), handler);
+      msg.writeHandler = handler;
+      bus.sendOrPubInternal(msg, options, null);
     }
     return this;
   }
@@ -133,9 +141,21 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    close(null);
+  }
+
+  @Override
   public void close() {
+    close(null);
+  }
+
+  @Override
+  public void close(Handler<AsyncResult<Void>> handler) {
     if (creditConsumer != null) {
-      creditConsumer.unregister();
+      creditConsumer.unregister(handler);
+    } else {
+      vertx.runOnContext(v -> handler.handle(Future.succeededFuture()));
     }
   }
 
@@ -146,28 +166,25 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     super.finalize();
   }
 
-  private synchronized <R> void doSend(T data, Handler<AsyncResult<Message<R>>> replyHandler) {
+  private synchronized <R> void doSend(T data, Handler<AsyncResult<Message<R>>> replyHandler, Handler<AsyncResult<Void>> handler) {
+    MessageImpl msg = bus.createMessage(true, true, address, options.getHeaders(), data, options.getCodecName(), handler);
     if (credits > 0) {
       credits--;
-      if (replyHandler == null) {
-        bus.send(address, data, options);
-      } else {
-        bus.send(address, data, options, replyHandler);
-      }
+      bus.sendOrPubInternal(msg, options, replyHandler);
     } else {
-      pending.add(data);
+      pending.add(msg);
     }
   }
 
   private synchronized void doReceiveCredit(int credit) {
     credits += credit;
     while (credits > 0) {
-      T data = pending.poll();
-      if (data == null) {
+      MessageImpl<T, ?> msg = pending.poll();
+      if (msg == null) {
         break;
       } else {
         credits--;
-        bus.send(address, data, options);
+        bus.sendOrPubInternal(msg, options, null);
       }
     }
     checkDrained();
