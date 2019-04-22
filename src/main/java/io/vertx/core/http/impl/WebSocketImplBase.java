@@ -12,6 +12,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
@@ -22,7 +24,6 @@ import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.impl.InboundBuffer;
 
@@ -100,7 +101,33 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
+  @Override
   public void close() {
+    close(null);
+  }
+
+  @Override
+  public void close(Handler<AsyncResult<Void>> handler) {
+    close((short) 1000, null, handler);
+  }
+
+  @Override
+  public void close(short statusCode) {
+    close(statusCode, (Handler<AsyncResult<Void>>) null);
+  }
+
+  @Override
+  public void close(short statusCode, Handler<AsyncResult<Void>> handler) {
+    this.close(statusCode, null, handler);
+  }
+
+  @Override
+  public void close(short statusCode, String reason) {
+    close(statusCode, reason, null);
+  }
+
+  @Override
+  public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       if (closed) {
         return;
@@ -108,20 +135,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       closed = true;
     }
     unregisterHandlers();
-    conn.close();
-  }
-
-  public void close(short statusCode) {
-    this.close(statusCode, null);
-  }
-
-  public void close(short statusCode, String reason) {
-    synchronized (conn) {
-      checkClosed();
-      closed = true;
-      unregisterHandlers();
-      conn.closeWithPayload(HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason));
-    }
+    conn.closeWithPayload(statusCode, reason, handler);
   }
 
   @Override
@@ -151,12 +165,22 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public S writeFinalTextFrame(String text) {
-    return (S) writeFrame(WebSocketFrame.textFrame(text, true));
+    return writeFinalTextFrame(text, null);
+  }
+
+  @Override
+  public S writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler) {
+    return writeFrame(WebSocketFrame.textFrame(text, true), handler);
   }
 
   @Override
   public S writeFinalBinaryFrame(Buffer data) {
-    return (S) writeFrame(WebSocketFrame.binaryFrame(data, true));
+    return writeFinalBinaryFrame(data, null);
+  }
+
+  @Override
+  public S writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler) {
+    return writeFrame(WebSocketFrame.binaryFrame(data, true), handler);
   }
 
   @Override
@@ -174,27 +198,43 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public S writeBinaryMessage(Buffer data) {
+    return writeBinaryMessage(data, null);
+  }
+
+  @Override
+  public S writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       checkClosed();
-      writeMessageInternal(data);
+      writePartialMessage(FrameType.BINARY, data, 0, handler);
       return (S) this;
     }
   }
 
   @Override
   public S writeTextMessage(String text) {
+    return writeTextMessage(text, null);
+  }
+
+  @Override
+  public S writeTextMessage(String text, @Nullable Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       checkClosed();
-      writeTextMessageInternal(text);
+      Buffer data = Buffer.buffer(text);
+      writePartialMessage(FrameType.TEXT, data, 0, handler);
       return (S) this;
     }
   }
 
   @Override
   public S write(Buffer data) {
+    return write(data, null);
+  }
+
+  @Override
+  public S write(Buffer data, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       checkClosed();
-      writeFrame(WebSocketFrame.binaryFrame(data, true));
+      writeFrame(WebSocketFrame.binaryFrame(data, true), handler);
       return (S) this;
     }
   }
@@ -211,22 +251,11 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     return writeFrame(WebSocketFrame.pongFrame(data));
   }
 
-  private void writeMessageInternal(Buffer data) {
-    checkClosed();
-    writePartialMessage(FrameType.BINARY, data, 0);
-  }
-
-  private void writeTextMessageInternal(String text) {
-    checkClosed();
-    Buffer data = Buffer.buffer(text);
-    writePartialMessage(FrameType.TEXT, data, 0);
-  }
-
   /**
    * Splits the provided buffer into multiple frames (which do not exceed the maximum web socket frame size)
    * and writes them in order to the socket.
    */
-  private void writePartialMessage(FrameType frameType, Buffer data, int offset) {
+  private void writePartialMessage(FrameType frameType, Buffer data, int offset, Handler<AsyncResult<Void>> handler) {
     int end = offset + maxWebSocketFrameSize;
     boolean isFinal;
     if (end >= data.length()) {
@@ -242,10 +271,12 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     } else {
       frame = WebSocketFrame.continuationFrame(slice, isFinal);
     }
-    writeFrame(frame);
     int newOffset = offset + maxWebSocketFrameSize;
-    if (!isFinal) {
-      writePartialMessage(frameType, data, newOffset);
+    if (isFinal) {
+      writeFrame(frame, handler);
+    } else {
+      writeFrame(frame);
+      writePartialMessage(frameType, data, newOffset, handler);
     }
   }
 
@@ -262,10 +293,14 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public S writeFrame(WebSocketFrame frame) {
+    return writeFrame(frame, null);
+  }
+
+  public S writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       checkClosed();
       conn.reportBytesWritten(((WebSocketFrameInternal)frame).length());
-      conn.writeToChannel(conn.encodeFrame((WebSocketFrameImpl) frame));
+      conn.writeToChannel(conn.encodeFrame((WebSocketFrameImpl) frame), conn.toPromise(handler));
     }
     return (S) this;
   }
@@ -471,7 +506,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     synchronized (conn) {
       binaryConsumer = this.binaryHandlerRegistration;
       textConsumer = this.textHandlerRegistration;
-      closed = true;
       binaryHandlerRegistration = null;
       textHandlerRegistration = null;
     }
@@ -587,5 +621,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   @Override
   public void end() {
     close();
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    close(handler);
   }
 }

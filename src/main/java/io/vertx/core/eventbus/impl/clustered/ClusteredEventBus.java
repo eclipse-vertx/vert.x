@@ -175,11 +175,11 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
+  public MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName, Handler<AsyncResult<Void>> writeHandler) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send, this);
+    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send, this, writeHandler);
     return msg;
   }
 
@@ -242,6 +242,10 @@ public class ClusteredEventBus extends EventBusImpl {
       }
     } else {
       log.error("Failed to send message", asyncResult.cause());
+      Handler<AsyncResult<Void>> handler = sendContext.message.writeHandler();
+      if (handler != null) {
+        handler.handle(asyncResult.mapEmpty());
+      }
     }
   }
 

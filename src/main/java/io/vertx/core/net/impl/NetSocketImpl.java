@@ -15,10 +15,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandler;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
@@ -126,56 +124,57 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     if (closed) {
       throw new IllegalStateException("Socket is closed");
     }
-    super.writeToChannel(message);
+    writeToChannel(message);
     return this;
   }
 
   @Override
   public NetSocketInternal writeMessage(Object message, Handler<AsyncResult<Void>> handler) {
-    ChannelPromise promise = chctx.newPromise();
-    super.writeToChannel(message, promise);
-    promise.addListener((future) -> {
-        if (future.isSuccess()) {
-          handler.handle(Future.succeededFuture());
-        } else {
-          handler.handle(Future.failedFuture(future.cause()));
-        }
-      }
-    );
+    writeToChannel(message, toPromise(handler));
     return this;
   }
 
   @Override
   public NetSocket write(Buffer data) {
-    write(data.getByteBuf());
+    write(data.getByteBuf(), null);
     return this;
   }
 
   @Override
   public NetSocket write(String str) {
-    write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
+    return write(str, (Handler<AsyncResult<Void>>) null);
+  }
+
+  @Override
+  public NetSocket write(String str, Handler<AsyncResult<Void>> handler) {
+    write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8), handler);
     return this;
   }
 
   @Override
   public NetSocket write(String str, String enc) {
+    return write(str, enc, null);
+  }
+
+  @Override
+  public NetSocket write(String str, String enc, Handler<AsyncResult<Void>> handler) {
     if (enc == null) {
       write(str);
     } else {
-      write(Unpooled.copiedBuffer(str, Charset.forName(enc)));
+      write(Unpooled.copiedBuffer(str, Charset.forName(enc)), handler);
     }
     return this;
   }
 
-  private void write(ByteBuf buff) {
-    reportBytesWritten(buff.readableBytes());
-    writeMessage(buff);
-  }
-
   @Override
   public NetSocket write(Buffer message, Handler<AsyncResult<Void>> handler) {
-    writeMessage(message.getByteBuf(), handler);
+    write(message.getByteBuf(), handler);
     return this;
+  }
+
+  private void write(ByteBuf buff, Handler<AsyncResult<Void>> handler) {
+    reportBytesWritten(buff.readableBytes());
+    writeMessage(buff, handler);
   }
 
   @Override
@@ -285,16 +284,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     return this;
   }
 
-  @Override
-  public SocketAddress remoteAddress() {
-    return super.remoteAddress();
-  }
-
-  public SocketAddress localAddress() {
-    return super.localAddress();
-  }
-
-  @Override
   public NetSocketImpl exceptionHandler(Handler<Throwable> handler) {
     return (NetSocketImpl) super.exceptionHandler(handler);
   }
@@ -302,13 +291,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public NetSocketImpl closeHandler(Handler<Void> handler) {
     return (NetSocketImpl) super.closeHandler(handler);
-  }
-
-  @Override
-  public synchronized void close() {
-    // Close after all data is written
-    chctx.write(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-    chctx.flush();
   }
 
   @Override
@@ -346,6 +328,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   protected synchronized void handleInterestedOpsChanged() {
     checkContext();
     callDrainHandler();
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    close(handler);
   }
 
   @Override

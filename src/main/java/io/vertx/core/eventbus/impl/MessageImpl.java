@@ -37,13 +37,15 @@ public class MessageImpl<U, V> implements Message<V> {
   protected U sentBody;
   protected V receivedBody;
   protected boolean send;
+  protected Handler<AsyncResult<Void>> writeHandler;
 
   public MessageImpl() {
   }
 
   public MessageImpl(String address, String replyAddress, MultiMap headers, U sentBody,
                      MessageCodec<U, V> messageCodec,
-                     boolean send, EventBusImpl bus) {
+                     boolean send, EventBusImpl bus,
+                     Handler<AsyncResult<Void>> writeHandler) {
     this.messageCodec = messageCodec;
     this.address = address;
     this.replyAddress = replyAddress;
@@ -51,6 +53,7 @@ public class MessageImpl<U, V> implements Message<V> {
     this.sentBody = sentBody;
     this.send = send;
     this.bus = bus;
+    this.writeHandler = writeHandler;
   }
 
   protected MessageImpl(MessageImpl<U, V> other) {
@@ -70,6 +73,7 @@ public class MessageImpl<U, V> implements Message<V> {
       this.receivedBody = messageCodec.transform(other.sentBody);
     }
     this.send = other.send;
+    this.writeHandler = other.writeHandler;
   }
 
   public MessageImpl<U, V> copyBeforeReceive() {
@@ -107,7 +111,7 @@ public class MessageImpl<U, V> implements Message<V> {
   public void fail(int failureCode, String message) {
     if (replyAddress != null) {
       sendReply(bus.createMessage(true, replyAddress, null,
-        new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message), null), null, null);
+        new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message), null, null), null, null);
     }
   }
 
@@ -129,7 +133,7 @@ public class MessageImpl<U, V> implements Message<V> {
   @Override
   public <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (replyAddress != null) {
-      sendReply(bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
+      sendReply(bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName(), null), options, replyHandler);
     }
   }
 
@@ -140,6 +144,10 @@ public class MessageImpl<U, V> implements Message<V> {
 
   public void setReplyAddress(String replyAddress) {
     this.replyAddress = replyAddress;
+  }
+
+  public Handler<AsyncResult<Void>> writeHandler() {
+    return writeHandler;
   }
 
   public MessageCodec<U, V> codec() {

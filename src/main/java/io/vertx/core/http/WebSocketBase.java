@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
@@ -53,6 +54,9 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
 
   @Override
   WebSocketBase write(Buffer data);
+
+  @Fluent
+  WebSocketBase write(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
   WebSocketBase setWriteQueueMaxSize(int maxSize);
@@ -100,6 +104,12 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase writeFrame(WebSocketFrame frame);
 
   /**
+   * Same as {@link #writeFrame(WebSocketFrame)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  WebSocketBase writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Write a final WebSocket text frame to the connection
    *
    * @param text  The text to write
@@ -109,6 +119,12 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase writeFinalTextFrame(String text);
 
   /**
+   * Same as {@link #writeFinalTextFrame(String, Handler)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  WebSocketBase writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Write a final WebSocket binary frame to the connection
    *
    * @param data  The data to write
@@ -116,6 +132,12 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   WebSocketBase writeFinalBinaryFrame(Buffer data);
+
+  /**
+   * Same as {@link #writeFinalBinaryFrame(Buffer, Handler)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  WebSocketBase writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
 
   /**
    * Writes a (potentially large) piece of binary data to the connection. This data might be written as multiple frames
@@ -128,6 +150,12 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   WebSocketBase writeBinaryMessage(Buffer data);
 
   /**
+   * Same as {@link #writeBinaryMessage(Buffer)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  WebSocketBase writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Writes a (potentially large) piece of text data to the connection. This data might be written as multiple frames
    * if it exceeds the maximum WebSocket frame size.
    *
@@ -136,6 +164,12 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   WebSocketBase writeTextMessage(String text);
+
+  /**
+   * Same as {@link #writeTextMessage(String)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  WebSocketBase writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   /**
    * Writes a ping frame to the connection. This will be written in a single frame. Ping frames may be at most 125 bytes (octets).
@@ -233,11 +267,22 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   void end();
 
   /**
+   * Calls {@link #close(Handler)}
+   */
+  @Override
+  void end(Handler<AsyncResult<Void>> handler);
+
+  /**
    * Close the WebSocket sending the default close frame.
    * <p/>
    * No more messages can be sent.
    */
   void close();
+
+  /**
+   * Same as {@link #close()} but with an {@code handler} called when the operation completes
+   */
+  void close(Handler<AsyncResult<Void>> handler);
 
   /**
    * Close the WebSocket sending a close frame with specified status code. You can give a look at various close payloads
@@ -250,6 +295,11 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   void close(short statusCode);
 
   /**
+   * Same as {@link #close(short)} but with an {@code handler} called when the operation completes
+   */
+  void close(short statusCode, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Close sending a close frame with specified status code and reason. You can give a look at various close payloads
    * here: RFC6455 <a href="https://tools.ietf.org/html/rfc6455#section-7.4.1">section 7.4.1</a>
    * <p/>
@@ -259,6 +309,11 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param reason reason of closure
    */
   void close(short statusCode, @Nullable String reason);
+
+  /**
+   * Same as {@link #close(short, String)} but with an {@code handler} called when the operation completes
+   */
+  void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler);
 
   /**
    * @return the remote address for this socket
