@@ -55,6 +55,17 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
   }
 
   @Override
+  public WriteStream<Buffer> write(Buffer data, Handler<AsyncResult<Void>> handler) {
+    datagramSocket.send(data, port, host, ar -> {
+      PacketWriteStreamImpl.this.handle(ar);
+      if (handler != null) {
+        handler.handle(ar.mapEmpty());
+      }
+    });
+    return this;
+  }
+
+  @Override
   public PacketWriteStreamImpl setWriteQueueMaxSize(int maxSize) {
     return this;
   }
@@ -71,5 +82,11 @@ class PacketWriteStreamImpl implements WriteStream<Buffer>, Handler<AsyncResult<
 
   @Override
   public void end() {
+    datagramSocket.close();
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    datagramSocket.close(handler);
   }
 }

@@ -368,7 +368,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
       if (method == HttpMethod.CONNECT) {
@@ -395,21 +395,22 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
       }
       priority(priority);
-      writeHeaders(h, end && content == null);
       if (content != null) {
-        writeBuffer(content, end);
+        writeHeaders(h, false, null);
+        writeBuffer(content, end, handler);
       } else {
+        writeHeaders(h, end, handler);
         handlerContext.flush();
       }
     }
 
     @Override
-    public void writeBuffer(ByteBuf buf, boolean end) {
+    public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
       if (buf == null && end) {
         buf = Unpooled.EMPTY_BUFFER;
       }
       if (buf != null) {
-        writeData(buf, end);
+        writeData(buf, end, handler);
       }
       if (end) {
         handlerContext.flush();

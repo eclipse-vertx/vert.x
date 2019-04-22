@@ -141,13 +141,22 @@ public class VertxTestBase extends AsyncTestBase {
   }
 
   protected void startNodes(int numNodes, VertxOptions options) {
+    VertxOptions[] array = new VertxOptions[numNodes];
+    for (int i = 0;i < numNodes;i++) {
+      array[i] = options;
+    }
+    startNodes(array);
+  }
+
+  protected void startNodes(VertxOptions... options) {
+    int numNodes = options.length;
     CountDownLatch latch = new CountDownLatch(numNodes);
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      options.setClusterManager(getClusterManager())
+      options[i].setClusterManager(getClusterManager())
         .getEventBusOptions().setHost("localhost").setPort(0).setClustered(true);
-      clusteredVertx(options, ar -> {
+      clusteredVertx(options[i], ar -> {
           try {
             if (ar.failed()) {
               ar.cause().printStackTrace();

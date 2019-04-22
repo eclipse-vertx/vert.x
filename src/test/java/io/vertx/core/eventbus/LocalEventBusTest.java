@@ -1484,5 +1484,61 @@ public class LocalEventBusTest extends EventBusTestBase {
     consumer.unregister();
     await();
   }
+
+  @Test
+  public void testSendWriteHandler() {
+    waitFor(2);
+    eb.consumer(ADDRESS1, msg -> complete());
+    MessageProducer<String> producer = eb.sender(ADDRESS1);
+    producer.write("body", onSuccess(v -> complete()));
+    await();
+  }
+
+  @Test
+  public void testSendWriteHandlerNoConsumer() {
+    MessageProducer<String> producer = eb.sender(ADDRESS1);
+    producer.write("body", onFailure(err -> {
+      assertTrue(err instanceof ReplyException);
+      ReplyException replyException = (ReplyException) err;
+      assertEquals(-1, replyException.failureCode());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testPublishWriteHandler() {
+    waitFor(2);
+    eb.consumer(ADDRESS1, msg -> complete());
+    MessageProducer<String> producer = eb.publisher(ADDRESS1);
+    producer.write("body", onSuccess(v -> complete()));
+    await();
+  }
+
+  @Test
+  public void testPublishWriteHandlerNoConsumer() {
+    MessageProducer<String> producer = eb.publisher(ADDRESS1);
+    producer.write("body", onFailure(err -> {
+      assertTrue(err instanceof ReplyException);
+      ReplyException replyException = (ReplyException) err;
+      assertEquals(-1, replyException.failureCode());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testClosePublisher() {
+    MessageProducer<String> producer = eb.publisher(ADDRESS1);
+    producer.close(onSuccess(v -> testComplete()));
+    await();
+  }
+
+  @Test
+  public void testCloseSender() {
+    MessageProducer<String> producer = eb.sender(ADDRESS1);
+    producer.close(onSuccess(v -> testComplete()));
+    await();
+  }
 }
 

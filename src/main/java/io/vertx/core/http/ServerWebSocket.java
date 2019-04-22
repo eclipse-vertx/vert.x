@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -58,6 +59,9 @@ public interface ServerWebSocket extends WebSocketBase {
   ServerWebSocket write(Buffer data);
 
   @Override
+  ServerWebSocket write(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
   ServerWebSocket setWriteQueueMaxSize(int maxSize);
 
   @Override
@@ -67,13 +71,31 @@ public interface ServerWebSocket extends WebSocketBase {
   ServerWebSocket writeFrame(WebSocketFrame frame);
 
   @Override
+  ServerWebSocket writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler);
+
+  @Override
   ServerWebSocket writeFinalTextFrame(String text);
+
+  @Override
+  ServerWebSocket writeFinalTextFrame(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
   ServerWebSocket writeFinalBinaryFrame(Buffer data);
 
   @Override
+  ServerWebSocket writeFinalBinaryFrame(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
   ServerWebSocket writeBinaryMessage(Buffer data);
+
+  @Override
+  ServerWebSocket writeBinaryMessage(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  @Override
+  ServerWebSocket writeTextMessage(String text);
+
+  @Override
+  ServerWebSocket writeTextMessage(String text, Handler<AsyncResult<Void>> handler);
 
   @Override
   ServerWebSocket closeHandler(Handler<Void> handler);

@@ -11,6 +11,7 @@
 
 package io.vertx.core.streams;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
@@ -201,12 +202,22 @@ public class PumpTest {
       return this;
     }
 
+    @Override
+    public WriteStream<T> write(T data, Handler<AsyncResult<Void>> handler) {
+      throw new UnsupportedOperationException();
+    }
+
     public FakeWriteStream exceptionHandler(Handler<Throwable> handler) {
       return this;
     }
 
     @Override
     public void end() {
+    }
+
+    @Override
+    public void end(Handler<AsyncResult<Void>> handler) {
+      throw new UnsupportedOperationException();
     }
   }
 

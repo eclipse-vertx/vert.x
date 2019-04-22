@@ -288,17 +288,32 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public HttpServerResponseImpl write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
-    return write(buf);
+    return write(buf, conn.voidPromise);
+  }
+
+  @Override
+  public HttpServerResponse write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    return write(chunk.getByteBuf(), conn.toPromise(handler));
   }
 
   @Override
   public HttpServerResponseImpl write(String chunk, String enc) {
-    return write(Buffer.buffer(chunk, enc).getByteBuf());
+    return write(Buffer.buffer(chunk, enc).getByteBuf(), conn.voidPromise);
+  }
+
+  @Override
+  public HttpServerResponse write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    return write(Buffer.buffer(chunk, enc).getByteBuf(), conn.toPromise(handler));
   }
 
   @Override
   public HttpServerResponseImpl write(String chunk) {
-    return write(Buffer.buffer(chunk).getByteBuf());
+    return write(Buffer.buffer(chunk).getByteBuf(), conn.voidPromise);
+  }
+
+  @Override
+  public HttpServerResponse write(String chunk, Handler<AsyncResult<Void>> handler) {
+    return write(Buffer.buffer(chunk).getByteBuf(), conn.toPromise(handler));
   }
 
   @Override
@@ -313,25 +328,47 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public void end(String chunk, Handler<AsyncResult<Void>> handler) {
+    end(Buffer.buffer(chunk), handler);
+  }
+
+  @Override
   public void end(String chunk, String enc) {
     end(Buffer.buffer(chunk, enc));
   }
 
   @Override
+  public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    end(Buffer.buffer(chunk, enc), handler);
+  }
+
+  @Override
   public void end(Buffer chunk) {
+    end(chunk, conn.voidPromise);
+  }
+
+  @Override
+  public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    end(chunk, conn.toPromise(handler));
+  }
+
+  private void end(Buffer chunk, ChannelPromise promise) {
     synchronized (conn) {
-      checkValid();
+      if (written) {
+        throw new IllegalStateException("Response has already been written");
+      }
       ByteBuf data = chunk.getByteBuf();
       bytesWritten += data.readableBytes();
+      HttpObject msg;
       if (!headWritten) {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
         prepareHeaders(bytesWritten);
-        conn.writeToChannel(new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders));
+        msg = new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders);
       } else {
-        conn.writeToChannel(new AssembledLastHttpContent(data, trailingHeaders));
+        msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
-
+      conn.writeToChannel(msg, promise);
       if (!keepAlive) {
         closeConnAfterWrite();
         closed = true;
@@ -341,7 +378,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       if (bodyEndHandler != null) {
         bodyEndHandler.handle(null);
       }
-      if (endHandler != null) {
+      if (!closed && endHandler != null) {
         endHandler.handle(null);
       }
     }
@@ -364,6 +401,11 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public void end() {
     end(EMPTY_BUFFER);
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    end(EMPTY_BUFFER, handler);
   }
 
   @Override
@@ -553,7 +595,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
       closed = true;
       exceptionHandler = written ? null : this.exceptionHandler;
-      endHandler = this.endHandler;
+      endHandler = this.written ? null : this.endHandler;
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
@@ -609,24 +651,26 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private HttpServerResponseImpl write(ByteBuf chunk) {
+  private HttpServerResponseImpl write(ByteBuf chunk, ChannelPromise promise) {
     synchronized (conn) {
-      checkValid();
-      if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      if (written) {
+        throw new IllegalStateException("Response has already been written");
+      }
+      else if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
         if (version != HttpVersion.HTTP_1_0) {
           throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
             + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
         }
       }
-
       bytesWritten += chunk.readableBytes();
+      HttpObject msg;
       if (!headWritten) {
         prepareHeaders(-1);
-        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers, chunk));
+        msg = new AssembledHttpResponse(head, version, status, headers, chunk);
       } else {
-        conn.writeToChannel(new DefaultHttpContent(chunk));
+        msg = new DefaultHttpContent(chunk);
       }
-
+      conn.writeToChannel(msg, promise);
       return this;
     }
   }

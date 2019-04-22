@@ -88,11 +88,11 @@ public abstract class HttpTest extends HttpTestBase {
     assertNullPointerException(() -> req.write((Buffer) null));
     assertNullPointerException(() -> req.write((String) null));
     assertNullPointerException(() -> req.write(null, "UTF-8"));
-    assertNullPointerException(() -> req.write("someString", null));
+    assertNullPointerException(() -> req.write("someString", (String) null));
     assertNullPointerException(() -> req.end((Buffer) null));
     assertNullPointerException(() -> req.end((String) null));
     assertNullPointerException(() -> req.end(null, "UTF-8"));
-    assertNullPointerException(() -> req.end("someString", null));
+    assertNullPointerException(() -> req.end("someString", (String) null));
     assertIllegalArgumentException(() -> req.setTimeout(0));
   }
 
@@ -1567,30 +1567,63 @@ public abstract class HttpTest extends HttpTestBase {
       assertFalse(resp.ended());
       resp.end();
       assertTrue(resp.ended());
-      checkHttpServerResponse(resp);
-      testComplete();
+      checkHttpServerResponse(resp, true, onSuccess(v -> {
+        testComplete();
+      }));
     });
     startServer(testAddress);
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler()).end();
     await();
   }
 
-  private void checkHttpServerResponse(HttpServerResponse resp) {
+  private void checkHttpServerResponse(HttpServerResponse resp, boolean sync, Handler<AsyncResult<Void>> handler) {
     Buffer buff = Buffer.buffer();
     assertIllegalStateException(() -> resp.drainHandler(noOpHandler()));
-    assertIllegalStateException(() -> resp.end());
-    assertIllegalStateException(() -> resp.end("foo"));
-    assertIllegalStateException(() -> resp.end(buff));
-    assertIllegalStateException(() -> resp.end("foo", "UTF-8"));
     assertIllegalStateException(() -> resp.exceptionHandler(noOpHandler()));
     assertIllegalStateException(() -> resp.setChunked(false));
     assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
-    assertIllegalStateException(() -> resp.write(buff));
-    assertIllegalStateException(() -> resp.write("foo"));
-    assertIllegalStateException(() -> resp.write("foo", "UTF-8"));
-    assertIllegalStateException(() -> resp.write(buff));
     assertIllegalStateException(() -> resp.writeQueueFull());
     assertIllegalStateException(() -> resp.sendFile("asokdasokd"));
+    if (sync) {
+      assertIllegalStateException(() -> resp.end());
+      assertIllegalStateException(() -> resp.end("foo"));
+      assertIllegalStateException(() -> resp.end(buff));
+      assertIllegalStateException(() -> resp.end("foo", "UTF-8"));
+      assertIllegalStateException(() -> resp.write(buff));
+      assertIllegalStateException(() -> resp.write("foo"));
+      assertIllegalStateException(() -> resp.write("foo", "UTF-8"));
+      assertIllegalStateException(() -> resp.write(buff));
+      handler.handle(Future.succeededFuture());
+    } else {
+      resp.write(buff);
+      resp.write("foo");
+      resp.write("foo", "UTF-8");
+      resp.write(buff, ar1 -> {
+        if (ar1.succeeded()) {
+          handler.handle(Future.failedFuture("Was expecting a failure"));
+        } else {
+          resp.write("foo", ar2 -> {
+            if (ar2.succeeded()) {
+              handler.handle(Future.failedFuture("Was expecting a failure"));
+            } else {
+              resp.write("foo", "UTF-8", ar3 -> {
+                if (ar3.succeeded()) {
+                  handler.handle(Future.failedFuture("Was expecting a failure"));
+                } else {
+                  resp.end(ar4 -> {
+                    if (ar4.succeeded()) {
+                      handler.handle(Future.failedFuture("Was expecting a failure"));
+                    } else {
+                      handler.handle(Future.succeededFuture());
+                    }
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+    }
   }
 
   @Test
@@ -4214,13 +4247,20 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) { throw new UnsupportedOperationException(); }
       public HttpClientRequest write(String chunk) { throw new UnsupportedOperationException(); }
       public HttpClientRequest write(String chunk, String enc) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest write(Buffer data, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest sendHead() { throw new UnsupportedOperationException(); }
       public HttpClientRequest sendHead(Handler<HttpVersion> completionHandler) { throw new UnsupportedOperationException(); }
       public void end(String chunk) { throw new UnsupportedOperationException(); }
       public void end(String chunk, String enc) { throw new UnsupportedOperationException(); }
-      public void end(Buffer chunk) { throw new UnsupportedOperationException(); }
+      public void end(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
+      public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
+      public void end(Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public void end() { throw new UnsupportedOperationException(); }
+      public void end(Buffer chunk) { throw new UnsupportedOperationException(); }
+      public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setTimeout(long timeoutMs) { throw new UnsupportedOperationException(); }
       public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) { throw new UnsupportedOperationException(); }
       public boolean reset(long code) { return false; }
@@ -4458,9 +4498,10 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       resp.setChunked(true).write("some-data");
-      resp.closeHandler(v -> {
-        checkHttpServerResponse(resp);
-        testComplete();
+      resp.closeHandler(v1 -> {
+        checkHttpServerResponse(resp, false, onSuccess(v2 -> {
+          testComplete();
+        }));
       });
     });
     startServer();
@@ -4942,6 +4983,48 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testServerNetSocketCloseWithHandler() {
+    waitFor(2);
+    server.requestHandler(req -> {
+      NetSocket so = req.netSocket();
+      so.close(onSuccess(v -> {
+        complete();
+      }));
+    });
+    server.listen(onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        NetSocket so = resp.netSocket();
+        so.closeHandler(v -> {
+          complete();
+        });
+      });
+      req.sendHead();
+    }));
+    await();
+  }
+
+  @Test
+  public void testClientNetSocketCloseWithHandler() {
+    waitFor(2);
+    server.requestHandler(req -> {
+      NetSocket so = req.netSocket();
+      so.closeHandler(v -> {
+        complete();
+      });
+    });
+    server.listen(onSuccess(s -> {
+      HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        NetSocket so = resp.netSocket();
+        so.close(onSuccess(v -> {
+          complete();
+        }));
+      });
+      req.sendHead();
+    }));
+    await();
+  }
+
+  @Test
   public void testHttpInvalidConnectResponseEnded() {
     waitFor(2);
     server.requestHandler(req -> {
@@ -5033,6 +5116,148 @@ public abstract class HttpTest extends HttpTestBase {
         });
       }).start();
     });
+    await();
+  }
+
+  @Test
+  public void testServerResponseWriteSuccess() throws Exception {
+    testServerResponseWriteSuccess((resp, handler) -> resp.write(TestUtils.randomBuffer(1024), handler));
+  }
+
+  @Test
+  public void testServerResponseEndSuccess() throws Exception {
+    testServerResponseWriteSuccess((resp, handler) -> resp.end(TestUtils.randomBuffer(1024), handler));
+  }
+
+  private void testServerResponseWriteSuccess(BiConsumer<HttpServerResponse, Handler<AsyncResult<Void>>> op) throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      op.accept(resp, onSuccess(v -> {
+        complete();
+      }));
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      complete();
+    });
+    await();
+  }
+
+  @Test
+  public void testServerResponseWriteFailure() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      Buffer chunk = randomBuffer(1024);
+      Runnable[] task = new Runnable[1];
+      task[0] = () -> {
+        resp.write(chunk, ar1 -> {
+          if (ar1.succeeded()) {
+            task[0].run();
+          } else {
+            resp.end(ar2 -> {
+              testComplete();
+            });
+          }
+        });
+      };
+      task[0].run();
+    });
+    startServer();
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      resp.request().connection().close();
+    });
+    await();
+  }
+
+  @Test
+  public void testClientRequestWriteSuccess() throws Exception {
+    testClientRequestWriteSuccess((resp, handler) -> resp.write(TestUtils.randomBuffer(1024), handler));
+  }
+
+  @Test
+  public void testClientRequestEndSuccess() throws Exception {
+    testServerResponseWriteSuccess((resp, handler) -> resp.end(TestUtils.randomBuffer(1024), handler));
+  }
+
+  private void testClientRequestWriteSuccess(BiConsumer<HttpClientRequest, Handler<AsyncResult<Void>>> op) throws Exception {
+
+    waitFor(2);
+    CompletableFuture<Void> fut = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      fut.complete(null);
+      req.handler(v -> {
+        HttpServerResponse resp = req.response();
+        if (!resp.ended()) {
+          resp.end();
+        }
+      });
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      complete();
+    });
+    req.setChunked(true);
+    req.sendHead();
+    fut.whenComplete((v1, err) -> {
+      op.accept(req, onSuccess(v2 -> {
+        complete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testClientRequestLazyWriteSuccess() throws Exception {
+    testClientRequestLazyWriteSuccess((resp, handler) -> resp.write(TestUtils.randomBuffer(1024), handler));
+  }
+
+  @Test
+  public void testClientRequestLazyEndSuccess() throws Exception {
+    testServerResponseWriteSuccess((resp, handler) -> resp.end(TestUtils.randomBuffer(1024), handler));
+  }
+
+  private void testClientRequestLazyWriteSuccess(BiConsumer<HttpClientRequest, Handler<AsyncResult<Void>>> op) throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      complete();
+    });
+    req.setChunked(true);
+    op.accept(req, onSuccess(v -> {
+      complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testClientResponseWriteFailure() throws Exception {
+    server.requestHandler(req -> {
+      req.connection().close();
+    });
+    startServer();
+    HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, err -> {
+    });
+    req.setChunked(true);
+    Buffer chunk = randomBuffer(1024);
+    Runnable[] task = new Runnable[1];
+    task[0] = () -> {
+      req.write(chunk, ar1 -> {
+        if (ar1.succeeded()) {
+          task[0].run();
+        } else {
+          req.end(ar2 -> {
+            testComplete();
+          });
+        }
+      });
+    };
+    task[0].run();
     await();
   }
 

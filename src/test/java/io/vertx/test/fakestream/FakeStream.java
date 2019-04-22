@@ -11,6 +11,7 @@
 package io.vertx.test.fakestream;
 
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.streams.ReadStream;
@@ -106,6 +107,11 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
     }
   }
 
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    throw new UnsupportedOperationException();
+  }
+
   public synchronized void fail(Throwable err) {
     Handler<Throwable> handler = exceptionHandler;
     if (handler != null) {
@@ -195,6 +201,11 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
   public FakeStream<T> write(T data) {
     emit(data);
     return this;
+  }
+
+  @Override
+  public WriteStream<T> write(T data, Handler<AsyncResult<Void>> handler) {
+    throw new UnsupportedOperationException();
   }
 
   @Override

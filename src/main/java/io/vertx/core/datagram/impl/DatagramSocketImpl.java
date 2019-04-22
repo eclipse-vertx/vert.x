@@ -31,6 +31,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.ChannelFutureListenerAdapter;
 import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.transport.Transport;
@@ -215,7 +216,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   @SuppressWarnings("unchecked")
   final void addListener(ChannelFuture future, Handler<AsyncResult<DatagramSocket>> handler) {
     if (handler != null) {
-      future.addListener(new DatagramChannelFutureListener<>(this, handler, context));
+      future.addListener(new ChannelFutureListenerAdapter<>(context, this, handler));
     }
   }
 
@@ -317,7 +318,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     channel.flush();
     ChannelFuture future = channel.close();
     if (handler != null) {
-      future.addListener(new DatagramChannelFutureListener<>(null, handler, context));
+      future.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
     }
   }
 

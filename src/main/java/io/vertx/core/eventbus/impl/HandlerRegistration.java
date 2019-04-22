@@ -75,7 +75,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         if (metrics != null) {
           metrics.replyFailure(address, ReplyFailure.TIMEOUT);
         }
-        sendAsyncResultFailure(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address + ", repliedAddress: " + repliedAddress);
+        sendAsyncResultFailure(new ReplyException(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address + ", repliedAddress: " + repliedAddress));
       });
     }
   }
@@ -137,13 +137,12 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   @Override
   public void unregister(Handler<AsyncResult<Void>> completionHandler) {
-    Objects.requireNonNull(completionHandler);
     doUnregister(completionHandler);
   }
 
-  public void sendAsyncResultFailure(ReplyFailure failure, String msg) {
+  public void sendAsyncResultFailure(ReplyException failure) {
     unregister();
-    asyncResultHandler.handle(Future.failedFuture(new ReplyException(failure, msg)));
+    asyncResultHandler.handle(Future.failedFuture(failure));
   }
 
   private void doUnregister(Handler<AsyncResult<Void>> doneHandler) {

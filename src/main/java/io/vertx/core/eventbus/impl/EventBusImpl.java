@@ -108,7 +108,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public <T> EventBus send(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubInternal(createMessage(true, address, options.getHeaders(), message, options.getCodecName()), options, replyHandler);
+    sendOrPubInternal(createMessage(true, address, options.getHeaders(), message, options.getCodecName(), null), options, replyHandler);
     return this;
   }
 
@@ -145,7 +145,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public EventBus publish(String address, Object message, DeliveryOptions options) {
-    sendOrPubInternal(createMessage(false, address, options.getHeaders(), message, options.getCodecName()), options, null);
+    sendOrPubInternal(createMessage(false, address, options.getHeaders(), message, options.getCodecName(), null), options, null);
     return this;
   }
 
@@ -225,11 +225,11 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return metrics;
   }
 
-  protected MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
+  public MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName, Handler<AsyncResult<Void>> writeHandler) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    MessageImpl msg = new MessageImpl(address, null, headers, body, codec, send, this);
+    MessageImpl msg = new MessageImpl(address, null, headers, body, codec, send, this, writeHandler);
     return msg;
   }
 
@@ -358,14 +358,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   protected <T> void deliverMessageLocally(OutboundDeliveryContext<T> sendContext) {
-    if (!deliverMessageLocally(sendContext.message)) {
+    ReplyException failure = deliverMessageLocally(sendContext.message);
+    if (failure != null) {
       // no handlers
       if (metrics != null) {
         metrics.replyFailure(sendContext.message.address, ReplyFailure.NO_HANDLERS);
       }
       if (sendContext.handlerRegistration != null) {
-        sendContext.handlerRegistration.sendAsyncResultFailure(ReplyFailure.NO_HANDLERS, "No handlers for address "
-                                                               + sendContext.message.address);
+        sendContext.handlerRegistration.sendAsyncResultFailure(failure);
       }
     }
   }
@@ -374,7 +374,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return true;
   }
 
-  protected <T> boolean deliverMessageLocally(MessageImpl msg) {
+  protected ReplyException deliverMessageLocally(MessageImpl msg) {
     msg.setBus(this);
     ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
     if (handlers != null) {
@@ -386,6 +386,10 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         }
         if (holder != null) {
           deliverToHandler(msg, holder);
+          Handler<AsyncResult<Void>> handler = msg.writeHandler;
+          if (handler != null) {
+            handler.handle(Future.succeededFuture());
+          }
         }
       } else {
         // Publish
@@ -395,13 +399,22 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         for (HandlerHolder holder: handlers) {
           deliverToHandler(msg, holder);
         }
+        Handler<AsyncResult<Void>> handler = msg.writeHandler;
+        if (handler != null) {
+          handler.handle(Future.succeededFuture());
+        }
       }
-      return true;
+      return null;
     } else {
       if (metrics != null) {
         metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), 0);
       }
-      return false;
+      ReplyException failure = new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + msg.address);
+      Handler<AsyncResult<Void>> handler = msg.writeHandler;
+      if (handler != null) {
+        handler.handle(Future.failedFuture(failure));
+      }
+      return failure;
     }
   }
 
@@ -432,7 +445,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
   }
 
-  private <T> void sendOrPubInternal(MessageImpl message, DeliveryOptions options,
+  public <T> void sendOrPubInternal(MessageImpl message, DeliveryOptions options,
                                      Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
     HandlerRegistration<T> replyHandlerRegistration = createReplyHandlerRegistration(message, options, replyHandler);

@@ -245,10 +245,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       return conn.context;
     }
 
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority) {
+    @Override
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
       HttpRequest request = createRequest(method, rawMethod, uri, headers);
       prepareRequestHeaders(request, hostHeader, chunked);
-      sendRequest(request, buf, end);
+      sendRequest(request, buf, end, handler);
       if (conn.responseInProgress == null) {
         conn.responseInProgress = this;
       } else {
@@ -289,7 +290,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     private void sendRequest(
-      HttpRequest request, ByteBuf buf, boolean end) {
+      HttpRequest request, ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
       if (end) {
         if (buf != null) {
           request = new AssembledFullHttpRequest(request, buf);
@@ -301,7 +302,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           request = new AssembledHttpRequest(request, buf);
         }
       }
-      conn.writeToChannel(request);
+      conn.writeToChannel(request, conn.toPromise(handler));
     }
 
     private boolean handleChunk(Buffer buff) {
@@ -309,16 +310,21 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    public void writeBuffer(ByteBuf buff, boolean end) {
+    public void writeBuffer(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> handler) {
+      if (buff == null && !end) {
+        return;
+      }
+      HttpObject msg;
       if (end) {
         if (buff != null && buff.isReadable()) {
-          conn.writeToChannel(new DefaultLastHttpContent(buff, false));
+          msg = new DefaultLastHttpContent(buff, false);
         } else {
-          conn.writeToChannel(LastHttpContent.EMPTY_LAST_CONTENT);
+          msg = LastHttpContent.EMPTY_LAST_CONTENT;
         }
-      } else if (buff != null) {
-        conn.writeToChannel(new DefaultHttpContent(buff));
+      } else {
+        msg = new DefaultHttpContent(buff);
       }
+      conn.writeToChannel(msg, conn.toPromise(handler));
     }
 
     @Override
@@ -866,32 +872,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       for (StreamImpl r = responseInProgress;r != null;r = r.next) {
         r.handleException(e);
       }
-    }
-  }
-
-  @Override
-  public synchronized void close() {
-    closeWithPayload(null);
-  }
-
-  @Override
-  public void closeWithPayload(ByteBuf byteBuf) {
-    if (handshaker == null) {
-      super.close();
-    } else {
-      // make sure everything is flushed out on close
-      ChannelPromise promise = chctx.newPromise();
-      flush(promise);
-      // close the websocket connection by sending a close frame with specified payload.
-      promise.addListener((ChannelFutureListener) future -> {
-        CloseWebSocketFrame closeFrame;
-        if (byteBuf != null) {
-          closeFrame = new CloseWebSocketFrame(true, 0, byteBuf);
-        } else {
-          closeFrame = new CloseWebSocketFrame(true, 0, 1000, null);
-        }
-        handshaker.close(chctx.channel(), closeFrame);
-      });
     }
   }
 
