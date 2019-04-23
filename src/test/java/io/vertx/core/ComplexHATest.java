@@ -69,7 +69,7 @@ public class ComplexHATest extends VertxTestBase {
       deployRandomVerticles(() -> {
         killRandom();
       });
-      await(10, TimeUnit.MINUTES);
+      await(2, TimeUnit.MINUTES);
     } catch (Throwable t) {
       // Need to explicitly catch throwables in repeats or they will be swallowed
       t.printStackTrace();
@@ -118,7 +118,6 @@ public class ComplexHATest extends VertxTestBase {
       int deployedNum = v.deploymentIDs().size();
       int numToUnDeploy = random.nextInt(deployedNum + 1);
       List<String> deployed = new ArrayList<>(v.deploymentIDs());
-      int ii = pos;
       for (int j = 0; j < numToUnDeploy; j++) {
         int depPos = random.nextInt(deployed.size());
         String depID = deployed.remove(depPos);
@@ -133,25 +132,25 @@ public class ComplexHATest extends VertxTestBase {
       totDeployed -= totUndeployed;
       runner.run();
     });
-
   }
 
   private void eventLoopWaitUntil(BooleanSupplier supplier, Runnable runner) {
     long start = System.currentTimeMillis();
-    doEventLoopWaitUntil(start, supplier, runner);
-  }
-
-  private void doEventLoopWaitUntil(long start, BooleanSupplier supplier, Runnable runner) {
-    long now = System.currentTimeMillis();
-    if (now - start > 10000) {
-      fail("Timedout in waiting until");
-    } else {
-      if (supplier.getAsBoolean()) {
-        runner.run();
-      } else {
-        vertx.setTimer(1, tid -> doEventLoopWaitUntil(start, supplier, runner));
+    // Use a thread and not the event loop to avoid interference
+    new Thread(() -> {
+      while (!supplier.getAsBoolean()) {
+        if (System.currentTimeMillis() - start > 10000) {
+          fail("Timedout in waiting until");
+          return;
+        }
+        try {
+          Thread.sleep(1);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
       }
-    }
+      runner.run();
+    }).start();
   }
 
   protected void takeDeploymentSnapshots() {
