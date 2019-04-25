@@ -30,6 +30,7 @@ import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -42,6 +43,9 @@ public class Json {
 
   public static ObjectMapper mapper = new ObjectMapper();
   public static ObjectMapper prettyMapper = new ObjectMapper();
+
+  private static final JsonObject EMPTY_JSON_OBJECT = new JsonObject(Collections.emptyMap());
+  private static final JsonArray EMPTY_JSON_ARRAY = new JsonArray(Collections.emptyList());
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
@@ -221,6 +225,22 @@ public class Json {
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
+  }
+
+  /**
+   * Returns an empty jsonObject
+   * @return empty jsonObject
+   */
+  public static JsonObject emptyObject() {
+    return EMPTY_JSON_OBJECT;
+  }
+
+  /**
+   * Returns an empty jsonArray
+   * @return empty jsonArray
+   */
+  public static JsonArray emptyArray() {
+    return EMPTY_JSON_ARRAY;
   }
 
   @SuppressWarnings("unchecked")

@@ -1828,6 +1828,26 @@ public class JsonObjectTest {
     return obj;
   }
 
+  @Test
+  public void testEmptyJsonObject() {
+    JsonObject emptyObject = Json.emptyObject();
+
+    try {
+      emptyObject.put("key", "value"); // expect throw exception
+      fail();
+    } catch (Exception ignored) {
+      // OK
+    }
+
+    boolean empty = emptyObject.isEmpty();
+    assertTrue(empty);
+
+    int size = emptyObject.size();
+    assertEquals(size, 0);
+
+    assertSame(emptyObject, Json.emptyObject());
+  }
+
 }
 
 
