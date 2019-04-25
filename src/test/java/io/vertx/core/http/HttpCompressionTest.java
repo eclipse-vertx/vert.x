@@ -55,7 +55,7 @@ public class HttpCompressionTest extends HttpTestBase {
     // server = vertx.createHttpServer();
     serverWithMinCompressionLevel = vertx.createHttpServer(serverOpts.setPort(DEFAULT_HTTP_PORT - 1).setCompressionLevel(1));
     serverWithMaxCompressionLevel = vertx.createHttpServer(serverOpts.setPort(DEFAULT_HTTP_PORT + 1).setCompressionLevel(9));
-    serverWithClientDeCompression = vertx.createHttpServer(serverOpts.setCompressionSupported(false));
+    serverWithClientDeCompression = vertx.createHttpServer(serverOpts.setCompressionSupported(true));
   }
 
   @Test
@@ -177,27 +177,8 @@ public class HttpCompressionTest extends HttpTestBase {
     String compressData = "Test Client DeCompression....";
     serverWithClientDeCompression.requestHandler(req -> {
       assertNotNull(req.headers().get("Accept-Encoding"));
-      Deflater compress = new Deflater(Deflater.DEFAULT_COMPRESSION, true);
-      byte[] bytes = compressData.getBytes();
-      compress.setInput(bytes);
-      compress.finish();
-      ByteArrayOutputStream bos = new ByteArrayOutputStream(bytes.length);
-      byte[] buf = new byte[1024];
-      byte[] output;
-      while (!compress.finished()) {
-        int i = compress.deflate(buf);
-        bos.write(buf, 0, i);
-      }
-      output = bos.toByteArray();
-      try {
-        bos.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-      compress.end();
       req.response()
-        .putHeader(HttpHeaders.CONTENT_ENCODING, "deflate")
-        .end(Buffer.buffer(output));
+        .end(compressData);
     });
 
     startServer(serverWithClientDeCompression);
