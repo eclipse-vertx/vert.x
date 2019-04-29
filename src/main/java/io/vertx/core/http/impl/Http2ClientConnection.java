@@ -174,10 +174,19 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         String rawMethod = headers.method().toString();
         HttpMethod method = HttpUtils.toVertxMethod(rawMethod);
         String uri = headers.path().toString();
-        String host = headers.authority() != null ? headers.authority().toString() : null;
+        String authority = headers.authority() != null ? headers.authority().toString() : null;
         MultiMap headersMap = new Http2HeadersAdaptor(headers);
         Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-        int port = remoteAddress().port();
+        int pos = authority.indexOf(':');
+        int port;
+        String host;
+        if (pos == -1) {
+          host = authority;
+          port = 80;
+        } else {
+          host = authority.substring(0, pos);
+          port = Integer.parseInt(authority.substring(pos + 1));
+        }
         HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(this, promisedStream, client, isSsl(), method, rawMethod, uri, host, port, headersMap);
         if (metrics != null) {
           pushReq.metric(metrics.responsePushed(queueMetric, metric(), localAddress(), remoteAddress(), pushReq));

@@ -15,6 +15,8 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -392,7 +394,7 @@ public class CoreExamples {
     vertx.createHttpServer(new HttpServerOptions().setReusePort(reusePort));
   }
 
-  public void serverWithDomainSockets(Vertx vertx) {
+  public void tcpServerWithDomainSockets(Vertx vertx) {
     // Only available on BSD and Linux
     vertx.createNetServer().connectHandler(so -> {
       // Handle application
@@ -411,16 +413,31 @@ public class CoreExamples {
     });
   }
 
-  public void clientWithDomainSockets(Vertx vertx) {
+  public void tcpClientWithDomainSockets(Vertx vertx) {
     NetClient netClient = vertx.createNetClient();
 
     // Only available on BSD and Linux
-    netClient.connect(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"), ar -> {
+    SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
+
+    // Connect to the server
+    netClient.connect(addr, ar -> {
       if (ar.succeeded()) {
         // Connected
       } else {
         ar.cause().printStackTrace();
       }
     });
+  }
+
+  public void httpClientWithDomainSockets(Vertx vertx) {
+    HttpClient httpClient = vertx.createHttpClient();
+
+    // Only available on BSD and Linux
+    SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
+
+    // Send request to the server
+    httpClient.request(HttpMethod.GET, addr, 8080, "localhost", "/", resp -> {
+      // Process response
+    }).end();
   }
 }

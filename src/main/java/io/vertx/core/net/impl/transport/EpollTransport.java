@@ -28,6 +28,7 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -75,6 +76,14 @@ class EpollTransport extends Transport {
         return InetSocketAddress.createUnresolved(address.host(), address.port());
       }
     }
+  }
+
+  @Override
+  public io.vertx.core.net.SocketAddress convert(SocketAddress address) {
+    if (address instanceof DomainSocketAddress) {
+      return new SocketAddressImpl(((DomainSocketAddress) address).path());
+    }
+    return super.convert(address);
   }
 
   @Override
