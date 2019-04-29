@@ -1449,28 +1449,33 @@ Native on BSD gives you extra networking options:
 
 === Domain sockets
 
-Natives provide domain sockets support for `NetServer` and `HttpServer`:
+Natives provide domain sockets support for servers:
 
 [source,$lang]
 ----
-{@link examples.CoreExamples#serverWithDomainSockets}
+{@link examples.CoreExamples#tcpServerWithDomainSockets}
 ----
 
-Or for http:
+or for http:
+
 [source,$lang]
 ----
 {@link examples.CoreExamples#httpServerWithDomainSockets}
 ----
 
-
-As well as `NetClient`:
+As well as clients:
 
 [source,$lang]
 ----
-{@link examples.CoreExamples#clientWithDomainSockets}
+{@link examples.CoreExamples#tcpClientWithDomainSockets}
 ----
 
-NOTE: support for `HttpClient` can be expected in later versions of Vert.x
+or for http:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#httpClientWithDomainSockets}
+----
 
 == Security notes
 

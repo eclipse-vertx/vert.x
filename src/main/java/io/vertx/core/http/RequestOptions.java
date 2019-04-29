@@ -35,7 +35,7 @@ public class RequestOptions {
   /**
    * SSL enabled by default = false
    */
-  public static final boolean DEFAULT_SSL = false;
+  public static final Boolean DEFAULT_SSL = null;
 
   /**
    * The default relative request URI = ""
@@ -44,7 +44,7 @@ public class RequestOptions {
 
   private String host;
   private int port;
-  private boolean ssl;
+  private Boolean ssl;
   private String uri;
 
   /**
@@ -123,7 +123,7 @@ public class RequestOptions {
   /**
    * @return is SSL/TLS enabled?
    */
-  public boolean isSsl() {
+  public Boolean isSsl() {
     return ssl;
   }
 
@@ -133,7 +133,7 @@ public class RequestOptions {
    * @param ssl  true if enabled
    * @return a reference to this, so the API can be used fluently
    */
-  public RequestOptions setSsl(boolean ssl) {
+  public RequestOptions setSsl(Boolean ssl) {
     this.ssl = ssl;
     return this;
   }

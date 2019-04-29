@@ -23,8 +23,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
@@ -110,7 +110,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
   @Override
   public NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
-    doConnect(SocketAddress.inetSocketAddress(port, host), serverName, connectHandler != null ? ar -> connectHandler.handle(ar.map(s -> (NetSocket) s)) : null);
+    doConnect(SocketAddress.inetSocketAddress(port, host), serverName, connectHandler);
     return this;
   }
 
@@ -177,7 +177,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
     applyConnectionOptions(remoteAddress.path() != null, bootstrap);
 
-    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, sslHelper.isSSL(), context, options.getProxyOptions());
+    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
       if (res.succeeded()) {
@@ -201,7 +201,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
       }
     };
 
-    channelProvider.connect(remoteAddress, remoteAddress, serverName, channelHandler);
+    channelProvider.connect(remoteAddress, remoteAddress, serverName, sslHelper.isSSL(), channelHandler);
   }
 
   private void connected(ContextInternal context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, SocketAddress remoteAddress) {

@@ -43,7 +43,6 @@ public final class ChannelProvider {
 
   private final Bootstrap bootstrap;
   private final SSLHelper sslHelper;
-  private final boolean ssl;
   private final ContextInternal context;
   private final ProxyOptions proxyOptions;
   private String applicationProtocol;
@@ -51,12 +50,10 @@ public final class ChannelProvider {
 
   public ChannelProvider(Bootstrap bootstrap,
                          SSLHelper sslHelper,
-                         boolean ssl,
                          ContextInternal context,
                          ProxyOptions proxyOptions) {
     this.bootstrap = bootstrap;
     this.context = context;
-    this.ssl = ssl;
     this.sslHelper = sslHelper;
     this.proxyOptions = proxyOptions;
   }
@@ -75,7 +72,7 @@ public final class ChannelProvider {
     return channel;
   }
 
-  public void connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, Handler<AsyncResult<Channel>> channelHandler) {
+  public void connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Handler<AsyncResult<Channel>> channelHandler) {
     Handler<AsyncResult<Channel>> handler = res -> {
       if (Context.isOnEventLoopThread()) {
         channelHandler.handle(res);
@@ -85,13 +82,13 @@ public final class ChannelProvider {
       }
     };
     if (proxyOptions != null) {
-      handleProxyConnect(remoteAddress, peerAddress, serverName, handler);
+      handleProxyConnect(remoteAddress, peerAddress, serverName, ssl, handler);
     } else {
-      handleConnect(remoteAddress, peerAddress, serverName, handler);
+      handleConnect(remoteAddress, peerAddress, serverName, ssl, handler);
     }
   }
 
-  private void initSSL(SocketAddress peerAddress, String serverName, Channel ch, Handler<AsyncResult<Channel>> channelHandler) {
+  private void initSSL(SocketAddress peerAddress, String serverName, boolean ssl, Channel ch, Handler<AsyncResult<Channel>> channelHandler) {
     if (ssl) {
       SslHandler sslHandler = new SslHandler(sslHelper.createEngine(context.owner(), peerAddress, serverName));
       ChannelPipeline pipeline = ch.pipeline();
@@ -124,19 +121,19 @@ public final class ChannelProvider {
   }
 
 
-  private void handleConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, Handler<AsyncResult<Channel>> channelHandler) {
+  private void handleConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Handler<AsyncResult<Channel>> channelHandler) {
     VertxInternal vertx = context.owner();
     bootstrap.resolver(vertx.nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) {
-        initSSL(peerAddress, serverName, ch, channelHandler);
+        initSSL(peerAddress, serverName, ssl, ch, channelHandler);
       }
     });
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress, false));
     fut.addListener(res -> {
       if (res.isSuccess()) {
-        connected(fut.channel(), channelHandler);
+        connected(fut.channel(), ssl, channelHandler);
       } else {
         channelHandler.handle(io.vertx.core.Future.failedFuture(res.cause()));
       }
@@ -149,7 +146,7 @@ public final class ChannelProvider {
    * @param channel the channel
    * @param channelHandler the channel handler
    */
-  private void connected(Channel channel, Handler<AsyncResult<Channel>> channelHandler) {
+  private void connected(Channel channel, boolean ssl, Handler<AsyncResult<Channel>> channelHandler) {
     this.channel = channel;
     if (!ssl) {
       // No handshake
@@ -160,7 +157,7 @@ public final class ChannelProvider {
   /**
    * A channel provider that connects via a Proxy : HTTP or SOCKS
    */
-  private void handleProxyConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, Handler<AsyncResult<Channel>> channelHandler) {
+  private void handleProxyConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Handler<AsyncResult<Channel>> channelHandler) {
 
     final VertxInternal vertx = context.owner();
     final String proxyHost = proxyOptions.getHost();
@@ -206,8 +203,8 @@ public final class ChannelProvider {
                 if (evt instanceof ProxyConnectionEvent) {
                   pipeline.remove(proxy);
                   pipeline.remove(this);
-                  initSSL(peerAddress, serverName, ch, channelHandler);
-                  connected(ch, channelHandler);
+                  initSSL(peerAddress, serverName, ssl, ch, channelHandler);
+                  connected(ch, ssl, channelHandler);
                 }
                 ctx.fireUserEventTriggered(evt);
               }

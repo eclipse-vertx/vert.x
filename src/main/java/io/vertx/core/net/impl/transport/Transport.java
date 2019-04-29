@@ -24,6 +24,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
@@ -111,6 +112,14 @@ public class Transport {
       } else {
         return InetSocketAddress.createUnresolved(address.host(), address.port());
       }
+    }
+  }
+
+  public io.vertx.core.net.SocketAddress convert(SocketAddress address) {
+    if (address instanceof InetSocketAddress) {
+      return new SocketAddressImpl((InetSocketAddress) address);
+    } else {
+      return null;
     }
   }
 
