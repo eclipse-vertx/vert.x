@@ -414,22 +414,28 @@ public abstract class ConnectionBase {
   }
 
   public String remoteName() {
-    InetSocketAddress addr = (InetSocketAddress) chctx.channel().remoteAddress();
-    if (addr == null) return null;
-    // Use hostString that does not trigger a DNS resolution
-    return addr.getHostString();
+    java.net.SocketAddress addr = chctx.channel().remoteAddress();
+    if (addr instanceof InetSocketAddress) {
+      // Use hostString that does not trigger a DNS resolution
+      return ((InetSocketAddress)addr).getHostString();
+    }
+    return null;
   }
 
   public SocketAddress remoteAddress() {
-    InetSocketAddress addr = (InetSocketAddress) chctx.channel().remoteAddress();
-    if (addr == null) return null;
-    return new SocketAddressImpl(addr);
+    java.net.SocketAddress addr = chctx.channel().remoteAddress();
+    if (addr != null) {
+      return vertx.transport().convert(addr);
+    }
+    return null;
   }
 
   public SocketAddress localAddress() {
-    InetSocketAddress addr = (InetSocketAddress) chctx.channel().localAddress();
-    if (addr == null) return null;
-    return new SocketAddressImpl(addr);
+    java.net.SocketAddress addr = chctx.channel().localAddress();
+    if (addr != null) {
+      return vertx.transport().convert(addr);
+    }
+    return null;
   }
 
   public void handleMessage(Object msg) {

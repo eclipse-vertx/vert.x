@@ -1550,7 +1550,7 @@ method.
 
 The {@link io.vertx.core.http.HttpClientOptions#setSsl(boolean)} setting acts as the default client setting.
 
-The {@link io.vertx.core.http.RequestOptions#setSsl(boolean)} overrides the default client setting
+The {@link io.vertx.core.http.RequestOptions#setSsl(Boolean)} overrides the default client setting
 
 * setting the value to `false` will disable SSL/TLS even if the client is configured to use SSL/TLS
 * setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual

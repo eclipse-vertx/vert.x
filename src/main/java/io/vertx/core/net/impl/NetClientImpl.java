@@ -113,7 +113,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
   @Override
   public NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
-    doConnect(SocketAddress.inetSocketAddress(port, host), serverName, connectHandler != null ? ar -> connectHandler.handle(ar.map(s -> (NetSocket) s)) : null);
+    doConnect(SocketAddress.inetSocketAddress(port, host), serverName, connectHandler);
     return this;
   }
 
@@ -180,7 +180,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
     applyConnectionOptions(remoteAddress.path() != null, bootstrap);
 
-    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, sslHelper.isSSL(), context, options.getProxyOptions());
+    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
       if (res.succeeded()) {
@@ -204,7 +204,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
       }
     };
 
-    channelProvider.connect(remoteAddress, remoteAddress, serverName, channelHandler);
+    channelProvider.connect(remoteAddress, remoteAddress, serverName, sslHelper.isSSL(), channelHandler);
   }
 
   private void connected(ContextInternal context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, SocketAddress remoteAddress) {
