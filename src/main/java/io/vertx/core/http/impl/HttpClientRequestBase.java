@@ -16,6 +16,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.streams.ReadStream;
@@ -33,9 +34,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final io.vertx.core.http.HttpMethod method;
   protected final String uri;
   protected final String path;
+  protected final String query;
   protected final String host;
   protected final int port;
-  protected final String query;
+  protected final SocketAddress server;
   protected final boolean ssl;
   private Handler<Throwable> exceptionHandler;
   private long currentTimeoutTimerId = -1;
@@ -46,10 +48,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private boolean paused;
   private HttpClientResponseImpl response;
 
-  HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
     this.uri = uri;
     this.method = method;
+    this.server = server;
     this.host = host;
     this.port = port;
     this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
@@ -94,7 +97,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   public String host() {
-    return host;
+    return server.host();
   }
 
   @Override
@@ -206,7 +209,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   private void timeout(long timeoutMs) {
-    String msg = "The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for host " + host;
+    String msg = "The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + server;
     // Use a stack-less exception
     handleException(new TimeoutException(msg) {
       @Override
@@ -252,5 +255,5 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     }
     return this;
   }
-  
+
 }

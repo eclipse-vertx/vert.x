@@ -35,6 +35,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -63,8 +64,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   private final HttpClientImpl client;
   private final HttpClientOptions options;
   private final boolean ssl;
-  private final String host;
-  private final int port;
+  private final SocketAddress server;
   private final Object endpointMetric;
   private final HttpClientMetrics metrics;
   private final HttpVersion version;
@@ -85,8 +85,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
                          Object endpointMetric,
                          ChannelHandlerContext channel,
                          boolean ssl,
-                         String host,
-                         int port,
+                         SocketAddress server,
                          ContextInternal context,
                          HttpClientMetrics metrics) {
     super(client.getVertx(), channel, context);
@@ -94,8 +93,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     this.client = client;
     this.options = client.getOptions();
     this.ssl = ssl;
-    this.host = host;
-    this.port = port;
+    this.server = server;
     this.metrics = metrics;
     this.version = version;
     this.endpointMetric = endpointMetric;
@@ -577,17 +575,19 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     StreamImpl stream;
     HttpClientResponseImpl response;
     HttpClientRequestImpl request;
-    Throwable err;
+    Exception err;
     synchronized (this) {
       stream = responseInProgress;
       request = stream.request;
+      HttpClientResponseImpl r = null;
+      Exception t = null;
       try {
-        response = stream.beginResponse(resp);
-        err = null;
+        r = stream.beginResponse(resp);
       } catch (Exception e) {
-        err = e;
-        response = null;
+        t = e;
       }
+      response = r;
+      err = t;
     }
     if (response != null) {
       request.handleResponse(response);
@@ -651,7 +651,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       URI wsuri = new URI(requestURI);
       if (!wsuri.isAbsolute()) {
         // Netty requires an absolute url
-        wsuri = new URI((ssl ? "https:" : "http:") + "//" + host + ":" + port + requestURI);
+        wsuri = new URI((ssl ? "https:" : "http:") + "//" + server.host() + ":" + server.port() + requestURI);
       }
       WebSocketVersion version =
          WebSocketVersion.valueOf((vers == null ?
@@ -812,8 +812,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   @Override
   public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
-      if (requestInProgress != null) {
-        requestInProgress.request.handleDrained();
+      StreamImpl current = requestInProgress;
+      if (current != null) {
+        current.request.handleDrained();
       } else if (ws != null) {
         ws.handleDrained();
       }

@@ -18,6 +18,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.function.Function;
@@ -54,6 +55,16 @@ import java.util.function.Function;
 public interface HttpClient extends Measured {
 
   /**
+   * Like {@link #request(HttpMethod, RequestOptions)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code options} parameter.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, RequestOptions options);
+
+  /**
    * Create an HTTP request to send to the server with the specified options.
    *
    * @param method  the HTTP method
@@ -71,6 +82,16 @@ public interface HttpClient extends Measured {
    * @return  an HTTP client request object
    */
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI);
+
+  /**
+   * Like {@link #request(HttpMethod, int, String, String)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code host} and {@code port} parameters.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, int port, String host, String requestURI);
 
   /**
    * Create an HTTP request to send to the server at the specified host and default port.
@@ -93,6 +114,16 @@ public interface HttpClient extends Measured {
   HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
+   * Like {@link #request(HttpMethod, RequestOptions, Handler)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code options} parameter.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, RequestOptions options, Handler<HttpClientResponse> responseHandler);
+
+  /**
    * Create an HTTP request to send to the server at the specified host and port, specifying a response handler to receive
    * the response
    * @param method  the HTTP method
@@ -106,6 +137,16 @@ public interface HttpClient extends Measured {
    */
   @Deprecated
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+
+  /**
+   * Like {@link #request(HttpMethod, int, String, String, Handler)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code host} and {@code port} parameters.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP request to send to the server at the specified host and default port, specifying a response handler to receive
@@ -151,6 +192,16 @@ public interface HttpClient extends Measured {
   HttpClientRequest requestAbs(HttpMethod method, String absoluteURI);
 
   /**
+   * Like {@link #requestAbs(HttpMethod, String)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code absoluteURI} parameter.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest requestAbs(HttpMethod method, SocketAddress serverAddress, String absoluteURI);
+
+  /**
    * Create an HTTP request to send to the server using an absolute URI, specifying a response handler to receive
    * the response
    * @param method  the HTTP method
@@ -162,6 +213,16 @@ public interface HttpClient extends Measured {
    */
   @Deprecated
   HttpClientRequest requestAbs(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
+
+  /**
+   * Like {@link #requestAbs(HttpMethod, String, Handler)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code absoluteURI} parameter.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest requestAbs(HttpMethod method, SocketAddress serverAddress, String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server with the specified options.

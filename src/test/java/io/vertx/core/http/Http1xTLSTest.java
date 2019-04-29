@@ -130,7 +130,7 @@ public class Http1xTLSTest extends HttpTLSTest {
       req.response().setStatusCode(303).putHeader("location", "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
     });
     startServer(redirectServer);
-    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043);
+    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043).setSsl(false);
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.NONE, Trust.NONE)
         .clientSSL(true)
         .serverSSL(false)

@@ -17,6 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.net.SocketAddress;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -40,7 +41,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
       String host,
       int port,
       MultiMap headers) {
-    super(client, ssl, method, host, port, uri);
+    super(client, ssl, method, SocketAddress.inetSocketAddress(port, host), host, port, uri);
     this.conn = conn;
     this.stream = new Http2ClientConnection.Http2ClientStream(conn, this, stream, false);
     this.rawMethod = rawMethod;
@@ -117,7 +118,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public String getHost() {
-    return host;
+    return server.host();
   }
 
   @Override

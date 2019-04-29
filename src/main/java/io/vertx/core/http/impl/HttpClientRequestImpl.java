@@ -28,6 +28,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
 
@@ -73,9 +74,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   // completed => drainHandler = null
 
-  HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, String host, int port,
+  HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, SocketAddress server,
+                        String host, int port,
                         String relativeURI, VertxInternal vertx) {
-    super(client, ssl, method, host, port, relativeURI);
+    super(client, ssl, method, server, host, port, relativeURI);
     this.chunked = false;
     this.vertx = vertx;
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
@@ -448,16 +450,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         throw new IllegalStateException("You must provide a rawMethod when using an HttpMethod.OTHER method");
       }
 
-      String peerHost;
+      SocketAddress peerAddress;
       if (hostHeader != null) {
         int idx = hostHeader.lastIndexOf(':');
         if (idx != -1) {
-          peerHost = hostHeader.substring(0, idx);
+          peerAddress = SocketAddress.inetSocketAddress(Integer.parseInt(hostHeader.substring(idx + 1)), hostHeader.substring(0, idx));
         } else {
-          peerHost = hostHeader;
+          peerAddress = SocketAddress.inetSocketAddress(80, hostHeader);
         }
       } else {
-        peerHost = host;
+        peerAddress = SocketAddress.inetSocketAddress(port, host);
       }
 
       // Capture some stuff
@@ -478,11 +480,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
       ContextInternal connectCtx = vertx.getOrCreateContext();
 
+
+
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
       connecting = true;
-      client.getConnectionForRequest(connectCtx, peerHost, ssl, port, host, ar1 -> {
+      client.getConnectionForRequest(connectCtx, peerAddress, ssl, server, ar1 -> {
         if (ar1.succeeded()) {
           HttpClientStream stream = ar1.result();
           ContextInternal ctx = (ContextInternal) stream.getContext();
