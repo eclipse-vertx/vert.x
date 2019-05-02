@@ -3415,7 +3415,6 @@ public class NetTest extends VertxTestBase {
     };
     Consumer<NetSocket> receiver = so -> {
       now.set(System.currentTimeMillis());
-      remaining.set(expected);
       int[] len = { 0 };
       so.handler(buff -> {
         len[0] += buff.length();
