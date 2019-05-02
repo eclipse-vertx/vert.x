@@ -42,7 +42,6 @@ import io.vertx.test.proxy.Socks4Proxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -56,6 +55,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -3285,24 +3285,43 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testServerWithIdleTimeoutSendChunkedFile() throws Exception {
-    testdleTimeoutSendChunkedFile(true);
+    testIdleTimeoutSendChunkedFile(true);
   }
 
   @Test
   public void testClientWithIdleTimeoutSendChunkedFile() throws Exception {
-    testdleTimeoutSendChunkedFile(false);
+    testIdleTimeoutSendChunkedFile(false);
   }
 
-  private void testdleTimeoutSendChunkedFile(boolean idleOnServer) throws Exception {
+  private void testIdleTimeoutSendChunkedFile(boolean idleOnServer) throws Exception {
     int expected = 16 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
     File sent = TestUtils.tmpFile(".dat", expected);
     server.close();
+    AtomicReference<AsyncResult<Void>> sendResult = new AtomicReference<>();
+    AtomicReference<Integer> remaining = new AtomicReference<>();
+    AtomicLong now = new AtomicLong();
+    Runnable testChecker = () -> {
+      if (sendResult.get() != null && remaining.get() != null) {
+        if (remaining.get() > 0) {
+          // It might fail sometimes
+          assertTrue(sendResult.get().failed());
+        } else {
+          assertTrue(sendResult.get().succeeded());
+          assertTrue(System.currentTimeMillis() - now.get() > 200);
+        }
+        testComplete();
+      }
+    };
     Consumer<NetSocket> sender = so -> {
-      so.sendFile(sent.getAbsolutePath());
+      so.sendFile(sent.getAbsolutePath(), ar -> {
+        sendResult.set(ar);
+        testChecker.run();
+      });
     };
     Consumer<NetSocket> receiver = so -> {
+      now.set(System.currentTimeMillis());
+      remaining.set(expected);
       int[] len = { 0 };
-      long now = System.currentTimeMillis();
       so.handler(buff -> {
         len[0] += buff.length();
         so.pause();
@@ -3312,9 +3331,8 @@ public class NetTest extends VertxTestBase {
       });
       so.exceptionHandler(this::fail);
       so.endHandler(v -> {
-        assertEquals(0, expected - len[0]);
-        assertTrue(System.currentTimeMillis() - now > 200);
-        testComplete();
+        remaining.set(expected - len[0]);
+        testChecker.run();
       });
     };
     server = vertx
