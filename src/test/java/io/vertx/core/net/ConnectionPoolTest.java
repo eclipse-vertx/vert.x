@@ -14,6 +14,7 @@ package io.vertx.core.net;
 import io.vertx.core.*;
 import io.vertx.core.http.impl.pool.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -21,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -40,6 +42,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     private int closeCount;
     private int seq;
     private final boolean fifo;
+    private final AtomicLong tick = new AtomicLong(1L);
 
     FakeConnectionManager(int queueMaxSize, int poolMaxSize, ConnectionProvider<FakeConnection> connector) {
       this(queueMaxSize, poolMaxSize, connector, false);
@@ -68,8 +71,8 @@ public class ConnectionPoolTest extends VertxTestBase {
       return active.size();
     }
 
-    int removeExpired(long timestamp) {
-      return pool.closeIdle(timestamp);
+    void removeExpired() {
+      pool.closeIdle();
     }
 
     synchronized Pool<FakeConnection> pool() {
@@ -80,6 +83,13 @@ public class ConnectionPoolTest extends VertxTestBase {
       return closeCount;
     }
 
+    void tick(long n) {
+      if (n < 0L) {
+        throw new IllegalArgumentException();
+      }
+      tick.addAndGet(n);
+    }
+
     void getConnection(FakeWaiter waiter) {
       synchronized (this) {
         if (closed) {
@@ -88,6 +98,7 @@ public class ConnectionPoolTest extends VertxTestBase {
           pool = new Pool<>(
             context,
             connector,
+            tick::get,
             queueMaxSize,
             1,
             poolMaxSize,
@@ -463,9 +474,15 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertWaitUntil(waiter1::isSuccess);
     conn.recycle(2L);
     assertEquals(1, mgr.size());
-    assertEquals(0, mgr.removeExpired(1L));
-    assertEquals(1, mgr.size());
-    assertEquals(1, mgr.removeExpired(2L));
+    mgr.removeExpired();
+//    assertEquals(0, mgr.removeExpired(1L));
+    assertWaitUntil(() -> mgr.size() == 1);
+//    assertEquals(1, mgr.removeExpired(2L));
+    mgr.tick(1L);
+    mgr.removeExpired();
+    mgr.tick(1L);
+    mgr.removeExpired();
+    waitUntil(() -> mgr.size() == 0);
     assertEquals(0, mgr.size());
     assertWaitUntil(mgr::closed);
   }
@@ -498,6 +515,34 @@ public class ConnectionPoolTest extends VertxTestBase {
   public void testQueueMaxSize() {
     checkQueueMaxSize(2, 3);
     checkQueueMaxSize(0, 3);
+  }
+
+  @Test
+  public void testRecycleInCallback() {
+    FakeConnectionProvider connector = new FakeConnectionProvider();
+    FakeConnectionManager mgr = new FakeConnectionManager(-1, 2, connector);
+    FakeWaiter waiter1 = new FakeWaiter() {
+      @Override
+      protected void onSuccess(FakeConnection conn) {
+        conn.recycle(0);
+      }
+    };
+    FakeWaiter waiter2 = new FakeWaiter() {
+      @Override
+      protected void onSuccess(FakeConnection conn) {
+        conn.recycle(0);
+      }
+    };
+    mgr.getConnection(waiter1);
+    mgr.getConnection(waiter2);
+    FakeConnection req1 = connector.assertRequest();
+    FakeConnection req2 = connector.assertRequest();
+    assertNotSame(req1, req2);
+    req1.connect();
+    req2.connect();
+    assertWaitUntil(waiter1::isSuccess);
+    assertWaitUntil(waiter2::isSuccess);
+    assertWaitUntil(() -> mgr.closed());
   }
 
   private void checkQueueMaxSize(int queueMaxSize, int poolMaxSize) {
@@ -552,10 +597,7 @@ public class ConnectionPoolTest extends VertxTestBase {
               if (action < -1) {
                 latch.countDown();
                 conn.recycle();
-              } /* else if (i < 30) {
-                latch.countDown();
-                throw new Exception();
-              } */ else {
+              } else {
                 vertx.setTimer(10, id -> {
                   if (action < 15) {
                     conn.close();
@@ -585,7 +627,12 @@ public class ConnectionPoolTest extends VertxTestBase {
       }
     }
 
-    assertWaitUntil(() -> mgr.closed());
+    try {
+      assertWaitUntil(() -> mgr.closed());
+    } catch (Exception e) {
+      System.out.println(mgr.pool.toString());;
+      throw e;
+    }
     assertEquals(1, mgr.closeCount());
 
     // Check state at the end

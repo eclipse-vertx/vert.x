@@ -23,6 +23,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.LongSupplier;
 
 /**
  * The connection manager associates remote hosts with pools, it also tracks all connections so they can be closed
@@ -31,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 class ConnectionManager {
+
+  private static final LongSupplier CLOCK = System::currentTimeMillis;
 
   private final int maxWaitQueueSize;
   private final HttpClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
@@ -59,8 +62,7 @@ class ConnectionManager {
   }
 
   private synchronized void checkExpired(long period) {
-    long timestamp = System.currentTimeMillis();
-    endpointMap.values().forEach(e -> e.pool.closeIdle(timestamp));
+    endpointMap.values().forEach(e -> e.pool.closeIdle());
     timerID = client.getVertx().setTimer(period, id -> checkExpired(period));
   }
 
@@ -126,7 +128,7 @@ class ConnectionManager {
         }
         Object metric = metrics != null ? metrics.createEndpoint(host, port, maxPoolSize) : null;
         HttpChannelConnector connector = new HttpChannelConnector(client, metric, version, ssl, peerAddress, server);
-        Pool<HttpClientConnection> pool = new Pool<>(ctx, connector, maxWaitQueueSize, connector.weight(), maxSize,
+        Pool<HttpClientConnection> pool = new Pool<>(ctx, connector, CLOCK, maxWaitQueueSize, connector.weight(), maxSize,
           v -> {
             if (metrics != null) {
               metrics.closeEndpoint(host, port, metric);

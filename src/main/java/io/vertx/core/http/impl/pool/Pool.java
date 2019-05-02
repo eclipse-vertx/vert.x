@@ -18,8 +18,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextInternal;
 
+import java.io.File;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
 
 /**
  * The pool is a state machine that maintains a queue of waiters and a list of available connections.
@@ -140,6 +142,7 @@ public class Pool<C> {
   private final ConnectionProvider<C> connector;
   private final Consumer<C> connectionAdded;
   private final Consumer<C> connectionRemoved;
+  private final LongSupplier clock;
 
   private final int queueMaxSize;                                   // the queue max size (does not include inflight waiters)
   private final Deque<Waiter<C>> waitersQueue = new ArrayDeque<>(); // The waiters pending
@@ -159,6 +162,7 @@ public class Pool<C> {
 
   public Pool(Context context,
               ConnectionProvider<C> connector,
+              LongSupplier clock,
               int queueMaxSize,
               long initialWeight,
               long maxWeight,
@@ -166,6 +170,7 @@ public class Pool<C> {
               Consumer<C> connectionAdded,
               Consumer<C> connectionRemoved,
               boolean fifo) {
+    this.clock = clock;
     this.context = (ContextInternal) context;
     this.maxWeight = maxWeight;
     this.initialWeight = initialWeight;
@@ -209,26 +214,10 @@ public class Pool<C> {
   /**
    * Close all unused connections with a {@code timestamp} greater than expiration timestamp.
    *
-   * @param timestamp the timestamp value
    * @return the number of closed connections when calling this method
    */
-  public synchronized int closeIdle(long timestamp) {
-    List<C> toClose = new ArrayList<>();
-    synchronized (this) {
-      if (waitersQueue.isEmpty() && capacity > 0) {
-        for (Holder holder : new ArrayList<>(available)) {
-          if (holder.capacity == holder.concurrency && holder.expirationTimestamp <= timestamp && !holder.removed) {
-            toClose.add(holder.connection);
-            evictConnection(holder);
-          }
-        }
-      }
-    }
+  public synchronized void closeIdle() {
     checkProgress();
-    for (C conn : toClose) {
-      connector.close(conn);
-    }
-    return toClose.size();
   }
 
   /**
@@ -242,7 +231,11 @@ public class Pool<C> {
   }
 
   private boolean canProgress() {
-    return waitersQueue.size() > 0 && (canAcquireConnection() || needToCreateConnection() || canEvictWaiter());
+    if (waitersQueue.size() > 0) {
+      return (canAcquireConnection() || needToCreateConnection() || canEvictWaiter());
+    } else {
+      return capacity > 0L;
+    }
   }
 
   /**
@@ -305,6 +298,17 @@ public class Pool<C> {
       } else if (canEvictWaiter()) {
         Waiter<C> waiter = waitersQueue.removeLast();
         return () -> waiter.handler.handle(Future.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize)));
+      }
+    } else if (capacity > 0) {
+      long now = clock.getAsLong();
+      for (Iterator<Holder> it = available.iterator();it.hasNext();) {
+        Holder holder = it.next();
+        if (holder.capacity == holder.concurrency && (holder.expirationTimestamp == 0 || now >= holder.expirationTimestamp )) {
+          it.remove();
+          return () -> {
+            connector.close(holder.connection);
+          };
+        }
       }
     }
     return null;
@@ -389,7 +393,7 @@ public class Pool<C> {
 
   private void recycle(Holder holder, long timestamp) {
     if (timestamp < 0L) {
-      throw new IllegalArgumentException("Invalid TTL");
+      throw new IllegalArgumentException("Invalid timestamp");
     }
     if (holder.removed) {
       return;
@@ -436,7 +440,7 @@ public class Pool<C> {
    * Recycles a connection.
    *
    * @param holder the connection to recycle
-   * @param timestamp the amount of millis the connection shall remain in the pool
+   * @param timestamp the expiration timestamp of the connection
    * @return {@code true} if the connection shall be closed
    */
   private boolean recycleConnection(Holder holder, long timestamp) {
@@ -465,5 +469,27 @@ public class Pool<C> {
       holder.capacity++;
       return false;
     }
+  }
+
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    synchronized (this) {
+      sb.append("Available:").append(File.separator);
+      available.forEach(holder -> {
+        sb.append(holder).append(File.separator);
+      });
+      sb.append("Waiters").append(File.separator);
+      waitersQueue.forEach(w -> {
+        sb.append(w.handler).append(File.separator);
+      });
+      sb.append("InitialWeight:").append(initialWeight).append(File.separator);
+      sb.append("MaxWeight:").append(maxWeight).append(File.separator);
+      sb.append("Weight:").append(weight).append(File.separator);
+      sb.append("Capacity:").append(capacity).append(File.separator);
+      sb.append("Connecting:").append(connecting).append(File.separator);
+      sb.append("CheckInProgress:").append(checkInProgress).append(File.separator);
+      sb.append("Closed:").append(closed).append(File.separator);
+    }
+    return sb.toString();
   }
 }
