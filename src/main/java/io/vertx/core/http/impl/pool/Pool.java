@@ -302,8 +302,15 @@ public class Pool<C> {
     } else if (capacity > 0) {
       long now = clock.getAsLong();
       List<Holder> expired = null;
-      for (Holder holder : available) {
+      for (Iterator<Holder> it  = available.iterator();it.hasNext();) {
+        Holder holder = it.next();
         if (holder.capacity == holder.concurrency && (holder.expirationTimestamp == 0 || now >= holder.expirationTimestamp)) {
+          it.remove();
+          if (holder.capacity > 0) {
+            capacity -= holder.capacity;
+          }
+          holder.expirationTimestamp = -1L;
+          holder.capacity = 0;
           if (expired == null) {
             expired = new ArrayList<>();
           }
