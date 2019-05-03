@@ -487,6 +487,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertWaitUntil(mgr::closed);
   }
 
+  @Repeat(times = 1000)
   @Test
   public void testCloseRecycledConnection() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
@@ -500,15 +501,11 @@ public class ConnectionPoolTest extends VertxTestBase {
     FakeWaiter waiter2 = new FakeWaiter();
     // Recycle connection
     mgr.getConnection(waiter2);
-    // But close it
+    // Then close it
     conn.close();
-    // We have a race here
-    if (waiter2.isComplete()) {
-      // Either the waiter acquires the recycled connection before it's closed
-    } else {
-      // Or a connection request happens
-      conn = connector.assertRequest();
-    }
+    // Either the waiter acquires the recycled connection before it's closed
+    // Or a connection request happens
+    assertWaitUntil(() -> waiter2.isComplete() || connector.hasRequests());
   }
 
   @Test
@@ -944,6 +941,10 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     int requests() {
       return pendingRequests.size();
+    }
+
+    boolean hasRequests() {
+      return pendingRequests.size() > 0;
     }
 
     FakeConnection assertRequest() {
