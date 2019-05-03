@@ -301,14 +301,22 @@ public class Pool<C> {
       }
     } else if (capacity > 0) {
       long now = clock.getAsLong();
-      for (Iterator<Holder> it = available.iterator();it.hasNext();) {
-        Holder holder = it.next();
-        if (holder.capacity == holder.concurrency && (holder.expirationTimestamp == 0 || now >= holder.expirationTimestamp )) {
-          it.remove();
-          return () -> {
-            connector.close(holder.connection);
-          };
+      List<Holder> expired = null;
+      for (Holder holder : available) {
+        if (holder.capacity == holder.concurrency && (holder.expirationTimestamp == 0 || now >= holder.expirationTimestamp)) {
+          if (expired == null) {
+            expired = new ArrayList<>();
+          }
+          expired.add(holder);
         }
+      }
+      if (expired != null) {
+        List<Holder> toClose = expired;
+        return () -> {
+          toClose.forEach(holder -> {
+            connector.close(holder.connection);
+          });
+        };
       }
     }
     return null;
