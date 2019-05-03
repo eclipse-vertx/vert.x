@@ -487,7 +487,6 @@ public class ConnectionPoolTest extends VertxTestBase {
     assertWaitUntil(mgr::closed);
   }
 
-  @Repeat(times = 1000)
   @Test
   public void testCloseRecycledConnection() {
     FakeConnectionProvider connector = new FakeConnectionProvider();
