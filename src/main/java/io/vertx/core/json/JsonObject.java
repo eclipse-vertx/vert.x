@@ -497,6 +497,47 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Recursively query into nested {@link JsonObject} / {@link JsonArray} objects.
+   * 
+   * @param pathIdx The current position in the query path.
+   * @param path The query path.
+   * @return The object at the query path, or null if not found.
+   * @throws IllegalArgumentException if the query path has extra unused parameters when a value is reached, or an attempt
+   *         is made to index a {@link JsonArray} using a non-{@link Integer} value. 
+   */
+  protected Object query(int pathIdx, Object[] path) {
+      if (pathIdx >= path.length) {
+          return null;
+      }
+      Object queryObj = path[pathIdx];
+      String queryStr = queryObj == null ? null : queryObj instanceof String ? (String) queryObj : queryObj.toString();
+      Object obj = getValue(queryStr);
+      if (obj == null || pathIdx == path.length - 1) {
+          return obj;
+      } else if (obj instanceof JsonObject) {
+          return ((JsonObject) obj).query(pathIdx + 1, path);
+      } else if (obj instanceof JsonArray) {
+          return ((JsonArray) obj).query(pathIdx + 1, path);
+      } else {
+          throw new IllegalArgumentException("Reached a terminal value before the end of the query parameters");
+      }
+  }
+
+  /**
+   * Recursively query into nested {@link JsonObject} / {@link JsonArray} objects. Objects in the path should be of type
+   * {@link String} for {@link JsonObject} keys (if they are not {@link String}, their {@link Object#toString()} method
+   * will be called to convert them to a {@link String}), and {@link Integer} for indexes into a {@link JsonArray}.
+   * 
+   * @param path The query path, consisting of {@link JsonObject} keys and {@link JsonArray} indices.
+   * @return The object at the query path, or null if an object was not found at the requested path.
+   * @throws IllegalArgumentException if the query path has extra unused parameters when a value is reached, or an attempt
+   *         is made to index a {@link JsonArray} using a non-{@link Integer} value. 
+   */
+  public Object query(Object... path) {
+      return query(0, path);
+  }
+
+  /**
    * Put an Enum into the JSON object with the specified key.
    * <p>
    * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name}
