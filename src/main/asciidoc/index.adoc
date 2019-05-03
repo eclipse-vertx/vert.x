@@ -743,6 +743,8 @@ include::eventbus.adoc[]
 
 include::override/json.adoc[]
 
+include::json-pointers.adoc[]
+
 include::buffers.adoc[]
 
 include::net.adoc[]
@@ -756,8 +758,6 @@ include::filesystem.adoc[]
 include::datagrams.adoc[]
 
 include::dns.adoc[]
-
-include::json-pointers.adoc[]
 
 [[streams]]
 include::streams.adoc[]
