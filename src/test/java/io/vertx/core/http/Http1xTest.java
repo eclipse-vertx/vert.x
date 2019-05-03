@@ -3382,6 +3382,7 @@ public class Http1xTest extends HttpTest {
     server.close();
     NetServer server = vertx.createNetServer();
     CompletableFuture<Void> requestReceived = new CompletableFuture<>();
+    CompletableFuture<Void> sendResponse = new CompletableFuture<>();
     try {
       AtomicInteger count = new AtomicInteger();
       AtomicBoolean closed = new AtomicBoolean();
@@ -3395,12 +3396,14 @@ public class Http1xTest extends HttpTest {
                   "host: localhost:8080\r\n" +
                   "\r\n")) {
                 requestReceived.complete(null);
-                so.write(Buffer.buffer(
+                sendResponse.whenComplete((v, err) -> {
+                  so.write(Buffer.buffer(
                     "HTTP/1.1 200 OK\r\n" +
-                        "Content-Length: 11\r\n" +
-                        "\r\n" +
-                        "Some-Buffer"
-                ));
+                      "Content-Length: 11\r\n" +
+                      "\r\n" +
+                      "Some-Buffer"
+                  ));
+                });
                 so.closeHandler(v -> {
                   closed.set(true);
                 });
@@ -3436,7 +3439,9 @@ public class Http1xTest extends HttpTest {
       awaitLatch(listenLatch);
       client.close();
       client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(pipelined).setKeepAlive(true));
-      HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", onFailure(err -> {}));
+      HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", onFailure(err -> {
+        sendResponse.complete(null);
+      }));
       if (pipelined) {
         requestReceived.thenAccept(v -> {
           req1.reset();
