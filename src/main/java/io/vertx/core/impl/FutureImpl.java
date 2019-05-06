@@ -15,7 +15,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
-class FutureImpl<T> implements Future<T>, Handler<AsyncResult<T>> {
+class FutureImpl<T> implements Future<T> {
 
   private boolean failed;
   private boolean succeeded;
