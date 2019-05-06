@@ -190,7 +190,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       false,
       options.getDecoderInitialBufferSize()));
     if (options.isTryUseCompression()) {
-      pipeline.addLast("inflater", new HttpContentDecompressor(true));
+      pipeline.addLast("inflater", new HttpContentDecompressor(false));
     }
   }
 

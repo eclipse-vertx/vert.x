@@ -17,6 +17,7 @@ import io.vertx.core.buffer.Buffer;
 
 import org.junit.Test;
 
+
 /**
  */
 public class HttpCompressionTest extends HttpTestBase {
@@ -37,7 +38,7 @@ public class HttpCompressionTest extends HttpTestBase {
       " * You may elect to redistribute this code under either of these licenses.\n" +
       " */";
 
-  private HttpServer serverWithMinCompressionLevel, serverWithMaxCompressionLevel = null;
+  private HttpServer serverWithMinCompressionLevel, serverWithMaxCompressionLevel,serverWithClientDeCompression,serverWithServerDecompression = null;
   private HttpClient clientraw = null;
 
   public void setUp() throws Exception {
@@ -51,6 +52,8 @@ public class HttpCompressionTest extends HttpTestBase {
     // server = vertx.createHttpServer();
     serverWithMinCompressionLevel = vertx.createHttpServer(serverOpts.setPort(DEFAULT_HTTP_PORT - 1).setCompressionLevel(1));
     serverWithMaxCompressionLevel = vertx.createHttpServer(serverOpts.setPort(DEFAULT_HTTP_PORT + 1).setCompressionLevel(9));
+    serverWithClientDeCompression = vertx.createHttpServer(serverOpts.setPort(DEFAULT_HTTP_PORT + 2).setCompressionSupported(true));
+    serverWithServerDecompression = vertx.createHttpServer(serverOpts.setPort(DEFAULT_HTTP_PORT - 2).setDecompressionSupported(true));
   }
 
   @Test
@@ -165,5 +168,43 @@ public class HttpCompressionTest extends HttpTestBase {
           && rawMinCompressionResponseByteCount > rawMaxCompressionResponseByteCount);
       testComplete();
     }
+  }
+
+  @Test
+  public void testClientDeCompression() throws Exception {
+    String compressData = "Test Client DeCompression....";
+    serverWithClientDeCompression.requestHandler(req -> {
+      assertNotNull(req.headers().get("Accept-Encoding"));
+      req.response()
+        .end(compressData);
+    });
+
+    startServer(serverWithClientDeCompression);
+    client.get(DEFAULT_HTTP_PORT+2, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI,
+      onSuccess(resp -> {
+        resp.bodyHandler(responseBuffer -> {
+           assertEquals(compressData,responseBuffer.toString());
+          testComplete();
+        });
+      })).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
+    await();
+  }
+
+  @Test
+  public void testServerDecompression() throws Exception {
+    String data = "Test Server Decompression";
+    serverWithServerDecompression.requestHandler(req -> {
+      assertNotNull(req.headers().get("Accept-Encoding"));
+      req.bodyHandler(buf -> {
+        assertEquals(data,buf.toString());
+        testComplete();
+        req.response().putHeader(HttpHeaders.CONTENT_ENCODING,HttpHeaders.DEFLATE_GZIP).end(buf);
+      });
+    });
+    startServer(serverWithServerDecompression);
+    client.get(DEFAULT_HTTP_PORT-2, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI,res -> {
+
+    }).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end(data);
+    await();
   }
 }
