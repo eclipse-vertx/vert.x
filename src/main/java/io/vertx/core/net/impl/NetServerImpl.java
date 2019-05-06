@@ -12,7 +12,9 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -465,18 +467,19 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private void connected(HandlerHolder<Handlers> handler, Channel ch) {
     NetServerImpl.this.initChannel(ch.pipeline());
 
-    VertxHandler<NetSocketImpl> nh = VertxHandler.<NetSocketImpl>create(handler.context, ctx -> new NetSocketImpl(vertx, ctx, handler.context, sslHelper, metrics));
-    nh.addHandler(conn -> socketMap.put(ch, conn));
+    VertxHandler<NetSocketImpl> nh = VertxHandler.create(handler.context, ctx -> new NetSocketImpl(vertx, ctx, handler.context, sslHelper, metrics));
+    nh.addHandler(conn -> {
+      socketMap.put(ch, conn);
+      handler.context.executeFromIO(v -> {
+        if (metrics != null) {
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+        }
+        conn.registerEventBusHandler();
+        handler.handler.connectionHandler.handle(conn);
+      });
+    });
     nh.removeHandler(conn -> socketMap.remove(ch));
     ch.pipeline().addLast("handler", nh);
-    NetSocketImpl sock = nh.getConnection();
-    handler.context.executeFromIO(v -> {
-      if (metrics != null) {
-        sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
-      }
-      sock.registerEventBusHandler();
-      handler.handler.connectionHandler.handle(sock);
-    });
   }
 
   private void executeCloseDone(ContextInternal closeContext, Handler<AsyncResult<Void>> done, Exception e) {
