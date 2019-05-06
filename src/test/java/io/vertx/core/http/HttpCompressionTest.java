@@ -181,12 +181,12 @@ public class HttpCompressionTest extends HttpTestBase {
 
     startServer(serverWithClientDeCompression);
     client.get(DEFAULT_HTTP_PORT+2, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI,
-      onSuccess(resp -> {
+      resp -> {
         resp.bodyHandler(responseBuffer -> {
            assertEquals(compressData,responseBuffer.toString());
           testComplete();
         });
-      })).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
+      }).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
     await();
   }
 
