@@ -1144,7 +1144,6 @@ public class Http1xTest extends HttpTest {
           req.handler(resp -> {
             resp.bodyHandler(buff -> {
               assertEquals("OK", buff.toString());
-              System.out.println("got resp");
               latch.countDown();
             });
           });
