@@ -1052,7 +1052,6 @@ public class Http1xTest extends HttpTest {
           req = client.request(HttpMethod.GET, testAddress, reqOptions, onSuccess(resp -> {
             resp.bodyHandler(buff -> {
               assertEquals("OK", buff.toString());
-              System.out.println("got resp");
               latch.countDown();
             });
           }));
@@ -1062,7 +1061,6 @@ public class Http1xTest extends HttpTest {
           // the first request should end up in the wait queue, the odd numbered requests should time out so we should get
           // (requests + 1 / 2) connect attempts
           req = client.request(HttpMethod.GET, testAddress, reqOptions, onFailure(err -> {
-            System.out.println("got failure");
             latch.countDown();
           }));
           req.setTimeout(responseDelay / 2);
