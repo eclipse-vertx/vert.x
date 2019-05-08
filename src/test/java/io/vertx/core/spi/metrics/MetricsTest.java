@@ -13,7 +13,6 @@ package io.vertx.core.spi.metrics;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SingleThreadEventLoop;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
@@ -258,15 +257,19 @@ public class MetricsTest extends VertxTestBase {
   public void testClusterUnregistration() {
     startNodes(1);
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertices[0].eventBus());
-    MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1, ar -> {
-      fail("Should not receive message");
+    Context ctx = vertices[0].getOrCreateContext();
+    ctx.runOnContext(v -> {
+      MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1, ar -> {
+        fail("Should not receive message");
+      });
+      consumer.completionHandler(onFailure(err -> {
+        assertSame(Vertx.currentContext(), ctx);
+        List<HandlerMetric> registrations = metrics.getRegistrations();
+        assertEquals(Collections.emptyList(), registrations);
+        testComplete();
+      }));
+      consumer.unregister();
     });
-    consumer.completionHandler(ar -> {
-      List<HandlerMetric> registrations = metrics.getRegistrations();
-      assertEquals(Collections.emptyList(), registrations);
-      testComplete();
-    });
-    consumer.unregister();
     await();
   }
 
