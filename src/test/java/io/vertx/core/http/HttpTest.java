@@ -2022,6 +2022,29 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void test100ContinueTimeout() throws Exception {
+
+    waitFor(2);
+
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(false));
+
+    server.requestHandler(req -> {
+      req.response().writeContinue();
+    });
+
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(1));
+
+    startServer(testAddress);
+
+    client.request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail()).exceptionHandler(err -> complete()).putHeader("Expect", "100-continue")
+      .continueHandler(v -> complete()).end();
+
+    await();
+  }
+
+  @Test
   public void testClientDrainHandler() {
     pausingServer(resumeFuture -> {
       HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler());

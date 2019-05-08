@@ -349,7 +349,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       HttpClientRequestBase req;
       HttpClientResponseImpl resp;
       synchronized (conn) {
-        req = (!requestEnded || response == null) ? request : null;
+        req = (!requestEnded || response == null || response.statusCode() == 100) ? request : null;
         resp = response;
       }
       if (req != null) {
