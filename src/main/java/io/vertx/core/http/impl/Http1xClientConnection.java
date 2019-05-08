@@ -521,7 +521,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         requestEnded = this.requestEnded;
       }
       if (request != null) {
-        if (response == null) {
+        if (response == null || response.statusCode() == 100) {
           request.handleException(cause);
         } else {
           if (!requestEnded) {
