@@ -67,6 +67,8 @@ public abstract class HttpTest extends HttpTestBase {
       tmp = TestUtils.tmpFile(".sock");
       testAddress = SocketAddress.domainSocketAddress(tmp.getAbsolutePath());
     }
+    client = vertx.createHttpClient(createBaseClientOptions());
+    server = vertx.createHttpServer(createBaseServerOptions());
   }
 
   protected HttpServerOptions createBaseServerOptions() {
@@ -1937,6 +1939,9 @@ public abstract class HttpTest extends HttpTestBase {
   public void test100ContinueHandledAutomatically() {
     Buffer toSend = TestUtils.randomBuffer(1000);
 
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(true));
+
     server.requestHandler(req -> {
       req.bodyHandler(data -> {
         assertEquals(toSend, data);
@@ -1962,9 +1967,6 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void test100ContinueHandledManually() {
-
-    server.close();
-    server = vertx.createHttpServer(createBaseServerOptions());
 
     Buffer toSend = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> {
@@ -1995,9 +1997,6 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void test100ContinueRejectedManually() {
 
-    server.close();
-    server = vertx.createHttpServer(createBaseServerOptions());
-
     server.requestHandler(req -> {
       req.response().setStatusCode(405).end();
       req.bodyHandler(data -> {
@@ -2025,9 +2024,6 @@ public abstract class HttpTest extends HttpTestBase {
   public void test100ContinueTimeout() throws Exception {
 
     waitFor(2);
-
-    server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setHandle100ContinueAutomatically(false));
 
     server.requestHandler(req -> {
       req.response().writeContinue();

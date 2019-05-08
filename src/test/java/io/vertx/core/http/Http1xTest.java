@@ -63,13 +63,6 @@ public class Http1xTest extends HttpTest {
     return options;
   }
 
-  @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    client = vertx.createHttpClient(new HttpClientOptions());
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST).setHandle100ContinueAutomatically(true));
-  }
-
   @Test
   public void testClientOptions() {
     HttpClientOptions options = new HttpClientOptions();
