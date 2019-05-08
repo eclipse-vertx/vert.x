@@ -1430,6 +1430,29 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testClientRequestExceptionHandlerCalledWhenRequestEnded() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.connection().close();
+    });
+    startServer(testAddress);
+    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(err -> {
+      complete();
+    }));
+    req.exceptionHandler(err -> {
+      fail();
+    });
+    req.end();
+    try {
+      req.exceptionHandler(err -> fail());
+      fail();
+    } catch (Exception e) {
+      complete();
+    }
+    await();
+  }
+
+  @Test
   public void testDefaultStatus() {
     testStatusCode(-1, null);
   }
