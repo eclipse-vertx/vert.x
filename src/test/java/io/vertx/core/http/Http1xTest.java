@@ -2813,29 +2813,41 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testDontReuseConnectionWhenResponseEndsDuringAnOngoingRequest() throws Exception {
+  public void testDontReuseConnectionWhenResponseEndsBeforeRequest() throws Exception {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
+    AtomicBoolean req1Ended = new AtomicBoolean();
     server.requestHandler(req -> {
+      switch (req.path()) {
+        case "/1":
+          assertFalse(req1Ended.get());
+          break;
+        case "/2":
+          assertTrue(req1Ended.get());
+          break;
+      }
       req.response().end();
     });
     startServer(testAddress);
 
-    HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI,
+    HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1",
       onSuccess(resp -> {
         resp.endHandler(v1 -> {
           // End request after the response ended
           vertx.setTimer(100, v2 -> {
+            req1Ended.set(true);
             resp.request().end();
           });
         });
       }));
     // Send head to the server and trigger the request handler
-    req1.sendHead();
+    req1
+      .setChunked(true)
+      .sendHead();
 
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", onSuccess(resp -> {
       testComplete();
-    }).end();
+    })).end();
 
     await();
   }
