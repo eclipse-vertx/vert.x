@@ -55,11 +55,6 @@ import static io.vertx.test.core.TestUtils.*;
 public class Http1xTest extends HttpTest {
 
   @Override
-  protected HttpServerOptions createBaseServerOptions() {
-    return super.createBaseServerOptions().setHandle100ContinueAutomatically(true);
-  }
-
-  @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
     options.getAddressResolverOptions().setHostsValue(Buffer.buffer("" +

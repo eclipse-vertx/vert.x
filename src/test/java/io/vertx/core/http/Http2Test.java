@@ -38,7 +38,7 @@ public class Http2Test extends HttpTest {
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST).setHandle100ContinueAutomatically(true);
+    return Http2TestBase.createHttp2ServerOptions(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   @Override
