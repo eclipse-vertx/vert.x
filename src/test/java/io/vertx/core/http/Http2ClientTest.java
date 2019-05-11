@@ -228,6 +228,7 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals(2, req.headers().getAll("juu_request").size());
       assertEquals("juu_request_value_1", req.headers().getAll("juu_request").get(0));
       assertEquals("juu_request_value_2", req.headers().getAll("juu_request").get(1));
+      assertEquals(new HashSet<>(Arrays.asList("foo_request", "bar_request", "juu_request")), new HashSet<>(req.headers().names()));
       reqCount.incrementAndGet();
       HttpServerResponse resp = req.response();
       resp.putHeader("content-type", "text/plain");
@@ -247,12 +248,12 @@ public class Http2ClientTest extends Http2TestBase {
         assertEquals(200, resp.statusCode());
         assertEquals("OK", resp.statusMessage());
         assertEquals("text/plain", resp.getHeader("content-type"));
-        assertEquals("200", resp.getHeader(":status"));
         assertEquals("foo_value", resp.getHeader("foo_response"));
         assertEquals("bar_value", resp.getHeader("bar_response"));
         assertEquals(2, resp.headers().getAll("juu_response").size());
         assertEquals("juu_value_1", resp.headers().getAll("juu_response").get(0));
         assertEquals("juu_value_2", resp.headers().getAll("juu_response").get(1));
+        assertEquals(new HashSet<>(Arrays.asList("content-type", "content-length", "foo_response", "bar_response", "juu_response")), new HashSet<>(resp.headers().names()));
         resp.endHandler(v -> {
           assertOnIOContext(ctx);
           testComplete();

@@ -338,6 +338,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           writeReset(0x01 /* PROTOCOL_ERROR */);
           return;
         }
+
+        headers.remove(":status");
+
         response = new HttpClientResponseImpl(
             request,
             HttpVersion.HTTP_2,
