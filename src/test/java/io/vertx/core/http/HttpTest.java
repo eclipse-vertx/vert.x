@@ -786,11 +786,7 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(1, req.headers().size());
         assertEquals("localhost:" + DEFAULT_HTTP_PORT, req.headers().get("host"));
       } else {
-        assertEquals(4, req.headers().size());
-        assertEquals("https", req.headers().get(":scheme"));
-        assertEquals("GET", req.headers().get(":method"));
-        assertEquals("some-uri", req.headers().get(":path"));
-        assertEquals("localhost:" + DEFAULT_HTTP_PORT, req.headers().get(":authority"));
+        assertEquals(0, req.headers().size());
       }
       req.response().end();
     });
@@ -804,17 +800,20 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testRequestHeadersWithCharSequence() {
-    HashMap<CharSequence, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.TEXT_HTML, "text/html");
-    headers.put(HttpHeaders.USER_AGENT, "User-Agent");
-    headers.put(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED, "application/x-www-form-urlencoded");
+    HashMap<CharSequence, String> expectedHeaders = new HashMap<>();
+    expectedHeaders.put(HttpHeaders.TEXT_HTML, "text/html");
+    expectedHeaders.put(HttpHeaders.USER_AGENT, "User-Agent");
+    expectedHeaders.put(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED, "application/x-www-form-urlencoded");
 
     server.requestHandler(req -> {
 
-      assertTrue(headers.size() < req.headers().size());
+      MultiMap headers = req.headers();
+      headers.remove("host");
 
-      headers.forEach((k, v) -> assertEquals(v, req.headers().get(k)));
-      headers.forEach((k, v) -> assertEquals(v, req.getHeader(k)));
+      assertEquals(expectedHeaders.size(), headers.size());
+
+      expectedHeaders.forEach((k, v) -> assertEquals(v, headers.get(k)));
+      expectedHeaders.forEach((k, v) -> assertEquals(v, req.getHeader(k)));
 
       req.response().end();
     });
@@ -822,7 +821,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(testAddress, onSuccess(server -> {
       HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete());
 
-      headers.forEach((k, v) -> req.headers().add(k, v));
+      expectedHeaders.forEach((k, v) -> req.headers().add(k, v));
 
       req.end();
     }));
@@ -841,11 +840,13 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testRequestHeaders(boolean individually) {
-    MultiMap headers = getHeaders(10);
+    MultiMap expectedHeaders = getHeaders(10);
 
     server.requestHandler(req -> {
-      assertTrue(headers.size() < req.headers().size());
-      for (Map.Entry<String, String> entry : headers) {
+      MultiMap headers = req.headers();
+      headers.remove("host");
+      assertEquals(expectedHeaders.size(), expectedHeaders.size());
+      for (Map.Entry<String, String> entry : expectedHeaders) {
         assertEquals(entry.getValue(), req.headers().get(entry.getKey()));
         assertEquals(entry.getValue(), req.getHeader(entry.getKey()));
       }
@@ -855,11 +856,11 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(testAddress, onSuccess(server -> {
       HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> testComplete());
       if (individually) {
-        for (Map.Entry<String, String> header : headers) {
+        for (Map.Entry<String, String> header : expectedHeaders) {
           req.headers().add(header.getKey(), header.getValue());
         }
       } else {
-        req.headers().setAll(headers);
+        req.headers().setAll(expectedHeaders);
       }
       req.end();
     }));
@@ -4812,7 +4813,6 @@ public abstract class HttpTest extends HttpTestBase {
       resp.headers().forEach(header -> {
         String name = header.getKey();
         switch (name.toLowerCase()) {
-          case ":status":
           case "content-length":
             break;
           default:

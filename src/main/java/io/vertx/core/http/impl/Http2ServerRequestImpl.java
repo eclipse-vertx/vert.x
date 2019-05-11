@@ -59,15 +59,16 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   private final String serverOrigin;
   private final Http2ServerResponseImpl response;
-  private final Http2Headers headers;
-  private MultiMap headersMap;
-  private MultiMap params;
-  private HttpMethod method;
-  private String rawMethod;
-  private String absoluteURI;
-  private String uri;
+  private final MultiMap headersMap;
+  private final String rawMethod;
+  private final String scheme;
+  private final String host;
+  private final String uri;
   private String path;
   private String query;
+  private HttpMethod method;
+  private MultiMap params;
+  private String absoluteURI;
   private MultiMap attributes;
 
   private Handler<Buffer> dataHandler;
@@ -89,8 +90,18 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     super(conn, stream, writable);
 
     this.serverOrigin = serverOrigin;
-    this.headers = headers;
     this.streamEnded = streamEnded;
+    this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;
+    this.scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
+    this.rawMethod = headers.get(":method") != null ? headers.get(":method").toString() : null;
+    this.host = headers.get(":authority") != null ? headers.get(":authority").toString() : null;
+
+    headers.remove(":method");
+    headers.remove(":scheme");
+    headers.remove(":path");
+    headers.remove(":authority");
+    headersMap = new Http2HeadersAdaptor(headers);
+
 
     String host = host();
     if (host == null) {
@@ -287,8 +298,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   public HttpMethod method() {
     synchronized (conn) {
       if (method == null) {
-        String sMethod = headers.method().toString();
-        method = HttpUtils.toVertxMethod(sMethod);
+        method = HttpUtils.toVertxMethod(rawMethod);
       }
       return method;
     }
@@ -296,12 +306,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public String rawMethod() {
-    synchronized (conn) {
-      if (rawMethod == null) {
-        rawMethod = headers.method().toString();
-      }
-      return rawMethod;
-    }
+    return rawMethod;
   }
 
   @Override
@@ -311,26 +316,13 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public String uri() {
-    synchronized (conn) {
-      if (uri == null) {
-        CharSequence path = headers.path();
-        if (path != null) {
-          uri = path.toString();
-        }
-      }
-      return uri;
-    }
+    return uri;
   }
 
   @Override
   public String path() {
     synchronized (conn) {
-      if (path == null) {
-        CharSequence path = headers.path();
-        if (path != null) {
-          this.path = HttpUtils.parsePath(path.toString());
-        }
-      }
+      this.path = uri != null ? HttpUtils.parsePath(uri) : null;
       return path;
     }
   }
@@ -338,26 +330,19 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   @Override
   public String query() {
     synchronized (conn) {
-      if (query == null) {
-        CharSequence path = headers.path();
-        if (path != null) {
-          this.query = HttpUtils.parseQuery(path.toString());
-        }
-      }
+      this.query = uri != null ? HttpUtils.parseQuery(uri) : null;
       return query;
     }
   }
 
   @Override
   public String scheme() {
-    CharSequence scheme = headers.scheme();
-    return scheme != null ? scheme.toString() : null;
+    return scheme;
   }
 
   @Override
   public String host() {
-    CharSequence authority = headers.authority();
-    return authority != null ? authority.toString() : null;
+    return host;
   }
 
   @Override
@@ -375,12 +360,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public MultiMap headers() {
-    synchronized (conn) {
-      if (headersMap == null) {
-        headersMap = new Http2HeadersAdaptor(headers);
-      }
-      return headersMap;
-    }
+    return headersMap;
   }
 
   @Override
@@ -456,9 +436,9 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
       checkEnded();
       if (expect) {
         if (postRequestDecoder == null) {
-          CharSequence contentType = headers.get(HttpHeaderNames.CONTENT_TYPE);
+          String contentType = headersMap.get(HttpHeaderNames.CONTENT_TYPE);
           if (contentType != null) {
-            io.netty.handler.codec.http.HttpMethod method = io.netty.handler.codec.http.HttpMethod.valueOf(headers.method().toString());
+            io.netty.handler.codec.http.HttpMethod method = io.netty.handler.codec.http.HttpMethod.valueOf(rawMethod);
             String lowerCaseContentType = contentType.toString().toLowerCase();
             boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED.toString());
             if ((lowerCaseContentType.startsWith(HttpHeaderValues.MULTIPART_FORM_DATA.toString()) || isURLEncoded) &&
@@ -469,7 +449,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
               HttpRequest req = new DefaultHttpRequest(
                   io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
                   method,
-                  headers.path().toString());
+                  uri);
               req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
               postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(context, this, () -> uploadHandler), req);
             }

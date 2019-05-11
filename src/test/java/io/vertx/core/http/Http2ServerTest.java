@@ -437,11 +437,9 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(HttpMethod.GET, req.method());
       assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, req.host());
       assertEquals("/", req.path());
-      assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, req.getHeader(":authority"));
       assertTrue(req.isSSL());
-      assertEquals("https", req.getHeader(":scheme"));
-      assertEquals("/", req.getHeader(":path"));
-      assertEquals("GET", req.getHeader(":method"));
+      assertEquals("https", req.scheme());
+      assertEquals("/", req.uri());
       assertEquals("foo_request_value", req.getHeader("Foo_request"));
       assertEquals("bar_request_value", req.getHeader("bar_request"));
       assertEquals(2, req.headers().getAll("juu_request").size());
@@ -525,7 +523,6 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals("foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.query());
       assertEquals("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.uri());
       assertEquals("http://whatever.com/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.absoluteURI());
-      assertEquals("/some/path?foo=foo_value&bar=bar_value_1&bar=bar_value_2", req.getHeader(":path"));
       assertEquals("whatever.com", req.host());
       MultiMap params = req.params();
       Set<String> names = params.names();
@@ -2679,7 +2676,6 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(HttpVersion.HTTP_2, resp.version());
       complete();
     }).exceptionHandler(this::fail).pushHandler(pushedReq -> {
-      assertEquals("http", pushedReq.headers().get(":scheme"));
       pushedReq.handler(pushResp -> {
         pushResp.bodyHandler(buff -> {
           assertEquals("the-pushed-response", buff.toString());
