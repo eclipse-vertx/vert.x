@@ -2196,6 +2196,23 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testCloseWithHandler() {
+    waitFor(2);
+    server.connectHandler(so -> {
+      so.closeHandler(v -> {
+        complete();
+      });
+    }).listen(testAddress, onSuccess(s -> {
+      client.connect(testAddress, onSuccess(so -> {
+        so.close(onSuccess(v -> {
+          complete();
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testClientMultiThreaded() throws Exception {
     int numThreads = 10;
     Thread[] threads = new Thread[numThreads];

@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -192,6 +193,21 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public HttpClientRequest write(Buffer data, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) {
     throw new IllegalStateException();
   }
@@ -212,12 +228,27 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public void end(String chunk, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public void end(String chunk, String enc) {
     throw new IllegalStateException();
   }
 
   @Override
+  public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public void end(Buffer chunk) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
 
@@ -228,6 +259,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public void end() {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
     throw new IllegalStateException();
   }
 

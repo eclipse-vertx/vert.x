@@ -13,6 +13,8 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.Context;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
@@ -39,8 +41,8 @@ interface HttpClientStream {
   HttpConnection connection();
   Context getContext();
 
-  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority);
-  void writeBuffer(ByteBuf buf, boolean end);
+  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler);
+  void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler);
   void writeFrame(int type, int flags, ByteBuf payload);
 
   void reportBytesWritten(long numberOfBytes);

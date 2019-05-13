@@ -11,19 +11,42 @@
 
 package io.vertx.core.eventbus;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.SelfSignedCertificate;
+import io.vertx.core.spi.cluster.AsyncMultiMap;
+import io.vertx.core.spi.cluster.ChoosableIterable;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.fakecluster.FakeClusterManager;
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 
 /**
@@ -348,6 +371,133 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     });
     consumer.handler(msg -> {});
     consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testSendWriteHandler() {
+    startNodes(2);
+    waitFor(2);
+    vertices[1]
+      .eventBus()
+      .consumer(ADDRESS1, msg -> complete())
+      .completionHandler(onSuccess(v1 -> {
+        MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
+        producer.write("body", onSuccess(v2 -> complete()));
+      }));
+    await();
+  }
+
+  @Test
+  public void testSendWriteHandlerNoConsumer() {
+    startNodes(2);
+    MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
+    producer.write("body", onFailure(err -> {
+      assertTrue(err instanceof ReplyException);
+      ReplyException replyException = (ReplyException) err;
+      assertEquals(-1, replyException.failureCode());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testPublishWriteHandler() {
+    startNodes(2);
+    waitFor(2);
+    vertices[1]
+      .eventBus()
+      .consumer(ADDRESS1, msg -> complete())
+      .completionHandler(onSuccess(v1 -> {
+        MessageProducer<String> producer = vertices[0].eventBus().publisher(ADDRESS1);
+        producer.write("body", onSuccess(v -> complete()));
+      }));
+    await();
+  }
+
+  @Test
+  public void testPublishWriteHandlerNoConsumer() {
+    startNodes(2);
+    MessageProducer<String> producer = vertices[0].eventBus().publisher(ADDRESS1);
+    producer.write("body", onFailure(err -> {
+      assertTrue(err instanceof ReplyException);
+      ReplyException replyException = (ReplyException) err;
+      assertEquals(-1, replyException.failureCode());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testWriteHandlerConnectFailure() {
+    VertxOptions options = getOptions();
+    options.getEventBusOptions()
+      .setSsl(true)
+      .setTrustAll(false)
+      .setKeyCertOptions(Cert.SERVER_JKS.get());
+    startNodes(2, options);
+    vertices[1]
+      .eventBus()
+      .consumer(ADDRESS1, msg -> {})
+      .completionHandler(onSuccess(v1 -> {
+        MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
+        producer.write("body", onFailure(err -> {
+          testComplete();
+        }));
+      }));
+    await();
+  }
+
+  @Test
+  public void testWriteHandlerLookupFailure() {
+    Throwable cause = new Throwable();
+    ClusterManager cm = new FakeClusterManager() {
+      @Override
+      public <K, V> void getAsyncMultiMap(String name, Handler<AsyncResult<AsyncMultiMap<K, V>>> handler) {
+        if ("__vertx.subs".equals(name)) {
+          super.<K, V>getAsyncMultiMap(name, ar -> {
+            handler.handle(ar.map(map -> {
+              return new AsyncMultiMap<K, V>() {
+                @Override
+                public void add(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
+                  map.add(k, v, completionHandler);
+                }
+                @Override
+                public void get(K k, Handler<AsyncResult<ChoosableIterable<V>>> completionHandler) {
+                  completionHandler.handle(Future.failedFuture(cause));
+                }
+                @Override
+                public void remove(K k, V v, Handler<AsyncResult<Boolean>> completionHandler) {
+                  map.remove(k, v, completionHandler);
+                }
+                @Override
+                public void removeAllForValue(V v, Handler<AsyncResult<Void>> completionHandler) {
+                  map.removeAllForValue(v, completionHandler);
+                }
+                @Override
+                public void removeAllMatching(Predicate<V> p, Handler<AsyncResult<Void>> completionHandler) {
+                  map.removeAllMatching(p, completionHandler);
+                }
+              };
+            }));
+          });
+        } else {
+          super.getAsyncMultiMap(name, handler);
+        }
+      }
+    };
+    VertxOptions options = new VertxOptions().setClusterManager(cm);
+    options.getEventBusOptions().setHost("localhost").setPort(0).setClustered(true);
+    vertices = new Vertx[1];
+    clusteredVertx(options, onSuccess(node -> {
+      vertices[0] = node;
+    }));
+    assertWaitUntil(() -> vertices[0] != null);
+    MessageProducer<String> sender = vertices[0].eventBus().sender(ADDRESS1);
+    sender.write("the_string", onFailure(err -> {
+      assertSame(cause, err);
+      testComplete();
+    }));
     await();
   }
 }

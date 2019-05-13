@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -58,6 +59,12 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    */
   @Override
   HttpClientRequest write(Buffer data);
+
+  /**
+   * Same as {@link #write(Buffer)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  HttpClientRequest write(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
   HttpClientRequest setWriteQueueMaxSize(int maxSize);
@@ -221,6 +228,12 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   HttpClientRequest write(String chunk);
 
   /**
+   * Same as {@link #write(String)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Write a {@link String} to the request body, encoded using the encoding {@code enc}.
    *
    * @return @return a reference to this, so the API can be used fluently
@@ -228,6 +241,12 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    */
   @Fluent
   HttpClientRequest write(String chunk, String enc);
+
+  /**
+   * Same as {@link #write(String,String)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}
@@ -270,6 +289,11 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   void end(String chunk);
 
   /**
+   * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
+   */
+  void end(String chunk, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding
    *
    * @throws java.lang.IllegalStateException when no response handler is set
@@ -277,12 +301,24 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   void end(String chunk, String enc);
 
   /**
+   * Same as {@link #end(String,String)} but with an {@code handler} called when the operation completes
+   */
+  void end(String chunk, String enc, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Same as {@link #end()} but writes some data to the request body before ending. If the request is not chunked and
    * no other data has been written then the {@code Content-Length} header will be automatically set
    *
    * @throws java.lang.IllegalStateException when no response handler is set
    */
+  @Override
   void end(Buffer chunk);
+
+  /**
+   * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
+   */
+  @Override
+  void end(Buffer chunk, Handler<AsyncResult<Void>> handler);
 
   /**
    * Ends the request. If no data has been written to the request body, and {@link #sendHead()} has not been called then
@@ -292,7 +328,14 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    *
    * @throws java.lang.IllegalStateException when no response handler is set
    */
+  @Override
   void end();
+
+  /**
+   * Same as {@link #end()} but with an {@code handler} called when the operation completes
+   */
+  @Override
+  void end(Handler<AsyncResult<Void>> handler);
 
   /**
    * Set's the amount of time after which if the request does not return any data within the timeout period an

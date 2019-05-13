@@ -14,13 +14,14 @@ package io.vertx.core.streams;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
 /**
  *
  * Represents a stream of data that can be written to.
  * <p>
- * Any class that implements this interface can be used by a {@link Pump} to pump data from a {@code ReadStream}
+ * Any class that implements this interface can be used by a {@link Pipe} to pipe data from a {@code ReadStream}
  * to it.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -49,6 +50,12 @@ public interface WriteStream<T> extends StreamBase {
   WriteStream<T> write(T data);
 
   /**
+   * Same as {@link #write(T)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  WriteStream<T> write(T data, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Ends the stream.
    * <p>
    * Once the stream has ended, it cannot be used any more.
@@ -56,11 +63,37 @@ public interface WriteStream<T> extends StreamBase {
   void end();
 
   /**
-   * Same as {@link #end()} but writes some data to the stream before ending.
+   * Same as {@link #end()} but with an {@code handler} called when the operation completes
    */
-  default void end(T t) {
-    write(t);
+  void end(Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Same as {@link #end()} but writes some data to the stream before ending.
+   *
+   * @implSpec The default default implementation calls sequentially {@link #write(Object)} then {@link #end()}
+   * @apiNote Implementations might want to perform a single operation
+   * @param data the data to write
+   */
+  default void end(T data) {
+    write(data);
     end();
+  }
+
+  /**
+   * Same as {@link #end(T)} but with an {@code handler} called when the operation completes
+   */
+  default void end(T data, Handler<AsyncResult<Void>> handler) {
+    if (handler != null) {
+      write(data, ar -> {
+        if (ar.succeeded()) {
+          end(handler);
+        } else {
+          handler.handle(ar);
+        }
+      });
+    } else {
+      end(data);
+    }
   }
 
   /**
