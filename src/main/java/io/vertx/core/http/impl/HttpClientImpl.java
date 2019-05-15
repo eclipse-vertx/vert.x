@@ -30,7 +30,6 @@ import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
-import io.vertx.core.streams.ReadStream;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -158,233 +157,40 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect) {
-    return websocket(options, null, wsConnect);
+  public void webSocket(WebSocketConnectOptions connectOptions, Handler<AsyncResult<WebSocket>> handler) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    SocketAddress addr = SocketAddress.inetSocketAddress(connectOptions.getPort(), connectOptions.getHost());
+    websocketCM.getConnection(
+      ctx,
+      addr,
+      connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(),
+      addr, ar -> {
+        if (ar.succeeded()) {
+          Http1xClientConnection conn = (Http1xClientConnection) ar.result();
+          conn.toWebSocket(connectOptions.getURI(), connectOptions.getHeaders(), connectOptions.getVersion(), connectOptions.getSubProtocols(), HttpClientImpl.this.options.getMaxWebsocketFrameSize(), handler);
+        } else {
+          ctx.schedule(v -> handler.handle(Future.failedFuture(ar.cause())));
+        }
+      });
   }
 
   @Override
-  public HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect) {
-    websocketStream(port, host, requestURI, null, null).handler(wsConnect);
-    return this;
+  public void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
+    webSocket(new WebSocketConnectOptions().setURI(requestURI).setHost(host).setPort(port), handler);
   }
 
   @Override
-  public HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options, null, wsConnect, failureHandler);
-  }
-
-  public HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler){
-    websocketStream(port, host, requestURI, null, null).subscribe(wsConnect, failureHandler);
-    return this;
+  public void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler) {
+    webSocket(options.getDefaultPort(), host, requestURI, handler);
   }
 
   @Override
-  public HttpClient websocket(String host, String requestURI, Handler<WebSocket> wsConnect) {
-    return websocket(options.getDefaultPort(), host, requestURI, wsConnect);
+  public void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler) {
+    webSocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, handler);
   }
 
   @Override
-  public HttpClient websocket(String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getDefaultPort(), host, requestURI, wsConnect, failureHandler);
-  }
-
-  @Override
-  public HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect) {
-    return websocket(options, headers, null, wsConnect);
-  }
-
-  @Override
-  public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect) {
-    websocketStream(port, host, requestURI, headers, null).handler(wsConnect);
-    return this;
-  }
-
-  @Override
-  public HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options, headers, null, wsConnect, failureHandler);
-  }
-
-  @Override
-  public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStream(port, host, requestURI, headers, null).subscribe(wsConnect, failureHandler);
-    return this;
-  }
-
-  @Override
-  public HttpClient websocket(String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect) {
-    return websocket(options.getDefaultPort(), host, requestURI, headers, wsConnect);
-  }
-
-  @Override
-  public HttpClient websocket(String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getDefaultPort(), host, requestURI, headers, wsConnect, failureHandler);
-  }
-
-  @Override
-  public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
-    return websocket(options, headers, version, null, wsConnect);
-  }
-
-  @Override
-  public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
-    websocketStream(port, host, requestURI, headers, version, null).handler(wsConnect);
-    return this;
-  }
-
-  @Override
-  public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options, headers, version, null, wsConnect, failureHandler);
-  }
-
-  @Override
-  public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version
-          , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStream(port, host, requestURI, headers, version, null).subscribe(wsConnect, failureHandler);
-    return this;
-  }
-
-  @Override
-  public HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
-    return websocket(options.getDefaultPort(), host, requestURI, headers, version, wsConnect);
-  }
-
-  @Override
-  public HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version
-          , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getDefaultPort(), host, requestURI, headers, version, wsConnect, failureHandler);
-  }
-
-  @Override
-  public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect) {
-    websocketStream(options, headers, version, subProtocols).handler(wsConnect);
-    return this;
-  }
-
-  @Override
-  public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
-                              String subProtocols, Handler<WebSocket> wsConnect) {
-    websocketStream(port, host, requestURI, headers, version, subProtocols).handler(wsConnect);
-    return this;
-  }
-
-  @Override
-  public HttpClient websocketAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStreamAbs(url, headers, version, subProtocols).subscribe(wsConnect, failureHandler);
-    return this;
-  }
-
-  @Override
-  public HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStream(options, headers, version, subProtocols).subscribe(wsConnect, failureHandler);
-    return this;
-  }
-
-  @Override
-  public HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
-                              String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    websocketStream(port, host, requestURI, headers, version, subProtocols).subscribe(wsConnect, failureHandler);
-    return this;
-  }
-
-  @Override
-  public HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect) {
-    return websocket(options.getDefaultPort(), host, requestURI, headers, version, subProtocols, wsConnect);
-  }
-
-  @Override
-  public HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols
-          , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getDefaultPort(), host, requestURI, headers, version, subProtocols, wsConnect, failureHandler);
-  }
-
-  @Override
-  public HttpClient websocket(String requestURI, Handler<WebSocket> wsConnect) {
-    return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, wsConnect);
-  }
-
-  @Override
-  public HttpClient websocket(String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, wsConnect, failureHandler);
-  }
-
-  @Override
-  public HttpClient websocket(String requestURI, MultiMap headers, Handler<WebSocket> wsConnect) {
-    return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, wsConnect);
-  }
-
-  @Override
-  public HttpClient websocket(String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, wsConnect, failureHandler);
-  }
-
-  @Override
-  public HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect) {
-    return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, version, wsConnect);
-  }
-
-  @Override
-  public HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, version, wsConnect, failureHandler);
-  }
-
-  @Override
-  public HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect) {
-    return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, version, subProtocols, wsConnect);
-  }
-  @Override
-  public HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols
-          , Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler) {
-    return websocket(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, version, subProtocols
-            , wsConnect, failureHandler);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(RequestOptions options) {
-    return websocketStream(options, null);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(int port, String host, String requestURI) {
-    return websocketStream(port, host, requestURI, null, null);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(String host, String requestURI) {
-    return websocketStream(options.getDefaultPort(), host, requestURI);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(RequestOptions options, MultiMap headers) {
-    return websocketStream(options, headers, null);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers) {
-    return websocketStream(port, host, requestURI, headers, null);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(String host, String requestURI, MultiMap headers) {
-    return websocketStream(options.getDefaultPort(), host, requestURI, headers);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version) {
-    return websocketStream(options, headers, version, null);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version) {
-    return websocketStream(port, host, requestURI, headers, version, null);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version) {
-    return websocketStream(options.getDefaultPort(), host, requestURI, headers, version);
-  }
-
-  @Override
-  public WebSocketStream websocketStreamAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols) {
+  public void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler) {
     URI uri;
     try {
       uri = new URI(url);
@@ -408,44 +214,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     if (uri.getRawFragment() != null) {
       relativeUri.append('#').append(uri.getRawFragment());
     }
-    RequestOptions options = new RequestOptions().setHost(uri.getHost()).setPort(port).setSsl(ssl).setURI(relativeUri.toString());
-    return websocketStream(options, headers, version, subProtocols);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version, String subProtocols) {
-    return new WebSocketStream(options.getPort(), options.getHost(), options.getURI(), headers, version, subProtocols, options.isSsl());
-  }
-
-  @Override
-  public WebSocketStream websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
-                                         String subProtocols) {
-    return new WebSocketStream(port, host, requestURI, headers, version, subProtocols, null);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols) {
-    return websocketStream(options.getDefaultPort(), host, requestURI, headers, version, subProtocols);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(String requestURI) {
-    return websocketStream(options.getDefaultPort(), options.getDefaultHost(), requestURI);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(String requestURI, MultiMap headers) {
-    return websocketStream(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(String requestURI, MultiMap headers, WebsocketVersion version) {
-    return websocketStream(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, version);
-  }
-
-  @Override
-  public WebSocketStream websocketStream(String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols) {
-    return websocketStream(options.getDefaultPort(), options.getDefaultHost(), requestURI, headers, version, subProtocols);
+    WebSocketConnectOptions options = new WebSocketConnectOptions()
+      .setHost(uri.getHost())
+      .setPort(port).setSsl(ssl)
+      .setURI(relativeUri.toString())
+      .setHeaders(headers)
+      .setVersion(version)
+      .setSubProtocols(subProtocols);
+    webSocket(options, handler);
   }
 
   @Override
@@ -551,7 +327,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClientRequest request(HttpMethod method, RequestOptions options) {
-    return createRequest(method, null, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null);
+    return createRequest(method, null, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), options.getHeaders());
   }
 
   @Override
@@ -974,26 +750,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     return options;
   }
 
-  private void getConnectionForWebsocket(ContextInternal ctx,
-                                         boolean ssl,
-                                         int port,
-                                         String host,
-                                         Handler<Http1xClientConnection> handler,
-                                         Handler<Throwable> connectionExceptionHandler) {
-    websocketCM.getConnection(ctx, SocketAddress.inetSocketAddress(port, host), ssl, SocketAddress.inetSocketAddress(port, host), ar -> {
-      if (ar.succeeded()) {
-        HttpClientConnection conn = ar.result();
-        conn.getContext().dispatch(v -> {
-          handler.handle((Http1xClientConnection) conn);
-        });
-      } else {
-        ctx.dispatch(v -> {
-          connectionExceptionHandler.handle(ar.cause());
-        });
-      }
-    });
-  }
-
   void getConnectionForRequest(ContextInternal ctx,
                                SocketAddress peerAddress,
                                boolean ssl,
@@ -1079,99 +835,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private synchronized void checkClosed() {
     if (closed) {
       throw new IllegalStateException("Client is closed");
-    }
-  }
-
-  private class WebSocketStream implements ReadStream<WebSocket> {
-
-    final int port;
-    final String host;
-    final String requestURI;
-    final MultiMap headers;
-    final WebsocketVersion version;
-    final String subProtocols;
-    private Handler<WebSocket> handler;
-    private Handler<Throwable> exceptionHandler;
-    private Handler<Void> endHandler;
-    private Boolean ssl;
-
-    WebSocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version, String subProtocols, Boolean ssl) {
-      this.port = port;
-      this.host = host;
-      this.requestURI = requestURI;
-      this.headers = headers;
-      this.version = version;
-      this.subProtocols = subProtocols;
-      this.ssl = ssl;
-    }
-
-    void subscribe(Handler<WebSocket> completionHandler, Handler<Throwable> failureHandler) {
-      Future<WebSocket> fut = Future.future();
-      fut.setHandler(ar -> {
-        if (ar.succeeded()) {
-          completionHandler.handle(ar.result());
-        } else {
-          failureHandler.handle(ar.cause());
-        }
-      });
-      exceptionHandler(fut::tryFail);
-      handler(fut::tryComplete);
-    }
-
-    @Override
-    public synchronized ReadStream<WebSocket> exceptionHandler(Handler<Throwable> handler) {
-      exceptionHandler = handler;
-      return this;
-    }
-
-    @Override
-    public synchronized ReadStream<WebSocket> handler(Handler<WebSocket> handler) {
-      if (this.handler == null && handler != null) {
-        this.handler = handler;
-        checkClosed();
-        Handler<Throwable> connectionExceptionHandler;
-        if (exceptionHandler == null) {
-          connectionExceptionHandler = log::error;
-        } else {
-          connectionExceptionHandler = exceptionHandler;
-        }
-        Handler<WebSocket> wsConnect;
-        if (endHandler != null) {
-          Handler<Void> endCallback = endHandler;
-          wsConnect = ws -> {
-            handler.handle(ws);
-            endCallback.handle(null);
-          };
-        } else {
-          wsConnect = handler;
-        }
-        getConnectionForWebsocket(vertx.getOrCreateContext(), ssl != null ? ssl : options.isSsl(), port, host, conn -> {
-          conn.exceptionHandler(connectionExceptionHandler);
-          conn.toWebSocket(requestURI, headers, version, subProtocols, options.getMaxWebsocketFrameSize(), wsConnect);
-        }, connectionExceptionHandler);
-      }
-      return this;
-    }
-
-    @Override
-    public synchronized ReadStream<WebSocket> endHandler(Handler<Void> endHandler) {
-      this.endHandler = endHandler;
-      return this;
-    }
-
-    @Override
-    public ReadStream<WebSocket> pause() {
-      return this;
-    }
-
-    @Override
-    public ReadStream<WebSocket> resume() {
-      return this;
-    }
-
-    @Override
-    public ReadStream<WebSocket> fetch(long amount) {
-      return this;
     }
   }
 

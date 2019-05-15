@@ -148,21 +148,10 @@ class ConnectionManager {
       }
 
       if (endpoint.pool.getConnection(ar -> {
-        if (ar.succeeded()) {
-
-          HttpClientConnection conn = ar.result();
-
-          if (metrics != null) {
-            metrics.dequeueRequest(endpoint.metric, metric);
-          }
-
-          ctx.schedule(Future.succeededFuture(conn), handler);
-        } else {
-          if (metrics != null) {
-            metrics.dequeueRequest(endpoint.metric, metric);
-          }
-          ctx.schedule(Future.failedFuture(ar.cause()), handler);
+        if (metrics != null) {
+          metrics.dequeueRequest(endpoint.metric, metric);
         }
+        handler.handle(ar);
       })) {
         break;
       }

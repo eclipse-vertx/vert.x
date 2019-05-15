@@ -774,8 +774,11 @@ public class HTTPExamples {
   }
 
   public void example54(HttpClient client) {
-    client.websocket("/some-uri", websocket -> {
-      System.out.println("Connected!");
+    client.webSocket("/some-uri", res -> {
+      if (res.succeeded()) {
+        WebSocket ws = res.result();
+        System.out.println("Connected!");
+      }
     });
   }
 
