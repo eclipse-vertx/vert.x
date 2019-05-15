@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -21,6 +22,7 @@ import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -1000,7 +1002,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect);
 
@@ -1011,7 +1015,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(int, String, String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect);
 
@@ -1021,7 +1027,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1033,7 +1041,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(int, String, String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1043,7 +1053,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(String, String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, Handler<WebSocket> wsConnect);
 
@@ -1054,7 +1066,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(String, String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1064,7 +1078,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect);
 
@@ -1076,7 +1092,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
@@ -1087,7 +1105,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1100,7 +1120,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1111,7 +1133,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
@@ -1123,7 +1147,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1135,7 +1161,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
@@ -1150,7 +1178,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
@@ -1164,7 +1194,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1180,7 +1212,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1194,7 +1228,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
@@ -1209,7 +1245,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1223,7 +1261,9 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols to use
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
@@ -1239,7 +1279,9 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols to use
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
@@ -1255,7 +1297,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocketAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1269,7 +1313,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1286,7 +1332,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1301,7 +1349,9 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols to use
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
@@ -1317,7 +1367,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1327,7 +1379,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, Handler<WebSocket> wsConnect);
 
@@ -1337,7 +1391,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1347,7 +1403,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
@@ -1358,7 +1416,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1370,7 +1430,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
@@ -1384,7 +1446,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1399,7 +1463,9 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
@@ -1414,17 +1480,64 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
 
   /**
+   * Connect a WebSocket to the specified port, host and relative request URI
+   * @param port  the port
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param handler  handler that will be called with the websocket when connected
+   */
+  void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Connect a WebSocket to the host and relative request URI and default port
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param handler  handler that will be called with the websocket when connected
+   */
+  void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Connect a WebSocket at the relative request URI using the default host and port
+   * @param requestURI  the relative URI
+   * @param handler  handler that will be called with the websocket when connected
+   */
+  void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Connect a WebSocket with the specified options.
+   *
+   * @param options  the request options
+   */
+  void webSocket(WebSocketConnectOptions options, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Connect a WebSocket with the specified absolute url, with the specified headers, using
+   * the specified version of WebSockets, and the specified websocket sub protocols.
+   *
+   * @param url            the absolute url
+   * @param headers        the headers
+   * @param version        the websocket version
+   * @param subProtocols   the subprotocols to use
+   * @param handler handler that will be called if websocket connection fails
+   */
+  void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
    * Create a WebSocket stream with the specified options
    * @param options  the request options
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(RequestOptions options);
 
   /**
@@ -1433,7 +1546,9 @@ public interface HttpClient extends Measured {
    * @param host  the host
    * @param requestURI  the relative URI
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(int, String, String, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(int port, String host, String requestURI);
 
   /**
@@ -1441,7 +1556,9 @@ public interface HttpClient extends Measured {
    * @param host  the host
    * @param requestURI  the relative URI
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(String, String, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String host, String requestURI);
 
   /**
@@ -1449,7 +1566,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param headers  the headers
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(RequestOptions options, MultiMap headers);
 
   /**
@@ -1459,7 +1578,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param headers  the headers
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(int port, String host, String requestURI, MultiMap headers);
 
   /**
@@ -1468,7 +1589,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param headers  the headers
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers);
 
   /**
@@ -1478,7 +1601,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version);
 
   /**
@@ -1490,7 +1615,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
@@ -1501,7 +1628,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
@@ -1513,7 +1642,9 @@ public interface HttpClient extends Measured {
    * @param version      the websocket version
    * @param subProtocols the subprotocols to use
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStreamAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols);
 
   /**
@@ -1524,7 +1655,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols to use
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
@@ -1538,7 +1671,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols to use
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
@@ -1551,7 +1686,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols to use
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
@@ -1559,7 +1696,9 @@ public interface HttpClient extends Measured {
    * Create a WebSocket stream at the relative request URI using the default host and port and the specified headers
    * @param requestURI  the relative URI
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(String, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String requestURI);
 
   /**
@@ -1567,7 +1706,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param headers  the headers
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String requestURI, MultiMap headers);
 
   /**
@@ -1577,7 +1718,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
@@ -1588,7 +1731,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 

@@ -1625,7 +1625,7 @@ The {@link io.vertx.core.http.ServerWebSocket} instance enables you to retrieve 
 
 The Vert.x {@link io.vertx.core.http.HttpClient} supports WebSockets.
 
-You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.HttpClient#websocket} operations and
+You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.HttpClient#webSocket} operations and
 providing a handler.
 
 The handler will be called with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:

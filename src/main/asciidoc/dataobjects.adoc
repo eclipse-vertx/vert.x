@@ -1836,6 +1836,9 @@ Set proxy username.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[headers]]`@headers`|`String`|+++
+Add a request header.
++++
 |[[host]]`@host`|`String`|+++
 Set the host name to be used by the client request.
 +++
@@ -2078,6 +2081,41 @@ Set the time unit of <code>warningExceptionTime</code>.
 +++
 |[[workerPoolSize]]`@workerPoolSize`|`Number (int)`|+++
 Set the maximum number of worker threads to be used by the Vert.x instance.
++++
+|===
+
+[[WebSocketConnectOptions]]
+== WebSocketConnectOptions
+
+++++
+ Options describing how an link connect a link.
+++++
+'''
+
+[cols=">25%,25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[headers]]`@headers`|`String`|+++
+Add a request header.
++++
+|[[host]]`@host`|`String`|+++
+Set the host name to be used by the client request.
++++
+|[[port]]`@port`|`Number (int)`|+++
+Set the port to be used by the client request.
++++
+|[[ssl]]`@ssl`|`Boolean`|+++
+Set whether SSL/TLS is enabled
++++
+|[[subProtocols]]`@subProtocols`|`Array of String`|+++
+Set the WebSocket sub protocols to use.
++++
+|[[uri]]`@uri`|`String`|+++
+Set the request relative URI
++++
+|[[version]]`@version`|`link:enums.html#WebsocketVersion[WebsocketVersion]`|+++
+Set the WebSocket version.
 +++
 |===
 
