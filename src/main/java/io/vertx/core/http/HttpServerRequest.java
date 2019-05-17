@@ -11,7 +11,6 @@
 
 package io.vertx.core.http;
 
-import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
