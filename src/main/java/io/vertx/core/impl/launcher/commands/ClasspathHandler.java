@@ -93,7 +93,7 @@ public abstract class ClasspathHandler extends DefaultCommand {
       classloader = (classpath == null || classpath.isEmpty()) ?
           ClasspathHandler.class.getClassLoader() : createClassloader();
       Class<?> clazz = classloader.loadClass("io.vertx.core.impl.launcher.commands.VertxIsolatedDeployer");
-      return clazz.newInstance();
+      return clazz.getDeclaredConstructor().newInstance();
     } catch (Exception e) {
       log.error("Failed to load or instantiate the isolated deployer", e);
       throw new IllegalStateException(e);
