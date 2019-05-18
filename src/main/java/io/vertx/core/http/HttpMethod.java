@@ -20,5 +20,28 @@ import io.vertx.codegen.annotations.VertxGen;
  */
 @VertxGen
 public enum HttpMethod {
-  OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER
+  OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER;
+
+  public boolean isSafe() {
+    switch (this) {
+      case GET:
+      case HEAD:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  public boolean isIdempotent() {
+    switch (this) {
+      case GET:
+      case HEAD:
+      case PUT:
+      case PATCH:
+      case DELETE:
+        return true;
+      default:
+        return false;
+    }
+  }
 }
