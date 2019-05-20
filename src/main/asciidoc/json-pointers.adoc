@@ -10,11 +10,11 @@ a string, a URI or manually appending paths:
 ----
 
 After instantiating your pointer, use {@link io.vertx.core.json.pointer.JsonPointer#queryJson(java.lang.Object)} to query
-a JSON value. If can update a Json Value using {@link io.vertx.core.json.pointer.JsonPointer#writeJson(java.lang.Object, java.lang.Object)}:
+a JSON value. You can update a Json Value using {@link io.vertx.core.json.pointer.JsonPointer#writeJson(java.lang.Object, java.lang.Object)}:
 
 [source,java]
 ----
 {@link examples.JsonPointerExamples#example2Pointers}
 ----
 
-You can reuse Vert.x Json Pointer with custom object models by providing a custom implementation of {@link io.vertx.core.json.pointer.JsonPointerIterator}
+You can use Vert.x Json Pointer with any object model by providing a custom implementation of {@link io.vertx.core.json.pointer.JsonPointerIterator}

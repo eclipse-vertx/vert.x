@@ -31,84 +31,81 @@ import java.util.stream.Stream;
 public interface JsonPointer {
 
   /**
-   * Return true if the pointer is a root pointer
-   *
-   * @return
+   * Return {@code true} if the pointer is a root pointer
    */
   boolean isRootPointer();
 
   /**
-   * Return true if the pointer is local (URI with only fragment)
-   *
-   * @return
+   * Return {@code true} if the pointer is local (URI with only fragment)
    */
   boolean isLocalPointer();
 
+  /**
+   * Return {@code true} if this pointer is a parent pointer of {@code child}.
+   * <br/>
+   * For instance {@code "/properties"} pointer is parent pointer of {@code "/properties/parent"}
+   *
+   * @param child
+   */
   boolean isParent(JsonPointer child);
 
   /**
    * Build a <a href="https://tools.ietf.org/html/rfc6901#section-5">string representation</a> of the JSON Pointer
-   *
-   * @return
    */
   @Override
   String toString();
 
   /**
    * Build a <a href="https://tools.ietf.org/html/rfc6901#section-6">URI representation</a> of the JSON Pointer
-   *
-   * @return
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   URI toURI();
 
   /**
-   * Returns the underlying URI without the fragment
-   *
-   * @return
+   * Return the underlying URI without the fragment
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   URI getURIWithoutFragment();
 
   /**
-   * Append unescaped path to JsonPointer. <br/>
+   * Append an unescaped {@code token} to this pointer <br/>
    * Note: If you provide escaped path the behaviour is undefined
    *
-   * @param path unescaped path
-   * @return
+   * @param token the unescaped reference token
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  JsonPointer append(String path);
+  JsonPointer append(String token);
 
   /**
-   * Append index path to JsonPointer
+   * Append the {@code index} as reference token to JsonPointer
    *
-   * @param i index
-   * @return
+   * @param index
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  JsonPointer append(int i);
+  JsonPointer append(int index);
 
   /**
-   * Append unescaped list of paths to JsonPointer <br/>
+   * Append an unescaped list of {@code tokens} to JsonPointer <br/>
    * Note: If you provide escaped paths the behaviour is undefined
    *
-   * @param paths unescaped paths
-   * @return
+   * @param tokens unescaped reference tokens
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  JsonPointer append(List<String> paths);
+  JsonPointer append(List<String> tokens);
 
   /**
-   * Remove last append
+   * Remove last reference token of this pointer
    *
-   * @return
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   JsonPointer parent();
 
   /**
-   * Query the objectToQuery using the provided JsonPointerIterator. <br/>
+   * Query {@code objectToQuery} using the provided {@link JsonPointerIterator}. <br/>
    * If you need to query Vert.x json data structures, use {@link JsonPointer#queryJson(Object)}<br/>
    * Note: if this pointer is a root pointer, this function returns the provided object
    *
@@ -119,7 +116,7 @@ public interface JsonPointer {
   default @Nullable Object query(Object objectToQuery, JsonPointerIterator iterator) { return queryOrDefault(objectToQuery, iterator, null); }
 
   /**
-   * Query the provided readable json pointer iterator. If the query result is null, returns the default. <br/>
+   * Query {@code objectToQuery} using the provided {@link JsonPointerIterator}. If the query result is null, returns the default. <br/>
    * If you need to query Vert.x json data structures, use {@link JsonPointer#queryJsonOrDefault(Object, Object)}<br/>
    * Note: if this pointer is a root pointer, this function returns the provided object
    *
@@ -131,7 +128,7 @@ public interface JsonPointer {
   Object queryOrDefault(Object objectToQuery, JsonPointerIterator iterator, Object defaultValue);
 
   /**
-   * Query the provided json element. <br/>
+   * Query {@code jsonElement}. <br/>
    * Note: if this pointer is a root pointer, this function returns the provided json element
    *
    * @param jsonElement the json element to query
@@ -140,7 +137,7 @@ public interface JsonPointer {
   default @Nullable Object queryJson(Object jsonElement) {return query(jsonElement, JsonPointerIterator.JSON_ITERATOR); }
 
   /**
-   * Query the provided json element. If the query result is null, returns the default.<br/>
+   * Query {@code jsonElement}. If the query result is null, returns the default.<br/>
    * Note: if this pointer is a root pointer, this function returns the provided object
    *
    * @param jsonElement the json element to query
@@ -150,7 +147,7 @@ public interface JsonPointer {
   default @Nullable Object queryJsonOrDefault(Object jsonElement, Object defaultValue) {return queryOrDefault(jsonElement, JsonPointerIterator.JSON_ITERATOR, defaultValue); }
 
   /**
-   * Query the provided object tracing each element walked during the query, including the first and the result (if any).<br/>
+   * Query {@code objectToQuery} tracing each element walked during the query, including the first and the result (if any).<br/>
    * The first element of the list is objectToQuery and the last is the result, or the element before the first null was encountered
    *
    * @param objectToQuery the object to query
@@ -160,7 +157,7 @@ public interface JsonPointer {
   List<Object> tracedQuery(Object objectToQuery, JsonPointerIterator iterator);
 
   /**
-   * Write a value in objectToWrite using this pointer. The path token "-" is handled as append to end of array <br/>
+   * Write {@code newElement} in {@code objectToWrite} using this pointer. The path token "-" is handled as append to end of array <br/>
    * If you need to write in Vert.x json data structures, use {@link JsonPointer#writeJson(Object, Object)} (Object)}<br/>
    *
    * @param objectToWrite object to write
@@ -172,8 +169,7 @@ public interface JsonPointer {
   Object write(Object objectToWrite, JsonPointerIterator iterator, Object newElement, boolean createOnMissing);
 
   /**
-   * Write a value in jsonElement using this pointer. The path token "-" is handled as append to end of array. <br/>
-   * This function does not support root pointers.
+   * Write {@code newElement} in {@code jsonElement} using this pointer. The path token "-" is handled as append to end of array.
    *
    * @param jsonElement json element to query and write
    * @param newElement json to insert
@@ -182,8 +178,7 @@ public interface JsonPointer {
   default Object writeJson(Object jsonElement, Object newElement) { return writeJson(jsonElement, newElement, false); }
 
   /**
-   * Write a value in jsonElement using this pointer. The path token "-" is handled as append to end of array. <br/>
-   * This function does not support root pointers.
+   * Write {@code newElement} in {@code jsonElement} using this pointer. The path token "-" is handled as append to end of array.
    *
    * @param jsonElement json to query and write
    * @param newElement json to insert

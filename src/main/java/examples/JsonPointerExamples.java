@@ -11,10 +11,8 @@ public class JsonPointerExamples {
   public void example1Pointers() {
     // Build a pointer from a string
     JsonPointer pointer1 = JsonPointer.from("/hello/world");
-    // Build a pointer from an URI
-    JsonPointer pointer2 = JsonPointer.fromURI(URI.create("#/hello/world"));
     // Build a pointer manually
-    JsonPointer pointer3 = JsonPointer.create()
+    JsonPointer pointer2 = JsonPointer.create()
       .append("hello")
       .append("world");
   }
