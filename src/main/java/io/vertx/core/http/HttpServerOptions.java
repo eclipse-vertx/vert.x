@@ -449,6 +449,16 @@ public class HttpServerOptions extends NetServerOptions {
     return (HttpServerOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
   }
 
+  @Override
+  public HttpServerOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    return (HttpServerOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
+  }
+
+  @Override
+  public HttpServerOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    return (HttpServerOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+  }
+
   /**
    * @return {@code true} if the server supports gzip/deflate compression
    */

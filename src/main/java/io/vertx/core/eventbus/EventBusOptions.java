@@ -20,6 +20,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Options to configure the event bus.
@@ -506,6 +507,16 @@ public class EventBusOptions extends TCPSSLOptions {
   @Override
   public EventBusOptions setLogActivity(boolean logEnabled) {
     return (EventBusOptions) super.setLogActivity(logEnabled);
+  }
+
+  @Override
+  public EventBusOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    return (EventBusOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
+  }
+
+  @Override
+  public EventBusOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    return (EventBusOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
   }
 
   /**
