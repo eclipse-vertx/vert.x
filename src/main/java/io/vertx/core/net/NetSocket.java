@@ -248,7 +248,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetSocket upgradeToSsl(Handler<Void> handler);
+  NetSocket upgradeToSsl(Handler<AsyncResult<Void>> handler);
 
   /**
    * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
@@ -258,7 +258,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  NetSocket upgradeToSsl(String serverName, Handler<Void> handler);
+  NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler);
 
   /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS.

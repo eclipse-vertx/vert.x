@@ -344,12 +344,12 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   }
 
   @Override
-  public NetSocket upgradeToSsl(Handler<Void> handler) {
+  public NetSocket upgradeToSsl(Handler<AsyncResult<Void>> handler) {
     throw new UnsupportedOperationException("Cannot upgrade HTTP/2 stream to SSL");
   }
 
   @Override
-  public NetSocket upgradeToSsl(String serverName, Handler<Void> handler) {
+  public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
     throw new UnsupportedOperationException("Cannot upgrade HTTP/2 stream to SSL");
   }
 

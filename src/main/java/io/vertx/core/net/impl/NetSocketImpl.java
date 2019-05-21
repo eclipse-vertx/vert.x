@@ -294,20 +294,17 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public NetSocket upgradeToSsl(Handler<Void> handler) {
+  public NetSocket upgradeToSsl(Handler<AsyncResult<Void>> handler) {
     return upgradeToSsl(null, handler);
   }
 
   @Override
-  public NetSocket upgradeToSsl(String serverName, Handler<Void> handler) {
+  public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
     ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) chctx.pipeline().get("ssl");
     if (sslHandler == null) {
       chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
-        if (ar.succeeded()) {
-          handler.handle(null);
-        } else {
-          chctx.channel().closeFuture();
-          handleException(ar.cause());
+        if (handler != null) {
+          handler.handle(ar.mapEmpty());
         }
       }));
       if (remoteAddress != null) {

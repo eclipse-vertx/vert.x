@@ -1567,17 +1567,15 @@ public class NetTest extends VertxTestBase {
             if (upgradedServer.compareAndSet(false, true)) {
               indicatedServerName = socket.indicatedServerName();
               assertFalse(socket.isSsl());
-              socket.exceptionHandler(err -> {
-                if (shouldPass) {
-                  fail("Should not fail to connect");
+              socket.upgradeToSsl(ar -> {
+                assertEquals(shouldPass, ar.succeeded());
+                if (ar.succeeded()) {
+                  certificateChainChecker.accept(socket);
+                  upgradedServerCount.incrementAndGet();
+                  assertTrue(socket.isSsl());
                 } else {
                   complete();
                 }
-              });
-              socket.upgradeToSsl(v -> {
-                certificateChainChecker.accept(socket);
-                upgradedServerCount.incrementAndGet();
-                assertTrue(socket.isSsl());
               });
             } else {
               assertTrue(socket.isSsl());
@@ -1645,24 +1643,22 @@ public class NetTest extends VertxTestBase {
               if (startTLS && !upgradedClient.get()) {
                 upgradedClient.set(true);
                 assertFalse(socket.isSsl());
-                Handler<Void> handler = v -> {
-                  assertTrue(socket.isSsl());
-                  try {
-                    clientPeerCert = socket.peerCertificateChain()[0];
-                  } catch (SSLPeerUnverifiedException ignore) {
-                  }
-                  // Now send the rest
-                  for (int i = 1; i < numChunks; i++) {
-                    socket.write(toSend.get(i));
-                  }
-                };
-                socket.exceptionHandler(err -> {
-                  if (shouldPass) {
-                    fail("Should not fail to connect");
-                  } else {
-                    complete();
-                  }
-                });
+                Handler<AsyncResult<Void>> handler;
+                if (shouldPass) {
+                  handler = onSuccess(v -> {
+                    assertTrue(socket.isSsl());
+                    try {
+                      clientPeerCert = socket.peerCertificateChain()[0];
+                    } catch (SSLPeerUnverifiedException ignore) {
+                    }
+                    // Now send the rest
+                    for (int i = 1; i < numChunks; i++) {
+                      socket.write(toSend.get(i));
+                    }
+                  });
+                } else {
+                  handler = onFailure(err -> complete());
+                }
                 if (serverName != null) {
                   socket.upgradeToSsl(serverName, handler);
                 } else {
@@ -2815,13 +2811,9 @@ public class NetTest extends VertxTestBase {
       client.connect(1234, "localhost", ar2 -> {
         assertTrue(ar2.succeeded());
         NetSocket ns = ar2.result();
-        ns.exceptionHandler(th -> {
-          fail(th);
-        });
-        ns.upgradeToSsl(v2 -> {
-          // failure would occur before upgradeToSsl completes
+        ns.upgradeToSsl(onSuccess(v2 -> {
           testComplete();
-        });
+        }));
       });
     });
     await();
@@ -2957,12 +2949,9 @@ public class NetTest extends VertxTestBase {
       client.connect(4043, "localhost", arSocket -> {
         if (arSocket.succeeded()) {
           NetSocket ns = arSocket.result();
-          ns.exceptionHandler(th -> {
-            fail(th);
-          });
-          ns.upgradeToSsl(v -> {
+          ns.upgradeToSsl(onSuccess(v -> {
             testComplete();
-          });
+          }));
         } else {
           fail(ar.cause());
         }
@@ -2988,12 +2977,9 @@ public class NetTest extends VertxTestBase {
       client.connect(4043, "127.0.0.1", arSocket -> {
         if (arSocket.succeeded()) {
           NetSocket ns = arSocket.result();
-          ns.closeHandler(v -> {
+          ns.upgradeToSsl(onFailure(err -> {
             testComplete();
-          });
-          ns.upgradeToSsl(v -> {
-            fail("this test should fail");
-          });
+          }));
         } else {
           fail(ar.cause());
         }
@@ -3511,14 +3497,11 @@ public class NetTest extends VertxTestBase {
         NetSocket socket = res.result();
 
         assertFalse(socket.isSsl());
-        socket.upgradeToSsl(v -> {
-          fail("this should never be called because of failure of handshake");
-        });
-        socket.exceptionHandler(err -> {
+        socket.upgradeToSsl(onFailure(err -> {
           assertTrue(err instanceof SSLException);
           assertEquals("handshake timed out", err.getMessage());
           testComplete();
-        });
+        }));
       });
     });
     await();
