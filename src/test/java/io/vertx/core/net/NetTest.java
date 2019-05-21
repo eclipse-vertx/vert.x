@@ -3414,12 +3414,11 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(s -> {
     }).listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
-      client.connect(testAddress, res -> {
-        assertTrue(res.failed());
-        assertTrue(res.cause() instanceof SSLHandshakeException);
-        assertEquals("handshake timed out", res.cause().getCause().getMessage());
+      client.connect(testAddress, onFailure(err -> {
+        assertTrue(err instanceof SSLHandshakeException);
+        assertEquals("handshake timed out", err.getCause().getMessage());
         testComplete();
-      });
+      }));
     });
     await();
   }
@@ -3479,12 +3478,11 @@ public class NetTest extends VertxTestBase {
 
         assertFalse(socket.isSsl());
         socket.upgradeToSsl(v -> {
-          // this handler will never be called because of failure of handshake
-          fail("this should never be called");
-          assertFalse(socket.isSsl());
+          fail("this should never be called because of failure of handshake");
         });
-        // wait a bit to make sure the above handler will not be called
-        vertx.setTimer(2000, id -> {
+        socket.exceptionHandler(err -> {
+          assertTrue(err instanceof SSLException);
+          assertEquals("handshake timed out", err.getMessage());
           testComplete();
         });
       });
