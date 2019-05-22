@@ -115,6 +115,34 @@ public class AsyncFileImpl implements AsyncFile {
     });
   }
 
+  public AsyncFileImpl(VertxInternal vertx,  AsynchronousFileChannel fileChannel, boolean isAppend, ContextInternal context) {
+    this.vertx = vertx;
+    this.ch = fileChannel;
+    this.closed = ch.isOpen();
+
+    try {
+      if (isAppend) {
+        writePos = ch.size();
+
+      }
+    } catch (IOException e) {
+      throw new FileSystemException(e);
+    }
+
+    this.context = context;
+    this.queue = new InboundBuffer<>(context, 0);
+    queue.handler(buff -> {
+      if (buff.length() > 0) {
+        handleBuffer(buff);
+      } else {
+        handleEnd();
+      }
+    });
+    queue.drainHandler(v -> {
+      doRead();
+    });
+  }
+
   @Override
   public void close() {
     closeInternal(null);
@@ -165,17 +193,19 @@ public class AsyncFileImpl implements AsyncFile {
     Arguments.require(position >= 0, "position must be >= 0");
     check();
     Handler<AsyncResult<Void>> wrapped = ar -> {
-      if (ar.succeeded()) {
-        checkContext();
-        Runnable action;
-        synchronized (AsyncFileImpl.this) {
-          if (writesOutstanding == 0 && closedDeferred != null) {
-            action = closedDeferred;
-          } else {
-            action = this::checkDrained;
-          }
+
+      checkContext();
+      Runnable action;
+      synchronized (AsyncFileImpl.this) {
+        if (writesOutstanding == 0 && closedDeferred != null) {
+          action = closedDeferred;
+        } else {
+          action = this::checkDrained;
         }
-        action.run();
+      }
+      action.run();
+
+      if (ar.succeeded()) {
         if (handler != null) {
           handler.handle(ar);
         }
@@ -413,13 +443,13 @@ public class AsyncFileImpl implements AsyncFile {
       synchronized (this) {
         writesOutstanding += toWrite;
       }
-      writeInternal(buff, position, handler);
+      writeInternal(buff, position, toWrite, handler);
     } else {
       handler.handle(Future.succeededFuture());
     }
   }
 
-  private void writeInternal(ByteBuffer buff, long position, Handler<AsyncResult<Void>> handler) {
+  private void writeInternal(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {
 
     ch.write(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
@@ -431,7 +461,7 @@ public class AsyncFileImpl implements AsyncFile {
           // partial write
           pos += bytesWritten;
           // resubmit
-          writeInternal(buff, pos, handler);
+          writeInternal(buff, pos, toWrite, handler);
         } else {
           // It's been fully written
           context.runOnContext((v) -> {
@@ -445,7 +475,12 @@ public class AsyncFileImpl implements AsyncFile {
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
-          context.runOnContext((v) -> handler.handle(Future.failedFuture(exc)));
+          context.runOnContext((v) -> {
+            synchronized (AsyncFileImpl.this) {
+              writesOutstanding -= toWrite;
+            }
+            handler.handle(Future.failedFuture(exc));
+          });
         } else {
           log.error("Error occurred", exc);
         }
@@ -502,7 +537,7 @@ public class AsyncFileImpl implements AsyncFile {
   private void checkContext() {
     if (!vertx.getContext().equals(context)) {
       throw new IllegalStateException("AsyncFile must only be used in the context that created it, expected: "
-          + context + " actual " + vertx.getContext());
+        + context + " actual " + vertx.getContext());
     }
   }
 
