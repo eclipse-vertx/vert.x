@@ -17,7 +17,7 @@ import io.vertx.core.json.pointer.impl.JsonPointerIteratorImpl;
  *
  */
 @VertxGen
-public interface JsonPointerIterator<OBJECT_TYPE, ARRAY_TYPE, VALUE_TYPE> {
+public interface JsonPointerIterator {
 
   /**
    * @param currentValue
