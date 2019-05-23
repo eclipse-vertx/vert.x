@@ -27,6 +27,7 @@ import static java.util.Arrays.asList;
 public class ObjectArrayMessageCodecTest extends VertxTestBase {
 
 
+  public static final String ADDRESS = "sample-address";
   private final Object[] message;
 
   public ObjectArrayMessageCodecTest(Object[] message) {
@@ -68,11 +69,11 @@ public class ObjectArrayMessageCodecTest extends VertxTestBase {
     vertices[0].exceptionHandler(this::fail);
     vertices[1].exceptionHandler(this::fail);
 
-    vertices[0].eventBus().<Object[]>consumer("a").handler(m -> assertArrayEquals("Array not equals", message, m.body()))
+    vertices[0].eventBus().<Object[]>consumer(ADDRESS).handler(m -> assertArrayEquals("Array not equals", message, m.body()))
       .exceptionHandler(this::fail)
       .completionHandler(ar -> {
         assertTrue(ar.succeeded());
-        vertices[1].eventBus().send("a", message);
+        vertices[1].eventBus().send(ADDRESS, message);
         testComplete();
       });
     await(30, TimeUnit.SECONDS);
@@ -88,11 +89,11 @@ public class ObjectArrayMessageCodecTest extends VertxTestBase {
     vertices[0].exceptionHandler(this::fail);
     vertices[1].exceptionHandler(this::fail);
 
-    vertices[0].eventBus().<Object[]>consumer("a").handler(m -> assertArrayEquals("Array not equals", message, m.body()))
+    vertices[0].eventBus().<Object[]>consumer(ADDRESS).handler(m -> assertArrayEquals("Array not equals", message, m.body()))
       .exceptionHandler(this::fail)
       .completionHandler(ar -> {
         assertTrue(ar.succeeded());
-        vertices[1].eventBus().publish("a", message);
+        vertices[1].eventBus().publish(ADDRESS, message);
         testComplete();
       });
     await(30, TimeUnit.SECONDS);
