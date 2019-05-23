@@ -145,6 +145,12 @@ public class JsonPointerImpl implements JsonPointer {
   }
 
   @Override
+  public JsonPointer append(JsonPointer pointer) {
+    decodedTokens.addAll(((JsonPointerImpl)pointer).decodedTokens);
+    return this;
+  }
+
+  @Override
   public JsonPointer parent() {
     if (!this.isRootPointer()) decodedTokens.remove(decodedTokens.size() - 1);
     return this;

@@ -88,6 +88,14 @@ public class JsonPointerTest {
   }
 
   @Test
+  public void testAppendOtherPointer() {
+    JsonPointer firstPointer = JsonPointer.fromURI(URI.create("http://example.com/stuff.json#/hello")).append("world");
+    JsonPointer otherPointer = JsonPointer.fromURI(URI.create("http://example.com/other.json#/francesco"));
+    firstPointer.append(otherPointer);
+    assertEquals(URI.create("http://example.com/stuff.json#/hello/world/francesco"), firstPointer.toURI());
+  }
+
+  @Test
   public void testNullQuerying() {
     JsonPointer pointer = JsonPointer.from("/hello/world");
     assertNull(pointer.queryJson(null));

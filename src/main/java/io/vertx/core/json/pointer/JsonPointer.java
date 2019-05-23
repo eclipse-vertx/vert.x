@@ -97,6 +97,16 @@ public interface JsonPointer {
   JsonPointer append(List<String> tokens);
 
   /**
+   * Append all tokens of {@code pointer} to this pointer <br/>
+   * Note: The base URI of this pointer will remain untouched
+   *
+   * @param pointer other pointer
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  JsonPointer append(JsonPointer pointer);
+
+  /**
    * Remove last reference token of this pointer
    *
    * @return a reference to this, so the API can be used fluently
