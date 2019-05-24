@@ -41,9 +41,7 @@ public class DefaultCommandFactory<C extends Command> implements CommandFactory<
    */
   @Override
   public C create(CommandLine cl) {
-    C c = ReflectionUtils.newInstance(clazz);
-    CLIConfigurator.inject(cl, c);
-    return c;
+    return ReflectionUtils.newInstance(clazz);
   }
 
   /**
