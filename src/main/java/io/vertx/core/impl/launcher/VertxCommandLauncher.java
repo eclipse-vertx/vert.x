@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
@@ -125,9 +126,18 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
     return this;
   }
 
+  @Deprecated
   @SuppressWarnings("unchecked")
   public VertxCommandLauncher register(Class<? extends Command> clazz) {
     DefaultCommandFactory factory = new DefaultCommandFactory(clazz);
+    CLI cli = factory.define();
+    commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
+    return this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public VertxCommandLauncher register(Class<? extends Command> clazz, Supplier<? extends Command> supplier) {
+    DefaultCommandFactory factory = new DefaultCommandFactory(clazz, supplier);
     CLI cli = factory.define();
     commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
     return this;

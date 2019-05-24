@@ -1,49 +1,51 @@
 [
   {
     "name": "io.vertx.core.impl.launcher.commands.VertxIsolatedDeployer",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true
+    "methods": [
+      { "name": "<init>", "parameterTypes": [] }
+    ],
+    "allPublicMethods": true
   },
   {
     "name": "io.vertx.core.impl.launcher.commands.BareCommand",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true
+    "allPublicMethods": true
   },
   {
     "name": "io.vertx.core.impl.launcher.commands.ListCommand",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true
+    "allPublicMethods": true
   },
   {
     "name": "io.vertx.core.impl.launcher.commands.RunCommand",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true
+    "allPublicMethods": true
   },
   {
     "name": "io.vertx.core.impl.launcher.commands.StartCommand",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true
+    "allPublicMethods": true
   },
   {
     "name": "io.vertx.core.impl.launcher.commands.StopCommand",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true
+    "allPublicMethods": true
   },
   {
     "name": "io.vertx.core.impl.launcher.commands.VersionCommand",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true
+    "allPublicMethods": true
   },
   {
     "name": "java.lang.Long",
-    "allDeclaredConstructors": true
+    "methods": [
+      { "name": "<init>", "parameterTypes": ["java.lang.String"] }
+    ]
   },
   {
     "name": "java.lang.Integer",
-    "allDeclaredConstructors": true
+    "methods": [
+      { "name": "<init>", "parameterTypes": ["java.lang.String"] }
+    ]
   },
   {
     "name": "java.lang.Boolean",
-    "allDeclaredConstructors": true
+    "methods": [
+      { "name": "<init>", "parameterTypes": ["java.lang.String"] }
+    ]
   }
 ]

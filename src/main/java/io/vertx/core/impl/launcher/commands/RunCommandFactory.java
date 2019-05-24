@@ -24,6 +24,6 @@ public class RunCommandFactory extends DefaultCommandFactory<RunCommand> {
    * Creates a new instance of {@link RunCommandFactory}.
    */
   public RunCommandFactory() {
-    super(RunCommand.class);
+    super(RunCommand.class, RunCommand::new);
   }
 }
