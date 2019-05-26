@@ -220,7 +220,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
       boolean unregisterCalled;
 
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         EventBus eventBus = getVertx().eventBus();
         MessageConsumer<String> consumer = eventBus.consumer("whatever");
         consumer.handler(m -> {

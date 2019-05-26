@@ -822,7 +822,7 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger childUndeployed = new AtomicInteger();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         vertx.deployVerticle(new AbstractVerticle() {
           @Override
           public void start() throws Exception {
@@ -850,7 +850,7 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger childUndeployed = new AtomicInteger();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         vertx.deployVerticle(new AbstractVerticle() {
           @Override
@@ -879,10 +879,10 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger parentFailed = new AtomicInteger();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         vertx.deployVerticle(new AbstractVerticle() {
           @Override
-          public void start(Future<Void> fut) throws Exception {
+          public void start(Promise<Void> fut) throws Exception {
             vertx.setTimer(100, id -> {
               fut.complete();
             });
@@ -1028,11 +1028,11 @@ public class DeploymentTest extends VertxTestBase {
   public void testChildUndeployedDirectly() throws Exception {
     Verticle parent = new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
 
         Verticle child = new AbstractVerticle() {
           @Override
-          public void start(Future<Void> startFuture) throws Exception {
+          public void start(Promise<Void> startFuture) throws Exception {
             startFuture.complete();
 
             // Undeploy it directly
@@ -1044,11 +1044,6 @@ public class DeploymentTest extends VertxTestBase {
           startFuture.complete();
         }));
 
-      }
-
-      @Override
-      public void stop(Future<Void> stopFuture) throws Exception {
-        super.stop(stopFuture);
       }
     };
 
@@ -1203,7 +1198,7 @@ public class DeploymentTest extends VertxTestBase {
   public static class ParentVerticle extends AbstractVerticle {
 
     @Override
-    public void start(Future<Void> startFuture) throws Exception {
+    public void start(Promise<Void> startFuture) throws Exception {
       vertx.deployVerticle("java:" + ChildVerticle.class.getName(), ar -> {
         if (ar.succeeded()) {
           startFuture.complete(null);
@@ -1319,7 +1314,7 @@ public class DeploymentTest extends VertxTestBase {
   public void testFailedVerticleStopNotCalled() {
     Verticle verticleChild = new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         startFuture.fail("wibble");
       }
       @Override
@@ -1330,7 +1325,7 @@ public class DeploymentTest extends VertxTestBase {
     };
     Verticle verticleParent = new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         vertx.deployVerticle(verticleChild, onFailure(v -> {
           startFuture.complete();
         }));
@@ -1481,7 +1476,7 @@ public class DeploymentTest extends VertxTestBase {
     };
     Verticle v = new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         this.context.addCloseHook(closeable);
         startFuture.fail("Fail to deploy.");
       }
@@ -1506,7 +1501,7 @@ public class DeploymentTest extends VertxTestBase {
     vertx.deployVerticle(() -> {
       Verticle v = new AbstractVerticle() {
         @Override
-        public void start(final Future<Void> startFuture) throws Exception {
+        public void start(final Promise<Void> startFuture) throws Exception {
           startFuture.fail("Fail to deploy.");
         }
       };
@@ -1644,23 +1639,23 @@ public class DeploymentTest extends VertxTestBase {
 
   public class MyAsyncVerticle extends AbstractVerticle {
 
-    private final Consumer<Future<Void>> startConsumer;
-    private final Consumer<Future<Void>> stopConsumer;
+    private final Consumer<Promise<Void>> startConsumer;
+    private final Consumer<Promise<Void>> stopConsumer;
 
-    public MyAsyncVerticle(Consumer<Future<Void>> startConsumer, Consumer<Future<Void>> stopConsumer) {
+    public MyAsyncVerticle(Consumer<Promise<Void>> startConsumer, Consumer<Promise<Void>> stopConsumer) {
       this.startConsumer = startConsumer;
       this.stopConsumer = stopConsumer;
     }
 
     @Override
-    public void start(Future<Void> startFuture) throws Exception {
+    public void start(Promise<Void> startFuture) throws Exception {
       if (startConsumer != null) {
         startConsumer.accept(startFuture);
       }
     }
 
     @Override
-    public void stop(Future<Void> stopFuture) throws Exception {
+    public void stop(Promise<Void> stopFuture) throws Exception {
       if (stopConsumer != null) {
         stopConsumer.accept(stopFuture);
       }

@@ -24,6 +24,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
@@ -206,7 +207,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     private final String uri;
     private final String contentEncoding;
     private Http2ServerResponseImpl response;
-    private final Future<HttpServerResponse> completionHandler;
+    private final Promise<HttpServerResponse> completionHandler;
 
     public Push(Http2Stream stream,
                 String contentEncoding,
@@ -215,10 +216,13 @@ public class Http2ServerConnection extends Http2ConnectionBase {
                 boolean writable,
                 Handler<AsyncResult<HttpServerResponse>> completionHandler) {
       super(Http2ServerConnection.this, stream, writable);
+      Promise<HttpServerResponse> promise = Promise.promise();
+      promise.future().setHandler(completionHandler);
+
       this.method = method;
       this.uri = uri;
       this.contentEncoding = contentEncoding;
-      this.completionHandler = Future.<HttpServerResponse>future().setHandler(completionHandler);
+      this.completionHandler = promise;
     }
 
     @Override

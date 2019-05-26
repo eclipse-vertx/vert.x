@@ -26,6 +26,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -614,8 +615,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       }
       checkSendHeaders(false);
 
-      Future<Long> result = Future.future();
-      result.setHandler(ar -> {
+      Promise<Long> result = Promise.promise();
+      result.future().setHandler(ar -> {
         if (ar.succeeded()) {
           bytesWritten += ar.result();
           end();

@@ -380,8 +380,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (headers != null && next.headers == null) {
       next.headers().addAll(headers);
     }
-    Future<Void> fut = Future.future();
-    fut.setHandler(ar -> {
+    Promise<Void> promise = Promise.promise();
+    Future<Void> future = promise.future();
+    future.setHandler(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
           next.setTimeout(timeoutMs);
@@ -392,19 +393,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
     });
     if (exceptionOccurred != null) {
-      fut.fail(exceptionOccurred);
+      promise.fail(exceptionOccurred);
     }
     else if (completed) {
-      fut.complete();
+      promise.complete();
     } else {
       exceptionHandler(err -> {
-        if (!fut.isComplete()) {
-          fut.fail(err);
+        if (!future.isComplete()) {
+          promise.fail(err);
         }
       });
       completionHandler = v -> {
-        if (!fut.isComplete()) {
-          fut.complete();
+        if (!future.isComplete()) {
+          promise.complete();
         }
       };
     }

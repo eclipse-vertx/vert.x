@@ -20,9 +20,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.impl.VertxInternal;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -53,7 +53,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   private final MultiMap headers;
   private HttpServerRequestImpl request;
   private Integer status;
-  private Future<Integer> handshakeFuture;
+  private Promise<Integer> handshakePromise;
 
   ServerWebSocketImpl(Http1xServerConnection conn,
                       boolean supportsContinuation,
@@ -128,10 +128,10 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
     synchronized (conn) {
       checkClosed();
       if (status == null) {
-        if (handshakeFuture == null) {
+        if (handshakePromise == null) {
           tryHandshake(101);
         } else {
-          handshakeFuture.tryComplete(101);
+          handshakePromise.tryComplete(101);
         }
       }
     }
@@ -193,8 +193,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
 
   Boolean tryHandshake(int sc) {
     synchronized (conn) {
-      if (status == null && handshakeFuture == null) {
-        setHandshake(Future.succeededFuture(sc));
+      if (status == null && handshakePromise == null) {
+        setHandshake(Promise.succeededPromise(sc));
       }
       return status == null ? null : status == sc;
     }
@@ -202,16 +202,21 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
 
   @Override
   public void setHandshake(Future<Integer> future) {
-    if (future == null) {
+    setHandshake((Promise<Integer>) future);
+  }
+
+  @Override
+  public void setHandshake(Promise<Integer> promise) {
+    if (promise == null) {
       throw new NullPointerException();
     }
     synchronized (conn) {
-      if (handshakeFuture != null) {
+      if (handshakePromise != null) {
         throw new IllegalStateException();
       }
-      handshakeFuture = future;
+      handshakePromise = promise;
     }
-    future.setHandler(ar -> {
+    promise.future().setHandler(ar -> {
       if (ar.succeeded()) {
         handleHandshake(ar.result());
       } else {

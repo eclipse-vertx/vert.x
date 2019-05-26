@@ -359,7 +359,7 @@ This example uses:
 
 * {@link io.vertx.core.Future#compose(java.util.function.Function)}: when the current future completes,
 run the given function, that returns a future. When this returned future completes, it completes the composition.
-* {@link io.vertx.core.Future#compose(io.vertx.core.Handler,io.vertx.core.Future)}: when the current future
+* {@link io.vertx.core.Future#compose(io.vertx.core.Handler,io.vertx.core.Promise)}: when the current future
 completes, run the given handler that completes the given `future` (next).
 
 In this second case, the {@link io.vertx.core.Handler} should complete the `next` future to report its success or

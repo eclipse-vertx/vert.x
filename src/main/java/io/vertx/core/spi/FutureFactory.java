@@ -12,11 +12,22 @@
 package io.vertx.core.spi;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface FutureFactory {
+
+  <T> Promise<T> promise();
+
+  <T> Promise<T> succeededPromise();
+
+  <T> Promise<T> succeededPromise(T result);
+
+  <T> Promise<T> failedPromise(Throwable t);
+
+  <T> Promise<T> failurePromise(String failureMessage);
 
   <T> Future<T> future();
 

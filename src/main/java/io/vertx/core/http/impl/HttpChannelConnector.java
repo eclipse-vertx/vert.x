@@ -20,6 +20,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectResult;
@@ -93,18 +94,19 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
   @Override
   public void connect(ConnectionListener<HttpClientConnection> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<HttpClientConnection>>> handler) {
-    Future<ConnectResult<HttpClientConnection>> future = Future.<ConnectResult<HttpClientConnection>>future().setHandler(handler);
+    Promise<ConnectResult<HttpClientConnection>> promise = Promise.promise();
+    promise.future().setHandler(handler);
     try {
-      doConnect(listener, context, future);
+      doConnect(listener, context, promise);
     } catch(Exception e) {
-      future.tryFail(e);
+      promise.tryFail(e);
     }
   }
 
   private void doConnect(
     ConnectionListener<HttpClientConnection> listener,
     ContextInternal context,
-    Future<ConnectResult<HttpClientConnection>> future) {
+    Promise<ConnectResult<HttpClientConnection>> future) {
 
     boolean domainSocket = server.path() != null;
     boolean useAlpn = options.isUseAlpn();
@@ -200,7 +202,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
                                boolean ssl,
                                ContextInternal context,
                                Channel ch, long weight,
-                               Future<ConnectResult<HttpClientConnection>> future) {
+                               Promise<ConnectResult<HttpClientConnection>> future) {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(context, chctx -> {
       Http1xClientConnection conn = new Http1xClientConnection(listener, upgrade ? HttpVersion.HTTP_1_1 : version, client, endpointMetric, chctx, ssl, server, context, metrics);
@@ -229,7 +231,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   private void http2Connected(ConnectionListener<HttpClientConnection> listener,
                               ContextInternal context,
                               Channel ch,
-                              Future<ConnectResult<HttpClientConnection>> future) {
+                              Promise<ConnectResult<HttpClientConnection>> future) {
     try {
       VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, endpointMetric, listener, context, null, (conn, concurrency) -> {
         future.complete(new ConnectResult<>(conn, concurrency, http2Weight));
@@ -241,7 +243,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     }
   }
 
-  private void connectFailed(Channel ch, ConnectionListener<HttpClientConnection> listener, Throwable t, Future<ConnectResult<HttpClientConnection>> future) {
+  private void connectFailed(Channel ch, ConnectionListener<HttpClientConnection> listener, Throwable t, Promise<ConnectResult<HttpClientConnection>> future) {
     if (ch != null) {
       try {
         ch.close();

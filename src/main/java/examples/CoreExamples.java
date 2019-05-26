@@ -116,11 +116,9 @@ public class CoreExamples {
   }
 
   public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
-    Future<HttpServer> httpServerFuture = Future.future();
-    httpServer.listen(httpServerFuture);
+    Future<HttpServer> httpServerFuture = Future.future(promise -> httpServer.listen(promise));
 
-    Future<NetServer> netServerFuture = Future.future();
-    netServer.listen(netServerFuture);
+    Future<NetServer> netServerFuture = Future.future(promise -> netServer.listen(promise));
 
     CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
       if (ar.succeeded()) {
@@ -166,22 +164,18 @@ public class CoreExamples {
   public void exampleFuture6(Vertx vertx) {
 
     FileSystem fs = vertx.fileSystem();
-    Future<Void> startFuture = Future.future();
 
-    Future<Void> fut1 = Future.future();
-    fs.createFile("/foo", fut1);
+    Future<Void> fut1 = Future.future(p -> fs.createFile("/foo", p));
 
-    fut1.compose(v -> {
+    Future<Void> startFuture = fut1
+      .compose(v -> {
       // When the file is created (fut1), execute this:
-      Future<Void> fut2 = Future.future();
-      fs.writeFile("/foo", Buffer.buffer(), fut2);
-      return fut2;
-    }).compose(v -> {
-              // When the file is written (fut2), execute this:
-              fs.move("/foo", "/bar", startFuture);
-            },
-            // mark startFuture it as failed if any step fails.
-            startFuture);
+      return Future.<Void>future(p -> fs.writeFile("/foo", Buffer.buffer(), p));
+    })
+      .compose(v -> {
+      // When the file is written (fut2), execute this:
+      return Future.future(p -> fs.move("/foo", "/bar", p));
+    });
   }
 
   public void example7_1(Vertx vertx) {

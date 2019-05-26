@@ -12,7 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.test.core.VertxTestBase;
@@ -34,7 +34,7 @@ public class HttpServerCloseHookTest extends VertxTestBase {
   private static class TestVerticle extends AbstractVerticle {
 
     @Override
-    public void start(Future<Void> startFuture) {
+    public void start(Promise<Void> startFuture) {
       HttpServerOptions invalidOptions = new HttpServerOptions()
         .setSsl(true)
         .setPfxTrustOptions(new PfxOptions().setValue(Buffer.buffer("boom")));

@@ -36,6 +36,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -104,9 +105,9 @@ public class Http2ClientTest extends Http2TestBase {
     io.vertx.core.http.Http2Settings updatedSettings = TestUtils.randomHttp2Settings();
     updatedSettings.setHeaderTableSize(initialSettings.getHeaderTableSize()); // Otherwise it raise "invalid max dynamic table size" in Netty
     AtomicInteger count = new AtomicInteger();
-    Future<Void> end = Future.future();
+    Promise<Void> end = Promise.promise();
     server.requestHandler(req -> {
-      end.setHandler(v -> {
+      end.future().setHandler(v -> {
         req.response().end();
       });
     }).connectionHandler(conn -> {
@@ -491,7 +492,7 @@ public class Http2ClientTest extends Http2TestBase {
   public void testClientResponsePauseResume() throws Exception {
     String content = TestUtils.randomAlphaString(1024);
     Buffer expected = Buffer.buffer();
-    Future<Void> whenFull = Future.future();
+    Promise<Void> whenFull = Promise.promise();
     AtomicBoolean drain = new AtomicBoolean();
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
@@ -521,7 +522,7 @@ public class Http2ClientTest extends Http2TestBase {
       Buffer received = Buffer.buffer();
       resp.pause();
       resp.handler(buff -> {
-        if (whenFull.isComplete()) {
+        if (whenFull.future().isComplete()) {
           assertSame(ctx, Vertx.currentContext());
         } else {
           assertOnIOContext(ctx);
@@ -532,7 +533,7 @@ public class Http2ClientTest extends Http2TestBase {
         assertEquals(expected.toString().length(), received.toString().length());
         testComplete();
       });
-      whenFull.setHandler(v -> {
+      whenFull.future().setHandler(v -> {
         resp.resume();
       });
     });
@@ -670,9 +671,9 @@ public class Http2ClientTest extends Http2TestBase {
   public void testServerResetClientStreamDuringResponse() throws Exception {
     waitFor(2);
     String chunk = TestUtils.randomAlphaString(1024);
-    Future<Void> doReset = Future.future();
+    Promise<Void> doReset = Promise.promise();
     server.requestHandler(req -> {
-      doReset.setHandler(onSuccess(v -> {
+      doReset.future().setHandler(onSuccess(v -> {
         req.response().reset(8);
       }));
       req.response().setChunked(true).write(Buffer.buffer(chunk));
@@ -699,7 +700,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testClientResetServerStreamDuringRequest() throws Exception {
-    Future<Void> bufReceived = Future.future();
+    Promise<Void> bufReceived = Promise.promise();
     server.requestHandler(req -> {
       req.handler(buf -> {
         bufReceived.complete();
@@ -725,7 +726,7 @@ public class Http2ClientTest extends Http2TestBase {
     HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
       fail();
     }).setChunked(true).write(Buffer.buffer("hello"));
-    bufReceived.setHandler(ar -> {
+    bufReceived.future().setHandler(ar -> {
       req.reset(10);
     });
     await();

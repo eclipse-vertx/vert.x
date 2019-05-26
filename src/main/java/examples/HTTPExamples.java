@@ -15,6 +15,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -677,16 +678,16 @@ public class HTTPExamples {
 
   public void exampleAsynchronousHandshake(HttpServer server) {
     server.websocketHandler(websocket -> {
-      Future<Integer> fut = Future.future();
-      websocket.setHandshake(fut);
+      Promise<Integer> promise = Promise.promise();
+      websocket.setHandshake(promise);
       authenticate(websocket, ar -> {
         if (ar.succeeded()) {
           // Terminate the handshake with the status code 101 (Switching Protocol)
           // Reject the handshake with 401 (Unauthorized)
-          fut.complete(ar.succeeded() ? 101 : 401);
+          promise.complete(ar.succeeded() ? 101 : 401);
         } else {
           // Will send a 500 error
-          fut.fail(ar.cause());
+          promise.fail(ar.cause());
         }
       });
     });
