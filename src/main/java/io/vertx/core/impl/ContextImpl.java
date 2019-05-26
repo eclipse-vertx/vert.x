@@ -18,6 +18,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Starter;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
@@ -233,26 +234,26 @@ abstract class ContextImpl implements ContextInternal {
   }
 
   @Override
-  public <T> void executeBlockingInternal(Handler<Future<T>> action, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void executeBlockingInternal(Handler<Promise<T>> action, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(action, resultHandler, internalBlockingPool.executor(), internalOrderedTasks, internalBlockingPool.metrics());
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(blockingCodeHandler, resultHandler, workerPool.executor(), ordered ? orderedTasks : null, workerPool.metrics());
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(blockingCodeHandler, resultHandler, workerPool.executor(), queue, workerPool.metrics());
   }
 
-  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler,
+  <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler,
       Handler<AsyncResult<T>> resultHandler,
       Executor exec, TaskQueue queue, PoolMetrics metrics) {
     Object queueMetric = metrics != null ? metrics.submitted() : null;
@@ -266,17 +267,18 @@ abstract class ContextImpl implements ContextInternal {
         if (!DISABLE_TIMINGS) {
           current.executeStart();
         }
-        Future<T> res = Future.future();
+        Promise<T> promise = Promise.promise();
         try {
           ContextImpl.setContext(this);
-          blockingCodeHandler.handle(res);
+          blockingCodeHandler.handle(promise);
         } catch (Throwable e) {
-          res.tryFail(e);
+          promise.tryFail(e);
         } finally {
           if (!DISABLE_TIMINGS) {
             current.executeEnd();
           }
         }
+        Future<T> res = promise.future();
         if (metrics != null) {
           metrics.end(execMetric, res.succeeded());
         }

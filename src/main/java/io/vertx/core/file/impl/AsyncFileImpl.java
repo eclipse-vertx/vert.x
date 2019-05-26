@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystemException;
@@ -388,7 +389,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
-    context.executeBlockingInternal((Future<Void> fut) -> {
+    context.executeBlockingInternal((Promise<Void> fut) -> {
       try {
         ch.force(false);
         fut.complete();

@@ -14,6 +14,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
@@ -38,21 +39,21 @@ public class WriteStreamTest extends AsyncTestBase {
 
   static class EndWithItemStreamAsync extends StreamBase<Object> {
     AtomicInteger writeCount = new AtomicInteger();
-    Future<Void> writeFut = Future.future();
+    Promise<Void> writeFut = Promise.promise();
     AtomicInteger endCount = new AtomicInteger();
-    Future<Void> endFut = Future.future();
+    Promise<Void> endFut = Promise.promise();
     AtomicInteger resolvedCount = new AtomicInteger();
-    Future<Void> resolvedFut = Future.future();
+    Promise<Void> resolvedFut = Promise.promise();
     @Override
     public StreamBase<Object> write(Object data, Handler<AsyncResult<Void>> handler) {
       writeCount.incrementAndGet();
-      writeFut.setHandler(handler);
+      writeFut.future().setHandler(handler);
       return this;
     }
     @Override
     public void end(Handler<AsyncResult<Void>> handler) {
       endCount.incrementAndGet();
-      endFut.setHandler(handler);
+      endFut.future().setHandler(handler);
     }
     public void end(Object item) {
       end(item, ar -> {
@@ -80,8 +81,8 @@ public class WriteStreamTest extends AsyncTestBase {
     assertEquals(1, src.writeCount.get());
     assertEquals(1, src.endCount.get());
     assertEquals(1, src.resolvedCount.get());
-    assertTrue(src.resolvedFut.succeeded());
-    assertNull(src.resolvedFut.result());
+    assertTrue(src.resolvedFut.future().succeeded());
+    assertNull(src.resolvedFut.future().result());
 
     src = new EndWithItemStreamAsync();
     src.end(item);
@@ -89,8 +90,8 @@ public class WriteStreamTest extends AsyncTestBase {
     assertEquals(1, src.writeCount.get());
     assertEquals(0, src.endCount.get());
     assertEquals(1, src.resolvedCount.get());
-    assertTrue(src.resolvedFut.failed());
-    assertSame(cause, src.resolvedFut.cause());
+    assertTrue(src.resolvedFut.future().failed());
+    assertSame(cause, src.resolvedFut.future().cause());
 
     src = new EndWithItemStreamAsync();
     src.end(item);
@@ -99,8 +100,8 @@ public class WriteStreamTest extends AsyncTestBase {
     assertEquals(1, src.writeCount.get());
     assertEquals(1, src.endCount.get());
     assertEquals(1, src.resolvedCount.get());
-    assertTrue(src.resolvedFut.failed());
-    assertSame(cause, src.resolvedFut.cause());
+    assertTrue(src.resolvedFut.future().failed());
+    assertSame(cause, src.resolvedFut.future().cause());
   }
 
   static class EndStreamSync extends StreamBase<Object> {

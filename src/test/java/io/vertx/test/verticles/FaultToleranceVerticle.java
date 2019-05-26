@@ -14,6 +14,7 @@ package io.vertx.test.verticles;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
@@ -41,12 +42,12 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     numAddresses = config.getInteger("addressesCount");
     List<Future> registrationFutures = new ArrayList<>(numAddresses);
     for (int i = 0; i < numAddresses; i++) {
-      Future<Void> registrationFuture = Future.future();
-      registrationFutures.add(registrationFuture);
+      Promise<Void> registrationFuture = Promise.promise();
+      registrationFutures.add(registrationFuture.future());
       vertx.eventBus().consumer(createAddress(id, i), msg -> msg.reply("pong")).completionHandler(registrationFuture);
     }
-    Future<Void> registrationFuture = Future.future();
-    registrationFutures.add(registrationFuture);
+    Promise<Void> registrationFuture = Promise.promise();
+    registrationFutures.add(registrationFuture.future());
     vertx.eventBus().consumer("ping", this::ping).completionHandler(registrationFuture);
     CompositeFuture.all(registrationFutures).setHandler(ar -> {
       if (ar.succeeded()) {

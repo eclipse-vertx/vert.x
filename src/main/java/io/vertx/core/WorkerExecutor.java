@@ -35,7 +35,7 @@ public interface WorkerExecutor extends Measured {
    * (i.e. on the original event loop of the caller).
    * <p>
    * A {@code Future} instance is passed into {@code blockingCodeHandler}. When the blocking code successfully completes,
-   * the handler should call the {@link Future#complete} or {@link Future#complete(Object)} method, or the {@link Future#fail}
+   * the handler should call the {@link Promise#complete} or {@link Promise#complete(Object)} method, or the {@link Promise#fail}
    * method if it failed.
    * <p>
    * In the {@code blockingCodeHandler} the current context remains the original context and therefore any task
@@ -48,12 +48,12 @@ public interface WorkerExecutor extends Measured {
    *                 guarantees
    * @param <T> the type of the result
    */
-  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
+  <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
 
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
    */
-  default <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
+  default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }
 

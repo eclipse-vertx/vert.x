@@ -34,6 +34,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 
 import java.io.RandomAccessFile;
 import java.net.SocketAddress;
@@ -56,7 +57,7 @@ class FileStreamChannel extends AbstractChannel {
   private final VertxHttp2Stream stream;
 
   FileStreamChannel(
-      Future<Long> result,
+      Promise<Long> result,
       VertxHttp2Stream stream,
       long offset,
       long length) {

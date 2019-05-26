@@ -51,7 +51,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
     return pool;
   }
 
-  public synchronized <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
+  public synchronized <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
     if (closed) {
       throw new IllegalStateException("Worker executor closed");
     }
