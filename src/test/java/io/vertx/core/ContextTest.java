@@ -148,7 +148,7 @@ public class ContextTest extends VertxTestBase {
     Context context = vertx.getOrCreateContext();
     context.<Void>runOnContext(v -> {
       Thread expected = Thread.currentThread();
-      context.executeBlocking(Future::complete, r -> {
+      context.executeBlocking(Promise::complete, r -> {
         assertSame(expected, Thread.currentThread());
         testComplete();
       });
@@ -307,7 +307,7 @@ public class ContextTest extends VertxTestBase {
     ctx.runOnContext(v -> {
       vertx.deployVerticle(new AbstractVerticle() {
         @Override
-        public void start(Future<Void> startFuture) throws Exception {
+        public void start(Promise<Void> startFuture) throws Exception {
           context.runOnContext(startFuture::complete);
         }
       }, ar -> {
@@ -515,7 +515,7 @@ public class ContextTest extends VertxTestBase {
 
     CountDownLatch latch4 = new CountDownLatch(1);
     duplicated.runOnContext(v -> {
-      vertx.executeBlocking(Future::complete, res -> {
+      vertx.executeBlocking(Promise::complete, res -> {
         assertSame(duplicated, Vertx.currentContext());
         latch4.countDown();
       });

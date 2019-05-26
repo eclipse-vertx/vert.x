@@ -11,8 +11,8 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Starter;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
@@ -108,7 +108,7 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+  public final <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
   }
 

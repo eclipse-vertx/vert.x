@@ -555,16 +555,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     closeHooks.run(ar -> {
       deploymentManager.undeployAll(ar1 -> {
         HAManager haManager = haManager();
-        Future<Void> haFuture = Future.future();
+        Promise<Void> haPromise = Promise.promise();
         if (haManager != null) {
           this.executeBlocking(fut -> {
             haManager.stop();
             fut.complete();
-          }, false, haFuture);
+          }, false, haPromise);
         } else {
-          haFuture.complete();
+          haPromise.complete();
         }
-        haFuture.setHandler(ar2 -> {
+        haPromise.future().setHandler(ar2 -> {
           addressResolver.close(ar3 -> {
             eventBus.close(ar4 -> {
               closeClusterManager(ar5 -> {
@@ -707,7 +707,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
     HAManager haManager = haManager();
-    Future<Void> haFuture = Future.future();
+    Promise<Void> haFuture = Promise.promise();
     if (haManager != null && haManager.isEnabled()) {
       this.executeBlocking(fut -> {
         haManager.removeFromHA(deploymentID);
@@ -716,10 +716,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       haFuture.complete();
     }
-    haFuture.compose(v -> {
-      Future<Void> deploymentFuture = Future.future();
+    haFuture.future().compose(v -> {
+      Promise<Void> deploymentFuture = Promise.promise();
       deploymentManager.undeployVerticle(deploymentID, deploymentFuture);
-      return deploymentFuture;
+      return deploymentFuture.future();
     }).setHandler(completionHandler);
   }
 
@@ -744,21 +744,21 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public <T> void executeBlockingInternal(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     ContextInternal context = getOrCreateContext();
 
     context.executeBlockingInternal(blockingCodeHandler, resultHandler);
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered,
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered,
                                   Handler<AsyncResult<T>> asyncResultHandler) {
     ContextInternal context = getOrCreateContext();
     context.executeBlocking(blockingCodeHandler, ordered, asyncResultHandler);
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler,
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler,
                                   Handler<AsyncResult<T>> asyncResultHandler) {
     executeBlocking(blockingCodeHandler, true, asyncResultHandler);
   }

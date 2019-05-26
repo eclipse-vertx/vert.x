@@ -11,6 +11,22 @@
 
 package io.vertx.core.file.impl;
 
+import io.netty.buffer.ByteBuf;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystemException;
+import io.vertx.core.file.OpenOptions;
+import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.streams.impl.InboundBuffer;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
@@ -24,21 +40,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import io.netty.buffer.ByteBuf;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.AsyncFile;
-import io.vertx.core.file.FileSystemException;
-import io.vertx.core.file.OpenOptions;
-import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.streams.impl.InboundBuffer;
 
 /**
  *
@@ -398,7 +399,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
-    context.executeBlockingInternal((Future<Void> fut) -> {
+    context.executeBlockingInternal((Promise<Void> fut) -> {
       try {
         ch.force(false);
         fut.complete();

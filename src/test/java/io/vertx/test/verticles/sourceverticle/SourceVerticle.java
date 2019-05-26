@@ -13,7 +13,7 @@ package io.vertx.test.verticles.sourceverticle;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.test.verticles.sourceverticle.somepackage.OtherSourceVerticle;
 
 /**
@@ -23,7 +23,7 @@ public class SourceVerticle extends AbstractVerticle {
 
 
   @Override
-  public void start(Future<Void> startFuture) throws Exception {
+  public void start(Promise<Void> startFuture) throws Exception {
     vertx.deployVerticle("java:" + OtherSourceVerticle.class.getName().replace('.', '/') + ".java", new DeploymentOptions(), ar -> {
       if (ar.succeeded()) {
         startFuture.complete((Void) null);

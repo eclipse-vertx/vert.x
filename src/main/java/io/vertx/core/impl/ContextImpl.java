@@ -18,6 +18,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
@@ -143,21 +144,21 @@ abstract class ContextImpl extends AbstractContext {
   }
 
   @Override
-  public <T> void executeBlockingInternal(Handler<Future<T>> action, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void executeBlockingInternal(Handler<Promise<T>> action, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(this, action, resultHandler, internalBlockingPool, internalOrderedTasks);
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(this, blockingCodeHandler, resultHandler, workerPool, ordered ? orderedTasks : null);
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(this, blockingCodeHandler, resultHandler, workerPool, queue);
   }
 
-  static <T> void executeBlocking(ContextInternal context, Handler<Future<T>> blockingCodeHandler,
+  static <T> void executeBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
       Handler<AsyncResult<T>> resultHandler,
       WorkerPool workerPool, TaskQueue queue) {
     PoolMetrics metrics = workerPool.metrics();
@@ -168,7 +169,8 @@ abstract class ContextImpl extends AbstractContext {
         if (metrics != null) {
           execMetric = metrics.begin(queueMetric);
         }
-        Future<T> res = Future.future();
+        Promise<T> res = Promise.promise();
+        Future<T> fut = res.future();
         context.dispatch(res, f -> {
           try {
             blockingCodeHandler.handle(res);
@@ -177,10 +179,10 @@ abstract class ContextImpl extends AbstractContext {
           }
         });
         if (metrics != null) {
-          metrics.end(execMetric, res.succeeded());
+          metrics.end(execMetric, fut.succeeded());
         }
         if (resultHandler != null) {
-          res.setHandler(ar -> context.runOnContext(v -> resultHandler.handle(ar)));
+          fut.setHandler(ar -> context.runOnContext(v -> resultHandler.handle(ar)));
         }
       };
       Executor exec = workerPool.executor();
@@ -276,17 +278,17 @@ abstract class ContextImpl extends AbstractContext {
       return delegate.tracer();
     }
 
-    public final <T> void executeBlockingInternal(Handler<Future<T>> action, Handler<AsyncResult<T>> resultHandler) {
+    public final <T> void executeBlockingInternal(Handler<Promise<T>> action, Handler<AsyncResult<T>> resultHandler) {
       ContextImpl.executeBlocking(this, action, resultHandler, delegate.internalBlockingPool, delegate.internalOrderedTasks);
     }
 
     @Override
-    public final <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+    public final <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
       ContextImpl.executeBlocking(this, blockingCodeHandler, resultHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
     }
 
     @Override
-    public final <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
+    public final <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
       ContextImpl.executeBlocking(this, blockingCodeHandler, resultHandler, delegate.workerPool, queue);
     }
 

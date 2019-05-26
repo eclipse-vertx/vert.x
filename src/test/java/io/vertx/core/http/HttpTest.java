@@ -2137,13 +2137,13 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  private void pausingServer(Consumer<Future<Void>> consumer) {
-    Future<Void> resumeFuture = Future.future();
+  private void pausingServer(Consumer<Promise<Void>> consumer) {
+    Promise<Void> resumeFuture = Promise.promise();
     server.requestHandler(req -> {
       req.response().setChunked(true);
       req.pause();
       Context ctx = vertx.getOrCreateContext();
-      resumeFuture.setHandler(v1 -> {
+      resumeFuture.future().setHandler(v1 -> {
         ctx.runOnContext(v2 -> {
           req.resume();
         });
@@ -2170,7 +2170,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void drainingServer(Consumer<Future<Void>> consumer) {
 
-    Future<Void> resumeFuture = Future.future();
+    Promise<Void> resumeFuture = Promise.promise();
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
@@ -2194,7 +2194,7 @@ public abstract class HttpTest extends HttpTestBase {
       });
     });
 
-    server.listen(testAddress, onSuccess(s -> consumer.accept(resumeFuture)));
+    server.listen(testAddress, onSuccess(s -> consumer.accept(resumeFuture.future())));
   }
 
   @Test
@@ -4014,14 +4014,14 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(server2);
     client.redirectHandler(resp -> {
-      Future<HttpClientRequest> fut = Future.future();
+      Promise<HttpClientRequest> fut = Promise.promise();
       vertx.setTimer(25, id -> {
         HttpClientRequest req = client.getAbs(scheme + "://localhost:" + port + "/custom");
         req.putHeader("foo", "foo_another");
         req.setHost("localhost:" + port);
         fut.complete(req);
       });
-      return fut;
+      return fut.future();
     });
     client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
       assertEquals(scheme + "://localhost:" + port + "/custom", resp.request().absoluteURI());

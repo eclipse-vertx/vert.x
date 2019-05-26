@@ -236,17 +236,19 @@ public final class DnsClientImpl implements DnsClient {
   private class Query<T> {
 
     final DatagramDnsQuery msg;
-    final Future<List<T>> fut;
+    final Promise<List<T>> promise;
     final String name;
     final DnsRecordType[] types;
     long timerID;
 
     public Query(String name, DnsRecordType[] types, Handler<AsyncResult<List<T>>> handler) {
+      Promise<List<T>> promise = Promise.promise();
+      promise.future().setHandler(handler);
       this.msg = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt()).setRecursionDesired(options.isRecursionDesired());
       for (DnsRecordType type: types) {
         msg.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
       }
-      this.fut = Future.<List<T>>future().setHandler(handler);
+      this.promise = promise;
       this.types = types;
       this.name = name;
     }
@@ -256,7 +258,7 @@ public final class DnsClientImpl implements DnsClient {
       if (timerID >= 0) {
         vertx.cancelTimer(timerID);
       }
-      fut.tryFail(cause);
+      promise.tryFail(cause);
     }
 
     void handle(DnsResponse msg) {
@@ -279,7 +281,7 @@ public final class DnsClientImpl implements DnsClient {
           Collections.sort((List) records);
         }
         actualCtx.executeFromIO(v -> {
-          fut.tryComplete(records);
+          promise.tryComplete(records);
         });
       } else {
         actualCtx.executeFromIO(new DnsException(code), this::fail);

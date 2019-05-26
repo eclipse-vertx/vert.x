@@ -49,6 +49,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http1xOrH2CHandler;
@@ -806,7 +807,7 @@ public class Http2ServerTest extends Http2TestBase {
     Context ctx = vertx.getOrCreateContext();
     String content = TestUtils.randomAlphaString(1024);
     StringBuilder expected = new StringBuilder();
-    Future<Void> whenFull = Future.future();
+    Promise<Void> whenFull = Promise.promise();
     AtomicBoolean drain = new AtomicBoolean();
     server.requestHandler(req -> {
       WriteStream<Buffer> stream = streamProvider.apply(req);
@@ -859,7 +860,7 @@ public class Http2ServerTest extends Http2TestBase {
           }
         }
       });
-      whenFull.setHandler(ar -> {
+      whenFull.future().setHandler(ar -> {
         request.context.executor().execute(() -> {
           try {
             request.decoder.flowController().consumeBytes(request.connection.stream(id), toAck.intValue());
@@ -964,7 +965,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testClientResetServerStream() throws Exception {
     Context ctx = vertx.getOrCreateContext();
-    Future<Void> bufReceived = Future.future();
+    Promise<Void> bufReceived = Promise.promise();
     AtomicInteger resetCount = new AtomicInteger();
     server.requestHandler(req -> {
       req.handler(buf -> {
@@ -994,7 +995,7 @@ public class Http2ServerTest extends Http2TestBase {
       Http2ConnectionEncoder encoder = request.encoder;
       encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
       encoder.writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 0, false, request.context.newPromise());
-      bufReceived.setHandler(ar -> {
+      bufReceived.future().setHandler(ar -> {
         encoder.writeRstStream(request.context, id, 10, request.context.newPromise());
         request.context.flush();
       });
@@ -1468,7 +1469,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testStreamError() throws Exception {
     waitFor(2);
-    Future<Void> when = Future.future();
+    Promise<Void> when = Promise.promise();
     Context ctx = vertx.getOrCreateContext();
     server.requestHandler(req -> {
       AtomicInteger reqErrors = new AtomicInteger();
@@ -1501,7 +1502,7 @@ public class Http2ServerTest extends Http2TestBase {
       Http2ConnectionEncoder encoder = request.encoder;
       encoder.writeHeaders(request.context, id, GET("/"), 0, false, request.context.newPromise());
       request.context.flush();
-      when.setHandler(ar -> {
+      when.future().setHandler(ar -> {
         // Send a corrupted frame on purpose to check we get the corresponding error in the request exception handler
         // the error is : greater padding value 0c -> 1F
         // ChannelFuture a = encoder.frameWriter().writeData(request.context, id, Buffer.buffer("hello").getByteBuf(), 12, false, request.context.newPromise());
@@ -1522,7 +1523,7 @@ public class Http2ServerTest extends Http2TestBase {
   public void testPromiseStreamError() throws Exception {
     Context ctx = vertx.getOrCreateContext();
     waitFor(2);
-    Future<Void> when = Future.future();
+    Promise<Void> when = Promise.promise();
     server.requestHandler(req -> {
       req.response().push(HttpMethod.GET, "/wibble", ar -> {
         assertTrue(ar.succeeded());
@@ -1552,7 +1553,7 @@ public class Http2ServerTest extends Http2TestBase {
       request.decoder.frameListener(new Http2EventAdapter() {
         @Override
         public void onPushPromiseRead(ChannelHandlerContext ctx, int streamId, int promisedStreamId, Http2Headers headers, int padding) throws Http2Exception {
-          when.setHandler(ar -> {
+          when.future().setHandler(ar -> {
             Http2ConnectionEncoder encoder = request.encoder;
             encoder.frameWriter().writeHeaders(request.context, promisedStreamId, GET("/"), 0, false, request.context.newPromise());
             request.context.flush();
@@ -1572,7 +1573,7 @@ public class Http2ServerTest extends Http2TestBase {
   public void testConnectionDecodeError() throws Exception {
     Context ctx = vertx.getOrCreateContext();
     waitFor(3);
-    Future<Void> when = Future.future();
+    Promise<Void> when = Promise.promise();
     server.requestHandler(req -> {
       AtomicInteger reqFailures = new AtomicInteger();
       AtomicInteger respFailures = new AtomicInteger();
@@ -1612,7 +1613,7 @@ public class Http2ServerTest extends Http2TestBase {
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
       Http2ConnectionEncoder encoder = request.encoder;
-      when.setHandler(ar -> {
+      when.future().setHandler(ar -> {
         // Send a stream ID that does not exists
         encoder.frameWriter().writeRstStream(request.context, 10, 0, request.context.newPromise());
         request.context.flush();
@@ -1859,7 +1860,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testClientSendGoAwayNoError() throws Exception {
-    Future<Void> abc = Future.future();
+    Promise<Void> abc = Promise.promise();
     Context ctx = vertx.getOrCreateContext();
     Handler<HttpServerRequest> requestHandler = req -> {
       HttpConnection conn = req.connection();
@@ -1892,7 +1893,7 @@ public class Http2ServerTest extends Http2TestBase {
       int id = request.nextStreamId();
       encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
       request.context.flush();
-      abc.setHandler(ar -> {
+      abc.future().setHandler(ar -> {
         encoder.writeGoAway(request.context, id, 0, Unpooled.EMPTY_BUFFER, request.context.newPromise());
         request.context.flush();
       });
@@ -1903,7 +1904,7 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testClientSendGoAwayInternalError() throws Exception {
-    Future<Void> abc = Future.future();
+    Promise<Void> abc = Promise.promise();
     Context ctx = vertx.getOrCreateContext();
     Handler<HttpServerRequest> requestHandler = req -> {
       HttpConnection conn = req.connection();
@@ -1931,7 +1932,7 @@ public class Http2ServerTest extends Http2TestBase {
       int id = request.nextStreamId();
       encoder.writeHeaders(request.context, id, GET("/"), 0, true, request.context.newPromise());
       request.context.flush();
-      abc.setHandler(ar -> {
+      abc.future().setHandler(ar -> {
         encoder.writeGoAway(request.context, id, 3, Unpooled.EMPTY_BUFFER, request.context.newPromise());
         request.context.flush();
       });
@@ -2602,20 +2603,23 @@ public class Http2ServerTest extends Http2TestBase {
         setUseAlpn(false).
         setSsl(false).
         setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(10000)));
-    doRequest(method, expected, conn -> clientConnectionCount.incrementAndGet(),
-      Future.<HttpClientResponse>future().setHandler(onSuccess(resp -> {
-        assertEquals(HttpVersion.HTTP_2, resp.version());
-        // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
-        assertEquals(1, serverConnectionCount.get());
-        assertEquals(1, clientConnectionCount.get());
-        doRequest(method, expected, null, Future.<HttpClientResponse>future().setHandler(onSuccess(resp2 -> {
-          testComplete();
-        })));
-      })));
+    Promise<HttpClientResponse> p1 = Promise.promise();
+    p1.future().setHandler(onSuccess(resp -> {
+      assertEquals(HttpVersion.HTTP_2, resp.version());
+      // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
+      assertEquals(1, serverConnectionCount.get());
+      assertEquals(1, clientConnectionCount.get());
+      Promise<HttpClientResponse> p2 = Promise.promise();
+      p2.future().setHandler(onSuccess(resp2 -> {
+        testComplete();
+      }));
+      doRequest(method, expected, null, p2);
+    }));
+    doRequest(method, expected, conn -> clientConnectionCount.incrementAndGet(), p1);
     await();
   }
 
-  private void doRequest(HttpMethod method, Buffer expected, Handler<HttpConnection> connHandler, Future<HttpClientResponse> fut) {
+  private void doRequest(HttpMethod method, Buffer expected, Handler<HttpConnection> connHandler, Promise<HttpClientResponse> fut) {
     HttpClientRequest req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
       assertEquals(HttpVersion.HTTP_2, resp.version());
       // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());

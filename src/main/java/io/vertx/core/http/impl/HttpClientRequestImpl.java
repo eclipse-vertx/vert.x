@@ -53,7 +53,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   private final VertxInternal vertx;
-  private final Future<HttpClientResponse> respFut;
+  private final Promise<HttpClientResponse> responsePromise;
   private boolean chunked;
   private String hostHeader;
   private String rawMethod;
@@ -84,7 +84,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     this.chunked = false;
     this.vertx = vertx;
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
-    this.respFut = Future.future();
+    this.responsePromise = Promise.promise();
   }
 
   @Override
@@ -100,7 +100,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
     }
     handler.handle(t);
-    respFut.tryFail(t);
+    responsePromise.tryFail(t);
   }
 
   @Override
@@ -119,7 +119,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (handler != null) {
       checkComplete();
     }
-    respFut.setHandler(handler);
+    responsePromise.future().setHandler(handler);
     return this;
   }
 
@@ -388,7 +388,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void handleNextRequest(HttpClientRequestImpl next, long timeoutMs) {
-    next.handler(respFut.getHandler());
+    next.handler(responsePromise.future().getHandler());
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
     next.pushHandler = pushHandler;
@@ -400,8 +400,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (headers != null && next.headers == null) {
       next.headers().addAll(headers);
     }
-    Future<Void> fut = Future.future();
-    fut.setHandler(ar -> {
+    Promise<Void> promise = Promise.promise();
+    Future<Void> future = promise.future();
+    future.setHandler(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
           next.setTimeout(timeoutMs);
@@ -412,19 +413,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
     });
     if (exceptionOccurred != null) {
-      fut.fail(exceptionOccurred);
+      promise.fail(exceptionOccurred);
     }
     else if (completed) {
-      fut.complete();
+      promise.complete();
     } else {
       exceptionHandler(err -> {
-        if (!fut.isComplete()) {
-          fut.fail(err);
+        if (!future.isComplete()) {
+          promise.fail(err);
         }
       });
       completionHandler = v -> {
-        if (!fut.isComplete()) {
-          fut.complete();
+        if (!future.isComplete()) {
+          promise.complete();
         }
       };
     }
@@ -451,7 +452,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           continueHandler.handle(null);
         }
       } else {
-        respFut.complete(resp);
+        responsePromise.complete(resp);
       }
     }
   }
@@ -736,7 +737,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void checkResponseHandler() {
-    if (stream == null && !connecting && respFut.getHandler() == null) {
+    if (stream == null && !connecting && responsePromise.future().getHandler() == null) {
       throw new IllegalStateException("You must set a response handler before connecting to the server");
     }
   }

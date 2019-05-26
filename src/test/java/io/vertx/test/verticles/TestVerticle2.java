@@ -13,7 +13,7 @@ package io.vertx.test.verticles;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
-import io.vertx.core.Future;
+import io.vertx.core.Promise;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -38,9 +38,9 @@ public class TestVerticle2 extends AbstractVerticle {
   }
 
   @Override
-  public void stop(Future<Void> stopFuture) throws Exception {
+  public void stop(Promise<Void> stopPromise) throws Exception {
     vertx.eventBus().send("tvstopped", "stopped", reply -> {
-      stopFuture.complete(null);
+      stopPromise.complete(null);
     });
   }
 }

@@ -12,8 +12,8 @@
 package io.vertx.core.file.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.CopyOptions;
@@ -951,7 +951,7 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
-  protected abstract class BlockingAction<T> implements Handler<Future<T>> {
+  protected abstract class BlockingAction<T> implements Handler<Promise<T>> {
 
     private final Handler<AsyncResult<T>> handler;
     protected final ContextInternal context;
@@ -968,7 +968,7 @@ public class FileSystemImpl implements FileSystem {
     }
 
     @Override
-    public void handle(Future<T> fut) {
+    public void handle(Promise<T> fut) {
       try {
         T result = perform();
         fut.complete(result);

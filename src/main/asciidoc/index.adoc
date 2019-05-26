@@ -355,12 +355,8 @@ In this example, 3 operations are chained:
 When these 3 steps are successful, the final future (`startFuture`) is succeeded. However, if one
 of the steps fails, the final future is failed.
 
-This example uses:
-
-* {@link io.vertx.core.Future#compose(java.util.function.Function)}: when the current future completes,
+This example uses {@link io.vertx.core.Future#compose(java.util.function.Function)}: when the current future completes,
 run the given function, that returns a future. When this returned future completes, it completes the composition.
-* {@link io.vertx.core.Future#compose(io.vertx.core.Handler,io.vertx.core.Future)}: when the current future
-completes, run the given handler that completes the given `future` (next).
 
 In this second case, the {@link io.vertx.core.Handler} should complete the `next` future to report its success or
 failure.

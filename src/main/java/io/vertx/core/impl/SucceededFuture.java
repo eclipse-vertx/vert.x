@@ -14,11 +14,12 @@ package io.vertx.core.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class SucceededFuture<T> implements Future<T> {
+class SucceededFuture<T> implements Future<T>, Promise<T> {
 
   private final T result;
 
@@ -109,6 +110,11 @@ class SucceededFuture<T> implements Future<T> {
   @Override
   public void handle(AsyncResult<T> asyncResult) {
     throw new IllegalStateException("Result is already complete: succeeded");
+  }
+
+  @Override
+  public Future<T> future() {
+    return this;
   }
 
   @Override

@@ -861,7 +861,7 @@ public class MetricsTest extends VertxTestBase {
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getWorkerPoolSize()));
 
-    Handler<Future<Void>> job = getSomeDumbTask();
+    Handler<Promise<Void>> job = getSomeDumbTask();
 
     AtomicInteger counter = new AtomicInteger();
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
@@ -977,7 +977,7 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     Verticle worker = new AbstractVerticle() {
       @Override
-      public void start(Future<Void> done) throws Exception {
+      public void start(Promise<Void> done) throws Exception {
         vertx.eventBus().localConsumer("message", d -> {
             msg.incrementAndGet();
             try {
@@ -1043,7 +1043,7 @@ public class MetricsTest extends VertxTestBase {
     assertThat(metrics.getPoolSize(), is(10));
     assertThat(metrics.numberOfIdleThreads(), is(10));
 
-    Handler<Future<Void>> job = getSomeDumbTask();
+    Handler<Promise<Void>> job = getSomeDumbTask();
 
     AtomicInteger counter = new AtomicInteger();
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
@@ -1106,7 +1106,7 @@ public class MetricsTest extends VertxTestBase {
     assertTrue(metrics2.isClosed());
   }
 
-  private Handler<Future<Void>> getSomeDumbTask() {
+  private Handler<Promise<Void>> getSomeDumbTask() {
     return (future) -> {
       try {
         Thread.sleep(50);

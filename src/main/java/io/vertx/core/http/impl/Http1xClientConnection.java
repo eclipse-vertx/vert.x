@@ -48,7 +48,6 @@ import java.net.URI;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 import static io.vertx.core.http.HttpHeaders.*;
 
@@ -194,7 +193,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     private final int id;
     private final Http1xClientConnection conn;
     private final ContextInternal context;
-    private final Future<HttpClientStream> fut;
+    private final Promise<HttpClientStream> promise;
     private final InboundBuffer<Object> queue;
     private HttpClientRequestImpl request;
     private HttpClientResponseImpl response;
@@ -208,9 +207,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     StreamImpl(ContextInternal context, Http1xClientConnection conn, int id, Handler<AsyncResult<HttpClientStream>> handler) {
       this.context = context;
       this.conn = conn;
-      this.fut = Future.<HttpClientStream>future().setHandler(handler);
+      this.promise = Promise.promise();
       this.id = id;
       this.queue = new InboundBuffer<>(context, 5);
+
+      promise.future().setHandler(handler);
     }
 
     private void append(StreamImpl s) {
@@ -517,12 +518,12 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     void handleException(Throwable cause) {
       HttpClientRequestImpl request;
       HttpClientResponseImpl response;
-      Future<HttpClientStream> fut;
+      Promise<HttpClientStream> promise;
       boolean requestEnded;
       synchronized (conn) {
         request = this.request;
         response = this.response;
-        fut = this.fut;
+        promise = this.promise;
         requestEnded = this.requestEnded;
       }
       if (request != null) {
@@ -535,7 +536,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           response.handleException(cause);
         }
       } else {
-        fut.tryFail(cause);
+        promise.tryFail(cause);
       }
     }
   }
@@ -663,7 +664,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       checkLifecycle();
     }
     if (next != null) {
-      next.fut.complete(next);
+      next.promise.complete(next);
     }
   }
 
@@ -848,7 +849,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
       requestInProgress = stream;
     }
-    stream.context.dispatch(Future.succeededFuture(stream), stream.fut);
+    stream.context.dispatch(Future.succeededFuture(stream), stream.promise);
   }
 
   private void recycle() {

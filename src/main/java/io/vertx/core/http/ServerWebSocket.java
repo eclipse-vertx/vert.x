@@ -19,6 +19,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 
@@ -165,7 +166,7 @@ public interface ServerWebSocket extends WebSocketBase {
    *
    * The provided future might be completed by the WebSocket itself, e.g calling the {@link #close()} method
    * will try to accept the handshake and close the WebSocket afterward. Thus it is advised to try to complete
-   * the {@code future} with {@link Future#tryComplete} or {@link Future#tryFail}.
+   * the {@code future} with {@link Promise#tryComplete} or {@link Promise#tryFail}.
    * <p>
    * This method should be called from the WebSocket handler to explicitly set an asynchronous handshake.
    * <p>
@@ -174,6 +175,13 @@ public interface ServerWebSocket extends WebSocketBase {
    * @param future the future to complete with
    * @throws IllegalStateException when the WebSocket has already an asynchronous result
    */
+  void setHandshake(Promise<Integer> future);
+
+  /**
+   * @deprecated instead use {@link #setHandshake(Promise)}
+   */
+  @GenIgnore
+  @Deprecated
   void setHandshake(Future<Integer> future);
 
   /**

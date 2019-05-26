@@ -21,10 +21,10 @@ import java.util.List;
  * <p>
  * Instead of implementing {@link io.vertx.core.Verticle} directly, it is often simpler to just extend this class.
  * <p>
- * In the simplest case, just override the {@link #start} method. If you have verticle clean-up to do you can
- * optionally override the {@link #stop} method too.
+ * In the simplest case, just override the {@link #start(Promise)} method. If you have verticle clean-up to do you can
+ * optionally override the {@link #stop(Promise)} method too.
  * <p>If your verticle does extra start-up or clean-up that takes some time (e.g. it deploys other verticles) then
- * you should override the asynchronous {@link #start(Future) start} and {@link #stop(Future) stop} methods.
+ * you should override the asynchronous {@link #start(Promise) start} and {@link #stop(Promise) stop} methods.
  * <p>
  * This class also maintains references to the {@link io.vertx.core.Vertx} and {@link io.vertx.core.Context}
  * instances of the verticle for easy access.<p>
@@ -102,7 +102,7 @@ public abstract class AbstractVerticle implements Verticle {
    * @throws Exception
    */
   @Override
-  public void start(Future<Void> startFuture) throws Exception {
+  public void start(Promise<Void> startFuture) throws Exception {
     start();
     startFuture.complete();
   }
@@ -116,7 +116,7 @@ public abstract class AbstractVerticle implements Verticle {
    * @throws Exception
    */
   @Override
-  public void stop(Future<Void> stopFuture) throws Exception {
+  public void stop(Promise<Void> stopFuture) throws Exception {
     stop();
     stopFuture.complete();
   }

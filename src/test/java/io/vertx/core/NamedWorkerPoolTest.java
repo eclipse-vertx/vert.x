@@ -53,7 +53,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       .setMaxWorkerExecuteTime(maxWorkerExecuteTime);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         vertx.executeBlocking(fut -> {
           try {
             SECONDS.sleep(5);

@@ -16,6 +16,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.Verticle;
 import io.vertx.core.json.JsonObject;
@@ -155,21 +156,21 @@ public class DeploymentManager {
                                 Handler<AsyncResult<String>> completionHandler) {
     if (iter.hasNext()) {
       VerticleFactory verticleFactory = iter.next();
-      Future<String> fut = Future.future();
+      Promise<String> promise = Promise.promise();
       if (verticleFactory.requiresResolve()) {
         try {
-          verticleFactory.resolve(identifier, options, cl, fut);
+          verticleFactory.resolve(identifier, options, cl, promise);
         } catch (Exception e) {
           try {
-            fut.fail(e);
+            promise.fail(e);
           } catch (Exception ignore) {
             // Too late
           }
         }
       } else {
-        fut.complete(identifier);
+        promise.complete(identifier);
       }
-      fut.setHandler(ar -> {
+      promise.future().setHandler(ar -> {
         Throwable err;
         if (ar.succeeded()) {
           String resolvedName = ar.result();
@@ -482,8 +483,9 @@ public class DeploymentManager {
       context.runOnContext(v -> {
         try {
           verticle.init(vertx, context);
-          Future<Void> startFuture = Future.future();
-          verticle.start(startFuture);
+          Promise<Void> startPromise = Promise.promise();
+          Future<Void> startFuture = startPromise.future();
+          verticle.start(startPromise);
           startFuture.setHandler(ar -> {
             if (ar.succeeded()) {
               if (parent != null) {
@@ -623,7 +625,8 @@ public class DeploymentManager {
         for (VerticleHolder verticleHolder: verticles) {
           ContextImpl context = verticleHolder.context;
           context.runOnContext(v -> {
-            Future<Void> stopFuture = Future.future();
+            Promise<Void> stopPromise = Promise.promise();
+            Future<Void> stopFuture = stopPromise.future();
             AtomicBoolean failureReported = new AtomicBoolean();
             stopFuture.setHandler(ar -> {
               deployments.remove(deploymentID);
@@ -645,9 +648,9 @@ public class DeploymentManager {
               });
             });
             try {
-              verticleHolder.verticle.stop(stopFuture);
+              verticleHolder.verticle.stop(stopPromise);
             } catch (Throwable t) {
-              stopFuture.fail(t);
+              stopPromise.fail(t);
             }
           });
         }

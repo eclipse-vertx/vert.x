@@ -26,6 +26,7 @@ package io.vertx.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@SuppressWarnings( "deprecation" )
 public interface Verticle {
 
   /**
@@ -50,22 +51,22 @@ public interface Verticle {
    * <p>
    * Vert.x calls this method when deploying the instance. You do not call it yourself.
    * <p>
-   * A future is passed into the method, and when deployment is complete the verticle should either call
-   * {@link io.vertx.core.Future#complete} or {@link io.vertx.core.Future#fail} the future.
+   * A promise is passed into the method, and when deployment is complete the verticle should either call
+   * {@link io.vertx.core.Promise#complete} or {@link io.vertx.core.Promise#fail} the future.
    *
-   * @param startFuture  the future
+   * @param startPromise  the future
    */
-  void start(Future<Void> startFuture) throws Exception;
+  void start(Promise<Void> startPromise) throws Exception;
 
   /**
    * Stop the verticle instance.
    * <p>
    * Vert.x calls this method when un-deploying the instance. You do not call it yourself.
    * <p>
-   * A future is passed into the method, and when un-deployment is complete the verticle should either call
-   * {@link io.vertx.core.Future#complete} or {@link io.vertx.core.Future#fail} the future.
+   * A promise is passed into the method, and when un-deployment is complete the verticle should either call
+   * {@link io.vertx.core.Promise#complete} or {@link io.vertx.core.Promise#fail} the future.
    *
-   * @param stopFuture  the future
+   * @param stopPromise  the future
    */
-  void stop(Future<Void> stopFuture) throws Exception;
+  void stop(Promise<Void> stopPromise) throws Exception;
 }

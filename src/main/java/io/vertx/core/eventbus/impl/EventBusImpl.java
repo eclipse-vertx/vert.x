@@ -17,6 +17,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.ContextInternal;
@@ -460,7 +461,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       message.setReplyAddress(replyAddress);
       HandlerRegistration<T> registration = new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, src);
       ReplyHandler<T> handler = new ReplyHandler<>(registration, timeout);
-      handler.result.setHandler(replyHandler);
+      handler.result.future().setHandler(replyHandler);
       registration.handler(handler);
       return handler;
     } else {
@@ -470,13 +471,13 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   public class ReplyHandler<T> implements Handler<Message<T>> {
 
-    final Future<Message<T>> result;
+    final Promise<Message<T>> result;
     final HandlerRegistration<T> registration;
     final long timeoutID;
     public Object trace;
 
     ReplyHandler(HandlerRegistration<T> registration, long timeout) {
-      this.result = Future.future();
+      this.result = Promise.promise();
       this.registration = registration;
       this.timeoutID = vertx.setTimer(timeout, id -> {
         fail(new ReplyException(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + registration.address + ", repliedAddress: " + registration.repliedAddress));

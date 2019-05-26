@@ -16,6 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.impl.AsyncFileImpl;
@@ -1238,7 +1239,7 @@ public class FileSystemTest extends VertxTestBase {
 
       @Override
       Future<Void> handle(ReadStream<Buffer> stream) {
-        Future<Void> fut = Future.future();
+        Promise<Void> fut = Promise.promise();
         assert flowing.getAndSet(false);
         stream.pause();
         Vertx.currentContext().owner().setTimer(1, id -> {
@@ -1246,7 +1247,7 @@ public class FileSystemTest extends VertxTestBase {
           stream.resume();
           fut.complete();
         });
-        return fut;
+        return fut.future();
       }
     },
 
@@ -1259,14 +1260,14 @@ public class FileSystemTest extends VertxTestBase {
       }
       @Override
       Future<Void> handle(ReadStream<Buffer> stream) {
-        Future<Void> fut = Future.future();
+        Promise<Void> fut = Promise.promise();
         assert fetching.getAndSet(false);
         Vertx.currentContext().owner().setTimer(1, id -> {
           assert !fetching.getAndSet(true);
           stream.fetch(1);
           fut.complete();
         });
-        return fut;
+        return fut.future();
       }
     };
 
