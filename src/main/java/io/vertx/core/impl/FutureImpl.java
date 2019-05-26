@@ -14,8 +14,9 @@ package io.vertx.core.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 
-class FutureImpl<T> implements Future<T> {
+class FutureImpl<T> implements Promise<T>, Future<T> {
 
   private boolean failed;
   private boolean succeeded;
@@ -175,6 +176,11 @@ class FutureImpl<T> implements Future<T> {
   @Override
   public boolean tryFail(String failureMessage) {
     return tryFail(new NoStackTraceThrowable(failureMessage));
+  }
+
+  @Override
+  public Future<T> future() {
+    return this;
   }
 
   @Override

@@ -13,6 +13,7 @@ package io.vertx.core.spi;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 
@@ -80,7 +81,7 @@ public interface VerticleFactory {
    * @param classLoader  The classloader
    * @param resolution  A future which will receive the result of the resolution.
    */
-  default void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Future<String> resolution) {
+  default void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<String> resolution) {
     resolution.complete(identifier);
   }
 

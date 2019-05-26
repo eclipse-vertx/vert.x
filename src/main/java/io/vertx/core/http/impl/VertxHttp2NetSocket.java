@@ -21,6 +21,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
@@ -268,8 +269,8 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
       long contentLength = Math.min(length, file.length() - offset);
 
-      Future<Long> result = Future.future();
-      result.setHandler(ar -> {
+      Promise<Long> result = Promise.promise();
+      result.future().setHandler(ar -> {
         if (resultHandler != null) {
           resultCtx.runOnContext(v -> {
             resultHandler.handle(Future.succeededFuture());

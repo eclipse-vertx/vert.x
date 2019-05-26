@@ -15,6 +15,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.logging.Logger;
 
 import java.util.HashSet;
@@ -86,8 +87,8 @@ class CloseHooks {
         AtomicInteger count = new AtomicInteger();
         AtomicBoolean failed = new AtomicBoolean();
         for (Closeable hook : copy) {
-          Future<Void> a = Future.future();
-          a.setHandler(ar -> {
+          Promise<Void> promise = Promise.promise();
+          promise.future().setHandler(ar -> {
             if (ar.failed()) {
               if (failed.compareAndSet(false, true)) {
                 // Only report one failure
@@ -101,10 +102,10 @@ class CloseHooks {
             }
           });
           try {
-            hook.close(a);
+            hook.close(promise);
           } catch (Throwable t) {
             log.warn("Failed to run close hooks", t);
-            a.tryFail(t);
+            promise.tryFail(t);
           }
         }
       } else {

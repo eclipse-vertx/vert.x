@@ -256,7 +256,7 @@ public class VerticleFactoryTest extends VertxTestBase {
         return true;
       }
       @Override
-      public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Future<String> resolution) {
+      public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<String> resolution) {
         deploymentOptions.setMultiThreaded(true);
         vertx.runOnContext(v -> {
           // Async resolution
@@ -586,7 +586,7 @@ public class VerticleFactoryTest extends VertxTestBase {
     }
 
     @Override
-    public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Future<String> resolution) {
+    public void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<String> resolution) {
       if (failInResolve) {
         resolution.fail(new IOException("whatever"));
       } else {

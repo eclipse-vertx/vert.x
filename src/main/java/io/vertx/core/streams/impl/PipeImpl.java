@@ -13,6 +13,7 @@ package io.vertx.core.streams.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
@@ -22,7 +23,7 @@ public class PipeImpl<T> implements Pipe<T> {
 
   private static final Handler<AsyncResult<Void>> NULL_HANDLER = ar -> {};
 
-  private final Future<Void> result;
+  private final Promise<Void> result;
   private final ReadStream<T> src;
   private boolean endOnSuccess = true;
   private boolean endOnFailure = true;
@@ -30,7 +31,7 @@ public class PipeImpl<T> implements Pipe<T> {
 
   public PipeImpl(ReadStream<T> src) {
     this.src = src;
-    this.result = Future.<Void>future();
+    this.result = Promise.promise();
 
     // Set handlers now
     src.endHandler(result::tryComplete);
@@ -86,7 +87,7 @@ public class PipeImpl<T> implements Pipe<T> {
     });
     ws.exceptionHandler(err -> result.tryFail(new WriteException(err)));
     src.resume();
-    result.setHandler(ar -> {
+    result.future().setHandler(ar -> {
       try {
         src.handler(null);
       } catch (Exception ignore) {
@@ -132,7 +133,7 @@ public class PipeImpl<T> implements Pipe<T> {
         dst.drainHandler(null);
         dst.exceptionHandler(null);
       }
-      if (result.isComplete()) {
+      if (result.future().isComplete()) {
         return;
       }
     }

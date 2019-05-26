@@ -567,7 +567,10 @@ public class ConnectionPoolTest extends VertxTestBase {
       @Override
       public void connect(ConnectionListener<FakeConnection> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<FakeConnection>>> handler) {
         int i = ThreadLocalRandom.current().nextInt(100);
-        FakeConnection conn = new FakeConnection(context, listener, Future.<ConnectResult<FakeConnection>>future().setHandler(handler));
+        Promise<ConnectResult<FakeConnection>> promise = Promise.promise();
+        Future<ConnectResult<FakeConnection>> future = promise.future();
+        future.setHandler(handler);
+        FakeConnection conn = new FakeConnection(context, listener, promise);
         if (i < 10) {
           conn.fail(new Exception("Could not connect"));
         } else {
@@ -844,13 +847,13 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     private final ContextInternal context;
     private final ConnectionListener<FakeConnection> listener;
-    private final Future<ConnectResult<FakeConnection>> future;
+    private final Promise<ConnectResult<FakeConnection>> future;
 
     private long inflight;
     private long concurrency = 1;
     private int status = DISCONNECTED;
 
-    FakeConnection(ContextInternal context, ConnectionListener<FakeConnection> listener, Future<ConnectResult<FakeConnection>> future) {
+    FakeConnection(ContextInternal context, ConnectionListener<FakeConnection> listener, Promise<ConnectResult<FakeConnection>> future) {
       this.context = context;
       this.listener = listener;
       this.future = future;
@@ -955,7 +958,9 @@ public class ConnectionPoolTest extends VertxTestBase {
 
     @Override
     public void connect(ConnectionListener<FakeConnection> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<FakeConnection>>> handler) {
-      pendingRequests.add(new FakeConnection(context, listener, Future.<ConnectResult<FakeConnection>>future().setHandler(handler)));
+      Promise<ConnectResult<FakeConnection>> promise = Promise.promise();
+      promise.future().setHandler(handler);
+      pendingRequests.add(new FakeConnection(context, listener, promise));
     }
   }
 }

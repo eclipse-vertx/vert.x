@@ -71,10 +71,10 @@ public class CoreExamples {
   }
 
   public void example7(Vertx vertx) {
-    vertx.executeBlocking(future -> {
+    vertx.executeBlocking(promise -> {
       // Call some blocking API that takes a significant amount of time to return
       String result = someAPI.blockingMethod("hello");
-      future.complete(result);
+      promise.complete(result);
     }, res -> {
       System.out.println("The result is: " + res.result());
     });
@@ -82,10 +82,10 @@ public class CoreExamples {
 
   public void workerExecutor1(Vertx vertx) {
     WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool");
-    executor.executeBlocking(future -> {
+    executor.executeBlocking(promise -> {
       // Call some blocking API that takes a significant amount of time to return
       String result = someAPI.blockingMethod("hello");
-      future.complete(result);
+      promise.complete(result);
     }, res -> {
       System.out.println("The result is: " + res.result());
     });
@@ -116,11 +116,9 @@ public class CoreExamples {
   }
 
   public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
-    Future<HttpServer> httpServerFuture = Future.future();
-    httpServer.listen(httpServerFuture);
+    Future<HttpServer> httpServerFuture = Future.future(promise -> httpServer.listen(promise));
 
-    Future<NetServer> netServerFuture = Future.future();
-    netServer.listen(netServerFuture);
+    Future<NetServer> netServerFuture = Future.future(promise -> netServer.listen(promise));
 
     CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
       if (ar.succeeded()) {
@@ -166,22 +164,18 @@ public class CoreExamples {
   public void exampleFuture6(Vertx vertx) {
 
     FileSystem fs = vertx.fileSystem();
-    Future<Void> startFuture = Future.future();
 
-    Future<Void> fut1 = Future.future();
-    fs.createFile("/foo", fut1);
+    Future<Void> fut1 = Future.future(promise -> fs.createFile("/foo", promise));
 
-    fut1.compose(v -> {
+    Future<Void> startFuture = fut1
+      .compose(v -> {
       // When the file is created (fut1), execute this:
-      Future<Void> fut2 = Future.future();
-      fs.writeFile("/foo", Buffer.buffer(), fut2);
-      return fut2;
-    }).compose(v -> {
-              // When the file is written (fut2), execute this:
-              fs.move("/foo", "/bar", startFuture);
-            },
-            // mark startFuture it as failed if any step fails.
-            startFuture);
+      return Future.<Void>future(promise -> fs.writeFile("/foo", Buffer.buffer(), promise));
+    })
+      .compose(v -> {
+      // When the file is written (fut2), execute this:
+      return Future.future(promise -> fs.move("/foo", "/bar", promise));
+    });
   }
 
   public void example7_1(Vertx vertx) {
@@ -200,9 +194,9 @@ public class CoreExamples {
 
   public void multiThreadedWorkerVerticleAlternative2(Vertx vertx, String someresult) {
     vertx.eventBus().consumer("foo", msg -> {
-      vertx.executeBlocking(fut -> {
+      vertx.executeBlocking(promise -> {
         // Invoke blocking code with received message data
-        fut.complete(someresult);
+        promise.complete(someresult);
       }, false, ar -> { // ordered == false
         // Handle result, e.g. reply to the message
       });

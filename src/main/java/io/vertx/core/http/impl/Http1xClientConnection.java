@@ -188,7 +188,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
     private final int id;
     private final Http1xClientConnection conn;
-    private final Future<HttpClientStream> fut;
+    private final Promise<HttpClientStream> fut;
     private final InboundBuffer<Object> queue;
     private HttpClientRequestImpl request;
     private HttpClientResponseImpl response;
@@ -199,8 +199,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     private StreamImpl next;
 
     StreamImpl(Http1xClientConnection conn, int id, Handler<AsyncResult<HttpClientStream>> handler) {
+      Promise<HttpClientStream> promise = Promise.promise();
+      promise.future().setHandler(handler);
+
       this.conn = conn;
-      this.fut = Future.<HttpClientStream>future().setHandler(handler);
+      this.fut = promise;
       this.id = id;
       this.queue = new InboundBuffer<>(conn.context, 5);
     }
@@ -497,7 +500,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     void handleException(Throwable cause) {
       HttpClientRequestImpl request;
       HttpClientResponseImpl response;
-      Future<HttpClientStream> fut;
+      Promise<HttpClientStream> fut;
       boolean requestEnded;
       synchronized (conn) {
         request = this.request;

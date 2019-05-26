@@ -22,6 +22,7 @@ import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
@@ -1284,7 +1285,7 @@ public class WebSocketTest extends VertxTestBase {
   public void testAsyncAccept() {
     AtomicBoolean resolved = new AtomicBoolean();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
-      Future<Integer> fut = Future.future();
+      Promise<Integer> fut = Promise.promise();
       ws.setHandshake(fut);
       try {
         ws.accept();
@@ -1315,11 +1316,11 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testCloseAsyncPending() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
-      Future<Integer> fut = Future.future();
-      ws.setHandshake(fut);
+      Promise<Integer> promise = Promise.promise();
+      ws.setHandshake(promise);
       ws.close();
-      assertTrue(fut.isComplete());
-      assertEquals(101, (int)fut.result());
+      assertTrue(promise.future().isComplete());
+      assertEquals(101, (int)promise.future().result());
     });
     server.listen(onSuccess(s -> {
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(ws -> {
@@ -2874,7 +2875,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testDrainServerWebSocket() {
-    Future<Void> resume = Future.future();
+    Promise<Void> resume = Promise.promise();
     server = vertx.createHttpServer()
       .websocketHandler(ws -> {
         fillQueue(ws, v1 -> {
@@ -2886,7 +2887,7 @@ public class WebSocketTest extends VertxTestBase {
       }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
         client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
           ws.pause();
-          resume.setHandler(onSuccess(v2 -> {
+          resume.future().setHandler(onSuccess(v2 -> {
             ws.resume();
           }));
         }));
@@ -2896,11 +2897,11 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testDrainClientWebSocket() {
-    Future<Void> resume = Future.future();
+    Promise<Void> resume = Promise.promise();
     server = vertx.createHttpServer()
       .websocketHandler(ws -> {
         ws.pause();
-        resume.setHandler(onSuccess(v2 -> {
+        resume.future().setHandler(onSuccess(v2 -> {
           ws.resume();
         }));
       }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
