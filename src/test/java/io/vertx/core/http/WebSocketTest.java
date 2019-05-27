@@ -34,7 +34,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
@@ -1905,7 +1904,6 @@ public class WebSocketTest extends VertxTestBase {
     testRaceConditionWithWebsocketClient(vertx.getOrCreateContext());
   }
 
-  @Repeat(times = 1000)
   @Test
   public void testRaceConditionWithWebsocketClientWorker() throws Exception {
     CompletableFuture<Context> fut = new CompletableFuture<>();
