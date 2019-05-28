@@ -14,17 +14,17 @@ package io.vertx.core.parsetools;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.fakestream.FakeStream;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
 import static io.vertx.test.core.TestUtils.assertNullPointerException;
 import static org.junit.Assert.*;
-
-import io.vertx.test.fakestream.FakeStream;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -93,7 +93,7 @@ public class RecordParserTest {
    */
   public void testMixed() {
     final int lines = 8;
-    final List<Object> types = new ArrayList<Object>();
+    final List<Object> types = new ArrayList<>();
 
     class MyHandler implements Handler<Buffer> {
       RecordParser parser = RecordParser.newFixed(10, this);
@@ -245,7 +245,7 @@ public class RecordParserTest {
 
   private List<Buffer> generateLines(int lines, boolean delim, byte delimByte) {
     //We create lines of length one to <lines> and shuffle them
-    List<Buffer> lineList = new ArrayList<Buffer>();
+    List<Buffer> lineList = new ArrayList<>();
     for (int i = 0; i < lines; i++) {
       lineList.add(TestUtils.randomBuffer(i + 1, delim, delimByte));
     }
@@ -255,7 +255,7 @@ public class RecordParserTest {
 
   private List<Integer> generateChunkSizes(int lines) {
     //Then we try a sequence of random chunk sizes
-    List<Integer> chunkSizes = new ArrayList<Integer>();
+    List<Integer> chunkSizes = new ArrayList<>();
     for (int i = 1; i < lines / 5; i++) {
       chunkSizes.add(i);
     }
@@ -296,6 +296,23 @@ public class RecordParserTest {
     doTestDelimitedMaxRecordSize(Buffer.buffer("ABCD--"), Buffer.buffer("--"), new Integer[] { 2 },
       3, exHandler, Buffer.buffer("ABCD"));
     assertTrue(handled.get());
+  }
+
+  private void doTestDelimitedMaxRecordSize(final Buffer input, Buffer delim, Integer[] chunkSizes, int maxRecordSize,
+                                            Handler<Throwable> exHandler, final Buffer... expected) {
+    final Buffer[] results = new Buffer[expected.length];
+    Handler<Buffer> out = new Handler<Buffer>() {
+      int pos;
+
+      public void handle(Buffer buff) {
+        results[pos++] = buff;
+      }
+    };
+    RecordParser parser = RecordParser.newDelimited(delim, out);
+    parser.maxRecordSize(maxRecordSize);
+    parser.exceptionHandler(exHandler);
+    feedChunks(input, parser, chunkSizes);
+    checkResults(expected, results);
   }
 
   @Test
@@ -394,19 +411,46 @@ public class RecordParserTest {
     assertEquals(Arrays.asList(Buffer.buffer("3"), Buffer.buffer("abc\r\n")), emitted);
   }
 
-  private void doTestDelimitedMaxRecordSize(final Buffer input, Buffer delim, Integer[] chunkSizes, int maxRecordSize,
-                                            Handler<Throwable> exHandler, final Buffer... expected) {
-    final Buffer[] results = new Buffer[expected.length];
-    Handler<Buffer> out = new Handler<Buffer>() {
-      int pos;
-      public void handle(Buffer buff) {
-        results[pos++] = buff;
-      }
-    };
-    RecordParser parser = RecordParser.newDelimited(delim, out);
-    parser.maxRecordSize(maxRecordSize);
-    parser.exceptionHandler(exHandler);
-    feedChunks(input, parser, chunkSizes);
-    checkResults(expected, results);
+  @Test
+  public void testEndOfWrappedStreamWithPauseWithFinalDelimiter() throws Exception {
+    endOfWrappedStream(true, true);
+  }
+
+  @Test
+  public void testEndOfWrappedStreamWithPauseWithoutFinalDelimiter() throws Exception {
+    endOfWrappedStream(true, false);
+  }
+
+  @Test
+  public void testEndOfWrappedStreamWithoutPauseWithoutFinalDelimiter() throws Exception {
+    endOfWrappedStream(false, false);
+  }
+
+  @Test
+  public void testEndOfWrappedStreamWithoutPauseWithFinalDelimiter() throws Exception {
+    endOfWrappedStream(false, true);
+  }
+
+  private void endOfWrappedStream(boolean pauseParser, boolean finalDelimiter) throws Exception {
+    FakeStream<Buffer> stream = new FakeStream<>();
+    RecordParser parser = RecordParser.newDelimited("\n", stream);
+    List<Buffer> emitted = Collections.synchronizedList(new ArrayList<>());
+    CountDownLatch endLatch = new CountDownLatch(1);
+    parser.endHandler(v -> {
+      assertEquals(Arrays.asList(Buffer.buffer("toto"), Buffer.buffer("titi")), emitted);
+      endLatch.countDown();
+    });
+    parser.handler(emitted::add);
+    if (pauseParser) {
+      parser.pause();
+    }
+    stream.emit(Buffer.buffer("toto\ntit"));
+    stream.emit(Buffer.buffer(finalDelimiter ? "i\n" : "i"));
+    stream.end();
+    if (pauseParser) {
+      parser.fetch(1);
+      parser.resume();
+    }
+    endLatch.await();
   }
 }
