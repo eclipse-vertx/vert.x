@@ -16,6 +16,7 @@ package io.vertx.core.cli.converters;
  *
  * @author Clement Escoffier <clement@apache.org>
  */
+@FunctionalInterface
 public interface Converter<T> {
 
   T fromString(String s);

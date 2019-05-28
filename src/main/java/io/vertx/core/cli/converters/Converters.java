@@ -11,6 +11,7 @@
 
 package io.vertx.core.cli.converters;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.NoSuchElementException;
 public class Converters {
 
   private static final Map<Class<?>, Class<?>> PRIMITIVE_TO_WRAPPER_TYPE;
+  private static final Map<Class<?>, Converter<?>> WELL_KNOWN_CONVERTERS;
 
   static {
     Map<Class<?>, Class<?>> primToWrap = new HashMap<>(16);
@@ -39,6 +41,19 @@ public class Converters {
     primToWrap.put(void.class, Void.class);
 
     PRIMITIVE_TO_WRAPPER_TYPE = Collections.unmodifiableMap(primToWrap);
+
+    Map<Class<?>, Converter<?>> wellKnown = new HashMap<>(16);
+    wellKnown.put(Boolean.class, BooleanConverter.INSTANCE);
+    wellKnown.put(Byte.class, Byte::parseByte);
+    wellKnown.put(Character.class, CharacterConverter.INSTANCE);
+    wellKnown.put(Double.class, Double::parseDouble);
+    wellKnown.put(Float.class, Float::parseFloat);
+    wellKnown.put(Integer.class, Integer::parseInt);
+    wellKnown.put(Long.class, Long::parseLong);
+    wellKnown.put(Short.class, Short::parseShort);
+    wellKnown.put(String.class, value -> value);
+
+    WELL_KNOWN_CONVERTERS = Collections.unmodifiableMap(wellKnown);
   }
 
   public static <T> T create(Class<T> type, String value) {
@@ -68,14 +83,9 @@ public class Converters {
    */
   @SuppressWarnings("unchecked")
   private static <T> Converter<T> getConverter(Class<T> type) {
-    // check for String first
-    if (type == String.class) {
-      return (Converter<T>) StringConverter.INSTANCE;
-    }
-
-    // Boolean has a special case as they support other form of "truth" such as "yes", "on", "1"...
-    if (type == Boolean.class) {
-      return (Converter<T>) BooleanConverter.INSTANCE;
+    // check for well known types first
+    if (WELL_KNOWN_CONVERTERS.containsKey(type)) {
+      return (Converter<T>) WELL_KNOWN_CONVERTERS.get(type);
     }
 
     // None of them are there, try default converters in the following order:
@@ -100,20 +110,14 @@ public class Converters {
       return converter;
     }
 
-    // Unlike other primitive type, characters cannot be created using the 'valueOf' method,
-    // so we need a specific converter. As creating characters is quite rare, this must be the last check.
-    if (type == Character.class) {
-      return (Converter<T>) CharacterConverter.INSTANCE;
-    }
-
     // running out of converters...
     throw new NoSuchElementException("Cannot find a converter able to create instance of " + type.getName());
   }
 
   public static <T> Converter<T> newInstance(Class<? extends Converter<T>> type) throws IllegalArgumentException {
     try {
-      return type.newInstance();
-    } catch (InstantiationException | IllegalAccessException e) {
+      return type.getDeclaredConstructor().newInstance();
+    } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
       throw new IllegalArgumentException("Cannot create a new instance of " + type.getName() + " - it requires an " +
           "public constructor without argument", e);
     }
