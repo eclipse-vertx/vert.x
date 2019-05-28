@@ -29,7 +29,7 @@ public class ReflectionUtils {
 
   public static <T> T newInstance(Class<T> clazz) {
     try {
-      return clazz.newInstance();
+      return clazz.getDeclaredConstructor().newInstance();
     } catch (Exception e) {
       throw new IllegalArgumentException("Cannot instantiate " + clazz.getName(), e);
     }

@@ -13,17 +13,11 @@ package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
-/**
- * Factory to create the {@code run} command.
- *
- * @author Clement Escoffier <clement@apache.org>
- */
-public class RunCommandFactory extends DefaultCommandFactory<RunCommand> {
 
-  /**
-   * Creates a new instance of {@link RunCommandFactory}.
-   */
-  public RunCommandFactory() {
-    super(RunCommand.class, RunCommand::new);
+public class Hello2CommandFactory extends DefaultCommandFactory<Hello2Command> {
+
+  public Hello2CommandFactory() {
+    super(Hello2Command.class, Hello2Command::new);
   }
+
 }
