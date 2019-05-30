@@ -102,6 +102,14 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         }
       }
     });
+    pending.exceptionHandler(t -> {
+      Handler<Throwable> handler = exceptionHandler();
+      if (handler != null) {
+        handler.handle(t);
+      } else {
+        log.error("Unhandled exception", t);
+      }
+    });
   }
 
   synchronized void registerEventBusHandler() {
