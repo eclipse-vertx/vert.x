@@ -14,6 +14,8 @@ import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Objects;
@@ -69,6 +71,7 @@ public class InboundBuffer<E> {
    * A reusable sentinel for signaling the end of a stream.
    */
   public static final Object END_SENTINEL = new Object();
+  private static final Logger log = LoggerFactory.getLogger(InboundBuffer.class);
 
   private final Context context;
   private final ArrayDeque<E> pending;
@@ -243,6 +246,7 @@ public class InboundBuffer<E> {
     Handler<Throwable> handler;
     synchronized (this) {
       if ((handler = exceptionHandler) == null) {
+        log.error("Unhandled exception", err);
         return;
       }
     }
