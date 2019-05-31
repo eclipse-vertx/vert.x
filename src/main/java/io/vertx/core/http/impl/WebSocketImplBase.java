@@ -77,6 +77,11 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     pending.drainHandler(v -> {
       conn.doResume();
     });
+    pending.exceptionHandler(t -> {
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(t);
+      }
+    });
   }
 
   void registerHandler(EventBus eventBus) {
