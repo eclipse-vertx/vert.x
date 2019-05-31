@@ -3619,6 +3619,38 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  /*
+   * Test `exceptionHandler` being set on `NetSocket`
+   * https://github.com/eclipse-vertx/vert.x/issues/2973
+   */
+  @Test
+  public void testExceptionHandler() {
+    server.close();
+    client.close();
+
+    server = vertx.createNetServer(new NetServerOptions());
+    client = vertx.createNetClient();
+
+    server.connectHandler(s -> {
+      s.write("...");
+    }).listen(testAddress, ar -> {
+      assertTrue(ar.succeeded());
+      client.connect(testAddress, res -> {
+        assertTrue(res.succeeded());
+        NetSocket socket = res.result();
+        socket.handler(buffer -> {
+          throw new UnsupportedOperationException("CATCH_ME");
+        });
+        socket.exceptionHandler(err -> {
+          assertTrue(err instanceof UnsupportedOperationException);
+          assertEquals("CATCH_ME", err.getMessage());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
+
   protected void startServer(SocketAddress remoteAddress) throws Exception {
     startServer(remoteAddress, vertx.getOrCreateContext());
   }
