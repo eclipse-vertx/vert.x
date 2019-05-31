@@ -2960,4 +2960,36 @@ public class WebSocketTest extends VertxTestBase {
       }));
     await();
   }
+
+  /*
+   * test `exceptionHandler` being set on `WebSocketImpl`
+   * https://github.com/eclipse-vertx/vert.x/issues/2948
+   */
+  @Test
+  public void testExceptionHandler(){
+    client = vertx.createHttpClient(new HttpClientOptions().setSendUnmaskedFrames(true));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    server.requestHandler(req -> {
+      req.response().setChunked(true).write("connect");
+    });
+    server.websocketHandler(ws -> {
+      ws.writeTextMessage("...");
+    });
+
+    server.listen(onSuccess(server -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
+        ws.exceptionHandler(exception -> {
+          assertTrue(exception instanceof UnsupportedOperationException);
+          assertEquals("CATCH_ME", exception.getMessage());
+          testComplete();
+        });
+        ws.handler(result -> {
+          throw new UnsupportedOperationException("CATCH_ME");
+        });
+      }));
+    }));
+
+    await();
+  }
+
 }
