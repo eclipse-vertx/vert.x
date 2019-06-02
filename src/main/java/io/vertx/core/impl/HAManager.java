@@ -265,7 +265,7 @@ public class HAManager {
   private void doDeployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
                                 final Handler<AsyncResult<String>> doneHandler) {
     final Handler<AsyncResult<String>> wrappedHandler = ar1 -> {
-      vertx.<String>executeBlocking(fut -> {
+      vertx.<String>execBlocking(fut -> {
         if (ar1.succeeded()) {
           // Tell the other nodes of the cluster about the verticle for HA purposes
           String deploymentID = ar1.result();
@@ -343,7 +343,7 @@ public class HAManager {
     } else {
       vertx.setTimer(200, tid -> {
         // This can block on a monitor so it needs to run as a worker
-        vertx.executeBlockingInternal(fut -> {
+        vertx.execBlockingInternal(fut -> {
           if (System.currentTimeMillis() - start > 10000) {
             log.warn("Timed out waiting for group information to appear");
           } else if (!stopped) {

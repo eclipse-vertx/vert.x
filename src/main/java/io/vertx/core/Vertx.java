@@ -525,12 +525,52 @@ public interface Vertx extends Measured {
    *                 guarantees
    * @param <T> the type of the result
    */
-  <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
+  @Deprecated
+  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
 
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
    */
-  <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler);
+  @Deprecated
+  <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler);
+
+  /**
+   * Safely execute some blocking code.
+   * <p>
+   * Executes the blocking code in the handler {@code blockingCodeHandler} using a thread from the worker pool.
+   * <p>
+   * When the code is complete the handler {@code resultHandler} will be called with the result on the original context
+   * (e.g. on the original event loop of the caller).
+   * <p>
+   * A {@code Future} instance is passed into {@code blockingCodeHandler}. When the blocking code successfully completes,
+   * the handler should call the {@link Promise#complete} or {@link Promise#complete(Object)} method, or the {@link Promise#fail}
+   * method if it failed.
+   * <p>
+   * In the {@code blockingCodeHandler} the current context remains the original context and therefore any task
+   * scheduled in the {@code blockingCodeHandler} will be executed on the this context and not on the worker thread.
+   * <p>
+   * The blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
+   * or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
+   * <p>
+   * When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
+   * blocked thread checker.
+   * <p>
+   * Long blocking operations should use a dedicated thread managed by the application, which can interact with
+   * verticles using the event-bus or {@link Context#runOnContext(Handler)}
+   *
+   * @param blockingCodeHandler  handler representing the blocking code to run
+   * @param resultHandler  handler that will be called when the blocking code is complete
+   * @param ordered  if true then if executeBlocking is called several times on the same context, the executions
+   *                 for that context will be executed serially, not in parallel. if false then they will be no ordering
+   *                 guarantees
+   * @param <T> the type of the result
+   */
+  <T> void execBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
+
+  /**
+   * Like {@link #execBlocking(Handler, boolean, Handler)} called with ordered = true.
+   */
+  <T> void execBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler);
 
   /**
    * Return the Netty EventLoopGroup used by Vert.x

@@ -1911,7 +1911,7 @@ public class FileSystemTest extends VertxTestBase {
         fs.props(from, onSuccess(actual -> {
           assertEquals(expected.creationTime(), actual.creationTime());
           assertEquals(expected.lastModifiedTime(), actual.lastModifiedTime());
-          vertx.<Set<PosixFilePermission>>executeBlocking(fut -> {
+          vertx.<Set<PosixFilePermission>>execBlocking(fut -> {
             try {
               fut.complete(Files.getPosixFilePermissions(new File(testDir, target).toPath(), LinkOption.NOFOLLOW_LINKS));
             } catch (IOException e) {

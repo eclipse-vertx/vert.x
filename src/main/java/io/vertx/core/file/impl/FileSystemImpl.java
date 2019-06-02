@@ -965,7 +965,7 @@ public class FileSystemImpl implements FileSystem {
      * Run the blocking action using a thread from the worker pool.
      */
     public void run() {
-      context.executeBlockingInternal(this, handler);
+      context.execBlockingInternal(this, handler);
     }
 
     @Override

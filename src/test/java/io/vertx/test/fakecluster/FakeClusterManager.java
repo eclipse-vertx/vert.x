@@ -185,7 +185,7 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public void join(Handler<AsyncResult<Void>> resultHandler) {
-    vertx.executeBlocking(fut -> {
+    vertx.execBlocking(fut -> {
       synchronized (this) {
         this.nodeID = UUID.randomUUID().toString();
         doJoin(nodeID, this);
@@ -196,7 +196,7 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public void leave(Handler<AsyncResult<Void>> resultHandler) {
-    vertx.executeBlocking(fut -> {
+    vertx.execBlocking(fut -> {
       synchronized (this) {
         if (nodeID != null) {
           if (nodeListener != null) {
@@ -237,7 +237,7 @@ public class FakeClusterManager implements ClusterManager {
     @Override
     public void add(final K k, final V v, Handler<AsyncResult<Void>> completionHandler) {
       ContextInternal ctx = vertx.getOrCreateContext();
-      ctx.executeBlocking(fut -> {
+      ctx.execBlocking(fut -> {
         ChoosableSet<V> vals = map.get(k);
         if (vals == null) {
           vals = new ChoosableSet<>(1);
@@ -254,7 +254,7 @@ public class FakeClusterManager implements ClusterManager {
     @Override
     public void get(final K k, Handler<AsyncResult<ChoosableIterable<V>>> asyncResultHandler) {
       ContextInternal ctx = vertx.getOrCreateContext();
-      ctx.executeBlocking(fut -> {
+      ctx.execBlocking(fut -> {
         ChoosableIterable<V> it = map.get(k);
         if (it == null) {
           it = new ChoosableSet<>(0);
@@ -266,7 +266,7 @@ public class FakeClusterManager implements ClusterManager {
     @Override
     public void remove(final K k, final V v, Handler<AsyncResult<Boolean>> completionHandler) {
       ContextInternal ctx = vertx.getOrCreateContext();
-      ctx.executeBlocking(fut -> {
+      ctx.execBlocking(fut -> {
         ChoosableSet<V> vals = map.get(k);
         boolean found = false;
         if (vals != null) {
@@ -290,7 +290,7 @@ public class FakeClusterManager implements ClusterManager {
     @Override
     public void removeAllMatching(Predicate<V> p, Handler<AsyncResult<Void>> completionHandler) {
       ContextInternal ctx = vertx.getOrCreateContext();
-      ctx.executeBlocking(fut -> {
+      ctx.execBlocking(fut -> {
         Iterator<Entry<K, ChoosableSet<V>>> mapIter = map.entrySet().iterator();
         while (mapIter.hasNext()) {
           Entry<K, ChoosableSet<V>> entry = mapIter.next();

@@ -365,7 +365,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
       receivedLatch.countDown();
     }).completionHandler(ar -> {
       assertTrue(ar.succeeded());
-      vertices[0].executeBlocking(fut -> {
+      vertices[0].execBlocking(fut -> {
         vertices[0].eventBus().send(ADDRESS1, expectedBody);
         try {
           awaitLatch(receivedLatch); // Make sure message is sent even if we're busy
@@ -439,7 +439,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
     }, new DeploymentOptions().setWorker(true));
 
     // Inside executeBlocking
-    vertices[0].executeBlocking(fut -> {
+    vertices[0].execBlocking(fut -> {
       vertices[0].eventBus().send("blah", "blah", ar -> {
         assertTrue(ar.failed());
         if (ar.cause() instanceof ReplyException) {

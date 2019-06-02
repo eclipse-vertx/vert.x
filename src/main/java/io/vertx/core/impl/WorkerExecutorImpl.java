@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -51,7 +52,13 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
     return pool;
   }
 
-  public synchronized <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
+  @Override
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> asyncResultHandler) {
+    execBlocking(promise -> blockingCodeHandler.handle(promise.future()), ordered, asyncResultHandler);
+  }
+
+  @Override
+  public synchronized <T> void execBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> asyncResultHandler) {
     if (closed) {
       throw new IllegalStateException("Worker executor closed");
     }

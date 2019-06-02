@@ -1924,7 +1924,7 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testExecuteBlockingException() throws Exception {
 
-    vertx.executeBlocking(fut -> {
+    vertx.execBlocking(fut -> {
       try {
         vertx.createHttpClient(createHttp2ClientOptions());
         fail("HttpClient should not work with HTTP_2 inside executeBlocking");

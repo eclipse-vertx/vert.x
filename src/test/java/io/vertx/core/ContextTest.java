@@ -97,7 +97,7 @@ public class ContextTest extends VertxTestBase {
   @Test
   public void testExecuteOrderedBlocking() throws Exception {
     Context context = vertx.getOrCreateContext();
-    context.executeBlocking(f -> {
+    context.execBlocking(f -> {
       assertTrue(Context.isOnWorkerThread());
       f.complete(1 + 2);
     }, r -> {
@@ -111,7 +111,7 @@ public class ContextTest extends VertxTestBase {
   @Test
   public void testExecuteUnorderedBlocking() throws Exception {
     Context context = vertx.getOrCreateContext();
-    context.executeBlocking(f -> {
+    context.execBlocking(f -> {
       assertTrue(Context.isOnWorkerThread());
       f.complete(1 + 2);
     }, false, r -> {
@@ -123,11 +123,11 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testExecuteBlockingThreadSyncComplete() throws Exception {
+  public void testexecBlockingThreadSyncComplete() throws Exception {
     Context context = vertx.getOrCreateContext();
     context.<Void>runOnContext(v -> {
       Thread expected = Thread.currentThread();
-      context.executeBlocking(Promise::complete, r -> {
+      context.execBlocking(Promise::complete, r -> {
         assertSame(expected, Thread.currentThread());
         testComplete();
       });
@@ -136,11 +136,11 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testExecuteBlockingThreadAsyncComplete() throws Exception {
+  public void testexecBlockingThreadAsyncComplete() throws Exception {
     Context context = vertx.getOrCreateContext();
     context.<Void>runOnContext(v -> {
       Thread expected = Thread.currentThread();
-      context.executeBlocking(fut -> {
+      context.execBlocking(fut -> {
         new Thread(() -> {
           try {
             // Wait some time to allow the worker thread to set the handler on the future and have the future
@@ -306,12 +306,12 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testVerticleUseDifferentExecuteBlockingOrderedExecutor() throws Exception {
+  public void testVerticleUseDifferentexecBlockingOrderedExecutor() throws Exception {
     testVerticleUseDifferentOrderedExecutor(false);
   }
 
   @Test
-  public void testWorkerVerticleUseDifferentExecuteBlockingOrderedExecutor() throws Exception {
+  public void testWorkerVerticleUseDifferentexecBlockingOrderedExecutor() throws Exception {
     testVerticleUseDifferentOrderedExecutor(true);
   }
 
@@ -322,7 +322,7 @@ public class ContextTest extends VertxTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
-        vertx.executeBlocking(fut -> {
+        vertx.execBlocking(fut -> {
           latch1.countDown();
           try {
             awaitLatch(latch2);
@@ -341,7 +341,7 @@ public class ContextTest extends VertxTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
-        vertx.executeBlocking(fut -> {
+        vertx.execBlocking(fut -> {
           latch3.countDown();
           fut.complete();
         }, ar -> {
@@ -356,7 +356,7 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testInternalExecuteBlockingWithQueue() {
+  public void testInternalexecBlockingWithQueue() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     TaskQueue[] queues = new TaskQueue[] { new TaskQueue(), new TaskQueue()};
     AtomicReference<Thread>[] current = new AtomicReference[queues.length];
@@ -370,7 +370,7 @@ public class ContextTest extends VertxTestBase {
       int ival = i;
       for (int j = 0;j < queues.length;j++) {
         int jval = j;
-        context.executeBlocking(fut -> {
+        context.execBlocking(fut -> {
           if (ival == 0) {
             current[jval].set(Thread.currentThread());
           } else {

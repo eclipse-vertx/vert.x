@@ -23,9 +23,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ExecuteBlockingTest extends VertxTestBase {
 
   @Test
-  public void testExecuteBlockingSuccess() {
+  public void testexecBlockingSuccess() {
 
-    vertx.executeBlocking(future -> {
+    vertx.execBlocking(future -> {
       try {
         Thread.sleep(1000);
       } catch (Exception ignore) {
@@ -39,9 +39,9 @@ public class ExecuteBlockingTest extends VertxTestBase {
   }
 
   @Test
-  public void testExecuteBlockingFailed() {
+  public void testexecBlockingFailed() {
 
-    vertx.executeBlocking(future -> {
+    vertx.execBlocking(future -> {
       try {
         Thread.sleep(1000);
       } catch (Exception ignore) {
@@ -55,9 +55,9 @@ public class ExecuteBlockingTest extends VertxTestBase {
   }
 
   @Test
-  public void testExecuteBlockingThrowsRTE() {
+  public void testexecBlockingThrowsRTE() {
 
-    vertx.executeBlocking(future -> {
+    vertx.execBlocking(future -> {
       throw new RuntimeException("rte");
     }, onFailure(t -> {
       assertEquals("rte", t.getMessage());
@@ -67,12 +67,12 @@ public class ExecuteBlockingTest extends VertxTestBase {
   }
 
   @Test
-  public void testExecuteBlockingContext() {
+  public void testexecBlockingContext() {
 
     vertx.runOnContext(v -> {
       Context ctx = vertx.getOrCreateContext();
       assertTrue(ctx.isEventLoopContext());
-      vertx.executeBlocking(future -> {
+      vertx.execBlocking(future -> {
         assertSame(ctx, vertx.getOrCreateContext());
         assertTrue(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
         assertTrue(Context.isOnWorkerThread());
@@ -102,12 +102,12 @@ public class ExecuteBlockingTest extends VertxTestBase {
   }
 
   @Test
-  public void testExecuteBlockingTTCL() throws Exception {
+  public void testexecBlockingTTCL() throws Exception {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     assertNotNull(cl);
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<ClassLoader> blockingTCCL = new AtomicReference<>();
-    vertx.<String>executeBlocking(future -> {
+    vertx.<String>execBlocking(future -> {
       future.complete("whatever");
       blockingTCCL.set(Thread.currentThread().getContextClassLoader());
     }, ar -> {
@@ -121,7 +121,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
   }
 
   @Test
-  public void testExecuteBlockingParallel() throws Exception {
+  public void testexecBlockingParallel() throws Exception {
 
     long start = System.currentTimeMillis();
     int numExecBlocking = 10;
@@ -133,7 +133,7 @@ public class ExecuteBlockingTest extends VertxTestBase {
       assertTrue(ctx.isEventLoopContext());
 
       for (int i = 0; i < numExecBlocking; i++) {
-        vertx.executeBlocking(future -> {
+        vertx.execBlocking(future -> {
           assertSame(ctx, vertx.getOrCreateContext());
           assertTrue(Thread.currentThread().getName().startsWith("vert.x-worker-thread"));
           assertTrue(Context.isOnWorkerThread());

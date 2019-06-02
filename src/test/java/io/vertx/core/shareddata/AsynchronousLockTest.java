@@ -119,7 +119,7 @@ public class AsynchronousLockTest extends VertxTestBase {
     Vertx vertx = getVertx();
     SharedData sharedData = vertx.sharedData();
     AtomicReference<Long> start = new AtomicReference<>();
-    vertx.<Lock>executeBlocking(future -> {
+    vertx.<Lock>execBlocking(future -> {
       CountDownLatch acquireLatch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Lock>> lockReference = new AtomicReference<>();
       sharedData.getLock("foo", ar -> {
@@ -143,7 +143,7 @@ public class AsynchronousLockTest extends VertxTestBase {
         vertx.setTimer(1000, tid -> {
           ar.result().release();
         });
-        vertx.executeBlocking(future -> {
+        vertx.execBlocking(future -> {
           CountDownLatch acquireLatch = new CountDownLatch(1);
           AtomicReference<AsyncResult<Lock>> lockReference = new AtomicReference<>();
           sharedData.getLock("foo", ar2 -> {

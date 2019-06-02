@@ -99,9 +99,9 @@ public interface VertxInternal extends Vertx {
   File resolveFile(String fileName);
 
   /**
-   * Like {@link #executeBlocking(Handler, Handler)} but using the internal worker thread pool.
+   * Like {@link #execBlocking(Handler, Handler)} but using the internal worker thread pool.
    */
-  <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
+  <T> void execBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
 
   ClusterManager getClusterManager();
 

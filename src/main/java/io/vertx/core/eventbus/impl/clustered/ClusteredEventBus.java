@@ -128,7 +128,7 @@ public class ClusteredEventBus extends EventBusImpl {
             String serverHost = getClusterPublicHost(options);
             serverID = new ServerID(serverPort, serverHost);
             nodeInfo = new ClusterNodeInfo(clusterManager.getNodeID(), serverID);
-            vertx.executeBlocking(fut -> {
+            vertx.execBlocking(fut -> {
               haManager.addDataToAHAInfo(SERVER_ID_HA_KEY, new JsonObject().put("host", serverID.host).put("port", serverID.port));
               fut.complete();
             }, false, ar2 -> {

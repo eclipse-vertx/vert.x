@@ -16,6 +16,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
@@ -198,7 +199,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void createHaManager(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    this.<Map<String, String>>executeBlocking(fut -> {
+    this.<Map<String, String>>execBlocking(fut -> {
       fut.complete(clusterManager.getSyncMap(CLUSTER_MAP_NAME));
     }, false, ar -> {
       if (ar.succeeded()) {
@@ -224,7 +225,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void initializeHaManager(Handler<AsyncResult<Vertx>> resultHandler) {
-    this.executeBlocking(fut -> {
+    this.execBlocking(fut -> {
       // Init the manager (i.e register listener and check the quorum)
       // after the event bus has been fully started and updated its state
       // it will have also set the clustered changed view handler on the ha manager
@@ -541,7 +542,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         HAManager haManager = haManager();
         Promise<Void> haPromise = Promise.promise();
         if (haManager != null) {
-          this.executeBlocking(fut -> {
+          this.execBlocking(fut -> {
             haManager.stop();
             fut.complete();
           }, false, haPromise);
@@ -693,7 +694,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     HAManager haManager = haManager();
     Promise<Void> haFuture = Promise.promise();
     if (haManager != null && haManager.isEnabled()) {
-      this.executeBlocking(fut -> {
+      this.execBlocking(fut -> {
         haManager.removeFromHA(deploymentID);
         fut.complete();
       }, false, haFuture);
@@ -728,23 +729,35 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+  public <T> void execBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     ContextImpl context = getOrCreateContext();
 
-    context.executeBlockingInternal(blockingCodeHandler, resultHandler);
+    context.execBlockingInternal(blockingCodeHandler, resultHandler);
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered,
-                                  Handler<AsyncResult<T>> asyncResultHandler) {
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> asyncResultHandler) {
     ContextImpl context = getOrCreateContext();
     context.executeBlocking(blockingCodeHandler, ordered, asyncResultHandler);
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler,
+  public <T> void executeBlocking(Handler<Future<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> asyncResultHandler) {
+    ContextImpl context = getOrCreateContext();
+    context.executeBlocking(blockingCodeHandler, asyncResultHandler);
+  }
+
+  @Override
+  public <T> void execBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered,
                                   Handler<AsyncResult<T>> asyncResultHandler) {
-    executeBlocking(blockingCodeHandler, true, asyncResultHandler);
+    ContextImpl context = getOrCreateContext();
+    context.execBlocking(blockingCodeHandler, ordered, asyncResultHandler);
+  }
+
+  @Override
+  public <T> void execBlocking(Handler<Promise<T>> blockingCodeHandler,
+                                  Handler<AsyncResult<T>> asyncResultHandler) {
+    execBlocking(blockingCodeHandler, true, asyncResultHandler);
   }
 
   @Override
@@ -815,7 +828,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @SuppressWarnings("unchecked")
   private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
-    executeBlockingInternal(fut -> {
+    execBlockingInternal(fut -> {
       try {
         fileResolver.close();
         fut.complete();

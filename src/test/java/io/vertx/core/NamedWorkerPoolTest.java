@@ -54,7 +54,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startFuture) throws Exception {
-        vertx.executeBlocking(fut -> {
+        vertx.execBlocking(fut -> {
           try {
             SECONDS.sleep(5);
             fut.complete();
@@ -78,7 +78,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     AtomicBoolean onWorkerThread = new AtomicBoolean();
     AtomicBoolean onEventLoopThread = new AtomicBoolean();
     AtomicReference<String> threadName = new AtomicReference<>();
-    worker.executeBlocking(fut -> {
+    worker.execBlocking(fut -> {
       onVertxThread.set(Context.isOnVertxThread());
       onWorkerThread.set(Context.isOnWorkerThread());
       onEventLoopThread.set(Context.isOnEventLoopThread());
@@ -108,7 +108,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       for (int i = 0;i < num;i++) {
         boolean first = i == 0;
         boolean last = i == num - 1;
-        worker.executeBlocking(fut -> {
+        worker.execBlocking(fut -> {
           if (first) {
             try {
               awaitLatch(submitted);
@@ -145,7 +145,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
       for (int i = 0; i < num; i++) {
-        worker.executeBlocking(fut -> {
+        worker.execBlocking(fut -> {
           latch1.countDown();
           try {
             awaitLatch(latch2);
@@ -177,7 +177,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
         AtomicReference<Thread> currentThread = new AtomicReference<>();
         for (int i = 0;i < count;i++) {
           int val = i;
-          exec.executeBlocking(fut -> {
+          exec.execBlocking(fut -> {
             Thread current = Thread.currentThread();
             assertNotSame(startThread, current);
             if (val == 0) {
@@ -202,7 +202,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     CountDownLatch latch1 = new CountDownLatch(poolSize * 100);
     Set<String> names = Collections.synchronizedSet(new HashSet<>());
     for (int i = 0;i < poolSize * 100;i++) {
-      worker.executeBlocking(fut -> {
+      worker.execBlocking(fut -> {
         names.add(Thread.currentThread().getName());
         latch1.countDown();
       }, false, ar -> {
@@ -219,7 +219,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     long maxExecuteTime = 60;
     TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
     WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName, poolSize, maxExecuteTime, maxExecuteTimeUnit);
-    worker.executeBlocking(f -> {
+    worker.execBlocking(f -> {
       Thread t = Thread.currentThread();
       assertTrue(t instanceof VertxThread);
       VertxThread thread = (VertxThread) t;
@@ -238,7 +238,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     AtomicReference<Thread> thread = new AtomicReference<>();
     WorkerExecutor worker1 = vertx.createSharedWorkerExecutor(poolName);
     WorkerExecutor worker2 = vertx.createSharedWorkerExecutor(poolName);
-    worker1.executeBlocking(fut -> {
+    worker1.execBlocking(fut -> {
       thread.set(Thread.currentThread());
     }, ar -> {
     });
@@ -263,7 +263,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     String deploymentId = deploymentIdRef.get(20, SECONDS);
     vertx.undeploy(deploymentId, onSuccess(v -> {
       try {
-        pool.get().<String>executeBlocking(fut -> fail(), null);
+        pool.get().<String>execBlocking(fut -> fail(), null);
         fail();
       } catch (IllegalStateException ignore) {
         testComplete();
@@ -279,7 +279,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
-        vertx.executeBlocking(fut -> {
+        vertx.execBlocking(fut -> {
           thread.set(Thread.currentThread());
           assertTrue(Context.isOnVertxThread());
           assertTrue(Context.isOnWorkerThread());
@@ -321,12 +321,12 @@ public class NamedWorkerPoolTest extends VertxTestBase {
     WorkerExecutor exec = vertx.createSharedWorkerExecutor("vert.x-123");
     vertx.close(v -> {
       try {
-        vertx.executeBlocking(fut -> fail(), ar -> fail());
+        vertx.execBlocking(fut -> fail(), ar -> fail());
         fail();
       } catch (RejectedExecutionException ignore) {
       }
       try {
-        exec.executeBlocking(fut -> fail(), ar -> fail());
+        exec.execBlocking(fut -> fail(), ar -> fail());
         fail();
       } catch (RejectedExecutionException ignore) {
       }

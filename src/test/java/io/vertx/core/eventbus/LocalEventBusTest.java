@@ -1426,7 +1426,7 @@ public class LocalEventBusTest extends EventBusTestBase {
       public void start() {
         CyclicBarrier barrier = new CyclicBarrier(3);
         vertx.eventBus().consumer(ADDRESS1, msg -> {
-          vertx.executeBlocking(block -> {
+          vertx.execBlocking(block -> {
             try {
               barrier.await();
               complete();

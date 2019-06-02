@@ -96,7 +96,7 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     Verticle verticle = new AbstractVerticle() {
       @Override
       public void start() throws InterruptedException {
-        vertx.executeBlocking(fut -> {
+        vertx.execBlocking(fut -> {
           try {
             Thread.sleep(3000);
           } catch (InterruptedException e) {

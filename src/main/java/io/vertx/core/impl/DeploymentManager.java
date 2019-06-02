@@ -195,7 +195,7 @@ public class DeploymentManager {
             return;
           } else {
             if (verticleFactory.blockingCreate()) {
-              vertx.<Verticle[]>executeBlocking(createFut -> {
+              vertx.<Verticle[]>execBlocking(createFut -> {
                 try {
                   Verticle[] verticles = createVerticles(verticleFactory, identifier, options.getInstances(), cl);
                   createFut.complete(verticles);

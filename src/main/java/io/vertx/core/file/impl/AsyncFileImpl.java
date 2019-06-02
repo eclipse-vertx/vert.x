@@ -389,7 +389,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
-    context.executeBlockingInternal((Promise<Void> fut) -> {
+    context.execBlockingInternal((Promise<Void> fut) -> {
       try {
         ch.force(false);
         fut.complete();
@@ -499,7 +499,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
     ContextInternal handlerContext = vertx.getOrCreateContext();
-    handlerContext.executeBlockingInternal(res -> {
+    handlerContext.execBlockingInternal(res -> {
       try {
         ch.close();
         res.complete(null);

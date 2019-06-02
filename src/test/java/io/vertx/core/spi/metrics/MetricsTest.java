@@ -868,7 +868,7 @@ public class MetricsTest extends VertxTestBase {
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
     for (int i = 0; i < 100; i++) {
-      vertx.executeBlocking(
+      vertx.execBlocking(
           job,
           ar -> {
             if (metrics.numberOfWaitingTasks() > 0) {
@@ -919,7 +919,7 @@ public class MetricsTest extends VertxTestBase {
     int count = num * 5;
     for (int i = 0; i < count; i++) {
       CountDownLatch latch = latches.computeIfAbsent(i / num, k -> new CountDownLatch(num));
-      v.executeBlockingInternal(fut -> {
+      v.execBlockingInternal(fut -> {
         latch.countDown();
         try {
           awaitLatch(latch);
@@ -1058,7 +1058,7 @@ public class MetricsTest extends VertxTestBase {
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
     for (int i = 0; i < 100; i++) {
-      workerExec.executeBlocking(
+      workerExec.execBlocking(
           job,
           false,
           ar -> {

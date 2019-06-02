@@ -71,7 +71,7 @@ public class CoreExamples {
   }
 
   public void example7(Vertx vertx) {
-    vertx.executeBlocking(future -> {
+    vertx.execBlocking(future -> {
       // Call some blocking API that takes a significant amount of time to return
       String result = someAPI.blockingMethod("hello");
       future.complete(result);
@@ -82,7 +82,7 @@ public class CoreExamples {
 
   public void workerExecutor1(Vertx vertx) {
     WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool");
-    executor.executeBlocking(future -> {
+    executor.execBlocking(future -> {
       // Call some blocking API that takes a significant amount of time to return
       String result = someAPI.blockingMethod("hello");
       future.complete(result);
@@ -194,7 +194,7 @@ public class CoreExamples {
 
   public void multiThreadedWorkerVerticleAlternative2(Vertx vertx, String someresult) {
     vertx.eventBus().consumer("foo", msg -> {
-      vertx.executeBlocking(fut -> {
+      vertx.execBlocking(fut -> {
         // Invoke blocking code with received message data
         fut.complete(someresult);
       }, false, ar -> { // ordered == false

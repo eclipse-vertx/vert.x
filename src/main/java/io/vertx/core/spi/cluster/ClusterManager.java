@@ -35,7 +35,7 @@ import java.util.Map;
  * 3. For any particular join or leave event that is handled in any NodeListener, anywhere in the cluster, the List
  * of nodes returned by getNodes must be identical.
  * 4. All of the methods in the implementation must return immediately, i.e. they must not block while the operation
- * is being executed. If the underlying implementation does block, then {@link io.vertx.core.Vertx#executeBlocking}
+ * is being executed. If the underlying implementation does block, then {@link io.vertx.core.Vertx#execBlocking}
  * should be used to run the operation on a worker.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
