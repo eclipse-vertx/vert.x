@@ -1,4 +1,7 @@
-package io.vertx.core.json;
+package io.vertx.core.spi.json;
+
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Primitive for conversion JSON_TYPE -> TARGET_TYPE <br/>

@@ -1,6 +1,6 @@
 package io.vertx.core.json.codecs;
 
-import io.vertx.core.json.JsonCodec;
+import io.vertx.core.spi.json.JsonCodec;
 
 import java.util.Objects;
 
