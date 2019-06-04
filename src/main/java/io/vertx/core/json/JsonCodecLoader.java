@@ -1,6 +1,7 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.spi.json.JsonCodec;
 
 import java.util.HashMap;
 import java.util.Map;

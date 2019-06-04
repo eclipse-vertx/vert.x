@@ -1,9 +1,8 @@
 package io.vertx.core.json.codecs;
 
-import io.vertx.core.json.JsonCodec;
+import io.vertx.core.spi.json.JsonCodec;
 import io.vertx.core.json.JsonArray;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 public class MyJsonArrayPojo {
