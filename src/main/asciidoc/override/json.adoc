@@ -116,16 +116,3 @@ You get values from a JSON array using the `getXXX` methods, for example:
 ==== Encoding a JSON array to a String
 
 You use {@link io.vertx.core.json.JsonArray#encode} to encode the array to a String form.
-
-=== JsonCodec
-
-If you want to define a custom way to encode and decode Json, you can define a {@link io.vertx.core.spi.json.JsonCodec} for it.
-A `JsonCodec` for type `X` is a concrete class that implements the interface `JsonCodec<X, J>`, where `J` must be any of these:
-
-* `JsonArray` or `JsonObject`
-* `Number`
-* `String`
-* `Boolean`
-
-These `JsonCodec`s can be used in several components of Vert.x stack, like in vertx-web-client, using the SPI
-`io.vertx.core.spi.json.JsonCodec`.

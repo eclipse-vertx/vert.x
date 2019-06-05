@@ -4,8 +4,9 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
- * Primitive for conversion JSON_TYPE -> TARGET_TYPE <br/>
- * The TARGET_TYPE could be any type, while JSON_TYPE could be one of the following:
+ * Converts {@code <T>} type to {@code <J>}.
+ * <br/>
+ * {@code <T>} can be any class or interface type, {@code <J>} can be one of the following:
  * <ul>
  *     <li>{@link JsonObject}</li>
  *     <li>{@link JsonArray}</li>
@@ -14,19 +15,24 @@ import io.vertx.core.json.JsonObject;
  *     <li>{@link Boolean}</li>
  * </ul>
  *
- * @param <TARGET_TYPE>
- * @param <JSON_TYPE>
+ * @param <T> the type decoded from Json
+ * @param <J> the json type
  */
-public interface JsonDecoder<TARGET_TYPE, JSON_TYPE> {
+public interface JsonDecoder<T, J> {
+
   /**
-   * decode performs the conversion JSON_TYPE -> TARGET_TYPE <br/>
-   * It expects value not null and must not return a null value
+   * Decode {@code <J>} to {@code <T>}.
+   * <br/>
+   * The {@code json} will not be {@code null} and the implementation must not return {@code null}.
    *
-   * @param value
-   * @return
+   * @param json the json value
+   * @return the decoded value
    * @throws IllegalArgumentException when it cannot decode the value
    */
-  TARGET_TYPE decode(JSON_TYPE value) throws IllegalArgumentException;
+  T decode(J json) throws IllegalArgumentException;
 
-  Class<TARGET_TYPE> getTargetClass();
+  /**
+   * @return the class for {@code <T>}
+   */
+  Class<T> getTargetClass();
 }
