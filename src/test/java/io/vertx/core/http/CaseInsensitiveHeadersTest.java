@@ -991,20 +991,24 @@ public class CaseInsensitiveHeadersTest {
     mmap.add("another-header", Arrays.<CharSequence>asList("value1", "value2", "value3"));
 
     String json = Json.encode(mmap);
-    assertEquals("{'header': ['value1'], 'another-header': ['value1', 'value2', 'value3']}", json); // suggested layout: {key: [values]}
+
+
+    assertEquals("{\"another-header\":[\"value1\",\"value2\",\"value3\"],\"header\":[\"value1\"]}", json);
   }
 
   @Test
   public void testJacksonDeserialization() {
-    String json = "{'header': ['value1'], 'another-header': ['value2', 'value1', 'value3']}";
+    String json = "{\"header\": [\"value1\"], \"another-header\": [\"value2\", \"value1\", \"value3\"]}";
 
     MultiMap mmap = Json.decodeValue(json, CaseInsensitiveHeaders.class);
+
+    assertNotNull(mmap);
 
     CharSequence v1 = mmap.get("header");
     assertEquals("value1", v1.toString());
 
     CharSequence v2 = mmap.get("another-header");
-    assertEquals("value2", v1);
+    assertEquals("value2", v2);
 
     List<String> values = mmap.getAll("another-header");
     assertEquals(Arrays.<String>asList("value2", "value1", "value3"), values);

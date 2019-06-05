@@ -10,9 +10,19 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.core.Handler;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import io.vertx.core.MultiMap;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,7 +30,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -29,6 +38,8 @@ import java.util.function.Consumer;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
+@JsonSerialize(using = CaseInsensitiveHeaders.JacksonSerializer.class)
+@JsonDeserialize(using = CaseInsensitiveHeaders.JacksonDeserializer.class)
 public final class CaseInsensitiveHeaders implements MultiMap {
   private static final int BUCKET_SIZE = 17;
 
@@ -376,6 +387,71 @@ public final class CaseInsensitiveHeaders implements MultiMap {
     }
     return sb.toString();
   }
+
+  public static final class JacksonSerializer extends StdSerializer<CaseInsensitiveHeaders> {
+
+    public JacksonSerializer() {
+      this(null);
+    }
+
+    public JacksonSerializer(Class<CaseInsensitiveHeaders> t) {
+      super(t);
+    }
+
+    @Override
+    public void serialize(CaseInsensitiveHeaders headers, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
+      jsonGenerator.writeStartObject();
+      Set<String> names = headers.names();
+
+      Iterator<String> namesIterator = names.iterator();
+      while (namesIterator.hasNext()) {
+        String name = namesIterator.next();
+        List<String> values = headers.getAll(name);
+
+        jsonGenerator.writeArrayFieldStart(name);
+
+        for (int i = 0; i < values.size(); i++) {
+          jsonGenerator.writeString(values.get(i));
+        }
+
+        jsonGenerator.writeEndArray();
+      }
+      jsonGenerator.writeEndObject();
+    }
+  }
+
+  public static final class JacksonDeserializer extends StdDeserializer<CaseInsensitiveHeaders> {
+    public JacksonDeserializer() {
+      this(null);
+    }
+
+    public JacksonDeserializer(Class<CaseInsensitiveHeaders> t) {
+      super(t);
+    }
+
+    @Override
+    public CaseInsensitiveHeaders deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JsonProcessingException {
+      CaseInsensitiveHeaders result = new CaseInsensitiveHeaders();
+      JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+      Iterator<String> namesIterator = node.fieldNames();
+
+      while (namesIterator.hasNext()) {
+        String name = namesIterator.next();
+        if (node.get(name).isArray()) {
+          JsonNode arr = node.withArray(name);
+          Iterator<JsonNode> arrIterator = arr.iterator();
+
+          while (arrIterator.hasNext()) {
+            JsonNode arrValue = arrIterator.next();
+            result.add(name, arrValue.asText());
+          }
+        }
+      }
+
+      return result;
+    }
+  }
+
 
   private static final class MapEntry implements Map.Entry<String, String> {
     final int hash;
