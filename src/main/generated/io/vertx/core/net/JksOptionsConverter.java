@@ -4,12 +4,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.core.net.JksOptions}.
+ * Converter and Codec for {@link io.vertx.core.net.JksOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.JksOptions} original class using Vert.x codegen.
  */
-public class JksOptionsConverter {
+public class JksOptionsConverter implements JsonCodec<JksOptions, JsonObject> {
+
+  public static final JksOptionsConverter INSTANCE = new JksOptionsConverter();
+
+  @Override public JsonObject encode(JksOptions value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public JksOptions decode(JsonObject value) { return (value != null) ? new JksOptions(value) : null; }
+
+  @Override public Class<JksOptions> getTargetClass() { return JksOptions.class; }
 
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, JksOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

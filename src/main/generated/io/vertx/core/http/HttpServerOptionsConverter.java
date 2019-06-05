@@ -4,12 +4,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.core.http.HttpServerOptions}.
+ * Converter and Codec for {@link io.vertx.core.http.HttpServerOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.HttpServerOptions} original class using Vert.x codegen.
  */
- class HttpServerOptionsConverter {
+public class HttpServerOptionsConverter implements JsonCodec<HttpServerOptions, JsonObject> {
+
+  public static final HttpServerOptionsConverter INSTANCE = new HttpServerOptionsConverter();
+
+  @Override public JsonObject encode(HttpServerOptions value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public HttpServerOptions decode(JsonObject value) { return (value != null) ? new HttpServerOptions(value) : null; }
+
+  @Override public Class<HttpServerOptions> getTargetClass() { return HttpServerOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, HttpServerOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -61,7 +70,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
-            obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)member.getValue()));
+            obj.setInitialSettings(io.vertx.core.http.Http2SettingsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "maxChunkSize":
@@ -141,7 +150,7 @@ import java.time.format.DateTimeFormatter;
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     if (obj.getInitialSettings() != null) {
-      json.put("initialSettings", obj.getInitialSettings().toJson());
+      json.put("initialSettings", io.vertx.core.http.Http2SettingsConverter.INSTANCE.encode(obj.getInitialSettings()));
     }
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());

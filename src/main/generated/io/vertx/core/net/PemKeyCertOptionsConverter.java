@@ -4,12 +4,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.core.net.PemKeyCertOptions}.
+ * Converter and Codec for {@link io.vertx.core.net.PemKeyCertOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.PemKeyCertOptions} original class using Vert.x codegen.
  */
- class PemKeyCertOptionsConverter {
+public class PemKeyCertOptionsConverter implements JsonCodec<PemKeyCertOptions, JsonObject> {
+
+  public static final PemKeyCertOptionsConverter INSTANCE = new PemKeyCertOptionsConverter();
+
+  @Override public JsonObject encode(PemKeyCertOptions value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public PemKeyCertOptions decode(JsonObject value) { return (value != null) ? new PemKeyCertOptions(value) : null; }
+
+  @Override public Class<PemKeyCertOptions> getTargetClass() { return PemKeyCertOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, PemKeyCertOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

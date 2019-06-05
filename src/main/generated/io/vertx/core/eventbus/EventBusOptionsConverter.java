@@ -4,12 +4,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.core.eventbus.EventBusOptions}.
+ * Converter and Codec for {@link io.vertx.core.eventbus.EventBusOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.eventbus.EventBusOptions} original class using Vert.x codegen.
  */
- class EventBusOptionsConverter {
+public class EventBusOptionsConverter implements JsonCodec<EventBusOptions, JsonObject> {
+
+  public static final EventBusOptionsConverter INSTANCE = new EventBusOptionsConverter();
+
+  @Override public JsonObject encode(EventBusOptions value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public EventBusOptions decode(JsonObject value) { return (value != null) ? new EventBusOptions(value) : null; }
+
+  @Override public Class<EventBusOptions> getTargetClass() { return EventBusOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, EventBusOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -105,12 +114,12 @@ import java.time.format.DateTimeFormatter;
           break;
         case "jdkSslEngineOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setJdkSslEngineOptions(new io.vertx.core.net.JdkSSLEngineOptions((JsonObject)member.getValue()));
+            obj.setJdkSslEngineOptions(io.vertx.core.net.JdkSSLEngineOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "keyStoreOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setKeyStoreOptions(new io.vertx.core.net.JksOptions((JsonObject)member.getValue()));
+            obj.setKeyStoreOptions(io.vertx.core.net.JksOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "logActivity":
@@ -120,27 +129,27 @@ import java.time.format.DateTimeFormatter;
           break;
         case "openSslEngineOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setOpenSslEngineOptions(new io.vertx.core.net.OpenSSLEngineOptions((JsonObject)member.getValue()));
+            obj.setOpenSslEngineOptions(io.vertx.core.net.OpenSSLEngineOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "pemKeyCertOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setPemKeyCertOptions(new io.vertx.core.net.PemKeyCertOptions((JsonObject)member.getValue()));
+            obj.setPemKeyCertOptions(io.vertx.core.net.PemKeyCertOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "pemTrustOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setPemTrustOptions(new io.vertx.core.net.PemTrustOptions((JsonObject)member.getValue()));
+            obj.setPemTrustOptions(io.vertx.core.net.PemTrustOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "pfxKeyCertOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setPfxKeyCertOptions(new io.vertx.core.net.PfxOptions((JsonObject)member.getValue()));
+            obj.setPfxKeyCertOptions(io.vertx.core.net.PfxOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "pfxTrustOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setPfxTrustOptions(new io.vertx.core.net.PfxOptions((JsonObject)member.getValue()));
+            obj.setPfxTrustOptions(io.vertx.core.net.PfxOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "port":
@@ -235,7 +244,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "trustStoreOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setTrustStoreOptions(new io.vertx.core.net.JksOptions((JsonObject)member.getValue()));
+            obj.setTrustStoreOptions(io.vertx.core.net.JksOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "useAlpn":
@@ -292,26 +301,26 @@ import java.time.format.DateTimeFormatter;
       json.put("idleTimeoutUnit", obj.getIdleTimeoutUnit().name());
     }
     if (obj.getJdkSslEngineOptions() != null) {
-      json.put("jdkSslEngineOptions", obj.getJdkSslEngineOptions().toJson());
+      json.put("jdkSslEngineOptions", io.vertx.core.net.JdkSSLEngineOptionsConverter.INSTANCE.encode(obj.getJdkSslEngineOptions()));
     }
     if (obj.getKeyStoreOptions() != null) {
-      json.put("keyStoreOptions", obj.getKeyStoreOptions().toJson());
+      json.put("keyStoreOptions", io.vertx.core.net.JksOptionsConverter.INSTANCE.encode(obj.getKeyStoreOptions()));
     }
     json.put("logActivity", obj.getLogActivity());
     if (obj.getOpenSslEngineOptions() != null) {
-      json.put("openSslEngineOptions", obj.getOpenSslEngineOptions().toJson());
+      json.put("openSslEngineOptions", io.vertx.core.net.OpenSSLEngineOptionsConverter.INSTANCE.encode(obj.getOpenSslEngineOptions()));
     }
     if (obj.getPemKeyCertOptions() != null) {
-      json.put("pemKeyCertOptions", obj.getPemKeyCertOptions().toJson());
+      json.put("pemKeyCertOptions", io.vertx.core.net.PemKeyCertOptionsConverter.INSTANCE.encode(obj.getPemKeyCertOptions()));
     }
     if (obj.getPemTrustOptions() != null) {
-      json.put("pemTrustOptions", obj.getPemTrustOptions().toJson());
+      json.put("pemTrustOptions", io.vertx.core.net.PemTrustOptionsConverter.INSTANCE.encode(obj.getPemTrustOptions()));
     }
     if (obj.getPfxKeyCertOptions() != null) {
-      json.put("pfxKeyCertOptions", obj.getPfxKeyCertOptions().toJson());
+      json.put("pfxKeyCertOptions", io.vertx.core.net.PfxOptionsConverter.INSTANCE.encode(obj.getPfxKeyCertOptions()));
     }
     if (obj.getPfxTrustOptions() != null) {
-      json.put("pfxTrustOptions", obj.getPfxTrustOptions().toJson());
+      json.put("pfxTrustOptions", io.vertx.core.net.PfxOptionsConverter.INSTANCE.encode(obj.getPfxTrustOptions()));
     }
     json.put("port", obj.getPort());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
@@ -334,7 +343,7 @@ import java.time.format.DateTimeFormatter;
     json.put("trafficClass", obj.getTrafficClass());
     json.put("trustAll", obj.isTrustAll());
     if (obj.getTrustStoreOptions() != null) {
-      json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
+      json.put("trustStoreOptions", io.vertx.core.net.JksOptionsConverter.INSTANCE.encode(obj.getTrustStoreOptions()));
     }
     json.put("useAlpn", obj.isUseAlpn());
   }

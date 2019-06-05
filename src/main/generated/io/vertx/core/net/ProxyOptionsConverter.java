@@ -4,12 +4,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.core.net.ProxyOptions}.
+ * Converter and Codec for {@link io.vertx.core.net.ProxyOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.ProxyOptions} original class using Vert.x codegen.
  */
- class ProxyOptionsConverter {
+public class ProxyOptionsConverter implements JsonCodec<ProxyOptions, JsonObject> {
+
+  public static final ProxyOptionsConverter INSTANCE = new ProxyOptionsConverter();
+
+  @Override public JsonObject encode(ProxyOptions value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public ProxyOptions decode(JsonObject value) { return (value != null) ? new ProxyOptions(value) : null; }
+
+  @Override public Class<ProxyOptions> getTargetClass() { return ProxyOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, ProxyOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
