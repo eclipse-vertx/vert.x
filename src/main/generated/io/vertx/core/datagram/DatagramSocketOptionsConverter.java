@@ -4,12 +4,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.core.datagram.DatagramSocketOptions}.
+ * Converter and Codec for {@link io.vertx.core.datagram.DatagramSocketOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.datagram.DatagramSocketOptions} original class using Vert.x codegen.
  */
- class DatagramSocketOptionsConverter {
+public class DatagramSocketOptionsConverter implements JsonCodec<DatagramSocketOptions, JsonObject> {
+
+  public static final DatagramSocketOptionsConverter INSTANCE = new DatagramSocketOptionsConverter();
+
+  @Override public JsonObject encode(DatagramSocketOptions value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public DatagramSocketOptions decode(JsonObject value) { return (value != null) ? new DatagramSocketOptions(value) : null; }
+
+  @Override public Class<DatagramSocketOptions> getTargetClass() { return DatagramSocketOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, DatagramSocketOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

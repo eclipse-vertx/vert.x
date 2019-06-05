@@ -4,12 +4,21 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.core.http.WebSocketConnectOptions}.
+ * Converter and Codec for {@link io.vertx.core.http.WebSocketConnectOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.WebSocketConnectOptions} original class using Vert.x codegen.
  */
-public class WebSocketConnectOptionsConverter {
+public class WebSocketConnectOptionsConverter implements JsonCodec<WebSocketConnectOptions, JsonObject> {
+
+  public static final WebSocketConnectOptionsConverter INSTANCE = new WebSocketConnectOptionsConverter();
+
+  @Override public JsonObject encode(WebSocketConnectOptions value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public WebSocketConnectOptions decode(JsonObject value) { return (value != null) ? new WebSocketConnectOptions(value) : null; }
+
+  @Override public Class<WebSocketConnectOptions> getTargetClass() { return WebSocketConnectOptions.class; }
 
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, WebSocketConnectOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

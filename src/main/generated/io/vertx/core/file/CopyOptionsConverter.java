@@ -4,12 +4,27 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.core.file.CopyOptions}.
+ * Converter and Codec for {@link io.vertx.core.file.CopyOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.file.CopyOptions} original class using Vert.x codegen.
  */
- class CopyOptionsConverter {
+public class CopyOptionsConverter implements JsonCodec<CopyOptions, JsonObject> {
+
+  public static final CopyOptionsConverter INSTANCE = new CopyOptionsConverter();
+
+  @Override
+  public JsonObject encode(CopyOptions value) {
+    if (value == null) return null;
+    JsonObject json = new JsonObject();
+    toJson(value, json);
+    return json;
+  }
+
+  @Override public CopyOptions decode(JsonObject value) { return (value != null) ? new CopyOptions(value) : null; }
+
+  @Override public Class<CopyOptions> getTargetClass() { return CopyOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, CopyOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

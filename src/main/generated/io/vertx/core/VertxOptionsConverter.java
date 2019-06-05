@@ -4,19 +4,28 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
- * Converter for {@link io.vertx.core.VertxOptions}.
+ * Converter and Codec for {@link io.vertx.core.VertxOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.VertxOptions} original class using Vert.x codegen.
  */
- class VertxOptionsConverter {
+public class VertxOptionsConverter implements JsonCodec<VertxOptions, JsonObject> {
+
+  public static final VertxOptionsConverter INSTANCE = new VertxOptionsConverter();
+
+  @Override public JsonObject encode(VertxOptions value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public VertxOptions decode(JsonObject value) { return (value != null) ? new VertxOptions(value) : null; }
+
+  @Override public Class<VertxOptions> getTargetClass() { return VertxOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, VertxOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
         case "addressResolverOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setAddressResolverOptions(new io.vertx.core.dns.AddressResolverOptions((JsonObject)member.getValue()));
+            obj.setAddressResolverOptions(io.vertx.core.dns.AddressResolverOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "blockedThreadCheckInterval":
@@ -66,7 +75,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "eventBusOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setEventBusOptions(new io.vertx.core.eventbus.EventBusOptions((JsonObject)member.getValue()));
+            obj.setEventBusOptions(io.vertx.core.eventbus.EventBusOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "eventLoopPoolSize":
@@ -76,7 +85,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "fileSystemOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setFileSystemOptions(new io.vertx.core.file.FileSystemOptions((JsonObject)member.getValue()));
+            obj.setFileSystemOptions(io.vertx.core.file.FileSystemOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "haEnabled":
@@ -116,7 +125,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "metricsOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((JsonObject)member.getValue()));
+            obj.setMetricsOptions(io.vertx.core.metrics.MetricsOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "preferNativeTransport":
@@ -131,7 +140,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "tracingOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setTracingOptions(new io.vertx.core.tracing.TracingOptions((JsonObject)member.getValue()));
+            obj.setTracingOptions(io.vertx.core.tracing.TracingOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "warningExceptionTime":
@@ -159,7 +168,7 @@ import java.time.format.DateTimeFormatter;
 
    static void toJson(VertxOptions obj, java.util.Map<String, Object> json) {
     if (obj.getAddressResolverOptions() != null) {
-      json.put("addressResolverOptions", obj.getAddressResolverOptions().toJson());
+      json.put("addressResolverOptions", io.vertx.core.dns.AddressResolverOptionsConverter.INSTANCE.encode(obj.getAddressResolverOptions()));
     }
     json.put("blockedThreadCheckInterval", obj.getBlockedThreadCheckInterval());
     if (obj.getBlockedThreadCheckIntervalUnit() != null) {
@@ -177,11 +186,11 @@ import java.time.format.DateTimeFormatter;
     json.put("clusterPublicPort", obj.getClusterPublicPort());
     json.put("clustered", obj.isClustered());
     if (obj.getEventBusOptions() != null) {
-      json.put("eventBusOptions", obj.getEventBusOptions().toJson());
+      json.put("eventBusOptions", io.vertx.core.eventbus.EventBusOptionsConverter.INSTANCE.encode(obj.getEventBusOptions()));
     }
     json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
     if (obj.getFileSystemOptions() != null) {
-      json.put("fileSystemOptions", obj.getFileSystemOptions().toJson());
+      json.put("fileSystemOptions", io.vertx.core.file.FileSystemOptionsConverter.INSTANCE.encode(obj.getFileSystemOptions()));
     }
     json.put("haEnabled", obj.isHAEnabled());
     if (obj.getHAGroup() != null) {
@@ -197,12 +206,12 @@ import java.time.format.DateTimeFormatter;
       json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
     }
     if (obj.getMetricsOptions() != null) {
-      json.put("metricsOptions", obj.getMetricsOptions().toJson());
+      json.put("metricsOptions", io.vertx.core.metrics.MetricsOptionsConverter.INSTANCE.encode(obj.getMetricsOptions()));
     }
     json.put("preferNativeTransport", obj.getPreferNativeTransport());
     json.put("quorumSize", obj.getQuorumSize());
     if (obj.getTracingOptions() != null) {
-      json.put("tracingOptions", obj.getTracingOptions().toJson());
+      json.put("tracingOptions", io.vertx.core.tracing.TracingOptionsConverter.INSTANCE.encode(obj.getTracingOptions()));
     }
     json.put("warningExceptionTime", obj.getWarningExceptionTime());
     if (obj.getWarningExceptionTimeUnit() != null) {

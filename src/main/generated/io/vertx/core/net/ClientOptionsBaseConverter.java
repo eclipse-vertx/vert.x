@@ -4,12 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import io.vertx.core.spi.json.JsonEncoder;
 
 /**
- * Converter for {@link io.vertx.core.net.ClientOptionsBase}.
+ * Converter and Codec for {@link io.vertx.core.net.ClientOptionsBase}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.ClientOptionsBase} original class using Vert.x codegen.
  */
- class ClientOptionsBaseConverter {
+public class ClientOptionsBaseConverter implements JsonEncoder<ClientOptionsBase, JsonObject> {
+
+  public static final ClientOptionsBaseConverter INSTANCE = new ClientOptionsBaseConverter();
+
+  @Override public JsonObject encode(ClientOptionsBase value) { return (value != null) ? value.toJson() : null; }
+
+  @Override public Class<ClientOptionsBase> getTargetClass() { return ClientOptionsBase.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, ClientOptionsBase obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -31,7 +38,7 @@ import java.time.format.DateTimeFormatter;
           break;
         case "proxyOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((JsonObject)member.getValue()));
+            obj.setProxyOptions(io.vertx.core.net.ProxyOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
           }
           break;
         case "trustAll":
@@ -56,7 +63,7 @@ import java.time.format.DateTimeFormatter;
       json.put("metricsName", obj.getMetricsName());
     }
     if (obj.getProxyOptions() != null) {
-      json.put("proxyOptions", obj.getProxyOptions().toJson());
+      json.put("proxyOptions", io.vertx.core.net.ProxyOptionsConverter.INSTANCE.encode(obj.getProxyOptions()));
     }
     json.put("trustAll", obj.isTrustAll());
   }

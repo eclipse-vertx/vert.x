@@ -1,0 +1,8 @@
+io.vertx.core.json.codecs.MyBooleanPojo$MyBooleanPojoJsonCodec
+io.vertx.core.json.codecs.MyDoublePojo$MyDoublePojoJsonCodec
+io.vertx.core.json.codecs.MyFloatPojo$MyFloatPojoJsonCodec
+io.vertx.core.json.codecs.MyIntegerPojo$MyIntegerPojoJsonCodec
+io.vertx.core.json.codecs.MyJsonArrayPojo$MyJsonArrayPojoJsonCodec
+io.vertx.core.json.codecs.MyJsonObjectPojo$MyJsonObjectPojoJsonCodec
+io.vertx.core.json.codecs.MyLongPojo$MyLongPojoJsonCodec
+io.vertx.core.json.codecs.MyShortPojo$MyShortPojoJsonCodec
