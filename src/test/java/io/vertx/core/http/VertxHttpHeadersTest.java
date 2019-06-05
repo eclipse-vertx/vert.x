@@ -47,4 +47,14 @@ public class VertxHttpHeadersTest extends CaseInsensitiveHeadersTest {
   public void testHashMININT() {
     // Does not apply
   }
+
+  @Override
+  public void testJacksonSerialization() {
+    // Does not apply
+  }
+
+  @Override
+  public void testJacksonDeserialization() {
+    // Does not apply
+  }
 }

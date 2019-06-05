@@ -992,7 +992,6 @@ public class CaseInsensitiveHeadersTest {
 
     String json = Json.encode(mmap);
 
-
     assertEquals("{\"another-header\":[\"value1\",\"value2\",\"value3\"],\"header\":[\"value1\"]}", json);
   }
 
