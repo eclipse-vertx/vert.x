@@ -90,7 +90,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private Handler<HttpFrame> customFrameHandler;
 
   private Handler<StreamPriority> streamPriorityHandler;
-
+  
   public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, Http2Stream stream, HttpServerMetrics metrics,
                                 String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
     super(conn, context, stream, writable);
@@ -580,7 +580,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   public StreamPriority streamPriority() {
     return priority();
   }
-
-
+  
+  
 
 }
