@@ -12,11 +12,14 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.CacheReturn;
+import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 
 /**
  * Represents a message that is received from the event bus in a handler.
@@ -84,7 +87,9 @@ public interface Message<T> {
    *
    * @param message  the message to reply with.
    * @param replyHandler  the reply handler for the reply.
+   * @deprecated use {@link #replyAndRequest(Object, Handler)}
    */
+  @Deprecated
   <R> void reply(Object message, Handler<AsyncResult<Message<R>>> replyHandler);
 
   /**
@@ -102,8 +107,39 @@ public interface Message<T> {
    * @param message  the reply message
    * @param options  the delivery options
    * @param replyHandler  the reply handler for the reply.
+   * @deprecated use {@link #replyAndRequest(Object, DeliveryOptions, Handler)}
    */
+  @Deprecated
   <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler);
+
+  /**
+   * Reply to this message, specifying a {@code replyHandler} for the reply - i.e.
+   * to receive the reply to the reply.
+   * <p>
+   * If the message was sent specifying a reply handler, that handler will be
+   * called when it has received a reply. If the message wasn't sent specifying a receipt handler
+   * this method does nothing.
+   *
+   * @param message  the message to reply with.
+   * @param replyHandler  the reply handler for the reply.
+   */
+  @SuppressWarnings("deprecations")
+  default <R> void replyAndRequest(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
+    reply(message, replyHandler);
+  }
+
+  /**
+   * Like {@link #replyAndRequest(Object, Handler)} but specifying {@code options} that can be used
+   * to configure the delivery.
+   *
+   * @param message  the message body, may be {@code null}
+   * @param options  delivery options
+   * @param replyHandler  reply handler will be called when any reply from the recipient is received
+   */
+  @SuppressWarnings("deprecations")
+  default <R> void replyAndRequest(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
+    reply(message, options, replyHandler);
+  }
 
   /**
    * Signal to the sender that processing of this message failed.

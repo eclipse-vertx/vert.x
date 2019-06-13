@@ -99,7 +99,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     });
     reg.completionHandler(ar -> {
       assertTrue(ar.succeeded());
-      vertices[0].eventBus().send(ADDRESS1, str, onSuccess((Message<R> reply) -> {
+      vertices[0].eventBus().request(ADDRESS1, str, onSuccess((Message<R> reply) -> {
         if (consumer == null) {
           assertTrue(reply.isSend());
           assertEquals(received, reply.body());
@@ -205,7 +205,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
             sendMsg();
           });
         } else {
-          getVertx().eventBus().send("whatever", "marseille", ar -> {
+          getVertx().eventBus().request("whatever", "marseille", ar -> {
             Throwable cause = ar.cause();
             assertThat(cause, instanceOf(ReplyException.class));
             ReplyException replyException = (ReplyException) cause;
