@@ -175,7 +175,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     ctx.runOnContext(v -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
-      vertx1.eventBus().send("the_address", "msg_1", onSuccess(reply -> {
+      vertx1.eventBus().request("the_address", "msg_1", onSuccess(reply -> {
       }));
     });
     waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 4);
@@ -197,7 +197,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
-      vertx2.eventBus().send("the_address", "msg", onFailure(failure -> {
+      vertx2.eventBus().request("the_address", "msg", onFailure(failure -> {
       }));
     });
     waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 4);
@@ -213,7 +213,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     ctx.runOnContext(v -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
-      vertx2.eventBus().send("the_address", "msg", onFailure(failure -> { }));
+      vertx2.eventBus().request("the_address", "msg", onFailure(failure -> { }));
     });
     waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 2);
     assertEquals(Arrays.asList("sendRequest[the_address]", "receiveResponse[NO_HANDLERS]"), ebTracer.sendEvents);
@@ -231,7 +231,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
-      vertx2.eventBus().send("the_address", "msg", new DeliveryOptions().setSendTimeout(100), onFailure(failure -> {
+      vertx2.eventBus().request("the_address", "msg", new DeliveryOptions().setSendTimeout(100), onFailure(failure -> {
       }));
     });
     waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 4);
@@ -248,7 +248,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
       assertEquals("msg_1", msg.body());
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) vertx.getOrCreateContext()).localContextData();
       tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
-      msg.reply("msg_2", reply -> {
+      msg.replyAndRequest("msg_2", reply -> {
         assertNotSame(ctx, vertx2.getOrCreateContext());
         assertSameEventLoop(ctx, vertx2.getOrCreateContext());
       });
@@ -257,7 +257,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     ctx.runOnContext(v -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
-      vertx1.eventBus().send("the_address", "msg_1", onSuccess(reply -> {
+      vertx1.eventBus().request("the_address", "msg_1", onSuccess(reply -> {
         assertSame(Vertx.currentContext(), ctx);
         tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
         reply.reply("msg_3");

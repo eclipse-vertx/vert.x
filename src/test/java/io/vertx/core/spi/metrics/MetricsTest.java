@@ -207,7 +207,7 @@ public class MetricsTest extends VertxTestBase {
     consumer.completionHandler(done -> {
       assertTrue(done.succeeded());
       String msg = TestUtils.randomAlphaString(10);
-      from.eventBus().send(ADDRESS1, msg, reply -> {
+      from.eventBus().request(ADDRESS1, msg, reply -> {
         assertEquals(1, fromMetrics.getReceivedMessages().size());
         ReceivedMessage receivedMessage = fromMetrics.getReceivedMessages().get(0);
         assertEquals(false, receivedMessage.publish);
@@ -326,7 +326,7 @@ public class MetricsTest extends VertxTestBase {
     HandlerMetric registration = assertRegistration(metrics);
     assertEquals(ADDRESS1, registration.address);
     assertEquals(null, registration.repliedAddress);
-    from.eventBus().send(ADDRESS1, "ping", reply -> {
+    from.eventBus().request(ADDRESS1, "ping", reply -> {
       assertEquals(1, registration.scheduleCount.get());
       assertEquals(1, registration.beginCount.get());
       // This might take a little time
@@ -391,7 +391,7 @@ public class MetricsTest extends VertxTestBase {
       latch.countDown();
     });
     awaitLatch(latch);
-    vertx.eventBus().send(ADDRESS1, "ping", reply -> {
+    vertx.eventBus().request(ADDRESS1, "ping", reply -> {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
       HandlerMetric registration = metrics.getRegistrations().get(1);
       assertEquals(ADDRESS1, registration.repliedAddress);
@@ -436,7 +436,7 @@ public class MetricsTest extends VertxTestBase {
   public void testReplyFailureNoHandlers() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     EventBus eb = vertx.eventBus();
-    eb.send(ADDRESS1, "bar", new DeliveryOptions().setSendTimeout(10), ar -> {
+    eb.request(ADDRESS1, "bar", new DeliveryOptions().setSendTimeout(10), ar -> {
       assertTrue(ar.failed());
       latch.countDown();
     });
@@ -454,7 +454,7 @@ public class MetricsTest extends VertxTestBase {
     eb.consumer(ADDRESS1, msg -> {
       // Do not reply
     });
-    eb.send(ADDRESS1, "bar", new DeliveryOptions().setSendTimeout(10), ar -> {
+    eb.request(ADDRESS1, "bar", new DeliveryOptions().setSendTimeout(10), ar -> {
       assertTrue(ar.failed());
       latch.countDown();
     });
@@ -468,12 +468,12 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     EventBus eb = vertx.eventBus();
     eb.consumer(ADDRESS1, msg -> {
-      msg.reply("juu", new DeliveryOptions().setSendTimeout(10), ar -> {
+      msg.replyAndRequest("juu", new DeliveryOptions().setSendTimeout(10), ar -> {
         assertTrue(ar.failed());
         latch.countDown();
       });
     });
-    eb.send(ADDRESS1, "bar", ar -> {
+    eb.request(ADDRESS1, "bar", ar -> {
       // Do not reply
     });
     awaitLatch(latch);
@@ -496,7 +496,7 @@ public class MetricsTest extends VertxTestBase {
       regLatch.countDown();
     }));
     awaitLatch(regLatch);
-    eb.send("foo", "bar", new DeliveryOptions(), ar -> {
+    eb.request("foo", "bar", new DeliveryOptions(), ar -> {
       assertTrue(ar.failed());
       latch.countDown();
     });

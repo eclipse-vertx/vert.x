@@ -78,7 +78,7 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
       tracer.activate(rootSpan);
-      vertx1.eventBus().send("the-address", "ping", onSuccess(reply -> {
+      vertx1.eventBus().request("the-address", "ping", onSuccess(reply -> {
 
       }));
     });
@@ -99,7 +99,7 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
       tracer.activate(rootSpan);
-      vertx1.eventBus().send("the-address", "ping", onFailure(err -> {
+      vertx1.eventBus().request("the-address", "ping", onFailure(err -> {
 
       }));
     });

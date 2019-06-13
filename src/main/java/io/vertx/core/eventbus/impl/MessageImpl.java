@@ -119,21 +119,21 @@ public class MessageImpl<U, V> implements Message<V> {
 
   @Override
   public void reply(Object message) {
-    reply(message, new DeliveryOptions(), null);
+    replyAndRequest(message, new DeliveryOptions(), null);
   }
 
   @Override
-  public <R> void reply(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
-    reply(message, new DeliveryOptions(), replyHandler);
+  public <R> void replyAndRequest(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
+    replyAndRequest(message, new DeliveryOptions(), replyHandler);
   }
 
   @Override
   public void reply(Object message, DeliveryOptions options) {
-    reply(message, options, null);
+    replyAndRequest(message, options, null);
   }
 
   @Override
-  public <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
+  public <R> void replyAndRequest(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (replyAddress != null) {
       MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName(), null);
       bus.sendReply(reply, this, options, replyHandler);

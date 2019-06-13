@@ -46,18 +46,6 @@ public interface EventBus extends Measured {
   EventBus send(String address, Object message);
 
   /**
-   * Like {@link #send(String, Object)} but specifying a {@code replyHandler} that will be called if the recipient
-   * subsequently replies to the message.
-   *
-   * @param address  the address to send it to
-   * @param message  the message, may be {@code null}
-   * @param replyHandler  reply handler will be called when any reply from the recipient is received, may be {@code null}
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
-
-  /**
    * Like {@link #send(String, Object)} but specifying {@code options} that can be used to configure the delivery.
    *
    * @param address  the address to send it to
@@ -69,17 +57,30 @@ public interface EventBus extends Measured {
   EventBus send(String address, Object message, DeliveryOptions options);
 
   /**
-   * Like {@link #send(String, Object, DeliveryOptions)} but specifying a {@code replyHandler} that will be called if the recipient
+   * Sends a message and and specify a {@code replyHandler} that will be called if the recipient
    * subsequently replies to the message.
+   * <p>
+   * The message will be delivered to at most one of the handlers registered to the address.
    *
    * @param address  the address to send it to
-   * @param message  the message, may be {@code null}
-   * @param options  delivery options
-   * @param replyHandler  reply handler will be called when any reply from the recipient is received, may be {@code null}
+   * @param message  the message body, may be {@code null}
+   * @param replyHandler  reply handler will be called when any reply from the recipient is received
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  <T> EventBus send(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
+  <T> EventBus request(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
+
+  /**
+   * Like {@link #request(String, Object, Handler)} but specifying {@code options} that can be used to configure the delivery.
+   *
+   * @param address  the address to send it to
+   * @param message  the message body, may be {@code null}
+   * @param options  delivery options
+   * @param replyHandler  reply handler will be called when any reply from the recipient is received
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  <T> EventBus request(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Publish a message.<p>

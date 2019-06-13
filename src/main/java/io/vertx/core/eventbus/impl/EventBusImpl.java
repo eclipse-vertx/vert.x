@@ -102,21 +102,21 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public EventBus send(String address, Object message) {
-    return send(address, message, new DeliveryOptions(), null);
+    return request(address, message, new DeliveryOptions(), null);
   }
 
   @Override
-  public <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
-    return send(address, message, new DeliveryOptions(), replyHandler);
+  public <T> EventBus request(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
+    return request(address, message, new DeliveryOptions(), replyHandler);
   }
 
   @Override
   public EventBus send(String address, Object message, DeliveryOptions options) {
-    return send(address, message, options, null);
+    return request(address, message, options, null);
   }
 
   @Override
-  public <T> EventBus send(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
+  public <T> EventBus request(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
     sendOrPubInternal(createMessage(true, true, address, options.getHeaders(), message, options.getCodecName(), null), options, replyHandler);
     return this;
   }

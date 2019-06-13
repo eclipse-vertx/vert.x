@@ -53,8 +53,7 @@ The event bus also supports *point-to-point* messaging.
 
 Messages are sent to an address. Vert.x will then route them to just one of the handlers registered at that address.
 
-If there is more than one handler registered at the address,
-one will be chosen using a non-strict round-robin algorithm.
+If there is more than one handler registered at the address, one will be chosen using a non-strict round-robin algorithm.
 
 With point-to-point messaging, an optional reply handler can be specified when sending the message.
 
@@ -195,9 +194,11 @@ The headers of the message are available with {@link io.vertx.core.eventbus.Mess
 When using {@link io.vertx.core.eventbus.EventBus#send} the event bus attempts to deliver the message to a
 {@link io.vertx.core.eventbus.MessageConsumer} registered with the event bus.
 
-In some cases it's useful for the sender to know when the consumer has received the message and "processed" it.
+In some cases it's useful for the sender to know when the consumer has received the message and "processed" it using
+*request-response* pattern.
 
-To acknowledge that the message has been processed, the consumer can reply to the message by calling {@link io.vertx.core.eventbus.Message#reply}.
+To acknowledge that the message has been processed, the consumer can reply to the message by calling
+{@link io.vertx.core.eventbus.Message#reply}.
 
 When this happens it causes a reply to be sent back to the sender and the reply handler is invoked with the reply.
 
