@@ -14,8 +14,10 @@ package docoverride.json;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.pointer.JsonPointer;
 import io.vertx.docgen.Source;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,8 +81,5 @@ public class Examples {
     Integer intVal = array.getInteger(1);
     Boolean boolVal = array.getBoolean(2);
   }
-
-
-
 
 }
