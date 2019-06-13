@@ -212,7 +212,7 @@ public class EventBusInterceptorTest extends VertxTestBase {
       assertEquals(1, cnt.get());
       msg.reply("echidna");
     });
-    eb.send("some-address", "armadillo", reply -> {
+    eb.request("some-address", "armadillo", reply -> {
       assertEquals("echidna", reply.result().body());
       assertEquals(2, cnt.get());
       testComplete();
@@ -241,7 +241,7 @@ public class EventBusInterceptorTest extends VertxTestBase {
       assertEquals(1, cnt.get());
       msg.reply("echidna");
     });
-    eb.send("some-address", "armadillo", reply -> {
+    eb.request("some-address", "armadillo", reply -> {
       assertEquals("echidna", reply.result().body());
       assertEquals(2, cnt.get());
       testComplete();

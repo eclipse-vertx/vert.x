@@ -61,7 +61,7 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     for (int i = 0; i < jsonArray.size(); i++) {
       int node = jsonArray.getInteger(i);
       for (int j = 0; j < numAddresses; j++) {
-        vertx.eventBus().send(createAddress(node, j), "ping", ar -> {
+        vertx.eventBus().request(createAddress(node, j), "ping", ar -> {
           if (ar.succeeded()) {
             vertx.eventBus().send("control", "pong");
           } else {
