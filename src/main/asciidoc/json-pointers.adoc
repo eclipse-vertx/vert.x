@@ -1,0 +1,20 @@
+== Json Pointers
+
+Vert.x provides an implementation of <a href="https://tools.ietf.org/html/rfc6901">Json Pointers from RFC6901</a>.
+You can use pointers both for querying and for writing. You can build your {@link io.vertx.core.json.pointer.JsonPointer} using
+a string, a URI or manually appending paths:
+
+[source,java]
+----
+{@link examples.JsonPointerExamples#example1Pointers}
+----
+
+After instantiating your pointer, use {@link io.vertx.core.json.pointer.JsonPointer#queryJson(java.lang.Object)} to query
+a JSON value. You can update a Json Value using {@link io.vertx.core.json.pointer.JsonPointer#writeJson(java.lang.Object, java.lang.Object)}:
+
+[source,java]
+----
+{@link examples.JsonPointerExamples#example2Pointers}
+----
+
+You can use Vert.x Json Pointer with any object model by providing a custom implementation of {@link io.vertx.core.json.pointer.JsonPointerIterator}

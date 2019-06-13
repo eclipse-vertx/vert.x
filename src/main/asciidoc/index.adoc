@@ -739,6 +739,8 @@ include::eventbus.adoc[]
 
 include::override/json.adoc[]
 
+include::json-pointers.adoc[]
+
 include::buffers.adoc[]
 
 include::net.adoc[]
