@@ -91,6 +91,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   void handleClose() {
+    super.handleClose();
     Handler<Void> handler = closeHandler();
     if (handler != null) {
       handler.handle(null);

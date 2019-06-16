@@ -58,20 +58,15 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnection> implements HttpServerRequest {
+public class Http2ServerRequestImpl extends Http2ServerStream implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
   private final String serverOrigin;
-  private final Http2ServerResponseImpl response;
   private final MultiMap headersMap;
-  private final String rawMethod;
   private final String scheme;
-  private final String host;
-  private final String uri;
   private String path;
   private String query;
-  private HttpMethod method;
   private MultiMap params;
   private String absoluteURI;
   private MultiMap attributes;
@@ -81,7 +76,6 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private Handler<Void> endHandler;
   private boolean streamEnded;
   private boolean ended;
-  private long bytesRead;
 
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder postRequestDecoder;
@@ -92,32 +86,21 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private Handler<StreamPriority> streamPriorityHandler;
   
   public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, Http2Stream stream, HttpServerMetrics metrics,
-                                String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
-    super(conn, context, stream, writable);
+      String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
+    super(conn, context, stream, headers, contentEncoding, serverOrigin, writable);
 
-    this.serverOrigin = serverOrigin;
-    this.streamEnded = streamEnded;
-    this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;
-    this.scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
-    this.rawMethod = headers.get(":method") != null ? headers.get(":method").toString() : null;
-    this.host = headers.get(":authority") != null ? headers.get(":authority").toString() : null;
+    String scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
 
     headers.remove(":method");
     headers.remove(":scheme");
     headers.remove(":path");
     headers.remove(":authority");
-    headersMap = new Http2HeadersAdaptor(headers);
+    Http2HeadersAdaptor headersMap = new Http2HeadersAdaptor(headers);
 
-
-    String host = host();
-    if (host == null) {
-      int idx = serverOrigin.indexOf("://");
-      host = serverOrigin.substring(idx + 3);
-    }
-    this.response = new Http2ServerResponseImpl(conn, this, method(), false, contentEncoding, host);
-    if (METRICS_ENABLED && metrics != null) {
-      response.metric(metrics.requestBegin(conn.metric(), this));
-    }
+    this.serverOrigin = serverOrigin;
+    this.streamEnded = streamEnded;
+    this.scheme = scheme;
+    this.headersMap = headersMap;
   }
 
   void dispatch(Handler<HttpServerRequest> handler) {
@@ -167,6 +150,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   void handleClose() {
+    super.handleClose();
     boolean notify;
     Throwable failure;
     synchronized (conn) {
@@ -195,7 +179,6 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   void handleData(Buffer data) {
-    bytesRead += data.length();
     if (postRequestDecoder != null) {
       try {
         postRequestDecoder.offer(new DefaultHttpContent(data.getByteBuf()));
@@ -213,7 +196,6 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
     synchronized (conn) {
       streamEnded = true;
       ended = true;
-      conn.reportBytesRead(bytesRead);
       if (postRequestDecoder != null) {
         try {
           postRequestDecoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -322,21 +304,6 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   }
 
   @Override
-  public HttpMethod method() {
-    synchronized (conn) {
-      if (method == null) {
-        method = HttpUtils.toVertxMethod(rawMethod);
-      }
-      return method;
-    }
-  }
-
-  @Override
-  public String rawMethod() {
-    return rawMethod;
-  }
-
-  @Override
   public boolean isSSL() {
     return conn.isSsl();
   }
@@ -374,11 +341,8 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public long bytesRead() {
-    synchronized (conn) {
-      return bytesRead;
-    }
+    return super.bytesRead();
   }
-
 
   @Override
   public Http2ServerResponseImpl response() {
@@ -437,7 +401,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
 
   @Override
   public String absoluteURI() {
-    if (method() == HttpMethod.CONNECT) {
+    if (method == HttpMethod.CONNECT) {
       return null;
     }
     synchronized (conn) {

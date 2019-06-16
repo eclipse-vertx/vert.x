@@ -35,7 +35,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutMs;
   private long lastDataReceived;
   protected Throwable exceptionOccurred;
-  private Object metric;
 
   HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
@@ -47,14 +46,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
     this.query = HttpUtils.parseQuery(uri);
     this.ssl = ssl;
-  }
-
-  Object metric() {
-    return metric;
-  }
-
-  void metric(Object metric) {
-    this.metric = metric;
   }
 
   protected abstract void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs);

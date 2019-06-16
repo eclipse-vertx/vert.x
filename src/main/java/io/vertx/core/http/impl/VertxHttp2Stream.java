@@ -43,6 +43,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private MultiMap trailers;
   private boolean writable;
   private StreamPriority priority;
+  private long bytesRead;
+  private long bytesWritten;
 
   VertxHttp2Stream(C conn, ContextInternal context, Http2Stream stream, boolean writable) {
     this.conn = conn;
@@ -62,9 +64,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
     pending.handler(buff -> {
       if (buff == InboundBuffer.END_SENTINEL) {
+        conn.reportBytesRead(bytesRead);
         handleEnd(trailers);
       } else {
-        handleData((Buffer) buff);
+        Buffer data = (Buffer) buff;
+        bytesRead += data.length();
+        handleData(data);
       }
     });
     pending.exceptionHandler(context.exceptionHandler());
@@ -106,6 +111,14 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     return stream.id();
   }
 
+  long bytesWritten() {
+    return bytesWritten;
+  }
+
+  long bytesRead() {
+    return bytesRead;
+  }
+
   public void doPause() {
     pending.pause();
   }
@@ -133,10 +146,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void writeData(ByteBuf chunk, boolean end) {
-    conn.handler.writeData(stream, chunk, end, null);
+    writeData(chunk, end, null);
   }
 
   void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+    bytesWritten += chunk.readableBytes();
     conn.handler.writeData(stream, chunk, end, handler);
   }
 
@@ -163,6 +177,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void handleClose() {
+    conn.reportBytesWritten(bytesWritten);
   }
   
   synchronized void priority(StreamPriority streamPriority) {

@@ -203,6 +203,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     private MultiMap trailers;
     private StreamImpl next;
     private Object trace;
+    private long bytesWritten;
+    private long bytesRead;
+    private Object metric;
 
     StreamImpl(ContextInternal context, Http1xClientConnection conn, int id, Handler<AsyncResult<HttpClientStream>> handler) {
       this.context = context;
@@ -223,18 +226,13 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    public void reportBytesWritten(long numberOfBytes) {
-      conn.reportBytesWritten(numberOfBytes);
-    }
-
-    @Override
-    public void reportBytesRead(long numberOfBytes) {
-      conn.reportBytesRead(numberOfBytes);
-    }
-
-    @Override
     public int id() {
       return id;
+    }
+
+    @Override
+    public Object metric() {
+      return metric;
     }
 
     @Override
@@ -263,6 +261,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         conn.responseInProgress.append(this);
       }
       next = null;
+      if (buf != null) {
+        bytesWritten += buf.readableBytes();
+      }
     }
 
     private HttpRequest createRequest(HttpMethod method, String rawMethod, String uri, MultiMap headers) {
@@ -313,6 +314,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     private boolean handleChunk(Buffer buff) {
+      bytesRead += buff.length();
       return queue.write(buff);
     }
 
@@ -321,7 +323,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       if (buff == null && !end) {
         return;
       }
-      HttpObject msg;
+      HttpContent msg;
       if (end) {
         if (buff != null && buff.isReadable()) {
           msg = new DefaultLastHttpContent(buff, false);
@@ -331,6 +333,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       } else {
         msg = new DefaultHttpContent(buff);
       }
+      bytesWritten += msg.content().readableBytes();
       conn.writeToChannel(msg, conn.toPromise(handler));
     }
 
@@ -389,8 +392,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         }
         request = req;
         if (conn.metrics != null) {
-          Object reqMetric = conn.metrics.requestBegin(conn.endpointMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
-          request.metric(reqMetric);
+          metric = conn.metrics.requestBegin(conn.endpointMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
         }
         VertxTracer tracer = context.tracer();
         if (tracer != null) {
@@ -415,10 +417,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         }
         requestEnded = true;
         if (conn.metrics != null) {
-          conn.metrics.requestEnd(request.metric());
+          conn.metrics.requestEnd(metric);
         }
         doRecycle = responseEnded;
       }
+      conn.reportBytesWritten(bytesWritten);
       conn.handleRequestEnd(doRecycle);
     }
 
@@ -450,7 +453,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
       response = new HttpClientResponseImpl(request, version, this, resp.status().code(), resp.status().reasonPhrase(), new HeadersAdaptor(resp.headers()));
       if (conn.metrics != null) {
-        conn.metrics.responseBegin(request.metric(), response);
+        conn.metrics.responseBegin(metric, response);
       }
       if (resp.status().code() != 100 && request.method() != io.vertx.core.http.HttpMethod.CONNECT) {
         // See https://tools.ietf.org/html/rfc7230#section-6.3
@@ -476,6 +479,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
       queue.handler(buf -> {
         if (buf == InboundBuffer.END_SENTINEL) {
+          conn.reportBytesRead(bytesRead);
           response.handleEnd(trailers);
         } else {
           response.handleChunk((Buffer) buf);
@@ -493,11 +497,10 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       synchronized (conn) {
         HttpClientRequestImpl req = request;
         if (conn.metrics != null) {
-          Object reqMetric = req.metric();
           if (req.exceptionOccurred != null) {
-            conn.metrics.requestReset(reqMetric);
+            conn.metrics.requestReset(metric);
           } else {
-            conn.metrics.responseEnd(reqMetric, response);
+            conn.metrics.responseEnd(metric, response);
           }
         }
         VertxTracer tracer = context.tracer();
@@ -797,7 +800,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       ws = this.ws;
       for (StreamImpl r = responseInProgress;r != null;r = r.next) {
         if (metrics != null) {
-          metrics.requestReset(r.request.metric());
+          metrics.requestReset(r.metric);
         }
         if (tracer != null) {
           tracer.receiveResponse(r.context, null, r.trace, ConnectionBase.CLOSED_EXCEPTION, TagExtractor.empty());

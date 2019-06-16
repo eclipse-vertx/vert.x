@@ -69,7 +69,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private List<Handler<AsyncResult<Void>>> pendingHandlers;
   private int pendingMaxSize = -1;
   private int followRedirects;
-  private long written;
   private VertxHttpHeaders headers;
   private StreamPriority priority;
   public HttpClientStream stream;
@@ -140,7 +139,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public HttpClientRequestImpl setChunked(boolean chunked) {
     synchronized (this) {
       checkComplete();
-      if (written > 0) {
+      if (stream != null) {
         throw new IllegalStateException("Cannot set chunked after data has been written on request");
       }
       // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
@@ -393,7 +392,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     exceptionHandler(null);
     next.pushHandler = pushHandler;
     next.followRedirects = followRedirects - 1;
-    next.written = written;
     if (next.hostHeader == null) {
       next.hostHeader = hostHeader;
     }
@@ -556,7 +554,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
           stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true, priority, handler);
-          stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
           stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false, priority, handler);
@@ -565,7 +562,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         if (completed) {
           // we also need to write the head so optimize this and write all out in once
           stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true, priority, null);
-          stream.reportBytesWritten(written);
           stream.endRequest();
         } else {
           stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false, priority, null);
@@ -678,9 +674,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         // nothing to write to the connection just return
         return;
       }
-      if (buff != null) {
-        written += buff.readableBytes();
-      }
       if ((s = stream) == null) {
         if (buff != null) {
           if (pendingChunks == null) {
@@ -714,9 +707,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
     }
     s.writeBuffer(buff, end, h);
-    if (end) {
-      s.reportBytesWritten(written); // MUST BE READ UNDER SYNCHRONIZATION
-    }
     if (end) {
       Handler<Void> handler;
       synchronized (this) {

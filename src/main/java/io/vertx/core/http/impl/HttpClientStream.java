@@ -33,6 +33,8 @@ public interface HttpClientStream {
    */
   int id();
 
+  Object metric();
+
   /**
    * @return the stream version or null if it's not yet determined
    */
@@ -44,9 +46,6 @@ public interface HttpClientStream {
   void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler);
   void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler);
   void writeFrame(int type, int flags, ByteBuf payload);
-
-  void reportBytesWritten(long numberOfBytes);
-  void reportBytesRead(long numberOfBytes);
 
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();
