@@ -53,14 +53,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private static final Logger log = LoggerFactory.getLogger(Http2ServerResponseImpl.class);
 
-  private final VertxHttp2Stream stream;
+  private final Http2ServerStream stream;
   private final ChannelHandlerContext ctx;
   private final Http2ServerConnection conn;
   private final boolean head;
   private final boolean push;
   private final String host;
   private Http2Headers headers = new DefaultHttp2Headers();
-  private Object metric;
   private Http2HeadersAdaptor headersMap;
   private Http2Headers trailers;
   private Http2HeadersAdaptor trailedMap;
@@ -76,11 +75,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> bodyEndHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
-  private long bytesWritten;
   private NetSocket netSocket;
 
   public Http2ServerResponseImpl(Http2ServerConnection conn,
-                                 VertxHttp2Stream stream,
+                                 Http2ServerStream stream,
                                  HttpMethod method,
                                  boolean push,
                                  String contentEncoding,
@@ -97,8 +95,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  void metric(Object metric) {
-    this.metric = metric;
+  boolean isPush() {
+    return push;
   }
 
   void handleReset(long code) {
@@ -122,15 +120,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     synchronized (conn) {
       boolean failed = !ended;
       closed = true;
-      if (METRICS_ENABLED && metric != null) {
-        // Null in case of push response : handle this case
-        conn.reportBytesWritten(bytesWritten);
-        if (failed) {
-          conn.metrics().requestReset(metric);
-        } else {
-          conn.metrics().responseEnd(metric, this);
-        }
-      }
       exceptionHandler = failed ? this.exceptionHandler : null;
       endHandler = failed ? this.endHandler : null;
       closeHandler = this.closeHandler;
@@ -460,12 +449,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
         headersEndHandler.handle(null);
       }
       sanitizeHeaders();
-      if (Metrics.METRICS_ENABLED && metric != null) {
-        conn.metrics().responseBegin(metric, this);
-      }
       headWritten = true;
       headers.status(Integer.toString(status.code())); // Could be optimized for usual case ?
-      stream.writeHeaders(headers, end, null);
+      stream.writeHead(headers, end, null);
       if (end) {
         ctx.flush();
       }
@@ -486,7 +472,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       boolean hasBody = false;
       if (chunk != null) {
         hasBody = true;
-        bytesWritten += chunk.readableBytes();
       } else {
         chunk = Unpooled.EMPTY_BUFFER;
       }
@@ -618,7 +603,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       Promise<Long> result = Promise.promise();
       result.future().setHandler(ar -> {
         if (ar.succeeded()) {
-          bytesWritten += ar.result();
           end();
         }
         if (resultHandler != null) {
@@ -686,9 +670,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public long bytesWritten() {
-    synchronized (conn) {
-      return bytesWritten;
-    }
+    return stream.bytesWritten();
   }
 
   @Override

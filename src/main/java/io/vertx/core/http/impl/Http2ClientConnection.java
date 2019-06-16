@@ -42,10 +42,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
-  final HttpClientMetrics metrics;
-  final Object queueMetric;
+  private final HttpClientMetrics metrics;
+  private final Object queueMetric;
 
-  public Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
+  Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
                                Object queueMetric,
                                HttpClientImpl client,
                                ContextInternal context,
@@ -95,11 +95,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     super.onStreamClosed(nettyStream);
   }
 
-  void upgradeStream(HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  void upgradeStream(HttpClientRequestImpl req, Object metric, Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
         Http2ClientStream stream = createStream(handler.connection().stream(1));
+        stream.metric = metric;
         stream.beginRequest(req);
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
@@ -187,7 +188,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           }
           HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(this, promisedStream, client, isSsl(), method, rawMethod, uri, host, port, headersMap);
           if (metrics != null) {
-            pushReq.metric(metrics.responsePushed(queueMetric, metric(), localAddress(), remoteAddress(), pushReq));
+            pushReq.getStream().metric = metrics.responsePushed(queueMetric, metric(), localAddress(), remoteAddress(), pushReq);
           }
           streams.put(promisedStreamId, pushReq.getStream());
           pushHandler.handle(pushReq);
@@ -204,6 +205,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
+    private Object metric;
 
     Http2ClientStream(Http2ClientConnection conn, Http2Stream stream, boolean writable) {
       super(conn, stream, writable);
@@ -235,12 +237,17 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
+    public Object metric() {
+      return metric;
+    }
+
+    @Override
     void handleEnd(MultiMap trailers) {
       if (conn.metrics != null) {
         if (request.exceptionOccurred != null) {
-          conn.metrics.requestReset(request.metric());
+          conn.metrics.requestReset(metric);
         } else {
-          conn.metrics.responseEnd(request.metric(), response);
+          conn.metrics.responseEnd(metric, response);
         }
       }
       responseEnded = true;
@@ -264,7 +271,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         }
         responseEnded = true;
         if (conn.metrics != null) {
-          conn.metrics.requestReset(request.metric());
+          conn.metrics.requestReset(metric);
         }
       }
       handleException(new StreamResetException(errorCode));
@@ -272,6 +279,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleClose() {
+      super.handleClose();
       // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
       // boolean disposable = conn.streams.isEmpty();
       if (request == null || request instanceof HttpClientRequestImpl) {
@@ -282,7 +290,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (!responseEnded) {
         responseEnded = true;
         if (conn.metrics != null) {
-          conn.metrics.requestReset(request.metric());
+          conn.metrics.requestReset(metric);
         }
         handleException(CLOSED_EXCEPTION);
       }
@@ -337,7 +345,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
             new Http2HeadersAdaptor(headers)
         );
         if (conn.metrics != null) {
-          conn.metrics.responseBegin(request.metric(), response);
+          conn.metrics.responseBegin(metric, response);
         }
         request.handleResponse(response);
         if (end) {
@@ -392,7 +400,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
       if (conn.metrics != null) {
-        request.metric(conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request));
+        metric = conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
       }
       priority(priority);
       if (content != null) {
@@ -423,16 +431,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void reportBytesWritten(long numberOfBytes) {
-      conn.reportBytesWritten(numberOfBytes);
-    }
-
-    @Override
-    public void reportBytesRead(long numberOfBytes) {
-      conn.reportBytesRead(numberOfBytes);
-    }
-
-    @Override
     public ContextInternal getContext() {
       return context;
     }
@@ -454,7 +452,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public void endRequest() {
       if (conn.metrics != null) {
-        conn.metrics.requestEnd(request.metric());
+        conn.metrics.requestEnd(metric);
       }
       requestEnded = true;
     }
@@ -469,7 +467,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           responseEnded = true;
           writeReset(code);
           if (conn.metrics != null) {
-            conn.metrics.requestReset(request.metric());
+            conn.metrics.requestReset(metric);
           }
         }
       }

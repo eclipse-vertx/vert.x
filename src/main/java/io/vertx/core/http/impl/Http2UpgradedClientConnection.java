@@ -138,7 +138,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
           // Now we need to upgrade this to an HTTP2
           ConnectionListener<HttpClientConnection> listener = conn.listener();
           VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, conn.endpointMetric(), listener, conn.getContext(), current.metric(), (conn, concurrency) -> {
-            conn.upgradeStream(request, ar -> {
+            conn.upgradeStream(request, stream.metric(), ar -> {
               UpgradingStream.this.conn.closeHandler(null);
               UpgradingStream.this.conn.exceptionHandler(null);
               if (ar.succeeded()) {
@@ -172,6 +172,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     }
 
     @Override
+    public Object metric() {
+      return stream.metric();
+    }
+
+    @Override
     public HttpVersion version() {
       return HttpVersion.HTTP_2;
     }
@@ -189,16 +194,6 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     @Override
     public void writeFrame(int type, int flags, ByteBuf payload) {
       stream.writeFrame(type, flags, payload);
-    }
-
-    @Override
-    public void reportBytesWritten(long numberOfBytes) {
-      stream.reportBytesWritten(numberOfBytes);
-    }
-
-    @Override
-    public void reportBytesRead(long numberOfBytes) {
-      stream.reportBytesRead(numberOfBytes);
     }
 
     @Override

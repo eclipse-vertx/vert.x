@@ -114,6 +114,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
         return;
       }
       Http2ServerRequestImpl req = createRequest(streamId, headers, endOfStream);
+      req.registerMetrics();
       req.priority(new StreamPriority()
         .setDependency(streamDependency)
         .setWeight(weight)
@@ -201,12 +202,8 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     super.updateSettings(settingsUpdate, completionHandler);
   }
 
-  private class Push extends VertxHttp2Stream<Http2ServerConnection> {
+  private class Push extends Http2ServerStream {
 
-    private final HttpMethod method;
-    private final String uri;
-    private final String contentEncoding;
-    private Http2ServerResponseImpl response;
     private final Promise<HttpServerResponse> completionHandler;
 
     public Push(Http2Stream stream,
@@ -215,13 +212,9 @@ public class Http2ServerConnection extends Http2ConnectionBase {
                 String uri,
                 boolean writable,
                 Handler<AsyncResult<HttpServerResponse>> completionHandler) {
-      super(Http2ServerConnection.this, stream, writable);
+      super(Http2ServerConnection.this, stream, contentEncoding, method, uri, writable);
       Promise<HttpServerResponse> promise = Promise.promise();
       promise.future().setHandler(completionHandler);
-
-      this.method = method;
-      this.uri = uri;
-      this.contentEncoding = contentEncoding;
       this.completionHandler = promise;
     }
 
@@ -246,14 +239,8 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     @Override
     void handleReset(long errorCode) {
-      Http2ServerResponseImpl response;
-      synchronized (conn) {
-        response = this.response;
-      }
-      if (response != null) {
+      if (!completionHandler.tryFail(new StreamResetException(errorCode))) {
         response.handleReset(errorCode);
-      } else {
-        completionHandler.fail(new StreamResetException(errorCode));
       }
     }
 
@@ -266,6 +253,7 @@ public class Http2ServerConnection extends Http2ConnectionBase {
 
     @Override
     void handleClose() {
+      super.handleClose();
       if (pendingPushes.remove(this)) {
         completionHandler.fail("Push reset by client");
       } else {
@@ -282,13 +270,8 @@ public class Http2ServerConnection extends Http2ConnectionBase {
     }
 
     void complete() {
-      synchronized (Http2ServerConnection.this) {
-        response = new Http2ServerResponseImpl(Http2ServerConnection.this, this, method, true, contentEncoding, null);
-        if (METRICS_ENABLED && metrics != null) {
-          response.metric(metrics.responsePushed(conn.metric(), method, uri, response));
-        }
-        completionHandler.complete(response);
-      }
+      registerMetrics();
+      completionHandler.complete(response);
     }
   }
 }

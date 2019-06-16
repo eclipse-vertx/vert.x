@@ -50,9 +50,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Handler<StreamPriority> priorityHandler;
   private NetSocket netSocket;
 
-  // Track for metrics
-  private long bytesRead;
-
   // Cache these for performance
   private MultiMap headers;
   private MultiMap trailers;
@@ -228,7 +225,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     Handler<Buffer> handler;
     synchronized (conn) {
       request.dataReceived();
-      bytesRead += data.length();
       handler = dataHandler;
     }
     if (handler != null) {
@@ -243,8 +239,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   void handleEnd(MultiMap trailers) {
     Handler<Void> handler;
     synchronized (conn) {
-      stream.reportBytesRead(bytesRead);
-      bytesRead = 0;
       this.trailers = trailers;
       handler = endHandler;
       endHandler = null;
