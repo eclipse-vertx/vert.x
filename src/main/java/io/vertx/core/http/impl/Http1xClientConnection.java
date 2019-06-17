@@ -254,6 +254,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
       HttpRequest request = createRequest(method, rawMethod, uri, headers);
       prepareRequestHeaders(request, hostHeader, chunked);
+      if (buf != null) {
+        bytesWritten += buf.readableBytes();
+      }
       sendRequest(request, buf, end, handler);
       if (conn.responseInProgress == null) {
         conn.responseInProgress = this;
@@ -261,9 +264,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         conn.responseInProgress.append(this);
       }
       next = null;
-      if (buf != null) {
-        bytesWritten += buf.readableBytes();
-      }
     }
 
     private HttpRequest createRequest(HttpMethod method, String rawMethod, String uri, MultiMap headers) {
