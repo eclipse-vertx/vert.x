@@ -90,7 +90,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   private Handler<HttpFrame> customFrameHandler;
 
   private Handler<StreamPriority> streamPriorityHandler;
-  
+
   public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, Http2Stream stream, HttpServerMetrics metrics,
                                 String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
     super(conn, context, stream, writable);
@@ -480,7 +480,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
               req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
               postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(context, this, () -> uploadHandler), req);
             } else {
-                throw new IllegalStateException("Invalid content type or http method. Content type should be "+HttpHeaderValues.MULTIPART_FORM_DATA.toString()+" or "+HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED+" and http method should be "+ io.netty.handler.codec.http.HttpMethod.POST.toString()+", " + io.netty.handler.codec.http.HttpMethod.PUT.toString() + ", "+ io.netty.handler.codec.http.HttpMethod.PATCH.toString()+" or "+io.netty.handler.codec.http.HttpMethod.DELETE.toString()+".");
+                throw new IllegalStateException("Invalid content type or http method. Content type should be multipart/form-data or application/x-www-form-urlencoded and http method should be POST, PUT, PATCH or DELETE.");
             }
           } else {
               throw new IllegalStateException("Content type must not be null.");
@@ -580,7 +580,7 @@ public class Http2ServerRequestImpl extends VertxHttp2Stream<Http2ServerConnecti
   public StreamPriority streamPriority() {
     return priority();
   }
-  
-  
+
+
 
 }
