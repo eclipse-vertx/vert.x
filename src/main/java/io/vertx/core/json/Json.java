@@ -11,9 +11,7 @@
 
 package io.vertx.core.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
@@ -36,6 +34,7 @@ import java.util.stream.StreamSupport;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
+ * @author <a href="https://slinkydeveloper.com>slinkydeveloper</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Json {
@@ -43,12 +42,11 @@ public class Json {
   public static ObjectMapper mapper = new ObjectMapper();
   public static ObjectMapper prettyMapper = new ObjectMapper();
 
+  protected static final JsonFactory factory = new JsonFactory();
+
   static {
     // Non-standard JSON but we allow C style comments in our JSON
-    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
-    prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+    factory.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
     SimpleModule module = new SimpleModule();
     // custom types
@@ -73,6 +71,7 @@ public class Json {
    */
   public static String encode(Object obj) throws EncodeException {
     try {
+      JsonGenerator generator = factory.createGenerator()
       return mapper.writeValueAsString(obj);
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
@@ -135,18 +134,11 @@ public class Json {
    */
   public static Object decodeValue(String str) throws DecodeException {
     try {
-      Object value = mapper.readValue(str, Object.class);
-      if (value instanceof List) {
-        List list = (List) value;
-        return new JsonArray(list);
-      } else if (value instanceof Map) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) value;
-        return new JsonObject(map);
-      }
-      return value;
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode: " + e.getMessage());
+      JsonParser parser = factory.createParser(str);
+      parser.nextToken();
+      return decodeJson(parser);
+    } catch (IOException e) {
+      throw DecodeException.createFromJacksonError(e);
     }
   }
 
@@ -158,6 +150,7 @@ public class Json {
    * @return an instance of T
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
+  //TODO?
   public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
     try {
       return mapper.readValue(str, type);
@@ -175,20 +168,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static Object decodeValue(Buffer buf) throws DecodeException {
-    try {
-      Object value = mapper.readValue((InputStream) new ByteBufInputStream(buf.getByteBuf()), Object.class);
-      if (value instanceof List) {
-        List list = (List) value;
-        return new JsonArray(list);
-      } else if (value instanceof Map) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) value;
-        return new JsonObject(map);
-      }
-      return value;
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode: " + e.getMessage());
-    }
+    return decodeValue(buf.toString());
   }
 
   /**
@@ -199,6 +179,7 @@ public class Json {
    * @return an instance of T
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
+  //TODO?
   public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
     try {
       return mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), type);
@@ -270,6 +251,71 @@ public class Json {
   static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
     Iterable<T> iterable = () -> sourceIterator;
     return StreamSupport.stream(iterable.spliterator(), false);
+  }
+
+  // In recursive calls, the callee is in charge of calling parser.nextToken()
+  static Object decodeJson(JsonParser parser) throws DecodeException {
+    try {
+      // JsonObject
+      if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
+        JsonObject jo = new JsonObject();
+        parser.nextToken();
+        while (parser.getCurrentToken() != JsonToken.END_OBJECT) {
+          if (parser.getCurrentToken() != JsonToken.FIELD_NAME) {
+            throw DecodeException.create("Expecting field name", parser.getCurrentLocation());
+          }
+          String fieldName = parser.getCurrentName();
+          parser.nextToken();
+
+          Object fieldValue = decodeJson(parser);
+          jo.put(fieldName, fieldValue);
+        }
+        parser.nextToken();
+        return jo;
+      }
+      // JsonArray
+      if (parser.getCurrentToken() == JsonToken.START_ARRAY) {
+        JsonArray ja = new JsonArray();
+        parser.nextToken();
+        while (parser.getCurrentToken() != JsonToken.END_ARRAY) {
+          Object item = decodeJson(parser);
+          ja.add(item);
+        }
+        parser.nextToken();
+        return ja;
+      }
+      // String
+      if (parser.getCurrentToken() == JsonToken.VALUE_STRING) {
+        String val = parser.getText();
+        parser.nextToken();
+        return val;
+      }
+      // Numbers
+      if (parser.getCurrentToken().isNumeric()) {
+        Number val = parser.getNumberValue();
+        parser.nextToken();
+        return val;
+      }
+      // Booleans
+      if (parser.getCurrentToken().isBoolean()) {
+        Boolean val = parser.getBooleanValue();
+        parser.nextToken();
+        return val;
+      }
+      // Null
+      if (parser.getCurrentToken() == JsonToken.VALUE_NULL) {
+        parser.nextToken();
+        return null;
+      }
+
+      throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
+    } catch (IOException e) {
+      throw DecodeException.createFromJacksonError(e);
+    }
+  }
+
+  static String encodeJson(JsonGenerator generator) throws EncodeException {
+
   }
 
   private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {

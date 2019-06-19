@@ -10,11 +10,13 @@
  */
 package io.vertx.core.json;
 
+import com.fasterxml.jackson.core.JsonParser;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -968,11 +970,11 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   private void fromJson(String json) {
-    map = Json.decodeValue(json, Map.class);
+    Json.decodeValue(json);
   }
 
   private void fromBuffer(Buffer buf) {
-    map = Json.decodeValue(buf, Map.class);
+    fromJson(buf.toString());
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {
