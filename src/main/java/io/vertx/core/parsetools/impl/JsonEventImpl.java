@@ -12,6 +12,7 @@
 package io.vertx.core.parsetools.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
@@ -21,6 +22,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.parsetools.JsonEvent;
 import io.vertx.core.parsetools.JsonEventType;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Base64;
 
@@ -96,7 +98,7 @@ public class JsonEventImpl implements JsonEvent {
   public <T> T mapTo(Class<T> type) {
     if (buffer != null) {
       try {
-        return Json.mapper.readValue(buffer.asParser(), type);
+        return new ObjectMapper().readValue(buffer.asParser(), type);
       } catch (Exception e) {
         throw new DecodeException(e.getMessage());
       }
@@ -109,12 +111,17 @@ public class JsonEventImpl implements JsonEvent {
   public <T> T mapTo(TypeReference<T> type) {
     if (buffer != null) {
       try {
-        return Json.mapper.readValue(buffer.asParser(), type);
+        return new ObjectMapper().readValue(buffer.asParser(), type);
       } catch (Exception e) {
         throw new DecodeException(e.getMessage());
       }
     } else {
-      return Json.decodeValue(String.valueOf(value), type);
+      try {
+        return new ObjectMapper().readValue(String.valueOf(value), type);
+      } catch (IOException e) {
+        e.printStackTrace();
+        throw new DecodeException(e.getMessage());
+      }
     }
   }
 

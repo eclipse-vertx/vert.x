@@ -450,6 +450,21 @@
             </configuration>
           </execution>
           <execution>
+            <id>no-jackson-databind</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/core/json/*</include> <!--TODO what else should i run?-->
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
             <id>slf4j</id>
             <goals>
               <goal>integration-test</goal>

@@ -14,6 +14,7 @@ package io.vertx.core.parsetools.impl;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.json.async.NonBlockingJsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
@@ -319,7 +320,7 @@ public class JsonParserImpl implements JsonParser {
           case START_OBJECT:
           case START_ARRAY:
             if (depth++ == 0) {
-              buffer = new TokenBuffer(Json.mapper, false);
+              buffer = new TokenBuffer(new ObjectMapper(), false);
             }
             if (event == JsonToken.START_OBJECT) {
               buffer.writeStartObject();
@@ -372,7 +373,7 @@ public class JsonParserImpl implements JsonParser {
 
     <T> T convert(Class<T> type) {
       try {
-        return Json.mapper.readValue(buffer.asParser(), type);
+        return new ObjectMapper().readValue(buffer.asParser(), type);
       } catch (Exception e) {
         throw new DecodeException(e.getMessage());
       }

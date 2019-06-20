@@ -7,24 +7,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-class JsonCodecMapper {
+public class JsonCodecMapper implements JsonMapper {
 
-  private static final Map<Class, JsonCodec> codecMap;
+  private final Map<Class, JsonCodec> codecMap;
 
-  static {
-    Map<Class, JsonCodec> map = new HashMap<>();
+  JsonCodecMapper() {
+    this.codecMap = new HashMap<>();
     ServiceLoader<JsonCodec> codecServiceLoader = ServiceLoader.load(JsonCodec.class);
     for (JsonCodec j : codecServiceLoader) {
-      map.put(j.getTargetClass(), j);
+      this.codecMap.put(j.getTargetClass(), j);
     }
-    codecMap = map;
   }
 
-  private static <T> JsonCodec codec(Class<T> c) {
+  private <T> JsonCodec codec(Class<T> c) {
     return codecMap.get(c);
   }
 
-  public static <T> T decode(Object json, Class<T> c) {
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T decode(Object json, Class<T> c) {
     if (json == null) {
       return null;
     }
@@ -32,14 +33,16 @@ class JsonCodecMapper {
     if (codec == null) {
       throw new IllegalStateException("Unable to find codec for class " + c.getName());
     }
-    return codec.decode(json);
+    try {
+      return codec.decode(json);
+    } catch (Exception e) {
+      throw DecodeException.create(e);
+    }
   }
 
-  public static <T> T decodeBuffer(Buffer value, Class<T> c) {
-    return decode(Json.decodeValue(value), c);
-  }
-
-  public static Object encode(Object value) {
+  @Override
+  @SuppressWarnings("unchecked")
+  public Object encode(Object value) {
     if (value == null) {
       return null;
     }
@@ -47,10 +50,10 @@ class JsonCodecMapper {
     if (codec == null) {
       throw new IllegalStateException("Unable to find codec for class " + value.getClass().getName());
     }
-    return codec.encode(value);
-  }
-
-  public static Buffer encodeBuffer(Object value) {
-    return Json.encodeToBuffer(encode(value));
+    try {
+      return codec.encode(value);
+    } catch (Exception e) {
+      throw EncodeException.create(e);
+    }
   }
 }

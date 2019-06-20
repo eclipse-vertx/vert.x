@@ -103,11 +103,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   @SuppressWarnings("unchecked")
   public static JsonObject mapFrom(Object obj) {
-    if (obj == null) {
-      return null;
-    } else {
-      return new JsonObject((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
-    }
+    return (JsonObject) Json.toJson(obj);
   }
 
   /**
@@ -120,7 +116,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *          if the type cannot be instantiated.
    */
   public <T> T mapTo(Class<T> type) {
-    return Json.mapper.convertValue(map, type);
+    return Json.fromJson(this, type);
   }
 
   /**
@@ -970,7 +966,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   private void fromJson(String json) {
-    Json.decodeValue(json);
+    Json.decode(json);
   }
 
   private void fromBuffer(Buffer buf) {
