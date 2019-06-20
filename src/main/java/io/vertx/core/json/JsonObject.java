@@ -781,7 +781,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the string encoding.
    */
   public String encode() {
-    return Json.encode(map);
+    return Json.encode(this);
   }
 
   /**
@@ -791,7 +791,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the pretty string encoding.
    */
   public String encodePrettily() {
-    return Json.encodePrettily(map);
+    return Json.encodePrettily(this);
   }
 
   /**
@@ -800,7 +800,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the buffer encoding.
    */
   public Buffer toBuffer() {
-    return Json.encodeToBuffer(map);
+    return Json.encodeToBuffer(this);
   }
 
   /**

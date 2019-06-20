@@ -11,6 +11,8 @@
 
 package io.vertx.core.json;
 
+import com.fasterxml.jackson.core.JsonLocation;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -25,5 +27,16 @@ public class EncodeException extends RuntimeException {
   }
 
   public EncodeException() {
+  }
+
+  static EncodeException create(String e) {
+    return new EncodeException(String.format(
+      "Failed to decode: %s",
+      e
+    ));
+  }
+
+  static DecodeException create(Throwable e) {
+    return new DecodeException("Failed to decode: " + e.getMessage(), e);
   }
 }

@@ -31,7 +31,7 @@ public class DecodeException extends RuntimeException {
     super(message, cause);
   }
 
-  static DecodeException createFromJacksonError(Throwable e) {
+  static DecodeException create(Throwable e) {
     return new DecodeException("Failed to decode: " + e.getMessage(), e);
   }
 

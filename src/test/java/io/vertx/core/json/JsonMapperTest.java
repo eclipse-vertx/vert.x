@@ -234,4 +234,65 @@ public class JsonMapperTest extends VertxTestBase {
     } catch (DecodeException ignore) {
     }
   }
+
+  @Test
+  public void testEncode() {
+    Integer i = 4;
+    assertEquals(Integer.toString(i), Json.encode(i));
+
+    Long l = 4L;
+    assertEquals(Long.toString(l), Json.encode(l));
+
+    Float f = 3.4f;
+    assertEquals(Float.toString(f), Json.encode(f));
+
+    Double d = 5.2;
+    assertEquals(Double.toString(d), Json.encode(d));
+
+    String s = "aaa";
+    assertEquals("\"aaa\"", Json.encode(s));
+
+    Object n = null;
+    assertEquals("null", Json.encode(n));
+
+    Boolean b = true;
+    assertEquals(Boolean.toString(b), Json.encode(b));
+
+    JsonArray array = new JsonArray()
+      .add(5)
+      .add(10L)
+      .add(3.4f)
+      .add(5.2)
+      .add("aaa")
+      .addNull()
+      .add(true)
+      .add(new JsonArray().add("bbb"))
+      .add(new JsonObject().put("ccc", "ddd"));
+
+    assertEquals("[5,10,3.4,5.2,\"aaa\",null,true,[\"bbb\"],{\"ccc\":\"ddd\"}]", array.encode());
+
+    JsonObject object = new JsonObject()
+      .put("i", 5)
+      .put("l", 10L)
+      .put("f", 3.4f)
+      .put("d", 5.2d)
+      .put("s", "aaa")
+      .putNull("n")
+      .put("b", true)
+      .put("array", new JsonArray().add("bbb"))
+      .put("object", new JsonObject().put("ccc", "ddd"));
+
+    assertEquals("{\"i\":5,\"l\":10,\"f\":3.4,\"d\":5.2,\"s\":\"aaa\",\"n\":null,\"b\":true,\"array\":[\"bbb\"],\"object\":{\"ccc\":\"ddd\"}}", object.encode());
+  }
+
+  @Test
+  public void testEncodePrettily() {
+    JsonObject object = new JsonObject()
+      .put("hello", "world");
+
+    assertEquals(
+      "{\n" +
+      "  \"hello\" : \"world\"\n" +
+      "}", object.encodePrettily());
+  }
 }

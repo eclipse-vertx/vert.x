@@ -21,6 +21,7 @@ import io.vertx.core.buffer.Buffer;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -42,7 +43,7 @@ public class Json {
   public static ObjectMapper mapper = new ObjectMapper();
   public static ObjectMapper prettyMapper = new ObjectMapper();
 
-  protected static final JsonFactory factory = new JsonFactory();
+  private static final JsonFactory factory = new JsonFactory();
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
@@ -65,46 +66,50 @@ public class Json {
   /**
    * Encode a POJO to JSON using the underlying Jackson mapper.
    *
-   * @param obj a POJO
+   * @param json a POJO
    * @return a String containing the JSON representation of the given POJO.
    * @throws EncodeException if a property cannot be encoded.
    */
-  public static String encode(Object obj) throws EncodeException {
+  public static String encode(Object json) throws EncodeException {
     try {
-      JsonGenerator generator = factory.createGenerator()
-      return mapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+      StringWriter sw = new StringWriter();
+      JsonGenerator generator = factory.createGenerator(sw);
+      encodeJson(json, generator);
+      generator.flush();
+      return sw.toString();
+    } catch (IOException e) {
+      throw EncodeException.create(e);
     }
   }
 
   /**
    * Encode a POJO to JSON using the underlying Jackson mapper.
    *
-   * @param obj a POJO
+   * @param json a POJO
    * @return a Buffer containing the JSON representation of the given POJO.
    * @throws EncodeException if a property cannot be encoded.
    */
-  public static Buffer encodeToBuffer(Object obj) throws EncodeException {
-    try {
-      return Buffer.buffer(mapper.writeValueAsBytes(obj));
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
-    }
+  public static Buffer encodeToBuffer(Object json) throws EncodeException {
+    return Buffer.buffer(encode(json));
   }
 
   /**
    * Encode a POJO to JSON with pretty indentation, using the underlying Jackson mapper.
    *
-   * @param obj a POJO
+   * @param json a POJO
    * @return a String containing the JSON representation of the given POJO.
    * @throws EncodeException if a property cannot be encoded.
    */
-  public static String encodePrettily(Object obj) throws EncodeException {
+  public static String encodePrettily(Object json) throws EncodeException {
     try {
-      return prettyMapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+      StringWriter sw = new StringWriter();
+      JsonGenerator generator = factory.createGenerator(sw);
+      generator.useDefaultPrettyPrinter();
+      encodeJson(json, generator);
+      generator.flush();
+      return sw.toString();
+    } catch (IOException e) {
+      throw EncodeException.create(e);
     }
   }
 
@@ -138,7 +143,7 @@ public class Json {
       parser.nextToken();
       return decodeJson(parser);
     } catch (IOException e) {
-      throw DecodeException.createFromJacksonError(e);
+      throw DecodeException.create(e);
     }
   }
 
@@ -310,12 +315,57 @@ public class Json {
 
       throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
     } catch (IOException e) {
-      throw DecodeException.createFromJacksonError(e);
+      throw DecodeException.create(e);
     }
   }
 
-  static String encodeJson(JsonGenerator generator) throws EncodeException {
-
+  // In recursive calls, the callee is in charge of opening and closing the data structure
+  static void encodeJson(Object json, JsonGenerator generator) throws EncodeException {
+    try {
+      if (json instanceof JsonObject) {
+        generator.writeStartObject();
+        for (Map.Entry<String, Object> e : (JsonObject)json) {
+          generator.writeFieldName(e.getKey());
+          encodeJson(e.getValue(), generator);
+        }
+        generator.writeEndObject();
+      }
+      if (json instanceof JsonArray) {
+        generator.writeStartArray();
+        for (Object item : (JsonArray)json) {
+          encodeJson(item, generator);
+        }
+        generator.writeEndArray();
+      }
+      if (json instanceof String) {
+        generator.writeString((String)json);
+      }
+      if (json instanceof Number) {
+        if (json instanceof Short) {
+          generator.writeNumber((Short) json);
+        }
+        if (json instanceof Integer) {
+          generator.writeNumber((Integer) json);
+        }
+        if (json instanceof Long) {
+          generator.writeNumber((Long) json);
+        }
+        if (json instanceof Float) {
+          generator.writeNumber((Float) json);
+        }
+        if (json instanceof Double) {
+          generator.writeNumber((Double) json);
+        }
+      }
+      if (json instanceof Boolean) {
+        generator.writeBoolean((Boolean)json);
+      }
+      if (json == null) {
+        generator.writeNull();
+      }
+    } catch (IOException e) {
+      throw EncodeException.create(e);
+    }
   }
 
   private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {
