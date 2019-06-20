@@ -35,7 +35,7 @@ import java.util.stream.StreamSupport;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
- * @author <a href="https://slinkydeveloper.com>slinkydeveloper</a>
+ * @author <a href="https://slinkydeveloper.com">slinkydeveloper</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Json {
