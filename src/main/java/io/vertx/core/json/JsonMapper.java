@@ -1,5 +1,7 @@
 package io.vertx.core.json;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 public interface JsonMapper {
 
   /**
@@ -22,6 +24,8 @@ public interface JsonMapper {
    * @throws IllegalStateException If this mapper instance can't handle the provided class
    */
   <T> T decode(Object json, Class<T> c) throws DecodeException, IllegalStateException;
+
+  <T> T decode(Object json, TypeReference<T> t) throws DecodeException, IllegalStateException;
 
   static JsonMapper load() {
     try {

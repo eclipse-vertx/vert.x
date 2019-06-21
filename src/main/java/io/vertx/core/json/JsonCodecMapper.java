@@ -1,5 +1,6 @@
 package io.vertx.core.json;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.spi.json.JsonCodec;
 
@@ -38,6 +39,11 @@ public class JsonCodecMapper implements JsonMapper {
     } catch (Exception e) {
       throw new DecodeException(e);
     }
+  }
+
+  @Override
+  public <T> T decode(Object json, TypeReference<T> t) throws DecodeException, IllegalStateException {
+    throw new DecodeException("Cannot handle TypeReference. Are you missing jackson-databind dependency?");
   }
 
   @Override

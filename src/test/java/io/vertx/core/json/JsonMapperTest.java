@@ -29,7 +29,7 @@ public class JsonMapperTest extends VertxTestBase {
   @Test
   public void encodeCustomTypeInstant() {
     Instant now = Instant.now();
-    String json = Json.encodeValue(now);
+    String json = Json.encode(now);
     assertNotNull(json);
     // the RFC is one way only
     Instant decoded = Instant.from(ISO_INSTANT.parse(json.substring(1, json.length() - 1)));
@@ -39,7 +39,7 @@ public class JsonMapperTest extends VertxTestBase {
   @Test
   public void encodeCustomTypeInstantNull() {
     Instant now = null;
-    String json = Json.encodeValue(now);
+    String json = Json.encode(now);
     assertNotNull(json);
     assertEquals("null", json);
   }
@@ -47,7 +47,7 @@ public class JsonMapperTest extends VertxTestBase {
   @Test
   public void encodeCustomTypeBinary() {
     byte[] data = new byte[] { 'h', 'e', 'l', 'l', 'o'};
-    String json = Json.encodeValue(data);
+    String json = Json.encode(data);
     assertNotNull(json);
     // base64 encoded hello
     assertEquals("\"aGVsbG8=\"", json);
@@ -56,7 +56,7 @@ public class JsonMapperTest extends VertxTestBase {
   @Test
   public void encodeCustomTypeBinaryNull() {
     byte[] data = null;
-    String json = Json.encodeValue(data);
+    String json = Json.encode(data);
     assertNotNull(json);
     assertEquals("null", json);
   }
@@ -82,7 +82,7 @@ public class JsonMapperTest extends VertxTestBase {
     Pojo original = new Pojo();
     original.value = "test";
 
-    assertEquals("{\"value\":\"test\"}", Json.encodeValue(original));
+    assertEquals("{\"value\":\"test\"}", Json.encode(original));
   }
 
   @Test
@@ -127,29 +127,29 @@ public class JsonMapperTest extends VertxTestBase {
 
   private void testDecodeUnknowContent(boolean asBuffer) {
     String number = String.valueOf(1);
-    assertEquals(1, asBuffer ? Json.decode(Buffer.buffer(number)) : Json.decode(number));
+    assertEquals(1, asBuffer ? Json.decodeValue(Buffer.buffer(number)) : Json.decodeValue(number));
 
     String bool = Boolean.TRUE.toString();
-    assertEquals(true, asBuffer ? Json.decode(Buffer.buffer(bool)) : Json.decode(bool));
+    assertEquals(true, asBuffer ? Json.decodeValue(Buffer.buffer(bool)) : Json.decodeValue(bool));
 
     String text = "\"whatever\"";
-    assertEquals("whatever", asBuffer ? Json.decode(Buffer.buffer(text)) : Json.decode(text));
+    assertEquals("whatever", asBuffer ? Json.decodeValue(Buffer.buffer(text)) : Json.decodeValue(text));
 
     String nullText = "null";
-    assertNull(asBuffer ? Json.decode(Buffer.buffer(nullText)) : Json.decode(nullText));
+    assertNull(asBuffer ? Json.decodeValue(Buffer.buffer(nullText)) : Json.decodeValue(nullText));
 
     JsonObject obj = new JsonObject().put("foo", "bar");
-    assertEquals(obj, asBuffer ? Json.decode(obj.toBuffer()) : Json.decode(obj.toString()));
+    assertEquals(obj, asBuffer ? Json.decodeValue(obj.toBuffer()) : Json.decodeValue(obj.toString()));
 
     JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj);
-    assertEquals(arr, asBuffer ? Json.decode(arr.toBuffer()) : Json.decode(arr.toString()));
+    assertEquals(arr, asBuffer ? Json.decodeValue(arr.toBuffer()) : Json.decodeValue(arr.toString()));
 
     String invalidText = "\"invalid";
     try {
       if (asBuffer) {
-        Json.decode(Buffer.buffer(invalidText));
+        Json.decodeValue(Buffer.buffer(invalidText));
       } else {
-        Json.decode(invalidText);
+        Json.decodeValue(invalidText);
       }
       fail();
     } catch (DecodeException ignore) {

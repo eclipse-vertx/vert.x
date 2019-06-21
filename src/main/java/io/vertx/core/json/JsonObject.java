@@ -967,7 +967,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   private void fromJson(String json) {
     try {
-      JsonObject decoded = (JsonObject) Json.decode(json);
+      JsonObject decoded = (JsonObject) Json.decodeValue(json);
       this.map = decoded.map;
     } catch (Exception e) {
       throw new DecodeException(e);

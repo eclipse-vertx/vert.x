@@ -148,7 +148,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the buffer contains an array, object, string, ...etc
    */
   default Object toJson() {
-    return Json.decode(this);
+    return Json.decodeValue(this);
   }
 
   /**

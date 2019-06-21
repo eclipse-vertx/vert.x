@@ -379,7 +379,7 @@ public class JsonParserImpl implements JsonParser {
     public <T> T convert(Class<T> type) {
       try {
         if (type == JsonObject.class || type == JsonArray.class) {
-          return (T) Json.decode(buffer.toString());
+          return (T) Json.decodeValue(buffer.toString());
         } else {
           return Json.decodeValue(buffer.toString(), type);
         }

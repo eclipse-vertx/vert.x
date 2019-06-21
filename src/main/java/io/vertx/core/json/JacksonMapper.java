@@ -3,6 +3,7 @@ package io.vertx.core.json;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.io.IOException;
 import java.time.DateTimeException;
@@ -95,6 +96,15 @@ public class JacksonMapper extends JsonCodecMapper {
       } catch (Exception e1) {
         throw new DecodeException(e1);
       }
+    }
+  }
+
+  @Override
+  public <T> T decode(Object json, TypeReference<T> t) throws DecodeException, IllegalStateException {
+    try {
+      return mapper.convertValue(json, t);
+    } catch (Exception e1) {
+      throw new DecodeException(e1);
     }
   }
 }
