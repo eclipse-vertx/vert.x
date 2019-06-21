@@ -33,7 +33,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class Json {
 
-  private static final JsonFactory factory = new JsonFactory();
+  public static final JsonFactory factory = new JsonFactory();
   public static final JsonMapper mapper = JsonMapper.load();
 
   static {

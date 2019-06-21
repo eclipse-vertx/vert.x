@@ -155,13 +155,4 @@ public interface JsonEvent {
    */
   <T> T mapTo(Class<T> type);
 
-  /**
-   * Decodes and returns the current value as the specified {@code type}.
-   *
-   * @param type the type to decode the value to
-   * @return the decoded value
-   */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  <T> T mapTo(TypeReference<T> type);
-
 }

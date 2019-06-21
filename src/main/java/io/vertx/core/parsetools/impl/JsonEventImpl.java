@@ -11,18 +11,13 @@
 
 package io.vertx.core.parsetools.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.TokenBuffer;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.parsetools.JsonEvent;
 import io.vertx.core.parsetools.JsonEventType;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Base64;
 
@@ -36,13 +31,13 @@ public class JsonEventImpl implements JsonEvent {
   private final JsonEventType type;
   private final String field;
   private final Object value;
-  private final TokenBuffer buffer;
+  private final JsonParserImpl.BufferingHandler buffer;
 
   public JsonEventImpl(JsonEventType type, String field, Object value) {
     this(type, field, value, null);
   }
 
-  public JsonEventImpl(JsonEventType type, String field, Object value, TokenBuffer buffer) {
+  public JsonEventImpl(JsonEventType type, String field, Object value, JsonParserImpl.BufferingHandler buffer) {
     this.type = type;
     this.field = field;
     this.value = value;
@@ -97,31 +92,9 @@ public class JsonEventImpl implements JsonEvent {
   @Override
   public <T> T mapTo(Class<T> type) {
     if (buffer != null) {
-      try {
-        return new ObjectMapper().readValue(buffer.asParser(), type);
-      } catch (Exception e) {
-        throw new DecodeException(e.getMessage());
-      }
+      return buffer.convert(type);
     } else {
       return Json.decodeValue(String.valueOf(value), type);
-    }
-  }
-
-  @Override
-  public <T> T mapTo(TypeReference<T> type) {
-    if (buffer != null) {
-      try {
-        return new ObjectMapper().readValue(buffer.asParser(), type);
-      } catch (Exception e) {
-        throw new DecodeException(e.getMessage());
-      }
-    } else {
-      try {
-        return new ObjectMapper().readValue(String.valueOf(value), type);
-      } catch (IOException e) {
-        e.printStackTrace();
-        throw new DecodeException(e.getMessage());
-      }
     }
   }
 

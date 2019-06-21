@@ -565,24 +565,14 @@ public class JsonParserTest {
   }
 
     @Test
-    public void testObjectMappingWithTypeReference() {
-      JsonParser parser = JsonParser.newParser();
-      List<Object> values = new ArrayList<>();
-      parser.objectValueMode();
-      parser.handler(event ->   values.add(event.mapTo(new TypeReference<TheObject>() {})));
-      parser.handle(new JsonObject().put("f", "the-value").toBuffer());
-      assertEquals(Collections.singletonList(new TheObject("the-value")), values);
-    }
-
-    @Test
     public void testArrayMapping() {
       JsonParser parser = JsonParser.newParser();
       List<Object> values = new ArrayList<>();
       parser.arrayValueMode();
-      parser.handler(event -> values.add(event.mapTo(LinkedList.class)));
+      parser.handler(event -> values.add(event.mapTo(JsonArray.class)));
       parser.handle(new JsonArray().add(0).add(1).add(2).toBuffer());
-      assertEquals(Collections.singletonList(Arrays.asList(0L, 1L, 2L)), values);
-      assertEquals(LinkedList.class, values.get(0).getClass());
+      assertEquals(Collections.singletonList(new JsonArray(Arrays.asList(0L, 1L, 2L))), values);
+      assertEquals(JsonArray.class, values.get(0).getClass());
     }
 
     @Test
@@ -599,17 +589,6 @@ public class JsonParserTest {
       }
       assertEquals(Collections.emptyList(), values);
       assertEquals(1, errors.size());
-    }
-
-    @Test
-    public void testArrayMappingWithTypeReference() {
-      JsonParser parser = JsonParser.newParser();
-      List<Object> values = new ArrayList<>();
-      parser.arrayValueMode();
-      parser.handler(event -> values.add(event.mapTo(new TypeReference<LinkedList<Long>>() {})));
-      parser.handle(new JsonArray().add(0).add(1).add(2).toBuffer());
-      assertEquals(Collections.singletonList(Arrays.asList(0L, 1L, 2L)), values);
-      assertEquals(LinkedList.class, values.get(0).getClass());
     }
 
   public static class TheObject {

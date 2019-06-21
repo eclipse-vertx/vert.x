@@ -12,10 +12,9 @@
 package io.vertx.core.parsetools.impl;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.json.async.NonBlockingJsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.TokenBuffer;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
@@ -30,6 +29,7 @@ import io.vertx.core.parsetools.JsonParser;
 import io.vertx.core.streams.ReadStream;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
@@ -279,7 +279,7 @@ public class JsonParserImpl implements JsonParser {
     if (objectHandler == null) {
       BufferingHandler handler = new BufferingHandler();
       handler.handler = buffer -> {
-        handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, new JsonObject(handler.convert(Map.class)), handler.buffer));
+        handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, handler.convert(JsonObject.class), /*handler.buffer*/null));
       };
       objectHandler = handler;
     }
@@ -300,18 +300,20 @@ public class JsonParserImpl implements JsonParser {
     if (arrayHandler == null) {
       BufferingHandler handler = new BufferingHandler();
       handler.handler = buffer -> {
-        handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, new JsonArray(handler.convert(List.class)), handler.buffer));
+        handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, handler.convert(JsonArray.class), /*handler.buffer*/null));
       };
       arrayHandler = handler;
     }
     return this;
   }
 
-  private class BufferingHandler implements Handler<JsonToken> {
+  class BufferingHandler implements Handler<JsonToken> {
 
     Handler<Void> handler;
     int depth;
-    TokenBuffer buffer;
+    StringWriter buffer;
+    JsonGenerator generator;
+
 
     @Override
     public void handle(JsonToken event) {
@@ -320,61 +322,69 @@ public class JsonParserImpl implements JsonParser {
           case START_OBJECT:
           case START_ARRAY:
             if (depth++ == 0) {
-              buffer = new TokenBuffer(new ObjectMapper(), false);
+              buffer = new StringWriter();
+              generator = Json.factory.createGenerator(buffer);
             }
             if (event == JsonToken.START_OBJECT) {
-              buffer.writeStartObject();
+              generator.writeStartObject();
             } else {
-              buffer.writeStartArray();
+              generator.writeStartArray();
             }
             break;
           case FIELD_NAME:
-            buffer.writeFieldName(parser.getCurrentName());
+            generator.writeFieldName(parser.getCurrentName());
             break;
           case VALUE_NUMBER_INT:
-            buffer.writeNumber(parser.getLongValue());
+            generator.writeNumber(parser.getLongValue());
             break;
           case VALUE_NUMBER_FLOAT:
-            buffer.writeNumber(parser.getDoubleValue());
+            generator.writeNumber(parser.getFloatValue());
             break;
           case VALUE_STRING:
-            buffer.writeString(parser.getText());
+            generator.writeString(parser.getText());
             break;
           case VALUE_TRUE:
-            buffer.writeBoolean(true);
+            generator.writeBoolean(true);
             break;
           case VALUE_FALSE:
-            buffer.writeBoolean(false);
+            generator.writeBoolean(false);
             break;
           case VALUE_NULL:
-            buffer.writeNull();
+            generator.writeNull();
             break;
           case END_OBJECT:
           case END_ARRAY:
             if (event == JsonToken.END_OBJECT) {
-              buffer.writeEndObject();
+              generator.writeEndObject();
             } else {
-              buffer.writeEndArray();
+              generator.writeEndArray();
             }
             if (--depth == 0) {
+              generator.flush();
               tokenHandler = JsonParserImpl.this::handleToken;
-              buffer.flush();
               handler.handle(null);
             }
             break;
           default:
             throw new UnsupportedOperationException("Not implemented " + event);
         }
+        generator.flush();
       } catch (IOException e) {
         // Should not happen as we are buffering
         throw new VertxException(e);
       }
     }
 
-    <T> T convert(Class<T> type) {
+    @SuppressWarnings("unchecked")
+    public <T> T convert(Class<T> type) {
       try {
-        return new ObjectMapper().readValue(buffer.asParser(), type);
+        if (type == JsonObject.class || type == JsonArray.class) {
+          return (T) Json.decode(buffer.toString());
+        } else {
+          return Json.decodeValue(buffer.toString(), type);
+        }
       } catch (Exception e) {
+        e.printStackTrace();
         throw new DecodeException(e.getMessage());
       }
     }

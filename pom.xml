@@ -459,6 +459,7 @@
             <configuration>
               <includes>
                 <include>io/vertx/core/json/*</include>
+                <include>io/vertx/core/parsetools/JsonParserTest.java</include>
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
