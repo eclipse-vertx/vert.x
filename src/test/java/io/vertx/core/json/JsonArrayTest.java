@@ -1077,6 +1077,27 @@ public class JsonArrayTest {
     assertEquals(((JsonArray) removed).getDouble(0), 1.0, 0.0);
   }
 
+  @Test
+  public void testEmptyJsonObject() {
+    JsonArray emptyArray = Json.emptyArray();
+
+    try {
+      emptyArray.add("vertx"); // expect throw exception
+      fail();
+    } catch (Exception ignored) {
+      // OK
+    }
+
+    boolean empty = emptyArray.isEmpty();
+    assertTrue(empty);
+
+    int size = emptyArray.size();
+    assertEquals(size, 0);
+
+    assertSame(emptyArray, Json.emptyArray());
+  }
+
+
   private void testStreamCorrectTypes(JsonObject object) {
     object.getJsonArray("object1").stream().forEach(innerMap -> {
       assertTrue("Expecting JsonObject, found: " + innerMap.getClass().getCanonicalName(), innerMap instanceof JsonObject);
