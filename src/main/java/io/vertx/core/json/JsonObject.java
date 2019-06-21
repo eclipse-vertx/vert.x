@@ -966,7 +966,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   private void fromJson(String json) {
-    Json.decode(json);
+    try {
+      JsonObject decoded = (JsonObject) Json.decode(json);
+      this.map = decoded.map;
+    } catch (Exception e) {
+      throw new DecodeException(e);
+    }
   }
 
   private void fromBuffer(Buffer buf) {

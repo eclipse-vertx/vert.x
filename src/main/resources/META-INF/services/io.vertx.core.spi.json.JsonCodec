@@ -1,0 +1,3 @@
+io.vertx.core.json.codec.BufferJsonCodec
+io.vertx.core.json.codec.ByteArrayJsonCodec
+io.vertx.core.json.codec.InstantJsonCodec

@@ -9,9 +9,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.json;
+package io.vertx.it;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import io.vertx.core.json.JsonObject;
 import org.junit.Test;
 
 import java.time.Instant;

@@ -6,3 +6,7 @@ io.vertx.core.json.codecs.MyJsonArrayPojo$MyJsonArrayPojoJsonCodec
 io.vertx.core.json.codecs.MyJsonObjectPojo$MyJsonObjectPojoJsonCodec
 io.vertx.core.json.codecs.MyLongPojo$MyLongPojoJsonCodec
 io.vertx.core.json.codecs.MyShortPojo$MyShortPojoJsonCodec
+io.vertx.core.json.codec.ByteArrayJsonCodec
+io.vertx.core.json.codec.BufferJsonCodec
+io.vertx.core.json.codec.InstantJsonCodec
+io.vertx.core.json.Pojo$PojoJsonCodec

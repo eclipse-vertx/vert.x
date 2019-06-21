@@ -11,6 +11,7 @@
 
 package io.vertx.benchmarks;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
@@ -47,7 +48,7 @@ public class JsonEncodeBenchmark extends BenchmarkBase {
 
   private JsonObject loadJson(URL url) {
     try {
-      return new JsonObject(Json.mapper.readValue(url, Map.class));
+      return new JsonObject(new ObjectMapper().readValue(url, Map.class));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

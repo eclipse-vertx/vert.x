@@ -23,7 +23,10 @@ import org.openjdk.jmh.annotations.State;
 
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Thomas Segismont
@@ -47,9 +50,9 @@ public class JsonDecodeBenchmark extends BenchmarkBase {
 
   private Buffer loadJsonAsBuffer(URL url) {
     try {
-      Buffer encoded = new JsonObject(Json.mapper.readValue(url, Map.class)).toBuffer();
+      Buffer encoded = Buffer.buffer(String.join("", Files.readAllLines(Paths.get(url.toURI()))));
       return Buffer.buffer().appendInt(encoded.length()).appendBuffer(encoded);
-    } catch (IOException e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }

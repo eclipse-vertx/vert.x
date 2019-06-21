@@ -129,6 +129,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
+      <optional>true</optional>
     </dependency>
 
     <!-- Loggers -->
@@ -457,11 +458,23 @@
             <phase>integration-test</phase>
             <configuration>
               <includes>
-                <include>io/vertx/core/json/*</include> <!--TODO what else should i run?-->
+                <include>io/vertx/core/json/*</include>
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jackson-databind</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/JsonPOJOMapperTest.java</include>
+              </includes>
             </configuration>
           </execution>
           <execution>
