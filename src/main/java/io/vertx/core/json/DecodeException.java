@@ -20,8 +20,7 @@ import com.fasterxml.jackson.core.JsonLocation;
  */
 public class DecodeException extends RuntimeException {
 
-  public DecodeException() {
-  }
+  public DecodeException() { }
 
   public DecodeException(String message) {
     super(message);
@@ -31,8 +30,8 @@ public class DecodeException extends RuntimeException {
     super(message, cause);
   }
 
-  static DecodeException create(Throwable e) {
-    return new DecodeException("Failed to decode: " + e.getMessage(), e);
+  public DecodeException(Throwable cause) {
+    this("Failed to decode: " + cause.getMessage(), cause);
   }
 
   static DecodeException create(String e, JsonLocation location) {
@@ -40,6 +39,6 @@ public class DecodeException extends RuntimeException {
       "Failed to decode %s: %s",
       location != JsonLocation.NA ? "at " + location.getLineNr() + ":" + location.getColumnNr() : "",
       e
-    ));
+    ), null);
   }
 }

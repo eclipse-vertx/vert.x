@@ -36,7 +36,7 @@ public class JsonCodecMapper implements JsonMapper {
     try {
       return codec.decode(json);
     } catch (Exception e) {
-      throw DecodeException.create(e);
+      throw new DecodeException(e);
     }
   }
 
@@ -53,7 +53,7 @@ public class JsonCodecMapper implements JsonMapper {
     try {
       return codec.encode(value);
     } catch (Exception e) {
-      throw EncodeException.create(e);
+      throw new EncodeException(e);
     }
   }
 }

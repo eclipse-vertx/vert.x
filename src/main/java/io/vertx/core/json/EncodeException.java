@@ -18,25 +18,17 @@ import com.fasterxml.jackson.core.JsonLocation;
  */
 public class EncodeException extends RuntimeException {
 
+  public EncodeException(Throwable e) {
+    this("Failed to encode: " + e.getMessage(), e);
+  }
+
   public EncodeException(String message) {
-    super(message);
+    super(String.format("Failed to encode: %s", message));
   }
 
   public EncodeException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public EncodeException() {
-  }
-
-  static EncodeException create(String e) {
-    return new EncodeException(String.format(
-      "Failed to decode: %s",
-      e
-    ));
-  }
-
-  static DecodeException create(Throwable e) {
-    return new DecodeException("Failed to decode: " + e.getMessage(), e);
-  }
+  public EncodeException() { }
 }

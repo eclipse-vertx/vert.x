@@ -80,7 +80,7 @@ public class JacksonMapper extends JsonCodecMapper {
       try {
         return mapper.convertValue(value, JsonObject.class);
       } catch (Exception e1) {
-        throw EncodeException.create(e1);
+        throw new EncodeException(e1);
       }
     }
   }
@@ -93,7 +93,7 @@ public class JacksonMapper extends JsonCodecMapper {
       try {
         return mapper.convertValue(json, c);
       } catch (Exception e1) {
-        throw DecodeException.create(e1);
+        throw new DecodeException(e1);
       }
     }
   }

@@ -56,7 +56,7 @@ public class Json {
       generator.flush();
       return sw.toString();
     } catch (IOException e) {
-      throw EncodeException.create(e);
+      throw new EncodeException(e);
     }
   }
 
@@ -87,7 +87,7 @@ public class Json {
       generator.flush();
       return sw.toString();
     } catch (IOException e) {
-      throw EncodeException.create(e);
+      throw new EncodeException(e);
     }
   }
 
@@ -109,7 +109,7 @@ public class Json {
       else
         return mapper.encode(pojo);
     } catch (IllegalStateException e) {
-      throw EncodeException.create(e);
+      throw new EncodeException(e);
     }
   }
 
@@ -160,7 +160,7 @@ public class Json {
       parser.nextToken();
       return decodeJson(parser);
     } catch (IOException e) {
-      throw DecodeException.create(e);
+      throw new DecodeException(e);
     }
   }
 
@@ -192,7 +192,7 @@ public class Json {
     try {
       return mapper.decode(json, clazz);
     } catch (IllegalStateException e) {
-      throw DecodeException.create(e);
+      throw new DecodeException(e);
     }
   }
 
@@ -328,7 +328,7 @@ public class Json {
 
       throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
     } catch (IOException e) {
-      throw DecodeException.create(e);
+      throw new DecodeException(e);
     }
   }
 
@@ -377,7 +377,7 @@ public class Json {
         generator.writeNull();
       }
     } catch (IOException e) {
-      throw EncodeException.create(e);
+      throw new EncodeException(e);
     }
   }
 }
