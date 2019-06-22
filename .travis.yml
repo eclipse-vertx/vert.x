@@ -28,6 +28,7 @@ jobs:
       script: mvn -q clean verify -B -PtestDomainSockets
     - stage: deploy
       name: "Deploy to Sonatype's snapshots repository"
+      jdk: openjdk8
       if: type != pull_request AND env(SONATYPE_NEXUS_USERNAME) IS present
       script: bash .travis.deploy.artifacts.sh
 notifications:
