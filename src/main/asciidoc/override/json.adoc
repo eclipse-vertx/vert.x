@@ -121,9 +121,9 @@ You use {@link io.vertx.core.json.JsonArray#encode} to encode the array to a Str
 
 Creating JSON object and array assumes you are using valid string representation.
 
-When you are unsure of the string validity then you should use instead `{@link io.vertx.core.Json#decodeValue(java.lang.String)}`
+When you are unsure of the string validity then you should use instead `{@link io.vertx.core.json.Json#decodeValue(java.lang.String)}`
 
 [source,java]
 ----
-{@link docoverride.json.Examples#example0_1_decode}
+{@link docoverride.json.Examples#example5}
 ----
