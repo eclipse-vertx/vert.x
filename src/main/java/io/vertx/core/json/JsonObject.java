@@ -45,7 +45,13 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param json  the string of JSON
    */
   public JsonObject(String json) {
+    if (json == null) {
+      throw new NullPointerException();
+    }
     fromJson(json);
+    if (map == null) {
+      throw new DecodeException("Invalid JSON object: " + json);
+    }
   }
 
   /**
@@ -61,6 +67,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param map  the map to create the instance from.
    */
   public JsonObject(Map<String, Object> map) {
+    if (map == null) {
+      throw new NullPointerException();
+    }
     this.map = map;
   }
 
@@ -70,7 +79,13 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param buf  the buffer to create the instance from.
    */
   public JsonObject(Buffer buf) {
+    if (buf == null) {
+      throw new NullPointerException();
+    }
     fromBuffer(buf);
+    if (map == null) {
+      throw new DecodeException("Invalid JSON object: " + buf);
+    }
   }
 
   /**

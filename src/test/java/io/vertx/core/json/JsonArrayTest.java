@@ -1083,4 +1083,52 @@ public class JsonArrayTest {
     });
   }
 
+  @Test
+  public void testInvalidConstruction() {
+    try {
+      new JsonArray("null");
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonArray((String) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      new JsonArray("3");
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonArray("\"3");
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonArray(Buffer.buffer("null"));
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonArray((Buffer) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      new JsonArray(Buffer.buffer("3"));
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonArray(Buffer.buffer("\"3"));
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonArray((List) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
 }

@@ -39,12 +39,21 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   private List<Object> list;
 
   /**
-   * Create an instance from a String of JSON
+   * Create an instance from a String of JSON, this string must be a valid array otherwise an exception will be thrown.
+   * <p/>
+   * If you are unsure of the value, you should use instead {@link Json#decodeValue(String)} and check the result is
+   * a JSON array.
    *
    * @param json the string of JSON
    */
   public JsonArray(String json) {
+    if (json == null) {
+      throw new NullPointerException();
+    }
     fromJson(json);
+    if (list == null) {
+      throw new DecodeException("Invalid JSON array: " + json);
+    }
   }
 
   /**
@@ -57,9 +66,12 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Create an instance from a List. The List is not copied.
    *
-   * @param list
+   * @param list the underlying backing list
    */
   public JsonArray(List list) {
+    if (list == null) {
+      throw new NullPointerException();
+    }
     this.list = list;
   }
 
@@ -69,7 +81,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @param buf  the buffer of JSON.
    */
   public JsonArray(Buffer buf) {
+    if (buf == null) {
+      throw new NullPointerException();
+    }
     fromBuffer(buf);
+    if (list == null) {
+      throw new DecodeException("Invalid JSON array: " + buf);
+    }
   }
 
   /**
