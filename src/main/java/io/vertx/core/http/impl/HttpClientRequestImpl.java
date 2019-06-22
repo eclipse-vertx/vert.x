@@ -48,7 +48,7 @@ import static io.vertx.core.http.HttpHeaders.*;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientRequestImpl extends HttpClientRequestBase implements HttpClientRequest {
+public class HttpClientRequestImpl extends HttpClientRequestBase {
 
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 

@@ -71,14 +71,17 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     return (ssl ? "https://" : "http://") + hostHeader() + uri;
   }
 
+  @Override
   public String query() {
     return query;
   }
 
+  @Override
   public String path() {
     return path;
   }
 
+  @Override
   public String uri() {
     return uri;
   }
@@ -104,7 +107,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     cancelOutstandingTimeoutTimer();
   }
 
-  synchronized void handleResponse(HttpClientResponseImpl resp) {
+  void handleResponse(HttpClientResponseImpl resp) {
     long timeoutMS;
     synchronized (this) {
       // If an exception occurred (e.g. a timeout fired) we won't receive the response.
