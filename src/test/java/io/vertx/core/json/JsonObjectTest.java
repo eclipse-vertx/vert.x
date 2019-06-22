@@ -1828,6 +1828,54 @@ public class JsonObjectTest {
     return obj;
   }
 
+  @Test
+  public void testInvalidConstruction() {
+    try {
+      new JsonObject("null");
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonObject((String) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      new JsonObject("3");
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonObject("\"3");
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonObject(Buffer.buffer("null"));
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonObject((Buffer) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      new JsonObject(Buffer.buffer("3"));
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonObject(Buffer.buffer("\"3"));
+      fail();
+    } catch (DecodeException ignore) {
+    }
+    try {
+      new JsonObject((Map) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
 }
 
 

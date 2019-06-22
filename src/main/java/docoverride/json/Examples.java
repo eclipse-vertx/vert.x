@@ -12,6 +12,7 @@
 package docoverride.json;
 
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.pointer.JsonPointer;
@@ -82,4 +83,16 @@ public class Examples {
     Boolean boolVal = array.getBoolean(2);
   }
 
+  public void example5(String arbitraryJson) {
+    Object object = Json.decodeValue(arbitraryJson);
+    if (object instanceof JsonObject) {
+      // That's a valid json object
+    } else if (object instanceof JsonArray) {
+      // That's a valid json array
+    } else if (object instanceof String) {
+      // That's valid string
+    } else {
+      // etc...
+    }
+  }
 }
