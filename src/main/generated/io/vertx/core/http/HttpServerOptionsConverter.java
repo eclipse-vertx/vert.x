@@ -70,7 +70,7 @@ public class HttpServerOptionsConverter implements JsonCodec<HttpServerOptions, 
           break;
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
-            obj.setInitialSettings(io.vertx.core.http.Http2SettingsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)member.getValue()));
           }
           break;
         case "maxChunkSize":
@@ -150,7 +150,7 @@ public class HttpServerOptionsConverter implements JsonCodec<HttpServerOptions, 
     json.put("handle100ContinueAutomatically", obj.isHandle100ContinueAutomatically());
     json.put("http2ConnectionWindowSize", obj.getHttp2ConnectionWindowSize());
     if (obj.getInitialSettings() != null) {
-      json.put("initialSettings", io.vertx.core.http.Http2SettingsConverter.INSTANCE.encode(obj.getInitialSettings()));
+      json.put("initialSettings", obj.getInitialSettings().toJson());
     }
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());

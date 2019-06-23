@@ -38,7 +38,7 @@ public class ClientOptionsBaseConverter implements JsonEncoder<ClientOptionsBase
           break;
         case "proxyOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setProxyOptions(io.vertx.core.net.ProxyOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((JsonObject)member.getValue()));
           }
           break;
         case "trustAll":
@@ -63,7 +63,7 @@ public class ClientOptionsBaseConverter implements JsonEncoder<ClientOptionsBase
       json.put("metricsName", obj.getMetricsName());
     }
     if (obj.getProxyOptions() != null) {
-      json.put("proxyOptions", io.vertx.core.net.ProxyOptionsConverter.INSTANCE.encode(obj.getProxyOptions()));
+      json.put("proxyOptions", obj.getProxyOptions().toJson());
     }
     json.put("trustAll", obj.isTrustAll());
   }

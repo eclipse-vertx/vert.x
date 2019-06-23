@@ -25,7 +25,7 @@ public class VertxOptionsConverter implements JsonCodec<VertxOptions, JsonObject
       switch (member.getKey()) {
         case "addressResolverOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setAddressResolverOptions(io.vertx.core.dns.AddressResolverOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setAddressResolverOptions(new io.vertx.core.dns.AddressResolverOptions((JsonObject)member.getValue()));
           }
           break;
         case "blockedThreadCheckInterval":
@@ -75,7 +75,7 @@ public class VertxOptionsConverter implements JsonCodec<VertxOptions, JsonObject
           break;
         case "eventBusOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setEventBusOptions(io.vertx.core.eventbus.EventBusOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setEventBusOptions(new io.vertx.core.eventbus.EventBusOptions((JsonObject)member.getValue()));
           }
           break;
         case "eventLoopPoolSize":
@@ -85,7 +85,7 @@ public class VertxOptionsConverter implements JsonCodec<VertxOptions, JsonObject
           break;
         case "fileSystemOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setFileSystemOptions(io.vertx.core.file.FileSystemOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setFileSystemOptions(new io.vertx.core.file.FileSystemOptions((JsonObject)member.getValue()));
           }
           break;
         case "haEnabled":
@@ -125,7 +125,7 @@ public class VertxOptionsConverter implements JsonCodec<VertxOptions, JsonObject
           break;
         case "metricsOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setMetricsOptions(io.vertx.core.metrics.MetricsOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((JsonObject)member.getValue()));
           }
           break;
         case "preferNativeTransport":
@@ -140,7 +140,7 @@ public class VertxOptionsConverter implements JsonCodec<VertxOptions, JsonObject
           break;
         case "tracingOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setTracingOptions(io.vertx.core.tracing.TracingOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setTracingOptions(new io.vertx.core.tracing.TracingOptions((JsonObject)member.getValue()));
           }
           break;
         case "warningExceptionTime":
@@ -168,7 +168,7 @@ public class VertxOptionsConverter implements JsonCodec<VertxOptions, JsonObject
 
    static void toJson(VertxOptions obj, java.util.Map<String, Object> json) {
     if (obj.getAddressResolverOptions() != null) {
-      json.put("addressResolverOptions", io.vertx.core.dns.AddressResolverOptionsConverter.INSTANCE.encode(obj.getAddressResolverOptions()));
+      json.put("addressResolverOptions", obj.getAddressResolverOptions().toJson());
     }
     json.put("blockedThreadCheckInterval", obj.getBlockedThreadCheckInterval());
     if (obj.getBlockedThreadCheckIntervalUnit() != null) {
@@ -186,11 +186,11 @@ public class VertxOptionsConverter implements JsonCodec<VertxOptions, JsonObject
     json.put("clusterPublicPort", obj.getClusterPublicPort());
     json.put("clustered", obj.isClustered());
     if (obj.getEventBusOptions() != null) {
-      json.put("eventBusOptions", io.vertx.core.eventbus.EventBusOptionsConverter.INSTANCE.encode(obj.getEventBusOptions()));
+      json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }
     json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
     if (obj.getFileSystemOptions() != null) {
-      json.put("fileSystemOptions", io.vertx.core.file.FileSystemOptionsConverter.INSTANCE.encode(obj.getFileSystemOptions()));
+      json.put("fileSystemOptions", obj.getFileSystemOptions().toJson());
     }
     json.put("haEnabled", obj.isHAEnabled());
     if (obj.getHAGroup() != null) {
@@ -206,12 +206,12 @@ public class VertxOptionsConverter implements JsonCodec<VertxOptions, JsonObject
       json.put("maxWorkerExecuteTimeUnit", obj.getMaxWorkerExecuteTimeUnit().name());
     }
     if (obj.getMetricsOptions() != null) {
-      json.put("metricsOptions", io.vertx.core.metrics.MetricsOptionsConverter.INSTANCE.encode(obj.getMetricsOptions()));
+      json.put("metricsOptions", obj.getMetricsOptions().toJson());
     }
     json.put("preferNativeTransport", obj.getPreferNativeTransport());
     json.put("quorumSize", obj.getQuorumSize());
     if (obj.getTracingOptions() != null) {
-      json.put("tracingOptions", io.vertx.core.tracing.TracingOptionsConverter.INSTANCE.encode(obj.getTracingOptions()));
+      json.put("tracingOptions", obj.getTracingOptions().toJson());
     }
     json.put("warningExceptionTime", obj.getWarningExceptionTime());
     if (obj.getWarningExceptionTimeUnit() != null) {

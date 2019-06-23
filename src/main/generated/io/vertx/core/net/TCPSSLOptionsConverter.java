@@ -67,37 +67,37 @@ public class TCPSSLOptionsConverter implements JsonEncoder<TCPSSLOptions, JsonOb
           break;
         case "jdkSslEngineOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setJdkSslEngineOptions(io.vertx.core.net.JdkSSLEngineOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setJdkSslEngineOptions(new io.vertx.core.net.JdkSSLEngineOptions((JsonObject)member.getValue()));
           }
           break;
         case "keyStoreOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setKeyStoreOptions(io.vertx.core.net.JksOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setKeyStoreOptions(new io.vertx.core.net.JksOptions((JsonObject)member.getValue()));
           }
           break;
         case "openSslEngineOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setOpenSslEngineOptions(io.vertx.core.net.OpenSSLEngineOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setOpenSslEngineOptions(new io.vertx.core.net.OpenSSLEngineOptions((JsonObject)member.getValue()));
           }
           break;
         case "pemKeyCertOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setPemKeyCertOptions(io.vertx.core.net.PemKeyCertOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setPemKeyCertOptions(new io.vertx.core.net.PemKeyCertOptions((JsonObject)member.getValue()));
           }
           break;
         case "pemTrustOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setPemTrustOptions(io.vertx.core.net.PemTrustOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setPemTrustOptions(new io.vertx.core.net.PemTrustOptions((JsonObject)member.getValue()));
           }
           break;
         case "pfxKeyCertOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setPfxKeyCertOptions(io.vertx.core.net.PfxOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setPfxKeyCertOptions(new io.vertx.core.net.PfxOptions((JsonObject)member.getValue()));
           }
           break;
         case "pfxTrustOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setPfxTrustOptions(io.vertx.core.net.PfxOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setPfxTrustOptions(new io.vertx.core.net.PfxOptions((JsonObject)member.getValue()));
           }
           break;
         case "soLinger":
@@ -147,7 +147,7 @@ public class TCPSSLOptionsConverter implements JsonEncoder<TCPSSLOptions, JsonOb
           break;
         case "trustStoreOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setTrustStoreOptions(io.vertx.core.net.JksOptionsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setTrustStoreOptions(new io.vertx.core.net.JksOptions((JsonObject)member.getValue()));
           }
           break;
         case "useAlpn":
@@ -189,25 +189,25 @@ public class TCPSSLOptionsConverter implements JsonEncoder<TCPSSLOptions, JsonOb
       json.put("idleTimeoutUnit", obj.getIdleTimeoutUnit().name());
     }
     if (obj.getJdkSslEngineOptions() != null) {
-      json.put("jdkSslEngineOptions", io.vertx.core.net.JdkSSLEngineOptionsConverter.INSTANCE.encode(obj.getJdkSslEngineOptions()));
+      json.put("jdkSslEngineOptions", obj.getJdkSslEngineOptions().toJson());
     }
     if (obj.getKeyStoreOptions() != null) {
-      json.put("keyStoreOptions", io.vertx.core.net.JksOptionsConverter.INSTANCE.encode(obj.getKeyStoreOptions()));
+      json.put("keyStoreOptions", obj.getKeyStoreOptions().toJson());
     }
     if (obj.getOpenSslEngineOptions() != null) {
-      json.put("openSslEngineOptions", io.vertx.core.net.OpenSSLEngineOptionsConverter.INSTANCE.encode(obj.getOpenSslEngineOptions()));
+      json.put("openSslEngineOptions", obj.getOpenSslEngineOptions().toJson());
     }
     if (obj.getPemKeyCertOptions() != null) {
-      json.put("pemKeyCertOptions", io.vertx.core.net.PemKeyCertOptionsConverter.INSTANCE.encode(obj.getPemKeyCertOptions()));
+      json.put("pemKeyCertOptions", obj.getPemKeyCertOptions().toJson());
     }
     if (obj.getPemTrustOptions() != null) {
-      json.put("pemTrustOptions", io.vertx.core.net.PemTrustOptionsConverter.INSTANCE.encode(obj.getPemTrustOptions()));
+      json.put("pemTrustOptions", obj.getPemTrustOptions().toJson());
     }
     if (obj.getPfxKeyCertOptions() != null) {
-      json.put("pfxKeyCertOptions", io.vertx.core.net.PfxOptionsConverter.INSTANCE.encode(obj.getPfxKeyCertOptions()));
+      json.put("pfxKeyCertOptions", obj.getPfxKeyCertOptions().toJson());
     }
     if (obj.getPfxTrustOptions() != null) {
-      json.put("pfxTrustOptions", io.vertx.core.net.PfxOptionsConverter.INSTANCE.encode(obj.getPfxTrustOptions()));
+      json.put("pfxTrustOptions", obj.getPfxTrustOptions().toJson());
     }
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
@@ -221,7 +221,7 @@ public class TCPSSLOptionsConverter implements JsonEncoder<TCPSSLOptions, JsonOb
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("tcpQuickAck", obj.isTcpQuickAck());
     if (obj.getTrustStoreOptions() != null) {
-      json.put("trustStoreOptions", io.vertx.core.net.JksOptionsConverter.INSTANCE.encode(obj.getTrustStoreOptions()));
+      json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
     json.put("useAlpn", obj.isUseAlpn());
   }

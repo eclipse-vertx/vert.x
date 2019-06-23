@@ -80,7 +80,7 @@ public class HttpClientOptionsConverter implements JsonCodec<HttpClientOptions, 
           break;
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
-            obj.setInitialSettings(io.vertx.core.http.Http2SettingsConverter.INSTANCE.decode((JsonObject)member.getValue()));
+            obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)member.getValue()));
           }
           break;
         case "keepAlive":
@@ -221,7 +221,7 @@ public class HttpClientOptionsConverter implements JsonCodec<HttpClientOptions, 
     json.put("http2MaxPoolSize", obj.getHttp2MaxPoolSize());
     json.put("http2MultiplexingLimit", obj.getHttp2MultiplexingLimit());
     if (obj.getInitialSettings() != null) {
-      json.put("initialSettings", io.vertx.core.http.Http2SettingsConverter.INSTANCE.encode(obj.getInitialSettings()));
+      json.put("initialSettings", obj.getInitialSettings().toJson());
     }
     json.put("keepAlive", obj.isKeepAlive());
     json.put("keepAliveTimeout", obj.getKeepAliveTimeout());
