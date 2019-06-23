@@ -10,10 +10,15 @@
  */
 package io.vertx.core.spi.tracing;
 
+import io.vertx.core.Context;
+import io.vertx.core.Promise;
+import io.vertx.core.WorkerExecutor;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.faketracer.FakeTracer;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 
 public class TracerTest extends VertxTestBase {
@@ -32,5 +37,18 @@ public class TracerTest extends VertxTestBase {
     vertx.close(ar -> latch.countDown());
     awaitLatch(latch);
     assertEquals(1, tracer.closeCount());
+  }
+
+  @Test
+  public void testWorkerExecutor() {
+    WorkerExecutor exec = vertx.createSharedWorkerExecutor("exec");
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    ContextInternal duplicate = ctx.duplicate();
+    duplicate.runOnContext(v -> {
+      exec.executeBlocking(Promise::complete, onSuccess(res -> {
+        testComplete();
+      }));
+    });
+    await();
   }
 }
