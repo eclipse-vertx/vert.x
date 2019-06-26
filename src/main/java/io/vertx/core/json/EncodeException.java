@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -8,10 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-
 package io.vertx.core.json;
-
-import com.fasterxml.jackson.core.JsonLocation;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -22,13 +19,8 @@ public class EncodeException extends RuntimeException {
     this("Failed to encode: " + e.getMessage(), e);
   }
 
-  public EncodeException(String message) {
-    super(String.format("Failed to encode: %s", message));
-  }
-
   public EncodeException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public EncodeException() { }
 }

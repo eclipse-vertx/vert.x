@@ -51,7 +51,7 @@ public class Json {
    */
   public static String encode(Object value) throws EncodeException {
     try {
-      Object json = toJson(value);
+      Object json = mapFrom(value);
       StringWriter sw = new StringWriter();
       JsonGenerator generator = factory.createGenerator(sw);
       encodeJson(json, generator);
@@ -82,7 +82,7 @@ public class Json {
    */
   public static String encodePrettily(Object value) throws EncodeException {
     try {
-      Object json = toJson(value);
+      Object json = mapFrom(value);
       StringWriter sw = new StringWriter();
       JsonGenerator generator = factory.createGenerator(sw);
       generator.useDefaultPrettyPrinter();
@@ -105,7 +105,7 @@ public class Json {
    * @return a valid Vert.x json ({@link JsonObject}, {@link JsonArray} or primitive).
    * @throws EncodeException If there was an error during encoding or the internal mapper can't encode the provided pojo
    */
-  public static Object toJson(Object pojo) throws EncodeException {
+  public static Object mapFrom(Object pojo) throws EncodeException {
     try {
       if (pojo instanceof JsonObject || pojo instanceof JsonArray || pojo instanceof Number || pojo instanceof Boolean || pojo instanceof String || pojo == null)
         return pojo;
@@ -158,7 +158,7 @@ public class Json {
    * @return an instance of the class to map to.
    * @throws DecodeException If there was an error during decoding or the internal mapper can't decode the provided pojo.
    */
-  public static <T> T fromJson(Object json, Class<T> clazz) throws DecodeException {
+  public static <T> T mapTo(Object json, Class<T> clazz) throws DecodeException {
     try {
       return mapper.decode(json, clazz);
     } catch (IllegalStateException e) {
@@ -176,7 +176,7 @@ public class Json {
    * @throws DecodeException If there was an error during decoding or the internal mapper can't decode the provided pojo.
    */
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
-    return fromJson(decodeValue(str), clazz);
+    return mapTo(decodeValue(str), clazz);
   }
 
   /**

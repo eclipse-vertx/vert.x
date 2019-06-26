@@ -10,13 +10,11 @@
  */
 package io.vertx.core.json;
 
-import com.fasterxml.jackson.core.JsonParser;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -103,7 +101,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   @SuppressWarnings("unchecked")
   public static JsonObject mapFrom(Object obj) {
-    return (JsonObject) Json.toJson(obj);
+    return (JsonObject) Json.mapFrom(obj);
   }
 
   /**
@@ -116,7 +114,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *          if the type cannot be instantiated.
    */
   public <T> T mapTo(Class<T> type) {
-    return Json.fromJson(this, type);
+    return Json.mapTo(this, type);
   }
 
   /**

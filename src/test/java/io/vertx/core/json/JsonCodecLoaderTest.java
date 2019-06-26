@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
 package io.vertx.core.json;
 
 import io.vertx.core.json.codecs.*;
@@ -12,8 +22,8 @@ public class JsonCodecLoaderTest {
   public void booleanCodecTest() {
     MyBooleanPojo pojo = new MyBooleanPojo();
     pojo.setValue(true);
-    assertEquals(true, toJson(pojo));
-    assertEquals(pojo, fromJson(true, MyBooleanPojo.class));
+    assertEquals(true, mapFrom(pojo));
+    assertEquals(pojo, mapTo(true, MyBooleanPojo.class));
   }
 
   @Test(expected = DecodeException.class)
@@ -25,8 +35,8 @@ public class JsonCodecLoaderTest {
   public void doubleCodecTest() {
     MyDoublePojo pojo = new MyDoublePojo();
     pojo.setValue(1.2d);
-    assertEquals(1.2d, toJson(pojo));
-    assertEquals(pojo, fromJson(1.2d, MyDoublePojo.class));
+    assertEquals(1.2d, mapFrom(pojo));
+    assertEquals(pojo, mapTo(1.2d, MyDoublePojo.class));
   }
 
   @Test(expected = DecodeException.class)
@@ -38,8 +48,8 @@ public class JsonCodecLoaderTest {
   public void floatCodecTest() {
     MyFloatPojo pojo = new MyFloatPojo();
     pojo.setValue(1.2f);
-    assertEquals(1.2f, toJson(pojo));
-    assertEquals(pojo, fromJson(1.2f, MyFloatPojo.class));
+    assertEquals(1.2f, mapFrom(pojo));
+    assertEquals(pojo, mapTo(1.2f, MyFloatPojo.class));
   }
 
   @Test(expected = DecodeException.class)
@@ -51,8 +61,8 @@ public class JsonCodecLoaderTest {
   public void intCodecTest() {
     MyIntegerPojo pojo = new MyIntegerPojo();
     pojo.setValue(1);
-    assertEquals(1, toJson(pojo));
-    assertEquals(pojo, fromJson(1, MyIntegerPojo.class));
+    assertEquals(1, mapFrom(pojo));
+    assertEquals(pojo, mapTo(1, MyIntegerPojo.class));
   }
 
   @Test(expected = DecodeException.class)
@@ -64,8 +74,8 @@ public class JsonCodecLoaderTest {
   public void longCodecTest() {
     MyLongPojo pojo = new MyLongPojo();
     pojo.setValue(1L);
-    assertEquals(1L, toJson(pojo));
-    assertEquals(pojo, fromJson(1L, MyLongPojo.class));
+    assertEquals(1L, mapFrom(pojo));
+    assertEquals(pojo, mapTo(1L, MyLongPojo.class));
   }
 
   @Test(expected = DecodeException.class)
@@ -77,8 +87,8 @@ public class JsonCodecLoaderTest {
   public void shortCodecTest() {
     MyShortPojo pojo = new MyShortPojo();
     pojo.setValue((short)1);
-    assertEquals((short)1, toJson(pojo));
-    assertEquals(pojo, fromJson((short)1, MyShortPojo.class));
+    assertEquals((short)1, mapFrom(pojo));
+    assertEquals(pojo, mapTo((short)1, MyShortPojo.class));
   }
 
   @Test(expected = DecodeException.class)
@@ -91,8 +101,8 @@ public class JsonCodecLoaderTest {
     MyJsonArrayPojo pojo = new MyJsonArrayPojo();
     JsonArray array = new JsonArray().add(1).add(2).add(3);
     pojo.setValue(array);
-    assertEquals(array, toJson(pojo));
-    assertEquals(pojo, fromJson(array, MyJsonArrayPojo.class));
+    assertEquals(array, mapFrom(pojo));
+    assertEquals(pojo, mapTo(array, MyJsonArrayPojo.class));
   }
 
   @Test(expected = DecodeException.class)
@@ -105,8 +115,8 @@ public class JsonCodecLoaderTest {
     MyJsonObjectPojo pojo = new MyJsonObjectPojo();
     JsonObject obj = new JsonObject().put("a", 1).put("b", "c");
     pojo.setValue(obj);
-    assertEquals(obj, toJson(pojo));
-    assertEquals(pojo, fromJson(obj, MyJsonObjectPojo.class));
+    assertEquals(obj, mapFrom(pojo));
+    assertEquals(pojo, mapTo(obj, MyJsonObjectPojo.class));
   }
 
   @Test(expected = DecodeException.class)
