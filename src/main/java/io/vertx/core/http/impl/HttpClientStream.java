@@ -43,7 +43,7 @@ public interface HttpClientStream {
   HttpConnection connection();
   ContextInternal getContext();
 
-  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler);
+  void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<Void> contHandler, Handler<AsyncResult<Void>> handler);
   void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler);
   void writeFrame(int type, int flags, ByteBuf payload);
 
@@ -52,7 +52,7 @@ public interface HttpClientStream {
   void doPause();
   void doFetch(long amount);
 
-  void reset(long code);
+  void reset(Throwable cause);
   void beginRequest(HttpClientRequestImpl req);
   void endRequest();
 

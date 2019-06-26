@@ -670,6 +670,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testClientResetServerStreamDuringRequest() throws Exception {
+    waitFor(2);
     Promise<Void> bufReceived = Promise.promise();
     server.requestHandler(req -> {
       req.handler(buf -> {
@@ -689,13 +690,13 @@ public class Http2ClientTest extends Http2TestBase {
       });
       req.response().closeHandler(v -> {
         assertEquals(10L, reset.get());
-        testComplete();
+        complete();
       });
     });
     startServer();
-    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
-      fail();
-    }).setChunked(true);
+    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onFailure(err -> {
+      complete();
+    })).setChunked(true);
     req.write(Buffer.buffer("hello"));
     bufReceived.future().setHandler(ar -> {
       req.reset(10);
@@ -724,7 +725,6 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath",
       onSuccess(resp -> {
-        resp.exceptionHandler(this::fail);
         resp.request().reset(10);
         assertIllegalStateException(() -> resp.request().write(Buffer.buffer()));
         assertIllegalStateException(resp.request()::end);

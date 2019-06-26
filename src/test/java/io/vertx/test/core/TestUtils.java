@@ -15,6 +15,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.util.NetUtil;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.*;
@@ -30,6 +31,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.assertTrue;
@@ -315,6 +317,12 @@ public class TestUtils {
     } catch (IllegalStateException e) {
       // OK
     }
+  }
+
+  public static void assertIllegalStateException2(Supplier<Future<?>> runnable) {
+    Future<?> fut = runnable.get();
+    assertTrue(fut.failed());
+    assertTrue(fut.cause() instanceof IllegalStateException);
   }
 
   /**

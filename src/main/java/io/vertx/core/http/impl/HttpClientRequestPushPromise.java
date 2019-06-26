@@ -54,12 +54,8 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
+  void handleResponse(HttpClientResponse resp, long timeoutMs) {
     responsePromise.complete(resp);
-  }
-
-  @Override
-  protected void checkComplete() {
   }
 
   @Override
@@ -78,11 +74,9 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public boolean reset(long code) {
-    synchronized (conn) {
-      stream.reset(code);
-      return true;
-    }
+  boolean reset(Throwable cause) {
+    stream.reset(cause);
+    return true;
   }
 
   @Override

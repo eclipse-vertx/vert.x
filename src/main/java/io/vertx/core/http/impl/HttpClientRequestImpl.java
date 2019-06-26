@@ -61,9 +61,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<HttpClientRequest> pushHandler;
   private Handler<HttpConnection> connectionHandler;
   private Handler<Throwable> exceptionHandler;
-  private boolean completed;
-  private Handler<Void> completionHandler;
-  private Long reset;
+  private Promise<Void> endPromise = Promise.promise();
+  private Future<Void> endFuture = endPromise.future();
+  private boolean ended;
+  private Throwable reset;
   private ByteBuf pendingChunks;
   private List<Handler<AsyncResult<Void>>> pendingHandlers;
   private int pendingMaxSize = -1;
@@ -72,8 +73,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private StreamPriority priority;
   public HttpClientStream stream;
   private boolean connecting;
-
-  // completed => drainHandler = null
 
   HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, SocketAddress server,
                         String host, int port,
@@ -85,36 +84,30 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public void handleException(Throwable t) {
+  void handleException(Throwable t) {
     super.handleException(t);
     Handler<Throwable> handler;
     synchronized (this) {
-      exceptionOccurred = t;
-      if (exceptionHandler != null) {
+      if (exceptionHandler != null && !endFuture.isComplete()) {
         handler = exceptionHandler;
       } else {
         handler = log::error;
       }
     }
     handler.handle(t);
+    endPromise.tryFail(t);
     responsePromise.tryFail(t);
   }
 
   @Override
-  public int streamId() {
-    HttpClientStream s;
-    synchronized (this) {
-      if ((s = stream) == null) {
-        return -1;
-      }
-    }
-    return s.id();
+  public synchronized int streamId() {
+    return stream == null ? -1 : stream.id();
   }
 
   @Override
   public HttpClientRequest setFollowRedirects(boolean followRedirects) {
     synchronized (this) {
-      checkComplete();
+      checkEnded();
       if (followRedirects) {
         this.followRedirects = client.getOptions().getMaxRedirects() - 1;
       } else {
@@ -127,7 +120,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public HttpClientRequestImpl setChunked(boolean chunked) {
     synchronized (this) {
-      checkComplete();
+      checkEnded();
       if (stream != null) {
         throw new IllegalStateException("Cannot set chunked after data has been written on request");
       }
@@ -176,14 +169,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public synchronized HttpClientRequest putHeader(String name, String value) {
-    checkComplete();
+    checkEnded();
     headers().set(name, value);
     return this;
   }
 
   @Override
   public synchronized HttpClientRequest putHeader(String name, Iterable<String> values) {
-    checkComplete();
+    checkEnded();
     headers().set(name, values);
     return this;
   }
@@ -192,7 +185,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public HttpClientRequest setWriteQueueMaxSize(int maxSize) {
     HttpClientStream s;
     synchronized (this) {
-      checkComplete();
+      checkEnded();
       if ((s = stream) == null) {
         pendingMaxSize = maxSize;
         return this;
@@ -206,7 +199,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public boolean writeQueueFull() {
     HttpClientStream s;
     synchronized (this) {
-      checkComplete();
+      checkEnded();
       if ((s = stream) == null) {
         // Should actually check with max queue size and not always blindly return false
         return false;
@@ -221,7 +214,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
     if (handler != null) {
-      checkComplete();
+      checkEnded();
       this.exceptionHandler = handler;
     } else {
       this.exceptionHandler = null;
@@ -233,7 +226,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public HttpClientRequest drainHandler(Handler<Void> handler) {
     synchronized (this) {
       if (handler != null) {
-        checkComplete();
+        checkEnded();
         drainHandler = handler;
         HttpClientStream s;
         if ((s = stream) == null) {
@@ -256,7 +249,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized HttpClientRequest continueHandler(Handler<Void> handler) {
     if (handler != null) {
-      checkComplete();
+      checkEnded();
     }
     this.continueHandler = handler;
     return this;
@@ -269,7 +262,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public synchronized HttpClientRequest sendHead(Handler<HttpVersion> headersHandler) {
-    checkComplete();
+    checkEnded();
     checkResponseHandler();
     if (stream != null) {
       throw new IllegalStateException("Head already written");
@@ -281,14 +274,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public synchronized HttpClientRequest putHeader(CharSequence name, CharSequence value) {
-    checkComplete();
+    checkEnded();
     headers().set(name, value);
     return this;
   }
 
   @Override
   public synchronized HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values) {
-    checkComplete();
+    checkEnded();
     headers().set(name, values);
     return this;
   }
@@ -300,35 +293,25 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public boolean reset(long code) {
+  boolean reset(Throwable cause) {
     HttpClientStream s;
     synchronized (this) {
       if (reset != null) {
         return false;
       }
-      reset = code;
-      if (tryComplete()) {
-        if (completionHandler != null) {
-          completionHandler.handle(null);
-        }
-      }
+      reset = cause;
       s = stream;
     }
     if (s != null) {
-      s.reset(code);
+      s.reset(cause);
+    } else {
+      handleException(cause);
     }
     return true;
   }
 
-  private boolean tryComplete() {
-    if (!completed) {
-      completed = true;
-      drainHandler = null;
-      exceptionHandler = null;
-      return true;
-    } else {
-      return false;
-    }
+  private void tryComplete() {
+    endPromise.tryComplete();
   }
 
   @Override
@@ -352,7 +335,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public synchronized HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) {
     HttpClientStream s;
     synchronized (this) {
-      checkComplete();
+      checkEnded();
       if ((s = stream) == null) {
         throw new IllegalStateException("Not yet connected");
       }
@@ -364,7 +347,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   void handleDrained() {
     Handler<Void> handler;
     synchronized (this) {
-      if ((handler = drainHandler) == null) {
+      if ((handler = drainHandler) == null || endFuture.isComplete()) {
         return;
       }
     }
@@ -387,9 +370,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (headers != null && next.headers == null) {
       next.headers().addAll(headers);
     }
-    Promise<Void> promise = Promise.promise();
-    Future<Void> future = promise.future();
-    future.setHandler(ar -> {
+    endFuture.setHandler(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
           next.setTimeout(timeoutMs);
@@ -399,26 +380,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         next.handleException(ar.cause());
       }
     });
-    if (exceptionOccurred != null) {
-      promise.fail(exceptionOccurred);
-    }
-    else if (completed) {
-      promise.complete();
-    } else {
-      exceptionHandler(err -> {
-        if (!future.isComplete()) {
-          promise.fail(err);
-        }
-      });
-      completionHandler = v -> {
-        if (!future.isComplete()) {
-          promise.complete();
-        }
-      };
-    }
   }
 
-  protected void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs) {
+  void handleResponse(HttpClientResponse resp, long timeoutMs) {
     if (reset == null) {
       int statusCode = resp.statusCode();
       if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
@@ -428,19 +392,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             if (ar.succeeded()) {
               handleNextRequest((HttpClientRequestImpl) ar.result(), timeoutMs);
             } else {
-              handleException(ar.cause());
+              responsePromise.fail(ar.cause());
             }
           });
           return;
         }
       }
-      if (statusCode == 100) {
-        if (continueHandler != null) {
-          continueHandler.handle(null);
-        }
-      } else {
-        responsePromise.complete(resp);
-      }
+      responsePromise.complete(resp);
     }
   }
 
@@ -495,7 +453,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       client.getConnectionForRequest(connectCtx, peerAddress, ssl, server, ar1 -> {
         if (ar1.succeeded()) {
           HttpClientStream stream = ar1.result();
-          ContextInternal ctx = (ContextInternal) stream.getContext();
+          ContextInternal ctx = stream.getContext();
           if (stream.id() == 1 && initializer != null) {
             ctx.executeFromIO(v -> {
               initializer.handle(stream.connection());
@@ -503,8 +461,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           }
           // No need to synchronize as the thread is the same that set exceptionOccurred to true
           // exceptionOccurred=true getting the connection => it's a TimeoutException
-          if (exceptionOccurred != null || reset != null) {
-            stream.reset(0);
+          if (reset != null) {
+            stream.reset(reset);
           } else {
             connected(headersHandler, stream);
           }
@@ -527,34 +485,24 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         stream.doSetWriteQueueMaxSize(pendingMaxSize);
       }
 
+      ByteBuf pending = null;
+      Handler<AsyncResult<Void>> handler = null;
       if (pendingChunks != null) {
         List<Handler<AsyncResult<Void>>> handlers = pendingHandlers;
-        ByteBuf pending = pendingChunks;
-        pendingChunks = null;
         pendingHandlers = null;
-        Handler<AsyncResult<Void>> handler;
+        pending = pendingChunks;
+        pendingChunks = null;
         if (handlers != null) {
           handler = ar -> {
             handlers.forEach(h -> h.handle(ar));
           };
-        } else {
-          handler = null;
         }
-        if (completed) {
-          // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, true, priority, handler);
-          stream.endRequest();
-        } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, false, priority, handler);
-        }
-      } else {
-        if (completed) {
-          // we also need to write the head so optimize this and write all out in once
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, true, priority, null);
-          stream.endRequest();
-        } else {
-          stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, null, false, priority, null);
-        }
+      }
+      stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, ended, priority, continueHandler, handler);
+      if (ended) {
+        // we also need to write the head so optimize this and write all out in once
+        stream.endRequest();
+        tryComplete();
       }
       this.connecting = false;
       this.stream = stream;
@@ -562,10 +510,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (headersHandler != null) {
       headersHandler.handle(stream.version());
     }
-  }
-
-  private boolean contentLengthSet() {
-    return headers != null && headers().contains(CONTENT_LENGTH);
   }
 
   @Override
@@ -655,26 +599,31 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     write(Buffer.buffer(chunk, enc).getByteBuf(), false, handler);
   }
 
-  private void write(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> h) {
+  private boolean requiresContentLength() {
+    return !chunked && (headers == null || !headers.contains(CONTENT_LENGTH));
+  }
+
+  private void write(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> completionHandler) {
+    if (buff == null && !end) {
+      return;
+    }
     HttpClientStream s;
     synchronized (this) {
-      checkComplete();
-      checkResponseHandler();
-      if (end) {
-        if (buff != null && !chunked && !contentLengthSet()) {
-          headers().set(CONTENT_LENGTH, String.valueOf(buff.readableBytes()));
-        }
-      } else {
-        if (!chunked && !contentLengthSet()) {
-          throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-            + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
-        }
-      }
-      if (buff == null && !end) {
-        // nothing to write to the connection just return
+      if (ended) {
+        completionHandler.handle(Future.failedFuture(new IllegalStateException("Request already complete")));
         return;
       }
-      if ((s = stream) == null) {
+      checkResponseHandler();
+      if (end) {
+        if (buff != null && requiresContentLength()) {
+          headers().set(CONTENT_LENGTH, String.valueOf(buff.readableBytes()));
+        }
+      } else if (requiresContentLength()) {
+        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      }
+      ended |= end;
+      if (stream == null) {
         if (buff != null) {
           if (pendingChunks == null) {
             pendingChunks = buff;
@@ -689,39 +638,27 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             }
             pending.addComponent(true, buff);
           }
-          if (h != null) {
+          if (completionHandler != null) {
             if (pendingHandlers == null) {
               pendingHandlers = new ArrayList<>();
             }
-            pendingHandlers.add(h);
-          }
-        }
-        if (end) {
-          tryComplete();
-          if (completionHandler != null) {
-            completionHandler.handle(null);
+            pendingHandlers.add(completionHandler);
           }
         }
         connect(null);
         return;
       }
+      s = stream;
     }
-    s.writeBuffer(buff, end, h);
+    s.writeBuffer(buff, end, completionHandler);
     if (end) {
-      Handler<Void> handler;
-      synchronized (this) {
-        tryComplete();
-        s.endRequest();
-        if ((handler = completionHandler) == null) {
-          return;
-        }
-      }
-      handler.handle(null);
+      s.endRequest();
+      tryComplete();
     }
   }
 
-  protected void checkComplete() {
-    if (completed) {
+  private void checkEnded() {
+    if (ended) {
       throw new IllegalStateException("Request already complete");
     }
   }

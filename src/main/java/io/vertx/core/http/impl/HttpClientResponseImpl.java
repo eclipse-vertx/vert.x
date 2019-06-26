@@ -94,12 +94,12 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   @Override
   public String getHeader(String headerName) {
-    return headers().get(headerName);
+    return headers.get(headerName);
   }
 
   @Override
   public String getHeader(CharSequence headerName) {
-    return headers().get(headerName);
+    return headers.get(headerName);
   }
 
   @Override
@@ -138,12 +138,12 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
-  public HttpClientResponse handler(Handler<Buffer> handle) {
+  public HttpClientResponse handler(Handler<Buffer> handler) {
     synchronized (conn) {
-      if (handle != null) {
+      if (handler != null) {
         checkEnded();
       }
-      dataHandler = handle;
+      dataHandler = handler;
       return this;
     }
   }
@@ -211,9 +211,9 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   void handleChunk(Buffer data) {
+    request.dataReceived();
     Handler<Buffer> handler;
     synchronized (conn) {
-      request.dataReceived();
       handler = dataHandler;
     }
     if (handler != null) {

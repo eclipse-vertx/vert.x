@@ -975,19 +975,19 @@ public abstract class HttpTest extends HttpTestBase {
       req.end();
 
       Buffer buff = Buffer.buffer();
-      assertIllegalStateException(() -> req.end());
+      assertIllegalStateException2(() -> req.end());
       assertIllegalStateException(() -> req.continueHandler(noOpHandler()));
       assertIllegalStateException(() -> req.drainHandler(noOpHandler()));
-      assertIllegalStateException(() -> req.end("foo"));
-      assertIllegalStateException(() -> req.end(buff));
-      assertIllegalStateException(() -> req.end("foo", "UTF-8"));
+      assertIllegalStateException2(() -> req.end("foo"));
+      assertIllegalStateException2(() -> req.end(buff));
+      assertIllegalStateException2(() -> req.end("foo", "UTF-8"));
       assertIllegalStateException(() -> req.sendHead());
       assertIllegalStateException(() -> req.setChunked(false));
       assertIllegalStateException(() -> req.setWriteQueueMaxSize(123));
-      assertIllegalStateException(() -> req.write(buff));
-      assertIllegalStateException(() -> req.write("foo"));
-      assertIllegalStateException(() -> req.write("foo", "UTF-8"));
-      assertIllegalStateException(() -> req.write(buff));
+      assertIllegalStateException2(() -> req.write(buff));
+      assertIllegalStateException2(() -> req.write("foo"));
+      assertIllegalStateException2(() -> req.write("foo", "UTF-8"));
+      assertIllegalStateException2(() -> req.write(buff));
       assertIllegalStateException(() -> req.writeQueueFull());
 
       testComplete();
@@ -1238,9 +1238,12 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientExceptionHandlerCalledWhenFailingToConnect() {
+    waitFor(2);
     client.request(HttpMethod.GET, testAddress, 9998, "255.255.255.255", DEFAULT_TEST_URI, onFailure(err ->
-      testComplete()))
-      .exceptionHandler(error -> fail("Exception handler should not be called"))
+      complete()))
+      .exceptionHandler(error -> {
+        complete();
+      })
       .end();
     await();
   }
@@ -1437,9 +1440,7 @@ public abstract class HttpTest extends HttpTestBase {
     HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(err -> {
       complete();
     }));
-    req.exceptionHandler(err -> {
-      fail();
-    });
+    req.exceptionHandler(this::fail);
     req.end();
     try {
       req.exceptionHandler(err -> fail());
@@ -2196,7 +2197,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectionErrorsGetReportedToHandlers() throws InterruptedException {
-    CountDownLatch latch = new CountDownLatch(3);
+    CountDownLatch latch = new CountDownLatch(4);
 
     // This one should cause an error in the Client Exception handler, because it has no exception handler set specifically.
     HttpClientRequest req1 = client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, "someurl1", onFailure(resp -> {
@@ -2204,7 +2205,7 @@ public abstract class HttpTest extends HttpTestBase {
     }));
 
     req1.exceptionHandler(t -> {
-      fail("Should not be called");
+      latch.countDown();
     });
 
     HttpClientRequest req2 = client.request(HttpMethod.GET, 9997, DEFAULT_HTTP_HOST, "someurl2", onFailure(resp -> {
@@ -2313,16 +2314,18 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectInvalidPort() {
-    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> testComplete()))
-      .exceptionHandler(t -> fail("Exception handler should not be called"))
+    waitFor(2);
+    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> complete()))
+      .exceptionHandler(t -> complete())
       .end();
     await();
   }
 
   @Test
   public void testConnectInvalidHost() {
-    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, onFailure(resp -> testComplete()))
-      .exceptionHandler(t -> fail("Exception handler should not be called"))
+    waitFor(2);
+    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI, onFailure(resp -> complete()))
+      .exceptionHandler(t -> complete())
       .end();
     await();
   }
@@ -3199,6 +3202,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testResponseDataTimeout() {
+    waitFor(2);
     Buffer expected = TestUtils.randomBuffer(1000);
     server.requestHandler(req -> {
       req.response().setChunked(true).write(expected);
@@ -3206,6 +3210,14 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(testAddress, onSuccess(s -> {
       Buffer received = Buffer.buffer();
       HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        AtomicInteger count = new AtomicInteger();
+        resp.exceptionHandler(t -> {
+          if (count.getAndIncrement() == 0) {
+            assertTrue(t instanceof TimeoutException);
+            assertEquals(expected, received);
+            complete();
+          }
+        });
         resp.request().setTimeout(500);
         resp.handler(received::appendBuffer);
       }));
@@ -3214,7 +3226,7 @@ public abstract class HttpTest extends HttpTestBase {
         if (count.getAndIncrement() == 0) {
           assertTrue(t instanceof TimeoutException);
           assertEquals(expected, received);
-          testComplete();
+          complete();
         }
       });
       req.sendHead();
@@ -5143,26 +5155,91 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  /*
   @Test
-  public void testReset() throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
+  public void testResetClientRequestBeforeActualSend() throws Exception {
+    waitFor(2);
     server.requestHandler(req -> {
-      req.exceptionHandler(err -> {
-        System.out.println("GOT ERR");
-      });
-      req.endHandler(v -> {
-        System.out.println("GOT END");
-        latch.countDown();
-      });
     });
-    startServer();
-    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {});
-    req.end();
-    awaitLatch(latch);
-    req.reset();
-
+    startServer(testAddress);
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      HttpClientRequest req = client.request(
+        HttpMethod.GET,
+        testAddress,
+        new RequestOptions()
+          .setPort(DEFAULT_HTTP_PORT)
+          .setHost(DEFAULT_HTTP_HOST)
+          .setURI(DEFAULT_TEST_URI), onFailure(err -> {
+        assertTrue(err instanceof StreamResetException);
+        complete();
+      }));
+      req.exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        complete();
+      });
+      req.sendHead(version -> fail());
+      req.reset();
+    });
     await();
   }
-*/
+
+  @Test
+  public void testResetClientRequestInProgress() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+    });
+    startServer(testAddress);
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      HttpClientRequest req = client.request(
+        HttpMethod.GET,
+        testAddress,
+        new RequestOptions()
+          .setPort(DEFAULT_HTTP_PORT)
+          .setHost(DEFAULT_HTTP_HOST)
+          .setURI(DEFAULT_TEST_URI), onFailure(err -> {
+          assertTrue(err instanceof StreamResetException);
+          complete();
+        }));
+      req.exceptionHandler(err -> {
+        assertTrue(err instanceof StreamResetException);
+        complete();
+      });
+      req.sendHead(version -> {
+        req.reset(0);
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testResetClientRequestAwaitingResponse() throws Exception {
+    CompletableFuture<Void> fut = new CompletableFuture<>();
+    server.requestHandler(req -> {
+      fut.complete(null);
+    });
+    startServer(testAddress);
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      HttpClientRequest req = client.request(
+        HttpMethod.GET,
+        testAddress,
+        new RequestOptions()
+          .setPort(DEFAULT_HTTP_PORT)
+          .setHost(DEFAULT_HTTP_HOST)
+          .setURI(DEFAULT_TEST_URI), onFailure(err -> {
+          complete();
+        }));
+      req.exceptionHandler(err -> {
+        fail();
+      });
+      req.end();
+      fut.thenAccept(v2 -> {
+        ctx.runOnContext(v3 -> {
+          req.reset(0);
+        });
+      });
+    });
+    await();
+  }
 }

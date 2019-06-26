@@ -97,13 +97,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     super.onStreamClosed(nettyStream);
   }
 
-  void upgradeStream(HttpClientRequestImpl req, Object metric, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  void upgradeStream(Object metric, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
         Http2ClientStream stream = createStream(context, handler.connection().stream(1));
         stream.metric = metric;
-        stream.beginRequest(req);
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
@@ -204,6 +203,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     private HttpClientRequestBase request;
     private HttpClientResponseImpl response;
+    private Handler<Void> continueHandler;
     private boolean requestEnded;
     private boolean responseEnded;
     private Object trace;
@@ -246,11 +246,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     void handleEnd(MultiMap trailers) {
       if (conn.metrics != null) {
-        if (request.exceptionOccurred != null) {
-          conn.metrics.requestReset(metric);
-        } else {
-          conn.metrics.responseEnd(metric, response);
-        }
+        conn.metrics.responseEnd(metric, response);
       }
       responseEnded = true;
       // Should use a shared immutable object for CaseInsensitiveHeaders ?
@@ -333,9 +329,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     void handleHeaders(Http2Headers headers, StreamPriority streamPriority, boolean end) {
-      if(streamPriority != null)
+      if(streamPriority != null) {
         priority(streamPriority);
-      if (response == null || response.statusCode() == 100) {
+      }
+      if (response == null) {
         int status;
         String statusMessage;
         try {
@@ -346,9 +343,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           writeReset(0x01 /* PROTOCOL_ERROR */);
           return;
         }
-
+        if (status == 100) {
+          if (continueHandler != null) {
+            context.dispatch(continueHandler);
+          }
+          return;
+        }
         headers.remove(":status");
-
         response = new HttpClientResponseImpl(
             request,
             HttpVersion.HTTP_2,
@@ -389,7 +390,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<Void> contHandler, Handler<AsyncResult<Void>> handler) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
       if (method == HttpMethod.CONNECT) {
@@ -412,6 +413,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.client.getOptions().isTryUseCompression() && h.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
+      continueHandler = contHandler;
       if (conn.metrics != null) {
         metric = conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
       }
@@ -476,8 +478,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void reset(long code) {
+    public void reset(Throwable cause) {
+      long code = cause instanceof StreamResetException ? ((StreamResetException)cause).getCode() : 0;
       if (request == null) {
+        // Not sure this is possible in practice
         writeReset(code);
       } else {
         if (!(requestEnded && responseEnded)) {
@@ -487,6 +491,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           if (conn.metrics != null) {
             conn.metrics.requestReset(metric);
           }
+          handleException(cause);
         }
       }
     }

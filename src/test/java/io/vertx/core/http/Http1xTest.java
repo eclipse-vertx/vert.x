@@ -2870,8 +2870,8 @@ public class Http1xTest extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
     AtomicInteger connCount = new AtomicInteger();
     client.connectionHandler(conn -> connCount.incrementAndGet());
-    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", onSuccess(resp -> {
-      fail();
+    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", onFailure(err -> {
+
     }));
     req.reset(0);
     CountDownLatch respLatch = new CountDownLatch(2);
@@ -3043,8 +3043,7 @@ public class Http1xTest extends HttpTest {
       // There might be a race between the request write and the request reset
       // so we do it on the context thread to avoid it
       vertx.runOnContext(v -> {
-        HttpClientRequest post = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-          fail();
+        HttpClientRequest post = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
         }));
         post.setChunked(true).write(TestUtils.randomBuffer(1024));
         assertTrue(post.reset());
@@ -4457,12 +4456,13 @@ public class Http1xTest extends HttpTest {
     }).setChunked(true);
     CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), req);
     AtomicBoolean connected = new AtomicBoolean();
+    AtomicBoolean done = new AtomicBoolean();
     req.exceptionHandler(err -> {
       assertTrue(connected.get());
       Throwable failure = sender.close();
       if (failure != null) {
         fail(failure);
-      } else if (err == ConnectionBase.CLOSED_EXCEPTION) {
+      } else if (done.compareAndSet(false, true)) {
         testComplete();
       }
     });
