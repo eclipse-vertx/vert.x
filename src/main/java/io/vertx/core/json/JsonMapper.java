@@ -37,12 +37,4 @@ public interface JsonMapper {
 
   <T> T decode(Object json, TypeReference<T> t) throws DecodeException, IllegalStateException;
 
-  static JsonMapper load() {
-    try {
-      return new JacksonMapper();
-    } catch (Throwable t1) {
-      return new JsonCodecMapper();
-    }
-  }
-
 }

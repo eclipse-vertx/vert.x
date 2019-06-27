@@ -35,7 +35,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 public class Json {
 
   public static final JsonFactory factory = new JsonFactory();
-  public static final JsonMapper mapper = JsonMapper.load();
+  public static final JsonMapper mapper = load();
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
@@ -380,6 +380,14 @@ public class Json {
       }
     } catch (IOException e) {
       throw new EncodeException(e);
+    }
+  }
+
+  private static JsonMapper load() {
+    try {
+      return new JacksonMapper();
+    } catch (Throwable t1) {
+      return new JsonCodecMapper();
     }
   }
 }

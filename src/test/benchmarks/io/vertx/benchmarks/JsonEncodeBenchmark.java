@@ -11,10 +11,12 @@
 
 package io.vertx.benchmarks;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -38,12 +40,32 @@ public class JsonEncodeBenchmark extends BenchmarkBase {
 
   private JsonObject small;
   private JsonObject large;
+  private ObjectMapper jacksonMapper;
 
   @Setup
   public void setup() {
     ClassLoader classLoader = getClass().getClassLoader();
     small = loadJson(classLoader.getResource("small.json"));
     large = loadJson(classLoader.getResource("large.json"));
+    jacksonMapper = new ObjectMapper();
+
+    com.fasterxml.jackson.databind.module.SimpleModule module = new com.fasterxml.jackson.databind.module.SimpleModule();
+
+    // custom types
+    module.addSerializer(JsonObject.class, new com.fasterxml.jackson.databind.JsonSerializer<JsonObject>() {
+      @Override
+      public void serialize(JsonObject value, JsonGenerator jgen, com.fasterxml.jackson.databind.SerializerProvider serializerProvider) throws IOException {
+        jgen.writeObject(value.getMap());
+      }
+    });
+    module.addSerializer(JsonArray.class, new com.fasterxml.jackson.databind.JsonSerializer<JsonArray>() {
+        @Override
+        public void serialize(JsonArray value, JsonGenerator jgen, com.fasterxml.jackson.databind.SerializerProvider serializerProvider) throws IOException {
+          jgen.writeObject(value.getList());
+        }
+    });
+
+    this.jacksonMapper.registerModule(module);
   }
 
   private JsonObject loadJson(URL url) {
@@ -64,9 +86,29 @@ public class JsonEncodeBenchmark extends BenchmarkBase {
     viaString(large);
   }
 
+  @Benchmark
+  public void viaStringJacksonSmall() throws Exception {
+    viaStringJackson(small);
+  }
+
+  @Benchmark
+  public void viaStringJacksonLarge() throws Exception {
+    viaStringJackson(large);
+  }
+
   private void viaString(JsonObject jsonObject) throws Exception {
     Buffer buffer = Buffer.buffer();
     String strJson = jsonObject.encode();
+    byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
+    buffer.appendInt(encoded.length);
+    Buffer buff = Buffer.buffer(encoded);
+    buffer.appendBuffer(buff);
+    consume(buffer);
+  }
+
+  private void viaStringJackson(JsonObject jsonObject) throws Exception {
+    Buffer buffer = Buffer.buffer();
+    String strJson = jacksonMapper.writeValueAsString(jsonObject);
     byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
     buffer.appendInt(encoded.length);
     Buffer buff = Buffer.buffer(encoded);
@@ -84,9 +126,27 @@ public class JsonEncodeBenchmark extends BenchmarkBase {
     direct(large);
   }
 
+  @Benchmark
+  public void directJacksonSmall() throws Exception {
+    directJackson(small);
+  }
+
+  @Benchmark
+  public void directJacksonLarge() throws Exception {
+    directJackson(large);
+  }
+
   private void direct(JsonObject jsonObject) throws Exception {
     Buffer buffer = Buffer.buffer();
     Buffer encoded = jsonObject.toBuffer();
+    buffer.appendInt(encoded.length());
+    buffer.appendBuffer(encoded);
+    consume(buffer);
+  }
+
+  private void directJackson(JsonObject jsonObject) throws Exception {
+    Buffer buffer = Buffer.buffer();
+    Buffer encoded = Buffer.buffer(jacksonMapper.writeValueAsBytes(jsonObject));
     buffer.appendInt(encoded.length());
     buffer.appendBuffer(encoded);
     consume(buffer);

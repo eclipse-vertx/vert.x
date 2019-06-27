@@ -384,7 +384,6 @@ public class JsonParserImpl implements JsonParser {
           return Json.decodeValue(buffer.toString(), type);
         }
       } catch (Exception e) {
-        e.printStackTrace();
         throw new DecodeException(e.getMessage());
       }
     }

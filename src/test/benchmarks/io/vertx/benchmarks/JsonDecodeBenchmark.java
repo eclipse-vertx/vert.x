@@ -11,6 +11,7 @@
 
 package io.vertx.benchmarks;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
@@ -40,12 +41,14 @@ public class JsonDecodeBenchmark extends BenchmarkBase {
 
   private Buffer small;
   private Buffer large;
+  private ObjectMapper jacksonMapper;
 
   @Setup
   public void setup() {
     ClassLoader classLoader = getClass().getClassLoader();
     small = loadJsonAsBuffer(classLoader.getResource("small.json"));
     large = loadJsonAsBuffer(classLoader.getResource("large.json"));
+    jacksonMapper = new ObjectMapper();
   }
 
   private Buffer loadJsonAsBuffer(URL url) {
@@ -66,6 +69,15 @@ public class JsonDecodeBenchmark extends BenchmarkBase {
   public void viaStringLarge() throws Exception {
     viaString(large);
   }
+  @Benchmark
+  public void viaStringJacksonSmall() throws Exception {
+    viaStringJackson(small);
+  }
+
+  @Benchmark
+  public void viaStringJacksonLarge() throws Exception {
+    viaStringJackson(large);
+  }
 
   private void viaString(Buffer buffer) throws Exception {
     int pos = 0;
@@ -74,6 +86,16 @@ public class JsonDecodeBenchmark extends BenchmarkBase {
     byte[] encoded = buffer.getBytes(pos, pos + length);
     String str = new String(encoded, CharsetUtil.UTF_8);
     consume(new JsonObject(str));
+  }
+
+  private void viaStringJackson(Buffer buffer) throws Exception {
+    int pos = 0;
+    int length = buffer.getInt(pos);
+    pos += 4;
+    byte[] encoded = buffer.getBytes(pos, pos + length);
+    String str = new String(encoded, CharsetUtil.UTF_8);
+    Map decoded = jacksonMapper.readValue(str, Map.class);
+    consume(new JsonObject(decoded));
   }
 
   @Benchmark
@@ -86,10 +108,29 @@ public class JsonDecodeBenchmark extends BenchmarkBase {
     direct(large);
   }
 
+  @Benchmark
+  public void directJacksonSmall() throws Exception {
+    directJackson(small);
+  }
+
+  @Benchmark
+  public void directJacksonLarge() throws Exception {
+    directJackson(large);
+  }
+
   private void direct(Buffer buffer) throws Exception {
     int pos = 0;
     int length = buffer.getInt(pos);
     pos += 4;
     consume(new JsonObject(buffer.slice(pos, pos + length)));
+  }
+
+  private void directJackson(Buffer buffer) throws Exception {
+    int pos = 0;
+    int length = buffer.getInt(pos);
+    pos += 4;
+    Buffer slice = buffer.slice(pos, pos + length);
+    Map decoded = jacksonMapper.readValue(slice.toString(), Map.class);
+    consume(new JsonObject(decoded));
   }
 }
