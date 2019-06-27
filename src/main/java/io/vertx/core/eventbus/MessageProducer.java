@@ -34,7 +34,9 @@ public interface MessageProducer<T> extends WriteStream<T> {
    *
    * @param message the message to send
    * @return  reference to this for fluency
+   * @deprecated instead use {@link #write} with a producer obtained from {@link EventBus#sender}
    */
+  @Deprecated
   MessageProducer<T> send(T message);
 
   /**
@@ -44,7 +46,9 @@ public interface MessageProducer<T> extends WriteStream<T> {
    * @param message the message to send
    * @param replyHandler reply handler will be called when any reply from the recipient is received, may be {@code null}
    * @return  reference to this for fluency
+   * @deprecated instead use {@link EventBus#request(String, Object, Handler)}
    */
+  @Deprecated
   <R> MessageProducer<T> send(T message, Handler<AsyncResult<Message<R>>> replyHandler);
 
   @Override

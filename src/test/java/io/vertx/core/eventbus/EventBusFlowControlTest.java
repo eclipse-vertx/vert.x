@@ -83,7 +83,7 @@ public class EventBusFlowControlTest extends VertxTestBase {
   private void sendBatch(MessageProducer<String> prod, int batchSize, int numBatches, int batchNumber) {
     while (batchNumber < numBatches) {
       for (int i = 0; i < batchSize; i++) {
-        prod.send("message-" + i);
+        prod.write("message-" + i);
       }
       if (prod.writeQueueFull()) {
         int nextBatch = batchNumber + 1;
@@ -152,7 +152,7 @@ public class EventBusFlowControlTest extends VertxTestBase {
 
     boolean drainHandlerSet = false;
     for (int i = 0; i < wqms * 2; i++) {
-      prod.send("message-" + i);
+      prod.write("message-" + i);
       if (prod.writeQueueFull() && !drainHandlerSet) {
         prod.drainHandler(v -> {
           fail("Should not be called");
@@ -184,7 +184,7 @@ public class EventBusFlowControlTest extends VertxTestBase {
     while (!prod.writeQueueFull()) {
       int val = count++;
       expected.add(val);
-      prod.send(val);
+      prod.write(val);
     }
     consumer.resume();
     assertWaitUntil(() -> !prod.writeQueueFull());
