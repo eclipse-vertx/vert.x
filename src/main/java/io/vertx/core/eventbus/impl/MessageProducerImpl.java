@@ -68,18 +68,6 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   @Override
-  public MessageProducer<T> send(T message) {
-    doSend(message, null, null);
-    return this;
-  }
-
-  @Override
-  public <R> MessageProducer<T> send(T message, Handler<AsyncResult<Message<R>>> replyHandler) {
-    doSend(message, replyHandler, null);
-    return this;
-  }
-
-  @Override
   public MessageProducer<T> exceptionHandler(Handler<Throwable> handler) {
     return this;
   }
