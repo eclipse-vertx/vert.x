@@ -1280,6 +1280,26 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testCloseSender1() {
+    eb.sender(ADDRESS1).close();
+  }
+
+  @Test
+  public void testCloseSender2() {
+    eb.sender(ADDRESS1).close(null);
+  }
+
+  @Test
+  public void testClosePublisher1() {
+    eb.publisher(ADDRESS1).close();
+  }
+
+  @Test
+  public void testClosePublisher2() {
+    eb.publisher(ADDRESS1).close(null);
+  }
+
+  @Test
   public void testPump() {
     String str = TestUtils.randomUnicodeString(100);
     ReadStream<String> consumer = eb.<String>consumer(ADDRESS1).bodyStream();

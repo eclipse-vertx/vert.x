@@ -155,7 +155,11 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     if (creditConsumer != null) {
       creditConsumer.unregister(handler);
     } else {
-      vertx.runOnContext(v -> handler.handle(Future.succeededFuture()));
+      vertx.runOnContext(v -> {
+        if (handler != null) {
+          handler.handle(Future.succeededFuture());
+        }
+      });
     }
   }
 
