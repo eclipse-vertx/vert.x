@@ -11,15 +11,16 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http2.Http2CodecUtil;
+import io.vertx.core.Promise;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.StreamResetException;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.concurrent.TimeoutException;
 
@@ -45,7 +46,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long lastDataReceived;
   protected Throwable exceptionOccurred;
   private boolean paused;
-  private HttpClientResponseImpl response;
+  private HttpClientResponse response;
 
   HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
@@ -59,8 +60,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.ssl = ssl;
   }
 
-  protected abstract void doHandleResponse(HttpClientResponseImpl resp, long timeoutMs);
-  protected abstract void checkComplete();
+  protected void checkEnded() {
+  }
 
   protected String hostHeader() {
     if ((port == 80 && !ssl) || (port == 443 && ssl)) {
@@ -99,7 +100,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   @Override
   public synchronized HttpClientRequest exceptionHandler(Handler<Throwable> handler) {
     if (handler != null) {
-      checkComplete();
+      checkEnded();
       this.exceptionHandler = handler;
     } else {
       this.exceptionHandler = null;
@@ -113,7 +114,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   @Override
   public synchronized HttpClientRequest setTimeout(long timeoutMs) {
-    cancelOutstandingTimeoutTimer();
+    cancelTimeout();
     currentTimeoutMs = timeoutMs;
     currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
     return this;
@@ -122,7 +123,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   public void handleException(Throwable t) {
     Handler<Throwable> handler;
     synchronized (this) {
-      cancelOutstandingTimeoutTimer();
+      cancelTimeout();
       exceptionOccurred = t;
       if (exceptionHandler != null) {
         handler = exceptionHandler;
@@ -133,7 +134,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     handler.handle(t);
   }
 
-  void handleResponse(HttpClientResponseImpl resp) {
+  void handleResponse(HttpClientResponse resp) {
     synchronized (this) {
       response = resp;
     }
@@ -141,38 +142,30 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   private void checkHandleResponse() {
-    HttpClientResponseImpl resp;
+    long timeoutMS;
+    HttpClientResponse resp;
     synchronized (this) {
       if (response != null) {
         if (paused) {
           return;
         }
+        timeoutMS = cancelTimeout();
         resp = response;
         response = null;
       } else {
         return;
       }
     }
-    doHandleResponse(resp);
-  }
-
-  private synchronized void doHandleResponse(HttpClientResponseImpl resp) {
-    long timeoutMS;
-    synchronized (this) {
-      // If an exception occurred (e.g. a timeout fired) we won't receive the response.
-      if (exceptionOccurred != null) {
-        return;
-      }
-      timeoutMS = cancelOutstandingTimeoutTimer();
-    }
     try {
-      doHandleResponse(resp, timeoutMS);
+      handleResponse(resp, timeoutMS);
     } catch (Throwable t) {
       handleException(t);
     }
   }
 
-  private long cancelOutstandingTimeoutTimer() {
+  abstract void handleResponse(HttpClientResponse resp, long timeoutMs);
+
+  private synchronized long cancelTimeout() {
     long ret;
     if ((ret = currentTimeoutTimerId) != -1) {
       client.getVertx().cancelTimer(currentTimeoutTimerId);
@@ -184,31 +177,25 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   private void handleTimeout(long timeoutMs) {
-    if (lastDataReceived == 0) {
-      timeout(timeoutMs);
-    } else {
-      long now = System.currentTimeMillis();
-      long timeSinceLastData = now - lastDataReceived;
-      if (timeSinceLastData >= timeoutMs) {
-        timeout(timeoutMs);
-      } else {
-        // reschedule
-        lastDataReceived = 0;
-        setTimeout(timeoutMs - timeSinceLastData);
+    synchronized (this) {
+      if (lastDataReceived > 0) {
+        long now = System.currentTimeMillis();
+        long timeSinceLastData = now - lastDataReceived;
+        if (timeSinceLastData < timeoutMs) {
+          // reschedule
+          lastDataReceived = 0;
+          setTimeout(timeoutMs - timeSinceLastData);
+          return;
+        }
       }
     }
-  }
-
-  private void timeout(long timeoutMs) {
     String msg = "The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + server;
-    // Use a stack-less exception
-    handleException(new TimeoutException(msg) {
+    reset(new TimeoutException(msg) {
       @Override
       public synchronized Throwable fillInStackTrace() {
         return this;
       }
     });
-    reset(0);
   }
 
   synchronized void dataReceived() {
@@ -216,6 +203,13 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
       lastDataReceived = System.currentTimeMillis();
     }
   }
+
+  @Override
+  public boolean reset(long code) {
+    return reset(new StreamResetException(code));
+  }
+
+  abstract boolean reset(Throwable cause);
 
   @Override
   public HttpClientRequest pause() {

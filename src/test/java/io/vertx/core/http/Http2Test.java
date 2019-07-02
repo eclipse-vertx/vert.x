@@ -247,28 +247,24 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testResetClientRequestNotYetSent() throws Exception {
-    waitFor(2);
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(1)));
     AtomicInteger numReq = new AtomicInteger();
     server.requestHandler(req -> {
-      assertEquals(0, numReq.getAndIncrement());
-      req.response().end();
-      complete();
+      fail();
     });
     startServer(testAddress);
     // There might be a race between the request write and the request reset
     // so we do it on the context thread to avoid it
     vertx.runOnContext(v -> {
-      HttpClientRequest post = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      fail();
+      HttpClientRequest post = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail());
+      post.exceptionHandler(err -> {
+        if (err instanceof StreamResetException) {
+          complete();
+        }
       });
       post.setChunked(true).write(TestUtils.randomBuffer(1024));
       assertTrue(post.reset());
-      client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-        assertEquals(1, numReq.get());
-        complete();
-      }).end();
     });
     await();
   }

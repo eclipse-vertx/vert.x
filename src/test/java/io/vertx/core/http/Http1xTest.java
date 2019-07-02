@@ -2883,12 +2883,8 @@ public class Http1xTest extends HttpTest {
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
     AtomicInteger connCount = new AtomicInteger();
     client.connectionHandler(conn -> connCount.incrementAndGet());
-    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> {
-      fail();
-    });
-    // Force connect
-    req.sendHead(v -> {});
-    req.reset();
+    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/first", resp -> fail());
+    req.reset(0);
     CountDownLatch respLatch = new CountDownLatch(2);
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/second", resp -> {
       assertEquals(200, resp.statusCode());
@@ -3058,9 +3054,7 @@ public class Http1xTest extends HttpTest {
       // There might be a race between the request write and the request reset
       // so we do it on the context thread to avoid it
       vertx.runOnContext(v -> {
-        HttpClientRequest post = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-          fail();
-        });
+        HttpClientRequest post = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> fail());
         post.setChunked(true).write(TestUtils.randomBuffer(1024));
         assertTrue(post.reset());
         client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
@@ -4475,12 +4469,13 @@ public class Http1xTest extends HttpTest {
     }).setChunked(true);
     CheckingSender sender = new CheckingSender(vertx.getOrCreateContext(), req);
     AtomicBoolean connected = new AtomicBoolean();
+    AtomicBoolean done = new AtomicBoolean();
     req.exceptionHandler(err -> {
       assertTrue(connected.get());
       Throwable failure = sender.close();
       if (failure != null) {
         fail(failure);
-      } else if (err == ConnectionBase.CLOSED_EXCEPTION) {
+      } else if (done.compareAndSet(false, true)) {
         testComplete();
       }
     });

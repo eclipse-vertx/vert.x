@@ -191,11 +191,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     private final Promise<HttpClientStream> fut;
     private final InboundBuffer<Object> queue;
     private HttpClientRequestImpl request;
+    private Handler<Void> continueHandler;
     private HttpClientResponseImpl response;
     private boolean requestEnded;
     private boolean responseEnded;
     private boolean reset;
-    private MultiMap trailers;
     private StreamImpl next;
     private long bytesWritten;
     private long bytesRead;
@@ -245,12 +245,13 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<Void> contHandler, Handler<AsyncResult<Void>> handler) {
       HttpRequest request = createRequest(method, rawMethod, uri, headers);
       prepareRequestHeaders(request, hostHeader, chunked);
       if (buf != null) {
         bytesWritten += buf.readableBytes();
       }
+      continueHandler = contHandler;
       sendRequest(request, buf, end, handler);
       if (conn.responseInProgress == null) {
         conn.responseInProgress = this;
@@ -357,22 +358,26 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    public void reset(long code) {
+    public void reset(Throwable cause) {
       synchronized (conn) {
-        if (!reset) {
-          reset = true;
-          if (conn.requestInProgress == this) {
-            if (request == null) {
-              conn.requestInProgress = null;
-              conn.recycle();
-            } else {
-              conn.close();
-            }
-          } else if (!responseEnded) {
+        if (reset) {
+          return;
+        }
+        reset = true;
+        if (conn.requestInProgress == this) {
+          if (request == null) {
+            // Is that possible in practice ???
+            conn.handleRequestEnd(true);
+          } else {
             conn.close();
           }
+        } else if (!responseEnded) {
+          conn.close();
+        } else {
+          // ????
         }
       }
+      handleException(cause);
     }
 
     @Override
@@ -463,12 +468,12 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           }
         }
       }
-      queue.handler(buf -> {
-        if (buf == InboundBuffer.END_SENTINEL) {
+      queue.handler(item -> {
+        if (item instanceof MultiMap) {
           conn.reportBytesRead(bytesRead);
-          response.handleEnd(trailers);
+          response.handleEnd((MultiMap) item);
         } else {
-          response.handleChunk((Buffer) buf);
+          response.handleChunk((Buffer) item);
         }
       });
       queue.drainHandler(v -> {
@@ -482,16 +487,10 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     private boolean endResponse(LastHttpContent trailer) {
       synchronized (conn) {
         if (conn.metrics != null) {
-          HttpClientRequestBase req = request;
-          if (req.exceptionOccurred != null) {
-            conn.metrics.requestReset(metric);
-          } else {
-            conn.metrics.responseEnd(metric, response);
-          }
+          conn.metrics.responseEnd(metric, response);
         }
-        trailers = new HeadersAdaptor(trailer.trailingHeaders());
       }
-      queue.write(InboundBuffer.END_SENTINEL);
+      queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
       synchronized (conn) {
         responseEnded = true;
         conn.close |= !conn.options.isKeepAlive();
@@ -512,7 +511,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         requestEnded = this.requestEnded;
       }
       if (request != null) {
-        if (response == null || response.statusCode() == 100) {
+        if (response == null) {
           request.handleException(cause);
         } else {
           if (!requestEnded) {
@@ -582,27 +581,25 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   private void handleResponseBegin(HttpResponse resp) {
-    StreamImpl stream;
-    HttpClientResponseImpl response;
-    HttpClientRequestImpl request;
-    Exception err;
-    synchronized (this) {
-      stream = responseInProgress;
-      request = stream.request;
-      HttpClientResponseImpl r = null;
-      Exception t = null;
-      try {
-        r = stream.beginResponse(resp);
-      } catch (Exception e) {
-        t = e;
+    if (resp.status().code() == 100) {
+      Handler<Void> handler;
+      synchronized (this) {
+        StreamImpl stream = responseInProgress;
+        handler = stream.continueHandler;
       }
-      response = r;
-      err = t;
-    }
-    if (response != null) {
-      request.handleResponse(response);
+      if (handler != null) {
+        handler.handle(null);
+      }
     } else {
-      request.handleException(err);
+      StreamImpl stream;
+      HttpClientResponseImpl response;
+      HttpClientRequestImpl request;
+      synchronized (this) {
+        stream = responseInProgress;
+        request = stream.request;
+        response = stream.beginResponse(resp);
+      }
+      request.handleResponse(response);
     }
   }
 
@@ -622,8 +619,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     StreamImpl stream;
     synchronized (this) {
       stream = responseInProgress;
-      // We don't signal response end for a 100-continue response as a real response will follow
-      if (stream.response.statusCode() == 100) {
+      if (stream.response == null) {
+        // 100-continue
         return;
       }
       responseInProgress = stream.next;
@@ -640,7 +637,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       requestInProgress = next;
     }
     if (recycle) {
-      checkLifecycle();
+      recycle();
     }
     if (next != null) {
       next.fut.complete(next);
