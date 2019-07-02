@@ -333,6 +333,11 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   boolean isSsl();
 
   /**
+   * @return {@code true} if the WebSocket is closed
+   */
+  boolean isClosed();
+
+  /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is
    *         not SSL.
    * @see javax.net.ssl.SSLSession

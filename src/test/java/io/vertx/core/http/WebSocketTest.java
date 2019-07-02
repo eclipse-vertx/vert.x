@@ -1337,7 +1337,9 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(WebSocketBase::close);
     server.listen(onSuccess(s -> {
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(ws -> {
+        assertFalse(ws.isClosed());
         ws.closeHandler(v -> {
+          assertTrue(ws.isClosed());
           testComplete();
         });
       }));

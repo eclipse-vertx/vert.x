@@ -313,7 +313,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  boolean isClosed() {
+  public boolean isClosed() {
     synchronized (conn) {
       return closed;
     }
