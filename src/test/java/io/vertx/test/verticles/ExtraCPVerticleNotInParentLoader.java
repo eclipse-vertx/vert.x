@@ -19,9 +19,12 @@ import org.junit.Assert;
 * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
 */
 public class ExtraCPVerticleNotInParentLoader extends AbstractVerticle {
+
+  public static IsolatingClassLoader cl;
+
   @Override
   public void start() throws Exception {
-    IsolatingClassLoader cl = (IsolatingClassLoader) Thread.currentThread().getContextClassLoader();
+    cl = (IsolatingClassLoader) Thread.currentThread().getContextClassLoader();
     Class extraCPClass = cl.loadClass("MyVerticle");
     Assert.assertSame(extraCPClass.getClassLoader(), cl);
     try {

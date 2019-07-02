@@ -1168,12 +1168,23 @@ public class DeploymentTest extends VertxTestBase {
   public void testExtraClasspathLoaderNotInParentLoader() throws Exception {
     String dir = createClassOutsideClasspath("MyVerticle");
     List<String> extraClasspath = Arrays.asList(dir);
-    vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
-      setExtraClasspath(extraClasspath), ar -> {
-      assertTrue(ar.succeeded());
-      testComplete();
-    });
-    await();
+    DeploymentOptions options = new DeploymentOptions().setIsolationGroup("somegroup").setExtraClasspath(extraClasspath);
+    try {
+      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id1 -> {
+        vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id2 -> {
+          vertx.undeploy(id1, onSuccess(v1 -> {
+            assertFalse(ExtraCPVerticleNotInParentLoader.cl.isClosed());
+            vertx.undeploy(id2, onSuccess(v2 -> {
+              assertTrue(ExtraCPVerticleNotInParentLoader.cl.isClosed());
+              testComplete();
+            }));
+          }));
+        }));
+      }));
+      await();
+    } finally {
+      ExtraCPVerticleNotInParentLoader.cl = null;
+    }
   }
 
   @Test
@@ -1195,6 +1206,24 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testCloseIsolationGroup() throws Exception {
+    String dir = createClassOutsideClasspath("MyVerticle");
+    List<String> extraClasspath = Arrays.asList(dir);
+    Vertx vertx = Vertx.vertx();
+    try {
+      DeploymentOptions options = new DeploymentOptions().setIsolationGroup("somegroup").setExtraClasspath(extraClasspath);
+      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id -> {
+        vertx.close(onSuccess(v -> {
+          assertTrue(ExtraCPVerticleNotInParentLoader.cl.isClosed());
+          testComplete();
+        }));
+      }));
+      await();
+    } finally {
+      ExtraCPVerticleNotInParentLoader.cl = null;
+    }
+  }
   public static class ParentVerticle extends AbstractVerticle {
 
     @Override
