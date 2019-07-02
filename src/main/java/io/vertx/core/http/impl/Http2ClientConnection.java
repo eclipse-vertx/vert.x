@@ -485,13 +485,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         writeReset(code);
       } else {
         if (!(requestEnded && responseEnded)) {
+          handleException(cause);
           requestEnded = true;
           responseEnded = true;
           writeReset(code);
           if (conn.metrics != null) {
             conn.metrics.requestReset(metric);
           }
-          handleException(cause);
         }
       }
     }
