@@ -24,11 +24,14 @@ import java.util.List;
  */
 public class IsolatingClassLoader extends URLClassLoader {
 
+  private volatile boolean closed;
   private List<String> isolatedClasses;
+  int refCount;
 
   public IsolatingClassLoader(URL[] urls, ClassLoader parent, List<String> isolatedClasses) {
     super(urls, parent);
     this.isolatedClasses = isolatedClasses;
+    this.refCount = 1;
   }
 
   @Override
@@ -120,6 +123,16 @@ public class IsolatingClassLoader extends URLClassLoader {
     }
 
     return Collections.enumeration(resources);
+  }
+
+  @Override
+  public void close() throws IOException {
+    closed = true;
+    super.close();
+  }
+
+  public boolean isClosed() {
+    return closed;
   }
 
   private boolean isVertxOrSystemClass(String name) {

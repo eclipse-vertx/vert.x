@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -44,7 +45,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,7 +61,7 @@ public class DeploymentManager {
 
   private final VertxInternal vertx;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
-  private final Map<String, ClassLoader> classloaders = new WeakHashMap<>();
+  private final Map<String, IsolatingClassLoader> classloaders = new HashMap<>();
   private final Map<String, List<VerticleFactory>> verticleFactories = new ConcurrentHashMap<>();
   private final List<VerticleFactory> defaultFactories = new ArrayList<>();
 
@@ -387,7 +387,7 @@ public class DeploymentManager {
 
   private static URL mapToURL(String path) {
     try {
-        return new URL(path); 
+        return new URL(path);
     } catch (MalformedURLException e) {
       try {
         return new File(path).toURI().toURL();
@@ -445,7 +445,7 @@ public class DeploymentManager {
       List<URL> classpathURLs = extractCPFromProperty();
       for (URL url : extractCPByManifest(current)) {
         if (!classpathURLs.contains(url)) {
-          classpathURLs.add(url); 
+          classpathURLs.add(url);
         }
       }
       return classpathURLs;
@@ -463,8 +463,8 @@ public class DeploymentManager {
       cl = getCurrentClassLoader();
     } else {
       synchronized (this) {
-        cl = classloaders.get(isolationGroup);
-        if (cl == null) {
+        IsolatingClassLoader icl = classloaders.get(isolationGroup);
+        if (icl == null) {
           ClassLoader current = getCurrentClassLoader();
           List<URL> urls = new ArrayList<>();
           // Add any extra URLs to the beginning of the classpath
@@ -478,10 +478,13 @@ public class DeploymentManager {
           urls.addAll(extractClasspath(current));
 
           // Create an isolating cl with the urls
-          cl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader(),
-                                        options.getIsolatedClasses());
-          classloaders.put(isolationGroup, cl);
+          icl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader(),
+            options.getIsolatedClasses());
+          classloaders.put(isolationGroup, icl);
+        } else {
+          icl.refCount++;
         }
+        cl = icl;
       }
     }
     return cl;
@@ -702,6 +705,20 @@ public class DeploymentManager {
                 if (ar2.failed()) {
                   // Log error but we report success anyway
                   log.error("Failed to run close hook", ar2.cause());
+                }
+                String group = options.getIsolationGroup();
+                if (group != null) {
+                  synchronized (DeploymentManager.this) {
+                    IsolatingClassLoader icl = classloaders.get(group);
+                    if (--icl.refCount == 0) {
+                      classloaders.remove(group);
+                      try {
+                        icl.close();
+                      } catch (IOException e) {
+                        log.debug("Issue when closing isolation group loader", e);
+                      }
+                    }
+                  }
                 }
                 if (ar.succeeded() && undeployCount.incrementAndGet() == numToUndeploy) {
                   reportSuccess(null, undeployingContext, completionHandler);
