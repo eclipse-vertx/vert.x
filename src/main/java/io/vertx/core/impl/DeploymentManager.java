@@ -26,6 +26,7 @@ import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -40,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -57,7 +58,7 @@ public class DeploymentManager {
 
   private final VertxInternal vertx;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
-  private final Map<String, ClassLoader> classloaders = new WeakHashMap<>();
+  private final Map<String, IsolatingClassLoader> classloaders = new HashMap<>();
   private final Map<String, List<VerticleFactory>> verticleFactories = new ConcurrentHashMap<>();
   private final List<VerticleFactory> defaultFactories = new ArrayList<>();
 
@@ -389,8 +390,8 @@ public class DeploymentManager {
       // IMPORTANT - Isolation groups are not supported on Java 9+, because the system classloader is not an URLClassLoader
       // anymore. Thus we can't extract the paths from the classpath and isolate the loading.
       synchronized (this) {
-        cl = classloaders.get(isolationGroup);
-        if (cl == null) {
+        IsolatingClassLoader icl = classloaders.get(isolationGroup);
+        if (icl == null) {
           ClassLoader current = getCurrentClassLoader();
           if (!(current instanceof URLClassLoader)) {
             throw new IllegalStateException("Current classloader must be URLClassLoader");
@@ -414,10 +415,13 @@ public class DeploymentManager {
           urls.addAll(Arrays.asList(urlc.getURLs()));
 
           // Create an isolating cl with the urls
-          cl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader(),
-                                        options.getIsolatedClasses());
-          classloaders.put(isolationGroup, cl);
+          icl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader(),
+            options.getIsolatedClasses());
+          classloaders.put(isolationGroup, icl);
+        } else {
+          icl.refCount++;
         }
+        cl = icl;
       }
     }
     return cl;
@@ -638,6 +642,20 @@ public class DeploymentManager {
                 if (ar2.failed()) {
                   // Log error but we report success anyway
                   log.error("Failed to run close hook", ar2.cause());
+                }
+                String group = options.getIsolationGroup();
+                if (group != null) {
+                  synchronized (DeploymentManager.this) {
+                    IsolatingClassLoader icl = classloaders.get(group);
+                    if (--icl.refCount == 0) {
+                      classloaders.remove(group);
+                      try {
+                        icl.close();
+                      } catch (IOException e) {
+                        log.debug("Issue when closing isolation group loader", e);
+                      }
+                    }
+                  }
                 }
                 if (ar.succeeded() && undeployCount.incrementAndGet() == numToUndeploy) {
                   reportSuccess(null, undeployingContext, completionHandler);

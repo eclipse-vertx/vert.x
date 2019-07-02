@@ -1095,14 +1095,24 @@ public class DeploymentTest extends VertxTestBase {
     String dir = createClassOutsideClasspath("MyVerticle");
     List<String> extraClasspath = Arrays.asList(dir);
     try {
-      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
-          setExtraClasspath(extraClasspath), onSuccess(v -> {
-        testComplete();
+      DeploymentOptions options = new DeploymentOptions().setIsolationGroup("somegroup").setExtraClasspath(extraClasspath);
+      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id1 -> {
+        vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id2 -> {
+          vertx.undeploy(id1, onSuccess(v1 -> {
+            assertFalse(ExtraCPVerticleNotInParentLoader.cl.isClosed());
+            vertx.undeploy(id2, onSuccess(v2 -> {
+              assertTrue(ExtraCPVerticleNotInParentLoader.cl.isClosed());
+              testComplete();
+            }));
+          }));
+        }));
       }));
       assertTrue(expectedSuccess);
       await();
     } catch (IllegalStateException e) {
       assertFalse(expectedSuccess);
+    } finally {
+      ExtraCPVerticleNotInParentLoader.cl = null;
     }
   }
 
@@ -1125,6 +1135,28 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testCloseIsolationGroup() throws Exception {
+    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
+    String dir = createClassOutsideClasspath("MyVerticle");
+    List<String> extraClasspath = Arrays.asList(dir);
+    Vertx vertx = Vertx.vertx();
+    try {
+      DeploymentOptions options = new DeploymentOptions().setIsolationGroup("somegroup").setExtraClasspath(extraClasspath);
+      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id -> {
+        vertx.close(onSuccess(v -> {
+          assertTrue(ExtraCPVerticleNotInParentLoader.cl.isClosed());
+          testComplete();
+        }));
+      }));
+      assertTrue(expectedSuccess);
+      await();
+    } catch (IllegalStateException e) {
+      assertFalse(expectedSuccess);
+    } finally {
+      ExtraCPVerticleNotInParentLoader.cl = null;
+    }
+  }
   public static class ParentVerticle extends AbstractVerticle {
 
     @Override
