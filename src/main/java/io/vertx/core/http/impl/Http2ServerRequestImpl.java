@@ -59,7 +59,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequestImpl extends Http2ServerStream implements HttpServerRequest {
+public class Http2ServerRequestImpl extends Http2ServerStream implements HttpServerRequestInternal {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
@@ -88,6 +88,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private Handler<HttpFrame> customFrameHandler;
 
   private Handler<StreamPriority> streamPriorityHandler;
+
+  private Object payload;
   
   public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, Http2Stream stream, HttpServerMetrics metrics,
       String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
@@ -105,6 +107,16 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     this.streamEnded = streamEnded;
     this.scheme = scheme;
     this.headersMap = headersMap;
+  }
+
+  @Override
+  public void payload(Object o) {
+    payload = o;
+  }
+
+  @Override
+  public Object payload() {
+    return payload;
   }
 
   void dispatch(Handler<HttpServerRequest> handler) {
