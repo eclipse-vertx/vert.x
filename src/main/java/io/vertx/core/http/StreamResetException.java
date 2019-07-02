@@ -23,7 +23,7 @@ public class StreamResetException extends VertxException {
   private final long code;
 
   public StreamResetException(long code) {
-    super("Stream reset: " + code);
+    super("Stream reset: " + code, true);
     this.code = code;
   }
 

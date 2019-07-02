@@ -700,6 +700,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testClientResetServerStreamDuringRequest() throws Exception {
+    waitFor(2);
     Promise<Void> bufReceived = Promise.promise();
     server.requestHandler(req -> {
       req.handler(buf -> {
@@ -719,13 +720,14 @@ public class Http2ClientTest extends Http2TestBase {
       });
       req.response().closeHandler(v -> {
         assertEquals(10L, reset.get());
-        testComplete();
+        complete();
       });
     });
     startServer();
-    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
-      fail();
-    }).setChunked(true).write(Buffer.buffer("hello"));
+    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> fail())
+      .exceptionHandler(err -> complete())
+      .setChunked(true);
+    req.write(Buffer.buffer("hello"));
     bufReceived.future().setHandler(ar -> {
       req.reset(10);
     });
@@ -751,13 +753,12 @@ public class Http2ClientTest extends Http2TestBase {
       req.response().setChunked(true).write(Buffer.buffer("some-data"));
     });
     startServer();
-    HttpClientRequest req = client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath");
-    req.handler(resp -> {
-      resp.exceptionHandler(this::fail);
-      req.reset(10);
-      assertIllegalStateException(() -> req.write(Buffer.buffer()));
-      assertIllegalStateException(req::end);
-    }).end(Buffer.buffer("hello"));
+    client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath",
+      resp -> {
+        resp.request().reset(10);
+        assertIllegalStateException(() -> resp.request().write(Buffer.buffer()));
+        assertIllegalStateException(resp.request()::end);
+      }).end(Buffer.buffer("hello"));
     await();
   }
 
