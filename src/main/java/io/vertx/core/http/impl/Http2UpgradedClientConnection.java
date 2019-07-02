@@ -104,6 +104,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                           ByteBuf buf,
                           boolean end,
                           StreamPriority priority,
+                          Handler<Void> continueHandler,
                           Handler<AsyncResult<Void>> handler) {
       ChannelPipeline pipeline = conn.channel().pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
@@ -138,10 +139,12 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
           // Now we need to upgrade this to an HTTP2
           ConnectionListener<HttpClientConnection> listener = conn.listener();
           VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, conn.endpointMetric(), listener, conn.getContext(), current.metric(), (conn, concurrency) -> {
-            conn.upgradeStream(request, stream.metric(), ar -> {
+            conn.upgradeStream(stream.metric(), ar -> {
               UpgradingStream.this.conn.closeHandler(null);
               UpgradingStream.this.conn.exceptionHandler(null);
               if (ar.succeeded()) {
+                HttpClientStream upgradedStream = ar.result();
+                upgradedStream.beginRequest(request);
                 current = conn;
                 conn.closeHandler(closeHandler);
                 conn.exceptionHandler(exceptionHandler);
@@ -163,7 +166,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, handler);
+      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, continueHandler, handler);
     }
 
     @Override
@@ -217,8 +220,8 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public void reset(long code) {
-      stream.reset(code);
+    public void reset(Throwable cause) {
+      stream.reset(cause);
     }
 
     @Override
