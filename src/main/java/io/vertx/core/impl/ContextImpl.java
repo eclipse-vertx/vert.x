@@ -13,13 +13,7 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Starter;
+import io.vertx.core.*;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -282,9 +276,13 @@ abstract class ContextImpl implements ContextInternal {
         if (metrics != null) {
           metrics.end(execMetric, res.succeeded());
         }
-        if (resultHandler != null) {
-          res.setHandler(ar -> runOnContext(v -> resultHandler.handle(ar)));
-        }
+        res.setHandler(ar -> {
+          if (resultHandler != null) {
+            runOnContext(v -> resultHandler.handle(ar));
+          } else if (ar.failed()) {
+            reportException(ar.cause());
+          }
+        });
       };
       if (queue != null) {
         queue.execute(command, exec);

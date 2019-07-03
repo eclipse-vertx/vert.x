@@ -18,7 +18,10 @@ import io.vertx.core.impl.WorkerPool;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -302,6 +305,37 @@ public class ContextTest extends VertxTestBase {
         throw failure;
       });
     });
+    await();
+  }
+
+  @Test
+  public void testExceptionInExecutingBlockingWithContextExceptionHandler() {
+    RuntimeException expected = new RuntimeException("test");
+    Context context = vertx.getOrCreateContext();
+    context.exceptionHandler(t -> {
+      assertSame(expected, t);
+      complete();
+    });
+    vertx.exceptionHandler(t -> {
+      fail("Should not be invoked");
+    });
+    context.executeBlocking(promise -> {
+      throw expected;
+    }, null);
+    await();
+  }
+
+  @Test
+  public void testExceptionInExecutingBlockingWithVertxExceptionHandler() {
+    RuntimeException expected = new RuntimeException("test");
+    Context context = vertx.getOrCreateContext();
+    vertx.exceptionHandler(t -> {
+      assertSame(expected, t);
+      complete();
+    });
+    context.executeBlocking(promise -> {
+      throw expected;
+    }, null);
     await();
   }
 
