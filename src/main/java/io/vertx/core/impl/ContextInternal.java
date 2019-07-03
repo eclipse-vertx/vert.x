@@ -109,6 +109,26 @@ public interface ContextInternal extends Context {
   <T> void dispatch(T arg, Handler<T> task);
 
   /**
+   * Begin the dispatch of a task on this context.
+   * <p>
+   * The task execution is monitored by the blocked thread checker.
+   * <p>
+   * This context is thread-local associated during the task execution.
+   *
+   * @return the previous context that shall be restored after or {@code null} if there is none
+   * @throws IllegalStateException when the current thread of execution cannot execute this task
+   */
+  ContextInternal beginDispatch();
+
+  /**
+   * End the dispatch of a task on this context.
+   *
+   * @param prev the previous context to restore or {@code null} if there is none
+   * @throws IllegalStateException when the current thread of execution cannot execute this task
+   */
+  void endDispatch(ContextInternal prev);
+
+  /**
    * Report an exception to this context synchronously.
    * <p>
    * The exception handler will be called when there is one, otherwise the exception will be logged.

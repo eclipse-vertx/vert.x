@@ -97,7 +97,7 @@ class EpollTransport extends Transport {
   }
 
   @Override
-  public EventLoopGroup eventLoopGroup(int nThreads, ThreadFactory threadFactory, int ioRatio) {
+  public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
     EpollEventLoopGroup eventLoopGroup = new EpollEventLoopGroup(nThreads, threadFactory);
     eventLoopGroup.setIoRatio(ioRatio);
     return eventLoopGroup;

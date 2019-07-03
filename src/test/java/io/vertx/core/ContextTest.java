@@ -576,7 +576,7 @@ public class ContextTest extends VertxTestBase {
       assertSame(ctx, Vertx.currentContext());
       assertSame(cl, Thread.currentThread().getContextClassLoader());
       int[] called = new int[1];
-      VertxThread thread = VertxThread.current();
+      BlockedThreadChecker.Task thread = (BlockedThreadChecker.Task) Thread.currentThread();
       long start = thread.startTime();
       ctx.dispatch(v2 -> {
         called[0]++;

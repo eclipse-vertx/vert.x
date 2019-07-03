@@ -10,11 +10,11 @@
  */
 package io.vertx.core.streams.impl;
 
+import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxThread;
 
 import java.util.ArrayDeque;
 import java.util.Objects;
@@ -97,7 +97,7 @@ public class InboundBuffer<E> {
 
   private void checkThread() {
     Thread thread = Thread.currentThread();
-    if (!(thread instanceof VertxThread)) {
+    if (!(thread instanceof FastThreadLocalThread)) {
       throw new IllegalStateException("This operation must be called from a Vert.x thread");
     }
   }

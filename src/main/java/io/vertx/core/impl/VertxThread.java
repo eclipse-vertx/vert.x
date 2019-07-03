@@ -18,19 +18,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public final class VertxThread extends FastThreadLocalThread {
-
-  /**
-   * @return the current {@code VertxThread}
-   * @throws IllegalStateException when the current thread is not a {@code VertxThread}
-   */
-  public static VertxThread current() {
-    Thread th = Thread.currentThread();
-    if (!(th instanceof VertxThread)) {
-      throw new IllegalStateException("Uh oh! context executing with wrong thread! " + th);
-    }
-    return (VertxThread) th;
-  }
+public final class VertxThread extends FastThreadLocalThread implements BlockedThreadChecker.Task {
 
   static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
   static final boolean DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
@@ -75,11 +63,13 @@ public final class VertxThread extends FastThreadLocalThread {
     return worker;
   }
 
-  public long getMaxExecTime() {
+  @Override
+  public long maxExecTime() {
     return maxExecTime;
   }
 
-  public TimeUnit getMaxExecTimeUnit() {
+  @Override
+  public TimeUnit maxExecTimeUnit() {
     return maxExecTimeUnit;
   }
 
@@ -92,12 +82,9 @@ public final class VertxThread extends FastThreadLocalThread {
    * @param context the context on which the task is dispatched on
    * @return the current context that shall be restored
    */
-  public ContextInternal beginDispatch(ContextInternal context) {
+  ContextInternal beginDispatch(ContextInternal context) {
     if (!ContextImpl.DISABLE_TIMINGS) {
       executeStart();
-    }
-    if (!DISABLE_TCCL) {
-      setContextClassLoader(context != null ? context.classLoader() : null);
     }
     ContextInternal prev = this.context;
     this.context = context;
@@ -112,13 +99,10 @@ public final class VertxThread extends FastThreadLocalThread {
    *
    * @param prev the previous context thread to restore, might be {@code null}
    */
-  public void endDispatch(ContextInternal prev) {
+  void endDispatch(ContextInternal prev) {
     // We don't unset the context after execution - this is done later when the context is closed via
     // VertxThreadFactory
     context = prev;
-    if (!DISABLE_TCCL) {
-      setContextClassLoader(prev != null ? prev.classLoader() : null);
-    }
     if (!ContextImpl.DISABLE_TIMINGS) {
       executeEnd();
     }

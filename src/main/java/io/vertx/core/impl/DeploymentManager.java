@@ -478,8 +478,8 @@ public class DeploymentManager {
     for (Verticle verticle: verticles) {
       WorkerExecutorInternal workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
       WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
-      ContextImpl context = options.isWorker() ? (ContextImpl) vertx.createWorkerContext(deployment, pool, tccl) :
-        vertx.createEventLoopContext(deployment, pool, tccl);
+      ContextImpl context = (ContextImpl) (options.isWorker() ? vertx.createWorkerContext(deployment, pool, tccl) :
+        vertx.createEventLoopContext(deployment, pool, tccl));
       if (workerExec != null) {
         context.addCloseHook(workerExec);
       }

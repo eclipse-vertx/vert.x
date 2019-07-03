@@ -68,7 +68,7 @@ class KQueueTransport extends Transport {
   }
 
   @Override
-  public EventLoopGroup eventLoopGroup(int nThreads, ThreadFactory threadFactory, int ioRatio) {
+  public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
     KQueueEventLoopGroup eventLoopGroup = new KQueueEventLoopGroup(nThreads, threadFactory);
     eventLoopGroup.setIoRatio(ioRatio);
     return eventLoopGroup;

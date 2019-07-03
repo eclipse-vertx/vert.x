@@ -40,7 +40,7 @@ public class VertxThreadFactory implements ThreadFactory {
     // Vert.x threads are NOT daemons - we want them to prevent JVM exit so embededd user doesn't
     // have to explicitly prevent JVM from exiting.
     if (checker != null) {
-      checker.registerThread(t);
+      checker.registerThread(t, t);
     }
     // I know the default is false anyway, but just to be explicit-  Vert.x threads are NOT daemons
     // we want to prevent the JVM from exiting until Vert.x instances are closed

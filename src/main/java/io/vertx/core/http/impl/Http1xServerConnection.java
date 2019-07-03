@@ -27,7 +27,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.VertxThread;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -131,15 +130,14 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
           req.reportRequestBegin();
         }
       }
-      VertxThread currentThread = VertxThread.current();
       ContextInternal ctx = req.context;
-      ContextInternal prev = currentThread.beginDispatch(ctx);
+      ContextInternal prev = ctx.beginDispatch();
       try {
         req.handleBegin(requestHandler);
       } catch (Throwable t) {
         ctx.reportException(t);
       } finally {
-        currentThread.endDispatch(prev);
+        ctx.endDispatch(prev);
       }
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       handleEnd();

@@ -12,6 +12,7 @@
 package io.vertx.core.impl;
 
 
+import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
@@ -37,6 +38,10 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface VertxInternal extends Vertx {
+
+  long maxEventLoopExecTime();
+
+  TimeUnit maxEventLoopExecTimeUnit();
 
   @Override
   ContextInternal getOrCreateContext();
@@ -64,7 +69,9 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl);
+  ContextInternal createEventLoopContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl);
+
+  ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
 
   /**
    * @return worker loop context
@@ -123,6 +130,8 @@ public interface VertxInternal extends Vertx {
    * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
    */
   AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup();
+
+  BlockedThreadChecker blockedThreadChecker();
 
   void addCloseHook(Closeable hook);
 
