@@ -11,11 +11,7 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.TaskQueue;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.VertxThread;
-import io.vertx.core.impl.WorkerPool;
+import io.vertx.core.impl.*;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -314,6 +310,37 @@ public class ContextTest extends VertxTestBase {
         throw failure;
       });
     });
+    await();
+  }
+
+  @Test
+  public void testExceptionInExecutingBlockingWithContextExceptionHandler() {
+    RuntimeException expected = new RuntimeException("test");
+    Context context = vertx.getOrCreateContext();
+    context.exceptionHandler(t -> {
+      assertSame(expected, t);
+      complete();
+    });
+    vertx.exceptionHandler(t -> {
+      fail("Should not be invoked");
+    });
+    context.executeBlocking(promise -> {
+      throw expected;
+    }, null);
+    await();
+  }
+
+  @Test
+  public void testExceptionInExecutingBlockingWithVertxExceptionHandler() {
+    RuntimeException expected = new RuntimeException("test");
+    Context context = vertx.getOrCreateContext();
+    vertx.exceptionHandler(t -> {
+      assertSame(expected, t);
+      complete();
+    });
+    context.executeBlocking(promise -> {
+      throw expected;
+    }, null);
     await();
   }
 

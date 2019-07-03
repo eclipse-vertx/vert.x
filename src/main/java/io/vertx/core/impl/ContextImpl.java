@@ -13,16 +13,10 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -181,9 +175,13 @@ abstract class ContextImpl extends AbstractContext {
         if (metrics != null) {
           metrics.end(execMetric, fut.succeeded());
         }
-        if (resultHandler != null) {
-          fut.setHandler(ar -> context.runOnContext(v -> resultHandler.handle(ar)));
-        }
+        fut.setHandler(ar -> {
+          if (resultHandler != null) {
+            context.runOnContext(v -> resultHandler.handle(ar));
+          } else if (ar.failed()) {
+            context.reportException(ar.cause());
+          }
+        });
       };
       Executor exec = workerPool.executor();
       if (queue != null) {
