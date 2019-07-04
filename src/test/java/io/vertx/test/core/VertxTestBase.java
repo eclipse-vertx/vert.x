@@ -57,7 +57,7 @@ public class VertxTestBase extends AsyncTestBase {
     vinit();
     VertxOptions options = getOptions();
     boolean nativeTransport = options.getPreferNativeTransport();
-    vertx = Vertx.vertx(options);
+    vertx = vertx(options);
     if (nativeTransport) {
       assertTrue(vertx.isNativeTransportEnabled());
     }
@@ -97,12 +97,7 @@ public class VertxTestBase extends AsyncTestBase {
    * @return create a blank new Vert.x instance with no options closed when tear down executes.
    */
   protected Vertx vertx() {
-    if (created == null) {
-      created = new ArrayList<>();
-    }
-    Vertx vertx = Vertx.vertx();
-    created.add(vertx);
-    return vertx;
+    return vertx(new VertxOptions());
   }
 
   /**

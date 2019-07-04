@@ -13,6 +13,8 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.FastThreadLocal;
+import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.*;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
@@ -25,11 +27,53 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 abstract class ContextImpl implements ContextInternal {
+
+  public static Context context() {
+    Thread current = Thread.currentThread();
+    if (current instanceof VertxThread) {
+      return ((VertxThread) current).getContext();
+    } else if (current instanceof FastThreadLocalThread) {
+      return holderLocal.get().ctx;
+    }
+    return null;
+  }
+
+  static class Holder implements BlockedThreadChecker.Task {
+
+    BlockedThreadChecker checker;
+    ContextInternal ctx;
+    long startTime = 0;
+    long maxExecTime = VertxOptions.DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
+    TimeUnit maxExecTimeUnit = VertxOptions.DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME_UNIT;
+
+    @Override
+    public long startTime() {
+      return startTime;
+    }
+
+    @Override
+    public long maxExecTime() {
+      return maxExecTime;
+    }
+
+    @Override
+    public TimeUnit maxExecTimeUnit() {
+      return maxExecTimeUnit;
+    }
+  }
+
+  private static FastThreadLocal<Holder> holderLocal = new FastThreadLocal<Holder>() {
+    @Override
+    protected Holder initialValue() {
+      return new Holder();
+    }
+  };
 
   private static EventLoop getEventLoop(VertxInternal vertx) {
     EventLoopGroup group = vertx.getEventLoopGroup();
@@ -94,8 +138,13 @@ abstract class ContextImpl implements ContextInternal {
     }
   }
 
-  private static void setContext(VertxThread thread, ContextImpl context) {
-    thread.setContext(context);
+  private static void setContext(FastThreadLocalThread thread, ContextImpl context) {
+    if (thread instanceof VertxThread) {
+      ((VertxThread)thread).setContext(context);
+    } else {
+      Holder holder = holderLocal.get();
+      holder.ctx = context;
+    }
     if (!DISABLE_TCCL) {
       if (context != null) {
         context.setTCCL();
@@ -185,9 +234,9 @@ abstract class ContextImpl implements ContextInternal {
 
   private void checkEventLoopThread() {
     Thread current = Thread.currentThread();
-    if (!(current instanceof VertxThread)) {
+    if (!(current instanceof FastThreadLocalThread)) {
       throw new IllegalStateException("Expected to be on Vert.x thread, but actually on: " + current);
-    } else if (((VertxThread) current).isWorker()) {
+    } else if ((current instanceof VertxThread) && ((VertxThread) current).isWorker()) {
       throw new IllegalStateException("Event delivered on unexpected worker thread " + current);
     }
   }
@@ -308,12 +357,12 @@ abstract class ContextImpl implements ContextInternal {
 
   <T> boolean executeTask(T arg, Handler<T> hTask) {
     Thread th = Thread.currentThread();
-    if (!(th instanceof VertxThread)) {
+    if (!(th instanceof FastThreadLocalThread)) {
       throw new IllegalStateException("Uh oh! context executing with wrong thread! " + th);
     }
-    VertxThread current = (VertxThread) th;
+    FastThreadLocalThread current = (FastThreadLocalThread) th;
     if (!DISABLE_TIMINGS) {
-      current.executeStart();
+      executeStart(current);
     }
     try {
       setContext(current, this);
@@ -326,8 +375,33 @@ abstract class ContextImpl implements ContextInternal {
       // We don't unset the context after execution - this is done later when the context is closed via
       // VertxThreadFactory
       if (!DISABLE_TIMINGS) {
-        current.executeEnd();
+        executeEnd(current);
       }
+    }
+  }
+
+  private void executeStart(FastThreadLocalThread thread) {
+    if (thread instanceof VertxThread) {
+      ((VertxThread)thread).executeStart();
+    } else {
+      Holder holder = holderLocal.get();
+      if (holder.checker == null) {
+        BlockedThreadChecker checker = owner().blockedThreadChecker();
+        holder.checker = checker;
+        holder.maxExecTime = owner.maxEventLoopExecTime();
+        holder.maxExecTimeUnit = owner.maxEventLoopExecTimeUnit();
+        checker.registerThread(thread, holder);
+      }
+      holder.startTime = System.nanoTime();
+    }
+  }
+
+  private void executeEnd(FastThreadLocalThread thread) {
+    if (thread instanceof VertxThread) {
+      ((VertxThread)thread).executeEnd();
+    } else {
+      Holder holder = holderLocal.get();
+      holder.startTime = 0L;
     }
   }
 

@@ -40,6 +40,9 @@ import java.util.concurrent.ThreadFactory;
  */
 public class Transport {
 
+  public static final int ACCEPTOR_EVENT_LOOP_GROUP = 0;
+  public static final int IO_EVENT_LOOP_GROUP = 1;
+
   /**
    * The JDK transport, always there.
    */
@@ -135,9 +138,13 @@ public class Transport {
   }
 
   /**
+   * @param type one of {@link #ACCEPTOR_EVENT_LOOP_GROUP} or {@link #IO_EVENT_LOOP_GROUP}.
+   * @param nThreads the number of threads that will be used by this instance.
+   * @param threadFactory the ThreadFactory to use.
+   * @param ioRatio the IO ratio
    * @return a new event loop group
    */
-  public EventLoopGroup eventLoopGroup(int nThreads, ThreadFactory threadFactory, int ioRatio) {
+  public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
     NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(nThreads, threadFactory);
     eventLoopGroup.setIoRatio(ioRatio);
     return eventLoopGroup;

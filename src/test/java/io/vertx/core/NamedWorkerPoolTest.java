@@ -223,8 +223,8 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       Thread t = Thread.currentThread();
       assertTrue(t instanceof VertxThread);
       VertxThread thread = (VertxThread) t;
-      assertEquals(maxExecuteTime, thread.getMaxExecTime());
-      assertEquals(maxExecuteTimeUnit, thread.getMaxExecTimeUnit());
+      assertEquals(maxExecuteTime, thread.maxExecTime());
+      assertEquals(maxExecuteTimeUnit, thread.maxExecTimeUnit());
       f.complete();
     }, res -> {
       testComplete();

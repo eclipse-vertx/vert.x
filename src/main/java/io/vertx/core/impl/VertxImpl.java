@@ -88,20 +88,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
 
-  static VertxImpl vertx(VertxOptions options) {
-    VertxImpl vertx = new VertxImpl(options, Transport.transport(options.getPreferNativeTransport()));
-    vertx.init();
-    return vertx;
-  }
-
   static VertxImpl vertx(VertxOptions options, Transport transport) {
     VertxImpl vertx = new VertxImpl(options, transport);
     vertx.init();
     return vertx;
   }
 
-  static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    VertxImpl vertx = new VertxImpl(options, Transport.transport(options.getPreferNativeTransport()));
+  static void clusteredVertx(VertxOptions options, Transport transport, Handler<AsyncResult<Vertx>> resultHandler) {
+    VertxImpl vertx = new VertxImpl(options, transport);
     vertx.joinCluster(options, resultHandler);
   }
 
@@ -129,8 +123,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private volatile Handler<Throwable> exceptionHandler;
   private final Map<String, SharedWorkerPool> namedWorkerPools;
   private final int defaultWorkerPoolSize;
-  private final long defaultWorkerMaxExecTime;
-  private final TimeUnit defaultWorkerMaxExecTimeUnit;
+  private final long maxWorkerExecTime;
+  private final TimeUnit maxWorkerExecTimeUnit;
+  private final long maxEventLoopExTime;
+  private final TimeUnit maxEventLoopExecTimeUnit;
   private final CloseHooks closeHooks;
   private final Transport transport;
 
@@ -141,12 +137,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     closeHooks = new CloseHooks(log);
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
-    eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
-    eventLoopGroup = transport.eventLoopGroup(options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
+    maxEventLoopExTime = options.getMaxEventLoopExecuteTime();
+    maxEventLoopExecTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
+    eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, maxEventLoopExTime, maxEventLoopExecTimeUnit);
+    eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
     ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
-    acceptorEventLoopGroup = transport.eventLoopGroup(1, acceptorEventLoopThreadFactory, 100);
+    acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
 
     metrics = initialiseMetrics(options);
 
@@ -160,8 +158,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
     defaultWorkerPoolSize = options.getWorkerPoolSize();
-    defaultWorkerMaxExecTime = options.getMaxWorkerExecuteTime();
-    defaultWorkerMaxExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
+    maxWorkerExecTime = options.getMaxWorkerExecuteTime();
+    maxWorkerExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
 
     this.transport = transport;
     this.fileResolver = new FileResolver(options.getFileSystemOptions());
@@ -248,6 +246,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    */
   protected FileSystem getFileSystem() {
     return Utils.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
+  }
+
+  @Override
+  public long maxEventLoopExecTime() {
+    return maxEventLoopExTime;
+  }
+
+  @Override
+  public TimeUnit maxEventLoopExecTimeUnit() {
+    return maxEventLoopExecTimeUnit;
   }
 
   @Override
@@ -397,6 +405,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return new EventLoopContext(this, eventLoop, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, null, null, tccl);
+  }
+
+  @Override
   public ContextImpl createWorkerContext(boolean multiThreaded, String deploymentID, WorkerPool workerPool, JsonObject config,
                                          ClassLoader tccl) {
     if (workerPool == null) {
@@ -485,16 +498,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return timerId;
   }
 
-  public static Context context() {
-    Thread current = Thread.currentThread();
-    if (current instanceof VertxThread) {
-      return ((VertxThread) current).getContext();
-    }
-    return null;
-  }
-
   public ContextImpl getContext() {
-    ContextImpl context = (ContextImpl) context();
+    ContextImpl context = (ContextImpl) ContextImpl.context();
     if (context != null && context.owner == this) {
       return context;
     }
@@ -813,6 +818,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return addressResolver.nettyAddressResolverGroup();
   }
 
+  @Override
+  public BlockedThreadChecker blockedThreadChecker() {
+    return checker;
+  }
+
   @SuppressWarnings("unchecked")
   private void deleteCacheDirAndShutdown(Handler<AsyncResult<Void>> completionHandler) {
     executeBlockingInternal(fut -> {
@@ -1067,7 +1077,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize) {
-    return createSharedWorkerExecutor(name, poolSize, defaultWorkerMaxExecTime);
+    return createSharedWorkerExecutor(name, poolSize, maxWorkerExecTime);
   }
 
   @Override
