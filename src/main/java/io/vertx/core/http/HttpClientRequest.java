@@ -108,8 +108,24 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   @Override
   HttpClientRequest endHandler(Handler<Void> endHandler);
 
+  /**
+   * Set the request to follow HTTP redirects up to {@link HttpClientOptions#getMaxRedirects()}.
+   *
+   * @param followRedirects {@code true} to follow HTTP redirects
+   * @return a reference to this, so the API can be used fluently
+   */
   @Fluent
   HttpClientRequest setFollowRedirects(boolean followRedirects);
+
+  /**
+   * Set the max number of HTTP redirects this request will follow. The default is {@code 0} which means
+   * no redirects.
+   *
+   * @param maxRedirects the number of HTTP redirect to follow
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setMaxRedirects(int maxRedirects);
 
   /**
    * If chunked is true then the request will be set into HTTP chunked mode
