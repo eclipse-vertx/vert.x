@@ -135,6 +135,11 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public HttpClientRequest setMaxRedirects(int maxRedirects) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public HttpClientRequest setChunked(boolean chunked) {
     throw new IllegalStateException();
   }

@@ -24,6 +24,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -113,6 +114,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         this.followRedirects = 0;
       }
+      return this;
+    }
+  }
+
+  @Override
+  public HttpClientRequest setMaxRedirects(int maxRedirects) {
+    Arguments.require(maxRedirects >= 0, "Max redirects must be >= 0");
+    synchronized (this) {
+      checkEnded();
+      followRedirects = maxRedirects;
       return this;
     }
   }
@@ -358,16 +369,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  private void handleNextRequest(HttpClientRequestImpl next, long timeoutMs) {
+  private void handleNextRequest(HttpClientRequest next, long timeoutMs) {
     next.setHandler(responsePromise.future().getHandler());
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
-    next.pushHandler = pushHandler;
-    next.followRedirects = followRedirects - 1;
-    if (next.hostHeader == null) {
-      next.hostHeader = hostHeader;
+    next.pushHandler(pushHandler);
+    next.setMaxRedirects(followRedirects - 1);
+    if (next.getHost() == null) {
+      next.setHost(hostHeader);
     }
-    if (headers != null && next.headers == null) {
+    if (headers != null) {
       next.headers().addAll(headers);
     }
     endFuture.setHandler(ar -> {
@@ -377,7 +388,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         }
         next.end();
       } else {
-        next.handleException(ar.cause());
+        next.reset(0);
       }
     });
   }
@@ -390,7 +401,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         if (next != null) {
           next.setHandler(ar -> {
             if (ar.succeeded()) {
-              handleNextRequest((HttpClientRequestImpl) ar.result(), timeoutMs);
+              handleNextRequest(ar.result(), timeoutMs);
             } else {
               responsePromise.fail(ar.cause());
             }

@@ -4069,6 +4069,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest fetch(long amount) { throw new UnsupportedOperationException(); }
       public HttpClientRequest endHandler(Handler<Void> endHandler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setFollowRedirects(boolean followRedirects) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setMaxRedirects(int maxRedirects) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setChunked(boolean chunked) { throw new UnsupportedOperationException(); }
       public boolean isChunked() { return false; }
       public HttpMethod method() { return method; }
