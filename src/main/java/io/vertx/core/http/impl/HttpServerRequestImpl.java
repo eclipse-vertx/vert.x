@@ -56,7 +56,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerRequestImpl implements HttpServerRequestInternal {
+public class HttpServerRequestImpl implements HttpServerRequest {
 
   private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
 
@@ -94,24 +94,16 @@ public class HttpServerRequestImpl implements HttpServerRequestInternal {
   private Buffer body;
   private Promise<Buffer> bodyPromise;
 
-  private Object payload;
-
   HttpServerRequestImpl(Http1xServerConnection conn, HttpRequest request) {
     this.conn = conn;
     this.context = conn.getContext().duplicate();
     this.request = request;
   }
 
-  @Override
-  public void payload(Object o) {
-    payload = o;
-  }
-
-  @Override
-  public Object payload() {
-    return payload;
-  }
-
+  /**
+   *
+   * @return
+   */
   HttpRequest nettyRequest() {
     synchronized (conn) {
       return request;
