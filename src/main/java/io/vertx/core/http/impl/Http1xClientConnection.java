@@ -370,6 +370,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           return;
         }
         reset = true;
+      }
+      handleException(cause);
+      synchronized (conn) {
         if (conn.requestInProgress == this) {
           if (request == null) {
             // Is that possible in practice ???
@@ -383,7 +386,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           // ????
         }
       }
-      handleException(cause);
     }
 
     @Override

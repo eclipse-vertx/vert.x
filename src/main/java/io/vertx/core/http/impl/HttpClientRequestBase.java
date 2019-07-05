@@ -20,8 +20,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.net.SocketAddress;
 
-import java.util.concurrent.TimeoutException;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -139,12 +137,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
       }
     }
     String msg = "The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + server;
-    reset(new TimeoutException(msg) {
-      @Override
-      public synchronized Throwable fillInStackTrace() {
-        return this;
-      }
-    });
+    reset(new NoStackTraceTimeoutException(msg));
   }
 
   synchronized void dataReceived() {
