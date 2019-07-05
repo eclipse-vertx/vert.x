@@ -15,6 +15,6 @@ import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
 public class ComplexCommandFactory extends DefaultCommandFactory<ComplexCommand> {
   public ComplexCommandFactory() {
-    super(ComplexCommand.class);
+    super(ComplexCommand.class, ComplexCommand::new);
   }
 }

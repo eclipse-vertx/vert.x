@@ -23,6 +23,6 @@ public class ListCommandFactory extends DefaultCommandFactory<ListCommand> {
    * Creates a new {@link ListCommandFactory}.
    */
   public ListCommandFactory() {
-    super(ListCommand.class);
+    super(ListCommand.class, ListCommand::new);
   }
 }

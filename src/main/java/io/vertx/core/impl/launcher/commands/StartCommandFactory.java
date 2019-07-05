@@ -24,6 +24,6 @@ public class StartCommandFactory extends DefaultCommandFactory<StartCommand> {
    * Creates a new instance of {@link StartCommandFactory}.
    */
   public StartCommandFactory() {
-    super(StartCommand.class);
+    super(StartCommand.class, StartCommand::new);
   }
 }

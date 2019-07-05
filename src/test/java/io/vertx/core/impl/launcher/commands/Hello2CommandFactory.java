@@ -9,16 +9,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.cli.converters;
+package io.vertx.core.impl.launcher.commands;
 
-/**
- * The converter interface to convert {@code String}s to {@code Object}s.
- *
- * @author Clement Escoffier <clement@apache.org>
- */
-@FunctionalInterface
-public interface Converter<T> {
+import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
-  T fromString(String s);
+
+public class Hello2CommandFactory extends DefaultCommandFactory<Hello2Command> {
+
+  public Hello2CommandFactory() {
+    super(Hello2Command.class, Hello2Command::new);
+  }
 
 }

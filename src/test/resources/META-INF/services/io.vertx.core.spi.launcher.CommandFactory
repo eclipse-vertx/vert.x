@@ -3,3 +3,5 @@ io.vertx.core.impl.launcher.commands.HelloCommandFactory
 io.vertx.core.impl.launcher.commands.GoodByeCommandFactory
 io.vertx.core.impl.launcher.commands.HiddenCommandFactory
 io.vertx.core.impl.launcher.commands.ComplexCommandFactory
+# This command will have higher priority and override the previous one
+io.vertx.core.impl.launcher.commands.Hello2CommandFactory

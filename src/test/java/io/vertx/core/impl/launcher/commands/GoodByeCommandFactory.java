@@ -16,7 +16,7 @@ import io.vertx.core.spi.launcher.DefaultCommandFactory;
 
 public class GoodByeCommandFactory extends DefaultCommandFactory<GoodByeCommand> {
   public GoodByeCommandFactory() {
-    super(GoodByeCommand.class);
+    super(GoodByeCommand.class, GoodByeCommand::new);
   }
 
   @Override

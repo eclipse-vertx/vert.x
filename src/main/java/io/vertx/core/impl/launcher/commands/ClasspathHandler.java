@@ -93,7 +93,7 @@ public abstract class ClasspathHandler extends DefaultCommand {
       classloader = (classpath == null || classpath.isEmpty()) ?
           ClasspathHandler.class.getClassLoader() : createClassloader();
       Class<?> clazz = classloader.loadClass("io.vertx.core.impl.launcher.commands.VertxIsolatedDeployer");
-      return clazz.newInstance();
+      return clazz.getDeclaredConstructor().newInstance();
     } catch (Exception e) {
       log.error("Failed to load or instantiate the isolated deployer", e);
       throw new IllegalStateException(e);
@@ -156,6 +156,15 @@ public abstract class ClasspathHandler extends DefaultCommand {
       Thread.currentThread().setContextClassLoader(classloader);
       Method method = manager.getClass().getMethod("deploy", String.class, Vertx.class, DeploymentOptions.class,
           Handler.class);
+
+      if (executionContext.get("Default-Verticle-Factory") != null) {
+        // there is a configured default
+        if (verticle.indexOf(':') == -1) {
+          // and the verticle is not using a explicit factory
+          verticle = executionContext.get("Default-Verticle-Factory") + ":" + verticle;
+        }
+      }
+
       method.invoke(manager, verticle, vertx, options, completionHandler);
     } catch (InvocationTargetException e) {
       log.error("Failed to deploy verticle " + verticle, e.getCause());

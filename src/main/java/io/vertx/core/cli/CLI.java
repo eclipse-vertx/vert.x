@@ -267,4 +267,18 @@ public interface CLI {
    */
   @GenIgnore
   CLI usage(StringBuilder builder, String prefix);
+
+  /**
+   * @return the CLI priority.
+   */
+  int getPriority();
+
+  /**
+   * Sets the priority of the CLI.
+   *
+   * @param priority the priority
+   * @return the current {@link CLI} instance
+   */
+  @Fluent
+  CLI setPriority(int priority);
 }
