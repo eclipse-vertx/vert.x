@@ -24,8 +24,6 @@ import io.vertx.core.tracing.TracingOptions;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import static io.vertx.core.file.FileSystemOptions.DEFAULT_FILE_CACHING_ENABLED;
-
 /**
  * Instances of this class are used to configure {@link io.vertx.core.Vertx} instances.
  *
