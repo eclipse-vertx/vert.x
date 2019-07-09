@@ -19,10 +19,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -273,59 +270,91 @@ public class Json {
     return StreamSupport.stream(iterable.spliterator(), false);
   }
 
-  // In recursive calls, the callee is in charge of calling parser.nextToken()
   static Object decodeJson(JsonParser parser) throws DecodeException {
     try {
-      // JsonObject
-      if (parser.getCurrentToken() == JsonToken.START_OBJECT) {
-        JsonObject jo = new JsonObject();
-        parser.nextToken();
-        while (parser.getCurrentToken() != JsonToken.END_OBJECT) {
-          if (parser.getCurrentToken() != JsonToken.FIELD_NAME) {
-            throw DecodeException.create("Expecting field name", parser.getCurrentLocation());
-          }
-          String fieldName = parser.getCurrentName();
-          parser.nextToken();
+      Object current = null;
 
-          Object fieldValue = decodeJson(parser);
-          jo.put(fieldName, fieldValue);
-        }
-        parser.nextToken();
-        return jo;
-      }
-      // JsonArray
-      if (parser.getCurrentToken() == JsonToken.START_ARRAY) {
+      // Check if root object is a primitive or not
+      if (parser.getCurrentToken() == JsonToken.START_OBJECT) { // JsonObject
+        JsonObject jo = new JsonObject();
+        current = jo;
+      } else if (parser.getCurrentToken() == JsonToken.START_ARRAY) { // JsonArray
         JsonArray ja = new JsonArray();
-        parser.nextToken();
-        while (parser.getCurrentToken() != JsonToken.END_ARRAY) {
-          Object item = decodeJson(parser);
-          ja.add(item);
-        }
-        parser.nextToken();
-        return ja;
-      }
-      // String
-      if (parser.getCurrentToken() == JsonToken.VALUE_STRING) {
-        String val = parser.getText();
-        parser.nextToken();
-        return val;
-      }
-      // Numbers
-      if (parser.getCurrentToken().isNumeric()) {
-        Number val = parser.getNumberValue();
-        parser.nextToken();
-        return val;
-      }
-      // Booleans
-      if (parser.getCurrentToken().isBoolean()) {
-        Boolean val = parser.getBooleanValue();
-        parser.nextToken();
-        return val;
-      }
-      // Null
-      if (parser.getCurrentToken() == JsonToken.VALUE_NULL) {
-        parser.nextToken();
+        current = ja;
+      } else if (parser.getCurrentToken() == JsonToken.VALUE_STRING) { // String
+        return parser.getText();
+      } else if (parser.getCurrentToken().isNumeric()) { // Numbers
+        return parser.getNumberValue();
+      } else if (parser.getCurrentToken().isBoolean()) { // Booleans
+        return parser.getBooleanValue();
+      } else if (parser.getCurrentToken() == JsonToken.VALUE_NULL) { // Null
         return null;
+      } else {
+        throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
+      }
+
+      Deque<Object> stack = new ArrayDeque<>();
+      JsonToken actualToken = parser.nextToken();
+
+      while (actualToken != null) {
+        if (actualToken == JsonToken.FIELD_NAME) {
+          // If FIELD_NAME is found, then current is JsonObject
+          String fieldKey = parser.getCurrentName();
+          actualToken = parser.nextToken();
+          if (actualToken == JsonToken.START_OBJECT) { // JsonObject
+            JsonObject jo = new JsonObject();
+            ((JsonObject) current).put(fieldKey, jo);
+            stack.addFirst(current);
+            current = jo;
+          } else if (actualToken == JsonToken.START_ARRAY) { // JsonArray
+            JsonArray ja = new JsonArray();
+            ((JsonObject) current).put(fieldKey, ja);
+            stack.addFirst(current);
+            current = ja;
+          } else if (actualToken == JsonToken.VALUE_STRING) { // String
+            ((JsonObject) current).put(fieldKey, parser.getText());
+          } else if (actualToken.isNumeric()) { // Numbers
+            ((JsonObject) current).put(fieldKey, parser.getNumberValue());
+          } else if (actualToken.isBoolean()) { // Booleans
+            ((JsonObject) current).put(fieldKey, parser.getBooleanValue());
+          } else if (actualToken == JsonToken.VALUE_NULL) { // Null
+            ((JsonObject) current).putNull(fieldKey);
+          } else {
+            throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
+          }
+        } else if (actualToken.isStructEnd()) {
+          // must remove first element from stack or complete decoding if stack is empty
+          if (stack.isEmpty()) {
+            return current;
+          } else {
+            current = stack.removeFirst();
+          }
+        } else {
+          // current is JsonArray
+          if (actualToken == JsonToken.START_OBJECT) { // JsonObject
+            JsonObject jo = new JsonObject();
+            ((JsonArray)current).add(jo);
+            stack.addFirst(current);
+            current = jo;
+          } else if (actualToken == JsonToken.START_ARRAY) { // JsonArray
+            JsonArray ja = new JsonArray();
+            ((JsonArray)current).add(ja);
+            stack.addFirst(current);
+            current = ja;
+          } else if (actualToken == JsonToken.VALUE_STRING) { // String
+            ((JsonArray)current).add(parser.getText());
+          } else if (actualToken.isNumeric()) { // Numbers
+            ((JsonArray)current).add(parser.getNumberValue());
+          } else if (actualToken.isBoolean()) { // Booleans
+            ((JsonArray)current).add(parser.getBooleanValue());
+          } else if (actualToken == JsonToken.VALUE_NULL) { // Null
+            ((JsonArray)current).addNull();
+          } else {
+            throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
+          }
+        }
+
+        actualToken = parser.nextToken();
       }
 
       throw DecodeException.create("Unexpected token", parser.getCurrentLocation());

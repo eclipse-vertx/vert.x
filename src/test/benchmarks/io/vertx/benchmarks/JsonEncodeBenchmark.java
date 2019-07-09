@@ -23,6 +23,7 @@ import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.IOException;
 import java.net.URL;
@@ -33,20 +34,18 @@ import java.util.Map;
  */
 @State(Scope.Thread)
 public class JsonEncodeBenchmark extends BenchmarkBase {
-
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-  public static void consume(final Buffer buffer) {
-  }
-
+  
   private JsonObject small;
-  private JsonObject large;
+  private JsonObject wide;
+  private JsonObject deep;
   private ObjectMapper jacksonMapper;
 
   @Setup
   public void setup() {
     ClassLoader classLoader = getClass().getClassLoader();
-    small = loadJson(classLoader.getResource("small.json"));
-    large = loadJson(classLoader.getResource("large.json"));
+    small = loadJson(classLoader.getResource("small_bench.json"));
+    wide = loadJson(classLoader.getResource("wide_bench.json"));
+    deep = loadJson(classLoader.getResource("deep_bench.json"));
     jacksonMapper = new ObjectMapper();
 
     com.fasterxml.jackson.databind.module.SimpleModule module = new com.fasterxml.jackson.databind.module.SimpleModule();
@@ -77,78 +76,98 @@ public class JsonEncodeBenchmark extends BenchmarkBase {
   }
 
   @Benchmark
-  public void viaStringSmall() throws Exception {
-    viaString(small);
+  public void viaStringSmall(Blackhole blackhole) throws Exception {
+    viaString(small, blackhole);
   }
 
   @Benchmark
-  public void viaStringLarge() throws Exception {
-    viaString(large);
+  public void viaStringJacksonSmall(Blackhole blackhole) throws Exception {
+    viaStringJackson(small, blackhole);
   }
 
   @Benchmark
-  public void viaStringJacksonSmall() throws Exception {
-    viaStringJackson(small);
+  public void viaStringWide(Blackhole blackhole) throws Exception {
+    viaString(wide, blackhole);
   }
 
   @Benchmark
-  public void viaStringJacksonLarge() throws Exception {
-    viaStringJackson(large);
+  public void viaStringJacksonWide(Blackhole blackhole) throws Exception {
+    viaStringJackson(wide, blackhole);
   }
 
-  private void viaString(JsonObject jsonObject) throws Exception {
+  @Benchmark
+  public void viaStringDeep(Blackhole blackhole) throws Exception {
+    viaString(deep, blackhole);
+  }
+
+  @Benchmark
+  public void viaStringJacksonDeep(Blackhole blackhole) throws Exception {
+    viaStringJackson(deep, blackhole);
+  }
+
+  private void viaString(JsonObject jsonObject, Blackhole blackhole) throws Exception {
     Buffer buffer = Buffer.buffer();
     String strJson = jsonObject.encode();
     byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
     buffer.appendInt(encoded.length);
     Buffer buff = Buffer.buffer(encoded);
     buffer.appendBuffer(buff);
-    consume(buffer);
+    blackhole.consume(buffer);
   }
 
-  private void viaStringJackson(JsonObject jsonObject) throws Exception {
+  private void viaStringJackson(JsonObject jsonObject, Blackhole blackhole) throws Exception {
     Buffer buffer = Buffer.buffer();
     String strJson = jacksonMapper.writeValueAsString(jsonObject);
     byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
     buffer.appendInt(encoded.length);
     Buffer buff = Buffer.buffer(encoded);
     buffer.appendBuffer(buff);
-    consume(buffer);
+    blackhole.consume(buffer);
   }
 
   @Benchmark
-  public void directSmall() throws Exception {
-    direct(small);
+  public void directSmall(Blackhole blackhole) throws Exception {
+    direct(small, blackhole);
   }
 
   @Benchmark
-  public void directLarge() throws Exception {
-    direct(large);
+  public void directJacksonSmall(Blackhole blackhole) throws Exception {
+    directJackson(small, blackhole);
   }
 
   @Benchmark
-  public void directJacksonSmall() throws Exception {
-    directJackson(small);
+  public void directDeep(Blackhole blackhole) throws Exception {
+    direct(deep, blackhole);
   }
 
   @Benchmark
-  public void directJacksonLarge() throws Exception {
-    directJackson(large);
+  public void directJacksonDeep(Blackhole blackhole) throws Exception {
+    directJackson(deep, blackhole);
   }
 
-  private void direct(JsonObject jsonObject) throws Exception {
+  @Benchmark
+  public void directWide(Blackhole blackhole) throws Exception {
+    direct(wide, blackhole);
+  }
+
+  @Benchmark
+  public void directJacksonWide(Blackhole blackhole) throws Exception {
+    directJackson(wide, blackhole);
+  }
+
+  private void direct(JsonObject jsonObject, Blackhole blackhole) throws Exception {
     Buffer buffer = Buffer.buffer();
     Buffer encoded = jsonObject.toBuffer();
     buffer.appendInt(encoded.length());
     buffer.appendBuffer(encoded);
-    consume(buffer);
+    blackhole.consume(buffer);
   }
 
-  private void directJackson(JsonObject jsonObject) throws Exception {
+  private void directJackson(JsonObject jsonObject, Blackhole blackhole) throws Exception {
     Buffer buffer = Buffer.buffer();
     Buffer encoded = Buffer.buffer(jacksonMapper.writeValueAsBytes(jsonObject));
     buffer.appendInt(encoded.length());
     buffer.appendBuffer(encoded);
-    consume(buffer);
+    blackhole.consume(buffer);
   }
 }
