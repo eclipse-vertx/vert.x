@@ -111,7 +111,7 @@ public class VertxOptions {
   public static final long DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL = 1000;
 
   /**
-   * The default value of blocked thread check interval unit = TimeUnit.NANOSECONDS
+   * The default value of blocked thread check interval unit = TimeUnit.MILLISECONDS
    */
   public static final TimeUnit DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL_UNIT = TimeUnit.MILLISECONDS;
 
