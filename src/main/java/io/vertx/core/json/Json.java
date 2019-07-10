@@ -140,7 +140,13 @@ public class Json {
    * @throws DecodeException when the json cannot be decoded.
    */
   public static Object decodeValue(Buffer buf) throws DecodeException {
-    return decodeValue(buf.toString());
+    try {
+      JsonParser parser = factory.createParser(buf.getBytes());
+      parser.nextToken();
+      return decodeJson(parser);
+    } catch (IOException e) {
+      throw new DecodeException(e);
+    }
   }
 
   /**
@@ -316,7 +322,7 @@ public class Json {
           } else if (actualToken.isNumeric()) { // Numbers
             ((JsonObject) current).put(fieldKey, parser.getNumberValue());
           } else if (actualToken.isBoolean()) { // Booleans
-            ((JsonObject) current).put(fieldKey, parser.getBooleanValue());
+            ((JsonObject) current).put(fieldKey, actualToken == JsonToken.VALUE_TRUE);
           } else if (actualToken == JsonToken.VALUE_NULL) { // Null
             ((JsonObject) current).putNull(fieldKey);
           } else {
@@ -346,7 +352,7 @@ public class Json {
           } else if (actualToken.isNumeric()) { // Numbers
             ((JsonArray)current).add(parser.getNumberValue());
           } else if (actualToken.isBoolean()) { // Booleans
-            ((JsonArray)current).add(parser.getBooleanValue());
+            ((JsonArray)current).add(actualToken == JsonToken.VALUE_TRUE);
           } else if (actualToken == JsonToken.VALUE_NULL) { // Null
             ((JsonArray)current).addNull();
           } else {

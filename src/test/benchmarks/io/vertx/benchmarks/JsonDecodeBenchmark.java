@@ -17,11 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.CompilerControl;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.BufferedReader;
@@ -36,6 +32,7 @@ import java.util.stream.Collectors;
 
 /**
  * @author Thomas Segismont
+ * @author slinkydeveloper
  */
 @State(Scope.Thread)
 public class JsonDecodeBenchmark extends BenchmarkBase {
@@ -78,21 +75,25 @@ public class JsonDecodeBenchmark extends BenchmarkBase {
 
 
   @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
   public void viaStringWide(Blackhole blackhole) throws Exception {
     viaString(wide, blackhole);
   }
 
   @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
   public void viaStringJacksonWide(Blackhole blackhole) throws Exception {
     viaStringJackson(wide, blackhole);
   }
 
   @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
   public void viaStringDeep(Blackhole blackhole) throws Exception {
     viaString(deep, blackhole);
   }
 
   @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
   public void viaStringJacksonDeep(Blackhole blackhole) throws Exception {
     viaStringJackson(deep, blackhole);
   }
@@ -126,23 +127,26 @@ public class JsonDecodeBenchmark extends BenchmarkBase {
     directJackson(small, blackhole);
   }
 
-
   @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
   public void directWide(Blackhole blackhole) throws Exception {
     direct(wide, blackhole);
   }
 
   @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
   public void directJacksonWide(Blackhole blackhole) throws Exception {
     directJackson(wide, blackhole);
   }
 
   @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
   public void directDeep(Blackhole blackhole) throws Exception {
     direct(deep, blackhole);
   }
 
   @Benchmark
+  @BenchmarkMode(Mode.AverageTime)
   public void directJacksonDeep(Blackhole blackhole) throws Exception {
     directJackson(deep, blackhole);
   }

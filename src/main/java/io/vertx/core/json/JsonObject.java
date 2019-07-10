@@ -602,6 +602,19 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Put a Number into the JSON object with the specified key.
+   *
+   * @param key  the key
+   * @param value  the value
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public JsonObject put(String key, Number value) {
+    Objects.requireNonNull(key);
+    map.put(key, value);
+    return this;
+  }
+
+  /**
    * Put a Boolean into the JSON object with the specified key.
    *
    * @param key  the key

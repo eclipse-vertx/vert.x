@@ -367,6 +367,17 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
+   * Add a Number to the JSON array.
+   *
+   * @param value  the value
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public JsonArray add(Number value) {
+    list.add(value);
+    return this;
+  }
+
+  /**
    * Add a Boolean to the JSON array.
    *
    * @param value  the value

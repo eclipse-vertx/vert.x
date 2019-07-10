@@ -18,11 +18,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.CompilerControl;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.IOException;
@@ -31,8 +27,10 @@ import java.util.Map;
 
 /**
  * @author Thomas Segismont
+ * @author slinkydeveloper
  */
 @State(Scope.Thread)
+@BenchmarkMode(Mode.AverageTime)
 public class JsonEncodeBenchmark extends BenchmarkBase {
   
   private JsonObject small;

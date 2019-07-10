@@ -116,16 +116,16 @@ public class JsonMapperTest extends VertxTestBase {
   }
 
   @Test
-  public void testDecodeBufferUnknowContent() {
-    testDecodeUnknowContent(true);
+  public void testDecodeBuffer() {
+    testDecode(true);
   }
 
   @Test
-  public void testDecodeStringUnknowContent() {
-    testDecodeUnknowContent(false);
+  public void testDecodeString() {
+    testDecode(false);
   }
 
-  private void testDecodeUnknowContent(boolean asBuffer) {
+  private void testDecode(boolean asBuffer) {
     String number = String.valueOf(1);
     assertEquals(1, asBuffer ? Json.decodeValue(Buffer.buffer(number)) : Json.decodeValue(number));
 
