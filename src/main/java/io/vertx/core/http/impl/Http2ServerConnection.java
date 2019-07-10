@@ -39,13 +39,13 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerConnection extends Http2ConnectionBase {
+public class Http2ServerConnection extends Http2ConnectionBase implements HttpServerConnection {
 
   private final HttpServerOptions options;
   private final String serverOrigin;
-  private final Handler<HttpServerRequest> requestHandler;
   private final HttpServerMetrics metrics;
 
+  private Handler<HttpServerRequest> requestHandler;
   private Long maxConcurrentStreams;
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
@@ -55,14 +55,18 @@ public class Http2ServerConnection extends Http2ConnectionBase {
       String serverOrigin,
       VertxHttp2ConnectionHandler connHandler,
       HttpServerOptions options,
-      Handler<HttpServerRequest> requestHandler,
       HttpServerMetrics metrics) {
     super(context, connHandler);
 
     this.options = options;
     this.serverOrigin = serverOrigin;
-    this.requestHandler = requestHandler;
     this.metrics = metrics;
+  }
+
+  @Override
+  public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
+    requestHandler = handler;
+    return this;
   }
 
   public HttpServerMetrics metrics() {

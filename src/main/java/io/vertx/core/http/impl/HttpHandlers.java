@@ -11,11 +11,19 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
+import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameServerExtensionHandshaker;
+import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.net.impl.ConnectionBase;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 /**
@@ -23,7 +31,7 @@ import java.util.Objects;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpHandlers {
+public class HttpHandlers implements Handler<HttpServerConnection> {
 
   final HttpServerImpl server;
   final Handler<HttpServerRequest> requestHandler;
@@ -42,6 +50,47 @@ public class HttpHandlers {
     this.wsHandler = wsHandler;
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
+  }
+
+  @Override
+  public void handle(HttpServerConnection conn) {
+    server.connectionMap.put(conn.channel(), (ConnectionBase) conn);
+    conn.channel().closeFuture().addListener(fut -> {
+      server.connectionMap.remove(conn.channel());
+    });
+    Handler<HttpServerRequest> requestHandler = this.requestHandler;
+    if (HttpServerImpl.DISABLE_WEBSOCKETS) {
+      // As a performance optimisation you can set a system property to disable websockets altogether which avoids
+      // some casting and a header check
+    } else {
+      if (conn instanceof Http1xServerConnection) {
+        requestHandler =  new WebSocketRequestHandler(server.metrics, this);
+        Http1xServerConnection c = (Http1xServerConnection) conn;
+        initializeWebsocketExtensions(c.channelHandlerContext().pipeline());
+      }
+    }
+    conn.exceptionHandler(exceptionHandler);
+    conn.handler(requestHandler);
+    if (connectionHandler != null) {
+      connectionHandler.handle(conn);
+    }
+  }
+
+  private void initializeWebsocketExtensions(ChannelPipeline pipeline) {
+    ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<>();
+    if (server.options.getPerFrameWebsocketCompressionSupported()) {
+      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(server.options.getWebsocketCompressionLevel()));
+    }
+    if (server.options.getPerMessageWebsocketCompressionSupported()) {
+      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(server.options.getWebsocketCompressionLevel(),
+        ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
+        server.options.getWebsocketAllowServerNoContext(), server.options.getWebsocketPreferredClientNoContext()));
+    }
+    if (!extensionHandshakers.isEmpty()) {
+      WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(
+        extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[extensionHandshakers.size()]));
+      pipeline.addLast("websocketExtensionHandler", extensionHandler);
+    }
   }
 
   @Override

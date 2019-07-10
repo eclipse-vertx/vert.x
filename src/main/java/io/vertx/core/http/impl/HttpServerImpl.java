@@ -12,29 +12,14 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.handler.codec.compression.ZlibCodecFactory;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandler;
-import io.netty.handler.codec.http.websocketx.extensions.WebSocketServerExtensionHandshaker;
-import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameServerExtensionHandshaker;
-import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
-import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SniHandler;
-import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.stream.ChunkedWriteHandler;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -48,8 +33,6 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,25 +48,25 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   static final Logger log = LoggerFactory.getLogger(HttpServerImpl.class);
 
   private static final Handler<Throwable> DEFAULT_EXCEPTION_HANDLER = t -> log.trace("Connection failure", t);
-  private static final String FLASH_POLICY_HANDLER_PROP_NAME = "vertx.flashPolicyHandler";
-  private static final boolean USE_FLASH_POLICY_HANDLER = Boolean.getBoolean(FLASH_POLICY_HANDLER_PROP_NAME);
-  private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
-  private static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
-  private static final String DISABLE_H2C_PROP_NAME = "vertx.disableH2c";
-  private final boolean DISABLE_H2C = Boolean.getBoolean(DISABLE_H2C_PROP_NAME);
 
-  private final HttpServerOptions options;
-  private final VertxInternal vertx;
+  private static final String FLASH_POLICY_HANDLER_PROP_NAME = "vertx.flashPolicyHandler";
+  private static final String DISABLE_WEBSOCKETS_PROP_NAME = "vertx.disableWebsockets";
+  private static final String DISABLE_H2C_PROP_NAME = "vertx.disableH2c";
+
+  static final boolean USE_FLASH_POLICY_HANDLER = Boolean.getBoolean(FLASH_POLICY_HANDLER_PROP_NAME);
+  static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
+
+  final HttpServerOptions options;
+  final VertxInternal vertx;
   private final SSLHelper sslHelper;
   private final ContextInternal creatingContext;
-  private final Map<Channel, ConnectionBase> connectionMap = new ConcurrentHashMap<>();
+  private final boolean disableH2c = Boolean.getBoolean(DISABLE_H2C_PROP_NAME);
+  final Map<Channel, ConnectionBase> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<HttpHandlers> httpHandlerMgr = new HandlerManager<>(availableWorkers);
   private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
   private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpConnection> connectionHandler;
-  private final String subProtocols;
-  private String serverOrigin;
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
@@ -92,8 +75,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   private HttpServerImpl actualServer;
   private volatile int actualPort;
   private ContextInternal listenContext;
-  private HttpServerMetrics metrics;
-  private boolean logEnabled;
+  HttpServerMetrics metrics;
   private Handler<Throwable> exceptionHandler;
 
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
@@ -107,8 +89,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       creatingContext.addCloseHook(this);
     }
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
-    this.subProtocols = options.getWebsocketSubProtocols();
-    this.logEnabled = options.getLogActivity();
   }
 
   @Override
@@ -190,6 +170,36 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
   }
 
+  private ChannelHandler childHandler(SocketAddress address, String serverOrigin) {
+    VertxMetrics vertxMetrics = vertx.metricsSPI();
+    this.metrics = vertxMetrics != null ? vertxMetrics.createHttpServerMetrics(options, address) : null;
+    return new HttpServerChannelInitializer(
+      vertx,
+      sslHelper,
+      options,
+      serverOrigin,
+      metrics,
+      disableH2c,
+      httpHandlerMgr::chooseHandler,
+      eventLoop -> {
+        HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(eventLoop);
+        if (holder != null && holder.handler.exceptionHandler != null) {
+          return new HandlerHolder<>(holder.context, holder.handler.exceptionHandler);
+        } else {
+          return null;
+        }
+      }) {
+      @Override
+      protected void initChannel(Channel ch) {
+        if (!requestStream.accept() || !wsStream.accept()) {
+          ch.close();
+        } else {
+          super.initChannel(ch);
+        }
+      }
+    };
+  }
+
   public synchronized HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
       throw new IllegalStateException("Set request or websocket handler first");
@@ -201,7 +211,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     listening = true;
     String host = address.host() != null ? address.host() : "localhost";
     int port = address.port();
-    serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
     List<HttpVersion> applicationProtocols = options.getAlpnVersions();
     if (listenContext.isWorkerContext()) {
       applicationProtocols =  applicationProtocols.stream().filter(v -> v != HttpVersion.HTTP_2).collect(Collectors.toList());
@@ -217,88 +226,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);
         applyConnectionOptions(address.path() != null, bootstrap);
         sslHelper.validate(vertx);
-        bootstrap.childHandler(new ChannelInitializer<Channel>() {
-          @Override
-            protected void initChannel(Channel ch) throws Exception {
-              if (!requestStream.accept() || !wsStream.accept()) {
-                ch.close();
-                return;
-              }
-              ChannelPipeline pipeline = ch.pipeline();
-              if (sslHelper.isSSL()) {
-                ch.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
-                  if (ar.succeeded()) {
-                    if (options.isUseAlpn()) {
-                      SslHandler sslHandler = pipeline.get(SslHandler.class);
-                      String protocol = sslHandler.applicationProtocol();
-                      if ("h2".equals(protocol)) {
-                        handleHttp2(ch);
-                      } else {
-                        handleHttp1(ch);
-                      }
-                    } else {
-                      handleHttp1(ch);
-                    }
-                  } else {
-                    HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ch.eventLoop());
-                    handler.context.executeFromIO(v -> {
-                      handler.handler.exceptionHandler.handle(ar.cause());
-                    });
-                  }
-                }));
-                if (options.isSni()) {
-                  SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
-                  pipeline.addFirst(sniHandler);
-                } else {
-                  SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
-                  pipeline.addFirst("ssl", handler);
-                }
-              } else {
-                if (DISABLE_H2C) {
-                  handleHttp1(ch);
-                } else {
-                  IdleStateHandler idle;
-                  if (options.getIdleTimeout() > 0) {
-                    pipeline.addLast("idle", idle = new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
-                  } else {
-                    idle = null;
-                  }
-                  // Handler that detects whether the HTTP/2 connection preface or just process the request
-                  // with the HTTP 1.x pipeline to support H2C with prior knowledge, i.e a client that connects
-                  // and uses HTTP/2 in clear text directly without an HTTP upgrade.
-                  pipeline.addLast(new Http1xOrH2CHandler() {
-                    @Override
-                    protected void configure(ChannelHandlerContext ctx, boolean h2c) {
-                      if (idle != null) {
-                        // It will be re-added but this way we don't need to pay attention to order
-                        pipeline.remove(idle);
-                      }
-                      if (h2c) {
-                        handleHttp2(ctx.channel());
-                      } else {
-                        handleHttp1(ch);
-                      }
-                    }
-
-                    @Override
-                    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-                      if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
-                        ctx.close();
-                      }
-                    }
-
-                    @Override
-                    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-                      super.exceptionCaught(ctx, cause);
-                      HandlerHolder<HttpHandlers> handler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
-                      handler.context.executeFromIO(v -> handler.handler.exceptionHandler.handle(cause));
-                    }
-                  });
-                }
-              }
-            }
-        });
-
+        String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
+        bootstrap.childHandler(childHandler(address, serverOrigin));
         addHandlers(this, listenContext);
         try {
           bindFuture = AsyncResolveConnectHelper.doBind(vertx, address, bootstrap);
@@ -313,8 +242,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
                 HttpServerImpl.this.actualPort = address.port();
               }
               serverChannelGroup.add(serverChannel);
-              VertxMetrics metrics = vertx.metricsSPI();
-              this.metrics = metrics != null ? metrics.createHttpServerMetrics(options, address) : null;
             }
           });
         } catch (final Throwable t) {
@@ -350,155 +277,16 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           listenContext.runOnContext((v) -> listenHandler.handle(res));
         } else if (future.failed()) {
           listening  = false;
+          if (metrics != null) {
+            metrics.close();
+            metrics = null;
+          }
           // No handler - log so user can see failure
           log.error(future.cause());
         }
       });
     }
     return this;
-  }
-
-  VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler(HandlerHolder<HttpHandlers> holder) {
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
-      .server(true)
-      .useCompression(options.isCompressionSupported())
-      .useDecompression(options.isDecompressionSupported())
-      .compressionLevel(options.getCompressionLevel())
-      .initialSettings(options.getInitialSettings())
-      .connectionFactory(connHandler -> new Http2ServerConnection(holder.context, serverOrigin, connHandler, options, holder.handler.requestHandler, metrics))
-      .logEnabled(logEnabled)
-      .build();
-    handler.addHandler(conn -> {
-      connectionMap.put(conn.channel(), conn);
-      if (metrics != null) {
-        conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-      }
-      if (options.getHttp2ConnectionWindowSize() > 0) {
-        conn.setWindowSize(options.getHttp2ConnectionWindowSize());
-      }
-      if (holder.handler.connectionHandler != null) {
-        holder.context.executeFromIO(v -> {
-          holder.handler.connectionHandler.handle(conn);
-        });
-      }
-    });
-    handler.removeHandler(conn -> {
-      connectionMap.remove(conn.channel());
-    });
-    return handler;
-  }
-
-  private void configureHttp1(ChannelPipeline pipeline, HandlerHolder<HttpHandlers> holder) {
-    if (logEnabled) {
-      pipeline.addLast("logging", new LoggingHandler());
-    }
-    if (USE_FLASH_POLICY_HANDLER) {
-      pipeline.addLast("flashpolicy", new FlashPolicyHandler());
-    }
-    pipeline.addLast("httpDecoder", new VertxHttpRequestDecoder(options));
-    pipeline.addLast("httpEncoder", new VertxHttpResponseEncoder());
-    if (options.isDecompressionSupported()) {
-      pipeline.addLast("inflater", new HttpContentDecompressor(false));
-    }
-    if (options.isCompressionSupported()) {
-      pipeline.addLast("deflater", new HttpChunkContentCompressor(options.getCompressionLevel()));
-    }
-    if (sslHelper.isSSL() || options.isCompressionSupported()) {
-      // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
-      pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-    }
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
-    }
-    if (!DISABLE_H2C) {
-      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, httpHandlerMgr));
-    }
-    if (DISABLE_WEBSOCKETS) {
-      // As a performance optimisation you can set a system property to disable websockets altogether which avoids
-      // some casting and a header check
-    } else {
-      holder = new HandlerHolder<>(holder.context, new HttpHandlers(
-        this,
-        new WebSocketRequestHandler(metrics, holder.handler),
-        holder.handler.wsHandler,
-        holder.handler.connectionHandler,
-        holder.handler.exceptionHandler));
-      initializeWebsocketExtensions (pipeline);
-    }
-    HandlerHolder<HttpHandlers> holder2 = holder;
-    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(holder2.context, chctx -> {
-      Http1xServerConnection conn = new Http1xServerConnection(holder2.context.owner(),
-        sslHelper,
-        options,
-        chctx,
-        holder2.context,
-        serverOrigin,
-        holder2.handler,
-        metrics);
-      if (metrics != null) {
-        holder2.context.executeFromIO(v -> conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName())));
-      }
-      return conn;
-    });
-    handler.addHandler(conn -> {
-      connectionMap.put(pipeline.channel(), conn);
-    });
-    handler.removeHandler(conn -> {
-      connectionMap.remove(pipeline.channel());
-    });
-    pipeline.addLast("handler", handler);
-
-  }
-
-  private void initializeWebsocketExtensions(ChannelPipeline pipeline) {
-    ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<>();
-    if (options.getPerFrameWebsocketCompressionSupported()) {
-      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(options.getWebsocketCompressionLevel()));
-    }
-    if (options.getPerMessageWebsocketCompressionSupported()) {
-      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(options.getWebsocketCompressionLevel(),
-        ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
-        options.getWebsocketAllowServerNoContext(), options.getWebsocketPreferredClientNoContext()));
-    }
-    if (!extensionHandshakers.isEmpty()) {
-      WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(
-        extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[extensionHandshakers.size()]));
-      pipeline.addLast("websocketExtensionHandler", extensionHandler);
-    }
-  }
-
-  private void handleHttp1(Channel ch) {
-    HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(ch.eventLoop());
-    if (holder == null) {
-      sendServiceUnavailable(ch);
-      return;
-    }
-    configureHttp1(ch.pipeline(), holder);
-  }
-
-  private void sendServiceUnavailable(Channel ch) {
-    ch.writeAndFlush(
-      Unpooled.copiedBuffer("HTTP/1.1 503 Service Unavailable\r\n" +
-        "Content-Length:0\r\n" +
-        "\r\n", StandardCharsets.ISO_8859_1))
-      .addListener(ChannelFutureListener.CLOSE);
-  }
-
-  private void handleHttp2(Channel ch) {
-    HandlerHolder<HttpHandlers> holder = httpHandlerMgr.chooseHandler(ch.eventLoop());
-    if (holder == null) {
-      ch.close();
-      return;
-    }
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = buildHttp2ConnectionHandler(holder);
-    ch.pipeline().addLast("handler", handler);
-    configureHttp2(ch.pipeline());
-  }
-
-  void configureHttp2(ChannelPipeline pipeline) {
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addBefore("handler", "idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
-    }
   }
 
   /**
@@ -665,7 +453,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     In practice synchronized overhead should be close to zero assuming most access is from the same thread due
     to biased locks
   */
-  private class HttpStreamHandler<C extends ReadStream<Buffer>> implements ReadStream<C> {
+  class HttpStreamHandler<C extends ReadStream<Buffer>> implements ReadStream<C> {
 
     private Handler<C> handler;
     private long demand = Long.MAX_VALUE;

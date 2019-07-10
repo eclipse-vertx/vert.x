@@ -3720,6 +3720,7 @@ public abstract class HttpTest extends HttpTestBase {
     AtomicReference<HttpConnection> connRef = new AtomicReference<>();
     Context serverCtx = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
+      assertSame(serverCtx, Vertx.currentContext());
       assertEquals(0, status.getAndIncrement());
       assertNull(connRef.getAndSet(conn));
     });

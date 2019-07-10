@@ -69,7 +69,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocketImpl> implements HttpConnection {
+public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocketImpl> implements HttpServerConnection {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerConnection.class);
 
@@ -82,8 +82,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private HttpServerRequestImpl requestInProgress;
   private HttpServerRequestImpl responseInProgress;
   private boolean channelPaused;
+  private Handler<HttpServerRequest> requestHandler;
 
-  final Handler<HttpServerRequest> requestHandler;
   final HttpServerMetrics metrics;
   final boolean handle100ContinueAutomatically;
   final HttpServerOptions options;
@@ -94,16 +94,19 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
                                 ChannelHandlerContext channel,
                                 ContextInternal context,
                                 String serverOrigin,
-                                HttpHandlers handlers,
                                 HttpServerMetrics metrics) {
     super(vertx, channel, context);
-    this.requestHandler = requestHandler(handlers);
     this.serverOrigin = serverOrigin;
     this.options = options;
     this.sslHelper = sslHelper;
     this.metrics = metrics;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
-    exceptionHandler(handlers.exceptionHandler);
+  }
+
+  @Override
+  public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
+    requestHandler = handler;
+    return this;
   }
 
   @Override
@@ -494,25 +497,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       return file.endOffset() - file.startOffset();
     } else {
       return -1;
-    }
-  }
-
-  private static Handler<HttpServerRequest> requestHandler(HttpHandlers handler) {
-    if (handler.connectionHandler != null) {
-      class Adapter implements Handler<HttpServerRequest> {
-        private boolean isFirst = true;
-        @Override
-        public void handle(HttpServerRequest request) {
-          if (isFirst) {
-            isFirst = false;
-            handler.connectionHandler.handle(request.connection());
-          }
-          handler.requestHandler.handle(request);
-        }
-      }
-      return new Adapter();
-    } else {
-      return handler.requestHandler;
     }
   }
 }
