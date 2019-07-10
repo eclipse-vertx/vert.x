@@ -2937,14 +2937,16 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testServerExceptionHandler() throws Exception {
+    Context serverCtx = vertx.getOrCreateContext();
     server.exceptionHandler(err -> {
+      assertSame(serverCtx, Vertx.currentContext());
       assertTrue(err instanceof TooLongFrameException);
       testComplete();
     });
     server.requestHandler(req -> {
       fail();
     });
-    startServer(testAddress);
+    startServer(testAddress, serverCtx);
     HttpClientRequest req = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
     });
     req.putHeader("the_header", TestUtils.randomAlphaString(10000));

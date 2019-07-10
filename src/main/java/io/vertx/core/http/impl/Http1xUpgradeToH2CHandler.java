@@ -8,8 +8,10 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.*;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.vertx.core.Handler;
 import io.vertx.core.net.impl.HandlerHolder;
-import io.vertx.core.net.impl.HandlerManager;
 import io.vertx.core.net.impl.VertxHandler;
 
 import java.util.Iterator;
@@ -21,13 +23,13 @@ import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
 
-  private final HttpServerImpl server;
-  private final HandlerManager<HttpHandlers> httpHandlerMgr;
+  private final HttpServerChannelInitializer initializer;
+  private final HandlerHolder<? extends Handler<HttpServerConnection>> holder;
   private VertxHttp2ConnectionHandler<Http2ServerConnection> handler;
 
-  Http1xUpgradeToH2CHandler(HttpServerImpl server, HandlerManager<HttpHandlers> httpHandlerMgr) {
-    this.server = server;
-    this.httpHandlerMgr = httpHandlerMgr;
+  Http1xUpgradeToH2CHandler(HttpServerChannelInitializer initializer, HandlerHolder<? extends Handler<HttpServerConnection>> holder) {
+    this.initializer = initializer;
+    this.holder = holder;
   }
 
   @Override
@@ -61,8 +63,7 @@ class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           if (settingsHeader != null) {
             Http2Settings settings = HttpUtils.decodeSettings(settingsHeader);
             if (settings != null) {
-              HandlerHolder<HttpHandlers> reqHandler = httpHandlerMgr.chooseHandler(ctx.channel().eventLoop());
-              if (reqHandler != null && reqHandler.context.isEventLoopContext()) {
+              if (holder != null && holder.context.isEventLoopContext()) {
                 ChannelPipeline pipeline = ctx.pipeline();
                 DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
                 res.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);
@@ -70,8 +71,7 @@ class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
                 res.headers().add(HttpHeaderNames.CONTENT_LENGTH, HttpHeaderValues.ZERO);
                 ctx.writeAndFlush(res);
                 pipeline.remove("httpEncoder");
-                pipeline.remove("handler");
-                handler = server.buildHttp2ConnectionHandler(reqHandler);
+                handler = initializer.buildHttp2ConnectionHandler(holder.context, holder.handler);
                 pipeline.addLast("handler", handler);
                 handler.serverUpgrade(ctx, settings, request);
                 DefaultHttp2Headers headers = new DefaultHttp2Headers();
@@ -95,6 +95,7 @@ class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           ctx.writeAndFlush(res);
         }
       } else {
+        initializer.configureHttp1(ctx.pipeline(), holder);
         ctx.fireChannelRead(msg);
         ctx.pipeline().remove(this);
       }
@@ -116,13 +117,22 @@ class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
                 pipeline.remove(handler.getKey());
               }
             }
-            server.configureHttp2(pipeline);
+            initializer.configureHttp2(pipeline);
           }
         } else {
           // We might have left over buffer sent when removing the HTTP decoder that needs to be propagated to the HTTP handler
           super.channelRead(ctx, msg);
         }
       }
+    }
+  }
+
+  @Override
+  public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+    if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
+      ctx.close();
+    } else {
+      ctx.fireUserEventTriggered(evt);
     }
   }
 }
