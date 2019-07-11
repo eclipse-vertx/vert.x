@@ -246,7 +246,6 @@ public class InboundBuffer<E> {
     Handler<Throwable> handler;
     synchronized (this) {
       if ((handler = exceptionHandler) == null) {
-        log.error("Unhandled exception", err);
         return;
       }
     }
