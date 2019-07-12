@@ -23,7 +23,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
-public class FakePoolMetrics implements PoolMetrics<Void> {
+public class FakePoolMetrics implements PoolMetrics<Object> {
+
+  private static final Object TASK_SUBMITTED = new Object();
+  private static final Object TASK_BEGIN = new Object();
+
   private final static Map<String, PoolMetrics> METRICS = new ConcurrentHashMap<>();
 
   private final int poolSize;
@@ -51,29 +55,33 @@ public class FakePoolMetrics implements PoolMetrics<Void> {
     return name;
   }
 
-  public synchronized Void submitted() {
+  public synchronized Object submitted() {
     submitted.incrementAndGet();
     waiting.incrementAndGet();
-    return null;
+    return TASK_SUBMITTED;
   }
 
   @Override
-  public void rejected(Void t) {
+  public void rejected(Object t) {
     waiting.decrementAndGet();
   }
 
   @Override
-  public Void begin(Void t) {
-    waiting.decrementAndGet();
-    idle.decrementAndGet();
-    running.incrementAndGet();
-    return null;
+  public Object begin(Object t) {
+    if (t == TASK_SUBMITTED) {
+      waiting.decrementAndGet();
+      idle.decrementAndGet();
+      running.incrementAndGet();
+    }
+    return TASK_BEGIN;
   }
 
-  public void end(Void t, boolean succeeded) {
-    running.decrementAndGet();
-    idle.incrementAndGet();
-    completed.incrementAndGet();
+  public void end(Object t, boolean succeeded) {
+    if (t == TASK_BEGIN) {
+      running.decrementAndGet();
+      idle.incrementAndGet();
+      completed.incrementAndGet();
+    }
   }
 
   @Override

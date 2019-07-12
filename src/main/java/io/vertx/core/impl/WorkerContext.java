@@ -44,16 +44,17 @@ class WorkerContext extends ContextImpl {
 
   private <T> void execute(ContextInternal ctx, T value, Handler<T> task) {
     PoolMetrics metrics = workerPool.metrics();
-    Object metric = metrics != null ? metrics.submitted() : null;
+    Object queueMetric = metrics != null ? metrics.submitted() : null;
     orderedTasks.execute(() -> {
+      Object execMetric = null;
       if (metrics != null) {
-        metrics.begin(metric);
+        execMetric = metrics.begin(queueMetric);
       }
       try {
         ctx.dispatch(value, task);
       } finally {
         if (metrics != null) {
-          metrics.end(metric, true);
+          metrics.end(execMetric, true);
         }
       }
     }, workerPool.executor());
