@@ -26,14 +26,15 @@ class WorkerContext extends ContextImpl {
   }
 
   final <T> Runnable wrapTask(T arg, Handler<T> hTask, PoolMetrics metrics) {
-    Object metric = metrics != null ? metrics.submitted() : null;
+    Object queueMetric = metrics != null ? metrics.submitted() : null;
     return () -> {
+      Object execMetric = null;
       if (metrics != null) {
-        metrics.begin(metric);
+        execMetric = metrics.begin(queueMetric);
       }
       boolean succeeded = executeTask(arg, hTask);
       if (metrics != null) {
-        metrics.end(metric, succeeded);
+        metrics.end(execMetric, succeeded);
       }
     };
   }
