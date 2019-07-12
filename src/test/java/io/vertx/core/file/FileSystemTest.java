@@ -872,6 +872,19 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  public void testMkdirAlreadyExist() {
+    String dirName = "some-dir";
+    testMkdir(dirName, null, false, true, v1 -> {
+      testMkdir(dirName, null, false, false, v2 -> {
+        assertTrue(fileExists(dirName));
+        assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
   public void testMkdirCreateParents() {
     String dirName = "top-dir" + pathSep + "/some-dir";
     testMkdir(dirName, null, true, true, v -> {
@@ -890,6 +903,31 @@ public class FileSystemTest extends VertxTestBase {
       assertTrue(fileExists(dirName));
       assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
       assertPerms(perms, dirName);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testMkdirCreateParentsDirExist() {
+    String dirName = "some-dir";
+    testMkdir(dirName, null, true, true, v1 -> {
+      testMkdir(dirName, null, true, true, v2 -> {
+        assertTrue(fileExists(dirName));
+        assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testMkdirCreateParentsFileExist() throws Exception {
+    String dirName = "some-dir";
+    createFileWithJunk(dirName, 1024);
+    testMkdir(dirName, null, true, false, v2 -> {
+      assertTrue(fileExists(dirName));
+      assertFalse(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
       testComplete();
     });
     await();

@@ -483,7 +483,7 @@ public interface FileSystem {
   /**
    * Create the directory represented by {@code path} and any non existent parents, asynchronously.
    * <p>
-   * The operation will fail if the directory already exists.
+   * The operation will fail if the {@code path} already exists but is not a directory.
    *
    * @param path  path to the file
    * @param handler  the handler that will be called on completion
@@ -511,7 +511,7 @@ public interface FileSystem {
    * The permission String takes the form rwxr-x--- as specified
    * in <a href="http://download.oracle.com/javase/7/docs/api/java/nio/file/attribute/PosixFilePermissions.html">here</a>.
    * <p>
-   * The operation will fail if the directory already exists.<p>
+   * The operation will fail if the {@code path} already exists but is not a directory.
    *
    * @param path  path to the file
    * @param perms  the permissions string
