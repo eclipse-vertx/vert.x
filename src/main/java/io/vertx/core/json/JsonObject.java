@@ -978,15 +978,18 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   private void fromJson(String json) {
     try {
-      JsonObject decoded = (JsonObject) Json.decodeValue(json);
-      this.map = decoded.map;
+      this.map = (Map<String, Object>) Json.decodeValueInternal(json);
     } catch (Exception e) {
       throw new DecodeException(e);
     }
   }
 
   private void fromBuffer(Buffer buf) {
-    fromJson(buf.toString());
+    try {
+      this.map = (Map<String, Object>) Json.decodeValueInternal(buf);
+    } catch (Exception e) {
+      throw new DecodeException(e);
+    }
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {

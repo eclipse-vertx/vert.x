@@ -11,6 +11,7 @@
 
 package io.vertx.core.json;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Utils;
 import io.vertx.test.core.TestUtils;
@@ -1295,6 +1296,19 @@ public class JsonObjectTest {
     JsonArray nestedArr = obj.getJsonArray("myarr");
     assertEquals("foo", nestedArr.getString(0));
     assertEquals(Integer.valueOf(123), Integer.valueOf(nestedArr.getInteger(1)));
+  }
+
+  @Test
+  public void testDecodeMap() throws Exception {
+    byte[] bytes = TestUtils.randomByteArray(10);
+    String strBytes = Base64.getEncoder().encodeToString(bytes);
+    Instant now = Instant.now();
+    String strInstant = ISO_INSTANT.format(now);
+    String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
+      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
+    ObjectMapper jacksonMapper = new ObjectMapper();
+    Map decoded = jacksonMapper.readValue(json, Map.class);
+
   }
 
   @Test

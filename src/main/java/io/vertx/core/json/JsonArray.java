@@ -668,11 +668,19 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   private void fromJson(String json) {
-    list = Json.decodeValue(json, List.class);
+    try {
+      list = (List<Object>) Json.decodeValueInternal(json);
+    } catch (Exception e) {
+      throw new DecodeException(e);
+    }
   }
 
   private void fromBuffer(Buffer buf) {
-    list = Json.decodeValue(buf, List.class);
+    try {
+      list = (List<Object>) Json.decodeValueInternal(buf);
+    } catch (Exception e) {
+      throw new DecodeException(e);
+    }
   }
 
   private class Iter implements Iterator<Object> {
