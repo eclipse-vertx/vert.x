@@ -14,7 +14,6 @@ package io.vertx.core.net.impl;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
 import io.netty.util.Mapping;
-import io.vertx.core.Vertx;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
@@ -99,20 +98,6 @@ public class SSLHelper {
   }
 
   private static final Map<HttpVersion, String> PROTOCOL_NAME_MAPPING = new EnumMap<>(HttpVersion.class);
-  private static final List<String> DEFAULT_JDK_CIPHER_SUITE;
-
-  static {
-    ArrayList<String> suite = new ArrayList<>();
-    try {
-      SSLContext context = SSLContext.getInstance("TLS");
-      context.init(null, null, null);
-      SSLEngine engine = context.createSSLEngine();
-      Collections.addAll(suite, engine.getEnabledCipherSuites());
-    } catch (Throwable e) {
-      suite = null;
-    }
-    DEFAULT_JDK_CIPHER_SUITE = suite != null ? Collections.unmodifiableList(suite) : null;
-  }
 
   static {
     PROTOCOL_NAME_MAPPING.put(HttpVersion.HTTP_2, "h2");
@@ -289,7 +274,7 @@ public class SSLHelper {
       } else {
         builder.sslProvider(SslProvider.JDK);
         if (cipherSuites == null || cipherSuites.isEmpty()) {
-          cipherSuites = DEFAULT_JDK_CIPHER_SUITE;
+          cipherSuites = DefaultJDKCipherSuite.get();
         }
       }
       if (trustMgrFactory != null) {
