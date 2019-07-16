@@ -297,20 +297,26 @@ public class Json {
     Object current;
     try {
       // Check if root object is a primitive or not
-      if (parser.getCurrentToken() == JsonToken.START_OBJECT) { // JsonObject
-        current = new LinkedHashMap<String, Object>();
-      } else if (parser.getCurrentToken() == JsonToken.START_ARRAY) { // JsonArray
-        current = new ArrayList<>();
-      } else if (parser.getCurrentToken() == JsonToken.VALUE_STRING) { // String
-        return parser.getText();
-      } else if (parser.getCurrentToken().isNumeric()) { // Numbers
-        return parser.getNumberValue();
-      } else if (parser.getCurrentToken().isBoolean()) { // Booleans
-        return parser.getBooleanValue();
-      } else if (parser.getCurrentToken() == JsonToken.VALUE_NULL) { // Null
-        return null;
-      } else {
-        throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
+      switch (parser.getCurrentTokenId()) {
+        case JsonTokenId.ID_START_OBJECT:
+          current = new LinkedHashMap<String, Object>();
+          break;
+        case JsonTokenId.ID_START_ARRAY:
+          current = new ArrayList<>();
+          break;
+        case JsonTokenId.ID_STRING:
+          return parser.getText();
+        case JsonTokenId.ID_NUMBER_FLOAT:
+        case JsonTokenId.ID_NUMBER_INT:
+          return parser.getNumberValue();
+        case JsonTokenId.ID_TRUE:
+          return Boolean.TRUE;
+        case JsonTokenId.ID_FALSE:
+          return Boolean.FALSE;
+        case JsonTokenId.ID_NULL:
+          return null;
+        default:
+          throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
       }
     } catch (IOException e) {
       throw new DecodeException(e);
@@ -324,29 +330,35 @@ public class Json {
       Deque<Object> stack = null;
       String fieldKey = null;
       while (true) {
-        JsonToken actualToken = parser.nextToken();
-        if (actualToken == null) {
+        JsonToken token = parser.nextToken();
+        int tokenId = parser.getCurrentTokenId();
+        if (token == null) {
           break;
-        } else if (actualToken == JsonToken.FIELD_NAME) {
-          // If FIELD_NAME is found, then current is JsonObject
-          fieldKey = parser.getCurrentName();
-        } else if (actualToken.isStructStart()) {
-          if (stack == null) {
-            stack = new ArrayDeque<>();
-          }
-          stack.push(current);
-          if (fieldKey != null) {
-            stack.push(fieldKey);
-            fieldKey = null;
-          }
-          if (actualToken == JsonToken.START_OBJECT) {
-            current = new LinkedHashMap<>();
-          } else {
-            current = new ArrayList<>();
-          }
-        } else {
-          Object fieldValue;
-          if (actualToken.isStructEnd()) {
+        }
+        Object fieldValue;
+        switch (tokenId) {
+          case JsonTokenId.ID_FIELD_NAME:
+            // If FIELD_NAME is found, then current is JsonObject
+            fieldKey = parser.getCurrentName();
+            continue;
+          case JsonTokenId.ID_START_OBJECT:
+          case JsonTokenId.ID_START_ARRAY:
+            if (stack == null) {
+              stack = new ArrayDeque<>();
+            }
+            stack.push(current);
+            if (fieldKey != null) {
+              stack.push(fieldKey);
+              fieldKey = null;
+            }
+            if (tokenId == JsonTokenId.ID_START_OBJECT) {
+              current = new LinkedHashMap<>();
+            } else {
+              current = new ArrayList<>();
+            }
+            continue;
+          case JsonTokenId.ID_END_OBJECT:
+          case JsonTokenId.ID_END_ARRAY:
             if (stack == null || stack.isEmpty()) {
               return;
             }
@@ -356,29 +368,33 @@ public class Json {
               fieldKey = (String) current;
               current = stack.pop();
             }
-          } else {
-            if (actualToken == JsonToken.VALUE_STRING) {
-              fieldValue = parser.getText();
-            } else if (actualToken.isBoolean()) {
-              fieldValue = parser.getBooleanValue();
-            } else if (actualToken.isNumeric()) {
-              fieldValue = parser.getNumberValue();
-            } else if (actualToken == JsonToken.VALUE_NULL) {
-              fieldValue = null;
-            } else {
-              throw new UnsupportedOperationException();
-            }
-          }
-          if (fieldKey != null) {
-            ((Map<String, Object>)current).put(fieldKey, fieldValue);
-            fieldKey = null;
-          } else {
-            ((List<Object>)current).add(fieldValue);
-          }
+            break;
+          case JsonTokenId.ID_STRING:
+            fieldValue = parser.getText();
+            break;
+          case JsonTokenId.ID_NUMBER_FLOAT:
+          case JsonTokenId.ID_NUMBER_INT:
+            fieldValue = parser.getNumberValue();
+            break;
+          case JsonTokenId.ID_TRUE:
+            fieldValue = Boolean.TRUE;
+            break;
+          case JsonTokenId.ID_FALSE:
+            fieldValue = Boolean.FALSE;
+            break;
+          case JsonTokenId.ID_NULL:
+            fieldValue = null;
+            break;
+          default:
+            throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
+        }
+        if (fieldKey != null) {
+          ((Map<String, Object>)current).put(fieldKey, fieldValue);
+          fieldKey = null;
+        } else {
+          ((List<Object>)current).add(fieldValue);
         }
       }
-
-      throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
     } catch (IOException e) {
       throw new DecodeException(e);
     }
