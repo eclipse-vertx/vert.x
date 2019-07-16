@@ -14,10 +14,10 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.Message;
 
 import java.util.concurrent.ConcurrentMap;
 
@@ -96,6 +96,16 @@ public interface ContextInternal extends Context {
    * @param t the exception to report
    */
   void reportException(Throwable t);
+
+  /**
+   * Report a message exception to this context synchronously.
+   * <p>
+   * The message exception handler will be called when there is one, otherwise will do nothing.
+   *
+   * @param message the message from the consumer that caused the exception
+   * @param t       the exception to report
+   */
+  void reportMessageException(Message message, Throwable t);
 
   /**
    * @return the {@link ConcurrentMap} used to store context data

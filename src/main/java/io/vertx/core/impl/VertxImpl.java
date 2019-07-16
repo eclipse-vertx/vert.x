@@ -26,6 +26,7 @@ import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.MessageError;
 import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
@@ -121,6 +122,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private volatile HAManager haManager;
   private boolean closed;
   private volatile Handler<Throwable> exceptionHandler;
+  private volatile Handler<MessageError> messageExceptionHandler;
   private final Map<String, SharedWorkerPool> namedWorkerPools;
   private final int defaultWorkerPoolSize;
   private final long maxWorkerExecTime;
@@ -1116,6 +1118,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public Handler<Throwable> exceptionHandler() {
     return exceptionHandler;
+  }
+
+  @Override
+  public Vertx messageExceptionHandler(Handler<MessageError> handler) {
+    messageExceptionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Handler<MessageError> messageExceptionHandler() {
+    return messageExceptionHandler;
   }
 
   @Override

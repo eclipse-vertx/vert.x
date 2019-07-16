@@ -283,6 +283,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         metrics.endHandleMessage(metric, e);
       }
       context.reportException(e);
+      context.reportMessageException(message, e);
     }
     checkNextTick();
   }

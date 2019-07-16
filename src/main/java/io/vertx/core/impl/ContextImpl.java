@@ -16,6 +16,9 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.*;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageError;
+import io.vertx.core.eventbus.impl.MessageErrorImpl;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -102,6 +105,7 @@ abstract class ContextImpl implements ContextInternal {
   private final EventLoop eventLoop;
   private ConcurrentMap<Object, Object> contextData;
   private volatile Handler<Throwable> exceptionHandler;
+  private volatile Handler<MessageError> messageExceptionHandler;
   protected final WorkerPool workerPool;
   protected final WorkerPool internalBlockingPool;
   final TaskQueue orderedTasks;
@@ -405,6 +409,7 @@ abstract class ContextImpl implements ContextInternal {
     }
   }
 
+  @Override
   public void reportException(Throwable t) {
     Handler<Throwable> handler = this.exceptionHandler;
     if (handler == null) {
@@ -414,6 +419,17 @@ abstract class ContextImpl implements ContextInternal {
       handler.handle(t);
     } else {
       log.error("Unhandled exception", t);
+    }
+  }
+
+  @Override
+  public void reportMessageException(Message message, Throwable t) {
+    Handler<MessageError> handler = this.messageExceptionHandler;
+    if (handler == null) {
+      handler = owner.messageExceptionHandler();
+    }
+    if (handler != null) {
+      handler.handle(new MessageErrorImpl(message, t));
     }
   }
 
@@ -430,6 +446,17 @@ abstract class ContextImpl implements ContextInternal {
   @Override
   public Handler<Throwable> exceptionHandler() {
     return exceptionHandler;
+  }
+
+  @Override
+  public Context messageExceptionHandler(Handler<MessageError> handler) {
+    messageExceptionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Handler<MessageError> messageExceptionHandler() {
+    return messageExceptionHandler;
   }
 
   public int getInstanceCount() {

@@ -18,6 +18,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.dns.DnsClient;
 import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.MessageError;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -593,6 +594,21 @@ public interface Vertx extends Measured {
    */
   @GenIgnore
   @Nullable Handler<Throwable> exceptionHandler();
+
+  /**
+   * Set a default message exception handler for {@link Context}, set on {@link Context#messageExceptionHandler(Handler)} at creation.
+   *
+   * @param handler the exception handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  Vertx messageExceptionHandler(@Nullable Handler<MessageError> handler);
+
+  /**
+   * @return the current default message exception handler
+   */
+  @GenIgnore
+  @Nullable Handler<MessageError> messageExceptionHandler();
 
   @GenIgnore
   VertxFactory factory = ServiceHelper.loadFactory(VertxFactory.class);
