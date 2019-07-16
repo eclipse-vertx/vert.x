@@ -294,16 +294,17 @@ public class Json {
   }
 
   private static Object decodeJsonInternal(JsonParser parser) throws DecodeException {
-    Object current;
     try {
       // Check if root object is a primitive or not
       switch (parser.getCurrentTokenId()) {
         case JsonTokenId.ID_START_OBJECT:
-          current = new LinkedHashMap<String, Object>();
-          break;
+          Map<String, Object> object = new LinkedHashMap<>();
+          decodeObject(parser, object);
+          return object;
         case JsonTokenId.ID_START_ARRAY:
-          current = new ArrayList<>();
-          break;
+          List<Object> array = new ArrayList<>();
+          decodeArray(parser, array);
+          return array;
         case JsonTokenId.ID_STRING:
           return parser.getText();
         case JsonTokenId.ID_NUMBER_FLOAT:
@@ -321,79 +322,36 @@ public class Json {
     } catch (IOException e) {
       throw new DecodeException(e);
     }
-    decodeJsonStructure(parser, current);
-    return current;
   }
 
-  private static void decodeJsonStructure(JsonParser parser, Object current) throws DecodeException {
+  private static void decodeObject(JsonParser parser, Map<String, Object> current) throws DecodeException {
     try {
-      Deque<Object> stack = null;
-      String fieldKey = null;
       while (true) {
-        JsonToken token = parser.nextToken();
-        int tokenId = parser.getCurrentTokenId();
-        if (token == null) {
+        String name = parser.nextFieldName();
+        if (name == null) {
           break;
         }
-        Object fieldValue;
-        switch (tokenId) {
-          case JsonTokenId.ID_FIELD_NAME:
-            // If FIELD_NAME is found, then current is JsonObject
-            fieldKey = parser.getCurrentName();
-            continue;
-          case JsonTokenId.ID_START_OBJECT:
-          case JsonTokenId.ID_START_ARRAY:
-            if (stack == null) {
-              stack = new ArrayDeque<>();
-            }
-            stack.push(current);
-            if (fieldKey != null) {
-              stack.push(fieldKey);
-              fieldKey = null;
-            }
-            if (tokenId == JsonTokenId.ID_START_OBJECT) {
-              current = new LinkedHashMap<>();
-            } else {
-              current = new ArrayList<>();
-            }
-            continue;
-          case JsonTokenId.ID_END_OBJECT:
-          case JsonTokenId.ID_END_ARRAY:
-            if (stack == null || stack.isEmpty()) {
-              return;
-            }
-            fieldValue = current;
-            current = stack.pop();
-            if (current instanceof String) {
-              fieldKey = (String) current;
-              current = stack.pop();
-            }
-            break;
-          case JsonTokenId.ID_STRING:
-            fieldValue = parser.getText();
-            break;
-          case JsonTokenId.ID_NUMBER_FLOAT:
-          case JsonTokenId.ID_NUMBER_INT:
-            fieldValue = parser.getNumberValue();
-            break;
-          case JsonTokenId.ID_TRUE:
-            fieldValue = Boolean.TRUE;
-            break;
-          case JsonTokenId.ID_FALSE:
-            fieldValue = Boolean.FALSE;
-            break;
-          case JsonTokenId.ID_NULL:
-            fieldValue = null;
-            break;
-          default:
-            throw DecodeException.create("Unexpected token", parser.getCurrentLocation());
+        parser.nextToken();
+        Object value = decodeJsonInternal(parser);
+        current.put(name, value);
+      }
+    } catch (IOException e) {
+      throw new DecodeException(e);
+    }
+  }
+
+  private static void decodeArray(JsonParser parser, List<Object> current) throws DecodeException {
+    try {
+      while (true) {
+        parser.nextToken();
+        int tokenId = parser.getCurrentTokenId();
+        if (tokenId == JsonTokenId.ID_FIELD_NAME) {
+          throw new UnsupportedOperationException();
+        } else if (tokenId == JsonTokenId.ID_END_ARRAY) {
+          return;
         }
-        if (fieldKey != null) {
-          ((Map<String, Object>)current).put(fieldKey, fieldValue);
-          fieldKey = null;
-        } else {
-          ((List<Object>)current).add(fieldValue);
-        }
+        Object value = decodeJsonInternal(parser);
+        current.add(value);
       }
     } catch (IOException e) {
       throw new DecodeException(e);
