@@ -327,10 +327,11 @@ public class Json {
   private static void decodeObject(JsonParser parser, Map<String, Object> current) throws DecodeException {
     try {
       while (true) {
-        String name = parser.nextFieldName();
-        if (name == null) {
+        JsonToken token = parser.nextToken();
+        if (token != JsonToken.FIELD_NAME) {
           break;
         }
+        String name = parser.getText();
         parser.nextToken();
         Object value = decodeJsonInternal(parser);
         current.put(name, value);
