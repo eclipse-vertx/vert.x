@@ -303,8 +303,8 @@ public class ContextTest extends VertxTestBase {
     ctx.runOnContext(v -> {
       vertx.deployVerticle(new AbstractVerticle() {
         @Override
-        public void start(Promise<Void> startFuture) throws Exception {
-          context.runOnContext(startFuture::complete);
+        public void start(Promise<Void> startPromise) throws Exception {
+          context.runOnContext(startPromise::complete);
         }
       }, ar -> {
         throw failure;

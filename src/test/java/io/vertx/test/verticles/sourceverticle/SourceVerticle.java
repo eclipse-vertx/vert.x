@@ -23,10 +23,10 @@ public class SourceVerticle extends AbstractVerticle {
 
 
   @Override
-  public void start(Promise<Void> startFuture) throws Exception {
+  public void start(Promise<Void> startPromise) throws Exception {
     vertx.deployVerticle("java:" + OtherSourceVerticle.class.getName().replace('.', '/') + ".java", new DeploymentOptions(), ar -> {
       if (ar.succeeded()) {
-        startFuture.complete((Void) null);
+        startPromise.complete((Void) null);
       } else {
         ar.cause().printStackTrace();
       }

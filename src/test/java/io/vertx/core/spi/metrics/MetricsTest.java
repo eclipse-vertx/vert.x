@@ -977,7 +977,7 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     Verticle worker = new AbstractVerticle() {
       @Override
-      public void start(Promise<Void> done) throws Exception {
+      public void start(Promise<Void> startPromise) throws Exception {
         vertx.eventBus().localConsumer("message", d -> {
             msg.incrementAndGet();
             try {
@@ -1002,7 +1002,7 @@ public class MetricsTest extends VertxTestBase {
             }
           }
         );
-        done.complete();
+        startPromise.complete();
       }
     };
 
