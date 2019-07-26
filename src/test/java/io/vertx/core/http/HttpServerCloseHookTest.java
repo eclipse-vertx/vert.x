@@ -34,7 +34,7 @@ public class HttpServerCloseHookTest extends VertxTestBase {
   private static class TestVerticle extends AbstractVerticle {
 
     @Override
-    public void start(Promise<Void> startFuture) {
+    public void start(Promise<Void> startPromise) {
       HttpServerOptions invalidOptions = new HttpServerOptions()
         .setSsl(true)
         .setPfxTrustOptions(new PfxOptions().setValue(Buffer.buffer("boom")));
@@ -43,9 +43,9 @@ public class HttpServerCloseHookTest extends VertxTestBase {
         req.response().end("Hello World!");
       }).listen(8443, ar -> {
         if (ar.succeeded()) {
-          startFuture.complete();
+          startPromise.complete();
         } else {
-          startFuture.fail(ar.cause());
+          startPromise.fail(ar.cause());
         }
       });
     }

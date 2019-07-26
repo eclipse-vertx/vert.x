@@ -3094,7 +3094,7 @@ public class NetTest extends VertxTestBase {
     String expected = TestUtils.randomAlphaString(2000);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start(Promise<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startPromise) throws Exception {
         NetServer server = vertx.createNetServer();
         server.connectHandler(so -> {
           Buffer received = Buffer.buffer();
@@ -3109,7 +3109,7 @@ public class NetTest extends VertxTestBase {
             Thread.currentThread().interrupt();
           }
         });
-        server.listen(testAddress, ar -> startFuture.handle(ar.mapEmpty()));
+        server.listen(testAddress, ar -> startPromise.handle(ar.mapEmpty()));
       }
     }, new DeploymentOptions().setWorker(true), onSuccess(v -> {
       client.connect(testAddress, onSuccess(so -> {

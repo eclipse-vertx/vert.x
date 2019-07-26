@@ -22,14 +22,14 @@ import io.vertx.core.http.HttpServerOptions;
 public class SimpleServer extends AbstractVerticle {
 
   @Override
-  public void start(Promise<Void> startFuture) throws Exception {
+  public void start(Promise<Void> startPromise) throws Exception {
     HttpServer server = vertx.createHttpServer(new HttpServerOptions().setPort(8080));
     server.requestHandler(req -> req.response().end());
     server.listen(res -> {
       if (res.succeeded()) {
-        startFuture.complete();
+        startPromise.complete();
       } else {
-        startFuture.fail(res.cause());
+        startPromise.fail(res.cause());
       }
     });
   }
