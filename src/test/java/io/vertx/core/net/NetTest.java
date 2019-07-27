@@ -1567,7 +1567,9 @@ public class NetTest extends VertxTestBase {
             if (upgradedServer.compareAndSet(false, true)) {
               indicatedServerName = socket.indicatedServerName();
               assertFalse(socket.isSsl());
+              Context ctx = Vertx.currentContext();
               socket.upgradeToSsl(ar -> {
+                assertSame(ctx, Vertx.currentContext());
                 assertEquals(shouldPass, ar.succeeded());
                 if (ar.succeeded()) {
                   certificateChainChecker.accept(socket);
