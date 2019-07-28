@@ -61,6 +61,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Handler<Void> endHandler;
   protected final Http1xConnectionBase conn;
   protected boolean closed;
+  private Short closeStatusCode;
+  private String closeReason;
 
   WebSocketImplBase(Http1xConnectionBase conn,
                     boolean supportsContinuation,
@@ -193,6 +195,20 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   void subProtocol(String subProtocol) {
     synchronized (conn) {
       this.subProtocol = subProtocol;
+    }
+  }
+
+  @Override
+  public Short closeStatusCode() {
+    synchronized (conn) {
+      return closeStatusCode;
+    }
+  }
+
+  @Override
+  public String closeReason() {
+    synchronized (conn) {
+      return closeReason;
     }
   }
 
@@ -333,8 +349,11 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
             pongHandler.handle(frame.binaryData());
           }
           break;
-        case TEXT:
         case CLOSE:
+          closeStatusCode = frame.closeStatusCode();
+          closeReason = frame.closeReason();
+          // Continue through
+        case TEXT:
         case BINARY:
         case CONTINUATION:
           if (frameHandler != null) {

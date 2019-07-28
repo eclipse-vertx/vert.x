@@ -2468,13 +2468,13 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testCloseStatusCodeFromServer() {
-    waitFor(2);
+    waitFor(3);
     testCloseStatusCodeFromServer(ServerWebSocket::close);
   }
 
   @Test
   public void testCloseStatusCodeFromServerWithHandler() {
-    waitFor(3);
+    waitFor(4);
     testCloseStatusCodeFromServer(ws -> ws.close(onSuccess(v -> complete())));
   }
 
@@ -2493,6 +2493,10 @@ public class WebSocketTest extends VertxTestBase {
             assertEquals(1000, frame.binaryData().getByteBuf().getShort(0));
             assertEquals(1000, frame.closeStatusCode());
             assertNull(frame.closeReason());
+            complete();
+          });
+          ws.closeHandler(sc -> {
+            assertEquals((Short)(short)1000, ws.closeStatusCode());
             complete();
           });
         }));
@@ -2529,6 +2533,8 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
+          assertEquals((Short)(short)TEST_STATUS_CODE, socket.closeStatusCode());
+          assertEquals(TEST_REASON, socket.closeReason());
           complete();
         });
         socket.frameHandler(frame -> {
@@ -2568,6 +2574,8 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
+          assertEquals(null, socket.closeStatusCode());
+          assertEquals(null, socket.closeReason());
           complete();
         });
         vertx.setTimer(100, (ar) -> closeOp.accept(socket));
@@ -2621,10 +2629,12 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testCleanServerClose() {
+    short status = (short)(4000 + TestUtils.randomPositiveInt() % 100);
     waitFor(2);
     server = vertx.createHttpServer();
     server.websocketHandler(ws -> {
-      ws.closeHandler(v -> {
+      ws.closeHandler(sc -> {
+        assertEquals((Short)(short)status, ws.closeStatusCode());
         complete();
       });
     });
@@ -2635,7 +2645,6 @@ public class WebSocketTest extends VertxTestBase {
         NetSocketInternal so = (NetSocketInternal) res;
         so.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
         so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
-        int status = 4000 + TestUtils.randomPositiveInt() % 100;
         String reason = TestUtils.randomAlphaString(10);
         so.writeMessage(new CloseWebSocketFrame(status, reason));
         Deque<Object> received = new ArrayDeque<>();
