@@ -90,6 +90,16 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   String subProtocol();
 
   /**
+   * Returns the status code received when the WebSocket was closed by the other side, otherwise {@code null}.
+   */
+  Short closeStatusCode();
+
+  /**
+   * Returns the reason message received when the WebSocket was closed by the other side, otherwise {@code null}.
+   */
+  String closeReason();
+
+  /**
    * Write a WebSocket frame to the connection
    *
    * @param frame  the frame to write
@@ -195,7 +205,8 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Set a close handler. This will be called when the WebSocket is closed.
    * <p/>
-   * After this callback, no more messages are expected.
+   * After this callback, no more messages are expected. When the WebSocket received a close frame, the
+   * {@link #closeStatusCode()} will return the status code and {@link #closeReason()} will return the reason.
    *
    * @param handler  the handler
    * @return a reference to this, so the API can be used fluently
