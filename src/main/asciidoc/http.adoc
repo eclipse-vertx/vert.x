@@ -1082,9 +1082,10 @@ Alternatively you can just parse the `Set-Cookie` headers yourself in the respon
 
 ==== 30x redirection handling
 
-The client can be configured to follow HTTP redirections: when the client receives an
-`301`, `302`, `303` or `307`, `308` status code, it follows the redirection provided by the `Location` response header
-and the response handler is passed the redirected response instead of the original response.
+The client can be configured to follow HTTP redirections provided by the Location response header when the client receives:
+
+* a 301, 302, 307 or 308 status code along with a HTTP GET or HEAD method
+* a 303 status code, in addition the directed request perform an HTTP GET methodn
 
 Here's an example:
 
@@ -1092,11 +1093,6 @@ Here's an example:
 ----
 {@link examples.HTTPExamples#exampleFollowRedirect01}
 ----
-
-The redirection policy is as follow
-
-* on a `301`, `302` or `303` status code, follow the redirection with a `GET` method
-* on a `307`,`308` status code, follow the redirection with the same HTTP method
 
 The maximum redirects is `16` by default and can be changed with {@link io.vertx.core.http.HttpClientOptions#setMaxRedirects(int)}.
 
