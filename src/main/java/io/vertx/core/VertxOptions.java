@@ -94,7 +94,7 @@ public class VertxOptions {
    * @deprecated as of 3.7, use {@link EventBusOptions#DEFAULT_CLUSTER_PING_INTERVAL} instead
    */
   @Deprecated
-  public static final long DEFAULT_CLUSTER_PING_INTERVAL = 20000;
+  public static final long DEFAULT_CLUSTER_PING_INTERVAL = TimeUnit.SECONDS.toMillis(20);
 
   /**
    * The default value of cluster ping reply interval = 20000 ms.
@@ -102,35 +102,35 @@ public class VertxOptions {
    * @deprecated as of 3.7, use {@link EventBusOptions#DEFAULT_CLUSTER_PING_REPLY_INTERVAL} instead
    */
   @Deprecated
-  public static final long DEFAULT_CLUSTER_PING_REPLY_INTERVAL = 20000;
+  public static final long DEFAULT_CLUSTER_PING_REPLY_INTERVAL = TimeUnit.SECONDS.toMillis(20);
 
   /**
    * The default value of blocked thread check interval = 1000 ms.
    */
-  public static final long DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL = 1000;
+  public static final long DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(1);;
 
   /**
-   * The default value of blocked thread check interval unit = TimeUnit.NANOSECONDS
+   * The default value of blocked thread check interval unit = {@link TimeUnit#MILLISECONDS}
    */
   public static final TimeUnit DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL_UNIT = TimeUnit.MILLISECONDS;
 
   /**
    * The default value of max event loop execute time = 2000000000 ns (2 seconds)
    */
-  public static final long DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME = 2L * 1000 * 1000000;
+  public static final long DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME = TimeUnit.SECONDS.toNanos(2);
 
   /**
-   * The default value of max event loop execute time unit = TimeUnit.NANOSECONDS
+   * The default value of max event loop execute time unit = {@link TimeUnit#NANOSECONDS}
    */
   public static final TimeUnit DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME_UNIT = TimeUnit.NANOSECONDS;
 
   /**
    * The default value of max worker execute time = 60000000000 ns (60 seconds)
    */
-  public static final long DEFAULT_MAX_WORKER_EXECUTE_TIME = 60L * 1000 * 1000000;
+  public static final long DEFAULT_MAX_WORKER_EXECUTE_TIME = TimeUnit.SECONDS.toNanos(60);
 
   /**
-   * The default value of max worker execute time unit = TimeUnit.NANOSECONDS
+   * The default value of max worker execute time unit = {@link TimeUnit#NANOSECONDS}
    */
   public static final TimeUnit DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT = TimeUnit.NANOSECONDS;
 
@@ -162,7 +162,7 @@ public class VertxOptions {
   private static final long DEFAULT_WARNING_EXCEPTION_TIME = TimeUnit.SECONDS.toNanos(5);
 
   /**
-   * The default value of warning exception time unit = TimeUnit.NANOSECONDS
+   * The default value of warning exception time unit = {@link TimeUnit#NANOSECONDS}
    */
   public static final TimeUnit DEFAULT_WARNING_EXCEPTION_TIME_UNIT = TimeUnit.NANOSECONDS;
 
