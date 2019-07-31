@@ -3898,6 +3898,21 @@ public abstract class HttpTest extends HttpTestBase {
     testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 301, 200, 2, "/another", "http://localhost:8080/another");
   }
 
+  @Test
+  public void testFollowRedirectGetOn308() throws Exception {
+    testFollowRedirect(HttpMethod.GET, HttpMethod.GET, 308, 200, 2, "http://localhost:8080/redirected", "http://localhost:8080/redirected");
+  }
+
+  @Test
+  public void testFollowRedirectPostOn308() throws Exception {
+    testFollowRedirect(HttpMethod.POST, HttpMethod.POST, 308, 308, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+  }
+
+  @Test
+  public void testFollowRedirectPutOn308() throws Exception {
+    testFollowRedirect(HttpMethod.PUT, HttpMethod.PUT, 308, 308, 1, "http://localhost:8080/redirected", "http://localhost:8080/somepath");
+  }
+
   private void testFollowRedirect(
       HttpMethod method,
       HttpMethod expectedMethod,
