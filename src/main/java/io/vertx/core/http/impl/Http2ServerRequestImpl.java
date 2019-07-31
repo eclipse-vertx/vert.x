@@ -27,6 +27,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerFileUpload;
@@ -47,8 +48,7 @@ import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
-
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -513,7 +513,19 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   public StreamPriority streamPriority() {
     return priority();
   }
-  
-  
 
+  @Override
+  public @Nullable Cookie getCookie(String name) {
+    return response.cookies().get(name);
+  }
+
+  @Override
+  public int cookieCount() {
+    return response.cookies().size();
+  }
+
+  @Override
+  public Map<String, Cookie> cookieMap() {
+    return (Map) response.cookies();
+  }
 }

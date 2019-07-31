@@ -23,6 +23,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -36,6 +37,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
@@ -617,5 +619,20 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
     return this;
+  }
+
+  @Override
+  public @Nullable Cookie getCookie(String name) {
+    return response.cookies().get(name);
+  }
+
+  @Override
+  public int cookieCount() {
+    return response.cookies().size();
+  }
+
+  @Override
+  public Map<String, Cookie> cookieMap() {
+    return (Map)response.cookies();
   }
 }

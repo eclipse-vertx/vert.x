@@ -23,6 +23,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection> {
 
+  protected final Http2Headers headers;
   protected final String rawMethod;
   protected final HttpMethod method;
   protected final String uri;
@@ -39,6 +40,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
                     boolean writable) {
     super(conn, stream, writable);
 
+    this.headers = null;
     this.method = method;
     this.rawMethod = method.name();
     this.contentEncoding = contentEncoding;
@@ -56,6 +58,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
       host = serverOrigin.substring(idx + 3);
     }
 
+    this.headers = headers;
     this.host = host;
     this.contentEncoding = contentEncoding;
     this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;

@@ -517,4 +517,33 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   default HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
       return this;
   }
+
+  /**
+   * Add a cookie. This will be sent back to the client in the response.
+   *
+   * @param cookie  the cookie
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse addCookie(Cookie cookie);
+
+
+  /**
+   * Expire a cookie, notifying a User Agent to remove it from its cookie jar.
+   *
+   * @param name  the name of the cookie
+   * @return the cookie, if it existed, or null
+   */
+  default @Nullable Cookie removeCookie(String name) {
+    return removeCookie(name, true);
+  }
+
+  /**
+   * Remove a cookie from the cookie set. If invalidate is true then it will expire a cookie, notifying a User Agent to
+   * remove it from its cookie jar.
+   *
+   * @param name  the name of the cookie
+   * @return the cookie, if it existed, or null
+   */
+  @Nullable Cookie removeCookie(String name, boolean invalidate);
 }

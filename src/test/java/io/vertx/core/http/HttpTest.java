@@ -34,6 +34,8 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.net.URLEncoder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -5393,6 +5395,177 @@ public abstract class HttpTest extends HttpTestBase {
         });
       });
     });
+    await();
+  }
+
+  @Test
+  public void testSimpleCookie() throws Exception {
+    testCookies("foo=bar", req -> {
+      assertEquals(1, req.cookieCount());
+      Cookie cookie = req.getCookie("foo");
+      assertNotNull(cookie);
+      assertEquals("bar", cookie.getValue());
+      req.response().end();
+    }, response -> {
+    });
+  }
+
+  @Test
+  public void testGetCookies() throws Exception {
+    testCookies("foo=bar; wibble=blibble; plop=flop", req -> {
+      assertEquals(3, req.cookieCount());
+      Map<String, Cookie> cookies = req.cookieMap();
+      assertTrue(cookies.containsKey("foo"));
+      assertTrue(cookies.containsKey("wibble"));
+      assertTrue(cookies.containsKey("plop"));
+      Cookie removed = req.response().removeCookie("foo");
+      cookies = req.cookieMap();
+      // removed cookies, need to be sent back with an expiration date
+      assertTrue(cookies.containsKey("foo"));
+      assertTrue(cookies.containsKey("wibble"));
+      assertTrue(cookies.containsKey("plop"));
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      // the expired cookie must be sent back
+      assertEquals(1, cookies.size());
+      assertTrue(cookies.get(0).contains("Max-Age=0"));
+      assertTrue(cookies.get(0).contains("Expires="));
+    });
+  }
+
+  @Test
+  public void testCookiesChanged() throws Exception {
+    testCookies("foo=bar; wibble=blibble; plop=flop", req -> {
+      assertEquals(3, req.cookieCount());
+      assertEquals("bar", req.getCookie("foo").getValue());
+      assertEquals("blibble", req.getCookie("wibble").getValue());
+      assertEquals("flop", req.getCookie("plop").getValue());
+      req.response().removeCookie("plop");
+      // the expected number of elements should remain the same as we're sending an invalidate cookie back
+      assertEquals(3, req.cookieCount());
+
+      assertEquals("bar", req.getCookie("foo").getValue());
+      assertEquals("blibble", req.getCookie("wibble").getValue());
+      assertNotNull(req.getCookie("plop"));
+      req.response().addCookie(Cookie.cookie("fleeb", "floob"));
+      assertEquals(4, req.cookieCount());
+      assertNull(req.response().removeCookie("blarb"));
+      assertEquals(4, req.cookieCount());
+      Cookie foo = req.getCookie("foo");
+      foo.setValue("blah");
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(3, cookies.size());
+      assertTrue(cookies.contains("foo=blah"));
+      assertTrue(cookies.contains("fleeb=floob"));
+      boolean found = false;
+      for (String s : cookies) {
+        if (s.startsWith("plop")) {
+          found = true;
+          assertTrue(s.contains("Max-Age=0"));
+          assertTrue(s.contains("Expires="));
+          break;
+        }
+      }
+      assertTrue(found);
+    });
+  }
+
+  @Test
+  public void testCookieFields() throws Exception {
+    Cookie cookie = Cookie.cookie("foo", "bar");
+    assertEquals("foo", cookie.getName());
+    assertEquals("bar", cookie.getValue());
+    assertEquals("foo=bar", cookie.encode());
+    assertNull(cookie.getPath());
+    cookie.setPath("/somepath");
+    assertEquals("/somepath", cookie.getPath());
+    assertEquals("foo=bar; Path=/somepath", cookie.encode());
+    assertNull(cookie.getDomain());
+    cookie.setDomain("foo.com");
+    assertEquals("foo.com", cookie.getDomain());
+    assertEquals("foo=bar; Path=/somepath; Domain=foo.com", cookie.encode());
+    long maxAge = 30 * 60;
+    cookie.setMaxAge(maxAge);
+
+
+    long now = System.currentTimeMillis();
+    String encoded = cookie.encode();
+    int startPos = encoded.indexOf("Expires=");
+    int endPos = encoded.indexOf(';', startPos);
+    String expiresDate = encoded.substring(startPos + 8, endPos);
+    // RFC1123
+    DateFormat dtf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH);
+    dtf.setTimeZone(TimeZone.getTimeZone("GMT"));
+    Date d = dtf.parse(expiresDate);
+    assertTrue(d.getTime() - now >= maxAge);
+
+    cookie.setMaxAge(Long.MIN_VALUE);
+    cookie.setSecure(true);
+    assertEquals("foo=bar; Path=/somepath; Domain=foo.com; Secure", cookie.encode());
+    cookie.setHttpOnly(true);
+    assertEquals("foo=bar; Path=/somepath; Domain=foo.com; Secure; HTTPOnly", cookie.encode());
+  }
+
+  @Test
+  public void testNoCookiesRemoveCookie() throws Exception {
+    testCookies(null, req -> {
+      req.response().removeCookie("foo");
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(0, cookies.size());
+    });
+  }
+
+  @Test
+  public void testNoCookiesCookieCount() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(0, req.cookieCount());
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(0, cookies.size());
+    });
+  }
+
+  @Test
+  public void testNoCookiesGetCookie() throws Exception {
+    testCookies(null, req -> {
+      assertNull(req.getCookie("foo"));
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(0, cookies.size());
+    });
+  }
+
+  @Test
+  public void testNoCookiesAddCookie() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar")));
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(1, cookies.size());
+    });
+  }
+
+  private void testCookies(String cookieHeader, Consumer<HttpServerRequest> serverChecker, Consumer<HttpClientResponse> clientChecker) throws Exception {
+    server.requestHandler(serverChecker::accept);
+    startServer();
+    client.request(
+      HttpMethod.GET,
+      testAddress,
+      new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI(DEFAULT_TEST_URI), resp -> {
+        clientChecker.accept(resp);
+        testComplete();
+      }).putHeader(HttpHeaders.COOKIE.toString(), cookieHeader).end();
     await();
   }
 }

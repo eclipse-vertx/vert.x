@@ -23,6 +23,8 @@ import io.vertx.core.streams.ReadStream;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a server-side HTTP request.
@@ -347,4 +349,25 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @Fluent
   HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler);
+
+  /**
+   * Get the cookie with the specified name.
+   *
+   * @param name  the cookie name
+   * @return the cookie
+   */
+  @Nullable Cookie getCookie(String name);
+
+  /**
+   * @return the number of cookieMap.
+   */
+  int cookieCount();
+
+  /**
+   * @return a map of all the cookies.
+   */
+  // Map<String, Cookie> is only available in Vert.x 4
+  @GenIgnore()
+  Map<String, Cookie> cookieMap();
+
 }
