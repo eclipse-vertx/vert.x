@@ -54,7 +54,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     try {
       int statusCode = resp.statusCode();
       String location = resp.getHeader(HttpHeaders.LOCATION);
-      if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307)) {
+      if (location != null && (statusCode == 301 || statusCode == 302 || statusCode == 303 || statusCode == 307 || statusCode == 308)) {
         HttpMethod m = resp.request().method();
         if (statusCode == 303) {
           m = HttpMethod.GET;
