@@ -15,7 +15,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.EmptyHttpHeaders;
+import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -23,6 +29,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
@@ -39,6 +46,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Map;
+
+import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 
 /**
  *
@@ -58,6 +68,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private static final Logger log = LoggerFactory.getLogger(HttpServerResponseImpl.class);
 
   private final VertxInternal vertx;
+  private final HttpRequest request;
   private final Http1xServerConnection conn;
   private final ContextInternal context;
   private HttpResponseStatus status;
@@ -76,6 +87,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private Handler<Void> bodyEndHandler;
   private boolean closed;
   private final VertxHttpHeaders headers;
+  private Map<String, ServerCookie> cookies;
   private MultiMap trailers;
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
@@ -88,6 +100,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     this.context = context;
     this.version = request.protocolVersion();
     this.headers = new VertxHttpHeaders();
+    this.request = request;
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
@@ -643,10 +656,21 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     if (headersEndHandler != null) {
       headersEndHandler.handle(null);
     }
+    if (cookies != null) {
+      setCookies();
+    }
     if (Metrics.METRICS_ENABLED) {
       reportResponseBegin();
     }
     headWritten = true;
+  }
+
+  private void setCookies() {
+    for (ServerCookie cookie: cookies.values()) {
+      if (cookie.isChanged()) {
+        headers.add(SET_COOKIE, cookie.encode());
+      }
+    }
   }
 
   private void reportResponseBegin() {
@@ -731,4 +755,21 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     return this;
   }
 
+  Map<String, ServerCookie> cookies() {
+    if (cookies == null) {
+      cookies = CookieImpl.extractCookies(request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE));
+    }
+    return cookies;
+  }
+
+  @Override
+  public HttpServerResponse addCookie(Cookie cookie) {
+    cookies().put(cookie.getName(), (ServerCookie) cookie);
+    return this;
+  }
+
+  @Override
+  public @Nullable Cookie removeCookie(String name, boolean invalidate) {
+    return CookieImpl.removeCookie(cookies, name, invalidate);
+  }
 }

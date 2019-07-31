@@ -176,6 +176,16 @@ public class HTTPExamples {
     });
   }
 
+  public void exampleHandlingCookies(HttpServerRequest request) {
+    Cookie someCookie = request.getCookie("mycookie");
+    String cookieValue = someCookie.getValue();
+
+    // Do something with cookie...
+
+    // Add a cookie - this will get written back in the response automatically
+    request.response().addCookie(Cookie.cookie("othercookie", "somevalue"));
+  }
+
   public void example16(HttpServerRequest request, Buffer buffer) {
     HttpServerResponse response = request.response();
     response.write(buffer);

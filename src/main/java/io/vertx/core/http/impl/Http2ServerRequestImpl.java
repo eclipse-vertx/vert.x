@@ -29,6 +29,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerFileUpload;
@@ -52,9 +53,10 @@ import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
-import java.util.*;
-
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.AbstractMap;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -88,7 +90,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private Handler<HttpFrame> customFrameHandler;
 
   private Handler<StreamPriority> streamPriorityHandler;
-  
+
   public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, Http2Stream stream, HttpServerMetrics metrics,
       String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
     super(conn, context, stream, headers, contentEncoding, serverOrigin, writable);
@@ -572,7 +574,19 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   public StreamPriority streamPriority() {
     return priority();
   }
-  
-  
 
+  @Override
+  public @Nullable Cookie getCookie(String name) {
+    return response.cookies().get(name);
+  }
+
+  @Override
+  public int cookieCount() {
+    return response.cookies().size();
+  }
+
+  @Override
+  public Map<String, Cookie> cookieMap() {
+    return (Map) response.cookies();
+  }
 }

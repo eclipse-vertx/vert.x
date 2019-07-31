@@ -28,6 +28,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
@@ -37,14 +38,14 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.spi.metrics.Metrics;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Map;
 
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -59,7 +60,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private final boolean head;
   private final boolean push;
   private final String host;
-  private Http2Headers headers = new DefaultHttp2Headers();
+  private final Http2Headers headers = new DefaultHttp2Headers();
   private Http2HeadersAdaptor headersMap;
   private Http2Headers trailers;
   private Http2HeadersAdaptor trailedMap;
@@ -67,6 +68,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private boolean headWritten;
   private boolean ended;
   private boolean closed;
+  private Map<String, ServerCookie> cookies;
   private HttpResponseStatus status = HttpResponseStatus.OK;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
@@ -454,6 +456,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       if (headersEndHandler != null) {
         headersEndHandler.handle(null);
       }
+      if (cookies != null) {
+        setCookies();
+      }
       sanitizeHeaders();
       headWritten = true;
       headers.status(Integer.toString(status.code())); // Could be optimized for usual case ?
@@ -464,6 +469,14 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       return true;
     } else {
       return false;
+    }
+  }
+
+  private void setCookies() {
+    for (ServerCookie cookie: cookies.values()) {
+      if (cookie.isChanged()) {
+        headers.add(SET_COOKIE, cookie.encode());
+      }
     }
   }
 
@@ -722,5 +735,23 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse setStreamPriority(StreamPriority priority) {
     stream.updatePriority(priority);
     return this;
+  }
+
+  Map<String, ServerCookie> cookies() {
+    if (cookies == null) {
+      cookies = CookieImpl.extractCookies(stream.headers != null ? stream.headers.get(io.vertx.core.http.HttpHeaders.COOKIE) : null);
+    }
+    return cookies;
+  }
+
+  @Override
+  public HttpServerResponse addCookie(Cookie cookie) {
+    cookies().put(cookie.getName(), (ServerCookie) cookie);
+    return this;
+  }
+
+  @Override
+  public @Nullable Cookie removeCookie(String name, boolean invalidate) {
+    return CookieImpl.removeCookie(cookies, name, invalidate);
   }
 }
