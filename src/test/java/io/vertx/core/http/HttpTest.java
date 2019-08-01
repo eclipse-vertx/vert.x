@@ -5418,7 +5418,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testCookies(String cookieHeader, Consumer<HttpServerRequest> serverChecker, Consumer<HttpClientResponse> clientChecker) throws Exception {
     server.requestHandler(serverChecker::accept);
-    startServer();
+    startServer(testAddress);
     client.request(
       HttpMethod.GET,
       testAddress,
