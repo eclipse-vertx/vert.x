@@ -248,7 +248,9 @@ public class MetricsTest extends VertxTestBase {
     consumer.unregister(ar -> {
       assertTrue(ar.succeeded());
       assertEquals(0, metrics.getRegistrations().size());
-      testComplete();
+      consumer.unregister(ar2 -> {
+        testComplete();
+      });
     });
     await();
   }
