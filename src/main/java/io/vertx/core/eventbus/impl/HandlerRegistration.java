@@ -131,8 +131,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   private void doUnregister(Handler<AsyncResult<Void>> doneHandler) {
-    Deque<Message<T>> discarded;
-    Handler<Message<T>> discardHandler;
     synchronized (this) {
       if (handler == null) {
         callHandlerAsync(Future.succeededFuture(), doneHandler);
@@ -149,16 +147,20 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           }
         };
       }
-      if (pending.size() > 0) {
-        discarded = new ArrayDeque<>(pending);
-        pending.clear();
-      } else {
-        discarded = null;
+      if (pending.size() > 0 && discardHandler != null) {
+        Deque<Message<T>> discarded = new ArrayDeque<>(pending);
+        Handler<Message<T>> handler = discardHandler;
+        handlerContext.runOnContext(v -> {
+          Message<T> msg;
+          while ((msg = discarded.poll()) != null) {
+            handler.handle(msg);
+          }
+        });
       }
-      discardHandler = this.discardHandler;
-      HandlerHolder<T> holder = registered;
+      pending.clear();
+      discardHandler = null;
+      eventBus.removeRegistration(registered, doneHandler);
       registered = null;
-      eventBus.removeRegistration(holder, doneHandler);
       if (result == null) {
         result = Future.failedFuture("Consumer unregistered before registration completed");
         callHandlerAsync(result, completionHandler);
@@ -167,12 +169,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         if (metrics != null) {
           metrics.handlerUnregistered(metric);
         }
-      }
-    }
-    if (discardHandler != null && discarded != null) {
-      Message<T> msg;
-      while ((msg = discarded.poll()) != null) {
-        discardHandler.handle(msg);
       }
     }
   }
