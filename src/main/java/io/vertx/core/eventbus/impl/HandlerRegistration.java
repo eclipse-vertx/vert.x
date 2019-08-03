@@ -149,6 +149,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     Deque<Message<T>> discarded;
     Handler<Message<T>> discardHandler;
     synchronized (this) {
+      if (handler == null) {
+        callHandlerAsync(Future.succeededFuture(), doneHandler);
+        return;
+      }
       handler = null;
       if (timeoutID != -1) {
         vertx.cancelTimer(timeoutID);
@@ -163,7 +167,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           }
         };
       }
-      HandlerHolder<T> holder = registered;
       if (pending.size() > 0) {
         discarded = new ArrayDeque<>(pending);
         pending.clear();
@@ -171,13 +174,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         discarded = null;
       }
       discardHandler = this.discardHandler;
-      if (holder != null) {
-        handler = null;
-        registered = null;
-        eventBus.removeRegistration(holder, doneHandler);
-      } else {
-        callHandlerAsync(Future.succeededFuture(), doneHandler);
-      }
+      HandlerHolder<T> holder = registered;
+      registered = null;
+      eventBus.removeRegistration(holder, doneHandler);
       if (result == null) {
         result = Future.failedFuture("Consumer unregistered before registration completed");
         callHandlerAsync(result, completionHandler);
