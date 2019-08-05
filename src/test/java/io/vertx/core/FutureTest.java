@@ -65,14 +65,10 @@ public class FutureTest extends VertxTestBase {
     assertSame(f2, ref.get().future());
     assertEquals(1, count.get());
     new Checker<>(f2).assertFailed(cause);
-    try {
-      Future.future(f -> {
-        throw cause;
-      });
-      fail();
-    } catch (Exception e) {
-      assertSame(cause, e);
-    }
+    Future f3 = Future.future(f -> {
+      throw cause;
+    });
+    assertSame(cause, f3.cause());
   }
 
   @Test
