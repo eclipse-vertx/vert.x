@@ -36,10 +36,10 @@ public interface Future<T> extends AsyncResult<T> {
    */
   static <T> Future<T> future(Handler<Promise<T>> handler) {
     Promise<T> promise = Promise.promise();
-    try{
+    try {
       handler.handle(promise);
-    }catch (Exception e){
-      promise.fail(e);
+    } catch (Exception e){
+      promise.tryFail(e);
     }
     return promise.future();
   }
