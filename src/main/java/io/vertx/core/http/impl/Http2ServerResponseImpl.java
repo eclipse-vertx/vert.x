@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -28,6 +27,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.FileSystemException;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -38,11 +41,13 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.streams.WriteStream;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.NoSuchFileException;
 import java.util.Map;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
@@ -528,9 +533,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     if (ended) {
       throw new IllegalStateException("Response has already been written");
     }
-    if (closed) {
-      throw new IllegalStateException("Response is closed");
-    }
   }
 
   void writabilityChanged() {
@@ -577,64 +579,58 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     synchronized (conn) {
       checkValid();
 
-      Context resultCtx = resultHandler != null ? stream.vertx.getOrCreateContext() : null;
+      Handler<AsyncResult<Void>> h;
+      if (resultHandler != null) {
+        Context resultCtx = stream.vertx.getOrCreateContext();
+        h = ar -> {
+          resultCtx.runOnContext((v) -> {
+            resultHandler.handle(ar);
+          });
+        };
+      } else {
+        h = ar -> {};
+      }
 
-      File file = stream.vertx.resolveFile(filename);
-      if (!file.exists()) {
+      File file_ = stream.vertx.resolveFile(filename);
+      if (!file_.exists()) {
         if (resultHandler != null) {
-          resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
+          h.handle(Future.failedFuture(new FileNotFoundException()));
         } else {
-           log.error("File not found: " + filename);
+          log.error("File not found: " + filename);
         }
         return this;
       }
-
-      RandomAccessFile raf;
-      try {
-        raf = new RandomAccessFile(file, "r");
+      try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
       } catch (IOException e) {
         if (resultHandler != null) {
-          resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
+          h.handle(Future.failedFuture(e));
         } else {
           log.error("Failed to send file", e);
         }
         return this;
       }
 
-      long contentLength = Math.min(length, file.length() - offset);
-      if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
-        putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
-      }
-      if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
-        String contentType = MimeMapping.getMimeTypeForFilename(filename);
-        if (contentType != null) {
-          putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
-        }
-      }
-      checkSendHeaders(false);
+      long contentLength = Math.min(length, file_.length() - offset);
 
-      Promise<Long> result = Promise.promise();
-      result.future().setHandler(ar -> {
+      FileSystem fs = conn.vertx().fileSystem();
+      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
         if (ar.succeeded()) {
-          end();
-        }
-        if (resultHandler != null) {
-          resultCtx.runOnContext(v -> {
-            resultHandler.handle(Future.succeededFuture());
-          });
-        }
-      });
-
-      FileStreamChannel fileChannel = new FileStreamChannel(result, stream, offset, contentLength);
-      drainHandler(fileChannel.drainHandler);
-      ctx.channel()
-        .eventLoop()
-        .register(fileChannel)
-        .addListener((ChannelFutureListener) future -> {
-        if (future.isSuccess()) {
-          fileChannel.pipeline().fireUserEventTriggered(raf);
+          AsyncFile file = ar.result();
+          if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
+            putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+          }
+          if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
+            String contentType = MimeMapping.getMimeTypeForFilename(filename);
+            if (contentType != null) {
+              putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
+            }
+          }
+          checkSendHeaders(false);
+          file.setReadPos(offset);
+          file.setReadLength(contentLength);
+          file.pipeTo(this, h);
         } else {
-          result.tryFail(future.cause());
+          h.handle(ar.mapEmpty());
         }
       });
     }
