@@ -66,6 +66,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private static final Buffer EMPTY_BUFFER = Buffer.buffer(Unpooled.EMPTY_BUFFER);
   private static final Logger log = LoggerFactory.getLogger(HttpServerResponseImpl.class);
+  private static final String RESPONSE_WRITTEN = "Response has already been written";
 
   private final VertxInternal vertx;
   private final HttpRequest request;
@@ -378,7 +379,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private void end(Buffer chunk, ChannelPromise promise) {
     synchronized (conn) {
       if (written) {
-        throw new IllegalStateException("Response has already been written");
+        throw new IllegalStateException(RESPONSE_WRITTEN);
       }
       ByteBuf data = chunk.getByteBuf();
       bytesWritten += data.readableBytes();
@@ -483,10 +484,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private void doSendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
     synchronized (conn) {
+      checkValid();
       if (headWritten) {
         throw new IllegalStateException("Head already written");
       }
-      checkValid();
       File file = vertx.resolveFile(filename);
 
       if (!file.exists()) {
@@ -628,10 +629,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   private void checkValid() {
     if (written) {
-      throw new IllegalStateException("Response has already been written");
-    }
-    if (closed) {
-      throw new IllegalStateException("Response is closed");
+      throw new IllegalStateException(RESPONSE_WRITTEN);
     }
   }
 
@@ -683,8 +681,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException("Response has already been written");
-      }
-      else if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      } else if (!headWritten && !headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
         if (version != HttpVersion.HTTP_1_0) {
           throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
             + "body BEFORE sending any data if you are not using HTTP chunked encoding.");

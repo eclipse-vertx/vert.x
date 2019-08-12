@@ -493,7 +493,7 @@ public abstract class HttpTest extends HttpTestBase {
     File file = setupFile("test-server-chaining.dat", "blah");
     server.requestHandler(req -> {
       assertTrue(req.response().sendFile(file.getAbsolutePath(), null) == req.response());
-      assertTrue(req.response().ended());
+//      assertTrue(req.response().ended());
       file.delete();
       testComplete();
     });
@@ -977,19 +977,19 @@ public abstract class HttpTest extends HttpTestBase {
       req.end();
 
       Buffer buff = Buffer.buffer();
-      assertIllegalStateException2(() -> req.end());
+      assertIllegalStateExceptionAsync(() -> req.end());
       assertIllegalStateException(() -> req.continueHandler(noOpHandler()));
       assertIllegalStateException(() -> req.drainHandler(noOpHandler()));
-      assertIllegalStateException2(() -> req.end("foo"));
-      assertIllegalStateException2(() -> req.end(buff));
-      assertIllegalStateException2(() -> req.end("foo", "UTF-8"));
+      assertIllegalStateExceptionAsync(() -> req.end("foo"));
+      assertIllegalStateExceptionAsync(() -> req.end(buff));
+      assertIllegalStateExceptionAsync(() -> req.end("foo", "UTF-8"));
       assertIllegalStateException(() -> req.sendHead());
       assertIllegalStateException(() -> req.setChunked(false));
       assertIllegalStateException(() -> req.setWriteQueueMaxSize(123));
-      assertIllegalStateException2(() -> req.write(buff));
-      assertIllegalStateException2(() -> req.write("foo"));
-      assertIllegalStateException2(() -> req.write("foo", "UTF-8"));
-      assertIllegalStateException2(() -> req.write(buff));
+      assertIllegalStateExceptionAsync(() -> req.write(buff));
+      assertIllegalStateExceptionAsync(() -> req.write("foo"));
+      assertIllegalStateExceptionAsync(() -> req.write("foo", "UTF-8"));
+      assertIllegalStateExceptionAsync(() -> req.write(buff));
       assertIllegalStateException(() -> req.writeQueueFull());
 
       testComplete();
@@ -1568,30 +1568,20 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testUseResponseAfterComplete() throws Exception {
+  public void testUseAfterServerResponseEnd() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       assertFalse(resp.ended());
       resp.end();
       assertTrue(resp.ended());
-      checkHttpServerResponse(resp, true, onSuccess(v -> {
-        testComplete();
-      }));
-    });
-    startServer(testAddress);
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler()).end();
-    await();
-  }
-
-  private void checkHttpServerResponse(HttpServerResponse resp, boolean sync, Handler<AsyncResult<Void>> handler) {
-    Buffer buff = Buffer.buffer();
-    assertIllegalStateException(() -> resp.drainHandler(noOpHandler()));
-    assertIllegalStateException(() -> resp.exceptionHandler(noOpHandler()));
-    assertIllegalStateException(() -> resp.setChunked(false));
-    assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
-    assertIllegalStateException(() -> resp.writeQueueFull());
-    assertIllegalStateException(() -> resp.sendFile("asokdasokd"));
-    if (sync) {
+      Buffer buff = Buffer.buffer();
+      assertIllegalStateException(() -> resp.drainHandler(noOpHandler()));
+      assertIllegalStateException(() -> resp.exceptionHandler(noOpHandler()));
+      assertIllegalStateException(() -> resp.setChunked(false));
+      assertIllegalStateException(() -> resp.setWriteQueueMaxSize(123));
+      assertIllegalStateException(() -> resp.writeQueueFull());
+      assertIllegalStateException(() -> resp.putHeader("foo", "bar"));
+      assertIllegalStateException(() -> resp.sendFile("webroot/somefile.html"));
       assertIllegalStateException(() -> resp.end());
       assertIllegalStateException(() -> resp.end("foo"));
       assertIllegalStateException(() -> resp.end(buff));
@@ -1600,37 +1590,20 @@ public abstract class HttpTest extends HttpTestBase {
       assertIllegalStateException(() -> resp.write("foo"));
       assertIllegalStateException(() -> resp.write("foo", "UTF-8"));
       assertIllegalStateException(() -> resp.write(buff));
-      handler.handle(Future.succeededFuture());
-    } else {
-      resp.write(buff);
-      resp.write("foo");
-      resp.write("foo", "UTF-8");
-      resp.write(buff, ar1 -> {
-        if (ar1.succeeded()) {
-          handler.handle(Future.failedFuture("Was expecting a failure"));
-        } else {
-          resp.write("foo", ar2 -> {
-            if (ar2.succeeded()) {
-              handler.handle(Future.failedFuture("Was expecting a failure"));
-            } else {
-              resp.write("foo", "UTF-8", ar3 -> {
-                if (ar3.succeeded()) {
-                  handler.handle(Future.failedFuture("Was expecting a failure"));
-                } else {
-                  resp.end(ar4 -> {
-                    if (ar4.succeeded()) {
-                      handler.handle(Future.failedFuture("Was expecting a failure"));
-                    } else {
-                      handler.handle(Future.succeededFuture());
-                    }
-                  });
-                }
-              });
-            }
-          });
-        }
-      });
-    }
+      assertIllegalStateException(() -> resp.sendFile("webroot/somefile.html", ar -> {}));
+      assertIllegalStateException(() -> resp.end(ar -> {}));
+      assertIllegalStateException(() -> resp.end("foo", ar -> {}));
+      assertIllegalStateException(() -> resp.end(buff, ar -> {}));
+      assertIllegalStateException(() -> resp.end("foo", "UTF-8", ar -> {}));
+      assertIllegalStateException(() -> resp.write(buff, ar -> {}));
+      assertIllegalStateException(() -> resp.write("foo", ar -> {}));
+      assertIllegalStateException(() -> resp.write("foo", "UTF-8", ar -> {}));
+      assertIllegalStateException(() -> resp.write(buff, ar -> {}));
+      testComplete();
+    });
+    startServer(testAddress);
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler()).end();
+    await();
   }
 
   @Test
@@ -4362,22 +4335,62 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testCloseHandlerWhenConnectionClose() throws Exception {
+  public void testUseResponseAfterClose() throws Exception {
+    testAfterServerResponseClose(resp -> {
+      Buffer buff = Buffer.buffer();
+      resp.drainHandler(noOpHandler());
+      resp.exceptionHandler(noOpHandler());
+      resp.setChunked(false);
+      resp.setWriteQueueMaxSize(123);
+      resp.writeQueueFull();
+      resp.putHeader("foo", "bar");
+      resp.setChunked(true);
+      resp.write(buff);
+      resp.write("foo");
+      resp.write("foo", "UTF-8");
+      resp.write(buff, onFailure(err1 -> {
+        resp.write("foo", onFailure( err2 -> {
+          resp.write("foo", "UTF-8", onFailure(err3 -> {
+            resp.end(onFailure(err4 -> {
+              testComplete();
+            }));
+          }));
+        }));
+      }));
+    });
+  }
+
+  @Test
+  public void testSendFileAfterServerResponseClose() throws Exception {
+    testAfterServerResponseClose(resp -> {
+      resp.sendFile("webroot/somefile.html");
+      testComplete();
+    });
+  }
+
+  @Test
+  public void testSendFileAsyncAfterServerResponseClose() throws Exception {
+    testAfterServerResponseClose(resp -> {
+      resp.sendFile("webroot/somefile.html", onFailure(err -> {
+        testComplete();
+      }));
+    });
+  }
+
+  private void testAfterServerResponseClose(Handler<HttpServerResponse> test) throws Exception {
+    AtomicReference<HttpConnection> clientConn = new AtomicReference<>();
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
-      resp.setChunked(true).write("some-data");
       resp.closeHandler(v1 -> {
-        checkHttpServerResponse(resp, false, onSuccess(v2 -> {
-          testComplete();
-        }));
+        test.handle(resp);
       });
+      clientConn.get().close();
     });
     startServer();
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
-      resp.handler(v -> {
-        resp.request().connection().close();
-      });
-    }));
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(resp -> {
+    }))
+      .connectionHandler(clientConn::set)
+      .end();
     await();
   }
 

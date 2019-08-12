@@ -1441,19 +1441,25 @@ public class Http2ServerTest extends Http2TestBase {
       request.decoder.frameListener(new Http2EventAdapter() {
         Buffer buffer = Buffer.buffer();
         Http2Headers responseHeaders;
+        private void endStream() {
+          vertx.runOnContext(v -> {
+            assertEquals("" + length, responseHeaders.get("content-length").toString());
+            assertEquals(expected, buffer);
+            complete();
+          });
+        }
         @Override
         public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {
           responseHeaders = headers;
+          if (endStream) {
+            endStream();
+          }
         }
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
           buffer.appendBuffer(Buffer.buffer(data.duplicate()));
           if (endOfStream) {
-            vertx.runOnContext(v -> {
-              assertEquals("" + length, responseHeaders.get("content-length").toString());
-              assertEquals(expected, buffer);
-              complete();
-            });
+            endStream();
           }
           return data.readableBytes() + padding;
         }

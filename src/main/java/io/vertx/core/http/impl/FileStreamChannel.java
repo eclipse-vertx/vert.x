@@ -27,12 +27,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelConfig;
 import io.netty.channel.EventLoop;
-import io.netty.channel.nio.NioEventLoop;
 import io.netty.handler.stream.ChunkedFile;
-import io.netty.handler.stream.ChunkedStream;
 import io.netty.handler.stream.ChunkedWriteHandler;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 
@@ -54,7 +50,7 @@ class FileStreamChannel extends AbstractChannel {
   private boolean active;
   private boolean closed;
   private long bytesWritten;
-  private final VertxHttp2Stream stream;
+  private final VertxHttp2Stream<?> stream;
 
   FileStreamChannel(
       Promise<Long> result,
@@ -143,7 +139,7 @@ class FileStreamChannel extends AbstractChannel {
   }
 
   @Override
-  protected void doWrite(ChannelOutboundBuffer in) throws Exception {
+  protected void doWrite(ChannelOutboundBuffer in) {
     ByteBuf chunk;
     while (!stream.isNotWritable() && (chunk = (ByteBuf) in.current()) != null) {
       bytesWritten += chunk.readableBytes();
