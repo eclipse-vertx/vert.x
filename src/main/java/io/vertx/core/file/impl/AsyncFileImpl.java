@@ -73,6 +73,7 @@ public class AsyncFileImpl implements AsyncFile {
   private Handler<Buffer> handler;
   private Handler<Void> endHandler;
   private long readPos;
+  private long readLength = Long.MAX_VALUE;
 
   AsyncFileImpl(VertxInternal vertx, String path, OpenOptions options, ContextInternal context) {
     if (!options.isRead() && !options.isWrite()) {
@@ -310,6 +311,12 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
+  public synchronized AsyncFile setReadLength(long readLength) {
+    this.readLength = readLength;
+    return this;
+  }
+
+  @Override
   public synchronized long getWritePos() {
     return writePos;
   }
@@ -357,10 +364,13 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doRead(ByteBuffer bb) {
     Buffer buff = Buffer.buffer(readBufferSize);
+    int readSize = (int) Math.min((long)readBufferSize, readLength);
+    bb.limit(readSize);
     doRead(buff, 0, bb, readPos, ar -> {
       if (ar.succeeded()) {
         Buffer buffer = ar.result();
         readPos += buffer.length();
+        readLength -= buffer.length();
         // Empty buffer represents end of file
         if (queue.write(buffer) && buffer.length() > 0) {
           doRead(bb);
@@ -370,6 +380,7 @@ public class AsyncFileImpl implements AsyncFile {
       }
     });
   }
+
 
   private synchronized void handleBuffer(Buffer buff) {
     if (handler != null) {

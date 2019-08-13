@@ -1485,6 +1485,86 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  public void testReadStreamSetReadLength() throws Exception {
+    String fileName = "some-file.dat";
+    int chunkSize = 1000;
+    int chunks = 10;
+    byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
+    int readLength = chunkSize * chunks / 3;
+    createFile(fileName, content);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
+      if (ar.succeeded()) {
+        AsyncFile rs = ar.result();
+        rs.setReadLength(readLength);
+        Buffer buff = Buffer.buffer();
+        rs.handler(buff::appendBuffer);
+        rs.exceptionHandler(t -> fail(t.getMessage()));
+        rs.endHandler(v -> {
+          ar.result().close(ar2 -> {
+            if (ar2.failed()) {
+              fail(ar2.cause().getMessage());
+            } else {
+              assertEquals(readLength, buff.length());
+              byte[] firstThird = new byte[readLength];
+              System.arraycopy(content, 0, firstThird, 0, readLength);
+              assertEquals(Buffer.buffer(firstThird), buff);
+              testComplete();
+            }
+          });
+        });
+      } else {
+        fail(ar.cause().getMessage());
+      }
+    });
+    await();
+  }
+
+  @Test
+  public void testReadStreamSetReadPosReadLengthBufferSize() throws Exception {
+    String fileName = "some-file.dat";
+    int chunkSize = 1000;
+    int chunks = 10;
+    byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
+    int readLength = chunkSize * chunks / 3;
+    int readPos = chunkSize * chunks / 3;
+    int readBufferSize = 1000;
+    int numOfReads = readLength / readBufferSize + (readLength % readBufferSize > 0? 1 : 0);
+    createFile(fileName, content);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
+      if (ar.succeeded()) {
+        AsyncFile rs = ar.result();
+        rs.setReadPos(readPos);
+        rs.setReadLength(readLength);
+        rs.setReadBufferSize(readBufferSize);
+        final Buffer buff = Buffer.buffer();
+        final int[] appendCount = new int[] {0};
+        rs.handler((rsBuff) -> {
+          buff.appendBuffer(rsBuff);
+          appendCount[0]++;
+        });
+        rs.exceptionHandler(t -> fail(t.getMessage()));
+        rs.endHandler(v -> {
+          ar.result().close(ar2 -> {
+            if (ar2.failed()) {
+              fail(ar2.cause().getMessage());
+            } else {
+              assertEquals(buff.length(), readLength);
+              assertEquals(numOfReads, appendCount[0]);
+              byte[] middleThird = new byte[readLength];
+              System.arraycopy(content, readPos, middleThird, 0, readLength);
+              assertEquals(Buffer.buffer(middleThird), buff);
+              testComplete();
+            }
+          });
+        });
+      } else {
+        fail(ar.cause().getMessage());
+      }
+    });
+    await();
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   public void testPumpFileStreams() throws Exception {
     String fileName1 = "some-file.dat";
