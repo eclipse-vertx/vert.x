@@ -14,6 +14,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -36,17 +37,14 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
   private Handler<Throwable> exceptionHandler;
   private Handler<T> itemHandler;
   private Handler<Void> endHandler;
-  private final Deque<T> pending;
+  private final Deque<T> pending = new ArrayDeque<>();
   private long demand = Long.MAX_VALUE;
-  private boolean ended;
+  private Promise<Void> ended;
   private boolean overflow;
   private Handler<Void> drainHandler;
   private int pauseCount;
   private int resumeCount;
-
-  public FakeStream() {
-    pending = new ArrayDeque<>();
-  }
+  private Future<Void> completion = Future.succeededFuture();
 
   public synchronized int pauseCount() {
     return pauseCount;
@@ -61,7 +59,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
   }
 
   public synchronized boolean isEnded() {
-    return ended;
+    return ended != null;
   }
 
   public synchronized long demand() {
@@ -84,7 +82,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
   }
 
   public synchronized boolean emit(Stream<T> stream) {
-    if (ended) {
+    if (ended != null) {
       throw new IllegalStateException();
     }
     stream.forEach(pending::add);
@@ -94,24 +92,34 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
     return writable;
   }
 
-  public synchronized Future<Void> end() {
-    if (ended) {
-      throw new IllegalStateException();
-    }
-    ended = true;
-    if (pending.size() > 0) {
-      return Future.succeededFuture();
-    }
-    Handler<Void> handler = endHandler;
-    if (handler != null) {
-      handler.handle(null);
-    }
-    return Future.succeededFuture();
+  public Future<Void> end() {
+    Promise<Void> promise = Promise.promise();
+    end(promise);
+    return promise.future();
   }
 
   @Override
-  public void end(Handler<AsyncResult<Void>> handler) {
-    throw new UnsupportedOperationException();
+  public void end(Handler<AsyncResult<Void>> h) {
+    Promise<Void> promise = Promise.promise();
+    promise.future().setHandler(ar -> {
+      if (h != null) {
+        h.handle(ar);
+      }
+      Handler<Void> handler = endHandler();
+      if (handler != null) {
+        handler.handle(null);
+      }
+    });
+    synchronized(this) {
+      if (ended != null) {
+        throw new IllegalStateException();
+      }
+      ended = promise;
+      if (pending.size() > 0) {
+        return;
+      }
+    }
+    completion.setHandler(promise);
   }
 
   public synchronized void fail(Throwable err) {
@@ -172,11 +180,8 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
       demand = Long.MAX_VALUE;
     }
     checkPending();
-    if (pending.isEmpty() && ended) {
-      Handler<Void> handler = endHandler;
-      if (handler != null) {
-        handler.handle(null);
-      }
+    if (pending.isEmpty() && ended != null) {
+      completion.setHandler(ended);
     }
     return this;
   }
@@ -230,5 +235,10 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
 
   public synchronized Handler<Void> drainHandler() {
     return drainHandler;
+  }
+
+  public synchronized FakeStream<T> completion(Future<Void> fut) {
+    completion = fut;
+    return this;
   }
 }

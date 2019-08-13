@@ -10,6 +10,8 @@
  */
 package io.vertx.test.fakestream;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Promise;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 
@@ -19,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -119,5 +122,40 @@ public class FakeStreamTest extends AsyncTestBase {
     stream.emit(0, 1);
     stream.fetch(3);
     assertEquals(Arrays.asList(0, 1, 2), emitted);
+  }
+
+  @Test
+  public void testAsyncEnd() {
+    Promise<Void> end = Promise.promise();
+    stream.completion(end.future());
+    AtomicBoolean ended = new AtomicBoolean();
+    stream.endHandler(v -> ended.set(true));
+    AtomicReference<AsyncResult> endRes = new AtomicReference<>();
+    stream.end(endRes::set);
+    assertFalse(ended.get());
+    assertNull(endRes.get());
+    end.complete();
+    assertTrue(ended.get());
+    assertTrue(endRes.get().succeeded());
+  }
+
+  @Test
+  public void testAsyncEndOnFetch() {
+    Promise<Void> end = Promise.promise();
+    stream.completion(end.future());
+    stream.pause();
+    stream.emit(3);
+    AtomicBoolean ended = new AtomicBoolean();
+    stream.endHandler(v -> ended.set(true));
+    AtomicReference<AsyncResult> endRes = new AtomicReference<>();
+    stream.end(endRes::set);
+    assertFalse(ended.get());
+    assertNull(endRes.get());
+    end.complete();
+    assertFalse(ended.get());
+    assertNull(endRes.get());
+    stream.fetch(1);
+    assertTrue(ended.get());
+    assertTrue(endRes.get().succeeded());
   }
 }

@@ -96,7 +96,8 @@ public class PipeImpl<T> implements Pipe<T> {
       try {
         if (ar.succeeded()) {
           if (endOnSuccess) {
-            ws.end();
+            ws.end(completionHandler);
+            return;
           }
         } else {
           Throwable err = ar.cause();
