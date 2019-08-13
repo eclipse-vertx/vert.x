@@ -10,6 +10,8 @@
  */
 package io.vertx.core.streams;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Promise;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.fakestream.FakeStream;
 import org.junit.Test;
@@ -18,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class PipeTest extends AsyncTestBase {
 
@@ -216,5 +219,35 @@ public class PipeTest extends AsyncTestBase {
     src.end();
     assertTrue(src.isPaused());
     pipe.close();
+  }
+
+  @Test
+  public void testEndWriteStreamSuccess() {
+    Promise<Void> completion = Promise.promise();
+    dst.completion(completion.future());
+    FakeStream<Object> src = new FakeStream<>();
+    Pipe<Object> pipe = src.pipe();
+    AtomicReference<AsyncResult<Void>> ended = new AtomicReference<>();
+    pipe.to(dst, ended::set);
+    src.end();
+    assertNull(ended.get());
+    completion.complete();
+    assertTrue(ended.get().succeeded());
+  }
+
+  @Test
+  public void testEndWriteStreamFail() {
+    Promise<Void> completion = Promise.promise();
+    dst.completion(completion.future());
+    FakeStream<Object> src = new FakeStream<>();
+    Pipe<Object> pipe = src.pipe();
+    AtomicReference<AsyncResult<Void>> ended = new AtomicReference<>();
+    pipe.to(dst, ended::set);
+    src.end();
+    assertNull(ended.get());
+    Exception failure = new Exception();
+    completion.fail(failure);
+    assertTrue(ended.get().failed());
+    assertEquals(failure, ended.get().cause());
   }
 }
