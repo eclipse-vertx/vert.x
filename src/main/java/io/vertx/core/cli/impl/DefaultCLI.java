@@ -171,7 +171,7 @@ public class DefaultCLI implements CLI {
     }
 
     for (Option option : options) {
-      if (name.equalsIgnoreCase(option.getShortName())) {
+      if (name.equals(option.getShortName())) {
         return option;
       }
     }

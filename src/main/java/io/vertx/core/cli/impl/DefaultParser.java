@@ -488,7 +488,7 @@ public class DefaultParser {
 
   private boolean hasOptionWithShortName(String name) {
     for (Option option : cli.getOptions()) {
-      if (name.equalsIgnoreCase(option.getShortName())) {
+      if (name.equals(option.getShortName())) {
         return true;
       }
     }
@@ -529,7 +529,7 @@ public class DefaultParser {
   public Option getOption(String opt) {
     opt = stripLeadingHyphens(opt);
     for (Option option : cli.getOptions()) {
-      if (opt.equalsIgnoreCase(option.getShortName()) || opt.equalsIgnoreCase(option.getLongName())) {
+      if (opt.equals(option.getShortName()) || opt.equalsIgnoreCase(option.getLongName())) {
         return option;
       }
     }

@@ -227,4 +227,32 @@ public class DefaultCLITest {
     assertThat(commandLine.isValid()).isEqualTo(false);
   }
 
+  @Test
+  public void testOptionShortNameCaseSensitive() {
+    final CLI cli = CLI.create("test")
+        .addOption(new Option().setShortName("a").setLongName("lowercase"))
+        .addOption(new Option().setShortName("A").setLongName("uppercase"));
+
+    String lowercaseValue = "someValue";
+    String uppercaseValue = "someOtherValue";
+
+    CommandLine commandLine = cli.parse(Arrays.asList("-a", lowercaseValue, "-A", uppercaseValue));
+    assertThat((String) commandLine.getOptionValue("a")).isEqualTo(lowercaseValue);
+    assertThat((String) commandLine.getOptionValue("A")).isEqualTo(uppercaseValue);
+  }
+
+  @Test
+  public void testGetOptionValueByLongName() {
+    final CLI cli = CLI.create("test")
+        .addOption(new Option().setShortName("a").setLongName("lowercase"))
+        .addOption(new Option().setShortName("A").setLongName("uppercase"));
+
+    String lowercaseValue = "someValue";
+    String uppercaseValue = "someOtherValue";
+
+    CommandLine commandLine = cli.parse(Arrays.asList("-a", lowercaseValue, "-A", uppercaseValue));
+    assertThat((String) commandLine.getOptionValue("lowercase")).isEqualTo(lowercaseValue);
+    assertThat((String) commandLine.getOptionValue("uppercase")).isEqualTo(uppercaseValue);
+  }
+
 }
