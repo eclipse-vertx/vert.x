@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -479,7 +480,7 @@ public class DefaultParser {
 
   private boolean hasOptionWithLongName(String name) {
     for (Option option : cli.getOptions()) {
-      if (name.equalsIgnoreCase(option.getLongName())) {
+      if (name.equals(option.getLongName())) {
         return true;
       }
     }
@@ -549,6 +550,7 @@ public class DefaultParser {
    * @return the options matching the partial name specified, or an empty list if none matches
    */
   public List<Option> getMatchingOptions(String opt) {
+    Objects.requireNonNull(opt);
     opt = stripLeadingHyphens(opt);
 
     List<Option> matching = new ArrayList<>();
@@ -558,8 +560,15 @@ public class DefaultParser {
 
     // Exact match first
     for (Option option : options) {
-      if (opt.equalsIgnoreCase(option.getLongName())) {
+      if (opt.equals(option.getLongName())) {
         return Collections.singletonList(option);
+      }
+    }
+
+    // Case-insensitive match second
+    for (Option option : options) {
+      if (opt.equalsIgnoreCase(option.getLongName())) {
+        matching.add(option);
       }
     }
 

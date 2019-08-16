@@ -14,6 +14,7 @@ package io.vertx.core.cli.impl;
 import io.vertx.core.cli.*;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -160,25 +161,25 @@ public class DefaultCLI implements CLI {
   @Override
   public Option getOption(String name) {
     Objects.requireNonNull(name);
-    // The option by name look up is a three steps lookup:
-    // first check by long name
-    // then by short name
-    // finally by arg name
-    for (Option option : options) {
-      if (name.equalsIgnoreCase(option.getLongName())) {
-        return option;
-      }
-    }
+    List<Predicate<Option>> equalityChecks = Arrays.asList(
+        // The option by name look up is a three steps lookup:
+        // first check by long name
+        // then by short name
+        // finally by arg name
+        option -> name.equals(option.getLongName()),
+        option -> name.equals(option.getShortName()),
+        option -> name.equals(option.getArgName()),
+        // If there's no exact match, check again in the same order, this time ignoring case-sensitivity
+        option -> name.equalsIgnoreCase(option.getLongName()),
+        option -> name.equalsIgnoreCase(option.getShortName()),
+        option -> name.equalsIgnoreCase(option.getArgName())
+    );
 
-    for (Option option : options) {
-      if (name.equals(option.getShortName())) {
-        return option;
-      }
-    }
-
-    for (Option option : options) {
-      if (name.equalsIgnoreCase(option.getArgName())) {
-        return option;
+    for (Predicate<Option> equalityCheck : equalityChecks) {
+      for (Option option : options) {
+        if (equalityCheck.test(option)) {
+          return option;
+        }
       }
     }
 
