@@ -698,7 +698,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         nettyHeaders,
         maxWebSocketFrameSize,
         !options.isSendUnmaskedFrames(),
-        false);
+        false,
+        -1);
 
       WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, ar -> {
         AsyncResult<WebSocket> wsRes = ar.map(v -> {
