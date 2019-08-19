@@ -481,9 +481,8 @@ public class DeploymentManager {
           icl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader(),
             options.getIsolatedClasses());
           classloaders.put(isolationGroup, icl);
-        } else {
-          icl.refCount++;
         }
+        icl.refCount += options.getInstances();
         cl = icl;
       }
     }

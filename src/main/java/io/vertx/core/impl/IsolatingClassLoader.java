@@ -31,7 +31,7 @@ public class IsolatingClassLoader extends URLClassLoader {
   public IsolatingClassLoader(URL[] urls, ClassLoader parent, List<String> isolatedClasses) {
     super(urls, parent);
     this.isolatedClasses = isolatedClasses;
-    this.refCount = 1;
+    this.refCount = 0;
   }
 
   @Override
