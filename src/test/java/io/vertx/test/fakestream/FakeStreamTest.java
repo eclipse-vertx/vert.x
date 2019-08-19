@@ -142,7 +142,7 @@ public class FakeStreamTest extends AsyncTestBase {
     Promise<Void> end = Promise.promise();
     AtomicInteger ended = new AtomicInteger();
     AtomicReference<AsyncResult> endRes = new AtomicReference<>();
-    stream.completion(end.future());
+    stream.setEnd(end.future());
     stream.endHandler(v -> ended.incrementAndGet());
     stream.end(endRes::set);
     assertEquals(0, ended.get());
@@ -157,7 +157,7 @@ public class FakeStreamTest extends AsyncTestBase {
     Promise<Void> end = Promise.promise();
     AtomicInteger ended = new AtomicInteger();
     AtomicReference<AsyncResult> endRes = new AtomicReference<>();
-    stream.completion(end.future());
+    stream.setEnd(end.future());
     stream.pause();
     stream.emit(3);
     stream.endHandler(v -> ended.incrementAndGet());

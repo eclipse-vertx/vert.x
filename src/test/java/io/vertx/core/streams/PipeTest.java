@@ -224,7 +224,7 @@ public class PipeTest extends AsyncTestBase {
   @Test
   public void testEndWriteStreamSuccess() {
     Promise<Void> completion = Promise.promise();
-    dst.completion(completion.future());
+    dst.setEnd(completion.future());
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     AtomicReference<AsyncResult<Void>> ended = new AtomicReference<>();
@@ -238,7 +238,7 @@ public class PipeTest extends AsyncTestBase {
   @Test
   public void testEndWriteStreamFail() {
     Promise<Void> completion = Promise.promise();
-    dst.completion(completion.future());
+    dst.setEnd(completion.future());
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     AtomicReference<AsyncResult<Void>> ended = new AtomicReference<>();
