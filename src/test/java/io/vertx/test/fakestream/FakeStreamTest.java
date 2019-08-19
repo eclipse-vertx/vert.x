@@ -125,37 +125,53 @@ public class FakeStreamTest extends AsyncTestBase {
   }
 
   @Test
-  public void testAsyncEnd() {
-    Promise<Void> end = Promise.promise();
-    stream.completion(end.future());
-    AtomicBoolean ended = new AtomicBoolean();
-    stream.endHandler(v -> ended.set(true));
+  public void testFetchAfterEnd() {
+    AtomicInteger ended = new AtomicInteger();
     AtomicReference<AsyncResult> endRes = new AtomicReference<>();
+    stream.endHandler(v -> ended.incrementAndGet());
     stream.end(endRes::set);
-    assertFalse(ended.get());
-    assertNull(endRes.get());
-    end.complete();
-    assertTrue(ended.get());
+    assertEquals(1, ended.get());
+    assertTrue(endRes.get().succeeded());
+    stream.fetch(1);
+    assertEquals(1, ended.get());
     assertTrue(endRes.get().succeeded());
   }
 
   @Test
-  public void testAsyncEndOnFetch() {
+  public void testAsyncEnd() {
     Promise<Void> end = Promise.promise();
+    AtomicInteger ended = new AtomicInteger();
+    AtomicReference<AsyncResult> endRes = new AtomicReference<>();
+    stream.completion(end.future());
+    stream.endHandler(v -> ended.incrementAndGet());
+    stream.end(endRes::set);
+    assertEquals(0, ended.get());
+    assertNull(endRes.get());
+    end.complete();
+    assertEquals(1, ended.get());
+    assertTrue(endRes.get().succeeded());
+  }
+
+  @Test
+  public void testAsyncEndDeferred() {
+    Promise<Void> end = Promise.promise();
+    AtomicInteger ended = new AtomicInteger();
+    AtomicReference<AsyncResult> endRes = new AtomicReference<>();
     stream.completion(end.future());
     stream.pause();
     stream.emit(3);
-    AtomicBoolean ended = new AtomicBoolean();
-    stream.endHandler(v -> ended.set(true));
-    AtomicReference<AsyncResult> endRes = new AtomicReference<>();
+    stream.endHandler(v -> ended.incrementAndGet());
     stream.end(endRes::set);
-    assertFalse(ended.get());
+    assertEquals(0, ended.get());
     assertNull(endRes.get());
     end.complete();
-    assertFalse(ended.get());
+    assertEquals(0, ended.get());
     assertNull(endRes.get());
     stream.fetch(1);
-    assertTrue(ended.get());
+    assertEquals(0, ended.get());
+    assertNull(endRes.get());
+    stream.fetch(1);
+    assertEquals(1, ended.get());
     assertTrue(endRes.get().succeeded());
   }
 }
