@@ -668,7 +668,9 @@ public class DeploymentManager {
             try {
               verticleHolder.verticle.stop(stopPromise);
             } catch (Throwable t) {
-              stopPromise.fail(t);
+              if (!stopPromise.tryFail(t)) {
+                undeployingContext.reportException(t);
+              }
             }
           });
         }

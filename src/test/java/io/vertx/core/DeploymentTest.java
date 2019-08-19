@@ -877,6 +877,7 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+
   @Test
   public void testAsyncUndeployCalledSynchronously() throws Exception {
     MyAsyncVerticle verticle = new MyAsyncVerticle(f -> f.complete(null), f ->  f.complete(null));
@@ -943,6 +944,29 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testAsyncUndeployFailsAfterSuccess() {
+    waitFor(2);
+    Verticle verticle = new AbstractVerticle() {
+      @Override
+      public void stop(Promise<Void> stopPromise) throws Exception {
+        stopPromise.complete();
+        throw new Exception();
+      }
+    };
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v1 -> {
+      vertx.deployVerticle(verticle, onSuccess(id -> {
+        ctx.exceptionHandler(err -> {
+          complete();
+        });
+        vertx.undeploy(id, onSuccess(v2 -> {
+          complete();
+        }));
+      }));
+    });
+    await();
+  }
   @Test
   public void testChildUndeployedDirectly() throws Exception {
     Verticle parent = new AbstractVerticle() {
