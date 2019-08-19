@@ -40,11 +40,11 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
   private final Deque<Object> pending = new ArrayDeque<>();
   private long demand = Long.MAX_VALUE;
   private boolean ended;
+  private Future<Void> end = Future.succeededFuture();
   private boolean overflow;
   private Handler<Void> drainHandler;
   private int pauseCount;
   private int resumeCount;
-  private Future<Void> completion = Future.succeededFuture();
 
   public synchronized int pauseCount() {
     return pauseCount;
@@ -155,7 +155,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
         demand--;
       }
       if (elt instanceof Promise) {
-        completion.setHandler((Promise) elt);
+        end.setHandler((Promise) elt);
       } else {
         Handler<T> handler = itemHandler;
         if (handler != null) {
@@ -236,8 +236,11 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
     return drainHandler;
   }
 
-  public synchronized FakeStream<T> completion(Future<Void> fut) {
-    completion = fut;
+  public synchronized FakeStream<T> setEnd(Future<Void> fut) {
+    if (ended) {
+      throw new IllegalStateException();
+    }
+    end = fut;
     return this;
   }
 }
