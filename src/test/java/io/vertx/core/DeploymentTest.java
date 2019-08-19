@@ -1161,12 +1161,24 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testCloseIsolationGroup() throws Exception {
+    testCloseIsolationGroup(1);
+  }
+
+  @Test
+  public void testCloseIsolationGroupMultiInstances() throws Exception {
+    testCloseIsolationGroup(3);
+  }
+
+  private void testCloseIsolationGroup(int instances) throws Exception {
     boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
     String dir = createClassOutsideClasspath("MyVerticle");
-    List<String> extraClasspath = Arrays.asList(dir);
+    List<String> extraClasspath = Collections.singletonList(dir);
     Vertx vertx = Vertx.vertx();
     try {
-      DeploymentOptions options = new DeploymentOptions().setIsolationGroup("somegroup").setExtraClasspath(extraClasspath);
+      DeploymentOptions options = new DeploymentOptions()
+        .setInstances(instances)
+        .setIsolationGroup("somegroup")
+        .setExtraClasspath(extraClasspath);
       vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id -> {
         vertx.close(onSuccess(v -> {
           assertTrue(ExtraCPVerticleNotInParentLoader.cl.isClosed());
@@ -1181,6 +1193,7 @@ public class DeploymentTest extends VertxTestBase {
       ExtraCPVerticleNotInParentLoader.cl = null;
     }
   }
+
   public static class ParentVerticle extends AbstractVerticle {
 
     @Override
