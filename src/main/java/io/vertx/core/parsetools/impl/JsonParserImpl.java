@@ -31,6 +31,9 @@ import io.vertx.core.streams.ReadStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -110,6 +113,9 @@ public class JsonParserImpl implements JsonParser {
   }
 
   private void handleEvent(JsonEvent event) {
+    if (demand != Long.MAX_VALUE) {
+      demand--;
+    }
     Handler<JsonEvent> handler = this.eventHandler;
     if (handler != null) {
       handler.handle(event);
@@ -144,8 +150,9 @@ public class JsonParserImpl implements JsonParser {
           break;
         }
         case VALUE_STRING: {
-          handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, parser.getText()));
+          String f = currentField;
           currentField = null;
+          handleEvent(new JsonEventImpl(JsonEventType.VALUE, f, parser.getText()));
           break;
         }
         case VALUE_TRUE: {
@@ -194,7 +201,7 @@ public class JsonParserImpl implements JsonParser {
         exceptionHandler.handle(e);
         return;
       } else {
-        throw new DecodeException(e.getMessage());
+        throw new DecodeException(e.getMessage(), e);
       }
     }
     checkPending();
@@ -229,9 +236,6 @@ public class JsonParserImpl implements JsonParser {
           break;
         } else {
           if (demand > 0L) {
-            if (demand != Long.MAX_VALUE) {
-              demand--;
-            }
             JsonToken token = currentToken;
             currentToken = null;
             tokenHandler.handle(token);
