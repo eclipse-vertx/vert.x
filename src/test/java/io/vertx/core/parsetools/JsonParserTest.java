@@ -543,9 +543,14 @@ public class JsonParserTest {
     JsonParser parser = JsonParser.newParser();
     List<Object> values = new ArrayList<>();
     parser.objectValueMode();
-    parser.handler(event ->   values.add(event.mapTo(TheObject.class)));
-    parser.handle(new JsonObject().put("f", "the-value").toBuffer());
-    assertEquals(Collections.singletonList(new TheObject("the-value")), values);
+    parser.pause();
+    parser.handler(event -> values.add(event.mapTo(TheObject.class)));
+    parser.handle(Buffer.buffer("{\"f\":\"the-value-1\"}{\"f\":\"the-value-2\"}"));
+    assertEquals(Collections.emptyList(), values);
+    parser.fetch(1);
+    assertEquals(Collections.singletonList(new TheObject("the-value-1")), values);
+    parser.fetch(1);
+    assertEquals(Arrays.asList(new TheObject("the-value-1"), new TheObject("the-value-2")), values);
   }
 
   @Test
@@ -744,6 +749,19 @@ public class JsonParserTest {
     stream.handle("{}");
     parser.fetch(1);
     assertEquals(1, events.size());
+    assertTrue(stream.isPaused());
+  }
+
+  @Test
+  public void testStreamFetchNames() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(events::add);
+    parser.pause();
+    stream.handle("{\"foo\":\"bar\"}");
+    parser.fetch(3);
+    assertEquals(3, events.size());
     assertTrue(stream.isPaused());
   }
 
