@@ -38,16 +38,16 @@ public class Http2CompressionTest extends Http2TestBase {
             + " * You may elect to redistribute this code under either of these licenses.\n"
             + " */";
 
-    HttpServer serverWithMinCompressionLevel, serverWithMaxCompressionLevel = null;
+    HttpServer serverWithMinCompressionLevel, serverWithMaxCompressionLevel, serverWithCompressionWithoutTls = null;
 
-    HttpClient clientraw = null;
+    HttpClient clientraw, clearTextClient = null;
 
     public void setUp() throws Exception {
         super.setUp();
 
         client = vertx.createHttpClient(createHttp2ClientOptions().setTryUseCompression(true));
         clientraw = vertx.createHttpClient(createHttp2ClientOptions().setTryUseCompression(false));
-
+        clearTextClient = vertx.createHttpClient(new HttpClientOptions().setTryUseCompression(true).setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(true));
         // server = vertx.createHttpServer();
         serverWithMinCompressionLevel = vertx.createHttpServer(
                 createHttp2ServerOptions(DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST)
@@ -57,6 +57,12 @@ public class Http2CompressionTest extends Http2TestBase {
                 createHttp2ServerOptions(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST)
                         .setCompressionSupported(true)
                         .setCompressionLevel(9));
+        //regression part of test for https://github.com/eclipse-vertx/vert.x/issues/2934
+        serverWithCompressionWithoutTls = vertx.createHttpServer(
+                  new HttpServerOptions()
+                    .setCompressionSupported(true)
+                    .setPort(DEFAULT_HTTP_PORT + 2)
+                    .setHost(DEFAULT_HTTP_HOST));
     }
 
     @Test
@@ -71,7 +77,7 @@ public class Http2CompressionTest extends Http2TestBase {
 
         serverWithMinCompressionLevel.requestHandler(requestHandler);
         serverWithMaxCompressionLevel.requestHandler(requestHandler);
-
+        serverWithCompressionWithoutTls.requestHandler(requestHandler);
         serverWithMinCompressionLevel.listen(onSuccess(serverReady -> {
             testMinCompression();
             testRawMinCompression();
@@ -80,6 +86,10 @@ public class Http2CompressionTest extends Http2TestBase {
         serverWithMaxCompressionLevel.listen(onSuccess(serverReady -> {
             testMaxCompression();
             testRawMaxCompression();
+        }));
+
+        serverWithCompressionWithoutTls.listen(onSuccess(serverReady -> {
+            testCompressionWithHttp2Upgrade();
         }));
 
         await();
@@ -98,6 +108,20 @@ public class Http2CompressionTest extends Http2TestBase {
                     });
                 }).end();
     }
+
+    public static boolean compressionWithoutTlsPassed = false;
+    
+    public void testCompressionWithHttp2Upgrade() {
+        clearTextClient.request(HttpMethod.GET, DEFAULT_HTTP_PORT + 2, DEFAULT_HTTP_HOST, "some-uri",
+          resp -> {
+            resp.bodyHandler(responseBuffer -> {
+              String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
+              assertEquals(COMPRESS_TEST_STRING, responseBody);
+              compressionWithoutTlsPassed = true;
+              terminateTestWhenAllPassed();
+            });
+          }).end();
+      }
 
     public static boolean maxCompressionTestPassed = false;
 
@@ -146,7 +170,7 @@ public class Http2CompressionTest extends Http2TestBase {
     }
 
     public void terminateTestWhenAllPassed() {
-        if (maxCompressionTestPassed && minCompressionTestPassed
+        if (maxCompressionTestPassed && minCompressionTestPassed && compressionWithoutTlsPassed
                 && rawMinCompressionResponseByteCount != null && rawMaxCompressionResponseByteCount != null) {
             assertTrue("Checking compression byte size difference", rawMaxCompressionResponseByteCount > 0
                     && rawMinCompressionResponseByteCount > rawMaxCompressionResponseByteCount);

@@ -411,7 +411,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
     }
     if (!DISABLE_H2C) {
-      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, httpHandlerMgr));
+      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, httpHandlerMgr, options));
     }
     if (DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable websockets altogether which avoids

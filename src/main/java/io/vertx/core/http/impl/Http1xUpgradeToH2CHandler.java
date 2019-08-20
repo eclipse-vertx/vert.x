@@ -8,6 +8,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.*;
+import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.HandlerManager;
 import io.vertx.core.net.impl.VertxHandler;
@@ -24,10 +25,12 @@ class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
   private final HttpServerImpl server;
   private final HandlerManager<HttpHandlers> httpHandlerMgr;
   private VertxHttp2ConnectionHandler<Http2ServerConnection> handler;
+  private HttpServerOptions httpServerOptions;
 
-  Http1xUpgradeToH2CHandler(HttpServerImpl server, HandlerManager<HttpHandlers> httpHandlerMgr) {
+  Http1xUpgradeToH2CHandler(HttpServerImpl server, HandlerManager<HttpHandlers> httpHandlerMgr, HttpServerOptions httpServerOptions) {
     this.server = server;
     this.httpHandlerMgr = httpHandlerMgr;
+    this.httpServerOptions = httpServerOptions;
   }
 
   @Override
@@ -67,9 +70,15 @@ class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
                 DefaultFullHttpResponse res = new DefaultFullHttpResponse(HTTP_1_1, SWITCHING_PROTOCOLS, Unpooled.EMPTY_BUFFER, false);
                 res.headers().add(HttpHeaderNames.CONNECTION, HttpHeaderValues.UPGRADE);
                 res.headers().add(HttpHeaderNames.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME);
-                res.headers().add(HttpHeaderNames.CONTENT_LENGTH, HttpHeaderValues.ZERO);
+
                 ctx.writeAndFlush(res);
                 pipeline.remove("httpEncoder");
+                if(httpServerOptions.isCompressionSupported()) {
+                  pipeline.remove("deflater");
+                }
+                if(httpServerOptions.isDecompressionSupported()) {
+                  pipeline.remove("inflater");
+                }
                 pipeline.remove("handler");
                 handler = server.buildHttp2ConnectionHandler(reqHandler);
                 pipeline.addLast("handler", handler);
