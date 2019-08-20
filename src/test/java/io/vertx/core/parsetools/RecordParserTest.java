@@ -453,4 +453,25 @@ public class RecordParserTest {
     }
     endLatch.await();
   }
+
+  @Test
+  public void testParserIsNotReentrant() throws Exception {
+    RecordParser recordParser = RecordParser.newDelimited("\n");
+    AtomicInteger state = new AtomicInteger(0);
+    StringBuffer emitted = new StringBuffer();
+    CountDownLatch latch = new CountDownLatch(2);
+    recordParser.handler(buff -> {
+      emitted.append(buff.toString());
+      if (state.compareAndSet(0, 1)) {
+        recordParser.handle(Buffer.buffer("bar\n"));
+        assertEquals("Parser shouldn't trigger parsing while emitting", "foo", emitted.toString());
+        latch.countDown();
+      } else if (state.compareAndSet(1, 2)) {
+        assertEquals("foobar", emitted.toString());
+        latch.countDown();
+      }
+    });
+    recordParser.handle(Buffer.buffer("foo\n"));
+    latch.await();
+  }
 }
