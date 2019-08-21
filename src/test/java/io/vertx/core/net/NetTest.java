@@ -1229,6 +1229,21 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testTLSTrailingDotHost() throws Exception {
+    // We just need a vanilla cert for this test
+    SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
+    TLSTest test = new TLSTest()
+      .clientTrust(cert::trustOptions)
+      .connectAddress(SocketAddress.inetSocketAddress(4043, "host2.com."))
+      .bindAddress(SocketAddress.inetSocketAddress(4043, "host2.com"))
+      .serverCert(cert::keyCertOptions);
+    test.run(true);
+    await();
+    assertEquals("host2.com", cnOf(test.clientPeerCert()));
+    assertNull(test.indicatedServerName);
+  }
+
+  @Test
   // SNI without server name should use the first keystore entry
   public void testSniWithoutServerNameUsesTheFirstKeyStoreEntry1() throws Exception {
     TLSTest test = new TLSTest()
@@ -1391,6 +1406,19 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testSniWithTrailingDotHost() throws Exception {
+    TLSTest test = new TLSTest()
+      .clientTrust(Trust.SNI_JKS_HOST2)
+      .connectAddress(SocketAddress.inetSocketAddress(4043, "host2.com."))
+      .bindAddress(SocketAddress.inetSocketAddress(4043, "host2.com"))
+      .serverCert(Cert.SNI_JKS).sni(true);
+    test.run(true);
+    await();
+    assertEquals("host2.com", cnOf(test.clientPeerCert()));
+    assertEquals("host2.com", test.indicatedServerName);
+  }
+
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
                Cert<?> serverCert, Trust<?> serverTrust,
     boolean requireClientAuth, boolean clientTrustAll,
@@ -1440,7 +1468,8 @@ public class NetTest extends VertxTestBase {
     String[] enabledCipherSuites = new String[0];
     String[] enabledSecureTransportProtocols = new String[0];
     boolean sni;
-    SocketAddress address = SocketAddress.inetSocketAddress(4043, "localhost");
+    SocketAddress bindAddress = SocketAddress.inetSocketAddress(4043, "localhost");
+    SocketAddress connectAddress = bindAddress;
     String serverName;
     X509Certificate clientPeerCert;
     String indicatedServerName;
@@ -1491,7 +1520,18 @@ public class NetTest extends VertxTestBase {
     }
 
     public TLSTest address(SocketAddress address) {
-      this.address = address;
+      this.bindAddress = address;
+      this.connectAddress = address;
+      return this;
+    }
+
+    public TLSTest bindAddress(SocketAddress address) {
+      this.bindAddress = address;
+      return this;
+    }
+
+    public TLSTest connectAddress(SocketAddress address) {
+      this.connectAddress = address;
       return this;
     }
 
@@ -1588,8 +1628,7 @@ public class NetTest extends VertxTestBase {
           }
         });
       };
-      server.connectHandler(serverHandler).listen(address, ar -> {
-        assertTrue(ar.succeeded());
+      server.connectHandler(serverHandler).listen(bindAddress, onSuccess(ar -> {
         client.close();
         NetClientOptions clientOptions = new NetClientOptions();
         if (!startTLS) {
@@ -1610,7 +1649,7 @@ public class NetTest extends VertxTestBase {
           clientOptions.addEnabledSecureTransportProtocol(protocol);
         }
         client = vertx.createNetClient(clientOptions);
-        client.connect(address, serverName, ar2 -> {
+        client.connect(connectAddress, serverName, ar2 -> {
           if (ar2.succeeded()) {
             if (!startTLS && !shouldPass) {
               fail("Should not connect");
@@ -1678,13 +1717,14 @@ public class NetTest extends VertxTestBase {
             }
           } else {
             if (shouldPass) {
+              ar2.cause().printStackTrace();
               fail("Should not fail to connect");
             } else {
               complete();
             }
           }
         });
-      });
+      }));
     }
   }
 

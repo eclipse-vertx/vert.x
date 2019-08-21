@@ -141,6 +141,9 @@ public class DnsResolverProvider implements ResolverProvider {
             builder.hostsFileEntriesResolver(new HostsFileEntriesResolver() {
               @Override
               public InetAddress address(String inetHost, ResolvedAddressTypes resolvedAddressTypes) {
+                if (inetHost.endsWith(".")) {
+                  inetHost = inetHost.substring(0, inetHost.length() - 1);
+                }
                 InetAddress address = lookup(inetHost, resolvedAddressTypes);
                 if (address == null) {
                   address = lookup(inetHost.toLowerCase(Locale.ENGLISH), resolvedAddressTypes);

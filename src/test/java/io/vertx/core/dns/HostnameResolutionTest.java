@@ -391,6 +391,17 @@ public class HostnameResolutionTest extends VertxTestBase {
   }
 
   @Test
+  public void testTrailingDotResolveFromHosts() {
+    VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(new AddressResolverOptions().setHostsPath("hosts_config.txt")));
+    vertx.resolveAddress("server.net.", onSuccess(addr -> {
+      assertEquals("192.168.0.15", addr.getHostAddress());
+      assertEquals("server.net", addr.getHostName());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
   public void testResolveMissingLocalhost() throws Exception {
 
     InetAddress localhost = InetAddress.getByName("localhost");

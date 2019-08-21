@@ -434,7 +434,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           peerAddress = SocketAddress.inetSocketAddress(80, hostHeader);
         }
       } else {
-        peerAddress = SocketAddress.inetSocketAddress(port, host);
+        String peerHost = host;
+        if (peerHost.endsWith(".")) {
+          peerHost = peerHost.substring(0, peerHost.length() -  1);
+        }
+        peerAddress = SocketAddress.inetSocketAddress(port, peerHost);
       }
 
       // Capture some stuff
