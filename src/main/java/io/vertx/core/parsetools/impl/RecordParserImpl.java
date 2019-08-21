@@ -42,6 +42,8 @@ public class RecordParserImpl implements RecordParser {
   private Handler<Buffer> eventHandler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
+  private boolean parsing;
+  private boolean streamEnded;
 
   private final ReadStream<Buffer> stream;
 
@@ -172,47 +174,71 @@ public class RecordParserImpl implements RecordParser {
   }
 
   private void handleParsing() {
-    do {
-      if (demand > 0L) {
-        int next;
-        if (delimited) {
-          next = parseDelimited();
+    if (parsing) {
+      return;
+    }
+    parsing = true;
+    try {
+      do {
+        if (demand > 0L) {
+          int next;
+          if (delimited) {
+            next = parseDelimited();
+          } else {
+            next = parseFixed();
+          }
+          if (next == -1) {
+            if (streamEnded) {
+              if (buff.length() == 0) {
+                break;
+              }
+              next = buff.length();
+            } else {
+              ReadStream<Buffer> s = stream;
+              if (s != null) {
+                s.resume();
+              }
+              if (streamEnded) {
+                continue;
+              }
+              break;
+            }
+          }
+          if (demand != Long.MAX_VALUE) {
+            demand--;
+          }
+          Buffer event = buff.getBuffer(start, next);
+          start = pos;
+          Handler<Buffer> handler = eventHandler;
+          if (handler != null) {
+            handler.handle(event);
+          }
+          if (streamEnded) {
+            break;
+          }
         } else {
-          next = parseFixed();
-        }
-        if (next == -1) {
+          // Should use a threshold ?
           ReadStream<Buffer> s = stream;
           if (s != null) {
-            s.resume();
+            s.pause();
           }
           break;
         }
-        if (demand != Long.MAX_VALUE) {
-          demand--;
-        }
-        Buffer event = buff.getBuffer(start, next);
-        start = pos;
-        Handler<Buffer> handler = eventHandler;
-        if (handler != null) {
-          handler.handle(event);
-        }
+      } while (true);
+      int len = buff.length();
+      if (start == len) {
+        buff = EMPTY_BUFFER;
       } else {
-        // Should use a threshold ?
-        ReadStream<Buffer> s = stream;
-        if (s != null) {
-          s.pause();
-        }
-        break;
+        buff = buff.getBuffer(start, len);
       }
-    } while (true);
-    int len = buff.length();
-    if (start == len) {
-      buff = EMPTY_BUFFER;
-    } else {
-      buff = buff.getBuffer(start, len);
+      pos -= start;
+      start = 0;
+      if (streamEnded) {
+        end();
+      }
+    } finally {
+      parsing = false;
     }
-    pos -= start;
-    start = 0;
   }
 
   private int parseDelimited() {
@@ -285,7 +311,10 @@ public class RecordParserImpl implements RecordParser {
     eventHandler = handler;
     if (stream != null) {
       if (handler != null) {
-        stream.endHandler(v -> end());
+        stream.endHandler(v -> {
+          streamEnded = true;
+          handleParsing();
+        });
         stream.exceptionHandler(err -> {
           if (exceptionHandler != null) {
             exceptionHandler.handle(err);
