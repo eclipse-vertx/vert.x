@@ -651,10 +651,11 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().endHandler(v -> complete());
       req.response().end();
     }).listen(onSuccess(server ->
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(res -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", res -> {
         assertEquals(200, res.statusCode());
         complete();
-      }))
+      })
+      .exceptionHandler(this::fail)
       .putHeader(HttpHeaders.CONNECTION, "close")
       .end()));
     await();
