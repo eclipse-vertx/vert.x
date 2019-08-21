@@ -204,7 +204,12 @@ public class NetClientImpl implements MetricsProvider, NetClient {
       }
     };
 
-    channelProvider.connect(remoteAddress, remoteAddress, serverName, sslHelper.isSSL(), channelHandler);
+    SocketAddress peerAddress = remoteAddress;
+    String peerHost = peerAddress.host();
+    if (peerHost != null && peerHost.endsWith(".")) {
+      peerAddress = SocketAddress.inetSocketAddress(peerAddress.port(), peerHost.substring(0, peerHost.length() - 1));
+    }
+    channelProvider.connect(remoteAddress, peerAddress, serverName, sslHelper.isSSL(), channelHandler);
   }
 
   private void connected(ContextInternal context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, SocketAddress remoteAddress) {
