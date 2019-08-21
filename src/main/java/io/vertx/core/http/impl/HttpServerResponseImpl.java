@@ -393,10 +393,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
       conn.writeToChannel(msg, promise);
-      if (!keepAlive) {
-        closeConnAfterWrite();
-        closed = true;
-      }
       written = true;
       conn.responseComplete();
       if (bodyEndHandler != null) {
@@ -404,6 +400,10 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       }
       if (!closed && endHandler != null) {
         endHandler.handle(null);
+      }
+      if (!keepAlive) {
+        closeConnAfterWrite();
+        closed = true;
       }
     }
   }

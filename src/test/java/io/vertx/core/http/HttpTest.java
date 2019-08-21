@@ -16,8 +16,8 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.*;
 import io.vertx.core.Future;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
@@ -626,6 +626,22 @@ public abstract class HttpTest extends HttpTestBase {
         });
       })).end();
     }));
+    await();
+  }
+
+  @Test
+  public void testResponseEndHandlersConnectionClose() {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().endHandler(v -> complete());
+      req.response().end();
+    }).listen(onSuccess(server ->
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(res -> {
+        assertEquals(200, res.statusCode());
+        complete();
+      }))
+      .putHeader(HttpHeaders.CONNECTION, "close")
+      .end()));
     await();
   }
 
@@ -1352,6 +1368,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerExceptionHandlerOnClose() {
+    waitFor(3);
     vertx.createHttpServer().requestHandler(req -> {
       HttpServerResponse resp = req.response();
       AtomicInteger reqExceptionHandlerCount = new AtomicInteger();
@@ -1373,17 +1390,19 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(0, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.incrementAndGet());
         assertEquals(0, respEndHandlerCount.get());
+        complete();
       });
       resp.endHandler(v -> {
         assertEquals(0, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.get());
         assertEquals(1, respEndHandlerCount.incrementAndGet());
+        complete();
       });
       req.connection().closeHandler(v -> {
         assertEquals(1, reqExceptionHandlerCount.get());
         assertEquals(1, respExceptionHandlerCount.get());
         assertEquals(1, respEndHandlerCount.get());
-        testComplete();
+        complete();
       });
     }).listen(testAddress, ar -> {
       HttpClient client = vertx.createHttpClient();
