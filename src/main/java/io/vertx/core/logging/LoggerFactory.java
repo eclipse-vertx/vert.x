@@ -52,7 +52,8 @@ public class LoggerFactory {
         return;
       }
     }
-    configureWith("JUL", true, loader);
+    // Do not use dynamic classloading here to ensure the class is visible by AOT compilers
+    delegateFactory = new JULLogDelegateFactory();
   }
 
   private static boolean configureWith(String name, boolean shortName, ClassLoader loader) {
