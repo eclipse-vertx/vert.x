@@ -1177,6 +1177,7 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  @Repeat(times = 10)
   public void testCloseServerConnectionWithPendingMessages() throws Exception {
     int n = 5;
     server.requestHandler(req -> {
@@ -1247,7 +1248,6 @@ public class Http1xTest extends HttpTest {
   /**
    * A test that stress HTTP server pipe-lining.
    */
-  @Repeat(times = 100)
   @Test
   public void testPipelineStress() throws Exception {
 
