@@ -336,7 +336,7 @@ If you just want to upload the file to disk somewhere you can use {@link io.vert
 WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
 to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
 
-==== Manipulating cookies
+==== Handling cookies
 
 You use {@link io.vertx.core.http.HttpServerRequest#getCookie(String)} to retrieve
 a cookie by name, or use {@link io.vertx.core.http.HttpServerRequest#cookieMap()} to retrieve all the cookies.
