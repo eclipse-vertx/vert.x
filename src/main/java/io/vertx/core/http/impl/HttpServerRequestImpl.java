@@ -149,12 +149,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  void handleBegin(Handler<HttpServerRequest> handler) {
+  void handleBegin() {
     response = new HttpServerResponseImpl((VertxInternal) conn.vertx(), context, conn, request, metric);
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
-    handler.handle(this);
   }
 
   /**

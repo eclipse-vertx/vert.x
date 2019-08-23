@@ -132,11 +132,12 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         if (METRICS_ENABLED) {
           req.reportRequestBegin();
         }
+        req.handleBegin();
       }
       ContextInternal ctx = req.context;
       ContextInternal prev = ctx.beginDispatch();
       try {
-        req.handleBegin(requestHandler);
+        requestHandler.handle(req);
       } catch (Throwable t) {
         ctx.reportException(t);
       } finally {
@@ -203,9 +204,10 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void handleNext(HttpServerRequestImpl next) {
     responseInProgress = next;
-    getContext().runOnContext(v -> {
+    next.handleBegin();
+    context.runOnContext(v -> {
       next.resume();
-      next.handleBegin(requestHandler);
+      requestHandler.handle(next);
     });
   }
 
