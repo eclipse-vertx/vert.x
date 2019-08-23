@@ -131,8 +131,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
           return;
         }
         responseInProgress = requestInProgress;
+        req.handleBegin();
       }
-      req.handleBegin(requestHandler);
+      requestHandler.handle(req);
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       handleEnd();
     } else if (msg instanceof HttpContent) {
@@ -190,9 +191,10 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void handleNext(HttpServerRequestImpl next) {
     responseInProgress = next;
-    getContext().runOnContext(v -> {
+    next.handleBegin();
+    context.runOnContext(v -> {
       next.resume();
-      next.handleBegin(requestHandler);
+      requestHandler.handle(next);
     });
   }
 
