@@ -336,6 +336,28 @@ If you just want to upload the file to disk somewhere you can use {@link io.vert
 WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
 to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
 
+==== Handling cookies
+
+You use {@link io.vertx.core.http.HttpServerRequest#getCookie(String)} to retrieve
+a cookie by name, or use {@link io.vertx.core.http.HttpServerRequest#cookieMap()} to retrieve all the cookies.
+
+To remove a cookie, use {@link io.vertx.core.http.HttpServerResponse#removeCookie(String)}.
+
+To add a cookie use {@link io.vertx.core.http.HttpServerResponse#addCookie(Cookie)}.
+
+The set of cookies will be written back in the response automatically when the response headers are written so the
+browser can store them.
+
+Cookies are described by instances of {@link io.vertx.core.http.Cookie}. This allows you to retrieve the name,
+value, domain, path and other normal cookie properties.
+
+Here's an example of querying and adding cookies:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleHandlingCookies}
+----
+
 ==== Handling compressed body
 
 Vert.x can handle compressed body payloads which are encoded by the client with the _deflate_ or _gzip_
