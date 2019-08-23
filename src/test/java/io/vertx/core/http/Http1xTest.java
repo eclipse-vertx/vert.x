@@ -22,7 +22,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.CheckingSender;
@@ -1338,6 +1337,85 @@ public class Http1xTest extends HttpTest {
       requests.add(req);
     }
     closeFuture.complete(null);
+    await();
+  }
+
+  /**
+   * A test that stress HTTP server pipe-lining.
+   */
+  @Test
+  public void testPipelineStress() throws Exception {
+
+    // A client that will aggressively pipeline HTTP requests and close the connection abruptly after one second
+    class Client {
+      private final NetSocket so;
+      private StringBuilder received;
+      private int curr;
+      private int count;
+      private boolean closed;
+      Client(NetSocket so) {
+        this.so = so;
+      }
+      private void close() {
+        closed = true;
+      }
+      private void receiveChunk(Buffer chunk) {
+        received.append(chunk);
+        int c;
+        while ((c = received.indexOf("\r\n\r\n", curr)) != -1) {
+          curr = c + 4;
+          count++;
+        }
+        if (count == 16 && !closed) {
+          send();
+        }
+      }
+      private void send() {
+        received = new StringBuilder();
+        curr = 0;
+        count = 0;
+        for (int i = 0;i < 16;i++) {
+          so.write(Buffer.buffer("" +
+            "GET / HTTP/1.1\r\n" +
+            "content-length:0\r\n" +
+            "\r\n"));
+        }
+      }
+      void run() {
+        so.handler(this::receiveChunk);
+        so.closeHandler(v -> {
+          close();
+          complete();
+        });
+        send();
+        vertx.setTimer(1000, id -> {
+          so.close();
+        });
+      }
+    }
+
+    // We want to be aware of uncaught exceptions and fail the test when it happens
+    vertx.exceptionHandler(err -> {
+      fail(err);
+    });
+
+    server.requestHandler(req -> {
+      // Use runOnContext to allow pipelined requests to pile up in the server
+      // when we send a response right away it's nearly like no pipe-lining is occurring
+      Vertx.currentContext().runOnContext(v -> {
+        req.response().end("Hello World");
+      });
+    });
+    startServer(testAddress);
+    NetClient tcpClient = vertx.createNetClient(new NetClientOptions().setSoLinger(0));
+    int numConn = 32;
+    waitFor(numConn);
+    for (int i = 0;i < numConn;i++) {
+      tcpClient.connect(testAddress, onSuccess(so -> {
+        Client client = new Client(so);
+        client.run();
+      }));
+    }
     await();
   }
 

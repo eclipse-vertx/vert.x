@@ -140,7 +140,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-  void handleBegin(Handler<HttpServerRequest> handler) {
+  void handleBegin() {
     if (Metrics.METRICS_ENABLED) {
       reportRequestBegin();
     }
@@ -148,7 +148,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
-    handler.handle(this);
   }
 
   /**
