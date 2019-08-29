@@ -289,7 +289,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Add an enum to the JSON array.
    * <p>
-   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name}
+   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name()}
    * method and the value added as a String.
    *
    * @param value  the value

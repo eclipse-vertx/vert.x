@@ -514,7 +514,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Put an Enum into the JSON object with the specified key.
    * <p>
-   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name}
+   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name()}
    * method and the value put as a String.
    *
    * @param key  the key
