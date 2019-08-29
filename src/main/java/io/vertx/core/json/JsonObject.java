@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
@@ -840,7 +841,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a stream of the entries.
    */
   public Stream<Map.Entry<String, Object>> stream() {
-    return Json.asStream(iterator());
+    return asStream(iterator());
   }
 
   /**
@@ -1074,4 +1075,10 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     }
     return val;
   }
+
+  static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
+    Iterable<T> iterable = () -> sourceIterator;
+    return StreamSupport.stream(iterable.spliterator(), false);
+  }
+
 }

@@ -592,7 +592,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a Stream
    */
   public Stream<Object> stream() {
-    return Json.asStream(iterator());
+    return JsonObject.asStream(iterator());
   }
 
   @Override

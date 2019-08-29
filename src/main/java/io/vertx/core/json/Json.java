@@ -23,15 +23,11 @@ import io.vertx.core.buffer.Buffer;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
@@ -221,11 +217,6 @@ public class Json {
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
-  }
-
-  static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
-    Iterable<T> iterable = () -> sourceIterator;
-    return StreamSupport.stream(iterable.spliterator(), false);
   }
 
   private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {
