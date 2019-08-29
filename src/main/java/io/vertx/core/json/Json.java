@@ -11,25 +11,17 @@
 
 package io.vertx.core.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.time.DateTimeException;
 import java.time.Instant;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-
-import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -40,6 +32,10 @@ public class Json {
   public static ObjectMapper prettyMapper = new ObjectMapper();
 
   static {
+    initialize();
+  }
+
+  private static void initialize() {
     // Non-standard JSON but we allow C style comments in our JSON
     mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
 
@@ -172,7 +168,7 @@ public class Json {
    */
   public static Object decodeValue(Buffer buf) throws DecodeException {
     try {
-      Object value = mapper.readValue((InputStream) new ByteBufInputStream(buf.getByteBuf()), Object.class);
+      Object value = decodeValue(buf, Object.class);
       if (value instanceof List) {
         List list = (List) value;
         return new JsonArray(list);
@@ -216,60 +212,6 @@ public class Json {
       return mapper.readValue((InputStream) new ByteBufInputStream(buf.getByteBuf()), clazz);
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    }
-  }
-
-  private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {
-    @Override
-    public void serialize(JsonObject value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeObject(value.getMap());
-    }
-  }
-
-  private static class JsonArraySerializer extends JsonSerializer<JsonArray> {
-    @Override
-    public void serialize(JsonArray value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeObject(value.getList());
-    }
-  }
-
-  private static class InstantSerializer extends JsonSerializer<Instant> {
-    @Override
-    public void serialize(Instant value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeString(ISO_INSTANT.format(value));
-    }
-  }
-
-  private static class InstantDeserializer extends JsonDeserializer<Instant> {
-    @Override
-    public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-      String text = p.getText();
-      try {
-        return Instant.from(ISO_INSTANT.parse(text));
-      } catch (DateTimeException e) {
-        throw new InvalidFormatException(p, "Expected an ISO 8601 formatted date time", text, Instant.class);
-      }
-    }
-  }
-
-  private static class ByteArraySerializer extends JsonSerializer<byte[]> {
-
-    @Override
-    public void serialize(byte[] value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeString(Base64.getEncoder().encodeToString(value));
-    }
-  }
-
-  private static class ByteArrayDeserializer extends JsonDeserializer<byte[]> {
-
-    @Override
-    public byte[] deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
-      String text = p.getText();
-      try {
-        return Base64.getDecoder().decode(text);
-      } catch (IllegalArgumentException e) {
-        throw new InvalidFormatException(p, "Expected a base64 encoded byte array", text, Instant.class);
-      }
     }
   }
 }

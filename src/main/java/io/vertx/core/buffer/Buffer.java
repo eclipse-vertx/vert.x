@@ -17,12 +17,12 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.ServiceHelper;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 import io.vertx.core.spi.BufferFactory;
+import io.vertx.core.spi.JsonFactory;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -148,7 +148,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the buffer contains an array, object, string, ...etc
    */
   default Object toJson() {
-    return Json.decodeValue(this);
+    return JsonFactory.factory.fromBuffer(this, Object.class);
   }
 
   /**

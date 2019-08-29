@@ -14,6 +14,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
+import io.vertx.core.spi.JsonFactory;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -106,7 +107,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     if (obj == null) {
       return null;
     } else {
-      return new JsonObject((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
+      return new JsonObject((Map<String, Object>) JsonFactory.factory.fromValue(obj, Map.class));
     }
   }
 
@@ -120,7 +121,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *          if the type cannot be instantiated.
    */
   public <T> T mapTo(Class<T> type) {
-    return Json.mapper.convertValue(map, type);
+    return JsonFactory.factory.fromValue(map, type);
   }
 
   /**
@@ -781,7 +782,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the string encoding.
    */
   public String encode() {
-    return Json.encode(map);
+    return JsonFactory.factory.toString(map, false);
   }
 
   /**
@@ -791,7 +792,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the pretty string encoding.
    */
   public String encodePrettily() {
-    return Json.encodePrettily(map);
+    return JsonFactory.factory.toString(map, true);
   }
 
   /**
@@ -800,7 +801,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the buffer encoding.
    */
   public Buffer toBuffer() {
-    return Json.encodeToBuffer(map);
+    return JsonFactory.factory.toBuffer(map, false);
   }
 
   /**
@@ -970,11 +971,11 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   private void fromJson(String json) {
-    map = Json.decodeValue(json, Map.class);
+    map = JsonFactory.factory.fromString(json, Map.class);
   }
 
   private void fromBuffer(Buffer buf) {
-    map = Json.decodeValue(buf, Map.class);
+    map = JsonFactory.factory.fromBuffer(buf, Map.class);
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {
