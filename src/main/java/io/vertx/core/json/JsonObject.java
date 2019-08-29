@@ -14,11 +14,14 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
+import io.vertx.core.spi.json.JsonCodec;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
@@ -104,7 +107,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     if (obj == null) {
       return null;
     } else {
-      return new JsonObject((Map<String, Object>) Json.mapper.convertValue(obj, Map.class));
+      return new JsonObject((Map<String, Object>) JsonCodec.INSTANCE.fromValue(obj, Map.class));
     }
   }
 
@@ -118,7 +121,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *          if the type cannot be instantiated.
    */
   public <T> T mapTo(Class<T> type) {
-    return Json.mapper.convertValue(map, type);
+    return JsonCodec.INSTANCE.fromValue(map, type);
   }
 
   /**
@@ -514,7 +517,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Put an Enum into the JSON object with the specified key.
    * <p>
-   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name}
+   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name()}
    * method and the value put as a String.
    *
    * @param key  the key
@@ -696,7 +699,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public JsonObject put(String key, Object value) {
     Objects.requireNonNull(key);
-    value = Json.checkAndCopy(value, false);
+    value = checkAndCopy(value, false);
     map.put(key, value);
     return this;
   }
@@ -779,7 +782,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the string encoding.
    */
   public String encode() {
-    return Json.encode(map);
+    return JsonCodec.INSTANCE.toString(map, false);
   }
 
   /**
@@ -789,7 +792,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the pretty string encoding.
    */
   public String encodePrettily() {
-    return Json.encodePrettily(map);
+    return JsonCodec.INSTANCE.toString(map, true);
   }
 
   /**
@@ -798,7 +801,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the buffer encoding.
    */
   public Buffer toBuffer() {
-    return Json.encodeToBuffer(map);
+    return JsonCodec.INSTANCE.toBuffer(map, false);
   }
 
   /**
@@ -816,7 +819,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     }
     for (Map.Entry<String, Object> entry: map.entrySet()) {
       Object val = entry.getValue();
-      val = Json.checkAndCopy(val, true);
+      val = checkAndCopy(val, true);
       copiedMap.put(entry.getKey(), val);
     }
     return new JsonObject(copiedMap);
@@ -839,7 +842,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a stream of the entries.
    */
   public Stream<Map.Entry<String, Object>> stream() {
-    return Json.asStream(iterator());
+    return asStream(iterator());
   }
 
   /**
@@ -968,11 +971,11 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   private void fromJson(String json) {
-    map = Json.decodeValue(json, Map.class);
+    map = JsonCodec.INSTANCE.fromString(json, Map.class);
   }
 
   private void fromBuffer(Buffer buf) {
-    map = Json.decodeValue(buf, Map.class);
+    map = JsonCodec.INSTANCE.fromBuffer(buf, Map.class);
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {
@@ -1029,4 +1032,54 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       throw new UnsupportedOperationException();
     }
   }
+
+  @SuppressWarnings("unchecked")
+  static Object checkAndCopy(Object val, boolean copy) {
+    if (val == null) {
+      // OK
+    } else if (val instanceof Number && !(val instanceof BigDecimal)) {
+      // OK
+    } else if (val instanceof Boolean) {
+      // OK
+    } else if (val instanceof String) {
+      // OK
+    } else if (val instanceof Character) {
+      // OK
+    } else if (val instanceof CharSequence) {
+      val = val.toString();
+    } else if (val instanceof JsonObject) {
+      if (copy) {
+        val = ((JsonObject) val).copy();
+      }
+    } else if (val instanceof JsonArray) {
+      if (copy) {
+        val = ((JsonArray) val).copy();
+      }
+    } else if (val instanceof Map) {
+      if (copy) {
+        val = (new JsonObject((Map)val)).copy();
+      } else {
+        val = new JsonObject((Map)val);
+      }
+    } else if (val instanceof List) {
+      if (copy) {
+        val = (new JsonArray((List)val)).copy();
+      } else {
+        val = new JsonArray((List)val);
+      }
+    } else if (val instanceof byte[]) {
+      val = Base64.getEncoder().encodeToString((byte[])val);
+    } else if (val instanceof Instant) {
+      val = ISO_INSTANT.format((Instant) val);
+    } else {
+      throw new IllegalStateException("Illegal type in JsonObject: " + val.getClass());
+    }
+    return val;
+  }
+
+  static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
+    Iterable<T> iterable = () -> sourceIterator;
+    return StreamSupport.stream(iterable.spliterator(), false);
+  }
+
 }

@@ -485,6 +485,26 @@
               </includes>
             </configuration>
           </execution>
+          <execution>
+            <id>no-jackson</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/JsonTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+              </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
           <!-- Check some netty compat (dns / http2) with unstable classes -->
           <!-- Uncomment to run them, you need to have also the dependencies in the repo as they won't be downloaded automatically -->
           <!-- It is possible to have them easily by running the build with -Dnetty.version=4.1.9.Final -Dtcnative.version=2.0.0.Final -->

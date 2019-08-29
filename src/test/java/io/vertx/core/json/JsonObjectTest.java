@@ -12,7 +12,6 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.Utils;
 import io.vertx.test.core.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -1182,8 +1181,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInDepth0() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\" }}");
-    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", new JsonObject().put("bar", "flurb"));
+    JsonObject obj2 = new JsonObject().put("foo", new JsonObject().put("bar", "eek"));
     obj1.mergeIn(obj2, 0);
     assertEquals(1, obj1.size());
     assertEquals(1, obj1.getJsonObject("foo").size());
@@ -1192,8 +1191,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInFlat() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\", \"eek\": 32 }}");
-    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", new JsonObject().put("bar", "flurb").put("eek", 32));
+    JsonObject obj2 = new JsonObject().put("foo", new JsonObject().put("bar", "eek"));
     obj1.mergeIn(obj2, false);
     assertEquals(1, obj1.size());
     assertEquals(1, obj1.getJsonObject("foo").size());
@@ -1202,8 +1201,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInDepth1() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
-    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", "bar").put("flurb", new JsonObject().put("eek", "foo").put("bar", "flurb"));
+    JsonObject obj2 = new JsonObject().put("flurb", new JsonObject().put("bar", "flurb1"));
     obj1.mergeIn(obj2, 1);
     assertEquals(2, obj1.size());
     assertEquals(1, obj1.getJsonObject("flurb").size());
@@ -1212,8 +1211,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInDepth2() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
-    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", "bar").put("flurb", new JsonObject().put("eek", "foo").put("bar", "flurb"));
+    JsonObject obj2 = new JsonObject().put("flurb", new JsonObject().put("bar", "flurb1"));
     obj1.mergeIn(obj2, 2);
     assertEquals(2, obj1.size());
     assertEquals(2, obj1.getJsonObject("flurb").size());
@@ -1222,151 +1221,9 @@ public class JsonObjectTest {
   }
 
   @Test
-  public void testEncode() throws Exception {
-    jsonObject.put("mystr", "foo");
-    jsonObject.put("mycharsequence", new StringBuilder("oob"));
-    jsonObject.put("myint", 123);
-    jsonObject.put("mylong", 1234l);
-    jsonObject.put("myfloat", 1.23f);
-    jsonObject.put("mydouble", 2.34d);
-    jsonObject.put("myboolean", true);
-    byte[] bytes = TestUtils.randomByteArray(10);
-    jsonObject.put("mybinary", bytes);
-    Instant now = Instant.now();
-    jsonObject.put("myinstant", now);
-    jsonObject.putNull("mynull");
-    jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
-    jsonObject.put("myarr", new JsonArray().add("foo").add(123));
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
-    String json = jsonObject.encode();
-    assertEquals(expected, json);
-  }
-
-  @Test
-  public void testEncodeToBuffer() throws Exception {
-    jsonObject.put("mystr", "foo");
-    jsonObject.put("mycharsequence", new StringBuilder("oob"));
-    jsonObject.put("myint", 123);
-    jsonObject.put("mylong", 1234l);
-    jsonObject.put("myfloat", 1.23f);
-    jsonObject.put("mydouble", 2.34d);
-    jsonObject.put("myboolean", true);
-    byte[] bytes = TestUtils.randomByteArray(10);
-    jsonObject.put("mybinary", bytes);
-    Instant now = Instant.now();
-    jsonObject.put("myinstant", now);
-    jsonObject.putNull("mynull");
-    jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
-    jsonObject.put("myarr", new JsonArray().add("foo").add(123));
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-
-    Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
-
-    Buffer json = jsonObject.toBuffer();
-    assertArrayEquals(expected.getBytes(), json.getBytes());
-  }
-
-  @Test
-  public void testDecode() throws Exception {
-    byte[] bytes = TestUtils.randomByteArray(10);
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    Instant now = Instant.now();
-    String strInstant = ISO_INSTANT.format(now);
-    String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
-    JsonObject obj = new JsonObject(json);
-    assertEquals(json, obj.encode());
-    assertEquals("foo", obj.getString("mystr"));
-    assertEquals(Integer.valueOf(123), obj.getInteger("myint"));
-    assertEquals(Long.valueOf(1234), obj.getLong("mylong"));
-    assertEquals(Float.valueOf(1.23f), obj.getFloat("myfloat"));
-    assertEquals(Double.valueOf(2.34d), obj.getDouble("mydouble"));
-    assertTrue(obj.getBoolean("myboolean"));
-    assertArrayEquals(bytes, obj.getBinary("mybinary"));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), obj.getValue("mybinary"));
-    assertEquals(now, obj.getInstant("myinstant"));
-    assertEquals(now.toString(), obj.getValue("myinstant"));
-    assertTrue(obj.containsKey("mynull"));
-    JsonObject nestedObj = obj.getJsonObject("myobj");
-    assertEquals("bar", nestedObj.getString("foo"));
-    JsonArray nestedArr = obj.getJsonArray("myarr");
-    assertEquals("foo", nestedArr.getString(0));
-    assertEquals(Integer.valueOf(123), Integer.valueOf(nestedArr.getInteger(1)));
-  }
-
-  @Test
   public void testToString() {
     jsonObject.put("foo", "bar");
     assertEquals(jsonObject.encode(), jsonObject.toString());
-  }
-
-  @Test
-  public void testEncodePrettily() throws Exception {
-    jsonObject.put("mystr", "foo");
-    jsonObject.put("myint", 123);
-    jsonObject.put("mylong", 1234l);
-    jsonObject.put("myfloat", 1.23f);
-    jsonObject.put("mydouble", 2.34d);
-    jsonObject.put("myboolean", true);
-    byte[] bytes = TestUtils.randomByteArray(10);
-    jsonObject.put("mybinary", bytes);
-    Instant now = Instant.now();
-    jsonObject.put("myinstant", now);
-    jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
-    jsonObject.put("myarr", new JsonArray().add("foo").add(123));
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String strInstant = ISO_INSTANT.format(now);
-    String expected = "{" + Utils.LINE_SEPARATOR +
-      "  \"mystr\" : \"foo\"," + Utils.LINE_SEPARATOR +
-      "  \"myint\" : 123," + Utils.LINE_SEPARATOR +
-      "  \"mylong\" : 1234," + Utils.LINE_SEPARATOR +
-      "  \"myfloat\" : 1.23," + Utils.LINE_SEPARATOR +
-      "  \"mydouble\" : 2.34," + Utils.LINE_SEPARATOR +
-      "  \"myboolean\" : true," + Utils.LINE_SEPARATOR +
-      "  \"mybinary\" : \"" + strBytes + "\"," + Utils.LINE_SEPARATOR +
-      "  \"myinstant\" : \"" + strInstant + "\"," + Utils.LINE_SEPARATOR +
-      "  \"myobj\" : {" + Utils.LINE_SEPARATOR +
-      "    \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
-      "  }," + Utils.LINE_SEPARATOR +
-      "  \"myarr\" : [ \"foo\", 123 ]" + Utils.LINE_SEPARATOR +
-      "}";
-    String json = jsonObject.encodePrettily();
-    assertEquals(expected, json);
-  }
-
-  // Strict JSON doesn't allow comments but we do so users can add comments to config files etc
-  @Test
-  public void testCommentsInJson() {
-    String jsonWithComments =
-      "// single line comment\n" +
-      "/*\n" +
-      "  This is a multi \n" +
-      "  line comment\n" +
-      "*/\n" +
-      "{\n" +
-      "// another single line comment this time inside the JSON object itself\n" +
-      "  \"foo\": \"bar\" // and a single line comment at end of line \n" +
-      "/*\n" +
-      "  This is a another multi \n" +
-      "  line comment this time inside the JSON object itself\n" +
-      "*/\n" +
-      "}";
-    JsonObject json = new JsonObject(jsonWithComments);
-    assertEquals("{\"foo\":\"bar\"}", json.encode());
-  }
-
-  @Test
-  public void testInvalidJson() {
-    String invalid = "qiwjdoiqwjdiqwjd";
-    try {
-      new JsonObject(invalid);
-      fail();
-    } catch (DecodeException e) {
-      // OK
-    }
   }
 
   @Test
@@ -1831,44 +1688,14 @@ public class JsonObjectTest {
   @Test
   public void testInvalidConstruction() {
     try {
-      new JsonObject("null");
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
       new JsonObject((String) null);
       fail();
     } catch (NullPointerException ignore) {
     }
     try {
-      new JsonObject("3");
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
-      new JsonObject("\"3");
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
-      new JsonObject(Buffer.buffer("null"));
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
       new JsonObject((Buffer) null);
       fail();
     } catch (NullPointerException ignore) {
-    }
-    try {
-      new JsonObject(Buffer.buffer("3"));
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
-      new JsonObject(Buffer.buffer("\"3"));
-      fail();
-    } catch (DecodeException ignore) {
     }
     try {
       new JsonObject((Map) null);
