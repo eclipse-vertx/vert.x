@@ -442,7 +442,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Object value) {
-    value = Json.checkAndCopy(value, false);
+    value = JsonObject.checkAndCopy(value, false);
     list.add(value);
     return this;
   }
@@ -580,7 +580,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   public JsonArray copy() {
     List<Object> copiedList = new ArrayList<>(list.size());
     for (Object val: list) {
-      val = Json.checkAndCopy(val, true);
+      val = JsonObject.checkAndCopy(val, true);
       copiedList.add(val);
     }
     return new JsonArray(copiedList);

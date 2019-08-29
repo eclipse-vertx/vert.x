@@ -15,6 +15,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
@@ -696,7 +697,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public JsonObject put(String key, Object value) {
     Objects.requireNonNull(key);
-    value = Json.checkAndCopy(value, false);
+    value = checkAndCopy(value, false);
     map.put(key, value);
     return this;
   }
@@ -816,7 +817,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     }
     for (Map.Entry<String, Object> entry: map.entrySet()) {
       Object val = entry.getValue();
-      val = Json.checkAndCopy(val, true);
+      val = checkAndCopy(val, true);
       copiedMap.put(entry.getKey(), val);
     }
     return new JsonObject(copiedMap);
@@ -1028,5 +1029,49 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     public Object setValue(Object value) {
       throw new UnsupportedOperationException();
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  static Object checkAndCopy(Object val, boolean copy) {
+    if (val == null) {
+      // OK
+    } else if (val instanceof Number && !(val instanceof BigDecimal)) {
+      // OK
+    } else if (val instanceof Boolean) {
+      // OK
+    } else if (val instanceof String) {
+      // OK
+    } else if (val instanceof Character) {
+      // OK
+    } else if (val instanceof CharSequence) {
+      val = val.toString();
+    } else if (val instanceof JsonObject) {
+      if (copy) {
+        val = ((JsonObject) val).copy();
+      }
+    } else if (val instanceof JsonArray) {
+      if (copy) {
+        val = ((JsonArray) val).copy();
+      }
+    } else if (val instanceof Map) {
+      if (copy) {
+        val = (new JsonObject((Map)val)).copy();
+      } else {
+        val = new JsonObject((Map)val);
+      }
+    } else if (val instanceof List) {
+      if (copy) {
+        val = (new JsonArray((List)val)).copy();
+      } else {
+        val = new JsonArray((List)val);
+      }
+    } else if (val instanceof byte[]) {
+      val = Base64.getEncoder().encodeToString((byte[])val);
+    } else if (val instanceof Instant) {
+      val = ISO_INSTANT.format((Instant) val);
+    } else {
+      throw new IllegalStateException("Illegal type in JsonObject: " + val.getClass());
+    }
+    return val;
   }
 }
