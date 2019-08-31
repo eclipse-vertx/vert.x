@@ -11,6 +11,9 @@
 
 package io.vertx.core.json.impl;
 
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
@@ -19,13 +22,14 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.JsonFactory;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JsonFactoryImpl implements JsonFactory {
+public class JacksonJsonFactory implements JsonFactory {
 
   @Override
   public <T> T fromValue(Object json, Class<T> clazz) {
@@ -38,7 +42,7 @@ public class JsonFactoryImpl implements JsonFactory {
 
   @Override
   public <T> T fromString(String str, Class<T> clazz) throws DecodeException {
-    T value = Json.decodeValue(str, clazz);
+    T value = fromString(str, Json.mapper.getTypeFactory().constructType(clazz));
     if (clazz == Object.class) {
       value = clazz.cast(adapt(value));
     }
@@ -46,24 +50,41 @@ public class JsonFactoryImpl implements JsonFactory {
   }
 
   @Override
-  public <T> T fromBuffer(Buffer json, Class<T> clazz) throws DecodeException {
-    T value = Json.decodeValue(json, clazz);
+  public <T> T fromBuffer(Buffer buf, Class<T> clazz) throws DecodeException {
+    T value = JacksonJsonFactory.fromBuffer(buf, Json.mapper.getTypeFactory().constructType(clazz));
     if (clazz == Object.class) {
       value = clazz.cast(adapt(value));
     }
     return value;
   }
 
-  @Override
-  public String toString(Object object, boolean pretty) throws EncodeException {
-    if (pretty) {
-      return Json.encodePrettily(object);
-    } else {
-      return Json.encode(object);
+  public static <T> T fromString(String str, JavaType type) throws DecodeException {
+    T value;
+    try {
+      value = Json.mapper.readValue(str, type);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
+    if (type.isJavaLangObject()) {
+      value = (T) adapt(value);
+    }
+    return value;
   }
 
-  private Object adapt(Object o) {
+  public static <T> T fromBuffer(Buffer buf, JavaType type) throws DecodeException {
+    T value;
+    try {
+      value = Json.mapper.readValue((InputStream) new ByteBufInputStream(buf.getByteBuf()), type);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+    if (type.isJavaLangObject()) {
+      value = (T) adapt(value);
+    }
+    return value;
+  }
+
+  private static Object adapt(Object o) {
     try {
       if (o instanceof List) {
         List list = (List) o;
@@ -79,12 +100,24 @@ public class JsonFactoryImpl implements JsonFactory {
     }
   }
 
+
+  @Override
+  public String toString(Object object, boolean pretty) throws EncodeException {
+    try {
+      ObjectMapper mapper = pretty ? Json.prettyMapper : Json.mapper;
+      return mapper.writeValueAsString(object);
+    } catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+    }
+  }
+
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
-    if (pretty) {
-      return Buffer.buffer(toString(object, pretty));
-    } else {
-      return Json.encodeToBuffer(object);
+    try {
+      ObjectMapper mapper = pretty ? Json.prettyMapper : Json.mapper;
+      return Buffer.buffer(mapper.writeValueAsBytes(object));
+    } catch (Exception e) {
+      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
   }
 }

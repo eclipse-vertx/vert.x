@@ -15,13 +15,10 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.impl.JacksonJsonFactory;
 
-import java.io.InputStream;
 import java.time.Instant;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -64,11 +61,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encode(Object obj) throws EncodeException {
-    try {
-      return mapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
-    }
+    return JacksonJsonFactory.factory.toString(obj);
   }
 
   /**
@@ -79,11 +72,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static Buffer encodeToBuffer(Object obj) throws EncodeException {
-    try {
-      return Buffer.buffer(mapper.writeValueAsBytes(obj));
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
-    }
+    return JacksonJsonFactory.factory.toBuffer(obj);
   }
 
   /**
@@ -94,11 +83,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encodePrettily(Object obj) throws EncodeException {
-    try {
-      return prettyMapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
-    }
+    return JacksonJsonFactory.factory.toString(obj, true);
   }
 
   /**
@@ -110,11 +95,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
-    try {
-      return mapper.readValue(str, clazz);
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode: " + e.getMessage());
-    }
+    return JacksonJsonFactory.fromString(str, mapper.getTypeFactory().constructType(clazz));
   }
 
   /**
@@ -126,20 +107,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static Object decodeValue(String str) throws DecodeException {
-    try {
-      Object value = mapper.readValue(str, Object.class);
-      if (value instanceof List) {
-        List list = (List) value;
-        return new JsonArray(list);
-      } else if (value instanceof Map) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) value;
-        return new JsonObject(map);
-      }
-      return value;
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode: " + e.getMessage());
-    }
+    return decodeValue(str, Object.class);
   }
 
   /**
@@ -151,11 +119,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
-    try {
-      return mapper.readValue(str, type);
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode: " + e.getMessage(), e);
-    }
+    return JacksonJsonFactory.fromString(str, mapper.getTypeFactory().constructType(type));
   }
 
   /**
@@ -167,20 +131,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static Object decodeValue(Buffer buf) throws DecodeException {
-    try {
-      Object value = decodeValue(buf, Object.class);
-      if (value instanceof List) {
-        List list = (List) value;
-        return new JsonArray(list);
-      } else if (value instanceof Map) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) value;
-        return new JsonObject(map);
-      }
-      return value;
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode: " + e.getMessage());
-    }
+    return decodeValue(buf, Object.class);
   }
 
   /**
@@ -192,11 +143,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
-    try {
-      return mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), type);
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    }
+    return JacksonJsonFactory.fromBuffer(buf, mapper.getTypeFactory().constructType(type));
   }
 
   /**
@@ -208,10 +155,6 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
-    try {
-      return mapper.readValue((InputStream) new ByteBufInputStream(buf.getByteBuf()), clazz);
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    }
+    return JacksonJsonFactory.fromBuffer(buf, mapper.getTypeFactory().constructType(clazz));
   }
 }
