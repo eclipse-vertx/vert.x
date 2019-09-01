@@ -363,10 +363,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   @Override
   public String query() {
     if (query == null) {
-      synchronized (conn) {
           query = path() == uri || queryStart == -1 ? null : queryStart > 0 && uri.length() > queryStart
             ? uri.substring(queryStart + 1) : HttpUtils.parseQuery(uri);
-      }
     }
     return query;
   }
@@ -409,9 +407,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   @Override
   public MultiMap params() {
      if (params == null) {
-       synchronized (conn) {
-           params = HttpUtils.params(query(), false);
-       }
+       params = HttpUtils.params(query(), false);
      }
      return params;
   }
