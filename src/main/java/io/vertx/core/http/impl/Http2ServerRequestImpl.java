@@ -344,7 +344,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   
   @Override
   public String path() {
-    if (path == null) {
+    if (path == null && uri != null) {
       synchronized (conn) {
           final Object o =  HttpUtils.parsePathAndQueryStartIf(uri);
           if (o instanceof Object[]) {
@@ -362,7 +362,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
 
   @Override
   public String query() {
-    if (query == null) {
+    if (query == null && uri != null) {
           query = path() == uri || queryStart == -1 ? null : queryStart > 0 && uri.length() > queryStart
             ? uri.substring(queryStart + 1) : HttpUtils.parseQuery(uri);
     }
