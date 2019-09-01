@@ -68,10 +68,9 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private final String serverOrigin;
   private final MultiMap headersMap;
   private final String scheme;
-  //add volatile for fix Double-Checked Locking
-  private volatile String path;
-  private volatile String query;
-  private volatile MultiMap params;
+  private String path;
+  private String query;
+  private MultiMap params;
   private String absoluteURI;
   private MultiMap attributes;
   private Object trace;
@@ -347,7 +346,6 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   public String path() {
     if (path == null) {
       synchronized (conn) {
-        if (path == null) {
           final Object o =  HttpUtils.parsePathAndQueryStartIf(uri);
           if (o instanceof Object[]) {
             final Object[] arr =  (Object[])o;
@@ -357,7 +355,6 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
             path = (String)o;
             queryStart = -1;
           }
-         }
        }
     }
     return path;
@@ -367,10 +364,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   public String query() {
     if (query == null) {
       synchronized (conn) {
-        if (query == null) {
           query = path() == uri || queryStart == -1 ? null : queryStart > 0 && uri.length() > queryStart
             ? uri.substring(queryStart + 1) : HttpUtils.parseQuery(uri);
-        }
       }
     }
     return query;
@@ -415,9 +410,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   public MultiMap params() {
      if (params == null) {
        synchronized (conn) {
-         if (params == null) {
            params = HttpUtils.params(query(), false);
-         }
        }
      }
      return params;
