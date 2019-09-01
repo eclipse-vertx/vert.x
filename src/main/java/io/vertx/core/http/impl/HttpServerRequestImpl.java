@@ -219,11 +219,20 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public io.vertx.core.http.HttpMethod method() {
     if (method == null) {
-      String sMethod = request.method().toString();
-      try {
-        method = io.vertx.core.http.HttpMethod.valueOf(sMethod);
-      } catch (IllegalArgumentException e) {
-        method = io.vertx.core.http.HttpMethod.OTHER;
+      final HttpMethod nettyHttpMethod = request.method();
+      if (io.netty.handler.codec.http.HttpMethod.GET == nettyHttpMethod) {
+        method = io.vertx.core.http.HttpMethod.GET;
+      } else if(io.netty.handler.codec.http.HttpMethod.POST == nettyHttpMethod) {
+        method = io.vertx.core.http.HttpMethod.POST;
+      } else if(io.netty.handler.codec.http.HttpMethod.HEAD == nettyHttpMethod) {
+        method = io.vertx.core.http.HttpMethod.HEAD;
+      }else {
+        String sMethod = nettyHttpMethod.toString();
+        try {
+          method = io.vertx.core.http.HttpMethod.valueOf(sMethod);
+        } catch (IllegalArgumentException e) {
+          method = io.vertx.core.http.HttpMethod.OTHER;
+        }
       }
     }
     return method;
