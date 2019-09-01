@@ -424,7 +424,15 @@ public final class HttpUtils {
   /**
    * Extract the path out of the uri.
    */
-  static String parsePath(String uri) {
+  static String parsePath(final String uri) {
+    final Object o = parsePathAndQueryStartIf(uri);
+    return (String) ( o instanceof Object[] ? ((Object[])o)[0] : o );
+  }
+
+  /**
+   * Extract the path out of the uri and queryStart
+   */
+  static Object parsePathAndQueryStartIf(final String uri) {
     int i;
     if (uri.charAt(0) == '/') {
       i = 0;
@@ -443,9 +451,12 @@ public final class HttpUtils {
 
     int queryStart = uri.indexOf('?', i);
     if (queryStart == -1) {
+      if (i == 0) {
+        return uri;
+      }
       queryStart = uri.length();
     }
-    return uri.substring(i, queryStart);
+    return new Object[] {uri.substring(i, queryStart), queryStart};
   }
 
   /**
@@ -478,10 +489,13 @@ public final class HttpUtils {
     return absoluteURI;
   }
 
-  static MultiMap params(String uri) {
-    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
+  static MultiMap params(final String uri, final boolean hasPath) {
+    final MultiMap params = new CaseInsensitiveHeaders();
+    if ( uri == null ) {
+      return params;
+    }
+    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri, hasPath);
     Map<String, List<String>> prms = queryStringDecoder.parameters();
-    MultiMap params = new CaseInsensitiveHeaders();
     if (!prms.isEmpty()) {
       for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
         params.add(entry.getKey(), entry.getValue());

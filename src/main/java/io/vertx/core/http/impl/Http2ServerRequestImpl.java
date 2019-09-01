@@ -68,9 +68,10 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private final String serverOrigin;
   private final MultiMap headersMap;
   private final String scheme;
-  private String path;
-  private String query;
-  private MultiMap params;
+  //add volatile for fix Double-Checked Locking
+  private volatile String path;
+  private volatile String query;
+  private volatile MultiMap params;
   private String absoluteURI;
   private MultiMap attributes;
   private Object trace;
@@ -90,6 +91,9 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private Handler<HttpFrame> customFrameHandler;
 
   private Handler<StreamPriority> streamPriorityHandler;
+
+  // cache parsePath queryStart for performance, so queryString and params no need parse path again
+  private transient int queryStart = 0;
 
   public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, Http2Stream stream, HttpServerMetrics metrics,
       String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
@@ -338,20 +342,38 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     return uri;
   }
 
+  
   @Override
   public String path() {
-    synchronized (conn) {
-      this.path = uri != null ? HttpUtils.parsePath(uri) : null;
-      return path;
+    if (path == null) {
+      synchronized (conn) {
+        if (path == null) {
+          final Object o =  HttpUtils.parsePathAndQueryStartIf(uri);
+          if (o instanceof Object[]) {
+            final Object[] arr =  (Object[])o;
+            path = (String)arr[0];
+            queryStart = (Integer)arr[1];
+          }else {
+            path = (String)o;
+            queryStart = -1;
+          }
+         }
+       }
     }
+    return path;
   }
 
   @Override
   public String query() {
-    synchronized (conn) {
-      this.query = uri != null ? HttpUtils.parseQuery(uri) : null;
-      return query;
+    if (query == null) {
+      synchronized (conn) {
+        if (query == null) {
+          query = path() == uri || queryStart == -1 ? null : queryStart > 0 && uri.length() > queryStart
+            ? uri.substring(queryStart + 1) : HttpUtils.parseQuery(uri);
+        }
+      }
     }
+    return query;
   }
 
   @Override
@@ -391,12 +413,14 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
 
   @Override
   public MultiMap params() {
-    synchronized (conn) {
-      if (params == null) {
-        params = HttpUtils.params(uri());
-      }
-      return params;
-    }
+     if (params == null) {
+       synchronized (conn) {
+         if (params == null) {
+           params = HttpUtils.params(query(), false);
+         }
+       }
+     }
+     return params;
   }
 
   @Override

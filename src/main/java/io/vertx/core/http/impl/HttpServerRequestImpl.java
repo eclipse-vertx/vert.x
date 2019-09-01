@@ -96,6 +96,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private Buffer body;
   private Promise<Buffer> bodyPromise;
 
+  // cache parsePath queryStart for performance
+  private transient int queryStart = 0;
+
   HttpServerRequestImpl(Http1xServerConnection conn, HttpRequest request) {
     this.conn = conn;
     this.context = conn.getContext().duplicate();
@@ -248,7 +251,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public String path() {
     if (path == null) {
-      path = HttpUtils.parsePath(uri());
+      final Object o =  HttpUtils.parsePathAndQueryStartIf(uri());
+      if (o instanceof Object[]) {
+        final Object[] arr =  (Object[])o;
+        path = (String)arr[0];
+        queryStart = (Integer)arr[1];
+      }else {
+        path = (String)o;
+      }
     }
     return path;
   }
@@ -256,7 +266,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public String query() {
     if (query == null) {
-      query = HttpUtils.parseQuery(uri());
+      query = path() == uri || queryStart == -1 ? null : queryStart > 0 && uri.length() > queryStart
+          ? uri.substring(queryStart + 1) : HttpUtils.parseQuery(uri);
     }
     return query;
   }
@@ -304,7 +315,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public MultiMap params() {
     if (params == null) {
-      params = HttpUtils.params(uri());
+      params = HttpUtils.params(query(),false) ;
     }
     return params;
   }

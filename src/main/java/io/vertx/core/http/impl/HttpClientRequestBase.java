@@ -20,6 +20,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.net.SocketAddress;
 
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -46,8 +47,16 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.server = server;
     this.host = host;
     this.port = port;
-    this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
-    this.query = HttpUtils.parseQuery(uri);
+    final Object o = uri.length() > 0 ? HttpUtils.parsePathAndQueryStartIf(uri) :  "";
+    if (o instanceof Object[]) {
+      final Object[] arr = (Object[])o;
+      this.path = (String)arr[0];
+      final int queryStart = (Integer)arr[1];
+      this.query = queryStart != -1 &&  uri.length() > queryStart ? uri.substring(queryStart + 1) : null;
+    } else {
+      this.path = (String)o;
+      this.query = null;
+    }
     this.ssl = ssl;
     this.responsePromise = Promise.promise();
   }
