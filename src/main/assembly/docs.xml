@@ -9,7 +9,7 @@
   <fileSets>
     <fileSet>
       <directory>${project.build.directory}/asciidoc</directory>
-      <outputDirectory>/</outputDirectory>
+      <outputDirectory>./</outputDirectory>
     </fileSet>
   </fileSets>
 </assembly>
