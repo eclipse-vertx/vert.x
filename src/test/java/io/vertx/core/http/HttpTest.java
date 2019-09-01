@@ -2244,10 +2244,10 @@ public abstract class HttpTest extends HttpTestBase {
     AtomicReference<Throwable> exception = new AtomicReference<>();
     // There is no server running, should fail to connect
     client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(exception::set))
-      .setTimeout(800)
+      .setTimeout(1500)
       .end();
 
-    vertx.setTimer(1500, id -> {
+    vertx.setTimer(3500, id -> {
       assertNotNull("Expected an exception to be set", exception.get());
       assertFalse("Expected to not end with timeout exception, but did: " + exception.get(), exception.get() instanceof TimeoutException);
       testComplete();
