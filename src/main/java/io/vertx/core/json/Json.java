@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.impl.JacksonJsonFactory;
+import io.vertx.core.spi.JsonFactory;
 
 import java.time.Instant;
 
@@ -61,7 +62,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encode(Object obj) throws EncodeException {
-    return JacksonJsonFactory.factory.toString(obj);
+    return JsonFactory.factory.toString(obj);
   }
 
   /**
@@ -72,7 +73,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static Buffer encodeToBuffer(Object obj) throws EncodeException {
-    return JacksonJsonFactory.factory.toBuffer(obj);
+    return JsonFactory.factory.toBuffer(obj);
   }
 
   /**
@@ -83,7 +84,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encodePrettily(Object obj) throws EncodeException {
-    return JacksonJsonFactory.factory.toString(obj, true);
+    return JsonFactory.factory.toString(obj, true);
   }
 
   /**
@@ -95,7 +96,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
-    return JacksonJsonFactory.fromString(str, mapper.getTypeFactory().constructType(clazz));
+    return JsonFactory.factory.fromString(str, clazz);
   }
 
   /**
@@ -155,6 +156,6 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
-    return JacksonJsonFactory.fromBuffer(buf, mapper.getTypeFactory().constructType(clazz));
+    return JsonFactory.factory.fromBuffer(buf, clazz);
   }
 }
