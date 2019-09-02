@@ -18,8 +18,10 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.impl.JacksonJsonFactory;
 import io.vertx.core.parsetools.JsonEvent;
 import io.vertx.core.parsetools.JsonEventType;
+import io.vertx.core.spi.JsonFactory;
 
 import java.time.Instant;
 import java.util.Base64;
@@ -101,7 +103,7 @@ public class JsonEventImpl implements JsonEvent {
         throw new DecodeException(e.getMessage());
       }
     } else {
-      return Json.decodeValue(String.valueOf(value), type);
+      return JsonFactory.factory.fromValue(value, type);
     }
   }
 
@@ -114,7 +116,7 @@ public class JsonEventImpl implements JsonEvent {
         throw new DecodeException(e.getMessage());
       }
     } else {
-      return Json.decodeValue(String.valueOf(value), type);
+      return JacksonJsonFactory.fromValue(value, type);
     }
   }
 
