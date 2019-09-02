@@ -21,7 +21,7 @@ import io.vertx.core.json.EncodeException;
  */
 public interface JsonFactory {
 
-  JsonFactory factory = ServiceHelper.loadFactory(JsonFactory.class);;
+  JsonFactory factory = ServiceHelper.loadFactory(JsonFactory.class);
 
   /**
    * Decode the provide {@code json} string to an object extending {@code clazz}.
