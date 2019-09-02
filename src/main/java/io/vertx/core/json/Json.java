@@ -11,49 +11,13 @@
 
 package io.vertx.core.json;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.impl.JacksonCodec;
 import io.vertx.core.spi.json.JsonCodec;
-
-import java.time.Instant;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Json {
-
-  public static ObjectMapper mapper = new ObjectMapper();
-  public static ObjectMapper prettyMapper = new ObjectMapper();
-
-  static {
-    initialize();
-  }
-
-  private static void initialize() {
-    // Non-standard JSON but we allow C style comments in our JSON
-    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
-    prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-
-    SimpleModule module = new SimpleModule();
-    // custom types
-    module.addSerializer(JsonObject.class, new JsonObjectSerializer());
-    module.addSerializer(JsonArray.class, new JsonArraySerializer());
-    // he have 2 extensions: RFC-7493
-    module.addSerializer(Instant.class, new InstantSerializer());
-    module.addDeserializer(Instant.class, new InstantDeserializer());
-    module.addSerializer(byte[].class, new ByteArraySerializer());
-    module.addDeserializer(byte[].class, new ByteArrayDeserializer());
-
-    mapper.registerModule(module);
-    prettyMapper.registerModule(module);
-  }
 
   /**
    * Encode a POJO to JSON using the underlying Jackson mapper.
@@ -113,18 +77,6 @@ public class Json {
   }
 
   /**
-   * Decode a given JSON string to a POJO of the given type.
-   * @param str the JSON string.
-   * @param type the type to map to.
-   * @param <T> the generic type.
-   * @return an instance of T
-   * @throws DecodeException when there is a parsing or invalid mapping.
-   */
-  public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
-    return JacksonCodec.fromString(str, type);
-  }
-
-  /**
    * Decode a given JSON buffer.
    *
    * @param buf the JSON buffer.
@@ -134,18 +86,6 @@ public class Json {
    */
   public static Object decodeValue(Buffer buf) throws DecodeException {
     return decodeValue(buf, Object.class);
-  }
-
-  /**
-   * Decode a given JSON buffer to a POJO of the given class type.
-   * @param buf the JSON buffer.
-   * @param type the type to map to.
-   * @param <T> the generic type.
-   * @return an instance of T
-   * @throws DecodeException when there is a parsing or invalid mapping.
-   */
-  public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
-    return JacksonCodec.fromBuffer(buf, type);
   }
 
   /**

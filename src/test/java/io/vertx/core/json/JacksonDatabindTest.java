@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.impl.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -31,22 +32,22 @@ public class JacksonDatabindTest extends VertxTestBase {
 
   @Test
   public void testGetSetMapper() {
-    ObjectMapper mapper = Json.mapper;
+    ObjectMapper mapper = JacksonCodec.mapper;
     assertNotNull(mapper);
     ObjectMapper newMapper = new ObjectMapper();
-    Json.mapper = newMapper;
-    assertSame(newMapper, Json.mapper);
-    Json.mapper = mapper;
+    JacksonCodec.mapper = newMapper;
+    assertSame(newMapper, JacksonCodec.mapper);
+    JacksonCodec.mapper = mapper;
   }
 
   @Test
   public void testGetSetPrettyMapper() {
-    ObjectMapper mapper = Json.prettyMapper;
+    ObjectMapper mapper = JacksonCodec.prettyMapper;
     assertNotNull(mapper);
     ObjectMapper newMapper = new ObjectMapper();
-    Json.prettyMapper = newMapper;
-    assertSame(newMapper, Json.prettyMapper);
-    Json.prettyMapper = mapper;
+    JacksonCodec.prettyMapper = newMapper;
+    assertSame(newMapper, JacksonCodec.prettyMapper);
+    JacksonCodec.prettyMapper = mapper;
   }
 
   @Test
@@ -57,12 +58,12 @@ public class JacksonDatabindTest extends VertxTestBase {
     String json = Json.encode(Collections.singletonList(original));
     List<Pojo> correct;
 
-    correct = Json.decodeValue(json, new TypeReference<List<Pojo>>() {});
+    correct = JacksonCodec.fromString(json, new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 
     // same must apply if instead of string we use a buffer
-    correct = Json.decodeValue(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
+    correct = JacksonCodec.fromBuffer(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 

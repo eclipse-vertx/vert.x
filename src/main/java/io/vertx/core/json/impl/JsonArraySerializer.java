@@ -1,8 +1,9 @@
-package io.vertx.core.json;
+package io.vertx.core.json.impl;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import io.vertx.core.json.JsonArray;
 
 import java.io.IOException;
 

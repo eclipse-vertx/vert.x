@@ -13,8 +13,8 @@ package io.vertx.benchmarks;
 
 import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.impl.JacksonCodec;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Scope;
@@ -47,7 +47,7 @@ public class JsonDecodeBenchmark extends BenchmarkBase {
 
   private Buffer loadJsonAsBuffer(URL url) {
     try {
-      Buffer encoded = new JsonObject(Json.mapper.readValue(url, Map.class)).toBuffer();
+      Buffer encoded = new JsonObject(JacksonCodec.mapper.readValue(url, Map.class)).toBuffer();
       return Buffer.buffer().appendInt(encoded.length()).appendBuffer(encoded);
     } catch (IOException e) {
       throw new RuntimeException(e);

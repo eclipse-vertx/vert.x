@@ -8,17 +8,20 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.json;
+package io.vertx.core.json.impl;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
+import java.time.Instant;
 
-class JsonObjectSerializer extends JsonSerializer<JsonObject> {
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+
+class InstantSerializer extends JsonSerializer<Instant> {
   @Override
-  public void serialize(JsonObject value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-    jgen.writeObject(value.getMap());
+  public void serialize(Instant value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+    jgen.writeString(ISO_INSTANT.format(value));
   }
 }

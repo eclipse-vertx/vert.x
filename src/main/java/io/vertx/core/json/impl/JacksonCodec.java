@@ -14,17 +14,19 @@ package io.vertx.core.json.impl;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.json.JsonCodec;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -33,9 +35,37 @@ import java.util.Map;
  */
 public class JacksonCodec implements JsonCodec {
 
+  public static ObjectMapper mapper = new ObjectMapper();
+  public static ObjectMapper prettyMapper = new ObjectMapper();
+
+  static {
+    initialize();
+  }
+
+  private static void initialize() {
+    // Non-standard JSON but we allow C style comments in our JSON
+    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+
+    prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
+
+    SimpleModule module = new SimpleModule();
+    // custom types
+    module.addSerializer(JsonObject.class, new JsonObjectSerializer());
+    module.addSerializer(JsonArray.class, new JsonArraySerializer());
+    // he have 2 extensions: RFC-7493
+    module.addSerializer(Instant.class, new InstantSerializer());
+    module.addDeserializer(Instant.class, new InstantDeserializer());
+    module.addSerializer(byte[].class, new ByteArraySerializer());
+    module.addDeserializer(byte[].class, new ByteArrayDeserializer());
+
+    mapper.registerModule(module);
+    prettyMapper.registerModule(module);
+  }
+
   @Override
   public <T> T fromValue(Object json, Class<T> clazz) {
-    T value = Json.mapper.convertValue(json, clazz);
+    T value = JacksonCodec.mapper.convertValue(json, clazz);
     if (clazz == Object.class) {
       value = (T) adapt(value);
     }
@@ -43,7 +73,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
   public static <T> T fromValue(Object json, TypeReference<T> type) {
-    T value = Json.mapper.convertValue(json, type);
+    T value = JacksonCodec.mapper.convertValue(json, type);
     if (type.getType() == Object.class) {
       value = (T) adapt(value);
     }
@@ -70,7 +100,7 @@ public class JacksonCodec implements JsonCodec {
 
   private static JsonParser createParser(Buffer buf) {
     try {
-      return Json.mapper.getFactory().createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
+      return JacksonCodec.mapper.getFactory().createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
     } catch (IOException e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
@@ -78,7 +108,7 @@ public class JacksonCodec implements JsonCodec {
 
   private static JsonParser createParser(String str) {
     try {
-      return Json.mapper.getFactory().createParser(str);
+      return JacksonCodec.mapper.getFactory().createParser(str);
     } catch (IOException e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
@@ -87,7 +117,7 @@ public class JacksonCodec implements JsonCodec {
   private static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
     T value;
     try {
-      value = Json.mapper.readValue(parser, type);
+      value = JacksonCodec.mapper.readValue(parser, type);
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     } finally {
@@ -102,7 +132,7 @@ public class JacksonCodec implements JsonCodec {
   private static <T> T fromParser(JsonParser parser, TypeReference<T> type) throws DecodeException {
     T value;
     try {
-      value = Json.mapper.readValue(parser, type);
+      value = JacksonCodec.mapper.readValue(parser, type);
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     } finally {
@@ -141,7 +171,7 @@ public class JacksonCodec implements JsonCodec {
   @Override
   public String toString(Object object, boolean pretty) throws EncodeException {
     try {
-      ObjectMapper mapper = pretty ? Json.prettyMapper : Json.mapper;
+      ObjectMapper mapper = pretty ? JacksonCodec.prettyMapper : JacksonCodec.mapper;
       return mapper.writeValueAsString(object);
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
@@ -151,7 +181,7 @@ public class JacksonCodec implements JsonCodec {
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
     try {
-      ObjectMapper mapper = pretty ? Json.prettyMapper : Json.mapper;
+      ObjectMapper mapper = pretty ? JacksonCodec.prettyMapper : JacksonCodec.mapper;
       return Buffer.buffer(mapper.writeValueAsBytes(object));
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());

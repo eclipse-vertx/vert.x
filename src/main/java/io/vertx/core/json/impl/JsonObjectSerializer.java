@@ -8,19 +8,18 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.json;
+package io.vertx.core.json.impl;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
-import java.util.Base64;
 
-class ByteArraySerializer extends JsonSerializer<byte[]> {
-
+class JsonObjectSerializer extends JsonSerializer<JsonObject> {
   @Override
-  public void serialize(byte[] value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-    jgen.writeString(Base64.getEncoder().encodeToString(value));
+  public void serialize(JsonObject value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
+    jgen.writeObject(value.getMap());
   }
 }

@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.json;
+package io.vertx.core.json.impl;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -17,19 +17,18 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 import java.io.IOException;
-import java.time.DateTimeException;
 import java.time.Instant;
+import java.util.Base64;
 
-import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+class ByteArrayDeserializer extends JsonDeserializer<byte[]> {
 
-class InstantDeserializer extends JsonDeserializer<Instant> {
   @Override
-  public Instant deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+  public byte[] deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
     String text = p.getText();
     try {
-      return Instant.from(ISO_INSTANT.parse(text));
-    } catch (DateTimeException e) {
-      throw new InvalidFormatException(p, "Expected an ISO 8601 formatted date time", text, Instant.class);
+      return Base64.getDecoder().decode(text);
+    } catch (IllegalArgumentException e) {
+      throw new InvalidFormatException(p, "Expected a base64 encoded byte array", text, Instant.class);
     }
   }
 }

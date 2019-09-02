@@ -22,9 +22,9 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.impl.JacksonCodec;
 import io.vertx.core.parsetools.JsonEvent;
 import io.vertx.core.parsetools.JsonEventType;
 import io.vertx.core.parsetools.JsonParser;
@@ -445,7 +445,7 @@ public class JsonParserImpl implements JsonParser {
 
     <T> T convert(Class<T> type) {
       try {
-        return Json.mapper.readValue(buffer, type);
+        return JacksonCodec.mapper.readValue(buffer, type);
       } catch (Exception e) {
         throw new DecodeException(e.getMessage(), e);
       }
