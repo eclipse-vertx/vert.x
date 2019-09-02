@@ -1,7 +1,7 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,18 +9,18 @@ import java.util.ServiceLoader;
 
 class JsonCodecMapper {
 
-  private static final Map<Class, JsonCodec> codecMap;
+  private static final Map<Class, JsonMapper> codecMap;
 
   static {
-    Map<Class, JsonCodec> map = new HashMap<>();
-    ServiceLoader<JsonCodec> codecServiceLoader = ServiceLoader.load(JsonCodec.class);
-    for (JsonCodec j : codecServiceLoader) {
+    Map<Class, JsonMapper> map = new HashMap<>();
+    ServiceLoader<JsonMapper> codecServiceLoader = ServiceLoader.load(JsonMapper.class);
+    for (JsonMapper j : codecServiceLoader) {
       map.put(j.getTargetClass(), j);
     }
     codecMap = map;
   }
 
-  private static <T> JsonCodec codec(Class<T> c) {
+  private static <T> JsonMapper codec(Class<T> c) {
     return codecMap.get(c);
   }
 
@@ -28,11 +28,11 @@ class JsonCodecMapper {
     if (json == null) {
       return null;
     }
-    JsonCodec<T, Object> codec = (JsonCodec<T, Object>) codecMap.get(c);
+    JsonMapper<T, Object> codec = (JsonMapper<T, Object>) codecMap.get(c);
     if (codec == null) {
       throw new IllegalStateException("Unable to find codec for class " + c.getName());
     }
-    return codec.decode(json);
+    return codec.deserialize(json);
   }
 
   public static <T> T decodeBuffer(Buffer value, Class<T> c) {
@@ -43,11 +43,11 @@ class JsonCodecMapper {
     if (value == null) {
       return null;
     }
-    JsonCodec<Object, Object> codec = (JsonCodec<Object, Object>) codecMap.get(value.getClass());
+    JsonMapper<Object, Object> codec = (JsonMapper<Object, Object>) codecMap.get(value.getClass());
     if (codec == null) {
       throw new IllegalStateException("Unable to find codec for class " + value.getClass().getName());
     }
-    return codec.encode(value);
+    return codec.serialize(value);
   }
 
   public static Buffer encodeBuffer(Object value) {

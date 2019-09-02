@@ -1,20 +1,20 @@
 package io.vertx.core.json.codecs;
 
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 import java.util.Objects;
 
 public class MyDoublePojo {
 
-  public static class MyDoublePojoJsonCodec implements JsonCodec<MyDoublePojo, Number> {
+  public static class MyDoublePojoJsonCodec implements JsonMapper<MyDoublePojo, Number> {
 
     @Override
-    public MyDoublePojo decode(Number value) throws IllegalArgumentException {
+    public MyDoublePojo deserialize(Number value) throws IllegalArgumentException {
       return new MyDoublePojo().setValue(value.doubleValue());
     }
 
     @Override
-    public Double encode(MyDoublePojo value) throws IllegalArgumentException {
+    public Double serialize(MyDoublePojo value) throws IllegalArgumentException {
       return value.getValue();
     }
 

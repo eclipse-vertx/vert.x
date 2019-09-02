@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.metrics.MetricsOptions}.
+ * Converter and mapper for {@link io.vertx.core.metrics.MetricsOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.metrics.MetricsOptions} original class using Vert.x codegen.
  */
-public class MetricsOptionsConverter implements JsonCodec<MetricsOptions, JsonObject> {
+public class MetricsOptionsConverter implements JsonMapper<MetricsOptions, JsonObject> {
 
   public static final MetricsOptionsConverter INSTANCE = new MetricsOptionsConverter();
 
-  @Override public JsonObject encode(MetricsOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(MetricsOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public MetricsOptions decode(JsonObject value) { return (value != null) ? new MetricsOptions(value) : null; }
+  @Override public MetricsOptions deserialize(JsonObject value) { return (value != null) ? new MetricsOptions(value) : null; }
 
   @Override public Class<MetricsOptions> getTargetClass() { return MetricsOptions.class; }
 

@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.tracing.TracingOptions}.
+ * Converter and mapper for {@link io.vertx.core.tracing.TracingOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.tracing.TracingOptions} original class using Vert.x codegen.
  */
-public class TracingOptionsConverter implements JsonCodec<TracingOptions, JsonObject> {
+public class TracingOptionsConverter implements JsonMapper<TracingOptions, JsonObject> {
 
   public static final TracingOptionsConverter INSTANCE = new TracingOptionsConverter();
 
-  @Override public JsonObject encode(TracingOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(TracingOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public TracingOptions decode(JsonObject value) { return (value != null) ? new TracingOptions(value) : null; }
+  @Override public TracingOptions deserialize(JsonObject value) { return (value != null) ? new TracingOptions(value) : null; }
 
   @Override public Class<TracingOptions> getTargetClass() { return TracingOptions.class; }
 

@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 /**
- * Converts {@code <T>} type to {@code <J>}.
+ * Converts {@code <J>} type to {@code <T>}.
  * <br/>
  * {@code <T>} can be any class or interface type, {@code <J>} can be one of the following:
  * <ul>
@@ -15,21 +15,21 @@ import io.vertx.core.json.JsonObject;
  *     <li>{@link Boolean}</li>
  * </ul>
  *
- * @param <T> the type decoded from Json
+ * @param <T> the type encoded to Json
  * @param <J> the json type
  */
-public interface JsonDecoder<T, J> {
+public interface JsonSerializer<T, J> {
 
   /**
-   * Decode {@code <J>} to {@code <T>}.
+   * Encode {@code <T>} to {@code <J>}.
    * <br/>
-   * The {@code json} will not be {@code null} and the implementation must not return {@code null}.
+   * The {@code value} will not be {@code null} and the implementation must not return {@code null}.
    *
-   * @param json the json value
-   * @return the decoded value
+   * @param value the value
+   * @return the encoded json value
    * @throws IllegalArgumentException when it cannot decode the value
    */
-  T decode(J json) throws IllegalArgumentException;
+  J serialize(T value) throws IllegalArgumentException;
 
   /**
    * @return the class for {@code <T>}

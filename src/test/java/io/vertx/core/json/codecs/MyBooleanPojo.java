@@ -1,20 +1,20 @@
 package io.vertx.core.json.codecs;
 
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 import java.util.Objects;
 
 public class MyBooleanPojo {
 
-  public static class MyBooleanPojoJsonCodec implements JsonCodec<MyBooleanPojo, Boolean> {
+  public static class MyBooleanPojoJsonCodec implements JsonMapper<MyBooleanPojo, Boolean> {
 
     @Override
-    public MyBooleanPojo decode(Boolean value) throws IllegalArgumentException {
+    public MyBooleanPojo deserialize(Boolean value) throws IllegalArgumentException {
       return new MyBooleanPojo().setValue(value);
     }
 
     @Override
-    public Boolean encode(MyBooleanPojo value) throws IllegalArgumentException {
+    public Boolean serialize(MyBooleanPojo value) throws IllegalArgumentException {
       return value.isValue();
     }
 

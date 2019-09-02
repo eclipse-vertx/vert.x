@@ -4,17 +4,17 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonDecoder;
+import io.vertx.core.spi.json.JsonDeserializer;
 
 /**
- * Converter and Codec for {@link io.vertx.core.file.OpenOptions}.
+ * Converter and mapper for {@link io.vertx.core.file.OpenOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.file.OpenOptions} original class using Vert.x codegen.
  */
-public class OpenOptionsConverter implements JsonDecoder<OpenOptions, JsonObject> {
+public class OpenOptionsConverter implements JsonDeserializer<OpenOptions, JsonObject> {
 
   public static final OpenOptionsConverter INSTANCE = new OpenOptionsConverter();
 
-  @Override public OpenOptions decode(JsonObject value) { return (value != null) ? new OpenOptions(value) : null; }
+  @Override public OpenOptions deserialize(JsonObject value) { return (value != null) ? new OpenOptions(value) : null; }
 
   @Override public Class<OpenOptions> getTargetClass() { return OpenOptions.class; }
 

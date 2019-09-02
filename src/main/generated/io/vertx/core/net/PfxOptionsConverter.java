@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.net.PfxOptions}.
+ * Converter and mapper for {@link io.vertx.core.net.PfxOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.PfxOptions} original class using Vert.x codegen.
  */
-public class PfxOptionsConverter implements JsonCodec<PfxOptions, JsonObject> {
+public class PfxOptionsConverter implements JsonMapper<PfxOptions, JsonObject> {
 
   public static final PfxOptionsConverter INSTANCE = new PfxOptionsConverter();
 
-  @Override public JsonObject encode(PfxOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(PfxOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public PfxOptions decode(JsonObject value) { return (value != null) ? new PfxOptions(value) : null; }
+  @Override public PfxOptions deserialize(JsonObject value) { return (value != null) ? new PfxOptions(value) : null; }
 
   @Override public Class<PfxOptions> getTargetClass() { return PfxOptions.class; }
 

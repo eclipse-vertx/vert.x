@@ -1,20 +1,20 @@
 package io.vertx.core.json.codecs;
 
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 import java.util.Objects;
 
 public class MyLongPojo {
 
-  public static class MyLongPojoJsonCodec implements JsonCodec<MyLongPojo, Number> {
+  public static class MyLongPojoJsonCodec implements JsonMapper<MyLongPojo, Number> {
 
     @Override
-    public MyLongPojo decode(Number value) throws IllegalArgumentException {
+    public MyLongPojo deserialize(Number value) throws IllegalArgumentException {
       return new MyLongPojo().setValue(value.longValue());
     }
 
     @Override
-    public Long encode(MyLongPojo value) throws IllegalArgumentException {
+    public Long serialize(MyLongPojo value) throws IllegalArgumentException {
       return value.getValue();
     }
 

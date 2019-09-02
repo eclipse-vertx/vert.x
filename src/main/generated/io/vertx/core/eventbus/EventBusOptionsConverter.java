@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.eventbus.EventBusOptions}.
+ * Converter and mapper for {@link io.vertx.core.eventbus.EventBusOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.eventbus.EventBusOptions} original class using Vert.x codegen.
  */
-public class EventBusOptionsConverter implements JsonCodec<EventBusOptions, JsonObject> {
+public class EventBusOptionsConverter implements JsonMapper<EventBusOptions, JsonObject> {
 
   public static final EventBusOptionsConverter INSTANCE = new EventBusOptionsConverter();
 
-  @Override public JsonObject encode(EventBusOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(EventBusOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public EventBusOptions decode(JsonObject value) { return (value != null) ? new EventBusOptions(value) : null; }
+  @Override public EventBusOptions deserialize(JsonObject value) { return (value != null) ? new EventBusOptions(value) : null; }
 
   @Override public Class<EventBusOptions> getTargetClass() { return EventBusOptions.class; }
 

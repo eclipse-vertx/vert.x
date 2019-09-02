@@ -21,5 +21,5 @@ import io.vertx.core.json.JsonObject;
  * @param <T> the type encoded to Json
  * @param <J> the json type
  */
-public interface JsonCodec<T, J> extends JsonEncoder<T, J>, JsonDecoder<T, J> {
+public interface JsonMapper<T, J> extends JsonSerializer<T, J>, JsonDeserializer<T, J> {
 }

@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.cli.Argument}.
+ * Converter and mapper for {@link io.vertx.core.cli.Argument}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.cli.Argument} original class using Vert.x codegen.
  */
-public class ArgumentConverter implements JsonCodec<Argument, JsonObject> {
+public class ArgumentConverter implements JsonMapper<Argument, JsonObject> {
 
   public static final ArgumentConverter INSTANCE = new ArgumentConverter();
 
-  @Override public JsonObject encode(Argument value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(Argument value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public Argument decode(JsonObject value) { return (value != null) ? new Argument(value) : null; }
+  @Override public Argument deserialize(JsonObject value) { return (value != null) ? new Argument(value) : null; }
 
   @Override public Class<Argument> getTargetClass() { return Argument.class; }
 

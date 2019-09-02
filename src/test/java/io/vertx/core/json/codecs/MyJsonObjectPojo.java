@@ -1,21 +1,21 @@
 package io.vertx.core.json.codecs;
 
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
 
 public class MyJsonObjectPojo {
 
-  public static class MyJsonObjectPojoJsonCodec implements JsonCodec<MyJsonObjectPojo, JsonObject> {
+  public static class MyJsonObjectPojoJsonCodec implements JsonMapper<MyJsonObjectPojo, JsonObject> {
 
     @Override
-    public MyJsonObjectPojo decode(JsonObject value) throws IllegalArgumentException {
+    public MyJsonObjectPojo deserialize(JsonObject value) throws IllegalArgumentException {
       return new MyJsonObjectPojo().setValue(value);
     }
 
     @Override
-    public JsonObject encode(MyJsonObjectPojo value) throws IllegalArgumentException {
+    public JsonObject serialize(MyJsonObjectPojo value) throws IllegalArgumentException {
       return value.getValue();
     }
 

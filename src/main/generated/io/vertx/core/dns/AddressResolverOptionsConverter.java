@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.dns.AddressResolverOptions}.
+ * Converter and mapper for {@link io.vertx.core.dns.AddressResolverOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.dns.AddressResolverOptions} original class using Vert.x codegen.
  */
-public class AddressResolverOptionsConverter implements JsonCodec<AddressResolverOptions, JsonObject> {
+public class AddressResolverOptionsConverter implements JsonMapper<AddressResolverOptions, JsonObject> {
 
   public static final AddressResolverOptionsConverter INSTANCE = new AddressResolverOptionsConverter();
 
-  @Override public JsonObject encode(AddressResolverOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(AddressResolverOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public AddressResolverOptions decode(JsonObject value) { return (value != null) ? new AddressResolverOptions(value) : null; }
+  @Override public AddressResolverOptions deserialize(JsonObject value) { return (value != null) ? new AddressResolverOptions(value) : null; }
 
   @Override public Class<AddressResolverOptions> getTargetClass() { return AddressResolverOptions.class; }
 

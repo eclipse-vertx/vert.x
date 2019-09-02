@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.net.NetClientOptions}.
+ * Converter and mapper for {@link io.vertx.core.net.NetClientOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.NetClientOptions} original class using Vert.x codegen.
  */
-public class NetClientOptionsConverter implements JsonCodec<NetClientOptions, JsonObject> {
+public class NetClientOptionsConverter implements JsonMapper<NetClientOptions, JsonObject> {
 
   public static final NetClientOptionsConverter INSTANCE = new NetClientOptionsConverter();
 
-  @Override public JsonObject encode(NetClientOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(NetClientOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public NetClientOptions decode(JsonObject value) { return (value != null) ? new NetClientOptions(value) : null; }
+  @Override public NetClientOptions deserialize(JsonObject value) { return (value != null) ? new NetClientOptions(value) : null; }
 
   @Override public Class<NetClientOptions> getTargetClass() { return NetClientOptions.class; }
 

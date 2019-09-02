@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.dns.DnsClientOptions}.
+ * Converter and mapper for {@link io.vertx.core.dns.DnsClientOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.dns.DnsClientOptions} original class using Vert.x codegen.
  */
-public class DnsClientOptionsConverter implements JsonCodec<DnsClientOptions, JsonObject> {
+public class DnsClientOptionsConverter implements JsonMapper<DnsClientOptions, JsonObject> {
 
   public static final DnsClientOptionsConverter INSTANCE = new DnsClientOptionsConverter();
 
-  @Override public JsonObject encode(DnsClientOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(DnsClientOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public DnsClientOptions decode(JsonObject value) { return (value != null) ? new DnsClientOptions(value) : null; }
+  @Override public DnsClientOptions deserialize(JsonObject value) { return (value != null) ? new DnsClientOptions(value) : null; }
 
   @Override public Class<DnsClientOptions> getTargetClass() { return DnsClientOptions.class; }
 

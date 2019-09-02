@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.http.WebSocketConnectOptions}.
+ * Converter and mapper for {@link io.vertx.core.http.WebSocketConnectOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.WebSocketConnectOptions} original class using Vert.x codegen.
  */
-public class WebSocketConnectOptionsConverter implements JsonCodec<WebSocketConnectOptions, JsonObject> {
+public class WebSocketConnectOptionsConverter implements JsonMapper<WebSocketConnectOptions, JsonObject> {
 
   public static final WebSocketConnectOptionsConverter INSTANCE = new WebSocketConnectOptionsConverter();
 
-  @Override public JsonObject encode(WebSocketConnectOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(WebSocketConnectOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public WebSocketConnectOptions decode(JsonObject value) { return (value != null) ? new WebSocketConnectOptions(value) : null; }
+  @Override public WebSocketConnectOptions deserialize(JsonObject value) { return (value != null) ? new WebSocketConnectOptions(value) : null; }
 
   @Override public Class<WebSocketConnectOptions> getTargetClass() { return WebSocketConnectOptions.class; }
 

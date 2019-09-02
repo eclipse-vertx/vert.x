@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.DeploymentOptions}.
+ * Converter and mapper for {@link io.vertx.core.DeploymentOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.DeploymentOptions} original class using Vert.x codegen.
  */
-public class DeploymentOptionsConverter implements JsonCodec<DeploymentOptions, JsonObject> {
+public class DeploymentOptionsConverter implements JsonMapper<DeploymentOptions, JsonObject> {
 
   public static final DeploymentOptionsConverter INSTANCE = new DeploymentOptionsConverter();
 
-  @Override public JsonObject encode(DeploymentOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(DeploymentOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public DeploymentOptions decode(JsonObject value) { return (value != null) ? new DeploymentOptions(value) : null; }
+  @Override public DeploymentOptions deserialize(JsonObject value) { return (value != null) ? new DeploymentOptions(value) : null; }
 
   @Override public Class<DeploymentOptions> getTargetClass() { return DeploymentOptions.class; }
 

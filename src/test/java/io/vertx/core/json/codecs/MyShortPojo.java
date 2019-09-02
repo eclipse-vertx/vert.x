@@ -1,20 +1,20 @@
 package io.vertx.core.json.codecs;
 
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 import java.util.Objects;
 
 public class MyShortPojo {
 
-  public static class MyShortPojoJsonCodec implements JsonCodec<MyShortPojo, Number> {
+  public static class MyShortPojoJsonCodec implements JsonMapper<MyShortPojo, Number> {
 
     @Override
-    public MyShortPojo decode(Number value) throws IllegalArgumentException {
+    public MyShortPojo deserialize(Number value) throws IllegalArgumentException {
       return new MyShortPojo().setValue(value.shortValue());
     }
 
     @Override
-    public Short encode(MyShortPojo value) throws IllegalArgumentException {
+    public Short serialize(MyShortPojo value) throws IllegalArgumentException {
       return value.getValue();
     }
 

@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.http.RequestOptions}.
+ * Converter and mapper for {@link io.vertx.core.http.RequestOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.RequestOptions} original class using Vert.x codegen.
  */
-public class RequestOptionsConverter implements JsonCodec<RequestOptions, JsonObject> {
+public class RequestOptionsConverter implements JsonMapper<RequestOptions, JsonObject> {
 
   public static final RequestOptionsConverter INSTANCE = new RequestOptionsConverter();
 
-  @Override public JsonObject encode(RequestOptions value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(RequestOptions value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public RequestOptions decode(JsonObject value) { return (value != null) ? new RequestOptions(value) : null; }
+  @Override public RequestOptions deserialize(JsonObject value) { return (value != null) ? new RequestOptions(value) : null; }
 
   @Override public Class<RequestOptions> getTargetClass() { return RequestOptions.class; }
 

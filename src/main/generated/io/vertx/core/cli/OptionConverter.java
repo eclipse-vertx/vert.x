@@ -4,19 +4,19 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonCodec;
+import io.vertx.core.spi.json.JsonMapper;
 
 /**
- * Converter and Codec for {@link io.vertx.core.cli.Option}.
+ * Converter and mapper for {@link io.vertx.core.cli.Option}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.cli.Option} original class using Vert.x codegen.
  */
-public class OptionConverter implements JsonCodec<Option, JsonObject> {
+public class OptionConverter implements JsonMapper<Option, JsonObject> {
 
   public static final OptionConverter INSTANCE = new OptionConverter();
 
-  @Override public JsonObject encode(Option value) { return (value != null) ? value.toJson() : null; }
+  @Override public JsonObject serialize(Option value) { return (value != null) ? value.toJson() : null; }
 
-  @Override public Option decode(JsonObject value) { return (value != null) ? new Option(value) : null; }
+  @Override public Option deserialize(JsonObject value) { return (value != null) ? new Option(value) : null; }
 
   @Override public Class<Option> getTargetClass() { return Option.class; }
 
