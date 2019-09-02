@@ -21,7 +21,7 @@ import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.JsonFactory;
+import io.vertx.core.spi.json.JsonMapper;
 
 import java.io.InputStream;
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JacksonJsonFactory implements JsonFactory {
+public class JacksonMapper implements JsonMapper {
 
   @Override
   public <T> T fromValue(Object json, Class<T> clazz) {

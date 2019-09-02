@@ -16,8 +16,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.impl.JacksonJsonFactory;
-import io.vertx.core.spi.JsonFactory;
+import io.vertx.core.json.impl.JacksonMapper;
+import io.vertx.core.spi.json.JsonMapper;
 
 import java.time.Instant;
 
@@ -62,7 +62,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encode(Object obj) throws EncodeException {
-    return JsonFactory.factory.toString(obj);
+    return JsonMapper.INSTANCE.toString(obj);
   }
 
   /**
@@ -73,7 +73,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static Buffer encodeToBuffer(Object obj) throws EncodeException {
-    return JsonFactory.factory.toBuffer(obj);
+    return JsonMapper.INSTANCE.toBuffer(obj);
   }
 
   /**
@@ -84,7 +84,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encodePrettily(Object obj) throws EncodeException {
-    return JsonFactory.factory.toString(obj, true);
+    return JsonMapper.INSTANCE.toString(obj, true);
   }
 
   /**
@@ -96,7 +96,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
-    return JsonFactory.factory.fromString(str, clazz);
+    return JsonMapper.INSTANCE.fromString(str, clazz);
   }
 
   /**
@@ -120,7 +120,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
-    return JacksonJsonFactory.fromString(str, mapper.getTypeFactory().constructType(type));
+    return JacksonMapper.fromString(str, mapper.getTypeFactory().constructType(type));
   }
 
   /**
@@ -144,7 +144,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
-    return JacksonJsonFactory.fromBuffer(buf, mapper.getTypeFactory().constructType(type));
+    return JacksonMapper.fromBuffer(buf, mapper.getTypeFactory().constructType(type));
   }
 
   /**
@@ -156,6 +156,6 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
-    return JsonFactory.factory.fromBuffer(buf, clazz);
+    return JsonMapper.INSTANCE.fromBuffer(buf, clazz);
   }
 }

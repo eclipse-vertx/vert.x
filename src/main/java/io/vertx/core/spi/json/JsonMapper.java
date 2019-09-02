@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi;
+package io.vertx.core.spi.json;
 
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.buffer.Buffer;
@@ -19,9 +19,9 @@ import io.vertx.core.json.EncodeException;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface JsonFactory {
+public interface JsonMapper {
 
-  JsonFactory factory = ServiceHelper.loadFactory(JsonFactory.class);
+  JsonMapper INSTANCE = ServiceHelper.loadFactory(JsonMapper.class);
 
   /**
    * Decode the provide {@code json} string to an object extending {@code clazz}.
