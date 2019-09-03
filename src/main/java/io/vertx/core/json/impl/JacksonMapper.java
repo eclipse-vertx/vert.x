@@ -12,7 +12,6 @@
 package io.vertx.core.json.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
@@ -34,52 +33,70 @@ public class JacksonMapper implements JsonMapper {
 
   @Override
   public <T> T fromValue(Object json, Class<T> clazz) {
-    return fromValue(json, Json.mapper.getTypeFactory().constructType(clazz));
-  }
-
-  @Override
-  public <T> T fromString(String str, Class<T> clazz) throws DecodeException {
-    return fromString(str, Json.mapper.getTypeFactory().constructType(clazz));
-  }
-
-  @Override
-  public <T> T fromBuffer(Buffer buf, Class<T> clazz) throws DecodeException {
-    return fromBuffer(buf, Json.mapper.getTypeFactory().constructType(clazz));
-  }
-
-  public static <T> T fromString(String str, JavaType type) throws DecodeException {
-    T value;
-    try {
-      value = Json.mapper.readValue(str, type);
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    }
-    if (type.isJavaLangObject()) {
-      value = (T) adapt(value);
-    }
-    return value;
-  }
-
-  public static <T> T fromBuffer(Buffer buf, JavaType type) throws DecodeException {
-    T value;
-    try {
-      value = Json.mapper.readValue((InputStream) new ByteBufInputStream(buf.getByteBuf()), type);
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    }
-    if (type.isJavaLangObject()) {
+    T value = Json.mapper.convertValue(json, clazz);
+    if (clazz == Object.class) {
       value = (T) adapt(value);
     }
     return value;
   }
 
   public static <T> T fromValue(Object json, TypeReference<T> type) {
-    return fromValue(json, Json.mapper.getTypeFactory().constructType(type));
+    T value = Json.mapper.convertValue(json, type);
+    if (type.getType() == Object.class) {
+      value = (T) adapt(value);
+    }
+    return value;
   }
 
-  public static <T> T fromValue(Object json, JavaType type) {
-    T value = Json.mapper.convertValue(json, type);
-    if (type.isJavaLangObject()) {
+  @Override
+  public <T> T fromString(String str, Class<T> clazz) throws DecodeException {
+    T value;
+    try {
+      value = Json.mapper.readValue(str, clazz);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+    if (clazz == Object.class) {
+      value = (T) adapt(value);
+    }
+    return value;
+  }
+
+  public static <T> T fromString(String str, TypeReference<T> type) throws DecodeException {
+    T value;
+    try {
+      value = Json.mapper.readValue(str, type);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+    if (type.getType() == Object.class) {
+      value = (T) adapt(value);
+    }
+    return value;
+  }
+
+  @Override
+  public <T> T fromBuffer(Buffer buf, Class<T> clazz) throws DecodeException {
+    T value;
+    try {
+      value = Json.mapper.readValue((InputStream) new ByteBufInputStream(buf.getByteBuf()), clazz);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+    if (clazz == Object.class) {
+      value = (T) adapt(value);
+    }
+    return value;
+  }
+
+  public static <T> T fromBuffer(Buffer buf, TypeReference<T> type) throws DecodeException {
+    T value;
+    try {
+      value = Json.mapper.readValue(new ByteBufInputStream(buf.getByteBuf()), type);
+    } catch (Exception e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+    if (type.getType() == Object.class) {
       value = (T) adapt(value);
     }
     return value;

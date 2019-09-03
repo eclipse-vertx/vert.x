@@ -13,7 +13,8 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.impl.JacksonMapper;
@@ -120,7 +121,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
-    return JacksonMapper.fromString(str, mapper.getTypeFactory().constructType(type));
+    return JacksonMapper.fromString(str, type);
   }
 
   /**
@@ -144,7 +145,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
-    return JacksonMapper.fromBuffer(buf, mapper.getTypeFactory().constructType(type));
+    return JacksonMapper.fromBuffer(buf, type);
   }
 
   /**
