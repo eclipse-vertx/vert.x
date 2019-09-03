@@ -444,11 +444,7 @@ public class JsonParserImpl implements JsonParser {
     }
 
     <T> T convert(Class<T> type) {
-      try {
-        return JacksonCodec.mapper.readValue(buffer, type);
-      } catch (Exception e) {
-        throw new DecodeException(e.getMessage(), e);
-      }
+      return JacksonCodec.fromParser(buffer, type);
     }
   }
 

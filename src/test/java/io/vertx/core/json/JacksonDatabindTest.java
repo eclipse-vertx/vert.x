@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.impl.JacksonCodec;
+import io.vertx.core.json.impl.DatabindCodec;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -30,24 +30,26 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JacksonDatabindTest extends VertxTestBase {
 
+  private DatabindCodec mapper = new DatabindCodec();
+
   @Test
   public void testGetSetMapper() {
-    ObjectMapper mapper = JacksonCodec.mapper;
+    ObjectMapper mapper = DatabindCodec.mapper;
     assertNotNull(mapper);
     ObjectMapper newMapper = new ObjectMapper();
-    JacksonCodec.mapper = newMapper;
-    assertSame(newMapper, JacksonCodec.mapper);
-    JacksonCodec.mapper = mapper;
+    DatabindCodec.mapper = newMapper;
+    assertSame(newMapper, DatabindCodec.mapper);
+    DatabindCodec.mapper = mapper;
   }
 
   @Test
   public void testGetSetPrettyMapper() {
-    ObjectMapper mapper = JacksonCodec.prettyMapper;
+    ObjectMapper mapper = DatabindCodec.prettyMapper;
     assertNotNull(mapper);
     ObjectMapper newMapper = new ObjectMapper();
-    JacksonCodec.prettyMapper = newMapper;
-    assertSame(newMapper, JacksonCodec.prettyMapper);
-    JacksonCodec.prettyMapper = mapper;
+    DatabindCodec.prettyMapper = newMapper;
+    assertSame(newMapper, DatabindCodec.prettyMapper);
+    DatabindCodec.prettyMapper = mapper;
   }
 
   @Test
@@ -58,12 +60,12 @@ public class JacksonDatabindTest extends VertxTestBase {
     String json = Json.encode(Collections.singletonList(original));
     List<Pojo> correct;
 
-    correct = JacksonCodec.fromString(json, new TypeReference<List<Pojo>>() {});
+    correct = mapper.fromString(json, new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 
     // same must apply if instead of string we use a buffer
-    correct = JacksonCodec.fromBuffer(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
+    correct = mapper.fromBuffer(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 

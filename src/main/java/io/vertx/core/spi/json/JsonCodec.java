@@ -11,17 +11,17 @@
 
 package io.vertx.core.spi.json;
 
-import io.vertx.core.ServiceHelper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
+import io.vertx.core.spi.JsonFactory;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface JsonCodec {
 
-  JsonCodec INSTANCE = ServiceHelper.loadFactory(JsonCodec.class);
+  JsonCodec INSTANCE = JsonFactory.INSTANCE.codec();
 
   /**
    * Decode the provide {@code json} string to an object extending {@code clazz}.

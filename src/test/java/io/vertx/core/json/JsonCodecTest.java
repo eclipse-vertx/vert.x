@@ -13,9 +13,12 @@ package io.vertx.core.json;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.json.impl.DatabindCodec;
 import io.vertx.core.json.impl.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -26,6 +29,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.assertArrayEquals;
@@ -35,6 +39,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@RunWith(Parameterized.class)
 public class JsonCodecTest {
 
   private static final TypeReference<Integer> INTEGER_TYPE_REF = new TypeReference<Integer>() {};
@@ -45,6 +50,19 @@ public class JsonCodecTest {
   private static final TypeReference<Map<String, Object>> MAP_TYPE_REF = new TypeReference<Map<String, Object>>() {};
   private static final TypeReference<List<Object>> LIST_TYPE_REF = new TypeReference<List<Object>>() {};
   private static final TypeReference<Boolean> BOOLEAN_TYPE_REF = new TypeReference<Boolean>() {};
+
+  @Parameterized.Parameters
+  public static Collection<Object[]> mappers() {
+    return Arrays.asList(new Object[][] {
+      { new DatabindCodec() }, { new JacksonCodec() }
+    });
+  }
+
+  private final JacksonCodec mapper;
+
+  public JsonCodecTest(JacksonCodec mapper) {
+    this.mapper = mapper;
+  }
 
   @Test
   public void testEncodeJsonObject() {
@@ -66,7 +84,7 @@ public class JsonCodecTest {
     String strBytes = Base64.getEncoder().encodeToString(bytes);
     String expected = "{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
-    String json = jsonObject.encode();
+    String json = mapper.toString(jsonObject);
     assertEquals(expected, json);
   }
 
@@ -86,7 +104,7 @@ public class JsonCodecTest {
     jsonArray.add(new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
     String expected = "[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
-    String json = jsonArray.encode();
+    String json = mapper.toString(jsonArray);
     assertEquals(expected, json);
   }
 
@@ -112,7 +130,7 @@ public class JsonCodecTest {
     Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
 
-    Buffer json = jsonObject.toBuffer();
+    Buffer json = mapper.toBuffer(jsonObject);
     assertArrayEquals(expected.getBytes(), json.getBytes());
   }
 
@@ -132,7 +150,7 @@ public class JsonCodecTest {
     jsonArray.add(new JsonArray().add("foo").add(123));
     String strBytes = Base64.getEncoder().encodeToString(bytes);
     Buffer expected = Buffer.buffer("[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]", "UTF-8");
-    Buffer json = jsonArray.toBuffer();
+    Buffer json = mapper.toBuffer(jsonArray);
     assertArrayEquals(expected.getBytes(), json.getBytes());
   }
 
@@ -168,7 +186,7 @@ public class JsonCodecTest {
       "  }," + Utils.LINE_SEPARATOR +
       "  \"myarr\" : [ \"foo\", 123 ]" + Utils.LINE_SEPARATOR +
       "}";
-    String json = jsonObject.encodePrettily();
+    String json = mapper.toString(jsonObject, true);
     assertEquals(expected, json);
   }
 
@@ -190,7 +208,7 @@ public class JsonCodecTest {
     String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", null, {" + Utils.LINE_SEPARATOR +
       "  \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
       "}, [ \"foo\", 123 ] ]";
-    String json = jsonArray.encodePrettily();
+    String json = mapper.toString(jsonArray, true);
     assertEquals(expected, json);
   }
 
@@ -202,8 +220,8 @@ public class JsonCodecTest {
     String strInstant = ISO_INSTANT.format(now);
     String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
-    JsonObject obj = new JsonObject(json);
-    assertEquals(json, obj.encode());
+    JsonObject obj = new JsonObject(mapper.fromString(json, Map.class));
+    assertEquals(json, mapper.toString(obj));
     assertEquals("foo", obj.getString("mystr"));
     assertEquals(Integer.valueOf(123), obj.getInteger("myint"));
     assertEquals(Long.valueOf(1234), obj.getLong("mylong"));
@@ -229,7 +247,7 @@ public class JsonCodecTest {
     Instant now = Instant.now();
     String strInstant = ISO_INSTANT.format(now);
     String json = "[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",\"" + strInstant + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
-    JsonArray arr = new JsonArray(json);
+    JsonArray arr = new JsonArray(mapper.fromString(json, List.class));
     assertEquals("foo", arr.getString(0));
     assertEquals(Integer.valueOf(123), arr.getInteger(1));
     assertEquals(Long.valueOf(1234l), arr.getLong(2));
@@ -266,7 +284,7 @@ public class JsonCodecTest {
         "*/\n" +
         "}";
     JsonObject json = new JsonObject(jsonWithComments);
-    assertEquals("{\"foo\":\"bar\"}", json.encode());
+    assertEquals("{\"foo\":\"bar\"}", mapper.toString(json));
   }
 
   // Strict JSON doesn't allow comments but we do so users can add comments to config files etc
@@ -287,7 +305,7 @@ public class JsonCodecTest {
         "*/\n" +
         "]";
     JsonArray json = new JsonArray(jsonWithComments);
-    assertEquals("[\"foo\",\"bar\"]", json.encode());
+    assertEquals("[\"foo\",\"bar\"]", mapper.toString(json));
   }
 
   @Test
@@ -325,7 +343,7 @@ public class JsonCodecTest {
   @Test
   public void encodeCustomTypeInstant() {
     Instant now = Instant.now();
-    String json = Json.encode(now);
+    String json = mapper.toString(now);
     assertNotNull(json);
     // the RFC is one way only
     Instant decoded = Instant.from(ISO_INSTANT.parse(json.substring(1, json.length() - 1)));
@@ -336,7 +354,7 @@ public class JsonCodecTest {
   @Test
   public void encodeCustomTypeBinary() {
     byte[] data = new byte[] { 'h', 'e', 'l', 'l', 'o'};
-    String json = Json.encode(data);
+    String json = mapper.toString(data);
     assertNotNull(json);
     // base64 encoded hello
     assertEquals("\"aGVsbG8=\"", json);
@@ -344,14 +362,14 @@ public class JsonCodecTest {
 
   @Test
   public void encodeNull() {
-    String json = Json.encode(null);
+    String json = mapper.toString(null);
     assertNotNull(json);
     assertEquals("null", json);
   }
 
   @Test
   public void encodeToBuffer() {
-    Buffer json = Json.encodeToBuffer("Hello World!");
+    Buffer json = mapper.toBuffer("Hello World!");
     assertNotNull(json);
     // json strings are always UTF8
     assertEquals("\"Hello World!\"", json.toString());
@@ -359,7 +377,7 @@ public class JsonCodecTest {
 
   @Test
   public void encodeNullToBuffer() {
-    Buffer json = Json.encodeToBuffer(null);
+    Buffer json = mapper.toBuffer(null);
     assertNotNull(json);
     assertEquals("null", json.toString());
   }
@@ -380,15 +398,15 @@ public class JsonCodecTest {
   private <T> void assertDecodeValue(Buffer buffer, T expected, TypeReference<T> ref) {
     Type type = ref.getType();
     Class<?> clazz = type instanceof Class ? (Class<?>) type : (Class<?>) ((ParameterizedType) type).getRawType();
-    assertEquals(expected, Json.decodeValue(buffer, clazz));
-    assertEquals(expected, JacksonCodec.fromBuffer(buffer, ref));
-    assertEquals(expected, Json.decodeValue(buffer.toString(StandardCharsets.UTF_8), clazz));
-    assertEquals(expected, JacksonCodec.fromString(buffer.toString(StandardCharsets.UTF_8), ref));
+    assertEquals(expected, mapper.fromBuffer(buffer, clazz));
+    assertEquals(expected, mapper.fromBuffer(buffer, ref));
+    assertEquals(expected, mapper.fromString(buffer.toString(StandardCharsets.UTF_8), clazz));
+    assertEquals(expected, mapper.fromString(buffer.toString(StandardCharsets.UTF_8), ref));
     Buffer nullValue = Buffer.buffer("null");
-    assertNull(Json.decodeValue(nullValue, clazz));
-    assertNull(JacksonCodec.fromBuffer(nullValue, ref));
-    assertNull(Json.decodeValue(nullValue.toString(StandardCharsets.UTF_8), clazz));
-    assertNull(JacksonCodec.fromString(nullValue.toString(StandardCharsets.UTF_8), ref));
+    assertNull(mapper.fromBuffer(nullValue, clazz));
+    assertNull(mapper.fromBuffer(nullValue, ref));
+    assertNull(mapper.fromString(nullValue.toString(StandardCharsets.UTF_8), clazz));
+    assertNull(mapper.fromString(nullValue.toString(StandardCharsets.UTF_8), ref));
   }
 
   @Test
@@ -403,29 +421,29 @@ public class JsonCodecTest {
 
   private void testDecodeUnknowContent(boolean asBuffer) {
     String number = String.valueOf(1);
-    assertEquals(1, asBuffer ? Json.decodeValue(Buffer.buffer(number)) : Json.decodeValue(number));
+    assertEquals(1, asBuffer ? mapper.fromBuffer(Buffer.buffer(number)) : mapper.fromString(number));
 
     String bool = Boolean.TRUE.toString();
-    assertEquals(true, asBuffer ? Json.decodeValue(Buffer.buffer(bool)) : Json.decodeValue(bool));
+    assertEquals(true, asBuffer ?mapper.fromBuffer(Buffer.buffer(bool)) : mapper.fromString(bool));
 
     String text = "\"whatever\"";
-    assertEquals("whatever", asBuffer ? Json.decodeValue(Buffer.buffer(text)) : Json.decodeValue(text));
+    assertEquals("whatever", asBuffer ? mapper.fromBuffer(Buffer.buffer(text)) : mapper.fromString(text));
 
     String nullText = "null";
-    assertNull(asBuffer ? Json.decodeValue(Buffer.buffer(nullText)) : Json.decodeValue(nullText));
+    assertNull(asBuffer ? mapper.fromBuffer(Buffer.buffer(nullText)) : mapper.fromString(nullText));
 
     JsonObject obj = new JsonObject().put("foo", "bar");
-    assertEquals(obj, asBuffer ? Json.decodeValue(obj.toBuffer()) : Json.decodeValue(obj.toString()));
+    assertEquals(obj, asBuffer ? mapper.fromBuffer(obj.toBuffer()) : mapper.fromString(obj.toString()));
 
     JsonArray arr = new JsonArray().add(1).add(false).add("whatever").add(obj);
-    assertEquals(arr, asBuffer ? Json.decodeValue(arr.toBuffer()) : Json.decodeValue(arr.toString()));
+    assertEquals(arr, asBuffer ? mapper.fromBuffer(arr.toBuffer()) : mapper.fromString(arr.toString()));
 
     String invalidText = "\"invalid";
     try {
       if (asBuffer) {
-        Json.decodeValue(Buffer.buffer(invalidText));
+        mapper.fromBuffer(Buffer.buffer(invalidText));
       } else {
-        Json.decodeValue(invalidText);
+        mapper.fromString(invalidText);
       }
       fail();
     } catch (DecodeException ignore) {

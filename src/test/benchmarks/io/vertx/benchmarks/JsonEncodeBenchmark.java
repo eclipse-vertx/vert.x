@@ -11,15 +11,13 @@
 
 package io.vertx.benchmarks;
 
-import io.netty.util.CharsetUtil;
-import io.vertx.core.buffer.Buffer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.impl.DatabindCodec;
 import io.vertx.core.json.impl.JacksonCodec;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.CompilerControl;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import io.vertx.core.spi.json.JsonCodec;
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.IOException;
 import java.net.URL;
@@ -27,67 +25,109 @@ import java.util.Map;
 
 /**
  * @author Thomas Segismont
+ * @author slinkydeveloper
  */
 @State(Scope.Thread)
+@BenchmarkMode(Mode.AverageTime)
 public class JsonEncodeBenchmark extends BenchmarkBase {
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-  public static void consume(final Buffer buffer) {
-  }
-
   private JsonObject small;
-  private JsonObject large;
+  private JsonObject wide;
+  private JsonObject deep;
+  private JsonCodec jacksonCodec;
+  private JsonCodec databindCodec;
 
   @Setup
   public void setup() {
     ClassLoader classLoader = getClass().getClassLoader();
-    small = loadJson(classLoader.getResource("small.json"));
-    large = loadJson(classLoader.getResource("large.json"));
+    small = loadJson(classLoader.getResource("small_bench.json"));
+    wide = loadJson(classLoader.getResource("wide_bench.json"));
+    deep = loadJson(classLoader.getResource("deep_bench.json"));
+    jacksonCodec = new JacksonCodec();
+    databindCodec = new DatabindCodec();
   }
 
   private JsonObject loadJson(URL url) {
     try {
-      return new JsonObject(JacksonCodec.mapper.readValue(url, Map.class));
+      return new JsonObject(new ObjectMapper().readValue(url, Map.class));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
   @Benchmark
-  public void viaStringSmall() throws Exception {
-    viaString(small);
+  public void smallStringJackson(Blackhole blackhole) throws Exception {
+    stringJackson(small, blackhole);
   }
 
   @Benchmark
-  public void viaStringLarge() throws Exception {
-    viaString(large);
-  }
-
-  private void viaString(JsonObject jsonObject) throws Exception {
-    Buffer buffer = Buffer.buffer();
-    String strJson = jsonObject.encode();
-    byte[] encoded = strJson.getBytes(CharsetUtil.UTF_8);
-    buffer.appendInt(encoded.length);
-    Buffer buff = Buffer.buffer(encoded);
-    buffer.appendBuffer(buff);
-    consume(buffer);
+  public void smallStringDatabind(Blackhole blackhole) throws Exception {
+    stringDatabind(small, blackhole);
   }
 
   @Benchmark
-  public void directSmall() throws Exception {
-    direct(small);
+  public void wideStringJackson(Blackhole blackhole) throws Exception {
+    stringJackson(wide, blackhole);
   }
 
   @Benchmark
-  public void directLarge() throws Exception {
-    direct(large);
+  public void wideStringDatabind(Blackhole blackhole) throws Exception {
+    stringDatabind(wide, blackhole);
   }
 
-  private void direct(JsonObject jsonObject) throws Exception {
-    Buffer buffer = Buffer.buffer();
-    Buffer encoded = jsonObject.toBuffer();
-    buffer.appendInt(encoded.length());
-    buffer.appendBuffer(encoded);
-    consume(buffer);
+  @Benchmark
+  public void deepStringJackson(Blackhole blackhole) throws Exception {
+    stringJackson(deep, blackhole);
+  }
+
+  @Benchmark
+  public void deepStringDatabind(Blackhole blackhole) throws Exception {
+    stringDatabind(deep, blackhole);
+  }
+
+  private void stringJackson(JsonObject jsonObject, Blackhole blackhole) throws Exception {
+    blackhole.consume(jsonObject.encode());
+  }
+
+  private void stringDatabind(JsonObject jsonObject, Blackhole blackhole) throws Exception {
+    blackhole.consume(databindCodec.toString(jsonObject));
+  }
+
+  @Benchmark
+  public void smallBufferJackson(Blackhole blackhole) throws Exception {
+    bufferJackson(small, blackhole);
+  }
+
+  @Benchmark
+  public void smallBufferDatabind(Blackhole blackhole) throws Exception {
+    bufferDatabind(small, blackhole);
+  }
+
+  @Benchmark
+  public void deepBufferJackson(Blackhole blackhole) throws Exception {
+    bufferJackson(deep, blackhole);
+  }
+
+  @Benchmark
+  public void deepBufferDatabind(Blackhole blackhole) throws Exception {
+    bufferDatabind(deep, blackhole);
+  }
+
+  @Benchmark
+  public void wideBufferJackson(Blackhole blackhole) throws Exception {
+    bufferJackson(wide, blackhole);
+  }
+
+  @Benchmark
+  public void wideBufferDatabind(Blackhole blackhole) throws Exception {
+    bufferDatabind(wide, blackhole);
+  }
+
+  private void bufferJackson(JsonObject jsonObject, Blackhole blackhole) throws Exception {
+    blackhole.consume(jsonObject.toBuffer());
+  }
+
+  private void bufferDatabind(JsonObject jsonObject, Blackhole blackhole) throws Exception {
+    blackhole.consume(jacksonCodec.toBuffer(jsonObject));
   }
 }

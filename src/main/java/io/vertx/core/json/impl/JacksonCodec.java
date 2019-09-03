@@ -11,12 +11,15 @@
 
 package io.vertx.core.json.impl;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonTokenId;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
@@ -24,167 +27,345 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.json.JsonCodec;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class JacksonCodec implements JsonCodec {
 
-  public static ObjectMapper mapper = new ObjectMapper();
-  public static ObjectMapper prettyMapper = new ObjectMapper();
+  private static final JsonFactory factory = new JsonFactory();
 
   static {
-    initialize();
-  }
-
-  private static void initialize() {
     // Non-standard JSON but we allow C style comments in our JSON
-    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
-    prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-
-    SimpleModule module = new SimpleModule();
-    // custom types
-    module.addSerializer(JsonObject.class, new JsonObjectSerializer());
-    module.addSerializer(JsonArray.class, new JsonArraySerializer());
-    // he have 2 extensions: RFC-7493
-    module.addSerializer(Instant.class, new InstantSerializer());
-    module.addDeserializer(Instant.class, new InstantDeserializer());
-    module.addSerializer(byte[].class, new ByteArraySerializer());
-    module.addDeserializer(byte[].class, new ByteArrayDeserializer());
-
-    mapper.registerModule(module);
-    prettyMapper.registerModule(module);
+    factory.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
   }
 
   @Override
-  public <T> T fromValue(Object json, Class<T> clazz) {
-    T value = JacksonCodec.mapper.convertValue(json, clazz);
-    if (clazz == Object.class) {
-      value = (T) adapt(value);
-    }
-    return value;
+  public <T> T fromString(String json, Class<T> clazz) throws DecodeException {
+    return fromParser(createParser(json), clazz);
   }
 
-  public static <T> T fromValue(Object json, TypeReference<T> type) {
-    T value = JacksonCodec.mapper.convertValue(json, type);
-    if (type.getType() == Object.class) {
-      value = (T) adapt(value);
-    }
-    return value;
+  public <T> T fromString(String str, TypeReference<T> typeRef) throws DecodeException {
+    return fromString(str, classTypeOf(typeRef));
   }
 
   @Override
-  public <T> T fromString(String str, Class<T> clazz) throws DecodeException {
-    return fromParser(createParser(str), clazz);
+  public <T> T fromBuffer(Buffer json, Class<T> clazz) throws DecodeException {
+    return fromParser(createParser(json), clazz);
   }
 
-  public static <T> T fromString(String str, TypeReference<T> type) throws DecodeException {
-    return fromParser(createParser(str), type);
+  public <T> T fromBuffer(Buffer buf, TypeReference<T> typeRef) throws DecodeException {
+    return fromBuffer(buf, classTypeOf(typeRef));
   }
 
   @Override
-  public <T> T fromBuffer(Buffer buf, Class<T> clazz) throws DecodeException {
-    return fromParser(createParser(buf), clazz);
+  public <T> T fromValue(Object json, Class<T> toValueType) {
+    throw new UnsupportedOperationException("Mapping is not available without Jackson Databind on the classpath");
   }
 
-  public static <T> T fromBuffer(Buffer buf, TypeReference<T> type) throws DecodeException {
-    return fromParser(createParser(buf), type);
+  public <T> T fromValue(Object json, TypeReference<T> type) {
+    throw new UnsupportedOperationException("Mapping is not available without Jackson Databind on the classpath");
   }
 
-  private static JsonParser createParser(Buffer buf) {
+  @Override
+  public String toString(Object object, boolean pretty) throws EncodeException {
+    StringWriter sw = new StringWriter();
+    JsonGenerator generator = createGenerator(sw, pretty);
     try {
-      return JacksonCodec.mapper.getFactory().createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
+      encodeJson(object, generator);
+      generator.flush();
+      return sw.toString();
     } catch (IOException e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+      throw new EncodeException(e.getMessage(), e);
+    } finally {
+      close(generator);
+    }
+  }
+
+  @Override
+  public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
+    ByteBuf buf = Unpooled.buffer();
+    ByteBufOutputStream out = new ByteBufOutputStream(buf);
+    JsonGenerator generator = createGenerator(out, pretty);
+    try {
+      encodeJson(object, generator);
+      generator.flush();
+      return Buffer.buffer(buf);
+    } catch (IOException e) {
+      throw new EncodeException(e.getMessage(), e);
+    } finally {
+      close(generator);
     }
   }
 
   private static JsonParser createParser(String str) {
     try {
-      return JacksonCodec.mapper.getFactory().createParser(str);
+      return factory.createParser(str);
     } catch (IOException e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     }
   }
 
-  private static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
-    T value;
+  private static JsonParser createParser(Buffer buf) {
     try {
-      value = JacksonCodec.mapper.readValue(parser, type);
-    } catch (Exception e) {
+      return factory.createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
+    } catch (IOException e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+  }
+
+  private static JsonGenerator createGenerator(Writer out, boolean pretty) {
+    try {
+      JsonGenerator generator = factory.createGenerator(out);
+      if (pretty) {
+        generator.useDefaultPrettyPrinter();
+      }
+      return generator;
+    } catch (IOException e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+  }
+
+  private static JsonGenerator createGenerator(OutputStream out, boolean pretty) {
+    try {
+      JsonGenerator generator = factory.createGenerator(out);
+      if (pretty) {
+        generator.useDefaultPrettyPrinter();
+      }
+      return generator;
+    } catch (IOException e) {
+      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
+    }
+  }
+
+  public Object fromString(String str) throws DecodeException {
+    return fromParser(createParser(str), Object.class);
+  }
+
+  public Object fromBuffer(Buffer buf) throws DecodeException {
+    return fromParser(createParser(buf), Object.class);
+  }
+
+  public static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
+    try {
+      parser.nextToken();
+      Object res = parseAny(parser);
+      return cast(res, type);
+    } catch (IOException e) {
+      throw new DecodeException(e.getMessage(), e);
     } finally {
       close(parser);
     }
-    if (type == Object.class) {
-      value = (T) adapt(value);
-    }
-    return value;
   }
 
-  private static <T> T fromParser(JsonParser parser, TypeReference<T> type) throws DecodeException {
-    T value;
-    try {
-      value = JacksonCodec.mapper.readValue(parser, type);
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode:" + e.getMessage(), e);
-    } finally {
-      close(parser);
+  private static Object parseAny(JsonParser parser) throws IOException, DecodeException {
+    switch (parser.getCurrentTokenId()) {
+      case JsonTokenId.ID_START_OBJECT:
+        return parseObject(parser);
+      case JsonTokenId.ID_START_ARRAY:
+        return parseArray(parser);
+      case JsonTokenId.ID_STRING:
+        return parser.getText();
+      case JsonTokenId.ID_NUMBER_FLOAT:
+      case JsonTokenId.ID_NUMBER_INT:
+        return parser.getNumberValue();
+      case JsonTokenId.ID_TRUE:
+        return Boolean.TRUE;
+      case JsonTokenId.ID_FALSE:
+         return Boolean.FALSE;
+      case JsonTokenId.ID_NULL:
+        return null;
+      default:
+        throw new DecodeException("Unexpected token"/*, parser.getCurrentLocation()*/);
     }
-    if (type.getType() == Object.class) {
-      value = (T) adapt(value);
-    }
-    return value;
   }
 
-  private static void close(JsonParser parser) {
+  private static Map<String, Object> parseObject(JsonParser parser) throws IOException {
+    String key1 = parser.nextFieldName();
+    if (key1 == null) {
+      return new LinkedHashMap<>(2);
+    }
+    parser.nextToken();
+    Object value1 = parseAny(parser);
+    String key2 = parser.nextFieldName();
+    if (key2 == null) {
+      LinkedHashMap<String, Object> obj = new LinkedHashMap<>(2);
+      obj.put(key1, value1);
+      return obj;
+    }
+    parser.nextToken();
+    Object value2 = parseAny(parser);
+    String key = parser.nextFieldName();
+    if (key == null) {
+      LinkedHashMap<String, Object> obj = new LinkedHashMap<>(2);
+      obj.put(key1, value1);
+      obj.put(key2, value2);
+      return obj;
+    }
+    // General case
+    LinkedHashMap<String, Object> obj = new LinkedHashMap<>();
+    obj.put(key1, value1);
+    obj.put(key2, value2);
+    do {
+      parser.nextToken();
+      Object value = parseAny(parser);
+      obj.put(key, value);
+      key = parser.nextFieldName();
+    } while (key != null);
+    return obj;
+  }
+
+  private static List<Object> parseArray(JsonParser parser) throws IOException {
+    List<Object> array = new ArrayList<>();
+    while (true) {
+      parser.nextToken();
+      int tokenId = parser.getCurrentTokenId();
+      if (tokenId == JsonTokenId.ID_FIELD_NAME) {
+        throw new UnsupportedOperationException();
+      } else if (tokenId == JsonTokenId.ID_END_ARRAY) {
+        return array;
+      }
+      Object value = parseAny(parser);
+      array.add(value);
+    }
+  }
+
+  static void close(Closeable parser) {
     try {
       parser.close();
     } catch (IOException ignore) {
     }
   }
 
-  private static Object adapt(Object o) {
+  // In recursive calls, the callee is in charge of opening and closing the data structure
+  private static void encodeJson(Object json, JsonGenerator generator) throws EncodeException {
     try {
-      if (o instanceof List) {
-        List list = (List) o;
-        return new JsonArray(list);
-      } else if (o instanceof Map) {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) o;
-        return new JsonObject(map);
+      if (json instanceof JsonObject) {
+        json = ((JsonObject)json).getMap();
+      } else if (json instanceof JsonArray) {
+        json = ((JsonArray)json).getList();
       }
-      return o;
-    } catch (Exception e) {
-      throw new DecodeException("Failed to decode: " + e.getMessage());
+      if (json instanceof Map) {
+        generator.writeStartObject();
+        for (Map.Entry<String, ?> e : ((Map<String, ?>)json).entrySet()) {
+          generator.writeFieldName(e.getKey());
+          encodeJson(e.getValue(), generator);
+        }
+        generator.writeEndObject();
+      } else if (json instanceof List) {
+        generator.writeStartArray();
+        for (Object item : (List)json) {
+          encodeJson(item, generator);
+        }
+        generator.writeEndArray();
+      } else if (json instanceof String) {
+        generator.writeString((String)json);
+      } else if (json instanceof Number) {
+        if (json instanceof Short) {
+          generator.writeNumber((Short) json);
+        } else if (json instanceof Integer) {
+          generator.writeNumber((Integer) json);
+        } else if (json instanceof Long) {
+          generator.writeNumber((Long) json);
+        } else if (json instanceof Float) {
+          generator.writeNumber((Float) json);
+        } else if (json instanceof Double) {
+          generator.writeNumber((Double) json);
+        } else {
+          throw new UnsupportedOperationException();
+        }
+      } else if (json instanceof Boolean) {
+        generator.writeBoolean((Boolean)json);
+      } else if (json instanceof Instant) {
+        generator.writeString((ISO_INSTANT.format((Instant)json)));
+      } else if (json instanceof byte[]) {
+        generator.writeString(Base64.getEncoder().encodeToString((byte[]) json));
+      } else if (json == null) {
+        generator.writeNull();
+      } else {
+        throw new UnsupportedOperationException();
+      }
+    } catch (IOException e) {
+      throw new EncodeException(e.getMessage(), e);
     }
   }
 
-
-  @Override
-  public String toString(Object object, boolean pretty) throws EncodeException {
-    try {
-      ObjectMapper mapper = pretty ? JacksonCodec.prettyMapper : JacksonCodec.mapper;
-      return mapper.writeValueAsString(object);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+  private static <T> Class<T> classTypeOf(TypeReference<T> typeRef) {
+    Type type = typeRef.getType();
+    if (type instanceof Class) {
+      return (Class<T>) type;
+    } else if (type instanceof ParameterizedType) {
+      return (Class<T>) ((ParameterizedType)type).getRawType();
+    } else {
+      throw new DecodeException();
     }
   }
 
-  @Override
-  public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
-    try {
-      ObjectMapper mapper = pretty ? JacksonCodec.prettyMapper : JacksonCodec.mapper;
-      return Buffer.buffer(mapper.writeValueAsBytes(object));
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
+  private static <T> T cast(Object o, Class<T> clazz) {
+    if (o instanceof Map) {
+      if (!clazz.isAssignableFrom(Map.class)) {
+        throw new DecodeException("Failed to decode");
+      }
+      if (clazz == Object.class) {
+        o = new JsonObject((Map) o);
+      }
+      return clazz.cast(o);
+    } else if (o instanceof List) {
+      if (!clazz.isAssignableFrom(List.class)) {
+        throw new DecodeException("Failed to decode");
+      }
+      if (clazz == Object.class) {
+        o = new JsonArray((List) o);
+      }
+      return clazz.cast(o);
+    } else if (o instanceof String) {
+      if (!clazz.isAssignableFrom(String.class)) {
+        throw new DecodeException("Failed to decode");
+      }
+      return clazz.cast(o);
+    } else if (o instanceof Boolean) {
+      if (!clazz.isAssignableFrom(Boolean.class)) {
+        throw new DecodeException("Failed to decode");
+      }
+      return clazz.cast(o);
+    } else if (o == null) {
+      return null;
+    } else {
+      Number number = (Number) o;
+      if (clazz == Integer.class) {
+        o = number.intValue();
+      } else if (clazz == Long.class) {
+        o = number.longValue();
+      } else if (clazz == Float.class) {
+        o = number.floatValue();
+      } else if (clazz == Double.class) {
+        o = number.doubleValue();
+      } else if (clazz == Byte.class) {
+        o = number.byteValue();
+      } else if (clazz == Short.class) {
+        o = number.shortValue();
+      } else if (clazz == Object.class || clazz.isAssignableFrom(Number.class)) {
+        // Nothing
+      } else {
+        throw new DecodeException("Failed to decode");
+      }
+      return clazz.cast(o);
     }
   }
 }

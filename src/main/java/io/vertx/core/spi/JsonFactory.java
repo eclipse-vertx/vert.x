@@ -11,6 +11,7 @@
 
 package io.vertx.core.spi;
 
+import io.vertx.core.json.impl.DefaultJsonFactory;
 import io.vertx.core.spi.json.JsonCodec;
 
 /**
@@ -19,6 +20,8 @@ import io.vertx.core.spi.json.JsonCodec;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface JsonFactory {
+
+  JsonFactory INSTANCE = DefaultJsonFactory.load();
 
   JsonCodec codec();
 
