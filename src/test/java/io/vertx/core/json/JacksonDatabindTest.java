@@ -30,7 +30,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class JsonMapperTest extends VertxTestBase {
+public class JacksonDatabindTest extends VertxTestBase {
 
   @Test
   public void testGetSetMapper() {
