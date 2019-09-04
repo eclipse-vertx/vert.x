@@ -12,7 +12,6 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.Utils;
 import io.vertx.test.core.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -793,126 +792,9 @@ public class JsonArrayTest {
   }
 
   @Test
-  public void testEncode() throws Exception {
-    jsonArray.add("foo");
-    jsonArray.add(123);
-    jsonArray.add(1234l);
-    jsonArray.add(1.23f);
-    jsonArray.add(2.34d);
-    jsonArray.add(true);
-    byte[] bytes = TestUtils.randomByteArray(10);
-    jsonArray.add(bytes);
-    jsonArray.addNull();
-    jsonArray.add(new JsonObject().put("foo", "bar"));
-    jsonArray.add(new JsonArray().add("foo").add(123));
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
-    String json = jsonArray.encode();
-    assertEquals(expected, json);
-  }
-
-  @Test
-  public void testEncodeToBuffer() throws Exception {
-    jsonArray.add("foo");
-    jsonArray.add(123);
-    jsonArray.add(1234l);
-    jsonArray.add(1.23f);
-    jsonArray.add(2.34d);
-    jsonArray.add(true);
-    byte[] bytes = TestUtils.randomByteArray(10);
-    jsonArray.add(bytes);
-    jsonArray.addNull();
-    jsonArray.add(new JsonObject().put("foo", "bar"));
-    jsonArray.add(new JsonArray().add("foo").add(123));
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    Buffer expected = Buffer.buffer("[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]", "UTF-8");
-    Buffer json = jsonArray.toBuffer();
-    assertArrayEquals(expected.getBytes(), json.getBytes());
-  }
-
-  @Test
-  public void testDecode() {
-    byte[] bytes = TestUtils.randomByteArray(10);
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    Instant now = Instant.now();
-    String strInstant = ISO_INSTANT.format(now);
-    String json = "[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",\"" + strInstant + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
-    JsonArray arr = new JsonArray(json);
-    assertEquals("foo", arr.getString(0));
-    assertEquals(Integer.valueOf(123), arr.getInteger(1));
-    assertEquals(Long.valueOf(1234l), arr.getLong(2));
-    assertEquals(Float.valueOf(1.23f), arr.getFloat(3));
-    assertEquals(Double.valueOf(2.34d), arr.getDouble(4));
-    assertEquals(true, arr.getBoolean(5));
-    assertArrayEquals(bytes, arr.getBinary(6));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), arr.getValue(6));
-    assertEquals(now, arr.getInstant(7));
-    assertEquals(now.toString(), arr.getValue(7));
-    assertTrue(arr.hasNull(8));
-    JsonObject obj = arr.getJsonObject(9);
-    assertEquals("bar", obj.getString("foo"));
-    JsonArray arr2 = arr.getJsonArray(10);
-    assertEquals("foo", arr2.getString(0));
-    assertEquals(Integer.valueOf(123), arr2.getInteger(1));
-  }
-
-  @Test
-  public void testEncodePrettily() throws Exception {
-    jsonArray.add("foo");
-    jsonArray.add(123);
-    jsonArray.add(1234l);
-    jsonArray.add(1.23f);
-    jsonArray.add(2.34d);
-    jsonArray.add(true);
-    byte[] bytes = TestUtils.randomByteArray(10);
-    jsonArray.add(bytes);
-    jsonArray.addNull();
-    jsonArray.add(new JsonObject().put("foo", "bar"));
-    jsonArray.add(new JsonArray().add("foo").add(123));
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", null, {" + Utils.LINE_SEPARATOR +
-      "  \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
-      "}, [ \"foo\", 123 ] ]";
-    String json = jsonArray.encodePrettily();
-    assertEquals(expected, json);
-  }
-
-  @Test
   public void testToString() {
     jsonArray.add("foo").add(123);
     assertEquals(jsonArray.encode(), jsonArray.toString());
-  }
-
-  // Strict JSON doesn't allow comments but we do so users can add comments to config files etc
-  @Test
-  public void testCommentsInJson() {
-    String jsonWithComments =
-      "// single line comment\n" +
-        "/*\n" +
-        "  This is a multi \n" +
-        "  line comment\n" +
-        "*/\n" +
-        "[\n" +
-        "// another single line comment this time inside the JSON array itself\n" +
-        "  \"foo\", \"bar\" // and a single line comment at end of line \n" +
-        "/*\n" +
-        "  This is a another multi \n" +
-        "  line comment this time inside the JSON array itself\n" +
-        "*/\n" +
-        "]";
-    JsonArray json = new JsonArray(jsonWithComments);
-    assertEquals("[\"foo\",\"bar\"]", json.encode());
-  }
-
-  @Test
-  public void testInvalidJson() {
-    String invalid = "qiwjdoiqwjdiqwjd";
-    try {
-      new JsonArray(invalid);
-      fail();
-    } catch (DecodeException e) {
-      // OK
-    }
   }
 
   @Test
@@ -1086,44 +968,14 @@ public class JsonArrayTest {
   @Test
   public void testInvalidConstruction() {
     try {
-      new JsonArray("null");
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
       new JsonArray((String) null);
       fail();
     } catch (NullPointerException ignore) {
     }
     try {
-      new JsonArray("3");
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
-      new JsonArray("\"3");
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
-      new JsonArray(Buffer.buffer("null"));
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
       new JsonArray((Buffer) null);
       fail();
     } catch (NullPointerException ignore) {
-    }
-    try {
-      new JsonArray(Buffer.buffer("3"));
-      fail();
-    } catch (DecodeException ignore) {
-    }
-    try {
-      new JsonArray(Buffer.buffer("\"3"));
-      fail();
-    } catch (DecodeException ignore) {
     }
     try {
       new JsonArray((List) null);
