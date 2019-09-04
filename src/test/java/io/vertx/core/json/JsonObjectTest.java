@@ -1182,8 +1182,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInDepth0() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\" }}");
-    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", new JsonObject().put("bar", "flurb"));
+    JsonObject obj2 = new JsonObject().put("foo", new JsonObject().put("bar", "eek"));
     obj1.mergeIn(obj2, 0);
     assertEquals(1, obj1.size());
     assertEquals(1, obj1.getJsonObject("foo").size());
@@ -1192,8 +1192,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInFlat() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\", \"eek\": 32 }}");
-    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", new JsonObject().put("bar", "flurb").put("eek", 32));
+    JsonObject obj2 = new JsonObject().put("foo", new JsonObject().put("bar", "eek"));
     obj1.mergeIn(obj2, false);
     assertEquals(1, obj1.size());
     assertEquals(1, obj1.getJsonObject("foo").size());
@@ -1202,8 +1202,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInDepth1() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
-    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", "bar").put("flurb", new JsonObject().put("eek", "foo").put("bar", "flurb"));
+    JsonObject obj2 = new JsonObject().put("flurb", new JsonObject().put("bar", "flurb1"));
     obj1.mergeIn(obj2, 1);
     assertEquals(2, obj1.size());
     assertEquals(1, obj1.getJsonObject("flurb").size());
@@ -1212,8 +1212,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInDepth2() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
-    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", "bar").put("flurb", new JsonObject().put("eek", "foo").put("bar", "flurb"));
+    JsonObject obj2 = new JsonObject().put("flurb", new JsonObject().put("bar", "flurb1"));
     obj1.mergeIn(obj2, 2);
     assertEquals(2, obj1.size());
     assertEquals(2, obj1.getJsonObject("flurb").size());
