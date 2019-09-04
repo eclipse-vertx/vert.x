@@ -333,14 +333,6 @@ public class JsonMapperTest {
   }
 
   @Test
-  public void encodeCustomTypeInstantNull() {
-    Instant now = null;
-    String json = Json.encode(now);
-    assertNotNull(json);
-    assertEquals("null", json);
-  }
-
-  @Test
   public void encodeCustomTypeBinary() {
     byte[] data = new byte[] { 'h', 'e', 'l', 'l', 'o'};
     String json = Json.encode(data);
@@ -350,9 +342,8 @@ public class JsonMapperTest {
   }
 
   @Test
-  public void encodeCustomTypeBinaryNull() {
-    byte[] data = null;
-    String json = Json.encode(data);
+  public void encodeNull() {
+    String json = Json.encode(null);
     assertNotNull(json);
     assertEquals("null", json);
   }
@@ -362,7 +353,14 @@ public class JsonMapperTest {
     Buffer json = Json.encodeToBuffer("Hello World!");
     assertNotNull(json);
     // json strings are always UTF8
-    assertEquals("\"Hello World!\"", json.toString("UTF-8"));
+    assertEquals("\"Hello World!\"", json.toString());
+  }
+
+  @Test
+  public void encodeNullToBuffer() {
+    Buffer json = Json.encodeToBuffer(null);
+    assertNotNull(json);
+    assertEquals("null", json.toString());
   }
 
   @Test
