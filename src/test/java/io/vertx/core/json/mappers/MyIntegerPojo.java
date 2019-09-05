@@ -1,4 +1,4 @@
-package io.vertx.core.json.codecs;
+package io.vertx.core.json.mappers;
 
 import io.vertx.core.spi.json.JsonMapper;
 
@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class MyIntegerPojo {
 
-  public static class MyIntegerPojoJsonCodec implements JsonMapper<MyIntegerPojo, Number> {
+  public static class MyIntegerPojoJsonMapper implements JsonMapper<MyIntegerPojo, Number> {
 
     @Override
     public MyIntegerPojo deserialize(Number value) throws IllegalArgumentException {

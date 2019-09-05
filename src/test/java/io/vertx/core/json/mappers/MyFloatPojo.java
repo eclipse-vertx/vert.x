@@ -1,4 +1,4 @@
-package io.vertx.core.json.codecs;
+package io.vertx.core.json.mappers;
 
 import io.vertx.core.spi.json.JsonMapper;
 
@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class MyFloatPojo {
 
-  public static class MyFloatPojoJsonCodec implements JsonMapper<MyFloatPojo, Number> {
+  public static class MyFloatPojoJsonMapper implements JsonMapper<MyFloatPojo, Number> {
 
     @Override
     public MyFloatPojo deserialize(Number value) throws IllegalArgumentException {

@@ -1,6 +1,6 @@
 package io.vertx.core.json;
 
-import io.vertx.core.json.codecs.*;
+import io.vertx.core.json.mappers.*;
 import org.junit.Test;
 
 import static io.vertx.core.json.Json.encodeToBuffer;

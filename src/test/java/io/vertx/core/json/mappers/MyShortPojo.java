@@ -1,4 +1,4 @@
-package io.vertx.core.json.codecs;
+package io.vertx.core.json.mappers;
 
 import io.vertx.core.spi.json.JsonMapper;
 
@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class MyShortPojo {
 
-  public static class MyShortPojoJsonCodec implements JsonMapper<MyShortPojo, Number> {
+  public static class MyShortPojoJsonMapper implements JsonMapper<MyShortPojo, Number> {
 
     @Override
     public MyShortPojo deserialize(Number value) throws IllegalArgumentException {

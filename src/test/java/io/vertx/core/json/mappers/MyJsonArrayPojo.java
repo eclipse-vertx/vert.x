@@ -1,4 +1,4 @@
-package io.vertx.core.json.codecs;
+package io.vertx.core.json.mappers;
 
 import io.vertx.core.spi.json.JsonMapper;
 import io.vertx.core.json.JsonArray;
@@ -7,7 +7,7 @@ import java.util.Objects;
 
 public class MyJsonArrayPojo {
 
-  public static class MyJsonArrayPojoJsonCodec implements JsonMapper<MyJsonArrayPojo, JsonArray> {
+  public static class MyJsonArrayPojoJsonMapper implements JsonMapper<MyJsonArrayPojo, JsonArray> {
 
     @Override
     public MyJsonArrayPojo deserialize(JsonArray value) throws IllegalArgumentException {

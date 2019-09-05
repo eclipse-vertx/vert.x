@@ -1,4 +1,4 @@
-package io.vertx.core.json.codecs;
+package io.vertx.core.json.mappers;
 
 import io.vertx.core.spi.json.JsonMapper;
 
@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class MyBooleanPojo {
 
-  public static class MyBooleanPojoJsonCodec implements JsonMapper<MyBooleanPojo, Boolean> {
+  public static class MyBooleanPojoJsonMapper implements JsonMapper<MyBooleanPojo, Boolean> {
 
     @Override
     public MyBooleanPojo deserialize(Boolean value) throws IllegalArgumentException {
