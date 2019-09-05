@@ -21,7 +21,7 @@ import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.json.JsonMapper;
+import io.vertx.core.spi.json.JsonCodec;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class JacksonMapper implements JsonMapper {
+public class JacksonCodec implements JsonCodec {
 
   @Override
   public <T> T fromValue(Object json, Class<T> clazz) {

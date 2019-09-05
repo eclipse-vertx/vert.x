@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class JsonMapperTest {
+public class JsonCodecTest {
 
   private static final TypeReference<Integer> INTEGER_TYPE_REF = new TypeReference<Integer>() {};
   private static final TypeReference<Long> LONG_TYPE_REF = new TypeReference<Long>() {};

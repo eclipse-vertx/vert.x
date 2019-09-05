@@ -14,7 +14,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
-import io.vertx.core.spi.json.JsonMapper;
+import io.vertx.core.spi.json.JsonCodec;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -107,7 +107,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     if (obj == null) {
       return null;
     } else {
-      return new JsonObject((Map<String, Object>) JsonMapper.INSTANCE.fromValue(obj, Map.class));
+      return new JsonObject((Map<String, Object>) JsonCodec.INSTANCE.fromValue(obj, Map.class));
     }
   }
 
@@ -121,7 +121,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *          if the type cannot be instantiated.
    */
   public <T> T mapTo(Class<T> type) {
-    return JsonMapper.INSTANCE.fromValue(map, type);
+    return JsonCodec.INSTANCE.fromValue(map, type);
   }
 
   /**
@@ -782,7 +782,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the string encoding.
    */
   public String encode() {
-    return JsonMapper.INSTANCE.toString(map, false);
+    return JsonCodec.INSTANCE.toString(map, false);
   }
 
   /**
@@ -792,7 +792,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the pretty string encoding.
    */
   public String encodePrettily() {
-    return JsonMapper.INSTANCE.toString(map, true);
+    return JsonCodec.INSTANCE.toString(map, true);
   }
 
   /**
@@ -801,7 +801,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the buffer encoding.
    */
   public Buffer toBuffer() {
-    return JsonMapper.INSTANCE.toBuffer(map, false);
+    return JsonCodec.INSTANCE.toBuffer(map, false);
   }
 
   /**
@@ -971,11 +971,11 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   private void fromJson(String json) {
-    map = JsonMapper.INSTANCE.fromString(json, Map.class);
+    map = JsonCodec.INSTANCE.fromString(json, Map.class);
   }
 
   private void fromBuffer(Buffer buf) {
-    map = JsonMapper.INSTANCE.fromBuffer(buf, Map.class);
+    map = JsonCodec.INSTANCE.fromBuffer(buf, Map.class);
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {

@@ -14,7 +14,7 @@ package io.vertx.core.json;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
-import io.vertx.core.spi.json.JsonMapper;
+import io.vertx.core.spi.json.JsonCodec;
 
 import java.time.Instant;
 import java.util.*;
@@ -551,7 +551,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the string encoding
    */
   public String encode() {
-    return JsonMapper.INSTANCE.toString(list, false);
+    return JsonCodec.INSTANCE.toString(list, false);
   }
 
   /**
@@ -560,7 +560,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the buffer encoding.
    */
   public Buffer toBuffer() {
-    return JsonMapper.INSTANCE.toBuffer(list, false);
+    return JsonCodec.INSTANCE.toBuffer(list, false);
   }
 
   /**
@@ -569,7 +569,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the string encoding
    */
   public String encodePrettily() {
-    return JsonMapper.INSTANCE.toString(list, true);
+    return JsonCodec.INSTANCE.toString(list, true);
   }
 
   /**
@@ -658,11 +658,11 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   private void fromJson(String json) {
-    list = JsonMapper.INSTANCE.fromString(json, List.class);
+    list = JsonCodec.INSTANCE.fromString(json, List.class);
   }
 
   private void fromBuffer(Buffer buf) {
-    list = JsonMapper.INSTANCE.fromBuffer(buf, List.class);
+    list = JsonCodec.INSTANCE.fromBuffer(buf, List.class);
   }
 
   private class Iter implements Iterator<Object> {

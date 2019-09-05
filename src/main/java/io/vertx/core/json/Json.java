@@ -17,8 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.impl.JacksonMapper;
-import io.vertx.core.spi.json.JsonMapper;
+import io.vertx.core.json.impl.JacksonCodec;
+import io.vertx.core.spi.json.JsonCodec;
 
 import java.time.Instant;
 
@@ -63,7 +63,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encode(Object obj) throws EncodeException {
-    return JsonMapper.INSTANCE.toString(obj);
+    return JsonCodec.INSTANCE.toString(obj);
   }
 
   /**
@@ -74,7 +74,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static Buffer encodeToBuffer(Object obj) throws EncodeException {
-    return JsonMapper.INSTANCE.toBuffer(obj);
+    return JsonCodec.INSTANCE.toBuffer(obj);
   }
 
   /**
@@ -85,7 +85,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encodePrettily(Object obj) throws EncodeException {
-    return JsonMapper.INSTANCE.toString(obj, true);
+    return JsonCodec.INSTANCE.toString(obj, true);
   }
 
   /**
@@ -97,7 +97,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
-    return JsonMapper.INSTANCE.fromString(str, clazz);
+    return JsonCodec.INSTANCE.fromString(str, clazz);
   }
 
   /**
@@ -121,7 +121,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
-    return JacksonMapper.fromString(str, type);
+    return JacksonCodec.fromString(str, type);
   }
 
   /**
@@ -145,7 +145,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
-    return JacksonMapper.fromBuffer(buf, type);
+    return JacksonCodec.fromBuffer(buf, type);
   }
 
   /**
@@ -157,6 +157,6 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
-    return JsonMapper.INSTANCE.fromBuffer(buf, clazz);
+    return JsonCodec.INSTANCE.fromBuffer(buf, clazz);
   }
 }

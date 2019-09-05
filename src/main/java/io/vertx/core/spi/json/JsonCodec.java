@@ -19,9 +19,9 @@ import io.vertx.core.json.EncodeException;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface JsonMapper {
+public interface JsonCodec {
 
-  JsonMapper INSTANCE = ServiceHelper.loadFactory(JsonMapper.class);
+  JsonCodec INSTANCE = ServiceHelper.loadFactory(JsonCodec.class);
 
   /**
    * Decode the provide {@code json} string to an object extending {@code clazz}.
