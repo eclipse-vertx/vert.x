@@ -584,7 +584,9 @@ public class JsonParserTest {
       JsonParser parser = JsonParser.newParser();
       List<Object> values = new ArrayList<>();
       parser.arrayValueMode();
-      parser.handler(event -> values.add(event.mapTo(LinkedList.class)));
+      parser.handler(event -> {
+        values.add(event.mapTo(LinkedList.class));
+      });
       parser.handle(new JsonArray().add(0).add(1).add(2).toBuffer());
       assertEquals(Collections.singletonList(Arrays.asList(0L, 1L, 2L)), values);
       assertEquals(LinkedList.class, values.get(0).getClass());
@@ -598,7 +600,9 @@ public class JsonParserTest {
       assertEquals(Collections.emptyList(), values);
       assertEquals(1, errors.size());
       try {
-        JsonParser.newParser().arrayValueMode().handler(event -> values.add(event.mapTo(TheObject.class))).write(Buffer.buffer("[]")).end();
+        JsonParser.newParser().arrayValueMode().handler(event -> {
+          values.add(event.mapTo(TheObject.class));
+        }).write(Buffer.buffer("[]")).end();
         fail();
       } catch (DecodeException expected) {
       }

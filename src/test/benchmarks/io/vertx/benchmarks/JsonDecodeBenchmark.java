@@ -11,82 +11,134 @@
 
 package io.vertx.benchmarks;
 
-import io.netty.util.CharsetUtil;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.CompilerControl;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
+import io.vertx.core.json.impl.DatabindCodec;
+import io.vertx.core.json.impl.JacksonCodec;
+import io.vertx.core.spi.json.JsonCodec;
+import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.infra.Blackhole;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 
 /**
  * @author Thomas Segismont
+ * @author slinkydeveloper
  */
 @State(Scope.Thread)
 public class JsonDecodeBenchmark extends BenchmarkBase {
 
-  @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-  public static void consume(final JsonObject jsonObject) {
-  }
-
   private Buffer small;
-  private Buffer large;
+  private Buffer wide;
+  private Buffer deep;
+  private String smallString;
+  private String wideString;
+  private String deepString;
+  private JsonCodec jacksonCodec;
+  private JsonCodec databindCodec;
 
   @Setup
   public void setup() {
-    ClassLoader classLoader = getClass().getClassLoader();
-    small = loadJsonAsBuffer(classLoader.getResource("small.json"));
-    large = loadJsonAsBuffer(classLoader.getResource("large.json"));
+    small = loadJsonAsBuffer("small_bench.json");
+    wide = loadJsonAsBuffer("wide_bench.json");
+    deep = loadJsonAsBuffer("deep_bench.json");
+    smallString = small.toString();
+    wideString = wide.toString();
+    deepString = deep.toString();
+    jacksonCodec = new JacksonCodec();
+    databindCodec = new DatabindCodec();
   }
 
-  private Buffer loadJsonAsBuffer(URL url) {
-    try {
-      Buffer encoded = new JsonObject(Json.mapper.readValue(url, Map.class)).toBuffer();
-      return Buffer.buffer().appendInt(encoded.length()).appendBuffer(encoded);
-    } catch (IOException e) {
+  private Buffer loadJsonAsBuffer(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try (InputStream file = classLoader.getResourceAsStream(filename)) {
+      String str = new BufferedReader(new InputStreamReader(file, StandardCharsets.UTF_8))
+        .lines()
+        .collect(Collectors.joining());
+      Buffer encoded = Buffer.buffer(str);
+      return Buffer.buffer().appendBuffer(encoded);
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
   @Benchmark
-  public void viaStringSmall() throws Exception {
-    viaString(small);
+  public void smallStringJackson(Blackhole blackhole) {
+    stringJackson(smallString, blackhole);
   }
 
   @Benchmark
-  public void viaStringLarge() throws Exception {
-    viaString(large);
-  }
-
-  private void viaString(Buffer buffer) throws Exception {
-    int pos = 0;
-    int length = buffer.getInt(pos);
-    pos += 4;
-    byte[] encoded = buffer.getBytes(pos, pos + length);
-    String str = new String(encoded, CharsetUtil.UTF_8);
-    consume(new JsonObject(str));
+  public void smallStringDatabind(Blackhole blackhole) throws Exception {
+    stringDatabind(smallString, blackhole);
   }
 
   @Benchmark
-  public void directSmall() throws Exception {
-    direct(small);
+  public void wideStringJackson(Blackhole blackhole) {
+    stringJackson(wideString, blackhole);
   }
 
   @Benchmark
-  public void directLarge() throws Exception {
-    direct(large);
+  public void wideStringDatabind(Blackhole blackhole) throws Exception {
+    stringDatabind(wideString, blackhole);
   }
 
-  private void direct(Buffer buffer) throws Exception {
-    int pos = 0;
-    int length = buffer.getInt(pos);
-    pos += 4;
-    consume(new JsonObject(buffer.slice(pos, pos + length)));
+  @Benchmark
+  public void deepStringJackson(Blackhole blackhole) {
+    stringJackson(deepString, blackhole);
+  }
+
+  @Benchmark
+  public void deepStringDatabind(Blackhole blackhole) throws Exception {
+    stringDatabind(deepString, blackhole);
+  }
+
+  private void stringJackson(String str, Blackhole blackhole) {
+    blackhole.consume(new JsonObject(str));
+  }
+
+  private void stringDatabind(String str, Blackhole blackhole) {
+    blackhole.consume(databindCodec.fromString(str, JsonObject.class));
+  }
+
+  @Benchmark
+  public void smallBufferJackson(Blackhole blackhole) {
+    bufferJackson(small, blackhole);
+  }
+
+  @Benchmark
+  public void smallBufferDatabind(Blackhole blackhole) throws Exception {
+    bufferDatabind(small, blackhole);
+  }
+
+  @Benchmark
+  public void wideBufferJackson(Blackhole blackhole) {
+    bufferJackson(wide, blackhole);
+  }
+
+  @Benchmark
+  public void wideBufferDatabind(Blackhole blackhole) throws Exception {
+    bufferDatabind(wide, blackhole);
+  }
+
+  @Benchmark
+  public void deepBufferJackson(Blackhole blackhole) {
+    bufferJackson(deep, blackhole);
+  }
+
+  @Benchmark
+  public void deepBufferDatabind(Blackhole blackhole) throws Exception {
+    bufferDatabind(deep, blackhole);
+  }
+
+  private void bufferJackson(Buffer buffer, Blackhole blackhole) {
+    blackhole.consume(new JsonObject(buffer));
+  }
+
+  private void bufferDatabind(Buffer buffer, Blackhole blackhole) throws Exception {
+    blackhole.consume(jacksonCodec.fromBuffer(buffer, JsonObject.class));
   }
 }

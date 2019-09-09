@@ -12,12 +12,12 @@
 package io.vertx.core.parsetools.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.util.TokenBuffer;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.impl.JacksonCodec;
+import io.vertx.core.json.impl.DefaultJsonFactory;
 import io.vertx.core.parsetools.JsonEvent;
 import io.vertx.core.parsetools.JsonEventType;
 
@@ -34,17 +34,11 @@ public class JsonEventImpl implements JsonEvent {
   private final JsonEventType type;
   private final String field;
   private final Object value;
-  private final TokenBuffer buffer;
 
   public JsonEventImpl(JsonEventType type, String field, Object value) {
-    this(type, field, value, null);
-  }
-
-  public JsonEventImpl(JsonEventType type, String field, Object value, TokenBuffer buffer) {
     this.type = type;
     this.field = field;
     this.value = value;
-    this.buffer = buffer;
   }
 
   @Override
@@ -94,27 +88,19 @@ public class JsonEventImpl implements JsonEvent {
 
   @Override
   public <T> T mapTo(Class<T> type) {
-    if (buffer != null) {
-      try {
-        return Json.mapper.readValue(buffer.asParser(), type);
-      } catch (Exception e) {
-        throw new DecodeException(e.getMessage());
-      }
-    } else {
-      return Json.decodeValue(String.valueOf(value), type);
+    try {
+      return JacksonCodec.INSTANCE.fromValue(value, type);
+    } catch (Exception e) {
+      throw new DecodeException(e.getMessage(), e);
     }
   }
 
   @Override
   public <T> T mapTo(TypeReference<T> type) {
-    if (buffer != null) {
-      try {
-        return Json.mapper.readValue(buffer.asParser(), type);
-      } catch (Exception e) {
-        throw new DecodeException(e.getMessage());
-      }
-    } else {
-      return Json.decodeValue(String.valueOf(value), type);
+    try {
+      return DefaultJsonFactory.JACKSON_CODEC.fromValue(value, type);
+    } catch (Exception e) {
+      throw new DecodeException(e.getMessage(), e);
     }
   }
 

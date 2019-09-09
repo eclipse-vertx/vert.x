@@ -14,6 +14,7 @@ package io.vertx.core.json;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
+import io.vertx.core.spi.json.JsonCodec;
 
 import java.time.Instant;
 import java.util.*;
@@ -289,7 +290,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Add an enum to the JSON array.
    * <p>
-   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name}
+   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name()}
    * method and the value added as a String.
    *
    * @param value  the value
@@ -442,7 +443,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(Object value) {
-    value = Json.checkAndCopy(value, false);
+    value = JsonObject.checkAndCopy(value, false);
     list.add(value);
     return this;
   }
@@ -550,7 +551,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the string encoding
    */
   public String encode() {
-    return Json.encode(list);
+    return JsonCodec.INSTANCE.toString(this, false);
   }
 
   /**
@@ -559,7 +560,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the buffer encoding.
    */
   public Buffer toBuffer() {
-    return Json.encodeToBuffer(list);
+    return JsonCodec.INSTANCE.toBuffer(this, false);
   }
 
   /**
@@ -568,7 +569,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the string encoding
    */
   public String encodePrettily() {
-    return Json.encodePrettily(list);
+    return JsonCodec.INSTANCE.toString(this, true);
   }
 
   /**
@@ -580,7 +581,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   public JsonArray copy() {
     List<Object> copiedList = new ArrayList<>(list.size());
     for (Object val: list) {
-      val = Json.checkAndCopy(val, true);
+      val = JsonObject.checkAndCopy(val, true);
       copiedList.add(val);
     }
     return new JsonArray(copiedList);
@@ -592,7 +593,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a Stream
    */
   public Stream<Object> stream() {
-    return Json.asStream(iterator());
+    return JsonObject.asStream(iterator());
   }
 
   @Override
@@ -657,11 +658,11 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   private void fromJson(String json) {
-    list = Json.decodeValue(json, List.class);
+    list = JsonCodec.INSTANCE.fromString(json, List.class);
   }
 
   private void fromBuffer(Buffer buf) {
-    list = Json.decodeValue(buf, List.class);
+    list = JsonCodec.INSTANCE.fromBuffer(buf, List.class);
   }
 
   private class Iter implements Iterator<Object> {
