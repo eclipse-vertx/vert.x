@@ -97,7 +97,7 @@ public class DatabindCodec extends JacksonCodec {
     return fromParser(createParser(buf), typeRef);
   }
 
-  private static JsonParser createParser(Buffer buf) {
+  public static JsonParser createParser(Buffer buf) {
     try {
       return DatabindCodec.mapper.getFactory().createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
     } catch (IOException e) {
@@ -105,7 +105,7 @@ public class DatabindCodec extends JacksonCodec {
     }
   }
 
-  private static JsonParser createParser(String str) {
+  public static JsonParser createParser(String str) {
     try {
       return DatabindCodec.mapper.getFactory().createParser(str);
     } catch (IOException e) {
