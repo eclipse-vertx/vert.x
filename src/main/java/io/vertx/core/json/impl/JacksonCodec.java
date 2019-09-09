@@ -114,7 +114,7 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
-  private static JsonParser createParser(String str) {
+  public static JsonParser createParser(String str) {
     try {
       return factory.createParser(str);
     } catch (IOException e) {
@@ -122,7 +122,7 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
-  private static JsonParser createParser(Buffer buf) {
+  public static JsonParser createParser(Buffer buf) {
     try {
       return factory.createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
     } catch (IOException e) {
