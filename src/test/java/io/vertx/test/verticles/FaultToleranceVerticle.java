@@ -14,6 +14,7 @@ package io.vertx.test.verticles;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
@@ -41,13 +42,13 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     numAddresses = config.getInteger("addressesCount");
     List<Future> registrationFutures = new ArrayList<>(numAddresses);
     for (int i = 0; i < numAddresses; i++) {
-      Future<Void> registrationFuture = Future.future();
-      registrationFutures.add(registrationFuture);
-      vertx.eventBus().consumer(createAddress(id, i), msg -> msg.reply("pong")).completionHandler(registrationFuture.completer());
+      Promise<Void> registrationFuture = Promise.promise();
+      registrationFutures.add(registrationFuture.future());
+      vertx.eventBus().consumer(createAddress(id, i), msg -> msg.reply("pong")).completionHandler(registrationFuture);
     }
-    Future<Void> registrationFuture = Future.future();
-    registrationFutures.add(registrationFuture);
-    vertx.eventBus().consumer("ping", this::ping).completionHandler(registrationFuture.completer());
+    Promise<Void> registrationFuture = Promise.promise();
+    registrationFutures.add(registrationFuture.future());
+    vertx.eventBus().consumer("ping", this::ping).completionHandler(registrationFuture);
     CompositeFuture.all(registrationFutures).setHandler(ar -> {
       if (ar.succeeded()) {
         vertx.eventBus().send("control", "start");
@@ -60,7 +61,7 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     for (int i = 0; i < jsonArray.size(); i++) {
       int node = jsonArray.getInteger(i);
       for (int j = 0; j < numAddresses; j++) {
-        vertx.eventBus().send(createAddress(node, j), "ping", ar -> {
+        vertx.eventBus().request(createAddress(node, j), "ping", ar -> {
           if (ar.succeeded()) {
             vertx.eventBus().send("control", "pong");
           } else {

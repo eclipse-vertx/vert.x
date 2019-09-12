@@ -14,7 +14,12 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.multipart.FileUpload;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
+import io.vertx.core.Context;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.streams.ReadStream;
+import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,9 +29,8 @@ import java.nio.charset.Charset;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-final class NettyFileUpload implements FileUpload {
+final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
 
-  private final HttpServerFileUploadImpl upload;
   private final String name;
   private String contentType;
   private String filename;
@@ -34,29 +38,114 @@ final class NettyFileUpload implements FileUpload {
   private Charset charset;
   private boolean completed;
   private long maxSize = -1;
+  private final HttpServerRequest request;
+  private final InboundBuffer<Object> pending;
+  private Handler<Void> endHandler;
+  private Handler<Throwable> exceptionHandler;
+  private Handler<Buffer> dataHandler;
 
-  NettyFileUpload(HttpServerFileUploadImpl upload, String name, String filename, String contentType, String contentTransferEncoding, Charset charset) {
-    this.upload = upload;
+  NettyFileUpload(Context context, HttpServerRequest request, String name, String filename, String contentType, String contentTransferEncoding, Charset charset) {
     this.name = name;
     this.filename = filename;
     this.contentType = contentType;
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
+    this.request = request;
+    this.pending = new InboundBuffer<>(context)
+      .drainHandler(v -> request.resume())
+      .handler(buff -> {
+        if (buff == InboundBuffer.END_SENTINEL) {
+          Handler<Void> handler = endHandler();
+          if (handler != null) {
+            handler.handle(null);
+          }
+        } else {
+          Handler<Buffer> handler = handler();
+          if (handler != null) {
+            handler.handle((Buffer) buff);
+          }
+        }
+      });
+  }
+
+  @Override
+  public synchronized NettyFileUpload exceptionHandler(Handler<Throwable> handler) {
+    exceptionHandler = handler;
+    return this;
+  }
+
+  private Handler<Buffer> handler() {
+    return dataHandler;
+  }
+
+  @Override
+  public synchronized NettyFileUpload handler(Handler<Buffer> handler) {
+    dataHandler = handler;
+    return this;
+  }
+
+  @Override
+  public NettyFileUpload pause() {
+    pending.pause();
+    return this;
+  }
+
+  @Override
+  public NettyFileUpload resume() {
+    return fetch(Long.MAX_VALUE);
+  }
+
+  @Override
+  public NettyFileUpload fetch(long amount) {
+    pending.fetch(amount);
+    return this;
+  }
+
+  private synchronized Handler<Void> endHandler() {
+    return endHandler;
+  }
+
+  @Override
+  public synchronized NettyFileUpload endHandler(Handler<Void> handler) {
+    endHandler = handler;
+    return this;
+  }
+
+  private void receiveData(Buffer data) {
+    if (data.length() != 0) {
+      if (!pending.write(data)) {
+        request.pause();
+      }
+    }
+  }
+
+  private void end() {
+    pending.write(InboundBuffer.END_SENTINEL);
+  }
+
+  public void handleException(Throwable err) {
+    Handler<Throwable> handler;
+    synchronized (this) {
+      handler = exceptionHandler;
+    }
+    if (handler != null) {
+      handler.handle(err);
+    }
   }
 
   @Override
   public void setContent(ByteBuf channelBuffer) throws IOException {
     completed = true;
-    upload.receiveData(Buffer.buffer(channelBuffer));
-    upload.complete();
+    receiveData(Buffer.buffer(channelBuffer));
+    end();
   }
 
   @Override
   public void addContent(ByteBuf channelBuffer, boolean last) throws IOException {
-    upload.receiveData(Buffer.buffer(channelBuffer));
+    receiveData(Buffer.buffer(channelBuffer));
     if (last) {
       completed = true;
-      upload.complete();
+      end();
     }
   }
 

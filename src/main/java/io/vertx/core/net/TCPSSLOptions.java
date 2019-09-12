@@ -96,6 +96,16 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public static final boolean DEFAULT_TCP_QUICKACK = false;
 
+  /**
+   * The default value of SSL handshake timeout = 10
+   */
+  public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10L;
+
+  /**
+   * Default SSL handshake time unit = SECONDS
+   */
+  public static final TimeUnit DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
+
   private boolean tcpNoDelay;
   private boolean tcpKeepAlive;
   private int soLinger;
@@ -103,6 +113,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private int idleTimeout;
   private TimeUnit idleTimeoutUnit;
   private boolean ssl;
+  private long sslHandshakeTimeout;
+  private TimeUnit sslHandshakeTimeoutUnit;
   private KeyCertOptions keyCertOptions;
   private TrustOptions trustOptions;
   private Set<String> enabledCipherSuites;
@@ -137,13 +149,15 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.idleTimeout = other.getIdleTimeout();
     this.idleTimeoutUnit = other.getIdleTimeoutUnit() != null ? other.getIdleTimeoutUnit() : DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     this.ssl = other.isSsl();
-    this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().clone() : null;
-    this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().clone() : null;
+    this.sslHandshakeTimeout = other.sslHandshakeTimeout;
+    this.sslHandshakeTimeoutUnit = other.getSslHandshakeTimeoutUnit() != null ? other.getSslHandshakeTimeoutUnit() : DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
+    this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().copy() : null;
+    this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().copy() : null;
     this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledCipherSuites());
     this.crlPaths = new ArrayList<>(other.getCrlPaths());
     this.crlValues = new ArrayList<>(other.getCrlValues());
     this.useAlpn = other.useAlpn;
-    this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.clone() : null;
+    this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
     this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
     this.tcpFastOpen = other.isTcpFastOpen();
     this.tcpCork = other.isTcpCork();
@@ -180,6 +194,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     idleTimeout = DEFAULT_IDLE_TIMEOUT;
     idleTimeoutUnit = DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     ssl = DEFAULT_SSL;
+    sslHandshakeTimeout = DEFAULT_SSL_HANDSHAKE_TIMEOUT;
+    sslHandshakeTimeoutUnit = DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
     enabledCipherSuites = new LinkedHashSet<>();
     crlPaths = new ArrayList<>();
     crlValues = new ArrayList<>();
@@ -251,8 +267,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * @return are Netty pooled buffers enabled?
-   *
+   * @deprecated this has no effect, just don't use it
    */
+  @Deprecated
   public boolean isUsePooledBuffers() {
     return usePooledBuffers;
   }
@@ -262,7 +279,9 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    *
    * @param usePooledBuffers true if pooled buffers enabled
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this has no effect, just don't use it
    */
+  @Deprecated
   public TCPSSLOptions setUsePooledBuffers(boolean usePooledBuffers) {
     this.usePooledBuffers = usePooledBuffers;
     return this;
@@ -682,6 +701,45 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public Set<String> getEnabledSecureTransportProtocols() {
     return new LinkedHashSet<>(enabledSecureTransportProtocols);
+  }
+
+  /**
+   * @return the SSL handshake timeout, in time unit specified by {@link #getSslHandshakeTimeoutUnit()}.
+   */
+  public long getSslHandshakeTimeout() {
+    return sslHandshakeTimeout;
+  }
+
+  /**
+   * Set the SSL handshake timeout, default time unit is seconds.
+   *
+   * @param sslHandshakeTimeout the SSL handshake timeout to set, in milliseconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    if (sslHandshakeTimeout < 0) {
+      throw new IllegalArgumentException("sslHandshakeTimeout must be >= 0");
+    }
+    this.sslHandshakeTimeout = sslHandshakeTimeout;
+    return this;
+  }
+
+  /**
+   * Set the SSL handshake timeout unit. If not specified, default is seconds.
+   *
+   * @param sslHandshakeTimeoutUnit specify time unit.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    this.sslHandshakeTimeoutUnit = sslHandshakeTimeoutUnit;
+    return this;
+  }
+
+  /**
+   * @return the SSL handshake timeout unit.
+   */
+  public TimeUnit getSslHandshakeTimeoutUnit() {
+    return sslHandshakeTimeoutUnit;
   }
 
   @Override

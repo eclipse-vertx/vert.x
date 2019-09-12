@@ -56,7 +56,7 @@ WARNING: most browsers won't support `h2c`, so for serving web sites you should 
 When a server accepts an HTTP/2 connection, it sends to the client its {@link io.vertx.core.http.HttpServerOptions#getInitialSettings initial settings}.
 The settings define how the client can use the connection, the default initial settings for a server are:
 
-- {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: {@code 100} as recommended by the HTTP/2 RFC
+- {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: `100` as recommended by the HTTP/2 RFC
 - the default HTTP/2 settings values for the others
 
 NOTE: Worker Verticles are not compatible with HTTP/2
@@ -335,6 +335,28 @@ If you just want to upload the file to disk somewhere you can use {@link io.vert
 
 WARNING: Make sure you check the filename in a production system to avoid malicious clients uploading files
 to arbitrary places on your filesystem. See <<Security notes, security notes>> for more information.
+
+==== Handling cookies
+
+You use {@link io.vertx.core.http.HttpServerRequest#getCookie(String)} to retrieve
+a cookie by name, or use {@link io.vertx.core.http.HttpServerRequest#cookieMap()} to retrieve all the cookies.
+
+To remove a cookie, use {@link io.vertx.core.http.HttpServerResponse#removeCookie(String)}.
+
+To add a cookie use {@link io.vertx.core.http.HttpServerResponse#addCookie(Cookie)}.
+
+The set of cookies will be written back in the response automatically when the response headers are written so the
+browser can store them.
+
+Cookies are described by instances of {@link io.vertx.core.http.Cookie}. This allows you to retrieve the name,
+value, domain, path and other normal cookie properties.
+
+Here's an example of querying and adding cookies:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleHandlingCookies}
+----
 
 ==== Handling compressed body
 
@@ -775,7 +797,7 @@ Both methods of specifying host/port are supported for all the different ways of
 Often, you'll want to make HTTP requests with no request body. This is usually the case with HTTP GET, OPTIONS and
 HEAD requests.
 
-The simplest way to do this with the Vert.x http client is using the methods prefixed with `Now`. For example
+The simplest way to do this with the Vert.x http client is using the methods suffixed with `Now`. For example
 {@link io.vertx.core.http.HttpClient#getNow}.
 
 These methods create the http request and send it in a single method call and allow you to provide a handler that will be
@@ -1082,9 +1104,10 @@ Alternatively you can just parse the `Set-Cookie` headers yourself in the respon
 
 ==== 30x redirection handling
 
-The client can be configured to follow HTTP redirections: when the client receives an
-`301`, `302`, `303` or `307` status code, it follows the redirection provided by the `Location` response header
-and the response handler is passed the redirected response instead of the original response.
+The client can be configured to follow HTTP redirections provided by the `Location` response header when the client receives:
+
+* a `301`, `302`, `307` or `308` status code along with a HTTP GET or HEAD method
+* a `303` status code, in addition the directed request perform an HTTP GET methodn
 
 Here's an example:
 
@@ -1092,13 +1115,6 @@ Here's an example:
 ----
 {@link examples.HTTPExamples#exampleFollowRedirect01}
 ----
-
-The redirection policy is as follow
-
-* on a `301`, `302` or `303` status code, follow the redirection with a `GET` method
-* on a `307` status code, follow the redirection with the same HTTP method and the cached body
-
-WARNING: following redirections caches the request body
 
 The maximum redirects is `16` by default and can be changed with {@link io.vertx.core.http.HttpClientOptions#setMaxRedirects(int)}.
 
@@ -1550,7 +1566,7 @@ method.
 
 The {@link io.vertx.core.http.HttpClientOptions#setSsl(boolean)} setting acts as the default client setting.
 
-The {@link io.vertx.core.http.RequestOptions#setSsl(boolean)} overrides the default client setting
+The {@link io.vertx.core.http.RequestOptions#setSsl(Boolean)} overrides the default client setting
 
 * setting the value to `false` will disable SSL/TLS even if the client is configured to use SSL/TLS
 * setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual
@@ -1596,6 +1612,15 @@ You can choose to reject the WebSocket by calling {@link io.vertx.core.http.Serv
 {@link examples.HTTPExamples#example52}
 ----
 
+You can perform an asynchronous handshake by calling {@link io.vertx.core.http.ServerWebSocket#setHandshake} with a `Future`:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleAsynchronousHandshake}
+----
+
+NOTE: the WebSocket will be automatically accepted after the handler is called unless the WebSocket's handshake has been set
+
 ===== Upgrading to WebSocket
 
 The second way of handling WebSockets is to handle the HTTP Upgrade request that was sent from the client, and
@@ -1616,7 +1641,7 @@ The {@link io.vertx.core.http.ServerWebSocket} instance enables you to retrieve 
 
 The Vert.x {@link io.vertx.core.http.HttpClient} supports WebSockets.
 
-You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.HttpClient#websocket} operations and
+You can connect a WebSocket to a server using one of the {@link io.vertx.core.http.HttpClient#webSocket} operations and
 providing a handler.
 
 The handler will be called with an instance of {@link io.vertx.core.http.WebSocket} when the connection has been made:

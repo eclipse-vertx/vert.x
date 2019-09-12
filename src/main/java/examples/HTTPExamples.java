@@ -11,8 +11,11 @@
 
 package examples;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -171,6 +174,16 @@ public class HTTPExamples {
     request.uploadHandler(upload -> {
       upload.streamToFileSystem("myuploads_directory/" + upload.filename());
     });
+  }
+
+  public void exampleHandlingCookies(HttpServerRequest request) {
+    Cookie someCookie = request.getCookie("mycookie");
+    String cookieValue = someCookie.getValue();
+
+    // Do something with cookie...
+
+    // Add a cookie - this will get written back in the response automatically
+    request.response().addCookie(Cookie.cookie("othercookie", "somevalue"));
   }
 
   public void example16(HttpServerRequest request, Buffer buffer) {
@@ -673,6 +686,27 @@ public class HTTPExamples {
     });
   }
 
+  public void exampleAsynchronousHandshake(HttpServer server) {
+    server.websocketHandler(websocket -> {
+      Promise<Integer> promise = Promise.promise();
+      websocket.setHandshake(promise);
+      authenticate(websocket, ar -> {
+        if (ar.succeeded()) {
+          // Terminate the handshake with the status code 101 (Switching Protocol)
+          // Reject the handshake with 401 (Unauthorized)
+          promise.complete(ar.succeeded() ? 101 : 401);
+        } else {
+          // Will send a 500 error
+          promise.fail(ar.cause());
+        }
+      });
+    });
+  }
+
+  private static void authenticate(ServerWebSocket ws, Handler<AsyncResult<Boolean>> handler) {
+
+  }
+
   public void example53(HttpServer server) {
 
     server.requestHandler(request -> {
@@ -689,8 +723,11 @@ public class HTTPExamples {
   }
 
   public void example54(HttpClient client) {
-    client.websocket("/some-uri", websocket -> {
-      System.out.println("Connected!");
+    client.webSocket("/some-uri", res -> {
+      if (res.succeeded()) {
+        WebSocket ws = res.result();
+        System.out.println("Connected!");
+      }
     });
   }
 

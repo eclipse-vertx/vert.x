@@ -30,4 +30,16 @@ public interface BufferFactory {
   Buffer buffer(byte[] bytes);
 
   Buffer buffer(ByteBuf byteBuffer);
+
+  Buffer directBuffer(String str, String enc);
+
+  /**
+   * Create a direct buffer, use this with care as Vert.x buffers are not releasable (unpooled) and you would need
+   * to release the underlying Netty wrapped {@code ByteBuf}.
+   *
+   * @param bytes the bytes
+   * @return the buffer
+   */
+  Buffer directBuffer(byte[] bytes);
+
 }

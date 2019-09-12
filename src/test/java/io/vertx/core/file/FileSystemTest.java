@@ -14,12 +14,11 @@ package io.vertx.core.file;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.*;
-import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
@@ -73,7 +72,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
-  public void testIllegalArguments() throws Exception {
+  public void testIllegalArguments() {
     assertNullPointerException(() -> vertx.fileSystem().copy(null, "ignored", h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().copy("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().copyBlocking(null, "ignored"));
@@ -176,6 +175,7 @@ public class FileSystemTest extends VertxTestBase {
     testCopy(source, target, false, true, v-> {
       assertTrue(fileExists(source));
       assertTrue(fileExists(target));
+      testComplete();
     });
     await();
   }
@@ -189,6 +189,7 @@ public class FileSystemTest extends VertxTestBase {
     testCopy(source, target, false, false, v -> {
       assertTrue(fileExists(source));
       assertTrue(fileExists(target));
+      testComplete();
     });
     await();
   }
@@ -203,6 +204,7 @@ public class FileSystemTest extends VertxTestBase {
     testCopy(source, target, false, true, v -> {
       assertTrue(fileExists(source));
       assertTrue(fileExists(target));
+      testComplete();
     });
     await();
   }
@@ -215,6 +217,7 @@ public class FileSystemTest extends VertxTestBase {
     testCopy(source, target, false, true, v -> {
       assertTrue(fileExists(source));
       assertTrue(fileExists(target));
+      testComplete();
     });
     await();
   }
@@ -230,6 +233,7 @@ public class FileSystemTest extends VertxTestBase {
       assertTrue(fileExists(source));
       assertTrue(fileExists(target));
       assertFalse(fileExists(target + file1));
+      testComplete();
     });
     await();
   }
@@ -243,6 +247,7 @@ public class FileSystemTest extends VertxTestBase {
     testCopy(source, target, false, false, v -> {
       assertTrue(fileExists(source));
       assertTrue(fileExists(target));
+      testComplete();
     });
     await();
   }
@@ -266,6 +271,7 @@ public class FileSystemTest extends VertxTestBase {
       assertTrue(fileExists(target + file1));
       assertTrue(fileExists(target + file2));
       assertTrue(fileExists(target + pathSep + dir2 + file3));
+      testComplete();
     });
     await();
   }
@@ -287,6 +293,7 @@ public class FileSystemTest extends VertxTestBase {
     testMove(source, target, true, v -> {
       assertFalse(fileExists(source));
       assertTrue(fileExists(target));
+      testComplete();
     });
     await();
   }
@@ -300,6 +307,7 @@ public class FileSystemTest extends VertxTestBase {
     testMove(source, target, false, v -> {
       assertTrue(fileExists(source));
       assertTrue(fileExists(target));
+      testComplete();
     });
     await();
   }
@@ -312,6 +320,7 @@ public class FileSystemTest extends VertxTestBase {
     testMove(source, target, true, v -> {
       assertFalse(fileExists(source));
       assertTrue(fileExists(target));
+      testComplete();
     });
     await();
   }
@@ -325,6 +334,7 @@ public class FileSystemTest extends VertxTestBase {
     testMove(source, target, false, v -> {
       assertTrue(fileExists(source));
       assertTrue(fileExists(target));
+      testComplete();
     });
     await();
   }
@@ -348,11 +358,12 @@ public class FileSystemTest extends VertxTestBase {
       assertTrue(fileExists(target + file1));
       assertTrue(fileExists(target + file2));
       assertTrue(fileExists(target + pathSep + dir2 + file3));
+      testComplete();
     });
     await();
   }
 
-  private void testMove(String source, String target, boolean shouldPass, Handler<Void> afterOK) throws Exception {
+  private void testMove(String source, String target, boolean shouldPass, Handler<Void> afterOK) {
     vertx.fileSystem().move(testDir + pathSep + source, testDir + pathSep + target, createHandler(shouldPass, afterOK));
   }
 
@@ -365,6 +376,7 @@ public class FileSystemTest extends VertxTestBase {
     assertEquals(initialLen, fileLength(file1));
     testTruncate(file1, truncatedLen, true, v -> {
       assertEquals(truncatedLen, fileLength(file1));
+      testComplete();
     });
     await();
   }
@@ -378,20 +390,23 @@ public class FileSystemTest extends VertxTestBase {
     assertEquals(initialLen, fileLength(file1));
     testTruncate(file1, truncatedLen, true, v -> {
       assertEquals(truncatedLen, fileLength(file1));
+      testComplete();
     });
     await();
   }
 
   @Test
-  public void testTruncateFileDoesNotExist() throws Exception {
+  public void testTruncateFileDoesNotExist() {
     String file1 = "some-file.dat";
     long truncatedLen = 534;
-    testTruncate(file1, truncatedLen, false, null);
+    testTruncate(file1, truncatedLen, false, v -> {
+      testComplete();
+    });
     await();
   }
 
   private void testTruncate(String file, long truncatedLen, boolean shouldPass,
-                            Handler<Void> afterOK) throws Exception {
+                            Handler<Void> afterOK) {
     vertx.fileSystem().truncate(testDir + pathSep + file, truncatedLen, createHandler(shouldPass, afterOK));
   }
 
@@ -429,13 +444,14 @@ public class FileSystemTest extends VertxTestBase {
     String file1 = "some-file.dat";
     createFileWithJunk(file1, 100);
     testChmod(file1, perms, null, true, v -> {
-      azzertPerms(perms, file1);
+      assertPerms(perms, file1);
       deleteFile(file1);
+      testComplete();
     });
     await();
   }
 
-  private void azzertPerms(String perms, String file1) {
+  private void assertPerms(String perms, String file1) {
     if (!Utils.isWindows()) {
       assertEquals(perms, getPerms(file1));
     }
@@ -483,12 +499,13 @@ public class FileSystemTest extends VertxTestBase {
     mkDir(dir + pathSep + dir2);
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     testChmod(dir, perms, dirPerms, true, v -> {
-      azzertPerms(dirPerms, dir);
-      azzertPerms(perms, dir + file1);
-      azzertPerms(perms, dir + file2);
-      azzertPerms(dirPerms, dir + pathSep + dir2);
-      azzertPerms(perms, dir + pathSep + dir2 + file3);
+      assertPerms(dirPerms, dir);
+      assertPerms(perms, dir + file1);
+      assertPerms(perms, dir + file2);
+      assertPerms(dirPerms, dir + pathSep + dir2);
+      assertPerms(perms, dir + pathSep + dir2 + file3);
       deleteDir(dir);
+      testComplete();
     });
     await();
   }
@@ -548,11 +565,11 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   private void testChmod(String file, String perms, String dirPerms,
-                         boolean shouldPass, Handler<Void> afterOK) throws Exception {
+                         boolean shouldPass, Handler<Void> afterOK) {
     if (Files.isDirectory(Paths.get(testDir + pathSep + file))) {
-      azzertPerms(DEFAULT_DIR_PERMS, file);
+      assertPerms(DEFAULT_DIR_PERMS, file);
     } else {
-      azzertPerms(DEFAULT_FILE_PERMS, file);
+      assertPerms(DEFAULT_FILE_PERMS, file);
     }
     if (dirPerms != null) {
       vertx.fileSystem().chmodRecursive(testDir + pathSep + file, perms, dirPerms, createHandler(shouldPass, afterOK));
@@ -584,7 +601,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
-  public void testPropsFileDoesNotExist() throws Exception {
+  public void testPropsFileDoesNotExist() {
     String fileName = "some-file.txt";
     testProps(fileName, false, false, null);
     await();
@@ -639,7 +656,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   private void testProps(String fileName, boolean link, boolean shouldPass,
-                         Handler<FileProps> afterOK) throws Exception {
+                         Handler<FileProps> afterOK) {
     Handler<AsyncResult<FileProps>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
@@ -678,6 +695,7 @@ public class FileSystemTest extends VertxTestBase {
     testLink(linkName, fileName, false, true, v -> {
       assertEquals(fileSize, fileLength(linkName));
       assertFalse(Files.isSymbolicLink(Paths.get(testDir + pathSep + linkName)));
+      testComplete();
     });
     await();
   }
@@ -696,12 +714,13 @@ public class FileSystemTest extends VertxTestBase {
       // Now try reading it
       String read = vertx.fileSystem().readSymlinkBlocking(testDir + pathSep + symlinkName);
       assertEquals(fileName, read);
+      testComplete();
     });
     await();
   }
 
   private void testLink(String from, String to, boolean symbolic,
-                        boolean shouldPass, Handler<Void> afterOK) throws Exception {
+                        boolean shouldPass, Handler<Void> afterOK) {
     if (symbolic) {
       // Symlink is relative
       vertx.fileSystem().symlink(testDir + pathSep + from, to, createHandler(shouldPass, afterOK));
@@ -718,7 +737,10 @@ public class FileSystemTest extends VertxTestBase {
     String linkName = "some-link.txt";
     Files.createLink(Paths.get(testDir + pathSep + linkName), Paths.get(testDir + pathSep + fileName));
     assertEquals(fileSize, fileLength(linkName));
-    vertx.fileSystem().unlink(testDir + pathSep + linkName, createHandler(true, v -> assertFalse(fileExists(linkName))));
+    vertx.fileSystem().unlink(testDir + pathSep + linkName, createHandler(true, v -> {
+      assertFalse(fileExists(linkName));
+      testComplete();
+    }));
     await();
   }
 
@@ -749,6 +771,7 @@ public class FileSystemTest extends VertxTestBase {
     assertTrue(fileExists(fileName));
     testDelete(fileName, false, true, v -> {
       assertFalse(fileExists(fileName));
+      testComplete();
     });
     await();
   }
@@ -760,15 +783,18 @@ public class FileSystemTest extends VertxTestBase {
     assertTrue(fileExists(dirName));
     testDelete(dirName, false, true, v -> {
       assertFalse(fileExists(dirName));
+      testComplete();
     });
     await();
   }
 
   @Test
-  public void testDeleteNonExistent() throws Exception {
+  public void testDeleteNonExistent() {
     String dirName = "some-dir";
     assertFalse(fileExists(dirName));
-    testDelete(dirName, false, false, null);
+    testDelete(dirName, false, false, v -> {
+      testComplete();
+    });
     await();
   }
 
@@ -778,7 +804,9 @@ public class FileSystemTest extends VertxTestBase {
     mkDir(dirName);
     String file1 = "some-file.txt";
     createFileWithJunk(dirName + pathSep + file1, 100);
-    testDelete(dirName, false, false, null);
+    testDelete(dirName, false, false, v -> {
+      testComplete();
+    });
     await();
   }
 
@@ -796,12 +824,13 @@ public class FileSystemTest extends VertxTestBase {
     createFileWithJunk(dir + pathSep + dir2 + file3, 100);
     testDelete(dir, true, true, v -> {
       assertFalse(fileExists(dir));
+      testComplete();
     });
     await();
   }
 
   private void testDelete(String fileName, boolean recursive, boolean shouldPass,
-                          Handler<Void> afterOK) throws Exception {
+                          Handler<Void> afterOK) {
     if (recursive) {
       vertx.fileSystem().deleteRecursive(testDir + pathSep + fileName, recursive, createHandler(shouldPass, afterOK));
     } else {
@@ -810,58 +839,102 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
-  public void testMkdirSimple() throws Exception {
+  public void testMkdirSimple() {
     String dirName = "some-dir";
     testMkdir(dirName, null, false, true, v -> {
       assertTrue(fileExists(dirName));
       assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+      testComplete();
     });
     await();
   }
 
   @Test
-  public void testMkdirWithParentsFails() throws Exception {
+  public void testMkdirWithParentsFails() {
     String dirName = "top-dir" + pathSep + "some-dir";
-    testMkdir(dirName, null, false, false, null);
+    testMkdir(dirName, null, false, false, v -> {
+      testComplete();
+    });
     await();
   }
 
   @Test
-  public void testMkdirWithPerms() throws Exception {
+  public void testMkdirWithPerms() {
     String dirName = "some-dir";
     String perms = "rwx--x--x";
     testMkdir(dirName, perms, false, true, v -> {
       assertTrue(fileExists(dirName));
       assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
-      azzertPerms(perms, dirName);
+      assertPerms(perms, dirName);
+      testComplete();
     });
     await();
   }
 
   @Test
-  public void testMkdirCreateParents() throws Exception {
+  public void testMkdirAlreadyExist() {
+    String dirName = "some-dir";
+    testMkdir(dirName, null, false, true, v1 -> {
+      testMkdir(dirName, null, false, false, v2 -> {
+        assertTrue(fileExists(dirName));
+        assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testMkdirCreateParents() {
     String dirName = "top-dir" + pathSep + "/some-dir";
     testMkdir(dirName, null, true, true, v -> {
       assertTrue(fileExists(dirName));
       assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+      testComplete();
     });
     await();
   }
 
   @Test
-  public void testMkdirCreateParentsWithPerms() throws Exception {
+  public void testMkdirCreateParentsWithPerms() {
     String dirName = "top-dir" + pathSep + "/some-dir";
     String perms = "rwx--x--x";
     testMkdir(dirName, perms, true, true, v -> {
       assertTrue(fileExists(dirName));
       assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
-      azzertPerms(perms, dirName);
+      assertPerms(perms, dirName);
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testMkdirCreateParentsDirExist() {
+    String dirName = "some-dir";
+    testMkdir(dirName, null, true, true, v1 -> {
+      testMkdir(dirName, null, true, true, v2 -> {
+        assertTrue(fileExists(dirName));
+        assertTrue(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testMkdirCreateParentsFileExist() throws Exception {
+    String dirName = "some-dir";
+    createFileWithJunk(dirName, 1024);
+    testMkdir(dirName, null, true, false, v2 -> {
+      assertTrue(fileExists(dirName));
+      assertFalse(Files.isDirectory(Paths.get(testDir + pathSep + dirName)));
+      testComplete();
     });
     await();
   }
 
   private void testMkdir(String dirName, String perms, boolean createParents,
-                         boolean shouldPass, Handler<Void> afterOK) throws Exception {
+                         boolean shouldPass, Handler<Void> afterOK) {
     Handler<AsyncResult<Void>> handler = createHandler(shouldPass, afterOK);
     if (createParents) {
       if (perms != null) {
@@ -940,7 +1013,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   private void testReadDir(String dirName, String filter, boolean shouldPass,
-                           Handler<List<String>> afterOK) throws Exception {
+                           Handler<List<String>> afterOK) {
     Handler<AsyncResult<List<String>>> handler = ar -> {
       if (ar.failed()) {
         if (shouldPass) {
@@ -988,7 +1061,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
-  public void testWriteFile() throws Exception {
+  public void testWriteFile() {
     byte[] content = TestUtils.randomByteArray(1000);
     Buffer buff = Buffer.buffer(content);
     String fileName = "some-file.dat";
@@ -1013,7 +1086,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
-  public void testWriteAsync() throws Exception {
+  public void testWriteAsync() {
     String fileName = "some-file.dat";
     int chunkSize = 1000;
     int chunks = 10;
@@ -1059,6 +1132,17 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  public void testWriteEmptyAsync() {
+    String fileName = "some-file.dat";
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
+      file.write(Buffer.buffer(), 0, onSuccess(v -> {
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testReadAsync() throws Exception {
     String fileName = "some-file.dat";
     int chunkSize = 1000;
@@ -1097,7 +1181,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
-  public void testWriteStream() throws Exception {
+  public void testWriteStream() {
     String fileName = "some-file.dat";
     int chunkSize = 1000;
     int chunks = 10;
@@ -1177,7 +1261,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
-  public void testWriteStreamWithCompositeBuffer() throws Exception {
+  public void testWriteStreamWithCompositeBuffer() {
     String fileName = "some-file.dat";
     int chunkSize = 1000;
     int chunks = 10;
@@ -1218,7 +1302,7 @@ public class FileSystemTest extends VertxTestBase {
 
     NONE {
       @Override void init(ReadStream<Buffer> stream) { }
-      @Override void handle(ReadStream<Buffer> stream) { }
+      @Override Future<Void> handle(ReadStream<Buffer> stream) { return Future.succeededFuture(); }
     },
 
     FLOWING {
@@ -1228,13 +1312,16 @@ public class FileSystemTest extends VertxTestBase {
       }
 
       @Override
-      void handle(ReadStream<Buffer> stream) {
+      Future<Void> handle(ReadStream<Buffer> stream) {
+        Promise<Void> fut = Promise.promise();
         assert flowing.getAndSet(false);
         stream.pause();
         Vertx.currentContext().owner().setTimer(1, id -> {
           assert !flowing.getAndSet(true);
           stream.resume();
+          fut.complete();
         });
+        return fut.future();
       }
     },
 
@@ -1246,12 +1333,15 @@ public class FileSystemTest extends VertxTestBase {
         stream.fetch(1);
       }
       @Override
-      void handle(ReadStream<Buffer> stream) {
+      Future<Void> handle(ReadStream<Buffer> stream) {
+        Promise<Void> fut = Promise.promise();
         assert fetching.getAndSet(false);
         Vertx.currentContext().owner().setTimer(1, id -> {
           assert !fetching.getAndSet(true);
           stream.fetch(1);
+          fut.complete();
         });
+        return fut.future();
       }
     };
 
@@ -1259,7 +1349,7 @@ public class FileSystemTest extends VertxTestBase {
     final static AtomicBoolean fetching = new AtomicBoolean();
 
     abstract void init(ReadStream<Buffer> stream);
-    abstract void handle(ReadStream<Buffer> stream);
+    abstract Future<Void> handle(ReadStream<Buffer> stream);
 
   }
 
@@ -1286,23 +1376,36 @@ public class FileSystemTest extends VertxTestBase {
     createFile(fileName, content);
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
+        AtomicInteger inProgress = new AtomicInteger();
+        AtomicBoolean ended = new AtomicBoolean();
+        Buffer buff = Buffer.buffer();
+        Runnable checkEnd = () -> {
+          if (ended.get() && inProgress.get() == 0) {
+            ar.result().close(ar2 -> {
+              if (ar2.failed()) {
+                fail(ar2.cause().getMessage());
+              } else {
+                assertEquals(Buffer.buffer(content), buff);
+                testComplete();
+              }
+            });
+          }
+        };
         ReadStream<Buffer> rs = ar.result();
         strategy.init(rs);
-        Buffer buff = Buffer.buffer();
         rs.handler(chunk -> {
           buff.appendBuffer(chunk);
-          strategy.handle(rs);
+          inProgress.incrementAndGet();
+          Future<Void> fut = strategy.handle(rs);
+          fut.setHandler(v -> {
+            inProgress.decrementAndGet();
+            checkEnd.run();
+          });
         });
         rs.exceptionHandler(t -> fail(t.getMessage()));
         rs.endHandler(v -> {
-          ar.result().close(ar2 -> {
-            if (ar2.failed()) {
-              fail(ar2.cause().getMessage());
-            } else {
-              assertEquals(Buffer.buffer(content), buff);
-              testComplete();
-            }
-          });
+          ended.set(true);
+          checkEnd.run();
         });
       } else {
         fail(ar.cause().getMessage());
@@ -1382,6 +1485,86 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  public void testReadStreamSetReadLength() throws Exception {
+    String fileName = "some-file.dat";
+    int chunkSize = 1000;
+    int chunks = 10;
+    byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
+    int readLength = chunkSize * chunks / 3;
+    createFile(fileName, content);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
+      if (ar.succeeded()) {
+        AsyncFile rs = ar.result();
+        rs.setReadLength(readLength);
+        Buffer buff = Buffer.buffer();
+        rs.handler(buff::appendBuffer);
+        rs.exceptionHandler(t -> fail(t.getMessage()));
+        rs.endHandler(v -> {
+          ar.result().close(ar2 -> {
+            if (ar2.failed()) {
+              fail(ar2.cause().getMessage());
+            } else {
+              assertEquals(readLength, buff.length());
+              byte[] firstThird = new byte[readLength];
+              System.arraycopy(content, 0, firstThird, 0, readLength);
+              assertEquals(Buffer.buffer(firstThird), buff);
+              testComplete();
+            }
+          });
+        });
+      } else {
+        fail(ar.cause().getMessage());
+      }
+    });
+    await();
+  }
+
+  @Test
+  public void testReadStreamSetReadPosReadLengthBufferSize() throws Exception {
+    String fileName = "some-file.dat";
+    int chunkSize = 1000;
+    int chunks = 10;
+    byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
+    int readLength = chunkSize * chunks / 3;
+    int readPos = chunkSize * chunks / 3;
+    int readBufferSize = 1000;
+    int numOfReads = readLength / readBufferSize + (readLength % readBufferSize > 0? 1 : 0);
+    createFile(fileName, content);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), ar -> {
+      if (ar.succeeded()) {
+        AsyncFile rs = ar.result();
+        rs.setReadPos(readPos);
+        rs.setReadLength(readLength);
+        rs.setReadBufferSize(readBufferSize);
+        final Buffer buff = Buffer.buffer();
+        final int[] appendCount = new int[] {0};
+        rs.handler((rsBuff) -> {
+          buff.appendBuffer(rsBuff);
+          appendCount[0]++;
+        });
+        rs.exceptionHandler(t -> fail(t.getMessage()));
+        rs.endHandler(v -> {
+          ar.result().close(ar2 -> {
+            if (ar2.failed()) {
+              fail(ar2.cause().getMessage());
+            } else {
+              assertEquals(buff.length(), readLength);
+              assertEquals(numOfReads, appendCount[0]);
+              byte[] middleThird = new byte[readLength];
+              System.arraycopy(content, readPos, middleThird, 0, readLength);
+              assertEquals(Buffer.buffer(middleThird), buff);
+              testComplete();
+            }
+          });
+        });
+      } else {
+        fail(ar.cause().getMessage());
+      }
+    });
+    await();
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   public void testPumpFileStreams() throws Exception {
     String fileName1 = "some-file.dat";
@@ -1437,12 +1620,12 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
-  public void testCreateFileNoPerms() throws Exception {
+  public void testCreateFileNoPerms() {
     testCreateFile(null, true);
   }
 
   @Test
-  public void testCreateFileWithPerms() throws Exception {
+  public void testCreateFileWithPerms() {
     testCreateFile("rwx------", true);
   }
 
@@ -1452,7 +1635,7 @@ public class FileSystemTest extends VertxTestBase {
     testCreateFile(null, false);
   }
 
-  private void testCreateFile(String perms, boolean shouldPass) throws Exception {
+  private void testCreateFile(String perms, boolean shouldPass) {
     String fileName = "some-file.dat";
     Handler<AsyncResult<Void>> handler = ar -> {
       if (ar.failed()) {
@@ -1467,7 +1650,7 @@ public class FileSystemTest extends VertxTestBase {
           assertTrue(fileExists(fileName));
           assertEquals(0, fileLength(fileName));
           if (perms != null) {
-            azzertPerms(perms, fileName);
+            assertPerms(perms, fileName);
           }
           testComplete();
         } else {
@@ -1526,7 +1709,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   private void testFSProps(String fileName,
-                           Handler<FileSystemProps> afterOK) throws Exception {
+                           Handler<FileSystemProps> afterOK) {
     vertx.fileSystem().fsProps(testDir + pathSep + fileName, ar -> {
       if (ar.failed()) {
         fail(ar.cause().getMessage());
@@ -1605,7 +1788,7 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
-  public void testDrainNotCalledAfterClose() throws Exception {
+  public void testDrainNotCalledAfterClose() {
     String fileName = "some-file.dat";
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
       Buffer buf = TestUtils.randomBuffer(1024 * 1024);
@@ -1640,6 +1823,28 @@ public class FileSystemTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testPausedEnd() throws Exception {
+    String fileName = "some-file.dat";
+    createFile(fileName, new byte[0]);
+    AtomicBoolean paused = new AtomicBoolean(false);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
+      Buffer buffer = Buffer.buffer();
+      paused.set(true);
+      file.pause();
+      vertx.setTimer(100, id -> {
+        paused.set(false);
+        file.resume();
+      });
+      file.endHandler(v -> {
+        assertFalse(paused.get());
+        testComplete();
+      });
+      file.handler(buffer::appendBuffer);
+    }));
+    await();
+  }
+
   private Handler<AsyncResult<Void>> createHandler(boolean shouldPass, Handler<Void> afterOK) {
     return ar -> {
       if (ar.failed()) {
@@ -1650,14 +1855,12 @@ public class FileSystemTest extends VertxTestBase {
           if (afterOK != null) {
             afterOK.handle(null);
           }
-          testComplete();
         }
       } else {
         if (shouldPass) {
           if (afterOK != null) {
             afterOK.handle(null);
           }
-          testComplete();
         } else {
           fail("operation should fail");
         }

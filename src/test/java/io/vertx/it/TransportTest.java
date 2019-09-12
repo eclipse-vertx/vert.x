@@ -87,7 +87,7 @@ public class TransportTest extends AsyncTestBase {
 
   @Test
   public void testDomainSocketServer() throws Exception {
-    File sock = TestUtils.tmpFile("vertx", ".sock");
+    File sock = TestUtils.tmpFile(".sock");
     vertx = Vertx.vertx();
     NetServer server = vertx.createNetServer();
     server.connectHandler(so -> {});
@@ -100,7 +100,7 @@ public class TransportTest extends AsyncTestBase {
 
   @Test
   public void testDomainSocketClient() throws Exception {
-    File sock = TestUtils.tmpFile("vertx", ".sock");
+    File sock = TestUtils.tmpFile(".sock");
     vertx = Vertx.vertx();
     NetClient client = vertx.createNetClient();
     client.connect(SocketAddress.domainSocketAddress(sock.getAbsolutePath()), onFailure(err -> {

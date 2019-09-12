@@ -28,6 +28,7 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -78,6 +79,14 @@ class EpollTransport extends Transport {
   }
 
   @Override
+  public io.vertx.core.net.SocketAddress convert(SocketAddress address) {
+    if (address instanceof DomainSocketAddress) {
+      return new SocketAddressImpl(((DomainSocketAddress) address).path());
+    }
+    return super.convert(address);
+  }
+
+  @Override
   public boolean isAvailable() {
     return Epoll.isAvailable();
   }
@@ -88,7 +97,7 @@ class EpollTransport extends Transport {
   }
 
   @Override
-  public EventLoopGroup eventLoopGroup(int nThreads, ThreadFactory threadFactory, int ioRatio) {
+  public EventLoopGroup eventLoopGroup(int type, int nThreads, ThreadFactory threadFactory, int ioRatio) {
     EpollEventLoopGroup eventLoopGroup = new EpollEventLoopGroup(nThreads, threadFactory);
     eventLoopGroup.setIoRatio(ioRatio);
     return eventLoopGroup;
@@ -105,16 +114,16 @@ class EpollTransport extends Transport {
   }
 
   @Override
-  public ChannelFactory<? extends Channel> channelFactory(boolean domain) {
-    if (domain) {
+  public ChannelFactory<? extends Channel> channelFactory(boolean domainSocket) {
+    if (domainSocket) {
       return EpollDomainSocketChannel::new;
     } else {
       return EpollSocketChannel::new;
     }
   }
 
-  public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domain) {
-    if (domain) {
+  public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
+    if (domainSocket) {
       return EpollServerDomainSocketChannel::new;
     }
     return EpollServerSocketChannel::new;
@@ -127,23 +136,25 @@ class EpollTransport extends Transport {
   }
 
   @Override
-  public void configure(NetServerOptions options, ServerBootstrap bootstrap) {
-    bootstrap.option(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
+  public void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
+    if (!domainSocket) {
+      bootstrap.option(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
+    }
     if (options.isTcpFastOpen()) {
       bootstrap.option(EpollChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
     }
     bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
     bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
-    super.configure(options, bootstrap);
+    super.configure(options, domainSocket, bootstrap);
   }
 
   @Override
-  public void configure(ClientOptionsBase options, Bootstrap bootstrap) {
+  public void configure(ClientOptionsBase options, boolean domainSocket, Bootstrap bootstrap) {
     if (options.isTcpFastOpen()) {
       bootstrap.option(EpollChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
     }
     bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
     bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
-    super.configure(options, bootstrap);
+    super.configure(options, domainSocket, bootstrap);
   }
 }

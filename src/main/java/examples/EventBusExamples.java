@@ -82,7 +82,7 @@ public class EventBusExamples {
   }
 
   public void example9(EventBus eventBus) {
-    eventBus.send("news.uk.sport", "Yay! Someone kicked a ball across a patch of grass", ar -> {
+    eventBus.request("news.uk.sport", "Yay! Someone kicked a ball across a patch of grass", ar -> {
       if (ar.succeeded()) {
         System.out.println("Received reply: " + ar.result().body());
       }

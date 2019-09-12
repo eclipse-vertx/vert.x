@@ -15,21 +15,23 @@ import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.util.NetUtil;
 import io.netty.util.internal.logging.InternalLoggerFactory;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.test.netty.TestLoggerFactory;
 
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
 import javax.security.cert.X509Certificate;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.net.InetAddress;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.assertTrue;
@@ -396,13 +398,8 @@ public class TestUtils {
 
   public static String cnOf(X509Certificate cert) throws Exception {
     String dn = cert.getSubjectDN().getName();
-    LdapName ldapDN = new LdapName(dn);
-    for (Rdn rdn : ldapDN.getRdns()) {
-      if (rdn.getType().equalsIgnoreCase("cn")) {
-        return rdn.getValue().toString();
-      }
-    }
-    return null;
+    List<String> names = KeyStoreHelper.getX509CertificateCommonNames(dn);
+    return names.isEmpty() ? null : names.get(0);
   }
 
   /**
@@ -415,9 +412,20 @@ public class TestUtils {
   /**
    * Create a temp file that does not exists.
    */
-  public static File tmpFile(String prefix, String suffix) throws Exception {
-    File tmp = Files.createTempFile(prefix, suffix).toFile();
+  public static File tmpFile(String suffix) throws Exception {
+    File tmp = Files.createTempFile("vertx", suffix).toFile();
     assertTrue(tmp.delete());
+    return tmp;
+  }
+
+  /**
+   * Create a temp file that exists and with a specified {@code length}. The file will be deleted at VM exit.
+   */
+  public static File tmpFile(String suffix, long length) throws Exception {
+    File tmp = File.createTempFile("vertx", suffix);
+    tmp.deleteOnExit();
+    RandomAccessFile f = new RandomAccessFile(tmp, "rw");
+    f.setLength(length);
     return tmp;
   }
 

@@ -289,6 +289,16 @@ public class NetServerOptions extends TCPSSLOptions {
     return (NetServerOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
   }
 
+  @Override
+  public NetServerOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    return (NetServerOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
+  }
+
+  @Override
+  public NetServerOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    return (NetServerOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+  }
+
   /**
    * @return the value of accept backlog
    */
@@ -350,6 +360,7 @@ public class NetServerOptions extends TCPSSLOptions {
   /**
    *
    * @return true if client auth is required
+   * @deprecated use {@link #getClientAuth() getClientAuth()  == ClientAuth.REQUIRED} instead
    */
   @Deprecated
   public boolean isClientAuthRequired() {
@@ -361,6 +372,7 @@ public class NetServerOptions extends TCPSSLOptions {
    *
    * @param clientAuthRequired  true if client auth is required
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #setClientAuth(ClientAuth) setClientAuth(ClientAuth.REQUIRED)} or {@link #setClientAuth(ClientAuth) setClientAuth(ClientAuth.NONE)} instead
    */
   @Deprecated
   public NetServerOptions setClientAuthRequired(boolean clientAuthRequired) {

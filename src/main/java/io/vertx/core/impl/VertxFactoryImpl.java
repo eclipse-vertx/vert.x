@@ -11,11 +11,8 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
+import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.VertxFactory;
 
 /**
@@ -32,21 +29,31 @@ public class VertxFactoryImpl implements VertxFactory {
 
   @Override
   public Vertx vertx(VertxOptions options) {
-    if (options.isClustered()) {
+    return vertx(options, Transport.transport(options.getPreferNativeTransport()));
+  }
+
+  @Override
+  public Vertx vertx(VertxOptions options, Transport transport) {
+    if (options.getEventBusOptions().isClustered()) {
       throw new IllegalArgumentException("Please use Vertx.clusteredVertx() to create a clustered Vert.x instance");
     }
-    return VertxImpl.vertx(options);
+    return VertxImpl.vertx(options, transport);
   }
 
   @Override
   public void clusteredVertx(VertxOptions options, final Handler<AsyncResult<Vertx>> resultHandler) {
+    clusteredVertx(options, Transport.transport(options.getPreferNativeTransport()), resultHandler);
+  }
+
+  @Override
+  public void clusteredVertx(VertxOptions options, Transport transport, Handler<AsyncResult<Vertx>> resultHandler) {
     // We don't require the user to set clustered to true if they use this method
-    options.setClustered(true);
-    VertxImpl.clusteredVertx(options, resultHandler);
+    options.getEventBusOptions().setClustered(true);
+    VertxImpl.clusteredVertx(options, transport, resultHandler);
   }
 
   @Override
   public Context context() {
-    return VertxImpl.context();
+    return ContextImpl.context();
   }
 }

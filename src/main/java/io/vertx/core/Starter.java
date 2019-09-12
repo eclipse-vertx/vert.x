@@ -211,7 +211,7 @@ public class Starter {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
 
-      options.setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true);
+      options.getEventBusOptions().setClustered(true).setHost(clusterHost).setPort(clusterPort);
       if (ha) {
         String haGroup = args.map.get("-hagroup");
         int quorumSize = args.getInt("-quorum");

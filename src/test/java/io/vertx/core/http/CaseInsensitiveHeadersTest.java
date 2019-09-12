@@ -12,8 +12,6 @@
 package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.CaseInsensitiveHeaders;
-import io.vertx.core.http.HttpHeaders;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -28,8 +26,23 @@ import static org.junit.Assert.*;
 
 public class CaseInsensitiveHeadersTest {
 
+  // Same hash
+  protected String sameHash1 = "AZ";
+  protected String sameHash2 = "\u0080Y";
+
+  // Different hash / same bucket
+  protected String sameBucket1 = "A";
+  protected String sameBucket2 = "R";
+
   protected MultiMap newMultiMap() {
     return new CaseInsensitiveHeaders();
+  }
+
+  @Test
+  public void checkNameCollision() {
+    assertEquals(hash(sameHash1), hash(sameHash2));
+    assertNotEquals(hash(sameBucket1), hash(sameBucket2));
+    assertEquals(index(hash(sameBucket1)), index(hash(sameBucket2)));
   }
 
   @Test
@@ -710,46 +723,9 @@ public class CaseInsensitiveHeadersTest {
   @Test
   public void testGetHashColl() {
     MultiMap mm = newMultiMap();
-    String name1 = "!~AZ";
-    String name2 = "!~\u0080Y";
-    mm.add(name1, "value1");
-    mm.add(name2, "value2");
-    assertEquals(2, mm.size());
-    assertEquals("value1", mm.get(name1));
-    assertEquals("value2", mm.get(name2));
 
-    mm = new CaseInsensitiveHeaders();
-    name1 = "";
-    name2 = "\0";
-    mm.add(name1, "value1");
-    mm.add(name2, "value2");
-    assertEquals(2, mm.size());
-    assertEquals("value1", mm.get(name1));
-    assertEquals("value2", mm.get(name2));
-
-    mm = new CaseInsensitiveHeaders();
-    name1 = "AZa";
-    name2 = "\u0080YA";
-    mm.add(name1, "value1");
-    mm.add(name2, "value2");
-    assertEquals(2, mm.size());
-    assertEquals("value1", mm.get(name1));
-    assertEquals("value2", mm.get(name2));
-
-    mm = new CaseInsensitiveHeaders();
-    name1 = " !";
-    name2 = "? ";
-    assertTrue("hash error", hash(name1) == hash(name2));
-    mm.add(name1, "value1");
-    mm.add(name2, "value2");
-    assertEquals(2, mm.size());
-    assertEquals("value1", mm.get(name1));
-    assertEquals("value2", mm.get(name2));
-
-    mm = new CaseInsensitiveHeaders();
-    name1 = "\u0080a";
-    name2 = "Ab";
-    assertTrue("hash error", hash(name1) == hash(name2));
+    String name1 = this.sameHash1;
+    String name2 = this.sameHash2;
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -757,10 +733,9 @@ public class CaseInsensitiveHeadersTest {
     assertEquals("value2", mm.get(name2));
 
     // same bucket, different hash
-    mm = new CaseInsensitiveHeaders();
-    name1 = "A";
-    name2 = "R";
-    assertTrue("hash error", index(hash(name1)) == index(hash(name2)));
+    mm = newMultiMap();
+    name1 = this.sameBucket1;
+    name2 = this.sameBucket2;
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -771,19 +746,17 @@ public class CaseInsensitiveHeadersTest {
   @Test
   public void testGetAllHashColl() {
     MultiMap mm = newMultiMap();
-    String name1 = "AZ";
-    String name2 = "\u0080Y";
-    assertTrue("hash error", hash(name1) == hash(name2));
+    String name1 = this.sameHash1;
+    String name2 = this.sameHash2;
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
     assertEquals("[value1]", mm.getAll(name1).toString());
     assertEquals("[value2]", mm.getAll(name2).toString());
 
-    mm = new CaseInsensitiveHeaders();
-    name1 = "A";
-    name2 = "R";
-    assertTrue("hash error", index(hash(name1)) == index(hash(name2)));
+    mm = newMultiMap();
+    name1 = this.sameBucket1;
+    name2 = this.sameBucket2;
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -794,10 +767,9 @@ public class CaseInsensitiveHeadersTest {
   @Test
   public void testRemoveHashColl() {
     MultiMap mm = newMultiMap();
-    String name1 = "AZ";
-    String name2 = "\u0080Y";
+    String name1 = this.sameHash1;
+    String name2 = this.sameHash2;
     String name3 = "RZ";
-    assertTrue("hash error", hash(name1) == hash(name2));
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     mm.add(name3, "value3");
@@ -810,9 +782,8 @@ public class CaseInsensitiveHeadersTest {
     assertEquals(1, mm.size());
 
     mm = new CaseInsensitiveHeaders();
-    name1 = "A";
-    name2 = "R";
-    assertTrue("hash error", index(hash(name1)) == index(hash(name2)));
+    name1 = this.sameBucket1;
+    name2 = this.sameBucket2;
     mm.add(name1, "value1");
     mm.add(name2, "value2");
     assertEquals(2, mm.size());
@@ -991,5 +962,23 @@ public class CaseInsensitiveHeadersTest {
     CharSequence Value = HttpHeaders.createOptimized("Value");
     assertTrue(mmap.contains(name, vAlue, true));
     assertTrue(mmap.contains(name, Value, true));
+  }
+
+  @Test
+  public void testGetShouldReturnAddedEntriesInOrder() {
+    MultiMap mmap = newMultiMap();
+    mmap.add("header", "value1");
+    mmap.add("header", "value2");
+    mmap.add("header", "value3");
+    assertEquals("value1", mmap.get("header"));
+    assertEquals(Arrays.asList("value1", "value2", "value3"), mmap.getAll("header"));
+  }
+
+  @Test
+  public void testGetShouldReturnEntriesFromListInOrder() {
+    MultiMap mmap = newMultiMap();
+    mmap.add("header", Arrays.<CharSequence>asList("value1", "value2", "value3"));
+    assertEquals("value1", mmap.get("header"));
+    assertEquals(Arrays.asList("value1", "value2", "value3"), mmap.getAll("header"));
   }
 }

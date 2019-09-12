@@ -11,6 +11,8 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.Context;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.net.NetClientOptions;
@@ -40,13 +42,17 @@ public class HttpConnectionEarlyResetTest extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     CountDownLatch listenLatch = new CountDownLatch(1);
+    Context ctx = vertx.getOrCreateContext();
     httpServer = vertx.createHttpServer()
       .requestHandler(request -> {})
       .exceptionHandler(t -> {
+        assertSame(ctx, Vertx.currentContext());
         caught.set(t);
         resetLatch.countDown();
-      })
-      .listen(8080, onSuccess(server -> listenLatch.countDown()));
+      });
+    ctx.runOnContext(v -> {
+      httpServer.listen(8080, onSuccess(server -> listenLatch.countDown()));
+    });
     awaitLatch(listenLatch);
   }
 

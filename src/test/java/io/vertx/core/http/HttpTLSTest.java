@@ -286,6 +286,17 @@ public abstract class HttpTLSTest extends HttpTestBase {
     testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"}).pass();
   }
 
+  @Test
+  // Provide an host name with a trailing dot
+  public void testTLSTrailingDotHost() throws Exception {
+    // We just need a vanilla cert for this test
+    SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
+    TLSTest test = testTLS(Cert.NONE, cert::trustOptions, cert::keyCertOptions, Trust.NONE)
+      .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host2.com."))
+      .pass();
+    assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
+  }
+
   /*
 
   checks that we can enable algorithms
@@ -838,6 +849,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
         .pass();
   }
 
+  @Test
+  // Provide an host name with a trailing dot validated on the server with SNI
+  public void testSniWithTrailingDotHost() throws Exception {
+    TLSTest test = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
+      .serverSni()
+      .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host2.com."))
+      .pass();
+    assertEquals("host2.com", TestUtils.cnOf(test.clientPeerCert()));
+    assertEquals("host2.com", test.indicatedServerName);
+  }
 
   // Other tests
 
@@ -1129,7 +1150,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       AtomicInteger count = new AtomicInteger();
       server.exceptionHandler(err -> {
         if (shouldPass) {
-          fail();
+          HttpTLSTest.this.fail(err);
         } else {
           if (count.incrementAndGet() == 1) {
             complete();

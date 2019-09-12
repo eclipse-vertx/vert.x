@@ -12,14 +12,18 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
+
+import java.util.Objects;
 
 /**
  * Options describing how an {@link HttpClient} will make connect to make a request.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@DataObject
+@DataObject(generateConverter = true)
 public class RequestOptions {
 
   /**
@@ -35,7 +39,7 @@ public class RequestOptions {
   /**
    * SSL enabled by default = false
    */
-  public static final boolean DEFAULT_SSL = false;
+  public static final Boolean DEFAULT_SSL = null;
 
   /**
    * The default relative request URI = ""
@@ -44,8 +48,9 @@ public class RequestOptions {
 
   private String host;
   private int port;
-  private boolean ssl;
+  private Boolean ssl;
   private String uri;
+  private MultiMap headers;
 
   /**
    * Default constructor
@@ -76,10 +81,7 @@ public class RequestOptions {
    * @param json the JSON
    */
   public RequestOptions(JsonObject json) {
-    setHost(json.getString("host", DEFAULT_HOST));
-    setPort(json.getInteger("port", DEFAULT_PORT));
-    setSsl(json.getBoolean("ssl", DEFAULT_SSL));
-    setURI(json.getString("uri", DEFAULT_URI));
+    RequestOptionsConverter.fromJson(json, this);
   }
 
   /**
@@ -123,7 +125,7 @@ public class RequestOptions {
   /**
    * @return is SSL/TLS enabled?
    */
-  public boolean isSsl() {
+  public Boolean isSsl() {
     return ssl;
   }
 
@@ -133,7 +135,7 @@ public class RequestOptions {
    * @param ssl  true if enabled
    * @return a reference to this, so the API can be used fluently
    */
-  public RequestOptions setSsl(boolean ssl) {
+  public RequestOptions setSsl(Boolean ssl) {
     this.ssl = ssl;
     return this;
   }
@@ -154,5 +156,54 @@ public class RequestOptions {
   public RequestOptions setURI(String uri) {
     this.uri = uri;
     return this;
+  }
+
+  /**
+   * Add a request header.
+   *
+   * @param key  the header key
+   * @param value  the header value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public RequestOptions addHeader(String key, String value) {
+    checkHeaders();
+    Objects.requireNonNull(key, "no null key accepted");
+    Objects.requireNonNull(value, "no null value accepted");
+    headers.add(key, value);
+    return this;
+  }
+
+  /**
+   * Set request headers from a multi-map.
+   *
+   * @param headers  the headers
+   * @return  a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public RequestOptions setHeaders(MultiMap headers) {
+    this.headers = headers;
+    return this;
+  }
+
+  /**
+   * Get the request headers
+   *
+   * @return  the headers
+   */
+  @GenIgnore
+  public MultiMap getHeaders() {
+    return headers;
+  }
+
+  private void checkHeaders() {
+    if (headers == null) {
+      headers = new CaseInsensitiveHeaders();
+    }
+  }
+
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    RequestOptionsConverter.toJson(this, json);
+    return json;
   }
 }

@@ -11,6 +11,7 @@
 
 package io.vertx.core.http;
 
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -22,6 +23,8 @@ import io.vertx.core.streams.ReadStream;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a server-side HTTP request.
@@ -139,7 +142,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param headerName  the header name
    * @return the header value
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   String getHeader(CharSequence headerName);
 
   /**
@@ -175,7 +178,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    *         not SSL.
    * @see javax.net.ssl.SSLSession
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   SSLSession sslSession();
 
   /**
@@ -299,10 +302,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Upgrade the connection to a WebSocket connection.
    * <p>
-   * This is an alternative way of handling WebSockets and can only be used if no websocket handlers are set on the
-   * Http server, and can only be used during the upgrade request during the WebSocket handshake.
+   * This is an alternative way of handling WebSockets and can only be used if no WebSocket handler is set on the
+   * {@code HttpServer}, and can only be used during the upgrade request during the WebSocket handshake.
    *
-   * @return  the WebSocket
+   * @return the WebSocket
+   * @throws IllegalStateException if the current request cannot be upgraded, when it happens an appropriate response
+   *                               is sent
    */
   ServerWebSocket upgrade();
 
@@ -327,5 +332,42 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @CacheReturn
   HttpConnection connection();
+
+  /**
+   * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
+   */
+  default StreamPriority streamPriority() {
+      return null;
+  }
+
+  /**
+   * Set an handler for stream priority changes
+   * <p>
+   * This is not implemented for HTTP/1.x.
+   * 
+   * @param handler the handler to be called when stream priority changes
+   */
+  @Fluent
+  HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler);
+
+  /**
+   * Get the cookie with the specified name.
+   *
+   * @param name  the cookie name
+   * @return the cookie
+   */
+  @Nullable Cookie getCookie(String name);
+
+  /**
+   * @return the number of cookieMap.
+   */
+  int cookieCount();
+
+  /**
+   * @return a map of all the cookies.
+   */
+  // Map<String, Cookie> is only available in Vert.x 4
+  @GenIgnore()
+  Map<String, Cookie> cookieMap();
 
 }

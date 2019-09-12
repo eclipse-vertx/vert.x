@@ -15,7 +15,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.AsyncResult;
@@ -35,6 +34,8 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.io.FileNotFoundException;
+import java.net.ConnectException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -112,7 +113,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
   @Override
   public NetClient connect(int port, String host, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
-    doConnect(SocketAddress.inetSocketAddress(port, host), serverName, connectHandler != null ? ar -> connectHandler.handle(ar.map(s -> (NetSocket) s)) : null);
+    doConnect(SocketAddress.inetSocketAddress(port, host), serverName, connectHandler);
     return this;
   }
 
@@ -147,8 +148,8 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     }
   }
 
-  private void applyConnectionOptions(Bootstrap bootstrap) {
-    vertx.transport().configure(options, bootstrap);
+  private void applyConnectionOptions(boolean domainSocket, Bootstrap bootstrap) {
+    vertx.transport().configure(options, domainSocket, bootstrap);
   }
 
   @Override
@@ -177,45 +178,19 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     bootstrap.group(context.nettyEventLoop());
     bootstrap.channelFactory(vertx.transport().channelFactory(remoteAddress.path() != null));
 
-    applyConnectionOptions(bootstrap);
+    applyConnectionOptions(remoteAddress.path() != null, bootstrap);
 
-    ChannelProvider channelProvider;
-    if (options.getProxyOptions() == null) {
-      channelProvider = ChannelProvider.INSTANCE;
-    } else {
-      channelProvider = ProxyChannelProvider.INSTANCE;
-    }
-
-    Handler<Channel> channelInitializer = ch -> {
-      if (sslHelper.isSSL()) {
-        SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx, remoteAddress, serverName));
-        ch.pipeline().addLast("ssl", sslHandler);
-      }
-    };
+    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
 
     Handler<AsyncResult<Channel>> channelHandler = res -> {
       if (res.succeeded()) {
-
         Channel ch = res.result();
-
-        if (sslHelper.isSSL()) {
-          // TCP connected, so now we must do the SSL handshake
-          SslHandler sslHandler = (SslHandler) ch.pipeline().get("ssl");
-
-          io.netty.util.concurrent.Future<Channel> fut = sslHandler.handshakeFuture();
-          fut.addListener(future2 -> {
-            if (future2.isSuccess()) {
-              connected(context, ch, connectHandler, remoteAddress);
-            } else {
-              failed(context, ch, future2.cause(), connectHandler);
-            }
-          });
-        } else {
-          connected(context, ch, connectHandler, remoteAddress);
-        }
-
+        connected(context, ch, connectHandler, remoteAddress);
       } else {
-        if (remainingAttempts > 0 || remainingAttempts == -1) {
+        Throwable cause = res.cause();
+        // FileNotFoundException for domain sockets
+        boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
+        if (connectError && (remainingAttempts > 0 || remainingAttempts == -1)) {
           context.executeFromIO(v -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
@@ -224,19 +199,24 @@ public class NetClientImpl implements MetricsProvider, NetClient {
             );
           });
         } else {
-          failed(context, null, res.cause(), connectHandler);
+          failed(context, null, cause, connectHandler);
         }
       }
     };
 
-    channelProvider.connect(vertx, bootstrap, options.getProxyOptions(), remoteAddress, channelInitializer, channelHandler);
+    SocketAddress peerAddress = remoteAddress;
+    String peerHost = peerAddress.host();
+    if (peerHost != null && peerHost.endsWith(".")) {
+      peerAddress = SocketAddress.inetSocketAddress(peerAddress.port(), peerHost.substring(0, peerHost.length() - 1));
+    }
+    channelProvider.connect(remoteAddress, peerAddress, serverName, sslHelper.isSSL(), channelHandler);
   }
 
   private void connected(ContextInternal context, Channel ch, Handler<AsyncResult<NetSocket>> connectHandler, SocketAddress remoteAddress) {
 
     initChannel(ch.pipeline());
 
-    VertxNetHandler handler = new VertxNetHandler(ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics));
+    VertxHandler<NetSocketImpl> handler = VertxHandler.create(context, ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics));
     handler.addHandler(sock -> {
       socketMap.put(ch, sock);
       context.executeFromIO(v -> {

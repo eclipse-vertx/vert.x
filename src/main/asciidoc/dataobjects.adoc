@@ -196,6 +196,12 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`@ssl`|`Boolean`|+++
 Set whether SSL/TLS is enabled
 +++
+|[[sslHandshakeTimeout]]`@sslHandshakeTimeout`|`Number (long)`|+++
+Set the SSL handshake timeout, default time unit is seconds.
++++
+|[[sslHandshakeTimeoutUnit]]`@sslHandshakeTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
+Set the SSL handshake timeout unit. If not specified, default is seconds.
++++
 |[[tcpCork]]`@tcpCork`|`Boolean`|+++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
 +++
@@ -380,7 +386,16 @@ Sets the value of max worker execute time, in link.
 Set the time unit of <code>maxWorkerExecuteTime</code>
 +++
 |[[multiThreaded]]`@multiThreaded`|`Boolean`|+++
-Set whether the verticle(s) should be deployed as a multi-threaded worker verticle
+Set whether the verticle(s) should be deployed as a multi-threaded worker verticle.
+ <p>
+ <strong>WARNING</strong>: Multi-threaded worker verticles are a deprecated feature.
+ <p>
+ Most applications will have no need for them. Because of the concurrency in these verticles you have to be
+ very careful to keep the verticle in a consistent state using standard Java techniques for multi-threaded
+ programming.
+ <p>
+ You can read the documentation that explains how you can replace this feature by the usage of custom worker
+ pools or <code>executeBlocking</code> calls.
 +++
 |[[worker]]`@worker`|`Boolean`|+++
 Set whether the verticle(s) should be deployed as a worker verticle
@@ -538,6 +553,12 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`@ssl`|`Boolean`|+++
 Set whether SSL/TLS is enabled
 +++
+|[[sslHandshakeTimeout]]`@sslHandshakeTimeout`|`Number (long)`|+++
+Set the SSL handshake timeout, default time unit is seconds.
++++
+|[[sslHandshakeTimeoutUnit]]`@sslHandshakeTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
+Set the SSL handshake timeout unit. If not specified, default is seconds.
++++
 |[[tcpCork]]`@tcpCork`|`Boolean`|+++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
 +++
@@ -586,6 +607,11 @@ Set whether Netty pooled buffers are enabled
 |[[classPathResolvingEnabled]]`@classPathResolvingEnabled`|`Boolean`|+++
 When vert.x cannot find the file on the filesystem it tries to resolve the
  file from the class path when this is set to <code>true</code>.
++++
+|[[fileCacheDir]]`@fileCacheDir`|`String`|+++
+When vert.x reads a file that is packaged with the application it gets
+ extracted to this directory first and subsequent reads will use the extracted
+ file to get better IO performance.
 +++
 |[[fileCachingEnabled]]`@fileCachingEnabled`|`Boolean`|+++
 Set to <code>true</code> to cache files on the real file system
@@ -778,10 +804,10 @@ Set the maximum requests allowed in the wait queue, any requests beyond the max 
  a ConnectionPoolTooBusyException.  If the value is set to a negative number then the queue will be unbounded.
 +++
 |[[maxWebsocketFrameSize]]`@maxWebsocketFrameSize`|`Number (int)`|+++
-Set the max websocket frame size
+Set the max WebSocket frame size
 +++
 |[[maxWebsocketMessageSize]]`@maxWebsocketMessageSize`|`Number (int)`|+++
-Set the max websocket message size
+Set the max WebSocket message size
 +++
 |[[metricsName]]`@metricsName`|`String`|+++
 Set the metrics name identifying the reported metrics, useful for grouping metrics
@@ -831,15 +857,24 @@ Set the value of reuse port.
 Set the TCP send buffer size
 +++
 |[[sendUnmaskedFrames]]`@sendUnmaskedFrames`|`Boolean`|+++
-Set true when the client wants to skip frame masking.
- You may want to set it true on server by server websocket communication: In this case you are by passing RFC6455 protocol.
- It's false as default.
+Set <code>true</code> when the client wants to skip frame masking.
+ <p>
+ You may want to set it <code>true</code> on server by server WebSocket communication: in this case you are by passing
+ RFC6455 protocol.
+ <p>
+ It's <code>false</code> as default.
 +++
 |[[soLinger]]`@soLinger`|`Number (int)`|+++
 Set whether SO_linger keep alive is enabled
 +++
 |[[ssl]]`@ssl`|`Boolean`|+++
 Set whether SSL/TLS is enabled
++++
+|[[sslHandshakeTimeout]]`@sslHandshakeTimeout`|`Number (long)`|+++
+Set the SSL handshake timeout, default time unit is seconds.
++++
+|[[sslHandshakeTimeoutUnit]]`@sslHandshakeTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
+Set the SSL handshake timeout unit. If not specified, default is seconds.
 +++
 |[[tcpCork]]`@tcpCork`|`Boolean`|+++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
@@ -869,10 +904,13 @@ Set the trust options in jks format, aka Java truststore
 Set whether compression is enabled
 +++
 |[[tryUsePerFrameWebsocketCompression]]`@tryUsePerFrameWebsocketCompression`|`Boolean`|+++
-Set option to offer Deflate Frame websocket compression
+Set whether the client will offer the WebSocket per-frame deflate compression extension.
 +++
 |[[tryUsePerMessageWebsocketCompression]]`@tryUsePerMessageWebsocketCompression`|`Boolean`|+++
-Set option to offer Permessage Deflate websocket compression
+Set whether the client will offer the WebSocket per-message deflate compression extension.
++++
+|[[tryWebsocketDeflateFrameCompression]]`@tryWebsocketDeflateFrameCompression`|`Boolean`|+++
+
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
@@ -884,13 +922,15 @@ Set whether Netty pooled buffers are enabled
 Set whether hostname verification is enabled
 +++
 |[[websocketCompressionAllowClientNoContext]]`@websocketCompressionAllowClientNoContext`|`Boolean`|+++
-Set the websocket compression allow client no context option
+Set whether the <code>client_no_context_takeover</code> parameter of the WebSocket per-message
+ deflate compression extension will be offered.
 +++
 |[[websocketCompressionLevel]]`@websocketCompressionLevel`|`Number (int)`|+++
-Set websocket compression level
+Set the Websocket deflate compression level.
 +++
 |[[websocketCompressionRequestServerNoContext]]`@websocketCompressionRequestServerNoContext`|`Boolean`|+++
-Set the websocket compression server no context option
+Set whether the <code>server_no_context_takeover</code> parameter of the WebSocket per-message
+ deflate compression extension will be offered.
 +++
 |===
 
@@ -910,9 +950,9 @@ Set the websocket compression server no context option
 Set the accept back log
 +++
 |[[acceptUnmaskedFrames]]`@acceptUnmaskedFrames`|`Boolean`|+++
-Set true when the server accepts unmasked frame.
- As default Server doesn't accept unmasked frame, you can bypass this behaviour (RFC 6455) setting true
- It's set to false as default.
+Set <code>true</code> when the server accepts unmasked frame.
+ As default Server doesn't accept unmasked frame, you can bypass this behaviour (RFC 6455) setting <code>true</code>.
+ It's set to <code>false</code> as default.
 +++
 |[[alpnVersions]]`@alpnVersions`|`Array of link:enums.html#HttpVersion[HttpVersion]`|+++
 Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiatiation.
@@ -1010,10 +1050,10 @@ Set the maximum length of all headers for HTTP/1.x .
 Set the maximum length of the initial line for HTTP/1.x (e.g. <code>"GET / HTTP/1.0"</code>)
 +++
 |[[maxWebsocketFrameSize]]`@maxWebsocketFrameSize`|`Number (int)`|+++
-Set the maximum websocket frames size
+Set the maximum WebSocket frames size
 +++
 |[[maxWebsocketMessageSize]]`@maxWebsocketMessageSize`|`Number (int)`|+++
-Set the maximum websocket message size
+Set the maximum WebSocket message size
 +++
 |[[openSslEngineOptions]]`@openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
 |[[pemKeyCertOptions]]`@pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|+++
@@ -1023,10 +1063,10 @@ Set the key/cert store options in pem format.
 Set the trust options in pem format
 +++
 |[[perFrameWebsocketCompressionSupported]]`@perFrameWebsocketCompressionSupported`|`Boolean`|+++
-Enable or disable support for WebSocket Defalte Frame compression
+Enable or disable support for the WebSocket per-frame deflate compression extension.
 +++
 |[[perMessageWebsocketCompressionSupported]]`@perMessageWebsocketCompressionSupported`|`Boolean`|+++
-Enable or disable support for WebSocket Permessage Deflate compression
+Enable or disable support for WebSocket per-message deflate compression extension.
 +++
 |[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
 Set the key/cert options in pfx format.
@@ -1060,6 +1100,12 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`@ssl`|`Boolean`|+++
 Set whether SSL/TLS is enabled
 +++
+|[[sslHandshakeTimeout]]`@sslHandshakeTimeout`|`Number (long)`|+++
+Set the SSL handshake timeout, default time unit is seconds.
++++
+|[[sslHandshakeTimeoutUnit]]`@sslHandshakeTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
+Set the SSL handshake timeout unit. If not specified, default is seconds.
++++
 |[[tcpCork]]`@tcpCork`|`Boolean`|+++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
 +++
@@ -1088,16 +1134,18 @@ Set the ALPN usage.
 Set whether Netty pooled buffers are enabled
 +++
 |[[websocketAllowServerNoContext]]`@websocketAllowServerNoContext`|`Boolean`|+++
-Set the WebSocket Allow Server No Context option
+Set whether the WebSocket server will accept the <code>server_no_context_takeover</code> parameter of the per-message
+ deflate compression extension offered by the client.
 +++
 |[[websocketCompressionLevel]]`@websocketCompressionLevel`|`Number (int)`|+++
-Set the WebSocket compression level
+Set the WebSocket compression level.
 +++
 |[[websocketPreferredClientNoContext]]`@websocketPreferredClientNoContext`|`Boolean`|+++
-Set the WebSocket Preferred Client No Context setting
+Set whether the WebSocket server will accept the <code>client_no_context_takeover</code> parameter of the per-message
+ deflate compression extension offered by the client.
 +++
 |[[websocketSubProtocols]]`@websocketSubProtocols`|`String`|+++
-Set the websocket subprotocols supported by the server.
+Set the WebSocket sub-protocols supported by the server.
 +++
 |===
 
@@ -1271,6 +1319,12 @@ Set whether SO_linger keep alive is enabled
 |[[ssl]]`@ssl`|`Boolean`|+++
 Set whether SSL/TLS is enabled
 +++
+|[[sslHandshakeTimeout]]`@sslHandshakeTimeout`|`Number (long)`|+++
+Set the SSL handshake timeout, default time unit is seconds.
++++
+|[[sslHandshakeTimeoutUnit]]`@sslHandshakeTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
+Set the SSL handshake timeout unit. If not specified, default is seconds.
++++
 |[[tcpCork]]`@tcpCork`|`Boolean`|+++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
 +++
@@ -1393,6 +1447,12 @@ Set whether SO_linger keep alive is enabled
 +++
 |[[ssl]]`@ssl`|`Boolean`|+++
 Set whether SSL/TLS is enabled
++++
+|[[sslHandshakeTimeout]]`@sslHandshakeTimeout`|`Number (long)`|+++
+Set the SSL handshake timeout, default time unit is seconds.
++++
+|[[sslHandshakeTimeoutUnit]]`@sslHandshakeTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
+Set the SSL handshake timeout unit. If not specified, default is seconds.
 +++
 |[[tcpCork]]`@tcpCork`|`Boolean`|+++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
@@ -1812,6 +1872,9 @@ Set proxy username.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[headers]]`@headers`|`String`|+++
+Add a request header.
++++
 |[[host]]`@host`|`String`|+++
 Set the host name to be used by the client request.
 +++
@@ -1823,6 +1886,29 @@ Set whether SSL/TLS is enabled
 +++
 |[[uri]]`@uri`|`String`|+++
 Set the request relative URI
++++
+|===
+
+[[StreamPriority]]
+== StreamPriority
+
+++++
+ This class represents HTTP/2 stream priority defined in RFC 7540 clause 5.3
+++++
+'''
+
+[cols=">25%,25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[dependency]]`@dependency`|`Number (int)`|+++
+Set the priority dependency value.
++++
+|[[exclusive]]`@exclusive`|`Boolean`|+++
+Set the priority exclusive value.
++++
+|[[weight]]`@weight`|`Number (short)`|+++
+Set the priority weight.
 +++
 |===
 
@@ -1898,6 +1984,12 @@ Set whether SO_linger keep alive is enabled
 +++
 |[[ssl]]`@ssl`|`Boolean`|+++
 Set whether SSL/TLS is enabled
++++
+|[[sslHandshakeTimeout]]`@sslHandshakeTimeout`|`Number (long)`|+++
+Set the SSL handshake timeout, default time unit is seconds.
++++
+|[[sslHandshakeTimeoutUnit]]`@sslHandshakeTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
+Set the SSL handshake timeout unit. If not specified, default is seconds.
 +++
 |[[tcpCork]]`@tcpCork`|`Boolean`|+++
 Enable the <code>TCP_CORK</code> option - only with linux native transport.
@@ -1984,8 +2076,6 @@ Set the number of event loop threads to be used by the Vert.x instance.
 +++
 |[[fileResolverCachingEnabled]]`@fileResolverCachingEnabled`|`Boolean`|+++
 Set whether the Vert.x file resolver uses caching for classpath resources.
-
- Deprecated. Use FileSystemOptions instead.
 +++
 |[[fileSystemOptions]]`@fileSystemOptions`|`link:dataobjects.html#FileSystemOptions[FileSystemOptions]`|+++
 Set the file system options
@@ -2033,6 +2123,41 @@ Set the time unit of <code>warningExceptionTime</code>.
 +++
 |[[workerPoolSize]]`@workerPoolSize`|`Number (int)`|+++
 Set the maximum number of worker threads to be used by the Vert.x instance.
++++
+|===
+
+[[WebSocketConnectOptions]]
+== WebSocketConnectOptions
+
+++++
+ Options describing how an link connect a link.
+++++
+'''
+
+[cols=">25%,25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[headers]]`@headers`|`String`|+++
+Add a request header.
++++
+|[[host]]`@host`|`String`|+++
+Set the host name to be used by the client request.
++++
+|[[port]]`@port`|`Number (int)`|+++
+Set the port to be used by the client request.
++++
+|[[ssl]]`@ssl`|`Boolean`|+++
+Set whether SSL/TLS is enabled
++++
+|[[subProtocols]]`@subProtocols`|`Array of String`|+++
+Set the WebSocket sub protocols to use.
++++
+|[[uri]]`@uri`|`String`|+++
+Set the request relative URI
++++
+|[[version]]`@version`|`link:enums.html#WebsocketVersion[WebsocketVersion]`|+++
+Set the WebSocket version.
 +++
 |===
 

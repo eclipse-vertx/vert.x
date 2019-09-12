@@ -15,6 +15,8 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
@@ -69,10 +71,10 @@ public class CoreExamples {
   }
 
   public void example7(Vertx vertx) {
-    vertx.executeBlocking(future -> {
+    vertx.executeBlocking(promise -> {
       // Call some blocking API that takes a significant amount of time to return
       String result = someAPI.blockingMethod("hello");
-      future.complete(result);
+      promise.complete(result);
     }, res -> {
       System.out.println("The result is: " + res.result());
     });
@@ -80,10 +82,10 @@ public class CoreExamples {
 
   public void workerExecutor1(Vertx vertx) {
     WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool");
-    executor.executeBlocking(future -> {
+    executor.executeBlocking(promise -> {
       // Call some blocking API that takes a significant amount of time to return
       String result = someAPI.blockingMethod("hello");
-      future.complete(result);
+      promise.complete(result);
     }, res -> {
       System.out.println("The result is: " + res.result());
     });
@@ -100,7 +102,7 @@ public class CoreExamples {
 
     // 2 minutes
     long maxExecuteTime = 2;
-    TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
+    TimeUnit maxExecuteTimeUnit = TimeUnit.MINUTES;
 
     WorkerExecutor executor = vertx.createSharedWorkerExecutor("my-worker-pool", poolSize, maxExecuteTime, maxExecuteTimeUnit);
   }
@@ -114,11 +116,9 @@ public class CoreExamples {
   }
 
   public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
-    Future<HttpServer> httpServerFuture = Future.future();
-    httpServer.listen(httpServerFuture.completer());
+    Future<HttpServer> httpServerFuture = Future.future(promise -> httpServer.listen(promise));
 
-    Future<NetServer> netServerFuture = Future.future();
-    netServer.listen(netServerFuture.completer());
+    Future<NetServer> netServerFuture = Future.future(promise -> netServer.listen(promise));
 
     CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
       if (ar.succeeded()) {
@@ -164,27 +164,43 @@ public class CoreExamples {
   public void exampleFuture6(Vertx vertx) {
 
     FileSystem fs = vertx.fileSystem();
-    Future<Void> startFuture = Future.future();
 
-    Future<Void> fut1 = Future.future();
-    fs.createFile("/foo", fut1.completer());
+    Future<Void> fut1 = Future.future(promise -> fs.createFile("/foo", promise));
 
-    fut1.compose(v -> {
+    Future<Void> startFuture = fut1
+      .compose(v -> {
       // When the file is created (fut1), execute this:
-      Future<Void> fut2 = Future.future();
-      fs.writeFile("/foo", Buffer.buffer(), fut2.completer());
-      return fut2;
-    }).compose(v -> {
-              // When the file is written (fut2), execute this:
-              fs.move("/foo", "/bar", startFuture.completer());
-            },
-            // mark startFuture it as failed if any step fails.
-            startFuture);
+      return Future.<Void>future(promise -> fs.writeFile("/foo", Buffer.buffer(), promise));
+    })
+      .compose(v -> {
+      // When the file is written (fut2), execute this:
+      return Future.future(promise -> fs.move("/foo", "/bar", promise));
+    });
   }
 
   public void example7_1(Vertx vertx) {
     DeploymentOptions options = new DeploymentOptions().setWorker(true);
     vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+  }
+
+  public void multiThreadedWorkerVerticleAlternative(Vertx vertx) {
+    DeploymentOptions options = new DeploymentOptions()
+      .setWorker(true)
+      .setInstances(5) // matches the worker pool size below
+      .setWorkerPoolName("the-specific-pool")
+      .setWorkerPoolSize(5);
+    vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
+  }
+
+  public void multiThreadedWorkerVerticleAlternative2(Vertx vertx, String someresult) {
+    vertx.eventBus().consumer("foo", msg -> {
+      vertx.executeBlocking(promise -> {
+        // Invoke blocking code with received message data
+        promise.complete(someresult);
+      }, false, ar -> { // ordered == false
+        // Handle result, e.g. reply to the message
+      });
+    });
   }
 
   public void example8(Vertx vertx) {
@@ -374,7 +390,7 @@ public class CoreExamples {
     vertx.createHttpServer(new HttpServerOptions().setReusePort(reusePort));
   }
 
-  public void serverWithDomainSockets(Vertx vertx) {
+  public void tcpServerWithDomainSockets(Vertx vertx) {
     // Only available on BSD and Linux
     vertx.createNetServer().connectHandler(so -> {
       // Handle application
@@ -393,16 +409,31 @@ public class CoreExamples {
     });
   }
 
-  public void clientWithDomainSockets(Vertx vertx) {
+  public void tcpClientWithDomainSockets(Vertx vertx) {
     NetClient netClient = vertx.createNetClient();
 
     // Only available on BSD and Linux
-    netClient.connect(SocketAddress.domainSocketAddress("/var/tmp/myservice.sock"), ar -> {
+    SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
+
+    // Connect to the server
+    netClient.connect(addr, ar -> {
       if (ar.succeeded()) {
         // Connected
       } else {
         ar.cause().printStackTrace();
       }
     });
+  }
+
+  public void httpClientWithDomainSockets(Vertx vertx) {
+    HttpClient httpClient = vertx.createHttpClient();
+
+    // Only available on BSD and Linux
+    SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
+
+    // Send request to the server
+    httpClient.request(HttpMethod.GET, addr, 8080, "localhost", "/", resp -> {
+      // Process response
+    }).end();
   }
 }

@@ -24,6 +24,6 @@ public class StopCommandFactory extends DefaultCommandFactory<StopCommand> {
    * Creates a new instance of {@link StopCommandFactory}.
    */
   public StopCommandFactory() {
-    super(StopCommand.class);
+    super(StopCommand.class, StopCommand::new);
   }
 }

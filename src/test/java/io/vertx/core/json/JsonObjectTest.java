@@ -12,10 +12,6 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.Utils;
-import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -445,7 +441,8 @@ public class JsonObjectTest {
   public void testGetBinary() {
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, jsonObject.getBinary("foo")));
+    assertArrayEquals(bytes, jsonObject.getBinary("foo"));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonObject.getValue("foo"));
 
     // Can also get as string:
     String val = jsonObject.getString("foo");
@@ -463,7 +460,9 @@ public class JsonObjectTest {
 
     jsonObject.putNull("foo");
     assertNull(jsonObject.getBinary("foo"));
+    assertNull(jsonObject.getValue("foo"));
     assertNull(jsonObject.getBinary("absent"));
+    assertNull(jsonObject.getValue("absent"));
     try {
       jsonObject.getBinary(null);
       fail();
@@ -483,6 +482,7 @@ public class JsonObjectTest {
     Instant now = Instant.now();
     jsonObject.put("foo", now);
     assertEquals(now, jsonObject.getInstant("foo"));
+    assertEquals(now.toString(), jsonObject.getValue("foo"));
 
     // Can also get as string:
     String val = jsonObject.getString("foo");
@@ -500,7 +500,9 @@ public class JsonObjectTest {
 
     jsonObject.putNull("foo");
     assertNull(jsonObject.getInstant("foo"));
+    assertNull(jsonObject.getValue("foo"));
     assertNull(jsonObject.getInstant("absent"));
+    assertNull(jsonObject.getValue("absent"));
     try {
       jsonObject.getInstant(null);
       fail();
@@ -508,7 +510,19 @@ public class JsonObjectTest {
       // OK
     }
     try {
+      jsonObject.getValue(null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
       jsonObject.getInstant(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null, null);
       fail();
     } catch (NullPointerException e) {
       // OK
@@ -520,8 +534,10 @@ public class JsonObjectTest {
     byte[] bytes = TestUtils.randomByteArray(100);
     byte[] defBytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, jsonObject.getBinary("foo", defBytes)));
-    assertTrue(TestUtils.byteArraysEqual(bytes, jsonObject.getBinary("foo", null)));
+    assertArrayEquals(bytes, jsonObject.getBinary("foo", defBytes));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonObject.getValue("foo", Base64.getEncoder().encode(defBytes)));
+    assertArrayEquals(bytes, jsonObject.getBinary("foo", null));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonObject.getValue("foo", null));
 
     jsonObject.put("foo", 123);
     try {
@@ -550,7 +566,9 @@ public class JsonObjectTest {
     Instant later = now.plus(1, ChronoUnit.DAYS);
     jsonObject.put("foo", now);
     assertEquals(now, jsonObject.getInstant("foo", later));
+    assertEquals(now.toString(), jsonObject.getValue("foo", later));
     assertEquals(now, jsonObject.getInstant("foo", null));
+    assertEquals(now.toString(), jsonObject.getValue("foo", null));
 
     jsonObject.put("foo", 123);
     try {
@@ -563,10 +581,19 @@ public class JsonObjectTest {
     jsonObject.putNull("foo");
     assertNull(jsonObject.getInstant("foo", later));
     assertEquals(later, jsonObject.getInstant("absent", later));
+    assertEquals(later, jsonObject.getValue("absent", later));
     assertNull(jsonObject.getInstant("foo", null));
+    assertNull(jsonObject.getValue("foo", null));
     assertNull(jsonObject.getInstant("absent", null));
+    assertNull(jsonObject.getValue("absent", null));
     try {
       jsonObject.getInstant(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null, null);
       fail();
     } catch (NullPointerException e) {
       // OK
@@ -1016,12 +1043,16 @@ public class JsonObjectTest {
     byte[] bin3 = TestUtils.randomByteArray(100);
 
     assertSame(jsonObject, jsonObject.put("foo", bin1));
-    assertTrue(TestUtils.byteArraysEqual(bin1, jsonObject.getBinary("foo")));
+    assertArrayEquals(bin1, jsonObject.getBinary("foo"));
+    assertEquals(Base64.getEncoder().encodeToString(bin1), jsonObject.getValue("foo"));
     jsonObject.put("quux", bin2);
-    assertTrue(TestUtils.byteArraysEqual(bin2, jsonObject.getBinary("quux")));
-    assertTrue(TestUtils.byteArraysEqual(bin1, jsonObject.getBinary("foo")));
+    assertArrayEquals(bin2, jsonObject.getBinary("quux"));
+    assertEquals(Base64.getEncoder().encodeToString(bin2), jsonObject.getValue("quux"));
+    assertArrayEquals(bin1, jsonObject.getBinary("foo"));
+    assertEquals(Base64.getEncoder().encodeToString(bin1), jsonObject.getValue("foo"));
     jsonObject.put("foo", bin3);
-    assertTrue(TestUtils.byteArraysEqual(bin3, jsonObject.getBinary("foo")));
+    assertArrayEquals(bin3, jsonObject.getBinary("foo"));
+    assertEquals(Base64.getEncoder().encodeToString(bin3), jsonObject.getValue("foo"));
 
     jsonObject.put("foo", (byte[]) null);
     assertTrue(jsonObject.containsKey("foo"));
@@ -1042,11 +1073,15 @@ public class JsonObjectTest {
 
     assertSame(jsonObject, jsonObject.put("foo", bin1));
     assertEquals(bin1, jsonObject.getInstant("foo"));
+    assertEquals(bin1.toString(), jsonObject.getValue("foo"));
     jsonObject.put("quux", bin2);
     assertEquals(bin2, jsonObject.getInstant("quux"));
+    assertEquals(bin2.toString(), jsonObject.getValue("quux"));
     assertEquals(bin1, jsonObject.getInstant("foo"));
+    assertEquals(bin1.toString(), jsonObject.getValue("foo"));
     jsonObject.put("foo", bin3);
     assertEquals(bin3, jsonObject.getInstant("foo"));
+    assertEquals(bin3.toString(), jsonObject.getValue("foo"));
 
     jsonObject.put("foo", (Instant) null);
     assertTrue(jsonObject.containsKey("foo"));
@@ -1094,8 +1129,10 @@ public class JsonObjectTest {
     assertEquals(Long.valueOf(123l), jsonObject.getLong("long"));
     assertEquals(Float.valueOf(1.23f), jsonObject.getFloat("float"));
     assertEquals(Double.valueOf(1.23d), jsonObject.getDouble("double"));
-    assertTrue(TestUtils.byteArraysEqual(bytes, jsonObject.getBinary("binary")));
+    assertArrayEquals(bytes, jsonObject.getBinary("binary"));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonObject.getValue("binary"));
     assertEquals(now, jsonObject.getInstant("instant"));
+    assertEquals(now.toString(), jsonObject.getValue("instant"));
     assertEquals(obj, jsonObject.getJsonObject("obj"));
     assertEquals(arr, jsonObject.getJsonArray("arr"));
     try {
@@ -1144,8 +1181,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInDepth0() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\" }}");
-    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", new JsonObject().put("bar", "flurb"));
+    JsonObject obj2 = new JsonObject().put("foo", new JsonObject().put("bar", "eek"));
     obj1.mergeIn(obj2, 0);
     assertEquals(1, obj1.size());
     assertEquals(1, obj1.getJsonObject("foo").size());
@@ -1154,8 +1191,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInFlat() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": { \"bar\": \"flurb\", \"eek\": 32 }}");
-    JsonObject obj2 = new JsonObject("{ \"foo\": { \"bar\": \"eek\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", new JsonObject().put("bar", "flurb").put("eek", 32));
+    JsonObject obj2 = new JsonObject().put("foo", new JsonObject().put("bar", "eek"));
     obj1.mergeIn(obj2, false);
     assertEquals(1, obj1.size());
     assertEquals(1, obj1.getJsonObject("foo").size());
@@ -1164,8 +1201,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInDepth1() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
-    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", "bar").put("flurb", new JsonObject().put("eek", "foo").put("bar", "flurb"));
+    JsonObject obj2 = new JsonObject().put("flurb", new JsonObject().put("bar", "flurb1"));
     obj1.mergeIn(obj2, 1);
     assertEquals(2, obj1.size());
     assertEquals(1, obj1.getJsonObject("flurb").size());
@@ -1174,8 +1211,8 @@ public class JsonObjectTest {
 
   @Test
   public void testMergeInDepth2() {
-    JsonObject obj1 = new JsonObject("{ \"foo\": \"bar\", \"flurb\": { \"eek\": \"foo\", \"bar\": \"flurb\"}}");
-    JsonObject obj2 = new JsonObject("{ \"flurb\": { \"bar\": \"flurb1\" }}");
+    JsonObject obj1 = new JsonObject().put("foo", "bar").put("flurb", new JsonObject().put("eek", "foo").put("bar", "flurb"));
+    JsonObject obj2 = new JsonObject().put("flurb", new JsonObject().put("bar", "flurb1"));
     obj1.mergeIn(obj2, 2);
     assertEquals(2, obj1.size());
     assertEquals(2, obj1.getJsonObject("flurb").size());
@@ -1184,149 +1221,9 @@ public class JsonObjectTest {
   }
 
   @Test
-  public void testEncode() throws Exception {
-    jsonObject.put("mystr", "foo");
-    jsonObject.put("mycharsequence", new StringBuilder("oob"));
-    jsonObject.put("myint", 123);
-    jsonObject.put("mylong", 1234l);
-    jsonObject.put("myfloat", 1.23f);
-    jsonObject.put("mydouble", 2.34d);
-    jsonObject.put("myboolean", true);
-    byte[] bytes = TestUtils.randomByteArray(10);
-    jsonObject.put("mybinary", bytes);
-    Instant now = Instant.now();
-    jsonObject.put("myinstant", now);
-    jsonObject.putNull("mynull");
-    jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
-    jsonObject.put("myarr", new JsonArray().add("foo").add(123));
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String expected = "{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
-    String json = jsonObject.encode();
-    assertEquals(expected, json);
-  }
-
-  @Test
-  public void testEncodeToBuffer() throws Exception {
-    jsonObject.put("mystr", "foo");
-    jsonObject.put("mycharsequence", new StringBuilder("oob"));
-    jsonObject.put("myint", 123);
-    jsonObject.put("mylong", 1234l);
-    jsonObject.put("myfloat", 1.23f);
-    jsonObject.put("mydouble", 2.34d);
-    jsonObject.put("myboolean", true);
-    byte[] bytes = TestUtils.randomByteArray(10);
-    jsonObject.put("mybinary", bytes);
-    Instant now = Instant.now();
-    jsonObject.put("myinstant", now);
-    jsonObject.putNull("mynull");
-    jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
-    jsonObject.put("myarr", new JsonArray().add("foo").add(123));
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-
-    Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
-
-    Buffer json = jsonObject.toBuffer();
-    assertArrayEquals(expected.getBytes(), json.getBytes());
-  }
-
-  @Test
-  public void testDecode() throws Exception {
-    byte[] bytes = TestUtils.randomByteArray(10);
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    Instant now = Instant.now();
-    String strInstant = ISO_INSTANT.format(now);
-    String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
-    JsonObject obj = new JsonObject(json);
-    assertEquals(json, obj.encode());
-    assertEquals("foo", obj.getString("mystr"));
-    assertEquals(Integer.valueOf(123), obj.getInteger("myint"));
-    assertEquals(Long.valueOf(1234), obj.getLong("mylong"));
-    assertEquals(Float.valueOf(1.23f), obj.getFloat("myfloat"));
-    assertEquals(Double.valueOf(2.34d), obj.getDouble("mydouble"));
-    assertTrue(obj.getBoolean("myboolean"));
-    assertTrue(TestUtils.byteArraysEqual(bytes, obj.getBinary("mybinary")));
-    assertEquals(now, obj.getInstant("myinstant"));
-    assertTrue(obj.containsKey("mynull"));
-    JsonObject nestedObj = obj.getJsonObject("myobj");
-    assertEquals("bar", nestedObj.getString("foo"));
-    JsonArray nestedArr = obj.getJsonArray("myarr");
-    assertEquals("foo", nestedArr.getString(0));
-    assertEquals(Integer.valueOf(123), Integer.valueOf(nestedArr.getInteger(1)));
-  }
-
-  @Test
   public void testToString() {
     jsonObject.put("foo", "bar");
     assertEquals(jsonObject.encode(), jsonObject.toString());
-  }
-
-  @Test
-  public void testEncodePrettily() throws Exception {
-    jsonObject.put("mystr", "foo");
-    jsonObject.put("myint", 123);
-    jsonObject.put("mylong", 1234l);
-    jsonObject.put("myfloat", 1.23f);
-    jsonObject.put("mydouble", 2.34d);
-    jsonObject.put("myboolean", true);
-    byte[] bytes = TestUtils.randomByteArray(10);
-    jsonObject.put("mybinary", bytes);
-    Instant now = Instant.now();
-    jsonObject.put("myinstant", now);
-    jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
-    jsonObject.put("myarr", new JsonArray().add("foo").add(123));
-    String strBytes = Base64.getEncoder().encodeToString(bytes);
-    String strInstant = ISO_INSTANT.format(now);
-    String expected = "{" + Utils.LINE_SEPARATOR +
-      "  \"mystr\" : \"foo\"," + Utils.LINE_SEPARATOR +
-      "  \"myint\" : 123," + Utils.LINE_SEPARATOR +
-      "  \"mylong\" : 1234," + Utils.LINE_SEPARATOR +
-      "  \"myfloat\" : 1.23," + Utils.LINE_SEPARATOR +
-      "  \"mydouble\" : 2.34," + Utils.LINE_SEPARATOR +
-      "  \"myboolean\" : true," + Utils.LINE_SEPARATOR +
-      "  \"mybinary\" : \"" + strBytes + "\"," + Utils.LINE_SEPARATOR +
-      "  \"myinstant\" : \"" + strInstant + "\"," + Utils.LINE_SEPARATOR +
-      "  \"myobj\" : {" + Utils.LINE_SEPARATOR +
-      "    \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
-      "  }," + Utils.LINE_SEPARATOR +
-      "  \"myarr\" : [ \"foo\", 123 ]" + Utils.LINE_SEPARATOR +
-      "}";
-    String json = jsonObject.encodePrettily();
-    assertEquals(expected, json);
-  }
-
-  // Strict JSON doesn't allow comments but we do so users can add comments to config files etc
-  @Test
-  public void testCommentsInJson() {
-    String jsonWithComments =
-      "// single line comment\n" +
-      "/*\n" +
-      "  This is a multi \n" +
-      "  line comment\n" +
-      "*/\n" +
-      "{\n" +
-      "// another single line comment this time inside the JSON object itself\n" +
-      "  \"foo\": \"bar\" // and a single line comment at end of line \n" +
-      "/*\n" +
-      "  This is a another multi \n" +
-      "  line comment this time inside the JSON object itself\n" +
-      "*/\n" +
-      "}";
-    JsonObject json = new JsonObject(jsonWithComments);
-    assertEquals("{\"foo\":\"bar\"}", json.encode());
-  }
-
-  @Test
-  public void testInvalidJson() {
-    String invalid = "qiwjdoiqwjdiqwjd";
-    try {
-      new JsonObject(invalid);
-      fail();
-    } catch (DecodeException e) {
-      // OK
-    }
   }
 
   @Test
@@ -1788,6 +1685,24 @@ public class JsonObjectTest {
     return obj;
   }
 
+  @Test
+  public void testInvalidConstruction() {
+    try {
+      new JsonObject((String) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      new JsonObject((Buffer) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    try {
+      new JsonObject((Map) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
 }
 
 

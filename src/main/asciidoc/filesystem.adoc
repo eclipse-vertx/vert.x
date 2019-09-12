@@ -67,7 +67,7 @@ Here is an example of random access writes:
 
 [source,$lang]
 ----
-{@link examples.FileSystemExamples#asyncFileWrite()}
+{@link examples.FileSystemExamples#asyncFileWrite}
 ----
 
 ==== Random access reads
@@ -88,7 +88,7 @@ Here's an example of random access reads:
 
 [source,$lang]
 ----
-{@link examples.FileSystemExamples#asyncFileRead()}
+{@link examples.FileSystemExamples#asyncFileRead}
 ----
 
 ==== Opening Options
@@ -121,7 +121,7 @@ copy the content to another `AsyncFile`:
 
 [source,$lang]
 ----
-{@link examples.FileSystemExamples#asyncFilePump()}
+{@link examples.FileSystemExamples#asyncFilePump}
 ----
 
 You can also use the _pump_ to write file content into HTTP responses, or more generally in any

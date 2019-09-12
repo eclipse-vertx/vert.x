@@ -164,6 +164,8 @@ import java.time.format.DateTimeFormatter;
             obj.setTryUsePerMessageWebsocketCompression((Boolean)member.getValue());
           }
           break;
+        case "tryWebsocketDeflateFrameCompression":
+          break;
         case "verifyHost":
           if (member.getValue() instanceof Boolean) {
             obj.setVerifyHost((Boolean)member.getValue());
@@ -230,8 +232,11 @@ import java.time.format.DateTimeFormatter;
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
     json.put("tryUseCompression", obj.isTryUseCompression());
+    json.put("tryUsePerMessageWebsocketCompression", obj.getTryUsePerMessageWebsocketCompression());
+    json.put("tryWebsocketDeflateFrameCompression", obj.getTryWebsocketDeflateFrameCompression());
     json.put("verifyHost", obj.isVerifyHost());
     json.put("websocketCompressionAllowClientNoContext", obj.getWebsocketCompressionAllowClientNoContext());
+    json.put("websocketCompressionLevel", obj.getWebsocketCompressionLevel());
     json.put("websocketCompressionRequestServerNoContext", obj.getWebsocketCompressionRequestServerNoContext());
   }
 }

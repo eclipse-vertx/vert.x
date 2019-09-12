@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
@@ -22,6 +23,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
@@ -29,12 +31,13 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
-import io.vertx.core.queue.Queue;
+import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
 import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
@@ -57,7 +60,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   private final Http1xServerConnection conn;
 
-  private DefaultHttpRequest request;
+  private HttpRequest request;
   private io.vertx.core.http.HttpVersion version;
   private io.vertx.core.http.HttpMethod method;
   private String rawMethod;
@@ -83,54 +86,57 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
+  private InboundBuffer<Object> pending;
 
-  private boolean paused;
-  private Queue<Buffer> pending;
-
-  HttpServerRequestImpl(Http1xServerConnection conn, DefaultHttpRequest request) {
+  HttpServerRequestImpl(Http1xServerConnection conn, HttpRequest request) {
     this.conn = conn;
     this.request = request;
   }
 
-  DefaultHttpRequest getRequest() {
+  /**
+   *
+   * @return
+   */
+  HttpRequest nettyRequest() {
     synchronized (conn) {
       return request;
     }
   }
 
-  void setRequest(DefaultHttpRequest request) {
+  void setRequest(HttpRequest request) {
     synchronized (conn) {
       this.request = request;
     }
   }
 
-  private Queue<Buffer> pendingQueue() {
+  private InboundBuffer<Object> pendingQueue() {
     if (pending == null) {
-      pending = Queue.queue(conn.getContext(), 8);
-      pending.writableHandler(v -> conn.doResume());
-      pending.emptyHandler(v -> {
-        if (ended) {
-          doEnd();
+      pending = new InboundBuffer<>(conn.getContext(), 8);
+      pending.drainHandler(v -> conn.doResume());
+      pending.handler(buffer -> {
+        if (buffer == InboundBuffer.END_SENTINEL) {
+          onEnd();
+        } else {
+          onData((Buffer) buffer);
         }
       });
-      pending.handler(this::handleData);
     }
     return pending;
   }
 
-  private void enqueueData(Buffer chunk) {
-    // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
-    if (!pendingQueue().add(chunk)) {
-      // We only pause when we are actively called by the connection
-      conn.doPause();
-    }
-  }
-
   void handleContent(Buffer buffer) {
-    if (paused || pending != null) {
-      enqueueData(buffer);
+    InboundBuffer<Object> queue;
+    synchronized (conn) {
+      queue = pending;
+    }
+    if (queue != null) {
+      // We queue requests if paused or a request is in progress to prevent responses being written in the wrong order
+      if (!queue.write(buffer)) {
+        // We only pause when we are actively called by the connection
+        conn.doPause();
+      }
     } else {
-      handleData(buffer);
+      onData(buffer);
     }
   }
 
@@ -142,32 +148,26 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
-    conn.requestHandler.handle(this);
   }
 
-  void appendRequest(HttpServerRequestImpl next) {
+  /**
+   * Enqueue a pipelined request.
+   *
+   * @param request the enqueued request
+   */
+  void enqueue(HttpServerRequestImpl request) {
     HttpServerRequestImpl current = this;
     while (current.next != null) {
       current = current.next;
     }
-    current.next = next;
+    current.next = request;
   }
 
-  HttpServerRequestImpl nextRequest() {
+  /**
+   * @return the next request following this one
+   */
+  HttpServerRequestImpl next() {
     return next;
-  }
-
-  void handlePipelined() {
-    paused = false;
-    boolean end = ended;
-    ended = false;
-    handleBegin();
-    if (!paused && pending != null && pending.size() > 0) {
-      pending.resume();
-    }
-    if (end) {
-      handleEnd();
-    }
   }
 
   private void reportRequestBegin() {
@@ -267,7 +267,12 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public MultiMap headers() {
     if (headers == null) {
-      headers = new HeadersAdaptor(request.headers());
+      HttpHeaders reqHeaders = request.headers();
+      if (reqHeaders instanceof MultiMap) {
+        headers = (MultiMap) reqHeaders;
+      } else {
+        headers = new HeadersAdaptor(reqHeaders);
+      }
     }
     return headers;
   }
@@ -317,9 +322,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest pause() {
     synchronized (conn) {
-      if (!isEnded()) {
-        pendingQueue().pause();
-      }
+      pendingQueue().pause();
       return this;
     }
   }
@@ -327,19 +330,14 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public HttpServerRequest fetch(long amount) {
     synchronized (conn) {
-      pendingQueue().take(amount);
+      pendingQueue().fetch(amount);
       return this;
     }
   }
 
   @Override
   public HttpServerRequest resume() {
-    synchronized (conn) {
-      if (!isEnded()) {
-        pendingQueue().resume();
-      }
-      return this;
-    }
+    return fetch(Long.MAX_VALUE);
   }
 
   @Override
@@ -360,7 +358,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   @Override
   public boolean isSSL() {
-    return conn.isSSL();
+    return conn.isSsl();
   }
 
   @Override
@@ -421,7 +419,10 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public ServerWebSocket upgrade() {
     ServerWebSocketImpl ws = conn.createWebSocket(this);
-    ws.connectNow();
+    if (ws == null) {
+      throw new IllegalStateException("Can't upgrade this request");
+    }
+    ws.accept();
     return ws;
   }
 
@@ -435,7 +436,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
           if (contentType != null) {
             HttpMethod method = request.method();
             if (isValidMultipartContentType(contentType) && isValidMultipartMethod(method)) {
-              decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.vertx(), this, () -> uploadHandler), request);
+              decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.getContext(), this, () -> uploadHandler), request);
             }
           }
         }
@@ -471,7 +472,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   @Override
   public boolean isEnded() {
     synchronized (conn) {
-      return response != null && ended && (pending == null || pending.isEmpty());
+      return ended && (pending == null || (!pending.isPaused() && pending.isEmpty()));
     }
   }
 
@@ -485,7 +486,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return conn;
   }
 
-  private void handleData(Buffer data) {
+  private void onData(Buffer data) {
+    Handler<Buffer> handler;
     synchronized (conn) {
       bytesRead += data.length();
       if (decoder != null) {
@@ -495,28 +497,37 @@ public class HttpServerRequestImpl implements HttpServerRequest {
           handleException(e);
         }
       }
-      if (dataHandler != null) {
-        dataHandler.handle(data);
-      }
+      handler = dataHandler;
+    }
+    if (handler != null) {
+      handler.handle(data);
     }
   }
 
   void handleEnd() {
+    InboundBuffer<Object> queue;
     synchronized (conn) {
       ended = true;
-      if (isEnded()) {
-        doEnd();
-      }
+      queue = pending;
+    }
+    if (queue != null) {
+      queue.write(InboundBuffer.END_SENTINEL);
+    } else {
+      onEnd();
     }
   }
 
-  private void doEnd() {
-    if (decoder != null) {
-      endDecode();
+  private void onEnd() {
+    Handler<Void> handler;
+    synchronized (conn) {
+      if (decoder != null) {
+        endDecode();
+      }
+      handler = endHandler;
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
-    if (endHandler != null) {
-      endHandler.handle(null);
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 
@@ -545,19 +556,31 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   void handleException(Throwable t) {
+    Handler<Throwable> handler = null;
+    HttpServerResponseImpl resp = null;
+    InterfaceHttpData upload = null;
     synchronized (conn) {
       if (!isEnded()) {
-        Handler<Throwable> handler = this.exceptionHandler;
-        if (handler != null) {
-          conn.getContext().runOnContext(v -> handler.handle(t));
+        handler = exceptionHandler;
+        if (decoder != null) {
+          upload = decoder.currentPartialHttpData();
         }
       }
       if (!response.ended()) {
         if (METRICS_ENABLED) {
           reportRequestReset();
         }
-        response.handleException(t);
+        resp = response;
       }
+    }
+    if (resp != null) {
+      resp.handleException(t);
+    }
+    if (upload instanceof NettyFileUpload) {
+      ((NettyFileUpload)upload).handleException(t);
+    }
+    if (handler != null) {
+      handler.handle(t);
     }
   }
 
@@ -592,4 +615,23 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return QueryStringDecoder.decodeComponent(str, CharsetUtil.UTF_8);
   }
 
+  @Override
+  public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
+    return this;
+  }
+
+  @Override
+  public @Nullable Cookie getCookie(String name) {
+    return response.cookies().get(name);
+  }
+
+  @Override
+  public int cookieCount() {
+    return response.cookies().size();
+  }
+
+  @Override
+  public Map<String, Cookie> cookieMap() {
+    return (Map)response.cookies();
+  }
 }

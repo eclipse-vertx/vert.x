@@ -32,8 +32,8 @@ public interface ConnectionListener<C> {
   void onRecycle(long expirationTimestamp);
 
   /**
-   * Discard the connection from the pool, it will now be fully managed by the borrower.
+   * Evict the connection from the pool, it will now be fully managed by the borrower.
    */
-  void onDiscard();
+  void onEvict();
 
 }

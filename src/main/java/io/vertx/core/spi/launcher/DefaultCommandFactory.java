@@ -16,6 +16,8 @@ import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.annotations.CLIConfigurator;
 import io.vertx.core.cli.impl.ReflectionUtils;
 
+import java.util.function.Supplier;
+
 /**
  * Default implementation of {@link CommandFactory}. This implementation defines the {@link CLI} from the
  * given {@link Command} implementation (by reading the annotation). Then, {@link Command} instance are
@@ -26,14 +28,28 @@ import io.vertx.core.cli.impl.ReflectionUtils;
 public class DefaultCommandFactory<C extends Command> implements CommandFactory<C> {
 
   private final Class<C> clazz;
+  private final Supplier<C> supplier;
 
   /**
    * Creates a new {@link CommandFactory}.
    *
    * @param clazz the {@link Command} implementation
+   * @deprecated Please use {@link #DefaultCommandFactory(Class, Supplier)}
    */
+  @Deprecated
   public DefaultCommandFactory(Class<C> clazz) {
+    this(clazz, () -> ReflectionUtils.newInstance(clazz));
+  }
+
+  /**
+   * Creates a new {@link CommandFactory}.
+   *
+   * @param clazz the {@link Command} implementation
+   * @param supplier the {@link Command} implementation
+   */
+  public DefaultCommandFactory(Class<C> clazz, Supplier<C> supplier) {
     this.clazz = clazz;
+    this.supplier = supplier;
   }
 
   /**
@@ -41,9 +57,7 @@ public class DefaultCommandFactory<C extends Command> implements CommandFactory<
    */
   @Override
   public C create(CommandLine cl) {
-    C c = ReflectionUtils.newInstance(clazz);
-    CLIConfigurator.inject(cl, c);
-    return c;
+    return supplier.get();
   }
 
   /**

@@ -20,6 +20,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Options to configure the event bus.
@@ -29,23 +30,58 @@ import java.util.Set;
 @DataObject(generateConverter = true, inheritConverter = true, publicConverter = false)
 public class EventBusOptions extends TCPSSLOptions {
 
-  private boolean clustered = VertxOptions.DEFAULT_CLUSTERED;
-  private String clusterPublicHost = VertxOptions.DEFAULT_CLUSTER_PUBLIC_HOST;
-  private int clusterPublicPort = VertxOptions.DEFAULT_CLUSTER_PUBLIC_PORT;
-  private long clusterPingInterval = VertxOptions.DEFAULT_CLUSTER_PING_INTERVAL;
-  private long clusterPingReplyInterval = VertxOptions.DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
+  /**
+   * The default value of whether Vert.x is clustered = false.
+   */
+  public static final boolean DEFAULT_CLUSTERED = VertxOptions.DEFAULT_CLUSTERED;
+
+  /**
+   * The default hostname to use when clustering = "localhost"
+   */
+  public static final String DEFAULT_CLUSTER_HOST = VertxOptions.DEFAULT_CLUSTER_HOST;
+
+  /**
+   * The default port to use when clustering = 0 (meaning assign a random port)
+   */
+  public static final int DEFAULT_CLUSTER_PORT = VertxOptions.DEFAULT_CLUSTER_PORT;
+
+  /**
+   * The default cluster public host to use = null which means use the same as the cluster host
+   */
+  public static final String DEFAULT_CLUSTER_PUBLIC_HOST = VertxOptions.DEFAULT_CLUSTER_PUBLIC_HOST;
+
+  /**
+   * The default cluster public port to use = -1 which means use the same as the cluster port
+   */
+  public static final int DEFAULT_CLUSTER_PUBLIC_PORT = VertxOptions.DEFAULT_CLUSTER_PUBLIC_PORT;
+
+  /**
+   * The default value of cluster ping interval = 20000 ms.
+   */
+  public static final long DEFAULT_CLUSTER_PING_INTERVAL = VertxOptions.DEFAULT_CLUSTER_PING_INTERVAL;
+
+  /**
+   * The default value of cluster ping reply interval = 20000 ms.
+   */
+  public static final long DEFAULT_CLUSTER_PING_REPLY_INTERVAL = VertxOptions.DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
+
+  private boolean clustered = DEFAULT_CLUSTERED;
+  private String clusterPublicHost = DEFAULT_CLUSTER_PUBLIC_HOST;
+  private int clusterPublicPort = DEFAULT_CLUSTER_PUBLIC_PORT;
+  private long clusterPingInterval = DEFAULT_CLUSTER_PING_INTERVAL;
+  private long clusterPingReplyInterval = DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
 
   // Attributes used to configure the server of the event bus when the event bus is clustered.
 
   /**
    * The default port to listen on = 0 (meaning a random ephemeral free port will be chosen)
    */
-  public static final int DEFAULT_PORT = VertxOptions.DEFAULT_CLUSTER_PORT;
+  public static final int DEFAULT_PORT = DEFAULT_CLUSTER_PORT;
 
   /**
    * The default host to listen on = "0.0.0.0" (meaning listen on all available interfaces).
    */
-  public static final String DEFAULT_HOST = VertxOptions.DEFAULT_CLUSTER_HOST;
+  public static final String DEFAULT_HOST = DEFAULT_CLUSTER_HOST;
 
   /**
    * The default accept backlog = 1024
@@ -96,7 +132,7 @@ public class EventBusOptions extends TCPSSLOptions {
   public EventBusOptions() {
     super();
 
-    clustered = VertxOptions.DEFAULT_CLUSTERED;
+    clustered = DEFAULT_CLUSTERED;
 
     port = DEFAULT_PORT;
     host = DEFAULT_HOST;
@@ -201,9 +237,7 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * @return the host, which can be configured from the {@link VertxOptions#setClusterHost(String)}, or using
-   * the {@code --cluster-host} command line option.
-   * @see NetServerOptions#getHost()
+   * @return the host
    */
   public String getHost() {
     return host;
@@ -475,10 +509,18 @@ public class EventBusOptions extends TCPSSLOptions {
     return (EventBusOptions) super.setLogActivity(logEnabled);
   }
 
+  @Override
+  public EventBusOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    return (EventBusOptions) super.setSslHandshakeTimeout(sslHandshakeTimeout);
+  }
+
+  @Override
+  public EventBusOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    return (EventBusOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
+  }
+
   /**
-   * @return whether or not the event bus is clustered. This can be configured from the
-   * {@link VertxOptions#setClustered(boolean)} method or from the {@code --cluster} option from the command
-   * line.
+   * @return whether or not the event bus is clustered
    */
   public boolean isClustered() {
     return clustered;
@@ -538,8 +580,6 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * Get the value of cluster ping reply interval, in ms.
    * After sending a ping, if a pong is not received in this time, the node will be considered dead.
-   * <p>
-   * The value can be configured from {@link VertxOptions#setClusterPingInterval(long)}.
    *
    * @return the value of cluster ping reply interval
    */
@@ -564,8 +604,6 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * Get the value of cluster ping reply interval, in ms.
    * After sending a ping, if a pong is not received in this time, the node will be considered dead.
-   * <p>
-   * The value can be configured from {@link VertxOptions#setClusterPingReplyInterval(long)}}.
    *
    * @return the value of cluster ping reply interval
    */
@@ -588,9 +626,7 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * Get the public facing port to be used when clustering.
-   * <p>
-   * It can be configured using {@link VertxOptions#setClusterPublicHost(String)}
+   * Get the public facing host to be used when clustering.
    *
    * @return the public facing port
    */
@@ -617,8 +653,6 @@ public class EventBusOptions extends TCPSSLOptions {
 
   /**
    * Gets the public facing port to be used when clustering.
-   * <p>
-   * This can be configured from {@link VertxOptions#setClusterPublicPort(int)}.
    *
    * @return the public facing port
    */

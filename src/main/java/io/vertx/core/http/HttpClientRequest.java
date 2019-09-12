@@ -11,13 +11,11 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.*;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -62,29 +60,72 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   @Override
   HttpClientRequest write(Buffer data);
 
+  /**
+   * Same as {@link #write(Buffer)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  HttpClientRequest write(Buffer data, Handler<AsyncResult<Void>> handler);
+
   @Override
   HttpClientRequest setWriteQueueMaxSize(int maxSize);
 
   @Override
   HttpClientRequest drainHandler(Handler<Void> handler);
 
+  /**
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
+   */
+  @Deprecated
   @Override
+  @Fluent
   HttpClientRequest handler(Handler<HttpClientResponse> handler);
 
+  /**
+   * @deprecated this method will be removed in Vert.x 4
+   */
+  @Deprecated
   @Override
   HttpClientRequest pause();
 
+  /**
+   * @deprecated this method will be removed in Vert.x 4
+   */
+  @Deprecated
   @Override
   HttpClientRequest resume();
 
+  /**
+   * @deprecated this method will be removed in Vert.x 4
+   */
+  @Deprecated
   @Override
   HttpClientRequest fetch(long amount);
 
+  /**
+   * @deprecated this method will be removed in Vert.x 4
+   */
+  @Deprecated
   @Override
   HttpClientRequest endHandler(Handler<Void> endHandler);
 
+  /**
+   * Set the request to follow HTTP redirects up to {@link HttpClientOptions#getMaxRedirects()}.
+   *
+   * @param followRedirects {@code true} to follow HTTP redirects
+   * @return a reference to this, so the API can be used fluently
+   */
   @Fluent
   HttpClientRequest setFollowRedirects(boolean followRedirects);
+
+  /**
+   * Set the max number of HTTP redirects this request will follow. The default is {@code 0} which means
+   * no redirects.
+   *
+   * @param maxRedirects the number of HTTP redirect to follow
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setMaxRedirects(int maxRedirects);
 
   /**
    * If chunked is true then the request will be set into HTTP chunked mode
@@ -171,7 +212,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   /**
    * Like {@link #putHeader(String, String)} but using CharSequence
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpClientRequest putHeader(CharSequence name, CharSequence value);
 
@@ -182,14 +223,14 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    * @param values The header values
    * @return @return a reference to this, so the API can be used fluently
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpClientRequest putHeader(String name, Iterable<String> values);
 
   /**
    * Like {@link #putHeader(String, Iterable)} but using CharSequence
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values);
 
@@ -203,6 +244,12 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   HttpClientRequest write(String chunk);
 
   /**
+   * Same as {@link #write(String)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  HttpClientRequest write(String chunk, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Write a {@link String} to the request body, encoded using the encoding {@code enc}.
    *
    * @return @return a reference to this, so the API can be used fluently
@@ -210,6 +257,12 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    */
   @Fluent
   HttpClientRequest write(String chunk, String enc);
+
+  /**
+   * Same as {@link #write(String,String)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  HttpClientRequest write(String chunk, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
    * If you send an HTTP request with the header {@code Expect} set to the value {@code 100-continue}
@@ -252,6 +305,11 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   void end(String chunk);
 
   /**
+   * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
+   */
+  void end(String chunk, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding
    *
    * @throws java.lang.IllegalStateException when no response handler is set
@@ -259,12 +317,24 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   void end(String chunk, String enc);
 
   /**
+   * Same as {@link #end(String,String)} but with an {@code handler} called when the operation completes
+   */
+  void end(String chunk, String enc, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Same as {@link #end()} but writes some data to the request body before ending. If the request is not chunked and
    * no other data has been written then the {@code Content-Length} header will be automatically set
    *
    * @throws java.lang.IllegalStateException when no response handler is set
    */
+  @Override
   void end(Buffer chunk);
+
+  /**
+   * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
+   */
+  @Override
+  void end(Buffer chunk, Handler<AsyncResult<Void>> handler);
 
   /**
    * Ends the request. If no data has been written to the request body, and {@link #sendHead()} has not been called then
@@ -274,7 +344,14 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    *
    * @throws java.lang.IllegalStateException when no response handler is set
    */
+  @Override
   void end();
+
+  /**
+   * Same as {@link #end()} but with an {@code handler} called when the operation completes
+   */
+  @Override
+  void end(Handler<AsyncResult<Void>> handler);
 
   /**
    * Set's the amount of time after which if the request does not return any data within the timeout period an
@@ -387,4 +464,21 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
   default HttpClientRequest writeCustomFrame(HttpFrame frame) {
     return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
+  
+  /**
+   * Sets the priority of the associated stream.
+   * <p/>
+   * This is not implemented for HTTP/1.x.
+   *
+   * @param streamPriority the priority of this request's stream
+   */
+  @Fluent
+  default HttpClientRequest setStreamPriority(StreamPriority streamPriority) {
+      return this;
+  }
+
+  /**
+   * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
+   */
+  StreamPriority getStreamPriority();
 }

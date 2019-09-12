@@ -24,12 +24,13 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSocket {
+public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
 
-  public WebSocketImpl(VertxInternal vertx,
-                       Http1xClientConnection conn, boolean supportsContinuation,
-                       int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
-    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+  public WebSocketImpl(Http1xClientConnection conn,
+                       boolean supportsContinuation,
+                       int maxWebSocketFrameSize,
+                       int maxWebSocketMessageSize) {
+    super(conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
   }
 
   @Override
@@ -39,7 +40,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocket> implements WebSo
       if (metrics != null) {
         metrics.disconnected(getMetric());
       }
-      super.handleClosed();
     }
+    super.handleClosed();
   }
 }

@@ -47,6 +47,12 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   @Override
   AsyncFile write(Buffer data);
 
+  /**
+   * Same as {@link #write(Buffer)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  AsyncFile write(Buffer data, Handler<AsyncResult<Void>> handler);
+
   @Override
   AsyncFile setWriteQueueMaxSize(int maxSize);
 
@@ -64,6 +70,12 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Override
   void end();
+
+  /**
+   * Close the file, see {@link #close(Handler)}.
+   */
+  @Override
+  void end(Handler<AsyncResult<Void>> handler);
 
   /**
    * Close the file. The actual close happens asynchronously.
@@ -145,6 +157,15 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   AsyncFile setReadPos(long readPos);
 
   /**
+   * Sets the number of bytes that will be read when using the file as a {@link io.vertx.core.streams.ReadStream}.
+   *
+   * @param readLength the bytes that will be read from the file
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  AsyncFile setReadLength(long readLength);
+
+  /**
    * Sets the position from which data will be written when using the file as a {@link io.vertx.core.streams.WriteStream}.
    *
    * @param writePos  the position in the file
@@ -152,6 +173,11 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   AsyncFile setWritePos(long writePos);
+
+  /**
+   * @return the current write position the file is at
+   */
+  long getWritePos();
 
   /**
    * Sets the buffer size that will be used to read the data from the file. Changing this value will impact how much

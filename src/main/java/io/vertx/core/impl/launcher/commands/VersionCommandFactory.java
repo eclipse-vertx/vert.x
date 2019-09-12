@@ -24,6 +24,6 @@ public class VersionCommandFactory extends DefaultCommandFactory<VersionCommand>
    * Creates a new instance of {@link VersionCommandFactory}.
    */
   public VersionCommandFactory() {
-    super(VersionCommand.class);
+    super(VersionCommand.class, VersionCommand::new);
   }
 }

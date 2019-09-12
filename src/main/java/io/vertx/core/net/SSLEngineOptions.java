@@ -18,6 +18,12 @@ package io.vertx.core.net;
  */
 public abstract class SSLEngineOptions {
 
+  /**
+   * @deprecated use {@link #copy()} instead
+   */
+  @Deprecated
   public abstract SSLEngineOptions clone();
+
+  public abstract SSLEngineOptions copy();
 
 }

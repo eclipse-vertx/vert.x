@@ -25,6 +25,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.StreamPriority;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,6 +33,7 @@ import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -43,6 +45,27 @@ import static io.vertx.core.http.Http2Settings.*;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public final class HttpUtils {
+
+  static final int SC_SWITCHING_PROTOCOLS = 101;
+  static final int SC_BAD_GATEWAY = 502;
+
+  static final StreamPriority DEFAULT_STREAM_PRIORITY = new StreamPriority() {
+    @Override
+    public StreamPriority setWeight(short weight) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
+
+    @Override
+    public StreamPriority setDependency(int dependency) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
+
+    @Override
+    public StreamPriority setExclusive(boolean exclusive) {
+      throw new UnsupportedOperationException("Unmodifiable stream priority");
+    }
+  };
+
 
   private HttpUtils() {
   }
@@ -81,11 +104,96 @@ public final class HttpUtils {
   }
 
   /**
-   * Removed dots as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
+   * Normalizes a path as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
    *
    * There are 2 extra transformations that are not part of the spec but kept for backwards compatibility:
    *
    * double slash // will be converted to single slash and the path will always start with slash.
+   *
+   * Null paths are not normalized as nothing can be said about them.
+   *
+   * @param pathname raw path
+   * @return normalized path
+   */
+  public static String normalizePath(String pathname) {
+    if (pathname == null) {
+      return null;
+    }
+
+    // add trailing slash if not set
+    if (pathname.length() == 0) {
+      return "/";
+    }
+
+    StringBuilder ibuf = new StringBuilder(pathname.length() + 1);
+
+    // Not standard!!!
+    if (pathname.charAt(0) != '/') {
+      ibuf.append('/');
+    }
+
+    ibuf.append(pathname);
+    int i = 0;
+
+    while (i < ibuf.length()) {
+      // decode unreserved chars described in
+      // http://tools.ietf.org/html/rfc3986#section-2.4
+      if (ibuf.charAt(i) == '%') {
+        decodeUnreserved(ibuf, i);
+      }
+
+      i++;
+    }
+
+    // remove dots as described in
+    // http://tools.ietf.org/html/rfc3986#section-5.2.4
+    return removeDots(ibuf);
+  }
+
+  private static void decodeUnreserved(StringBuilder path, int start) {
+    if (start + 3 <= path.length()) {
+      // these are latin chars so there is no danger of falling into some special unicode char that requires more
+      // than 1 byte
+      final String escapeSequence = path.substring(start + 1, start + 3);
+      int unescaped;
+      try {
+        unescaped = Integer.parseInt(escapeSequence, 16);
+        if (unescaped < 0) {
+          throw new IllegalArgumentException("Invalid escape sequence: %" + escapeSequence);
+        }
+      } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("Invalid escape sequence: %" + escapeSequence);
+      }
+      // validate if the octet is within the allowed ranges
+      if (
+        // ALPHA
+        (unescaped >= 0x41 && unescaped <= 0x5A) ||
+          (unescaped >= 0x61 && unescaped <= 0x7A) ||
+          // DIGIT
+          (unescaped >= 0x30 && unescaped <= 0x39) ||
+          // HYPHEN
+          (unescaped == 0x2D) ||
+          // PERIOD
+          (unescaped == 0x2E) ||
+          // UNDERSCORE
+          (unescaped == 0x5F) ||
+          // TILDE
+          (unescaped == 0x7E)) {
+
+        path.setCharAt(start, (char) unescaped);
+        path.delete(start + 1, start + 3);
+      }
+    } else {
+      throw new IllegalArgumentException("Invalid position for escape character: " + start);
+    }
+  }
+
+  /**
+   * Removed dots as per <a href="http://tools.ietf.org/html/rfc3986#section-5.2.4>rfc3986</a>.
+   *
+   * There is 1 extra transformation that are not part of the spec but kept for backwards compatibility:
+   *
+   * double slash // will be converted to single slash.
    *
    * @param path raw path
    * @return normalized path
@@ -399,6 +507,10 @@ public final class HttpUtils {
       return Unpooled.copyShort(statusCode);
   }
 
+  static void sendError(Channel ch, HttpResponseStatus status) {
+    sendError(ch, status, status.reasonPhrase());
+  }
+
   static void sendError(Channel ch, HttpResponseStatus status, CharSequence err) {
     FullHttpResponse resp = new DefaultFullHttpResponse(HTTP_1_1, status);
     if (status.code() == METHOD_NOT_ALLOWED.code()) {
@@ -414,7 +526,7 @@ public final class HttpUtils {
     ch.writeAndFlush(resp);
   }
 
-  static String getWebSocketLocation(HttpRequest req, boolean ssl) throws Exception {
+  static String getWebSocketLocation(HttpServerRequest req, boolean ssl) throws Exception {
     String prefix;
     if (ssl) {
       prefix = "ws://";
@@ -554,21 +666,105 @@ public final class HttpUtils {
     return -1;
   }
 
+  private static final Consumer<CharSequence> HEADER_VALUE_VALIDATOR = HttpUtils::validateHeaderValue;
+
   public static void validateHeader(CharSequence name, CharSequence value) {
-    validateHeader(name);
-    validateHeader(value);
+    validateHeaderName(name);
+    validateHeaderValue(value);
   }
 
   public static void validateHeader(CharSequence name, Iterable<? extends CharSequence> values) {
-    validateHeader(name);
-    values.forEach(HttpUtils::validateHeader);
+    validateHeaderName(name);
+    values.forEach(HEADER_VALUE_VALIDATOR);
   }
 
-  public static void validateHeader(CharSequence value) {
+  public static void validateHeaderValue(CharSequence seq) {
+
+    int state = 0;
+    // Start looping through each of the character
+    for (int index = 0; index < seq.length(); index++) {
+      state = validateValueChar(seq, state, seq.charAt(index));
+    }
+
+    if (state != 0) {
+      throw new IllegalArgumentException("a header value must not end with '\\r' or '\\n':" + seq);
+    }
+  }
+
+  private static final int HIGHEST_INVALID_VALUE_CHAR_MASK = ~15;
+
+  private static int validateValueChar(CharSequence seq, int state, char character) {
+    /*
+     * State:
+     * 0: Previous character was neither CR nor LF
+     * 1: The previous character was CR
+     * 2: The previous character was LF
+     */
+    if ((character & HIGHEST_INVALID_VALUE_CHAR_MASK) == 0) {
+      // Check the absolutely prohibited characters.
+      switch (character) {
+        case 0x0: // NULL
+          throw new IllegalArgumentException("a header value contains a prohibited character '\0': " + seq);
+        case 0x0b: // Vertical tab
+          throw new IllegalArgumentException("a header value contains a prohibited character '\\v': " + seq);
+        case '\f':
+          throw new IllegalArgumentException("a header value contains a prohibited character '\\f': " + seq);
+      }
+    }
+
+    // Check the CRLF (HT | SP) pattern
+    switch (state) {
+      case 0:
+        switch (character) {
+          case '\r':
+            return 1;
+          case '\n':
+            return 2;
+        }
+        break;
+      case 1:
+        switch (character) {
+          case '\n':
+            return 2;
+          default:
+            throw new IllegalArgumentException("only '\\n' is allowed after '\\r': " + seq);
+        }
+      case 2:
+        switch (character) {
+          case '\t':
+          case ' ':
+            return 0;
+          default:
+            throw new IllegalArgumentException("only ' ' and '\\t' are allowed after '\\n': " + seq);
+        }
+    }
+    return state;
+  }
+
+  public static void validateHeaderName(CharSequence value) {
     for (int i = 0;i < value.length();i++) {
       char c = value.charAt(i);
-      if (c == '\r' || c == '\n') {
-        throw new IllegalArgumentException("Illegal header character: " + ((int)c));
+      switch (c) {
+        case 0x00:
+        case '\t':
+        case '\n':
+        case 0x0b:
+        case '\f':
+        case '\r':
+        case ' ':
+        case ',':
+        case ':':
+        case ';':
+        case '=':
+          throw new IllegalArgumentException(
+            "a header name cannot contain the following prohibited characters: =,;: \\t\\r\\n\\v\\f: " +
+              value);
+        default:
+          // Check to see if the character is not an ASCII character, or invalid
+          if (c > 127) {
+            throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " +
+              value);
+          }
       }
     }
   }

@@ -38,48 +38,7 @@ include::override/dependencies.adoc[]
 
 Let's discuss the different concepts and features in core.
 
-== In the beginning there was Vert.x
-
-////
-TODO Much of this is Java specific - need someway of swapping in language specific parts
-////
-
-You can't do much in Vert.x-land unless you can communicate with a {@link io.vertx.core.Vertx} object!
-
-It's the control centre of Vert.x and is how you do pretty much everything, including creating clients and servers,
-getting a reference to the event bus, setting timers, as well as many other things.
-
-So how do you get an instance?
-
-If you're embedding Vert.x then you simply create an instance as follows:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#example1}
-----
-
-NOTE: Most applications will only need a single Vert.x instance, but it's possible to create multiple Vert.x instances if you
-require, for example, isolation between the event bus or different groups of servers and clients.
-
-=== Specifying options when creating a Vertx object
-
-When creating a Vertx object you can also specify options if the defaults aren't right for you:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#example2}
-----
-
-The {@link io.vertx.core.VertxOptions} object has many settings and allows you to configure things like clustering,
-high availability, pool sizes and various other settings. The Javadoc describes all the settings in detail.
-
-=== Creating a clustered Vert.x object
-
-If you're creating a *clustered Vert.x* (See the section on the <<event_bus, event bus>> for more information
-on clustering the event bus), then you will normally use the asynchronous variant to create the Vertx object.
-
-This is because it usually takes some time (maybe a few seconds) for the different Vert.x instances in a cluster to
-group together. During that time, we don't want to block the calling thread, so we give the result to you asynchronously.
+include::override/in-the-beginning.adoc[]
 
 == Are you fluent?
 
@@ -266,6 +225,13 @@ result handler to be called back asynchronous when the blocking code has been ex
 {@link examples.CoreExamples#example7}
 ----
 
+WARNING: Blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
+         or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
+         When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
+         blocked thread checker. Long blocking operations should use a dedicated thread managed by the application,
+         which can interact with verticles using the event-bus or {@link io.vertx.core.Context#runOnContext(io.vertx.core.Handler)}
+
+
 By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
 the different executeBlocking are executed _serially_ (i.e. one after another).
 
@@ -399,9 +365,6 @@ completes, run the given handler that completes the given `future` (next).
 In this second case, the {@link io.vertx.core.Handler} should complete the `next` future to report its success or
 failure.
 
-You can use {@link io.vertx.core.Future#completer()} that completes a future with the operation result or
-failure. It avoids having to write the _traditional_: `if success then complete the future else fail the future`.
-
 == Verticles
 
 Vert.x comes with a simple, scalable, _actor-like_ deployment and concurrency model out of the box that
@@ -476,9 +439,31 @@ different threads at different times.
 A multi-threaded worker verticle is just like a normal worker verticle but it *can* be executed concurrently by
 different threads.
 
-WARNING: Multi-threaded worker verticles are an advanced feature and most applications will have no need for them.
+CAUTION: Multi-threaded worker verticles are an advanced feature and most applications will have no need for them.
+
 Because of the concurrency in these verticles you have to be very careful to keep the verticle in a consistent state
 using standard Java techniques for multi-threaded programming.
+
+Multi-threaded worker verticles were designed and are intended for the sole use of consuming simultaneously `EventBus` messages in a blocking fashion.
+
+WARNING: Vert.x clients and servers (TCP, HTTP, ...etc) cannot be created in a multi-threaded worker verticle.
+Should you incidentally try, an exception will be thrown.
+
+Essentially, multi-threaded worker verticles simply avoid the user from deploying as much instances of a worker verticle as the number of threads in a worker pool.
+So you could for example provide a worker pool name/size in {@link io.vertx.core.DeploymentOptions} and set the number of instances accordingly:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#multiThreadedWorkerVerticleAlternative}
+----
+
+Alternatively, you could create a regular verticle and wrap you blocking code with multiple `executeBlocking` with the `ordered` flag set to `false`:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#multiThreadedWorkerVerticleAlternative2}
+----
+
 
 === Deploying verticles programmatically
 
@@ -789,6 +774,8 @@ include::eventbus.adoc[]
 
 include::override/json.adoc[]
 
+include::json-pointers.adoc[]
+
 include::buffers.adoc[]
 
 include::net.adoc[]
@@ -913,8 +900,10 @@ vertx run groovy:io.vertx.example.MyGroovyVerticle
 
 The `vertx run` command can take a few optional parameters, they are:
 
- * `-conf <config_file>` - Provides some configuration to the verticle. `config_file` is the name of a text file
- containing a JSON object that represents the configuration for the verticle. This is optional.
+ * `-options <options>` - Provides the Vert.x options.
+ `options` is the name of a JSON file that represents the Vert.x options, or a JSON string. This is optional.
+ * `-conf <config>` - Provides some configuration to the verticle.
+ `config` is the name of a JSON file that represents the configuration for the verticle, or a JSON string. This is optional.
  * `-cp <path>` - The path on which to search for the verticle and any other resources used by the verticle. This
  defaults to `.` (current directory). If your verticle references other scripts, classes or other resources
  (e.g. jar files) then make sure these are on this path. The path can contain multiple path entries separated by
@@ -930,12 +919,16 @@ one instance. If omitted a single instance will be deployed.
  * `-cluster` -  This option determines whether the Vert.x instance will attempt to form a cluster with other Vert.x
  instances on the network. Clustering Vert.x instances allows Vert.x to form a distributed event bus with
  other nodes. Default is `false` (not clustered).
- * `-cluster-port` - If the cluster option has also been specified then this determines which port will be used for
+ * `-cluster-port` - If the `cluster` option has also been specified then this determines which port will be bound for
  cluster communication with other Vert.x instances. Default is `0` - which means '_choose a free random port_'. You
  don't usually need to specify this parameter unless you really need to bind to a specific port.
- * `-cluster-host` - If the cluster option has also been specified then this determines which host address will be
- used for cluster communication with other Vert.x instances. By default it will try and pick one from the available
+ * `-cluster-host` - If the `cluster` option has also been specified then this determines which host address will be
+ bound for cluster communication with other Vert.x instances. By default it will try and pick one from the available
  interfaces. If you have more than one interface and you want to use a specific one, specify it here.
+ * `-cluster-public-port` - If the `cluster` option has also been specified then this determines which port will be advertised for
+ cluster communication with other Vert.x instances. Default is `-1`, which means same as `cluster-port`.
+ * `-cluster-public-host` - If the `cluster` option has also been specified then this determines which host address will be advertised for
+ cluster communication with other Vert.x instances. If not specified, Vert.x uses the value of `cluster-host`.
  * `-ha` - if specified the verticle will be deployed as  high availability (HA) deployment. See related section
  for more details
  * `-quorum` - used in conjunction with `-ha`. It specifies the minimum number of nodes in the cluster for any _HA
@@ -1098,7 +1091,7 @@ The `start`, `stop` and `list` command are also available from the `vertx` tool.
  * `java-opts` : the Java Virtual Machine options, uses the `JAVA_OPTS` environment variable if not set.
  * `redirect-output` : redirect the spawned process output and error streams to the parent process streams.
 
- If option values contain spaces, don't forget to wrap the value between {@code ""} (double-quotes).
+ If option values contain spaces, don't forget to wrap the value between `""` (double-quotes).
 
  As the `start` command spawns a new process, the java options passed to the JVM are not propagated, so you **must**
  use `java-opts` to configure the JVM (`-X`, `-D`...). If you use the `CLASSPATH` environment variable, be sure it
@@ -1235,25 +1228,6 @@ also make sure the relevant Log4J or SLF4J jars are on your classpath.
 Notice that, the provided delegate for Log4J 1 does not support parameterized message. The delegate for Log4J 2
 uses the `{}` syntax like the SLF4J delegate. JUL delegate uses the `{x}` syntax.
 
-=== Logging from your application
-
-Vert.x itself is just a library and you can use whatever logging library you prefer to log from your own application,
-using that logging library's API.
-
-However, if you prefer you can use the Vert.x logging facility as described above to provide logging for your
-application too.
-
-To do that you use {@link io.vertx.core.logging.LoggerFactory} to get an instance of {@link io.vertx.core.logging.Logger}
-which you then use for logging, e.g.
-
-[source,$lang]
-----
-{@link examples.CoreExamples#example18}
-----
-
-CAUTION: Logging backends use different formats to represent replaceable tokens in parameterized messages.
-As a consequence, if you rely on Vert.x parameterized logging methods, you won't be able to switch backends without changing your code.
-
 [[netty-logging]]
 === Netty logging
 
@@ -1304,73 +1278,7 @@ SEVERE: java.io.IOException: Connection reset by peer
 It means that the client is resetting the HTTP connection instead of closing it. This message also indicates that you
 may have not consumed the complete payload (the connection was cut before you were able to).
 
-== Host name resolution
-
-Vert.x uses an an address resolver for resolving host name into IP addresses instead of
-the JVM built-in blocking resolver.
-
-An host name resolves to an IP address using:
-
-- the _hosts_ file of the operating system
-- otherwise DNS queries against a list of servers
-
-By default it will use the list of the system DNS server addresses from the environment, if that list cannot be
-retrieved it will use Google's public DNS servers `"8.8.8.8"` and `"8.8.4.4"`.
-
-DNS servers can be also configured when creating a {@link io.vertx.core.Vertx} instance:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#configureDNSServers}
-----
-
-The default port of a DNS server is `53`, when a server uses a different port, this port can be set
-using a colon delimiter: `192.168.0.2:40000`.
-
-NOTE: sometimes it can be desirable to use the JVM built-in resolver, the JVM system property
-_-Dvertx.disableDnsResolver=true_ activates this behavior
-
-=== Failover
-
-When a server does not reply in a timely manner, the resolver will try the next one from the list, the search
-is limited by {@link io.vertx.core.dns.AddressResolverOptions#setMaxQueries(int)} (the default value is `4` queries).
-
-A DNS query is considered as failed when the resolver has not received a correct answer within
-{@link io.vertx.core.dns.AddressResolverOptions#getQueryTimeout()} milliseconds (the default value is `5` seconds).
-
-=== Server list rotation
-
-By default the dns server selection uses the first one, the remaining servers are used for failover.
-
-You can configure {@link io.vertx.core.dns.AddressResolverOptions#setRotateServers(boolean)} to `true` to let
-the resolver perform a round-robin selection instead. It spreads the query load among the servers and avoids
-all lookup to hit the first server of the list.
-
-Failover still applies and will use the next server in the list.
-
-=== Hosts mapping
-
-The _hosts_ file of the operating system is used to perform an hostname lookup for an ipaddress.
-
-An alternative _hosts_ file can be used instead:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#configureHosts}
-----
-
-=== Search domains
-
-By default the resolver will use the system DNS search domains from the environment. Alternatively an explicit search domain
-list can be provided:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#configureSearchDomains()}
-----
-
-When a search domain list is used, the threshold for the number of dots is {@code 1} or loaded from `/etc/resolv.conf`
-on Linux, it can be configured to a specific value with {@link io.vertx.core.dns.AddressResolverOptions#setNdots(int)}.
+include::override/hostname-resolution.adoc[]
 
 == High Availability and Fail-Over
 
@@ -1517,13 +1425,7 @@ group.
 
 Vert.x can run with http://netty.io/wiki/native-transports.html[native transports] (when available) on BSD (OSX) and Linux:
 
-[source,$lang]
-----
-{@link examples.CoreExamples#configureNative()}
-----
-
-NOTE: preferring native transport will not prevent the application to execute, if your application requires native
-transport, you need to check {@link io.vertx.core.Vertx#isNativeTransportEnabled()}.
+include::override/configuring-native.adoc[]
 
 === Native Linux Transport
 
@@ -1541,10 +1443,10 @@ You need to add the following dependency in your classpath:
 
 Native on Linux gives you extra networking options:
 
-* SO_REUSEPORT
-* TCP_QUICKACK
-* TCP_CORK
-* TCP_FASTOPEN
+* `SO_REUSEPORT`
+* `TCP_QUICKACK`
+* `TCP_CORK`
+* `TCP_FASTOPEN`
 
 [source,$lang]
 ----
@@ -1559,7 +1461,7 @@ You need to add the following dependency in your classpath:
 ----
 <dependency>
   <groupId>io.netty</groupId>
-  <artifactId>netty-transport-native-epoll</artifactId>
+  <artifactId>netty-transport-native-kqueue</artifactId>
   <version>4.1.15.Final</version>
   <classifier>osx-x86_64</classifier>
 </dependency>
@@ -1569,7 +1471,7 @@ MacOS Sierra and above are supported.
 
 Native on BSD gives you extra networking options:
 
-* SO_REUSEPORT
+* `SO_REUSEPORT`
 
 [source,$lang]
 ----
@@ -1578,28 +1480,33 @@ Native on BSD gives you extra networking options:
 
 === Domain sockets
 
-Natives provide domain sockets support for `NetServer` and `HttpServer`:
+Natives provide domain sockets support for servers:
 
 [source,$lang]
 ----
-{@link examples.CoreExamples#serverWithDomainSockets}
+{@link examples.CoreExamples#tcpServerWithDomainSockets}
 ----
 
-Or for http:
+or for http:
+
 [source,$lang]
 ----
 {@link examples.CoreExamples#httpServerWithDomainSockets}
 ----
 
-
-As well as `NetClient`:
+As well as clients:
 
 [source,$lang]
 ----
-{@link examples.CoreExamples#clientWithDomainSockets}
+{@link examples.CoreExamples#tcpClientWithDomainSockets}
 ----
 
-NOTE: support for `HttpClient` can be expected in later versions of Vert.x
+or for http:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#httpClientWithDomainSockets}
+----
 
 == Security notes
 
@@ -1726,13 +1633,13 @@ and {@link io.vertx.core.impl.launcher.VertxCommandLauncher#unregister(java.lang
 
 When you use the {@link io.vertx.core.Launcher} class as main class, it uses the following exit code:
 
-* {@code 0} if the process ends smoothly, or if an uncaught error is thrown
-* {@code 1} for general purpose error
-* {@code 11} if Vert.x cannot be initialized
-* {@code 12} if a spawn process cannot be started, found or stopped. This error code is used by the `start` and
+* `0` if the process ends smoothly, or if an uncaught error is thrown
+* `1` for general purpose error
+* `11` if Vert.x cannot be initialized
+* `12` if a spawn process cannot be started, found or stopped. This error code is used by the `start` and
 `stop` command
-* {@code 14} if the system configuration is not meeting the system requirement (shc as java not found)
-* {@code 15} if the main verticle cannot be deployed
+* `14` if the system configuration is not meeting the system requirement (shc as java not found)
+* `15` if the main verticle cannot be deployed
 
 == Configuring Vert.x cache
 

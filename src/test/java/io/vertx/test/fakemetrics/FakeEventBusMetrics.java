@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -80,7 +82,10 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   }
 
   public void handlerUnregistered(HandlerMetric handler) {
-    registrations.remove(handler);
+    if (handler == null) {
+      throw new NullPointerException("Must not be null");
+    }
+    assertTrue(registrations.remove(handler));
   }
 
   @Override

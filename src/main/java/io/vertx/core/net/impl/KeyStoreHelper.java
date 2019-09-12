@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,6 +11,7 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
@@ -158,14 +159,8 @@ public class KeyStoreHelper {
           }
         }
         String dn = x509Cert.getSubjectX500Principal().getName();
-        LdapName ldapDN = new LdapName(dn);
-        for (Rdn rdn : ldapDN.getRdns()) {
-          if (rdn.getType().equalsIgnoreCase("cn")) {
-            String name = rdn.getValue().toString();
-            domains.add(name);
-          }
-        }
-        if (domains.size() > 0) {
+        domains.addAll(getX509CertificateCommonNames(dn));
+        if (!domains.isEmpty()) {
           PrivateKey key = (PrivateKey) ks.getKey(alias, password != null ? password.toCharArray() : null);
           Certificate[] tmp = ks.getCertificateChain(alias);
           if (tmp == null) {
@@ -256,8 +251,31 @@ public class KeyStoreHelper {
   /**
    * @return the store
    */
-  public KeyStore store() throws Exception {
+  public KeyStore store() {
     return store;
+  }
+
+  public static List<String> getX509CertificateCommonNames(String dn) throws Exception {
+    List<String> names = new ArrayList<>();
+    if (!PlatformDependent.isAndroid()) {
+      LdapName ldapDN = new LdapName(dn);
+      for (Rdn rdn : ldapDN.getRdns()) {
+        if (rdn.getType().equalsIgnoreCase("cn")) {
+          String name = rdn.getValue().toString();
+          names.add(name);
+        }
+      }
+    } else {
+      String [] rdns = dn.trim().split("[,;]");
+      for(String rdn : rdns) {
+        String [] nvp = rdn.trim().split("=");
+        if(nvp.length == 2 && "cn".equalsIgnoreCase(nvp[0])) {
+          names.add(nvp[1]);
+        }
+      }
+    }
+
+    return names;
   }
 
   private static KeyStore loadJKSOrPKCS12(String type, String password, Supplier<Buffer> value) throws Exception {
@@ -300,13 +318,22 @@ public class KeyStoreHelper {
       throw new RuntimeException("Missing private key path");
     }
     KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
+    KeyFactory ecKeyFactory = getECKeyFactory();
     List<PrivateKey> pems = loadPems(keyValue, (delimiter, content) -> {
       try {
         switch (delimiter) {
           case "RSA PRIVATE KEY":
             return Collections.singletonList(rsaKeyFactory.generatePrivate(PrivateKeyParser.getRSAKeySpec(content)));
           case "PRIVATE KEY":
-            return Collections.singletonList(rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
+            // in PKCS#8 the key algorithm is indicated at the beginning of the ASN.1 structure
+            // so we can use the corresponding key factory once we know the algorithm name
+            String algorithm = PrivateKeyParser.getPKCS8EncodedKeyAlgorithm(content);
+            if (rsaKeyFactory.getAlgorithm().equals(algorithm)) {
+                return Collections.singletonList(rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
+            } else if (ecKeyFactory != null &&
+                    ecKeyFactory.getAlgorithm().equals(algorithm)) {
+                return Collections.singletonList(ecKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
+            }
           default:
             return Collections.emptyList();
         }
@@ -318,6 +345,15 @@ public class KeyStoreHelper {
       throw new RuntimeException("Missing -----BEGIN PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY----- delimiter");
     }
     return pems.get(0);
+  }
+
+  private static KeyFactory getECKeyFactory() {
+    try {
+      return KeyFactory.getInstance("EC");
+    } catch (NoSuchAlgorithmException e) {
+      // support for ECC is not mandatory in JVM
+      return null;
+    }
   }
 
   private static KeyStore loadCA(Stream<Buffer> certValues) throws Exception {

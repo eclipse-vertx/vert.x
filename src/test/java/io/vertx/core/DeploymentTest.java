@@ -822,7 +822,7 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger childUndeployed = new AtomicInteger();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         vertx.deployVerticle(new AbstractVerticle() {
           @Override
           public void start() throws Exception {
@@ -850,7 +850,7 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger childUndeployed = new AtomicInteger();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
         vertx.deployVerticle(new AbstractVerticle() {
           @Override
@@ -879,10 +879,10 @@ public class DeploymentTest extends VertxTestBase {
     AtomicInteger parentFailed = new AtomicInteger();
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         vertx.deployVerticle(new AbstractVerticle() {
           @Override
-          public void start(Future<Void> fut) throws Exception {
+          public void start(Promise<Void> fut) throws Exception {
             vertx.setTimer(100, id -> {
               fut.complete();
             });
@@ -958,6 +958,7 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+
   @Test
   public void testAsyncUndeployCalledSynchronously() throws Exception {
     MyAsyncVerticle verticle = new MyAsyncVerticle(f -> f.complete(null), f ->  f.complete(null));
@@ -1025,14 +1026,37 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testAsyncUndeployFailsAfterSuccess() {
+    waitFor(2);
+    Verticle verticle = new AbstractVerticle() {
+      @Override
+      public void stop(Promise<Void> stopPromise) throws Exception {
+        stopPromise.complete();
+        throw new Exception();
+      }
+    };
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v1 -> {
+      vertx.deployVerticle(verticle, onSuccess(id -> {
+        ctx.exceptionHandler(err -> {
+          complete();
+        });
+        vertx.undeploy(id, onSuccess(v2 -> {
+          complete();
+        }));
+      }));
+    });
+    await();
+  }
+  @Test
   public void testChildUndeployedDirectly() throws Exception {
     Verticle parent = new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
 
         Verticle child = new AbstractVerticle() {
           @Override
-          public void start(Future<Void> startFuture) throws Exception {
+          public void start(Promise<Void> startFuture) throws Exception {
             startFuture.complete();
 
             // Undeploy it directly
@@ -1044,11 +1068,6 @@ public class DeploymentTest extends VertxTestBase {
           startFuture.complete();
         }));
 
-      }
-
-      @Override
-      public void stop(Future<Void> stopFuture) throws Exception {
-        super.stop(stopFuture);
       }
     };
 
@@ -1110,21 +1129,15 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testIsolationGroup1() throws Exception {
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
+  public void testIsolationGroup1() {
     List<String> isolatedClasses = Arrays.asList(TestVerticle.class.getCanonicalName());
-    try {
-      vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(),
-        new DeploymentOptions().setIsolationGroup("somegroup").setIsolatedClasses(isolatedClasses), ar -> {
-          assertTrue(ar.succeeded());
-          assertEquals(0, TestVerticle.instanceCount.get());
-          testComplete();
+    vertx.deployVerticle("java:" + TestVerticle.class.getCanonicalName(),
+      new DeploymentOptions().setIsolationGroup("somegroup").setIsolatedClasses(isolatedClasses), ar -> {
+        assertTrue(ar.succeeded());
+        assertEquals(0, TestVerticle.instanceCount.get());
+        testComplete();
       });
-      assertTrue(expectedSuccess);
-      await();
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
-    }
+    await();
   }
 
   @Test
@@ -1177,19 +1190,24 @@ public class DeploymentTest extends VertxTestBase {
 
   @Test
   public void testExtraClasspathLoaderNotInParentLoader() throws Exception {
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
     String dir = createClassOutsideClasspath("MyVerticle");
     List<String> extraClasspath = Arrays.asList(dir);
+    DeploymentOptions options = new DeploymentOptions().setIsolationGroup("somegroup").setExtraClasspath(extraClasspath);
     try {
-      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), new DeploymentOptions().setIsolationGroup("somegroup").
-          setExtraClasspath(extraClasspath), ar -> {
-        assertTrue(ar.succeeded());
-        testComplete();
-      });
-      assertTrue(expectedSuccess);
+      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id1 -> {
+        vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id2 -> {
+          vertx.undeploy(id1, onSuccess(v1 -> {
+            assertFalse(ExtraCPVerticleNotInParentLoader.cl.isClosed());
+            vertx.undeploy(id2, onSuccess(v2 -> {
+              assertTrue(ExtraCPVerticleNotInParentLoader.cl.isClosed());
+              testComplete();
+            }));
+          }));
+        }));
+      }));
       await();
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
+    } finally {
+      ExtraCPVerticleNotInParentLoader.cl = null;
     }
   }
 
@@ -1212,10 +1230,41 @@ public class DeploymentTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testCloseIsolationGroup() throws Exception {
+    testCloseIsolationGroup(1);
+  }
+
+  @Test
+  public void testCloseIsolationGroupMultiInstances() throws Exception {
+    testCloseIsolationGroup(3);
+  }
+
+  private void testCloseIsolationGroup(int instances) throws Exception {
+    String dir = createClassOutsideClasspath("MyVerticle");
+    List<String> extraClasspath = Collections.singletonList(dir);
+    Vertx vertx = Vertx.vertx();
+    try {
+      DeploymentOptions options = new DeploymentOptions()
+        .setInstances(instances)
+        .setIsolationGroup("somegroup")
+        .setExtraClasspath(extraClasspath);
+      vertx.deployVerticle("java:" + ExtraCPVerticleNotInParentLoader.class.getCanonicalName(), options, onSuccess(id -> {
+        vertx.close(onSuccess(v -> {
+          assertTrue(ExtraCPVerticleNotInParentLoader.cl.isClosed());
+          testComplete();
+        }));
+      }));
+      await();
+    } finally {
+      ExtraCPVerticleNotInParentLoader.cl = null;
+    }
+  }
+
   public static class ParentVerticle extends AbstractVerticle {
 
     @Override
-    public void start(Future<Void> startFuture) throws Exception {
+    public void start(Promise<Void> startFuture) throws Exception {
       vertx.deployVerticle("java:" + ChildVerticle.class.getName(), ar -> {
         if (ar.succeeded()) {
           startFuture.complete(null);
@@ -1288,7 +1337,7 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testGetInstanceCount() throws Exception {
+  public void testGetInstanceCount() {
     class MultiInstanceVerticle extends AbstractVerticle {
       @Override
       public void start() {
@@ -1301,8 +1350,6 @@ public class DeploymentTest extends VertxTestBase {
       testComplete();
     });
     await();
-    Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    vertx.undeploy(deployment.deploymentID());
   }
 
   @Test
@@ -1324,14 +1371,16 @@ public class DeploymentTest extends VertxTestBase {
     });
     await();
     Deployment deployment = ((VertxInternal) vertx).getDeployment(vertx.deploymentIDs().iterator().next());
-    vertx.undeploy(deployment.deploymentID());
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.undeploy(deployment.deploymentID(), ar -> latch.countDown());
+    awaitLatch(latch);
   }
 
   @Test
   public void testFailedVerticleStopNotCalled() {
     Verticle verticleChild = new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         startFuture.fail("wibble");
       }
       @Override
@@ -1342,7 +1391,7 @@ public class DeploymentTest extends VertxTestBase {
     };
     Verticle verticleParent = new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         vertx.deployVerticle(verticleChild, onFailure(v -> {
           startFuture.complete();
         }));
@@ -1493,7 +1542,7 @@ public class DeploymentTest extends VertxTestBase {
     };
     Verticle v = new AbstractVerticle() {
       @Override
-      public void start(Future<Void> startFuture) throws Exception {
+      public void start(Promise<Void> startFuture) throws Exception {
         this.context.addCloseHook(closeable);
         startFuture.fail("Fail to deploy.");
       }
@@ -1518,7 +1567,7 @@ public class DeploymentTest extends VertxTestBase {
     vertx.deployVerticle(() -> {
       Verticle v = new AbstractVerticle() {
         @Override
-        public void start(final Future<Void> startFuture) throws Exception {
+        public void start(final Promise<Void> startFuture) throws Exception {
           startFuture.fail("Fail to deploy.");
         }
       };
@@ -1550,30 +1599,24 @@ public class DeploymentTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<String> deploymentID1 = new AtomicReference<>();
     AtomicReference<String> deploymentID2 = new AtomicReference<>();
-    boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
-    try {
-      vertx.deployVerticle(verticleID, new DeploymentOptions().
-        setIsolationGroup(group1).setIsolatedClasses(isolatedClasses), ar -> {
-        assertTrue(ar.succeeded());
-        deploymentID1.set(ar.result());
-        assertEquals(0, TestVerticle.instanceCount.get());
-        vertx.deployVerticle(verticleID,
-          new DeploymentOptions().setIsolationGroup(group2).setIsolatedClasses(isolatedClasses), ar2 -> {
+    vertx.deployVerticle(verticleID, new DeploymentOptions().
+      setIsolationGroup(group1).setIsolatedClasses(isolatedClasses), ar -> {
+      assertTrue(ar.succeeded());
+      deploymentID1.set(ar.result());
+      assertEquals(0, TestVerticle.instanceCount.get());
+      vertx.deployVerticle(verticleID,
+        new DeploymentOptions().setIsolationGroup(group2).setIsolatedClasses(isolatedClasses), ar2 -> {
           assertTrue(ar2.succeeded());
           deploymentID2.set(ar2.result());
           assertEquals(0, TestVerticle.instanceCount.get());
           latch.countDown();
         });
-      });
-      awaitLatch(latch);
-      // Wait until two entries in the map
-      assertWaitUntil(() -> countMap.size() == 2);
-      assertEquals(count1, countMap.get(deploymentID1.get()).intValue());
-      assertEquals(count2, countMap.get(deploymentID2.get()).intValue());
-      assertTrue(expectedSuccess);
-    } catch (IllegalStateException e) {
-      assertFalse(expectedSuccess);
-    }
+    });
+    awaitLatch(latch);
+    // Wait until two entries in the map
+    assertWaitUntil(() -> countMap.size() == 2);
+    assertEquals(count1, countMap.get(deploymentID1.get()).intValue());
+    assertEquals(count2, countMap.get(deploymentID2.get()).intValue());
   }
 
   private void assertDeployment(int instances, MyVerticle verticle, JsonObject config, AsyncResult<String> ar) {
@@ -1662,23 +1705,23 @@ public class DeploymentTest extends VertxTestBase {
 
   public class MyAsyncVerticle extends AbstractVerticle {
 
-    private final Consumer<Future<Void>> startConsumer;
-    private final Consumer<Future<Void>> stopConsumer;
+    private final Consumer<Promise<Void>> startConsumer;
+    private final Consumer<Promise<Void>> stopConsumer;
 
-    public MyAsyncVerticle(Consumer<Future<Void>> startConsumer, Consumer<Future<Void>> stopConsumer) {
+    public MyAsyncVerticle(Consumer<Promise<Void>> startConsumer, Consumer<Promise<Void>> stopConsumer) {
       this.startConsumer = startConsumer;
       this.stopConsumer = stopConsumer;
     }
 
     @Override
-    public void start(Future<Void> startFuture) throws Exception {
+    public void start(Promise<Void> startFuture) throws Exception {
       if (startConsumer != null) {
         startConsumer.accept(startFuture);
       }
     }
 
     @Override
-    public void stop(Future<Void> stopFuture) throws Exception {
+    public void stop(Promise<Void> stopFuture) throws Exception {
       if (stopConsumer != null) {
         stopConsumer.accept(stopFuture);
       }

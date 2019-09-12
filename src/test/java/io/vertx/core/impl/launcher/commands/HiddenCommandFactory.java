@@ -16,7 +16,7 @@ import io.vertx.core.spi.launcher.DefaultCommandFactory;
 public class HiddenCommandFactory extends DefaultCommandFactory<HiddenCommand> {
 
   public HiddenCommandFactory() {
-    super(HiddenCommand.class);
+    super(HiddenCommand.class, HiddenCommand::new);
   }
 
 }

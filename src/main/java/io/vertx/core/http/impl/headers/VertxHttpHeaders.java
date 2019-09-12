@@ -11,8 +11,11 @@
 
 package io.vertx.core.http.impl.headers;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
+import io.netty.util.CharsetUtil;
 import io.netty.util.HashingStrategy;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
@@ -28,6 +31,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 
+import static io.netty.handler.codec.http.HttpConstants.*;
 import static io.netty.util.AsciiString.*;
 
 /**
@@ -50,10 +54,6 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     return names().size();
   }
 
-  private static int index(int hash) {
-    return hash & 0x0000000F;
-  }
-
   private final VertxHttpHeaders.MapEntry[] entries = new VertxHttpHeaders.MapEntry[16];
   private final VertxHttpHeaders.MapEntry head = new VertxHttpHeaders.MapEntry();
 
@@ -64,7 +64,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   @Override
   public VertxHttpHeaders add(CharSequence name, CharSequence value) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     add0(h, i, name, value);
     return this;
   }
@@ -87,7 +87,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   @Override
   public VertxHttpHeaders add(CharSequence name, Iterable values) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     for (Object vstr: values) {
       add0(h, i, name, (String) vstr);
     }
@@ -120,7 +120,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   public VertxHttpHeaders remove(CharSequence name) {
     Objects.requireNonNull(name, "name");
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     remove0(h, i, name);
     return this;
   }
@@ -155,14 +155,14 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     Objects.requireNonNull(values, "values");
 
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
 
     remove0(h, i, name);
     for (Object v: values) {
       if (v == null) {
         break;
       }
-      add0(h, i, name, (String) v);
+      add0(h, i, name, (CharSequence) v);
     }
 
     return this;
@@ -176,11 +176,12 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   @Override
   public boolean contains(CharSequence name, CharSequence value, boolean ignoreCase) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     VertxHttpHeaders.MapEntry e = entries[i];
     HashingStrategy<CharSequence> strategy = ignoreCase ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER;
     while (e != null) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+      CharSequence key = e.key;
+      if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         if (strategy.equals(value, e.getValue())) {
           return true;
         }
@@ -224,10 +225,11 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     LinkedList<String> values = new LinkedList<>();
 
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     VertxHttpHeaders.MapEntry e = entries[i];
     while (e != null) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+      CharSequence key = e.key;
+      if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         values.addFirst(e.getValue().toString());
       }
       e = e.next;
@@ -383,6 +385,42 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     throw new UnsupportedOperationException();
   }
 
+  public void encode(ByteBuf buf) {
+    VertxHttpHeaders.MapEntry current = head.after;
+    while (current != head) {
+      encoderHeader(current.key, current.value, buf);
+      current = current.after;
+    }
+  }
+
+  private static final int COLON_AND_SPACE_SHORT = (COLON << 8) | SP;
+  static final int CRLF_SHORT = (CR << 8) | LF;
+
+  static void encoderHeader(CharSequence name, CharSequence value, ByteBuf buf) {
+    final int nameLen = name.length();
+    final int valueLen = value.length();
+    final int entryLen = nameLen + valueLen + 4;
+    buf.ensureWritable(entryLen);
+    int offset = buf.writerIndex();
+    writeAscii(buf, offset, name);
+    offset += nameLen;
+    ByteBufUtil.setShortBE(buf, offset, COLON_AND_SPACE_SHORT);
+    offset += 2;
+    writeAscii(buf, offset, value);
+    offset += valueLen;
+    ByteBufUtil.setShortBE(buf, offset, CRLF_SHORT);
+    offset += 2;
+    buf.writerIndex(offset);
+  }
+
+  private static void writeAscii(ByteBuf buf, int offset, CharSequence value) {
+    if (value instanceof AsciiString) {
+      ByteBufUtil.copy((AsciiString) value, 0, buf, offset, value.length());
+    } else {
+      buf.setCharSequence(offset, value, CharsetUtil.US_ASCII);
+    }
+  }
+
   private static final class MapEntry implements Map.Entry<CharSequence, CharSequence> {
     final int hash;
     final CharSequence key;
@@ -427,6 +465,9 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     @Override
     public CharSequence setValue(CharSequence value) {
       Objects.requireNonNull(value, "value");
+      if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+        HttpUtils.validateHeaderValue(value);
+      }
       CharSequence oldValue = this.value;
       this.value = value;
       return oldValue;
@@ -445,7 +486,8 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     }
 
     for (;;) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
+      CharSequence key = e.key;
+      if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         e.remove();
         VertxHttpHeaders.MapEntry next = e.next;
         if (next != null) {
@@ -465,7 +507,8 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
       if (next == null) {
         break;
       }
-      if (next.hash == h && AsciiString.contentEqualsIgnoreCase(name, next.key)) {
+      CharSequence key = next.key;
+      if (next.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
         e.next = next.next;
         next.remove();
       } else {
@@ -475,11 +518,8 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
   }
 
   private void add0(int h, int i, final CharSequence name, final CharSequence value) {
-    if (!(name instanceof AsciiString)) {
-      HttpUtils.validateHeader(name);
-    }
-    if (!(value instanceof AsciiString)) {
-      HttpUtils.validateHeader(value);
+    if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
+      HttpUtils.validateHeader(name, value);
     }
     // Update the hash table.
     VertxHttpHeaders.MapEntry e = entries[i];
@@ -493,7 +533,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   private VertxHttpHeaders set0(final CharSequence name, final CharSequence strVal) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     remove0(h, i, name);
     if (strVal != null) {
       // test me
@@ -504,15 +544,17 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   private CharSequence get0(CharSequence name) {
     int h = AsciiString.hashCode(name);
-    int i = index(h);
+    int i = h & 0x0000000F;
     VertxHttpHeaders.MapEntry e = entries[i];
+    CharSequence value = null;
     while (e != null) {
-      if (e.hash == h && AsciiString.contentEqualsIgnoreCase(name, e.key)) {
-        return e.getValue();
+      CharSequence key = e.key;
+      if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
+        value = e.getValue();
       }
       e = e.next;
     }
-    return null;
+    return value;
   }
 
   private MultiMap set0(Iterable<Map.Entry<String, String>> map) {

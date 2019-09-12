@@ -1,0 +1,37 @@
+== In the beginning there was Vert.x
+
+You can't do much in Vert.x-land unless you can communicate with a {@link io.vertx.core.Vertx} object!
+
+It's the control centre of Vert.x and is how you do pretty much everything, including creating clients and servers,
+getting a reference to the event bus, setting timers, as well as many other things.
+
+So how do you get an instance?
+
+If you're embedding Vert.x then you simply create an instance as follows:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#example1}
+----
+
+NOTE: Most applications will only need a single Vert.x instance, but it's possible to create multiple Vert.x instances if you
+require, for example, isolation between the event bus or different groups of servers and clients.
+
+=== Specifying options when creating a Vertx object
+
+When creating a Vert.x object you can also specify options if the defaults aren't right for you:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#example2}
+----
+
+The {@link io.vertx.core.VertxOptions} object has many settings and allows you to configure things like clustering, high availability, pool sizes and various other settings.
+
+=== Creating a clustered Vert.x object
+
+If you're creating a *clustered Vert.x* (See the section on the <<event_bus, event bus>> for more information on clustering the event bus),
+then you will normally use the asynchronous variant to create the Vertx object.
+
+This is because it usually takes some time (maybe a few seconds) for the different Vert.x instances in a cluster to group together.
+During that time, we don't want to block the calling thread, so we give the result to you asynchronously.

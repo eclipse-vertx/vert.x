@@ -19,6 +19,11 @@ import java.time.format.DateTimeFormatter;
             obj.setClassPathResolvingEnabled((Boolean)member.getValue());
           }
           break;
+        case "fileCacheDir":
+          if (member.getValue() instanceof String) {
+            obj.setFileCacheDir((String)member.getValue());
+          }
+          break;
         case "fileCachingEnabled":
           if (member.getValue() instanceof Boolean) {
             obj.setFileCachingEnabled((Boolean)member.getValue());
@@ -34,6 +39,9 @@ import java.time.format.DateTimeFormatter;
 
    static void toJson(FileSystemOptions obj, java.util.Map<String, Object> json) {
     json.put("classPathResolvingEnabled", obj.isClassPathResolvingEnabled());
+    if (obj.getFileCacheDir() != null) {
+      json.put("fileCacheDir", obj.getFileCacheDir());
+    }
     json.put("fileCachingEnabled", obj.isFileCachingEnabled());
   }
 }

@@ -1,0 +1,24 @@
+The event bus can be configured. It is particularly useful when the event bus is clustered.
+Under the hood the event bus uses TCP connections to send and receive messages, so the {@link io.vertx.core.eventbus.EventBusOptions} let you configure all aspects of these TCP connections.
+As the event bus acts as a server and client, the configuration is close to {@link io.vertx.core.net.NetClientOptions} and {@link io.vertx.core.net.NetServerOptions}.
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example13}
+----
+
+The previous snippet depicts how you can use SSL connections for the event bus, instead of plain TCP connections.
+
+**WARNING**: to enforce the security in clustered mode, you **must** configure the cluster manager to use encryption or enforce security.
+Refer to the documentation of the cluster manager for further details.
+
+The event bus configuration needs to be consistent in all the cluster nodes.
+
+The {@link io.vertx.core.eventbus.EventBusOptions} also lets you specify whether or not the event bus is clustered, the port and host.
+
+When used in containers, you can also configure the public host and port:
+
+[source,$lang]
+----
+{@link examples.EventBusExamples#example14}
+----

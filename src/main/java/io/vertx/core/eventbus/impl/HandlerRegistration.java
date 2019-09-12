@@ -11,6 +11,7 @@
 
 package io.vertx.core.eventbus.impl;
 
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -18,14 +19,13 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.streams.ReadStream;
 
-import java.util.ArrayDeque;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 
 /*
  * This class is optimised for performance when used on the same event loop it was created on.
@@ -50,7 +50,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private long timeoutID = -1;
   private HandlerHolder<T> registered;
   private Handler<Message<T>> handler;
-  private Context handlerContext;
+  private ContextInternal handlerContext;
   private AsyncResult<Void> result;
   private Handler<AsyncResult<Void>> completionHandler;
   private Handler<Void> endHandler;
@@ -75,18 +75,37 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         if (metrics != null) {
           metrics.replyFailure(address, ReplyFailure.TIMEOUT);
         }
-        sendAsyncResultFailure(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address + ", repliedAddress: " + repliedAddress);
+        sendAsyncResultFailure(new ReplyException(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address + ", repliedAddress: " + repliedAddress));
       });
     }
   }
 
   @Override
-  public synchronized MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages) {
+  public MessageConsumer<T> setMaxBufferedMessages(int maxBufferedMessages) {
     Arguments.require(maxBufferedMessages >= 0, "Max buffered messages cannot be negative");
-    while (pending.size() > maxBufferedMessages) {
-      pending.poll();
+    List<Message<T>> discarded;
+    Handler<Message<T>> discardHandler;
+    synchronized (this) {
+      this.maxBufferedMessages = maxBufferedMessages;
+      int overflow = pending.size() - maxBufferedMessages;
+      if (overflow <= 0) {
+        return this;
+      }
+      discardHandler = this.discardHandler;
+      if (discardHandler == null) {
+        while (pending.size() > maxBufferedMessages) {
+          pending.poll();
+        }
+        return this;
+      }
+      discarded = new ArrayList<>(overflow);
+      while (pending.size() > maxBufferedMessages) {
+        discarded.add(pending.poll());
+      }
     }
-    this.maxBufferedMessages = maxBufferedMessages;
+    for (Message<T> msg : discarded) {
+      discardHandler.handle(msg);
+    }
     return this;
   }
 
@@ -112,74 +131,99 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   @Override
-  public synchronized void unregister() {
+  public void unregister() {
     doUnregister(null);
   }
 
   @Override
-  public synchronized void unregister(Handler<AsyncResult<Void>> completionHandler) {
-    Objects.requireNonNull(completionHandler);
+  public void unregister(Handler<AsyncResult<Void>> completionHandler) {
     doUnregister(completionHandler);
   }
 
-  public void sendAsyncResultFailure(ReplyFailure failure, String msg) {
+  public void sendAsyncResultFailure(ReplyException failure) {
     unregister();
-    asyncResultHandler.handle(Future.failedFuture(new ReplyException(failure, msg)));
+    asyncResultHandler.handle(Future.failedFuture(failure));
   }
 
-  private void doUnregister(Handler<AsyncResult<Void>> completionHandler) {
-    if (timeoutID != -1) {
-      vertx.cancelTimer(timeoutID);
-    }
-    if (endHandler != null) {
-      Handler<Void> theEndHandler = endHandler;
-      Handler<AsyncResult<Void>> handler = completionHandler;
-      completionHandler = ar -> {
-        theEndHandler.handle(null);
-        if (handler != null) {
-          handler.handle(ar);
-        }
-      };
-    }
-    HandlerHolder<T> holder = registered;
-    if (holder != null) {
+  private void doUnregister(Handler<AsyncResult<Void>> doneHandler) {
+    synchronized (this) {
+      if (handler == null) {
+        callHandlerAsync(Future.succeededFuture(), doneHandler);
+        return;
+      }
+      handler = null;
+      if (timeoutID != -1) {
+        vertx.cancelTimer(timeoutID);
+      }
+      if (endHandler != null) {
+        Handler<Void> theEndHandler = endHandler;
+        Handler<AsyncResult<Void>> handler = doneHandler;
+        doneHandler = ar -> {
+          theEndHandler.handle(null);
+          if (handler != null) {
+            handler.handle(ar);
+          }
+        };
+      }
+      if (pending.size() > 0 && discardHandler != null) {
+        Deque<Message<T>> discarded = new ArrayDeque<>(pending);
+        Handler<Message<T>> handler = discardHandler;
+        handlerContext.runOnContext(v -> {
+          Message<T> msg;
+          while ((msg = discarded.poll()) != null) {
+            handler.handle(msg);
+          }
+        });
+      }
+      pending.clear();
+      discardHandler = null;
+      eventBus.removeRegistration(registered, doneHandler);
       registered = null;
-      eventBus.removeRegistration(holder, completionHandler);
-    } else {
-      callCompletionHandlerAsync(completionHandler);
+      if (result == null) {
+        result = Future.failedFuture("Consumer unregistered before registration completed");
+        callHandlerAsync(result, completionHandler);
+      } else {
+        EventBusMetrics metrics = eventBus.metrics;
+        if (metrics != null) {
+          metrics.handlerUnregistered(metric);
+        }
+      }
     }
   }
 
-  private void callCompletionHandlerAsync(Handler<AsyncResult<Void>> completionHandler) {
+  private void callHandlerAsync(AsyncResult<Void> result, Handler<AsyncResult<Void>> completionHandler) {
     if (completionHandler != null) {
-      vertx.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+      vertx.runOnContext(v -> completionHandler.handle(result));
     }
   }
 
   synchronized void setHandlerContext(Context context) {
-    handlerContext = context;
+    handlerContext = (ContextInternal) context;
   }
 
   public synchronized void setResult(AsyncResult<Void> result) {
+    if (this.result != null) {
+      return;
+    }
     this.result = result;
-    if (completionHandler != null) {
-      if (metrics != null && result.succeeded()) {
+    if (result.failed()) {
+      log.error("Failed to propagate registration for handler " + handler + " and address " + address);
+    } else {
+      if (metrics != null) {
         metric = metrics.handlerRegistered(address, repliedAddress);
       }
-      Handler<AsyncResult<Void>> callback = completionHandler;
-      vertx.runOnContext(v -> callback.handle(result));
-    } else if (result.failed()) {
-      log.error("Failed to propagate registration for handler " + handler + " and address " + address);
-    } else if (metrics != null) {
-      metric = metrics.handlerRegistered(address, repliedAddress);
+      callHandlerAsync(result, completionHandler);
     }
   }
 
   @Override
   public void handle(Message<T> message) {
     Handler<Message<T>> theHandler;
+    ContextInternal ctx;
     synchronized (this) {
-      if (demand == 0L) {
+      if (registered == null) {
+        return;
+      } else if (demand == 0L) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
         } else {
@@ -195,16 +239,19 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           pending.add(message);
           message = pending.poll();
         }
+        if (demand != Long.MAX_VALUE) {
+          demand--;
+        }
         theHandler = handler;
       }
+      ctx = handlerContext;
     }
-    deliver(theHandler, message);
+    deliver(theHandler, message, ctx);
   }
 
-  private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
+  private void deliver(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    checkNextTick();
     boolean local = true;
     if (message instanceof ClusteredMessage) {
       // A bit hacky
@@ -230,8 +277,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       if (metrics != null) {
         metrics.endHandleMessage(metric, e);
       }
-      throw e;
+      context.reportException(e);
     }
+    checkNextTick();
   }
 
   private synchronized void checkNextTick() {
@@ -240,6 +288,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       handlerContext.runOnContext(v -> {
         Message<T> message;
         Handler<Message<T>> theHandler;
+        ContextInternal ctx;
         synchronized (HandlerRegistration.this) {
           if (demand == 0L || (message = pending.poll()) == null) {
             return;
@@ -248,8 +297,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
             demand--;
           }
           theHandler = handler;
+          ctx = handlerContext;
         }
-        deliver(theHandler, message);
+        deliver(theHandler, message, ctx);
       });
     }
   }
@@ -262,14 +312,17 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   @Override
-  public synchronized MessageConsumer<T> handler(Handler<Message<T>> handler) {
-    this.handler = handler;
-    if (this.handler != null && registered == null) {
-      registered = eventBus.addRegistration(address, this, repliedAddress != null, localOnly);
-    } else if (this.handler == null && registered != null) {
-      // This will set registered to false
-      this.unregister();
+  public synchronized MessageConsumer<T> handler(Handler<Message<T>> h) {
+    if (h != null) {
+      synchronized (this) {
+        handler = h;
+        if (registered == null) {
+          registered = eventBus.addRegistration(address, this, repliedAddress != null, localOnly);
+        }
+      }
+      return this;
     }
+    this.unregister();
     return this;
   }
 
@@ -290,12 +343,12 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   @Override
-  public synchronized MessageConsumer<T> resume() {
+  public MessageConsumer<T> resume() {
     return fetch(Long.MAX_VALUE);
   }
 
   @Override
-  public MessageConsumer<T> fetch(long amount) {
+  public synchronized MessageConsumer<T> fetch(long amount) {
     if (amount < 0) {
       throw new IllegalArgumentException();
     }

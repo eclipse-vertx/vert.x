@@ -13,12 +13,15 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+import static io.vertx.core.http.HttpHeaders.UPGRADE;
+import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
+import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 
 /**
  * An {@code Handler<HttpServerRequest>} decorator that handles {@code ServerWebSocket} dispatch to a WebSocket handler
@@ -38,7 +41,10 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
 
   @Override
   public void handle(HttpServerRequest req) {
-    if (req.headers().contains(io.vertx.core.http.HttpHeaders.UPGRADE, io.vertx.core.http.HttpHeaders.WEBSOCKET, true)) {
+    if (req.headers()
+      .contains(UPGRADE, WEBSOCKET, true)
+      || handlers.requestHandler == null) {
+      // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
       handle((HttpServerRequestImpl) req);
     } else {
       handlers.requestHandler.handle(req);
@@ -74,7 +80,7 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
    * Handle the request once we have the full body.
    */
   private void handle(HttpServerRequestImpl req, Buffer body) {
-    DefaultHttpRequest nettyReq = req.getRequest();
+    HttpRequest nettyReq = req.nettyRequest();
     nettyReq = new DefaultFullHttpRequest(
       nettyReq.protocolVersion(),
       nettyReq.method(),
@@ -86,12 +92,13 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
     req.setRequest(nettyReq);
     if (handlers.wsHandler != null) {
       ServerWebSocketImpl ws = ((Http1xServerConnection)req.connection()).createWebSocket(req);
-      handlers.wsHandler.handle(ws);
-      if (!ws.isRejected()) {
-        ws.connectNow();
-      } else {
-        req.response().setStatusCode(ws.getRejectedStatus().code()).end();
+      if (ws == null) {
+        // Response is already sent
+        return;
       }
+      handlers.wsHandler.handle(ws);
+      // Attempt to handshake
+      ws.tryHandshake(SC_SWITCHING_PROTOCOLS);
     } else {
       handlers.requestHandler.handle(req);
     }

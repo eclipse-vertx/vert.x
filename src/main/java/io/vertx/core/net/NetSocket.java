@@ -53,6 +53,12 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   @Override
   NetSocket fetch(long amount);
 
+  /**
+   * {@inheritDoc}
+   * <p>
+   * This handler might be called after the close handler when the socket is paused and there are still
+   * buffers to deliver.
+   */
   @Override
   NetSocket endHandler(Handler<Void> endHandler);
 
@@ -78,6 +84,12 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   String writeHandlerID();
 
   /**
+   * Same as {@link #write(String)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  NetSocket write(String str, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Write a {@link String} to the connection, encoded in UTF-8.
    *
    * @param str  the string to write
@@ -85,6 +97,12 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   NetSocket write(String str);
+
+  /**
+   * Same as {@link #write(String, String)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  NetSocket write(String str, String enc, Handler<AsyncResult<Void>> handler);
 
   /**
    * Write a {@link String} to the connection, encoded using the encoding {@code enc}.
@@ -95,6 +113,13 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    */
   @Fluent
   NetSocket write(String str, String enc);
+
+  /**
+   * Like {@link #write(Object)} but with an {@code handler} called when the message has been written
+   * or failed to be written.
+   */
+  @Fluent
+  NetSocket write(Buffer message, Handler<AsyncResult<Void>> handler);
 
   /**
    * Tell the operating system to stream a file as specified by {@code filename} directly from disk to the outgoing connection,
@@ -192,9 +217,20 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   void end();
 
   /**
+   * Calls {@link #end(Handler)}
+   */
+  @Override
+  void end(Handler<AsyncResult<Void>> handler);
+
+  /**
    * Close the NetSocket
    */
   void close();
+
+  /**
+   * Close the NetSocket and notify the {@code handler} when the operation completes.
+   */
+  void close(Handler<AsyncResult<Void>> handler);
 
   /**
    * Set a handler that will be called when the NetSocket is closed
@@ -234,7 +270,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    *         not SSL.
    * @see javax.net.ssl.SSLSession
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   SSLSession sslSession();
 
   /**

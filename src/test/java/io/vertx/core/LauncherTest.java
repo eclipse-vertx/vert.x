@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -23,11 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -443,7 +439,6 @@ public class LauncherTest extends VertxTestBase {
     assertEquals(true, opts.getMetricsOptions().isEnabled());
     assertEquals("somegroup", opts.getHAGroup());
     assertEquals(TimeUnit.SECONDS, opts.getMaxEventLoopExecuteTimeUnit());
-
   }
 
   private void clearProperties() {
@@ -457,6 +452,50 @@ public class LauncherTest extends VertxTestBase {
       }
     }
     toClear.forEach(System::clearProperty);
+  }
+
+  @Test
+  public void testConfigureFromJsonFile() throws Exception {
+    testConfigureFromJson(true);
+  }
+
+  @Test
+  public void testConfigureFromJsonString() throws Exception {
+    testConfigureFromJson(false);
+  }
+
+  private void testConfigureFromJson(boolean jsonFile) throws Exception {
+    JsonObject json = new JsonObject()
+      .put("eventLoopPoolSize", 123)
+      .put("maxEventLoopExecuteTime", 123767667)
+      .put("metricsOptions", new JsonObject().put("enabled", true))
+      .put("eventBusOptions", new JsonObject().put("clustered", true).put("clusterPublicHost", "mars"))
+      .put("haGroup", "somegroup")
+      .put("maxEventLoopExecuteTimeUnit", "SECONDS");
+
+    String optionsArg;
+    if (jsonFile) {
+      File file = testFolder.newFile();
+      Files.write(file.toPath(), json.toBuffer().getBytes());
+      optionsArg = file.getPath();
+    } else {
+      optionsArg = json.toString();
+    }
+
+    MyLauncher launcher = new MyLauncher();
+    String[] args = new String[]{"run", "java:" + TestVerticle.class.getCanonicalName(), "-options", optionsArg};
+    launcher.dispatch(args);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
+
+    VertxOptions opts = launcher.getVertxOptions();
+
+    assertEquals(123, opts.getEventLoopPoolSize(), 0);
+    assertEquals(123767667L, opts.getMaxEventLoopExecuteTime());
+    assertEquals(true, opts.getMetricsOptions().isEnabled());
+    assertEquals(true, opts.getEventBusOptions().isClustered());
+    assertEquals("mars", opts.getEventBusOptions().getClusterPublicHost());
+    assertEquals("somegroup", opts.getHAGroup());
+    assertEquals(TimeUnit.SECONDS, opts.getMaxEventLoopExecuteTimeUnit());
   }
 
   @Test
@@ -519,6 +558,49 @@ public class LauncherTest extends VertxTestBase {
   }
 
   @Test
+  public void testCustomMetricsOptionsFromJsonFile() throws Exception {
+    testCustomMetricsOptionsFromJson(true);
+  }
+
+  @Test
+  public void testCustomMetricsOptionsFromJsonString() throws Exception {
+    testCustomMetricsOptionsFromJson(false);
+  }
+
+  private void testCustomMetricsOptionsFromJson(boolean jsonFile) throws Exception {
+    JsonObject json = new JsonObject()
+      .put("metricsOptions", new JsonObject()
+        .put("enabled", true)
+        .put("customProperty", "customPropertyValue")
+        .put("nestedOptions", new JsonObject().put("nestedProperty", "nestedValue")));
+
+    String optionsArg;
+    if (jsonFile) {
+      File file = testFolder.newFile();
+      Files.write(file.toPath(), json.toBuffer().getBytes());
+      optionsArg = file.getPath();
+    } else {
+      optionsArg = json.toString();
+    }
+
+    MyLauncher launcher = new MyLauncher();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-options", optionsArg};
+    ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(MetricsOptionsTest.createMetricsFromMetaInfLoader("io.vertx.core.CustomMetricsFactory"));
+    try {
+      launcher.dispatch(args);
+    } finally {
+      Thread.currentThread().setContextClassLoader(oldCL);
+    }
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
+
+    VertxOptions opts = launcher.getVertxOptions();
+    CustomMetricsOptions custom = (CustomMetricsOptions) opts.getMetricsOptions();
+    assertEquals("customPropertyValue", custom.getCustomProperty());
+    assertEquals("nestedValue", custom.getNestedOptions().getNestedProperty());
+  }
+
+  @Test
   public void testWhenPassingTheMainObject() throws Exception {
     MyLauncher launcher = new MyLauncher();
     int instances = 10;
@@ -550,10 +632,10 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals("127.0.0.1", launcher.options.getClusterHost());
-    assertEquals(clusterPort, launcher.options.getClusterPort());
-    assertNull(launcher.options.getClusterPublicHost());
-    assertEquals(-1, launcher.options.getClusterPublicPort());
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getHost());
+    assertEquals(clusterPort, launcher.options.getEventBusOptions().getPort());
+    assertNull(launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(-1, launcher.options.getEventBusOptions().getClusterPublicPort());
   }
 
   @Test
@@ -563,10 +645,21 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster", "--cluster-host", "127.0.0.1", "--cluster-port", Integer.toString(clusterPort)};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals("127.0.0.1", launcher.options.getClusterHost());
-    assertEquals(clusterPort, launcher.options.getClusterPort());
-    assertNull(launcher.options.getClusterPublicHost());
-    assertEquals(-1, launcher.options.getClusterPublicPort());
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getHost());
+    assertEquals(clusterPort, launcher.options.getEventBusOptions().getPort());
+    assertNull(launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(-1, launcher.options.getEventBusOptions().getClusterPublicPort());
+  }
+
+  @Test
+  public void testConfigureClusterPublicHostPortFromCommandLine() throws Exception {
+    int clusterPublicPort = TestUtils.randomHighPortInt();
+    MyLauncher launcher = new MyLauncher();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster", "--cluster-public-host", "127.0.0.1", "--cluster-public-port", Integer.toString(clusterPublicPort)};
+    launcher.dispatch(args);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(clusterPublicPort, launcher.options.getEventBusOptions().getClusterPublicPort());
   }
 
   @Test
@@ -584,15 +677,16 @@ public class LauncherTest extends VertxTestBase {
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals("127.0.0.1", launcher.options.getClusterHost());
-    assertEquals(newClusterPort, launcher.options.getClusterPort());
-    assertEquals("127.0.0.3", launcher.options.getClusterPublicHost());
-    assertEquals(newClusterPublicPort, launcher.options.getClusterPublicPort());
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getHost());
+    assertEquals(newClusterPort, launcher.options.getEventBusOptions().getPort());
+    assertEquals("127.0.0.3", launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(newClusterPublicPort, launcher.options.getEventBusOptions().getClusterPublicPort());
   }
 
   @Test
   public void testOverrideClusterHostPortFromCommandLine() throws Exception {
     int clusterPort = TestUtils.randomHighPortInt();
+    int clusterPublicPort = TestUtils.randomHighPortInt();
     int newClusterPort = TestUtils.randomHighPortInt();
     int newClusterPublicPort = TestUtils.randomHighPortInt();
     MyLauncher launcher = new MyLauncher();
@@ -600,13 +694,18 @@ public class LauncherTest extends VertxTestBase {
     launcher.clusterPort = newClusterPort;
     launcher.clusterPublicHost = "127.0.0.3";
     launcher.clusterPublicPort = newClusterPublicPort;
-    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster", "--cluster-host", "127.0.0.2", "--cluster-port", Integer.toString(clusterPort)};
+    String[] args = {
+      "run", "java:" + TestVerticle.class.getCanonicalName(),
+      "-cluster",
+      "--cluster-host", "127.0.0.2", "--cluster-port", Integer.toString(clusterPort),
+      "--cluster-public-host", "127.0.0.4", "--cluster-public-port", Integer.toString(clusterPublicPort)
+    };
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
-    assertEquals("127.0.0.1", launcher.options.getClusterHost());
-    assertEquals(newClusterPort, launcher.options.getClusterPort());
-    assertEquals("127.0.0.3", launcher.options.getClusterPublicHost());
-    assertEquals(newClusterPublicPort, launcher.options.getClusterPublicPort());
+    assertEquals("127.0.0.1", launcher.options.getEventBusOptions().getHost());
+    assertEquals(newClusterPort, launcher.options.getEventBusOptions().getPort());
+    assertEquals("127.0.0.3", launcher.options.getEventBusOptions().getClusterPublicHost());
+    assertEquals(newClusterPublicPort, launcher.options.getEventBusOptions().getClusterPublicPort());
   }
 
   class MyLauncher extends Launcher {
@@ -652,10 +751,11 @@ public class LauncherTest extends VertxTestBase {
       beforeStartingVertxInvoked = true;
       this.options = options;
       if (clusterHost != null) {
-        options.setClusterHost(clusterHost);
-        options.setClusterPort(clusterPort);
-        options.setClusterPublicHost(clusterPublicHost);
-        options.setClusterPublicPort(clusterPublicPort);
+        options.getEventBusOptions()
+          .setHost(clusterHost)
+          .setPort(clusterPort)
+          .setClusterPublicHost(clusterPublicHost)
+          .setClusterPublicPort(clusterPublicPort);
         super.beforeStartingVertx(options);
       }
     }

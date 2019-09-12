@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,21 +11,21 @@
 
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.*;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.annotations.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
-import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.launcher.ExecutionContext;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -201,14 +201,14 @@ public class RunCommand extends BareCommand {
   public void setUp(ExecutionContext context) throws CLIException {
     super.setUp(context);
 
-    // If cluster-host and / or port is set, cluster need to have been explicitly set
-    io.vertx.core.cli.Option clusterHostOption = executionContext.cli().getOption("cluster-host");
-    io.vertx.core.cli.Option clusterPortOption = executionContext.cli().getOption("cluster-port");
     CommandLine commandLine = executionContext.commandLine();
-    if ((!isClustered()) &&
-        (commandLine.isOptionAssigned(clusterHostOption)
-            || commandLine.isOptionAssigned(clusterPortOption))) {
-      throw new CLIException("The option -cluster-host and -cluster-port requires -cluster to be enabled");
+    if (!isClustered() && (
+      commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-host"))
+        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-port"))
+        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-public-host"))
+        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-public-port"))
+    )) {
+      throw new CLIException("The -cluster-xxx options require -cluster to be enabled");
     }
 
     // If quorum and / or ha-group, ha need to have been explicitly set
@@ -226,7 +226,7 @@ public class RunCommand extends BareCommand {
    */
   @Override
   public boolean isClustered() {
-    return cluster || ha || (options != null  && options.isClustered());
+    return cluster || ha || (options != null && options.getEventBusOptions().isClustered());
   }
 
   @Override
@@ -357,6 +357,12 @@ public class RunCommand extends BareCommand {
     if (clusterPort != 0) {
       args.add("--cluster-port=" + clusterPort);
     }
+    if (clusterPublicHost != null) {
+      args.add("--cluster-public-host=" + clusterPublicHost);
+    }
+    if (clusterPublicPort != -1) {
+      args.add("--cluster-public-port=" + clusterPublicPort);
+    }
     if (ha) {
       args.add("--ha");
     }
@@ -411,30 +417,7 @@ public class RunCommand extends BareCommand {
   }
 
   protected JsonObject getConfiguration() {
-    JsonObject conf;
-    if (config != null) {
-      try (Scanner scanner = new Scanner(new File(config), "UTF-8").useDelimiter("\\A")) {
-        String sconf = scanner.next();
-        try {
-          conf = new JsonObject(sconf);
-        } catch (DecodeException e) {
-          log.error("Configuration file " + sconf + " does not contain a valid JSON object");
-          return null;
-        }
-      } catch (FileNotFoundException e) {
-        try {
-          conf = new JsonObject(config);
-        } catch (DecodeException e2) {
-          // The configuration is not printed for security purpose, it can contain sensitive data.
-          log.error("The -conf option does not point to an existing file or is not a valid JSON object");
-          e2.printStackTrace();
-          return null;
-        }
-      }
-    } else {
-      conf = null;
-    }
-    return conf;
+    return getJsonFromFileOrString(config, "conf");
   }
 
   protected void beforeDeployingVerticle(DeploymentOptions deploymentOptions) {

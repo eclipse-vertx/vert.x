@@ -242,14 +242,14 @@ public final class CaseInsensitiveHeaders implements MultiMap {
     int h = hash(name);
     int i = index(h);
     MapEntry e = entries[i];
+    String value = null;
     while (e != null) {
       if (e.hash == h && eq(name, e.key)) {
-        return e.getValue();
+        value = e.getValue();
       }
-
       e = e.next;
     }
-    return null;
+    return value;
   }
 
   @Override

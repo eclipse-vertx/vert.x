@@ -184,6 +184,11 @@ public class JksOptions implements KeyCertOptions, TrustOptions, Cloneable {
   }
 
   @Override
+  public JksOptions copy() {
+    return clone();
+  }
+
+  @Override
   public JksOptions clone() {
     return new JksOptions(this);
   }

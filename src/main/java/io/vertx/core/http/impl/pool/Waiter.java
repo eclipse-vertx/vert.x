@@ -16,15 +16,16 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
 /**
+ * This class might seem useless, however we'll add support for pool acquisition timeout
+ * so it will be used for keep tracking of the expired waiters.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 final class Waiter<C> {
 
-  public final ContextInternal context;
   public final Handler<AsyncResult<C>> handler;
 
-  Waiter(ContextInternal context, Handler<AsyncResult<C>> handler) {
-    this.context = context;
+  Waiter(Handler<AsyncResult<C>> handler) {
     this.handler = handler;
   }
 }

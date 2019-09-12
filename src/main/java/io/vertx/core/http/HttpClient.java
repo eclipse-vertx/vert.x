@@ -14,12 +14,15 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.List;
 import java.util.function.Function;
 
 /**
@@ -54,6 +57,16 @@ import java.util.function.Function;
 public interface HttpClient extends Measured {
 
   /**
+   * Like {@link #request(HttpMethod, RequestOptions)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code options} parameter.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, RequestOptions options);
+
+  /**
    * Create an HTTP request to send to the server with the specified options.
    *
    * @param method  the HTTP method
@@ -73,6 +86,16 @@ public interface HttpClient extends Measured {
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI);
 
   /**
+   * Like {@link #request(HttpMethod, int, String, String)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code host} and {@code port} parameters.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, int port, String host, String requestURI);
+
+  /**
    * Create an HTTP request to send to the server at the specified host and default port.
    * @param method  the HTTP method
    * @param host  the host
@@ -87,8 +110,20 @@ public interface HttpClient extends Measured {
    * @param method  the HTTP method
    * @param options  the request options
    * @return  an HTTP client request object
+   * @deprecated this method will break in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>}
    */
+  @Deprecated
   HttpClientRequest request(HttpMethod method, RequestOptions options, Handler<HttpClientResponse> responseHandler);
+
+  /**
+   * Like {@link #request(HttpMethod, RequestOptions, Handler)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code options} parameter.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP request to send to the server at the specified host and port, specifying a response handler to receive
@@ -99,8 +134,21 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest request(HttpMethod method, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
+
+  /**
+   * Like {@link #request(HttpMethod, int, String, String, Handler)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code host} and {@code port} parameters.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP request to send to the server at the specified host and default port, specifying a response handler to receive
@@ -110,7 +158,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest request(HttpMethod method, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -128,7 +179,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest request(HttpMethod method, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -140,14 +194,37 @@ public interface HttpClient extends Measured {
   HttpClientRequest requestAbs(HttpMethod method, String absoluteURI);
 
   /**
+   * Like {@link #requestAbs(HttpMethod, String)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code absoluteURI} parameter.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest requestAbs(HttpMethod method, SocketAddress serverAddress, String absoluteURI);
+
+  /**
    * Create an HTTP request to send to the server using an absolute URI, specifying a response handler to receive
    * the response
    * @param method  the HTTP method
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest requestAbs(HttpMethod method, String absoluteURI, Handler<HttpClientResponse> responseHandler);
+
+  /**
+   * Like {@link #requestAbs(HttpMethod, String, Handler)} using the {@code serverAddress} parameter to connect to the
+   * server instead of the {@code absoluteURI} parameter.
+   * <p>
+   * The request host header will still be created from the {@code absoluteURI} parameter.
+   * <p>
+   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   */
+  HttpClientRequest requestAbs(HttpMethod method, SocketAddress serverAddress, String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
    * Create an HTTP GET request to send to the server with the specified options.
@@ -179,7 +256,10 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest get(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -190,7 +270,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest get(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -200,7 +283,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest get(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -216,7 +302,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest get(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -232,7 +321,10 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest getAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -241,7 +333,10 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient getNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
@@ -253,7 +348,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient getNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -264,7 +362,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient getNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -274,7 +375,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient getNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -308,7 +412,10 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest post(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -319,7 +426,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest post(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -329,7 +439,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest post(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -345,7 +458,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest post(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -361,7 +477,10 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest postAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -394,7 +513,10 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest head(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -405,7 +527,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest head(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -415,7 +540,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest head(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -431,7 +559,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest head(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -447,7 +578,10 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest headAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -456,7 +590,10 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient headNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
@@ -468,7 +605,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient headNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -479,7 +619,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient headNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -489,7 +632,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient headNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -523,7 +669,10 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest options(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -534,7 +683,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest options(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -544,7 +696,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest options(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -560,7 +715,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest options(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -576,7 +734,10 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest optionsAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -585,7 +746,10 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient optionsNow(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
@@ -597,7 +761,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient optionsNow(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -608,7 +775,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient optionsNow(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -618,7 +788,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   @Fluent
   HttpClient optionsNow(String requestURI, Handler<HttpClientResponse> responseHandler);
 
@@ -652,7 +825,10 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest put(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -663,7 +839,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest put(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -673,7 +852,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest put(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -689,7 +871,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest put(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -705,7 +890,10 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest putAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -738,7 +926,10 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest delete(RequestOptions options, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -749,7 +940,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest delete(int port, String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -759,7 +953,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest delete(String host, String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -775,7 +972,10 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest delete(String requestURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -791,7 +991,10 @@ public interface HttpClient extends Measured {
    * @param absoluteURI  the absolute URI
    * @param responseHandler  the response handler
    * @return  an HTTP client request object
+   * @deprecated this method signature will change in Vert.x 4, the handler will use an {@code Handler<AsyncResult<HttpClientResponse>>},
+   *             you can use instead the WebClient
    */
+  @Deprecated
   HttpClientRequest deleteAbs(String absoluteURI, Handler<HttpClientResponse> responseHandler);
 
   /**
@@ -799,7 +1002,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect);
 
@@ -810,7 +1015,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(int, String, String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect);
 
@@ -820,7 +1027,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -832,7 +1041,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(int, String, String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -842,7 +1053,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(String, String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, Handler<WebSocket> wsConnect);
 
@@ -853,7 +1066,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(String, String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -863,7 +1078,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect);
 
@@ -875,7 +1092,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
@@ -886,7 +1105,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -899,7 +1120,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -910,7 +1133,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
@@ -922,7 +1147,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -934,7 +1161,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
@@ -949,7 +1178,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
@@ -963,7 +1194,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -979,7 +1212,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -993,7 +1228,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
@@ -1008,7 +1245,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1022,7 +1261,9 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols to use
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
@@ -1038,7 +1279,9 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols to use
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
@@ -1054,7 +1297,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect      handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocketAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1068,7 +1313,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(RequestOptions options, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1085,7 +1332,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1100,7 +1349,9 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols to use
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
@@ -1116,7 +1367,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1126,7 +1379,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, Handler<WebSocket> wsConnect);
 
@@ -1136,7 +1391,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(String, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1146,7 +1403,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, Handler<WebSocket> wsConnect);
 
@@ -1157,7 +1416,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
@@ -1169,7 +1430,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect);
@@ -1183,7 +1446,9 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
@@ -1198,7 +1463,9 @@ public interface HttpClient extends Measured {
    * @param subProtocols  the subprotocols
    * @param wsConnect  handler that will be called with the websocket when connected
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect);
@@ -1213,17 +1480,64 @@ public interface HttpClient extends Measured {
    * @param wsConnect  handler that will be called with the websocket when connected
    * @param failureHandler handler that will be called if websocket connection fails
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   @Fluent
   HttpClient websocket(String requestURI, MultiMap headers, WebsocketVersion version,
                        String subProtocols, Handler<WebSocket> wsConnect, Handler<Throwable> failureHandler);
 
 
   /**
+   * Connect a WebSocket to the specified port, host and relative request URI
+   * @param port  the port
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param handler  handler that will be called with the websocket when connected
+   */
+  void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Connect a WebSocket to the host and relative request URI and default port
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param handler  handler that will be called with the websocket when connected
+   */
+  void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Connect a WebSocket at the relative request URI using the default host and port
+   * @param requestURI  the relative URI
+   * @param handler  handler that will be called with the websocket when connected
+   */
+  void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Connect a WebSocket with the specified options.
+   *
+   * @param options  the request options
+   */
+  void webSocket(WebSocketConnectOptions options, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
+   * Connect a WebSocket with the specified absolute url, with the specified headers, using
+   * the specified version of WebSockets, and the specified websocket sub protocols.
+   *
+   * @param url            the absolute url
+   * @param headers        the headers
+   * @param version        the websocket version
+   * @param subProtocols   the subprotocols to use
+   * @param handler handler that will be called if websocket connection fails
+   */
+  void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler);
+
+  /**
    * Create a WebSocket stream with the specified options
    * @param options  the request options
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(RequestOptions options);
 
   /**
@@ -1232,7 +1546,9 @@ public interface HttpClient extends Measured {
    * @param host  the host
    * @param requestURI  the relative URI
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(int, String, String, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(int port, String host, String requestURI);
 
   /**
@@ -1240,7 +1556,9 @@ public interface HttpClient extends Measured {
    * @param host  the host
    * @param requestURI  the relative URI
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(String, String, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String host, String requestURI);
 
   /**
@@ -1248,7 +1566,9 @@ public interface HttpClient extends Measured {
    * @param options  the request options
    * @param headers  the headers
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(RequestOptions options, MultiMap headers);
 
   /**
@@ -1258,7 +1578,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param headers  the headers
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(int port, String host, String requestURI, MultiMap headers);
 
   /**
@@ -1267,7 +1589,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param headers  the headers
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers);
 
   /**
@@ -1277,7 +1601,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version);
 
   /**
@@ -1289,7 +1615,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
@@ -1300,7 +1628,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
@@ -1312,7 +1642,9 @@ public interface HttpClient extends Measured {
    * @param version      the websocket version
    * @param subProtocols the subprotocols to use
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStreamAbs(String url, MultiMap headers, WebsocketVersion version, String subProtocols);
 
   /**
@@ -1323,7 +1655,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols to use
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(RequestOptions options, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
@@ -1337,7 +1671,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols to use
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(int port, String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
@@ -1350,7 +1686,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols to use
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String host, String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 
@@ -1358,7 +1696,9 @@ public interface HttpClient extends Measured {
    * Create a WebSocket stream at the relative request URI using the default host and port and the specified headers
    * @param requestURI  the relative URI
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(String, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String requestURI);
 
   /**
@@ -1366,7 +1706,9 @@ public interface HttpClient extends Measured {
    * @param requestURI  the relative URI
    * @param headers  the headers
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String requestURI, MultiMap headers);
 
   /**
@@ -1376,7 +1718,9 @@ public interface HttpClient extends Measured {
    * @param headers  the headers
    * @param version  the websocket version
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String requestURI, MultiMap headers, WebsocketVersion version);
 
   /**
@@ -1387,7 +1731,9 @@ public interface HttpClient extends Measured {
    * @param version  the websocket version
    * @param subProtocols  the subprotocols
    * @return a stream emitting a WebSocket event when the client connection has been upgraded to a websocket
+   * @deprecated use {@link #webSocket(WebSocketConnectOptions, Handler)} instead
    */
+  @Deprecated
   ReadStream<WebSocket> websocketStream(String requestURI, MultiMap headers, WebsocketVersion version,
                                   String subProtocols);
 

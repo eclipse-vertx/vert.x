@@ -44,7 +44,7 @@ The method invocations can be chained because of the fluent API:
 
 ==== Getting values from a JSON object
 
-You get values from a JSON object using the {@code getXXX} methods, for example:
+You get values from a JSON object using the `getXXX` methods, for example:
 
 [source,java]
 ----
@@ -106,7 +106,7 @@ You add entries to a JSON array using the {@link io.vertx.core.json.JsonArray#ad
 
 ==== Getting values from a JSON array
 
-You get values from a JSON array using the {@code getXXX} methods, for example:
+You get values from a JSON array using the `getXXX` methods, for example:
 
 [source,java]
 ----
@@ -116,3 +116,14 @@ You get values from a JSON array using the {@code getXXX} methods, for example:
 ==== Encoding a JSON array to a String
 
 You use {@link io.vertx.core.json.JsonArray#encode} to encode the array to a String form.
+
+==== Creating arbitrary JSON
+
+Creating JSON object and array assumes you are using valid string representation.
+
+When you are unsure of the string validity then you should use instead `{@link io.vertx.core.json.Json#decodeValue(java.lang.String)}`
+
+[source,java]
+----
+{@link docoverride.json.Examples#example5}
+----

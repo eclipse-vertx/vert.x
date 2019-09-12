@@ -48,10 +48,11 @@ public class CLIConfigurator {
     if (name == null) {
       throw new IllegalArgumentException("The command cannot be defined, the @Name annotation is missing.");
     }
-    if (name.value() == null || name.value().isEmpty()) {
+    if (name.value().isEmpty()) {
       throw new IllegalArgumentException("The command cannot be defined, the @Name value is empty or null.");
     }
     cli.setName(name.value());
+    cli.setPriority(name.priority());
 
     if (summary != null) {
       cli.setSummary(summary.value());

@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
@@ -115,7 +116,18 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
   protected void load() {
     for (CommandFactoryLookup lookup : lookups) {
       Collection<CommandFactory<?>> commands = lookup.lookup();
-      commands.forEach(this::register);
+      commands.forEach(factory -> {
+        CLI cli = factory.define();
+        CommandRegistration previous = commandByName.get(cli.getName());
+        if (previous == null) {
+          commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
+        } else {
+          // command already registered, in this case we will replace IFF the priority is higher
+          if (cli.getPriority() > previous.cli.getPriority()) {
+            commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
+          }
+        }
+      });
     }
   }
 
@@ -125,9 +137,18 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
     return this;
   }
 
+  @Deprecated
   @SuppressWarnings("unchecked")
   public VertxCommandLauncher register(Class<? extends Command> clazz) {
     DefaultCommandFactory factory = new DefaultCommandFactory(clazz);
+    CLI cli = factory.define();
+    commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
+    return this;
+  }
+
+  @SuppressWarnings("unchecked")
+  public VertxCommandLauncher register(Class<? extends Command> clazz, Supplier<? extends Command> supplier) {
+    DefaultCommandFactory factory = new DefaultCommandFactory(clazz, supplier);
     CLI cli = factory.define();
     commandByName.put(cli.getName(), new CommandRegistration(factory, cli));
     return this;
@@ -215,6 +236,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
       if (main != null) {
         context.put("Main", main);
         context.put("Main-Class", main.getClass().getName());
+        context.put("Default-Verticle-Factory", getFromManifest("Default-Verticle-Factory"));
       }
 
       CLIConfigurator.inject(evaluated, cmd);
@@ -409,21 +431,24 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
   }
 
   protected String getCommandFromManifest() {
+    return getFromManifest("Main-Command");
+  }
+
+  private String getFromManifest(String key) {
     try {
       Enumeration<URL> resources = RunCommand.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
       while (resources.hasMoreElements()) {
-        InputStream stream = resources.nextElement().openStream();
-        Manifest manifest = new Manifest(stream);
-        Attributes attributes = manifest.getMainAttributes();
-        String mainClass = attributes.getValue("Main-Class");
-        if (main.getClass().getName().equals(mainClass)) {
-          String command = attributes.getValue("Main-Command");
-          if (command != null) {
-            stream.close();
-            return command;
+        try (InputStream stream = resources.nextElement().openStream()) {
+          Manifest manifest = new Manifest(stream);
+          Attributes attributes = manifest.getMainAttributes();
+          String mainClass = attributes.getValue("Main-Class");
+          if (main.getClass().getName().equals(mainClass)) {
+            String value = attributes.getValue(key);
+            if (value != null) {
+              return value;
+            }
           }
         }
-        stream.close();
       }
     } catch (IOException e) {
       throw new IllegalStateException(e.getMessage());
@@ -442,26 +467,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
    * @return the main verticle, {@code null} if not found.
    */
   protected String getMainVerticle() {
-    try {
-      Enumeration<URL> resources = RunCommand.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
-      while (resources.hasMoreElements()) {
-        InputStream stream = resources.nextElement().openStream();
-        Manifest manifest = new Manifest(stream);
-        Attributes attributes = manifest.getMainAttributes();
-        String mainClass = attributes.getValue("Main-Class");
-        if (main != null && main.getClass().getName().equals(mainClass)) {
-          String theMainVerticle = attributes.getValue("Main-Verticle");
-          if (theMainVerticle != null) {
-            stream.close();
-            return theMainVerticle;
-          }
-        }
-        stream.close();
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException(e.getMessage());
-    }
-    return null;
+    return getFromManifest("Main-Verticle");
   }
 
   /**

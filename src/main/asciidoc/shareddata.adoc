@@ -1,57 +1,66 @@
-== Using Shared Data with Vert.x
+== Using the SharedData API
 
-Shared data contains functionality that allows you to safely share data between different parts of your application,
-or different applications in the same Vert.x instance or across a cluster of Vert.x instances.
+As its name suggests, the {@link io.vertx.core.shareddata.SharedData} API allows you to safely share data between:
 
-Shared data provides:
+- different parts of your application, or
+- different applications in the same Vert.x instance, or
+- different applications across a cluster of Vert.x instances.
 
- * synchronous shared maps (local)
- * asynchronous maps (local or cluster-wide)
- * asynchronous locks (local or cluster-wide)
- * asynchronous counters (local or cluster-wide)
+In practice, it provides:
 
-IMPORTANT: The behavior of the distributed data structure depends on the cluster manager you use. Backup
-(replication) and behavior when a network partition is faced are defined by the cluster manager and its
-configuration. Refer to the cluster manager documentation as well as to the underlying framework manual.
+- synchronous maps (local-only)
+- asynchronous maps
+- asynchronous locks
+- asynchronous counters
 
-=== Local shared maps
+IMPORTANT: The behavior of the distributed data structure depends on the cluster manager you use.
+Backup (replication) and behavior when a network partition is faced are defined by the cluster manager and its configuration.
+Please refer to the cluster manager documentation as well as to the underlying framework manual.
 
-{@link io.vertx.core.shareddata.LocalMap Local shared maps} allow you to share data safely between different event
-loops (e.g. different verticles) in the same Vert.x instance.
+=== Local maps
 
-Local shared maps only allow certain data types to be used as keys and values. Those types must either be immutable,
-or certain other types that can be copied like {@link io.vertx.core.buffer.Buffer}. In the latter case the key/value
-will be copied before putting it in the map.
+{@link io.vertx.core.shareddata.LocalMap Local maps} allow you to share data safely between different event loops (e.g. different verticles) in the same Vert.x instance.
 
-This way we can ensure there is no _shared access to mutable state_ between different threads in your Vert.x application
-so you don't have to worry about protecting that state by synchronising access to it.
+They only allow certain data types to be used as keys and values:
+
+- immutable types (e.g. strings, booleans, ... etc), or
+- types implementing the {@link io.vertx.core.shareddata.Shareable} interface (buffers, JSON arrays, JSON objects, or your own shareable objects).
+
+In the latter case the key/value will be copied before putting it into the map.
+
+This way we can ensure there is no _shared access to mutable state_ between different threads in your Vert.x application.
+And you won't have to worry about protecting that state by synchronising access to it.
 
 Here's an example of using a shared local map:
 
 [source,$lang]
 ----
-{@link examples.SharedDataExamples#example1}
+{@link examples.SharedDataExamples#localMap}
 ----
 
 === Asynchronous shared maps
 
-Asynchronous shared maps allow data to be put in the map and retrieved locally when Vert.x is not clustered.
-When clustered, data can be put from any node and retrieved from the same node or any other node.
+{@link io.vertx.core.shareddata.AsyncMap Asynchronous shared maps} allow data to be put in the map and retrieved locally or from any other node.
 
-IMPORTANT: In clustered mode, asynchronous shared maps rely on distributed data structures provided by the cluster manager.
-Beware that the latency relative to asynchronous shared map operations can be much higher in clustered than in local mode.
-
-This makes them really useful for things like storing session state in a farm of servers hosting a Vert.x web
-application.
-
-You get an instance of {@link io.vertx.core.shareddata.AsyncMap} with
-{@link io.vertx.core.shareddata.SharedData#getAsyncMap(java.lang.String,io.vertx.core.Handler)}.
+This makes them really useful for things like storing session state in a farm of servers hosting a Vert.x Web application.
 
 Getting the map is asynchronous and the result is returned to you in the handler that you specify. Here's an example:
 
 [source,$lang]
 ----
-{@link examples.SharedDataExamples#example2}
+{@link examples.SharedDataExamples#asyncMap}
+----
+
+When Vert.x is clustered, data that you put into the map is accessible locally as well as on any of the other cluster members.
+
+IMPORTANT: In clustered mode, asynchronous shared maps rely on distributed data structures provided by the cluster manager.
+Beware that the latency relative to asynchronous shared map operations can be much higher in clustered than in local mode.
+
+If your application doesn't need data to be shared with every other node, you can retrieve a local-only map:
+
+[source,$lang]
+----
+{@link examples.SharedDataExamples#localAsyncMap}
 ----
 
 ==== Putting data in a map
@@ -69,7 +78,7 @@ The actual put is asynchronous and the handler is notified once it is complete:
 
 You get data from a map with {@link io.vertx.core.shareddata.AsyncMap#get(java.lang.Object,io.vertx.core.Handler)}.
 
-The actual get is asynchronous and the handler is notified with the result some time later
+The actual get is asynchronous and the handler is notified with the result some time later:
 
 [source,$lang]
 ----
@@ -80,37 +89,44 @@ The actual get is asynchronous and the handler is notified with the result some 
 
 You can also remove entries from an asynchronous map, clear them and get the size.
 
-See the {@link io.vertx.core.shareddata.AsyncMap API docs} for more information.
+See the {@link io.vertx.core.shareddata.AsyncMap API docs} for a detailed list of map operations.
 
 === Asynchronous locks
 
-{@link io.vertx.core.shareddata.Lock Asynchronous locks} allow you to obtain exclusive locks locally or across the cluster -
-this is useful when you want to do something or access a resource on only one node of a cluster at any one time.
+{@link io.vertx.core.shareddata.Lock Asynchronous locks} allow you to obtain exclusive locks locally or across the cluster.
+This is useful when you want to do something or access a resource on only one node of a cluster at any one time.
 
-Asynchronous locks have an asynchronous API unlike most lock APIs which block the calling thread until the lock
-is obtained.
+Asynchronous locks have an asynchronous API unlike most lock APIs which block the calling thread until the lock is obtained.
 
 To obtain a lock use {@link io.vertx.core.shareddata.SharedData#getLock(java.lang.String,io.vertx.core.Handler)}.
+This won't block, but when the lock is available, the handler will be called with an instance of {@link io.vertx.core.shareddata.Lock}, signalling that you now own the lock.
 
-This won't block, but when the lock is available, the handler will be called with an instance of {@link io.vertx.core.shareddata.Lock},
-signifying that you now own the lock.
+While you own the lock, no other caller, locally or on the cluster, will be able to obtain the lock.
 
-While you own the lock no other caller, anywhere on the cluster will be able to obtain the lock.
-
-When you've finished with the lock, you call {@link io.vertx.core.shareddata.Lock#release()} to release it, so
-another caller can obtain it.
+When you've finished with the lock, you call {@link io.vertx.core.shareddata.Lock#release()} to release it, so another caller can obtain it:
 
 [source,$lang]
 ----
-{@link examples.SharedDataExamples#example5}
+{@link examples.SharedDataExamples#lock}
 ----
 
-You can also get a lock with a timeout. If it fails to obtain the lock within the timeout the handler will be called
-with a failure:
+You can also get a lock with a timeout. If it fails to obtain the lock within the timeout the handler will be called with a failure:
 
 [source,$lang]
 ----
-{@link examples.SharedDataExamples#example6}
+{@link examples.SharedDataExamples#lockWithTimeout}
+----
+
+See the {@link io.vertx.core.shareddata.Lock API docs} for a detailed list of lock operations.
+
+IMPORTANT: In clustered mode, asynchronous locks rely on distributed data structures provided by the cluster manager.
+Beware that the latency relative to asynchronous shared lock operations can be much higher in clustered than in local mode.
+
+If your application doesn't need the lock to be shared with every other node, you can retrieve a local-only lock:
+
+[source,$lang]
+----
+{@link examples.SharedDataExamples#localLock}
 ----
 
 === Asynchronous counters
@@ -123,10 +139,20 @@ You obtain an instance with {@link io.vertx.core.shareddata.SharedData#getCounte
 
 [source,$lang]
 ----
-{@link examples.SharedDataExamples#example7}
+{@link examples.SharedDataExamples#counter}
 ----
 
 Once you have an instance you can retrieve the current count, atomically increment it, decrement and add a value to
 it using the various methods.
 
-See the {@link io.vertx.core.shareddata.Counter API docs} for more information.
+See the {@link io.vertx.core.shareddata.Counter API docs} for a detailed list of counter operations.
+
+IMPORTANT: In clustered mode, asynchronous counters rely on distributed data structures provided by the cluster manager.
+Beware that the latency relative to asynchronous shared counter operations can be much higher in clustered than in local mode.
+
+If your application doesn't need the counter to be shared with every other node, you can retrieve a local-only counter:
+
+[source,$lang]
+----
+{@link examples.SharedDataExamples#localCounter}
+----

@@ -12,6 +12,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.spi.FutureFactory;
 
 /**
@@ -20,6 +21,33 @@ import io.vertx.core.spi.FutureFactory;
 public class FutureFactoryImpl implements FutureFactory {
 
   private static final SucceededFuture EMPTY = new SucceededFuture<>(null);
+
+  @Override
+  public <T> Promise<T> promise() {
+    return new FutureImpl<>();
+  }
+
+  @Override
+  public <T> Promise<T> succeededPromise() {
+    @SuppressWarnings("unchecked")
+    Promise<T> promise = EMPTY;
+    return promise;
+  }
+
+  @Override
+  public <T> Promise<T> succeededPromise(T result) {
+    return new SucceededFuture<>(result);
+  }
+
+  @Override
+  public <T> Promise<T> failedPromise(Throwable t) {
+    return new FailedFuture<>(t);
+  }
+
+  @Override
+  public <T> Promise<T> failurePromise(String failureMessage) {
+    return new FailedFuture<>(failureMessage);
+  }
 
   @Override
   public <T> Future<T> future() {

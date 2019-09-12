@@ -11,16 +11,17 @@
 
 package io.vertx.core.json;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import org.junit.Test;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.Test;
-
-import io.vertx.core.json.JsonObject;
-
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 /**
@@ -98,12 +99,45 @@ public class JsonPOJOMapperTest {
   }
 
   @Test
+  public void testInstantToPOJO() {
+    MyType2 obj = new JsonObject().put("isodate", Instant.EPOCH).mapTo(MyType2.class);
+    assertEquals(Instant.EPOCH, obj.isodate);
+  }
+
+  @Test
+  public void testInvalidInstantToPOJO() {
+    testInvalidValueToPOJO("isodate");
+  }
+
+  @Test
   public void testBase64FromPOJO() {
     JsonObject json = JsonObject.mapFrom(new MyType2());
     // attempt to deserialize back to a byte[], asserting for not null
     // already means that there was an attempt to parse a string to byte[]
     // and that the parsing succeeded (the object is of type byte[] and not null)
     assertNotNull(json.getBinary("base64"));
+  }
+
+  @Test
+  public void testBase64ToPOJO() {
+    MyType2 obj = new JsonObject().put("base64", "Hello World!".getBytes()).mapTo(MyType2.class);
+    assertArrayEquals("Hello World!".getBytes(), obj.base64);
+  }
+
+  @Test
+  public void testInvalidBase64ToPOJO() {
+    testInvalidValueToPOJO("base64");
+  }
+
+  private void testInvalidValueToPOJO(String key) {
+    try {
+      new JsonObject().put(key, "1").mapTo(MyType2.class);
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e.getCause(), is(instanceOf(InvalidFormatException.class)));
+      InvalidFormatException ife = (InvalidFormatException) e.getCause();
+      assertEquals("1", ife.getValue());
+    }
   }
 
   @Test

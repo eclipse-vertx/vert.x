@@ -11,10 +11,7 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.Nullable;
-import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -51,6 +48,12 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   @Override
   HttpServerResponse write(Buffer data);
+
+  /**
+   * Same as {@link #write(Buffer)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  HttpServerResponse write(Buffer data, Handler<AsyncResult<Void>> handler);
 
   @Override
   HttpServerResponse setWriteQueueMaxSize(int maxSize);
@@ -128,21 +131,21 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Like {@link #putHeader(String, String)} but using CharSequence
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpServerResponse putHeader(CharSequence name, CharSequence value);
 
   /**
    * Like {@link #putHeader(String, String)} but providing multiple values via a String Iterable
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpServerResponse putHeader(String name, Iterable<String> values);
 
   /**
    * Like {@link #putHeader(String, Iterable)} but with CharSequence Iterable
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values);
 
@@ -165,21 +168,21 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Like {@link #putTrailer(String, String)} but using CharSequence
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpServerResponse putTrailer(CharSequence name, CharSequence value);
 
   /**
    * Like {@link #putTrailer(String, String)} but providing multiple values via a String Iterable
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpServerResponse putTrailer(String name, Iterable<String> values);
 
   /**
    * Like {@link #putTrailer(String, Iterable)} but with CharSequence Iterable
    */
-  @SuppressWarnings("codegen-allow-any-java-type")
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpServerResponse putTrailer(CharSequence name, Iterable<CharSequence> value);
 
@@ -219,6 +222,12 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   HttpServerResponse write(String chunk, String enc);
 
   /**
+   * Same as {@link #write(String, String)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  HttpServerResponse write(String chunk, String enc, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Write a {@link String} to the response body, encoded in UTF-8.
    *
    * @param chunk  the string to write
@@ -226,6 +235,12 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Fluent
   HttpServerResponse write(String chunk);
+
+  /**
+   * Same as {@link #write(String)} but with an {@code handler} called when the operation completes
+   */
+  @Fluent
+  HttpServerResponse write(String chunk, Handler<AsyncResult<Void>> handler);
 
   /**
    * Used to write an interim 100 Continue response to signify that the client should send the rest of the request.
@@ -243,6 +258,11 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   void end(String chunk);
 
   /**
+   * Same as {@link #end(String)} but with an {@code handler} called when the operation completes
+   */
+  void end(String chunk, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Same as {@link #end(Buffer)} but writes a String with the specified encoding before ending the response.
    *
    * @param chunk  the string to write before ending the response
@@ -251,12 +271,24 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   void end(String chunk, String enc);
 
   /**
+   * Same as {@link #end(String, String)} but with an {@code handler} called when the operation completes
+   */
+  void end(String chunk, String enc, Handler<AsyncResult<Void>> handler);
+
+  /**
    * Same as {@link #end()} but writes some data to the response body before ending. If the response is not chunked and
    * no other data has been written then the @code{Content-Length} header will be automatically set.
    *
    * @param chunk  the buffer to write before ending the response
    */
+  @Override
   void end(Buffer chunk);
+
+  /**
+   * Same as {@link #end(Buffer)} but with an {@code handler} called when the operation completes
+   */
+  @Override
+  void end(Buffer chunk, Handler<AsyncResult<Void>> handler);
 
   /**
    * Ends the response. If no data has been written to the response body,
@@ -264,6 +296,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * <p>
    * Once the response has ended, it cannot be used any more.
    */
+  @Override
   void end();
 
   /**
@@ -299,7 +332,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    *
    * @param filename  path to the file to serve
    * @param offset offset to start serving from
-   * @param length length to serve to
+   * @param length the number of bytes to send
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -472,4 +505,45 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   default HttpServerResponse writeCustomFrame(HttpFrame frame) {
     return writeCustomFrame(frame.type(), frame.flags(), frame.payload());
   }
+
+  /**
+   * Sets the priority of the associated stream
+   * <p/>
+   * This is not implemented for HTTP/1.x.
+   *
+   * @param streamPriority the priority for this request's stream
+   */
+  @Fluent
+  default HttpServerResponse setStreamPriority(StreamPriority streamPriority) {
+      return this;
+  }
+
+  /**
+   * Add a cookie. This will be sent back to the client in the response.
+   *
+   * @param cookie  the cookie
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerResponse addCookie(Cookie cookie);
+
+
+  /**
+   * Expire a cookie, notifying a User Agent to remove it from its cookie jar.
+   *
+   * @param name  the name of the cookie
+   * @return the cookie, if it existed, or null
+   */
+  default @Nullable Cookie removeCookie(String name) {
+    return removeCookie(name, true);
+  }
+
+  /**
+   * Remove a cookie from the cookie set. If invalidate is true then it will expire a cookie, notifying a User Agent to
+   * remove it from its cookie jar.
+   *
+   * @param name  the name of the cookie
+   * @return the cookie, if it existed, or null
+   */
+  @Nullable Cookie removeCookie(String name, boolean invalidate);
 }

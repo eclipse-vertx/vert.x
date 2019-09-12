@@ -11,9 +11,11 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
@@ -37,10 +39,12 @@ public class HttpTestBase extends VertxTestBase {
   protected HttpServer server;
   protected HttpClient client;
   protected TestProxyBase proxy;
+  protected SocketAddress testAddress;
 
   public void setUp() throws Exception {
     super.setUp();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
+    testAddress = SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST);
   }
 
   protected void tearDown() throws Exception {
@@ -77,18 +81,39 @@ public class HttpTestBase extends VertxTestBase {
     startServer(vertx.getOrCreateContext());
   }
 
+  protected void startServer(SocketAddress bindAddress) throws Exception {
+    startServer(bindAddress, vertx.getOrCreateContext());
+  }
+
   protected void startServer(HttpServer server) throws Exception {
     startServer(vertx.getOrCreateContext(), server);
+  }
+
+  protected void startServer(SocketAddress bindAddress, HttpServer server) throws Exception {
+    startServer(bindAddress, vertx.getOrCreateContext(), server);
   }
 
   protected void startServer(Context context) throws Exception {
     startServer(context, server);
   }
 
+  protected void startServer(SocketAddress bindAddress, Context context) throws Exception {
+    startServer(bindAddress, context, server);
+  }
+
   protected void startServer(Context context, HttpServer server) throws Exception {
+    startServer(null, context, server);
+  }
+
+  protected void startServer(SocketAddress bindAddress, Context context, HttpServer server) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     context.runOnContext(v -> {
-      server.listen(onSuccess(s -> latch.countDown()));
+      Handler<AsyncResult<HttpServer>> onListen = onSuccess(s -> latch.countDown());
+      if (bindAddress != null) {
+        server.listen(bindAddress, onListen);
+      } else {
+        server.listen(onListen);
+      }
     });
     awaitLatch(latch);
   }

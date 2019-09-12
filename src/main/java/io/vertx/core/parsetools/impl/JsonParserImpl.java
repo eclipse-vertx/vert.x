@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.util.TokenBuffer;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
@@ -25,12 +26,14 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.parsetools.JsonEvent;
 import io.vertx.core.parsetools.JsonEventType;
 import io.vertx.core.parsetools.JsonParser;
-import io.vertx.core.queue.Queue;
 import io.vertx.core.streams.ReadStream;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.function.ToIntFunction;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -38,22 +41,20 @@ import java.util.Map;
 public class JsonParserImpl implements JsonParser {
 
   private NonBlockingJsonParser parser;
+  private JsonToken currentToken;
   private Handler<JsonToken> tokenHandler = this::handleToken;
-  private final Queue<JsonEvent> pending;
+  private Handler<JsonEvent> eventHandler;
   private BufferingHandler arrayHandler;
   private BufferingHandler objectHandler;
   private Handler<Throwable> exceptionHandler;
   private String currentField;
   private Handler<Void> endHandler;
+  private long demand = Long.MAX_VALUE;
+  private boolean ended;
   private final ReadStream<Buffer> stream;
 
   public JsonParserImpl(ReadStream<Buffer> stream) {
     this.stream = stream;
-    this.pending = Queue
-      .<JsonEvent>queue()
-      .writableHandler(v -> {
-        stream.resume();
-      });
     JsonFactory factory = new JsonFactory();
     try {
       parser = (NonBlockingJsonParser) factory.createNonBlockingByteArrayParser();
@@ -64,19 +65,23 @@ public class JsonParserImpl implements JsonParser {
 
   @Override
   public JsonParser pause() {
-    pending.pause();
+    demand = 0L;
     return this;
   }
 
   @Override
   public JsonParser resume() {
-    pending.resume();
-    return this;
+    return fetch(Long.MAX_VALUE);
   }
 
   @Override
   public JsonParser fetch(long amount) {
-    pending.take(amount);
+    Arguments.require(amount > 0L, "Fetch amount must be > 0L");
+    demand += amount;
+    if (demand < 0L) {
+      demand = Long.MAX_VALUE;
+    }
+    checkPending();
     return this;
   }
 
@@ -88,7 +93,7 @@ public class JsonParserImpl implements JsonParser {
 
   @Override
   public JsonParser handler(Handler<JsonEvent> handler) {
-    pending.handler(handler);
+    eventHandler = handler;
     if (stream != null) {
       if (handler != null) {
         stream.endHandler(v -> end());
@@ -108,8 +113,12 @@ public class JsonParserImpl implements JsonParser {
   }
 
   private void handleEvent(JsonEvent event) {
-    if (!pending.add(event) && stream != null) {
-      stream.pause();
+    if (demand != Long.MAX_VALUE) {
+      demand--;
+    }
+    Handler<JsonEvent> handler = this.eventHandler;
+    if (handler != null) {
+      handler.handle(event);
     }
   }
 
@@ -141,8 +150,9 @@ public class JsonParserImpl implements JsonParser {
           break;
         }
         case VALUE_STRING: {
-          handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, parser.getText()));
+          String f = currentField;
           currentField = null;
+          handleEvent(new JsonEventImpl(JsonEventType.VALUE, f, parser.getText()));
           break;
         }
         case VALUE_TRUE: {
@@ -183,35 +193,64 @@ public class JsonParserImpl implements JsonParser {
 
   @Override
   public void handle(Buffer event) {
-    handle(event.getBytes());
+    byte[] bytes = event.getBytes();
+    try {
+      parser.feedInput(bytes, 0, bytes.length);
+    } catch (IOException e) {
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(e);
+        return;
+      } else {
+        throw new DecodeException(e.getMessage(), e);
+      }
+    }
+    checkPending();
   }
 
   @Override
   public void end() {
-    handle((byte[]) null);
-  }
-
-  private void handle(byte[] bytes) {
-    if (parser == null) {
+    if (ended) {
       throw new IllegalStateException("Parsing already done");
     }
+    ended = true;
+    parser.endOfInput();
+    checkPending();
+  }
+
+  private void checkPending() {
     try {
-      if (bytes != null) {
-        parser.feedInput(bytes, 0, bytes.length);
-      } else {
-        parser.endOfInput();
-      }
       while (true) {
-        JsonToken token = parser.nextToken();
-        if (token == null || token == JsonToken.NOT_AVAILABLE) {
-          break;
+        if (currentToken == null) {
+          JsonToken next = parser.nextToken();
+          if (next != null && next != JsonToken.NOT_AVAILABLE) {
+            currentToken = next;
+          }
         }
-        tokenHandler.handle(token);
+        if (currentToken == null) {
+          if (ended) {
+            if (endHandler != null) {
+              endHandler.handle(null);
+            }
+            return;
+          }
+          break;
+        } else {
+          if (demand > 0L) {
+            JsonToken token = currentToken;
+            currentToken = null;
+            tokenHandler.handle(token);
+          } else {
+            break;
+          }
+        }
       }
-      if (bytes == null) {
-        parser = null;
-        if (endHandler != null) {
-          endHandler.handle(null);
+      if (demand == 0L) {
+        if (stream != null) {
+          stream.pause();
+        }
+      } else {
+        if (stream != null) {
+          stream.resume();
         }
       }
     } catch (IOException e) {

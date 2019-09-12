@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -13,19 +13,26 @@ package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.*;
 import io.vertx.core.cli.annotations.*;
+import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.launcher.ExecutionContext;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.lang.reflect.Method;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -46,13 +53,16 @@ public class BareCommand extends ClasspathHandler {
   public static final String METRICS_OPTIONS_PROP_PREFIX = "vertx.metrics.options.";
 
   protected Vertx vertx;
+
   protected int clusterPort;
-
   protected String clusterHost;
-  protected int quorum;
+  protected int clusterPublicPort;
+  protected String clusterPublicHost;
 
+  protected int quorum;
   protected String haGroup;
 
+  protected String vertxOptions;
   protected VertxOptions options;
 
   protected Runnable finalAction;
@@ -108,6 +118,47 @@ public class BareCommand extends ClasspathHandler {
   }
 
   /**
+   * Sets the cluster public port.
+   *
+   * @param port the port
+   */
+  @Option(longName = "cluster-public-port", argName = "public-port")
+  @Description("Public port to use for cluster communication. Default is -1 which means same as cluster port.")
+  @DefaultValue("-1")
+  public void setClusterPublicPort(int port) {
+    this.clusterPublicPort = port;
+  }
+
+  /**
+   * Sets the cluster public host.
+   *
+   * @param host the host
+   */
+  @Option(longName = "cluster-public-host", argName = "public-host")
+  @Description("Public host to bind to for cluster communication. If not specified, Vert.x will use the same as cluster host.")
+  public void setClusterPublicHost(String host) {
+    this.clusterPublicHost = host;
+  }
+
+  /**
+   * The Vert.x options, it can be a json file or a json string.
+   *
+   * @param vertxOptions the configuration
+   */
+  @Option(longName = "options", argName = "options")
+  @Description("Specifies the Vert.x options. It should reference either a JSON file which represents the options OR be a JSON string.")
+  public void setVertxOptions(String vertxOptions) {
+    if (vertxOptions != null) {
+      // For inlined configuration remove first and end single and double quotes if any
+      this.vertxOptions = vertxOptions.trim()
+        .replaceAll("^\"|\"$", "")
+        .replaceAll("^'|'$", "");
+    } else {
+      this.vertxOptions = null;
+    }
+  }
+
+  /**
    * @return whether or not the vert.x instance should be clustered. This implementation
    * returns {@code true}.
    */
@@ -148,18 +199,32 @@ public class BareCommand extends ClasspathHandler {
    */
   @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
   protected Vertx startVertx() {
-    MetricsOptions metricsOptions = getMetricsOptions();
-    options = new VertxOptions().setMetricsOptions(metricsOptions);
+    JsonObject optionsJson = getJsonFromFileOrString(vertxOptions, "options");
+    if (optionsJson == null) {
+      MetricsOptions metricsOptions = getMetricsOptions();
+      options = new VertxOptions().setMetricsOptions(metricsOptions);
+    } else {
+      MetricsOptions metricsOptions = getMetricsOptions(optionsJson.getJsonObject("metricsOptions"));
+      options = new VertxOptions(optionsJson).setMetricsOptions(metricsOptions);
+    }
+
     configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
     beforeStartingVertx(options);
     Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
-      if (!options.getClusterHost().equals(VertxOptions.DEFAULT_CLUSTER_HOST)) {
-        clusterHost = options.getClusterHost();
+      EventBusOptions eventBusOptions = options.getEventBusOptions();
+      if (!Objects.equals(eventBusOptions.getHost(), EventBusOptions.DEFAULT_CLUSTER_HOST)) {
+        clusterHost = eventBusOptions.getHost();
       }
-      if (options.getClusterPort() != VertxOptions.DEFAULT_CLUSTER_PORT) {
-        clusterPort = options.getClusterPort();
+      if (eventBusOptions.getPort() != EventBusOptions.DEFAULT_CLUSTER_PORT) {
+        clusterPort = eventBusOptions.getPort();
+      }
+      if (!Objects.equals(eventBusOptions.getClusterPublicHost(), EventBusOptions.DEFAULT_CLUSTER_PUBLIC_HOST)) {
+        clusterPublicHost = eventBusOptions.getClusterPublicHost();
+      }
+      if (eventBusOptions.getClusterPublicPort() != EventBusOptions.DEFAULT_CLUSTER_PUBLIC_PORT) {
+        clusterPublicPort = eventBusOptions.getClusterPublicPort();
       }
       if (clusterHost == null) {
         clusterHost = getDefaultAddress();
@@ -173,7 +238,12 @@ public class BareCommand extends ClasspathHandler {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
 
-      options.setClusterHost(clusterHost).setClusterPort(clusterPort).setClustered(true);
+      eventBusOptions.setClustered(true)
+        .setHost(clusterHost).setPort(clusterPort)
+        .setClusterPublicHost(clusterPublicHost);
+      if (clusterPublicPort != -1) {
+        eventBusOptions.setClusterPublicPort(clusterPublicPort);
+      }
       if (getHA()) {
         options.setHAEnabled(true);
         if (haGroup != null) {
@@ -212,6 +282,33 @@ public class BareCommand extends ClasspathHandler {
     return instance;
   }
 
+  protected JsonObject getJsonFromFileOrString(String jsonFileOrString, String argName) {
+    JsonObject conf;
+    if (jsonFileOrString != null) {
+      try (Scanner scanner = new Scanner(new File(jsonFileOrString), "UTF-8").useDelimiter("\\A")) {
+        String sconf = scanner.next();
+        try {
+          conf = new JsonObject(sconf);
+        } catch (DecodeException e) {
+          log.error("Configuration file " + sconf + " does not contain a valid JSON object");
+          return null;
+        }
+      } catch (FileNotFoundException e) {
+        try {
+          conf = new JsonObject(jsonFileOrString);
+        } catch (DecodeException e2) {
+          // The configuration is not printed for security purpose, it can contain sensitive data.
+          log.error("The -" + argName + " argument does not point to an existing file or is not a valid JSON object");
+          e2.printStackTrace();
+          return null;
+        }
+      }
+    } else {
+      conf = null;
+    }
+    return conf;
+  }
+
   /**
    * Hook called after starting vert.x.
    *
@@ -240,12 +337,19 @@ public class BareCommand extends ClasspathHandler {
    * @return the metric options.
    */
   protected MetricsOptions getMetricsOptions() {
+    return getMetricsOptions(null);
+  }
+
+  /**
+   * @return the metric options.
+   */
+  protected MetricsOptions getMetricsOptions(JsonObject jsonObject) {
     MetricsOptions metricsOptions;
     VertxMetricsFactory factory = ServiceHelper.loadFactoryOrNull(VertxMetricsFactory.class);
     if (factory != null) {
-      metricsOptions = factory.newOptions();
+      metricsOptions = jsonObject == null ? factory.newOptions() : factory.newOptions(jsonObject);
     } else {
-      metricsOptions = new MetricsOptions();
+      metricsOptions = jsonObject == null ? new MetricsOptions() : new MetricsOptions(jsonObject);
     }
     configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);
     return metricsOptions;

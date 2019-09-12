@@ -11,19 +11,28 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.impl.VertxInternal;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 
-import java.util.function.Function;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 
-import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
+import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
+import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
+import static io.vertx.core.http.impl.HttpUtils.SC_BAD_GATEWAY;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -34,26 +43,31 @@ import static io.netty.handler.codec.http.HttpResponseStatus.BAD_GATEWAY;
  * @author <a href="http://tfox.org">Tim Fox</a>
  *
  */
-public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> implements ServerWebSocket {
+public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> implements ServerWebSocket {
 
+  private final Http1xServerConnection conn;
   private final String uri;
   private final String path;
   private final String query;
-  private final Function<ServerWebSocketImpl, String> handshaker;
+  private final WebSocketServerHandshaker handshaker;
   private final MultiMap headers;
+  private HttpServerRequestImpl request;
+  private Integer status;
+  private Promise<Integer> handshakePromise;
 
-  private boolean connected;
-  private boolean rejected;
-  private HttpResponseStatus rejectedStatus;
-
-  public ServerWebSocketImpl(VertxInternal vertx, String uri, String path, String query, MultiMap headers,
-                             Http1xConnectionBase conn, boolean supportsContinuation, Function<ServerWebSocketImpl, String> handshaker,
-                             int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
-    super(vertx, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
-    this.uri = uri;
-    this.path = path;
-    this.query = query;
-    this.headers = headers;
+  ServerWebSocketImpl(Http1xServerConnection conn,
+                      boolean supportsContinuation,
+                      HttpServerRequestImpl request,
+                      WebSocketServerHandshaker handshaker,
+                      int maxWebSocketFrameSize,
+                      int maxWebSocketMessageSize) {
+    super(conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+    this.conn = conn;
+    this.uri = request.uri();
+    this.path = request.path();
+    this.query = request.query();
+    this.headers = request.headers();
+    this.request = request;
     this.handshaker = handshaker;
   }
 
@@ -79,34 +93,23 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
 
   @Override
   public void accept() {
-    synchronized (conn) {
-      if (checkAccept()) {
-        throw new IllegalStateException("Websocket already rejected");
-      }
+    if (tryHandshake(SC_SWITCHING_PROTOCOLS) != Boolean.TRUE) {
+      throw new IllegalStateException("WebSocket already rejected");
     }
   }
 
   @Override
   public void reject() {
-    reject(BAD_GATEWAY);
+    reject(SC_BAD_GATEWAY);
   }
 
   @Override
-  public void reject(int status) {
-    reject(HttpResponseStatus.valueOf(status));
-  }
-
-  private void reject(HttpResponseStatus status) {
-    synchronized (conn) {
-      checkClosed();
-      if (handshaker == null) {
-        throw new IllegalStateException("Cannot reject websocket on the client side");
-      }
-      if (connected) {
-        throw new IllegalStateException("Cannot reject websocket, it has already been written to");
-      }
-      rejected = true;
-      rejectedStatus = status;
+  public void reject(int sc) {
+    if (sc == SC_SWITCHING_PROTOCOLS) {
+      throw new IllegalArgumentException("Invalid WebSocket rejection status code: 101");
+    }
+    if (tryHandshake(sc) != Boolean.TRUE) {
+      throw new IllegalStateException("Cannot reject WebSocket, it has already been written to");
     }
   }
 
@@ -124,59 +127,101 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocket> impl
   public void close() {
     synchronized (conn) {
       checkClosed();
-      if (checkAccept()) {
-        throw new IllegalStateException("Cannot close websocket, it has been rejected");
+      if (status == null) {
+        if (handshakePromise == null) {
+          tryHandshake(101);
+        } else {
+          handshakePromise.tryComplete(101);
+        }
       }
-      super.close();
+    }
+    super.close();
+  }
+
+  @Override
+  public ServerWebSocketImpl writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
+    synchronized (conn) {
+      Boolean check = checkAccept();
+      if (check == null) {
+        throw new IllegalStateException("Cannot write to WebSocket, it is pending accept or reject");
+      }
+      if (!check) {
+        throw new IllegalStateException("Cannot write to WebSocket, it has been rejected");
+      }
+      return super.writeFrame(frame, handler);
+    }
+  }
+
+  private Boolean checkAccept() {
+    return tryHandshake(SC_SWITCHING_PROTOCOLS);
+  }
+
+  private void handleHandshake(int sc) {
+    synchronized (conn) {
+      if (status == null) {
+        if (sc == SC_SWITCHING_PROTOCOLS) {
+          doHandshake();
+        } else {
+          status = sc;
+          HttpUtils.sendError(conn.channel(), HttpResponseStatus.valueOf(sc));
+        }
+      }
+    }
+  }
+
+  private void doHandshake() {
+    Channel channel = conn.channel();
+    try {
+      handshaker.handshake(channel, request.nettyRequest());
+    } catch (Exception e) {
+      request.response().setStatusCode(BAD_REQUEST.code()).end();
+      throw e;
+    } finally {
+      request = null;
+    }
+    conn.responseComplete();
+    status = SWITCHING_PROTOCOLS.code();
+    subProtocol(handshaker.selectedSubprotocol());
+    // remove compressor as its not needed anymore once connection was upgraded to websockets
+    ChannelPipeline pipeline = channel.pipeline();
+    ChannelHandler handler = pipeline.get(HttpChunkContentCompressor.class);
+    if (handler != null) {
+      pipeline.remove(handler);
+    }
+    registerHandler(conn.getContext().owner().eventBus());
+  }
+
+  Boolean tryHandshake(int sc) {
+    synchronized (conn) {
+      if (status == null && handshakePromise == null) {
+        setHandshake(Promise.succeededPromise(sc));
+      }
+      return status == null ? null : status == sc;
     }
   }
 
   @Override
-  public ServerWebSocket writeFrame(WebSocketFrame frame) {
+  public void setHandshake(Future<Integer> future) {
+    setHandshake((Promise<Integer>) future);
+  }
+
+  @Override
+  public void setHandshake(Promise<Integer> promise) {
+    if (promise == null) {
+      throw new NullPointerException();
+    }
     synchronized (conn) {
-      if (checkAccept()) {
-        throw new IllegalStateException("Cannot write to websocket, it has been rejected");
+      if (handshakePromise != null) {
+        throw new IllegalStateException();
       }
-      return super.writeFrame(frame);
+      handshakePromise = promise;
     }
-  }
-
-  private boolean checkAccept() {
-    if (handshaker != null) {
-      if (isRejected()) {
-        return true;
+    promise.future().setHandler(ar -> {
+      if (ar.succeeded()) {
+        handleHandshake(ar.result());
+      } else {
+        handleHandshake(500);
       }
-      if (!connected && !closed) {
-        connect();
-      }
-    }
-    return false;
+    });
   }
-
-  private void connect() {
-    subProtocol(handshaker.apply(this));
-    connected = true;
-  }
-
-  // Connect if not already connected
-  void connectNow() {
-    synchronized (conn) {
-      if (!connected && !isRejected()) {
-        connect();
-      }
-    }
-  }
-
-  boolean isRejected() {
-    synchronized (conn) {
-      return rejected;
-    }
-  }
-
-  HttpResponseStatus getRejectedStatus() {
-    synchronized (conn) {
-      return rejectedStatus;
-    }
-  }
-
 }

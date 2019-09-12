@@ -15,6 +15,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -147,7 +148,9 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   // Make sure ping/pong works ok
   @Test
   public void testClusteredPong() throws Exception {
-    startNodes(2, new VertxOptions().setClusterPingInterval(500).setClusterPingReplyInterval(500));
+    VertxOptions options = new VertxOptions();
+    options.getEventBusOptions().setClusterPingInterval(500).setClusterPingReplyInterval(500);
+    startNodes(2, options);
     AtomicBoolean sending = new AtomicBoolean();
     MessageConsumer<String> consumer = vertices[0].eventBus().<String>consumer("foobar").handler(msg -> {
       if (!sending.get()) {
@@ -326,8 +329,100 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
       msg.reply("pong", new DeliveryOptions().setLocalOnly(true));
     }).completionHandler(onSuccess(v -> {
-      vertices[0].eventBus().send(ADDRESS1, "ping", new DeliveryOptions().setSendTimeout(500), onSuccess(msg -> testComplete()));
+      vertices[0].eventBus().request(ADDRESS1, "ping", new DeliveryOptions().setSendTimeout(500), onSuccess(msg -> testComplete()));
     }));
+    await();
+  }
+
+  @Test
+  public void testImmediateUnregistration() {
+    startNodes(1);
+    MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1);
+    AtomicInteger completionCount = new AtomicInteger();
+    consumer.completionHandler(ar -> {
+      int val = completionCount.getAndIncrement();
+      assertEquals(0, val);
+      assertTrue(ar.failed());
+      vertx.setTimer(10, id -> {
+        testComplete();
+      });
+    });
+    consumer.handler(msg -> {});
+    consumer.unregister();
+    await();
+  }
+
+  @Test
+  public void testSendWriteHandler() {
+    startNodes(2);
+    waitFor(2);
+    vertices[1]
+      .eventBus()
+      .consumer(ADDRESS1, msg -> complete())
+      .completionHandler(onSuccess(v1 -> {
+        MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
+        producer.write("body", onSuccess(v2 -> complete()));
+      }));
+    await();
+  }
+
+  @Test
+  public void testSendWriteHandlerNoConsumer() {
+    startNodes(2);
+    MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
+    producer.write("body", onFailure(err -> {
+      assertTrue(err instanceof ReplyException);
+      ReplyException replyException = (ReplyException) err;
+      assertEquals(-1, replyException.failureCode());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testPublishWriteHandler() {
+    startNodes(2);
+    waitFor(2);
+    vertices[1]
+      .eventBus()
+      .consumer(ADDRESS1, msg -> complete())
+      .completionHandler(onSuccess(v1 -> {
+        MessageProducer<String> producer = vertices[0].eventBus().publisher(ADDRESS1);
+        producer.write("body", onSuccess(v -> complete()));
+      }));
+    await();
+  }
+
+  @Test
+  public void testPublishWriteHandlerNoConsumer() {
+    startNodes(2);
+    MessageProducer<String> producer = vertices[0].eventBus().publisher(ADDRESS1);
+    producer.write("body", onFailure(err -> {
+      assertTrue(err instanceof ReplyException);
+      ReplyException replyException = (ReplyException) err;
+      assertEquals(-1, replyException.failureCode());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testWriteHandlerConnectFailure() {
+    VertxOptions options = getOptions();
+    options.getEventBusOptions()
+      .setSsl(true)
+      .setTrustAll(false)
+      .setKeyCertOptions(Cert.SERVER_JKS.get());
+    startNodes(2, options);
+    vertices[1]
+      .eventBus()
+      .consumer(ADDRESS1, msg -> {})
+      .completionHandler(onSuccess(v1 -> {
+        MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
+        producer.write("body", onFailure(err -> {
+          testComplete();
+        }));
+      }));
     await();
   }
 }

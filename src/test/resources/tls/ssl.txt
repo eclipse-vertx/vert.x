@@ -7,9 +7,10 @@ This file describes the sequence of commands to create the various files necessa
 
 ## Self signed JKS (Java KeyStore)
 
-1) Create a private key + certificate for the server in a new key store:
+1) Create RSA and ECC private keys + certificates for the server in a new key store:
 
 keytool -genkey -alias test-store -keyalg RSA -keystore server-keystore.jks -keysize 2048 -validity 1095 -dname CN=localhost -keypass wibble -storepass wibble
+keytool -genkey -alias test-store -keyalg EC -keystore server-keystore-ec.jks -validity 1095 -dname CN=localhost -keypass wibble -storepass wibble
 
 2) Export the cert from the store
 
@@ -29,6 +30,7 @@ keytool -genkey -alias test-store -keyalg RSA -keystore mim-server-keystore.jks 
 1) Transform JKS to PKCS12
 
 keytool -importkeystore -srckeystore server-keystore.jks -srcstorepass wibble -destkeystore server-keystore.p12 -deststoretype PKCS12 -deststorepass wibble
+keytool -importkeystore -srckeystore server-keystore-ec.jks -srcstorepass wibble -destkeystore server-keystore-ec.p12 -deststoretype PKCS12 -deststorepass wibble
 
 2) Transform JKS to PKCS12
 
@@ -40,14 +42,17 @@ keytool -importkeystore -srckeystore client-truststore.jks -srcstorepass wibble 
 1) Extract the private key from the PCS12 store and convert it to PKCS8 format
 
 openssl pkcs12 -in server-keystore.p12 -nodes -passin pass:wibble | openssl pkcs8 -topk8 -inform PEM -outform PEM -out server-key.pem -nocrypt
+openssl pkcs12 -in server-keystore-ec.p12 -nodes -passin pass:wibble | openssl pkcs8 -topk8 -inform PEM -outform PEM -out server-key-ec.pem -nocrypt
 
 2) Convert PKCS#8 format to PKCS#1 format
 
 openssl rsa -inform PEM -outform PEM -in server-key.pem -out server-key-pkcs1.pem
+openssl ec -inform PEM -outform PEM -in server-key-ec.pem -out server-key-ec-pkcs1.pem
 
 3) Extract the X.509 certificate from the PCS12 store
 
 openssl pkcs12 -in server-keystore.p12 -nokeys -passin pass:wibble -out server-cert.pem
+openssl pkcs12 -in server-keystore-ec.p12 -nokeys -passin pass:wibble -out server-cert-ec.pem
 
 
 

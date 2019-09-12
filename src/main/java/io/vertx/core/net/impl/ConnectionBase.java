@@ -11,6 +11,7 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
@@ -49,17 +50,20 @@ public abstract class ConnectionBase {
    */
   public static final VertxException CLOSED_EXCEPTION = new VertxException("Connection was closed", true);
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
+  private static final int MAX_REGION_SIZE = 1024 * 1024;
 
-  private final VoidChannelPromise voidPromise;
+  public final VoidChannelPromise voidPromise;
   protected final VertxInternal vertx;
   protected final ChannelHandlerContext chctx;
   protected final ContextInternal context;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> closeHandler;
-  private boolean read;
-  private boolean needsFlush;
   private int writeInProgress;
   private Object metric;
+
+  // State accessed exclusively from the event loop thread
+  private boolean read;
+  private boolean needsFlush;
 
   protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
     this.vertx = vertx;
@@ -82,55 +86,119 @@ public abstract class ConnectionBase {
     return (VertxHandler) chctx.handler();
   }
 
-  private synchronized void startRead() {
-    checkContext();
-    read = true;
-  }
-
-  protected synchronized final void endReadAndFlush() {
+  /**
+   * This method is exclusively called by {@code VertxHandler} to signal read completion on the event-loop thread.
+   */
+  final void endReadAndFlush() {
     if (read) {
       read = false;
-      if (needsFlush && writeInProgress == 0) {
+      if (needsFlush) {
         needsFlush = false;
         chctx.flush();
       }
     }
   }
 
-  private void write(Object msg, ChannelPromise promise) {
-    if (read || writeInProgress > 0) {
-      needsFlush = true;
-      chctx.write(msg, promise);
-    } else {
-      needsFlush = false;
+  /**
+   * This method is exclusively called by {@code VertxHandler} to signal read on the event-loop thread.
+   */
+  final void setRead() {
+    read = true;
+  }
+
+  /**
+   * This method is exclusively called on the event-loop thread
+   *
+   * @param msg the messsage to write
+   * @param flush {@code true} to perform a write and flush operation
+   * @param promise the promise receiving the completion event
+   */
+  private void write(Object msg, boolean flush, ChannelPromise promise) {
+    needsFlush = !flush;
+    if (flush) {
       chctx.writeAndFlush(msg, promise);
+    } else {
+      chctx.write(msg, promise);
     }
   }
 
-  public synchronized void writeToChannel(Object msg, ChannelPromise promise) {
-    // Make sure we serialize all the messages as this method can be called from various threads:
-    // two "sequential" calls to writeToChannel (we can say that as it is synchronized) should preserve
-    // the message order independently of the thread. To achieve this we need to reschedule messages
-    // not on the event loop or if there are pending async message for the channel.
-    if (chctx.executor().inEventLoop() && writeInProgress == 0) {
-      write(msg, promise);
-    } else {
-      queueForWrite(msg, promise);
+  /**
+   * Provide a promise that will call the {@code handler} upon completion.
+   * When the {@code handler} is {@code null} {@link #voidPromise} is returned.
+   *
+   * @param handler the handler
+   * @return a promise
+   */
+  public final ChannelPromise toPromise(Handler<AsyncResult<Void>> handler) {
+    return handler == null ? voidPromise : wrap(handler);
+  }
+
+  private ChannelPromise wrap(Handler<AsyncResult<Void>> handler) {
+    ChannelPromise promise = chctx.newPromise();
+    promise.addListener((fut) -> {
+        if (fut.isSuccess()) {
+          handler.handle(Future.succeededFuture());
+        } else {
+          handler.handle(Future.failedFuture(fut.cause()));
+        }
+      }
+    );
+    return promise;
+  }
+
+  public void writeToChannel(Object msg, ChannelPromise promise) {
+    synchronized (this) {
+      if (!chctx.executor().inEventLoop() || writeInProgress > 0) {
+        // Make sure we serialize all the messages as this method can be called from various threads:
+        // two "sequential" calls to writeToChannel (we can say that as it is synchronized) should preserve
+        // the message order independently of the thread. To achieve this we need to reschedule messages
+        // not on the event loop or if there are pending async message for the channel.
+        queueForWrite(msg, promise);
+        return;
+      }
     }
+    // On the event loop thread
+    write(msg, !read, promise);
   }
 
   private void queueForWrite(Object msg, ChannelPromise promise) {
     writeInProgress++;
-    context.runOnContext(v -> {
-      synchronized (ConnectionBase.this) {
-        writeInProgress--;
-        write(msg, promise);
+    chctx.executor().execute(() -> {
+      boolean flush;
+      synchronized (this) {
+        flush = --writeInProgress == 0 && !read;
       }
+      write(msg, flush, promise);
     });
   }
 
   public void writeToChannel(Object obj) {
     writeToChannel(obj, voidPromise);
+  }
+
+  /**
+   * Asynchronous flush.
+   */
+  public final void flush() {
+    flush(voidPromise);
+  }
+
+  /**
+   * Asynchronous flush.
+   *
+   * @param promise the promise resolved when flush occurred
+   */
+  public final void flush(ChannelPromise promise) {
+    if (chctx.executor().inEventLoop()) {
+      if (needsFlush) {
+        needsFlush = false;
+        chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
+      } else {
+        promise.setSuccess();
+      }
+    } else {
+      chctx.executor().execute(() -> flush(promise));
+    }
   }
 
   // This is a volatile read inside the Netty channel implementation
@@ -142,9 +210,23 @@ public abstract class ConnectionBase {
    * Close the connection
    */
   public void close() {
+    close(null);
+  }
+
+  /**
+   * Close the connection and notifies the {@code handler}
+   */
+  public void close(Handler<AsyncResult<Void>> handler) {
     // make sure everything is flushed out on close
-    endReadAndFlush();
-    chctx.channel().close();
+    ChannelPromise promise = chctx
+      .newPromise()
+      .addListener((ChannelFutureListener) f -> {
+      ChannelFuture closeFut = chctx.channel().close();
+      if (handler != null) {
+        closeFut.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
+      }
+    });
+    flush(promise);
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
@@ -222,14 +304,29 @@ public abstract class ConnectionBase {
     }
   }
 
-  protected synchronized void handleClosed() {
-    NetworkMetrics metrics = metrics();
-    if (metrics != null && metrics instanceof TCPMetrics) {
-      ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+  protected void handleClosed() {
+    Handler<Void> handler;
+    synchronized (this) {
+      NetworkMetrics metrics = metrics();
+      if (metrics != null && metrics instanceof TCPMetrics) {
+        ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+      }
+      handler = closeHandler;
     }
-    if (closeHandler != null) {
-      vertx.runOnContext(closeHandler);
+    if (handler != null) {
+      handler.handle(null);
     }
+  }
+
+  /**
+   * Called by the Netty handler when the connection becomes idle. The default implementation closes the
+   * connection.
+   * <p/>
+   * Subclasses can override it to prevent the idle event to happen (e.g when the connection is pooled) or
+   * perform extra work when the idle event happens.
+   */
+  protected void handleIdle() {
+    chctx.close();
   }
 
   protected abstract void handleInterestedOpsChanged();
@@ -251,7 +348,7 @@ public abstract class ConnectionBase {
   }
 
   protected boolean supportsFileRegion() {
-    return !isSSL();
+    return !isSsl();
   }
 
   public void reportBytesRead(long numberOfBytes) {
@@ -268,8 +365,36 @@ public abstract class ConnectionBase {
     }
   }
 
-  public boolean isSSL() {
-    return chctx.pipeline().get(SslHandler.class) != null;
+  /**
+   * Send a file as a file region for zero copy transfer to the socket.
+   *
+   * The implementation splits the file into multiple regions to avoid stalling the pipeline
+   * and producing idle timeouts for very large files.
+   *
+   * @param file the file to send
+   * @param offset the file offset
+   * @param length the file length
+   * @param writeFuture the write future to be completed when the transfer is done or failed
+   */
+  private void sendFileRegion(RandomAccessFile file, long offset, long length, ChannelPromise writeFuture) {
+    if (length < MAX_REGION_SIZE) {
+      writeToChannel(new DefaultFileRegion(file.getChannel(), offset, length), writeFuture);
+    } else {
+      ChannelPromise promise = chctx.newPromise();
+      FileRegion region = new DefaultFileRegion(file.getChannel(), offset, MAX_REGION_SIZE);
+      // Retain explicitly this file region so the underlying channel is not closed by the NIO channel when it
+      // as been sent as we need it again
+      region.retain();
+      writeToChannel(region, promise);
+      promise.addListener(future -> {
+        if (future.isSuccess()) {
+          sendFileRegion(file, offset + MAX_REGION_SIZE, length - MAX_REGION_SIZE, writeFuture);
+        } else {
+          log.error(future.cause().getMessage(), future.cause());
+          writeFuture.setFailure(future.cause());
+        }
+      });
+    }
   }
 
   protected ChannelFuture sendFile(RandomAccessFile raf, long offset, long length) throws IOException {
@@ -280,8 +405,7 @@ public abstract class ConnectionBase {
       writeToChannel(new ChunkedFile(raf, offset, length, 8192), writeFuture);
     } else {
       // No encryption - use zero-copy.
-      FileRegion region = new DefaultFileRegion(raf.getChannel(), offset, length);
-      writeToChannel(region, writeFuture);
+      sendFileRegion(raf, offset, length, writeFuture);
     }
     if (writeFuture != null) {
       writeFuture.addListener(fut -> raf.close());
@@ -296,9 +420,8 @@ public abstract class ConnectionBase {
   }
 
   public SSLSession sslSession() {
-    if (isSSL()) {
-      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
-      assert sslHandlerContext != null;
+    ChannelHandlerContext sslHandlerContext = chctx.pipeline().context(SslHandler.class);
+    if (sslHandlerContext != null) {
       SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
       return sslHandler.engine().getSession();
     } else {
@@ -307,19 +430,17 @@ public abstract class ConnectionBase {
   }
 
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    if (isSSL()) {
-      ChannelHandlerContext sslHandlerContext = chctx.pipeline().context("ssl");
-      assert sslHandlerContext != null;
-      SslHandler sslHandler = (SslHandler) sslHandlerContext.handler();
-      return sslHandler.engine().getSession().getPeerCertificateChain();
+    SSLSession session = sslSession();
+    if (session != null) {
+      return session.getPeerCertificateChain();
     } else {
       return null;
     }
   }
 
   public String indicatedServerName() {
-    if (chctx.channel().hasAttr(VertxSniHandler.SERVER_NAME_ATTR)) {
-      return chctx.channel().attr(VertxSniHandler.SERVER_NAME_ATTR).get();
+    if (chctx.channel().hasAttr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR)) {
+      return chctx.channel().attr(SslHandshakeCompletionHandler.SERVER_NAME_ATTR).get();
     } else {
       return null;
     }
@@ -330,27 +451,28 @@ public abstract class ConnectionBase {
   }
 
   public String remoteName() {
-    InetSocketAddress addr = (InetSocketAddress) chctx.channel().remoteAddress();
-    if (addr == null) return null;
-    // Use hostString that does not trigger a DNS resolution
-    return addr.getHostString();
+    java.net.SocketAddress addr = chctx.channel().remoteAddress();
+    if (addr instanceof InetSocketAddress) {
+      // Use hostString that does not trigger a DNS resolution
+      return ((InetSocketAddress)addr).getHostString();
+    }
+    return null;
   }
 
   public SocketAddress remoteAddress() {
-    InetSocketAddress addr = (InetSocketAddress) chctx.channel().remoteAddress();
-    if (addr == null) return null;
-    return new SocketAddressImpl(addr);
+    java.net.SocketAddress addr = chctx.channel().remoteAddress();
+    if (addr != null) {
+      return vertx.transport().convert(addr);
+    }
+    return null;
   }
 
   public SocketAddress localAddress() {
-    InetSocketAddress addr = (InetSocketAddress) chctx.channel().localAddress();
-    if (addr == null) return null;
-    return new SocketAddressImpl(addr);
-  }
-
-  final void handleRead(Object msg) {
-    startRead();
-    handleMessage(msg);
+    java.net.SocketAddress addr = chctx.channel().localAddress();
+    if (addr != null) {
+      return vertx.transport().convert(addr);
+    }
+    return null;
   }
 
   public void handleMessage(Object msg) {

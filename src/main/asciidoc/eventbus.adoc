@@ -53,8 +53,7 @@ The event bus also supports *point-to-point* messaging.
 
 Messages are sent to an address. Vert.x will then route them to just one of the handlers registered at that address.
 
-If there is more than one handler registered at the address,
-one will be chosen using a non-strict round-robin algorithm.
+If there is more than one handler registered at the address, one will be chosen using a non-strict round-robin algorithm.
 
 With point-to-point messaging, an optional reply handler can be specified when sending the message.
 
@@ -195,9 +194,11 @@ The headers of the message are available with {@link io.vertx.core.eventbus.Mess
 When using {@link io.vertx.core.eventbus.EventBus#send} the event bus attempts to deliver the message to a
 {@link io.vertx.core.eventbus.MessageConsumer} registered with the event bus.
 
-In some cases it's useful for the sender to know when the consumer has received the message and "processed" it.
+In some cases it's useful for the sender to know when the consumer has received the message and "processed" it using
+*request-response* pattern.
 
-To acknowledge that the message has been processed, the consumer can reply to the message by calling {@link io.vertx.core.eventbus.Message#reply}.
+To acknowledge that the message has been processed, the consumer can reply to the message by calling
+{@link io.vertx.core.eventbus.Message#reply}.
 
 When this happens it causes a reply to be sent back to the sender and the reply handler is invoked with the reply.
 
@@ -265,14 +266,15 @@ instance as clustered;
 {@link examples.EventBusExamples#example12}
 ----
 
-You should also make sure you have a {@link io.vertx.core.spi.cluster.ClusterManager} implementation on your classpath,
-for example the default {@code HazelcastClusterManager}.
+You should also make sure you have a {@link io.vertx.core.spi.cluster.ClusterManager} implementation on your classpath, for example the Hazelcast cluster manager.
 
 ==== Clustering on the command line
 
 You can run Vert.x clustered on the command line with
 
- vertx run my-verticle.js -cluster
+----
+vertx run my-verticle.js -cluster
+----
 
 === Automatic clean-up in verticles
 
@@ -281,33 +283,4 @@ when the verticle is undeployed.
 
 == Configuring the event bus
 
-The event bus can be configured. It is particularly useful when the event bus is clustered. Under the hood
-the event bus uses TCP connections to send and receive messages, so the
-{@link io.vertx.core.eventbus.EventBusOptions} let you configure all aspects of these TCP connections. As
-the event bus acts as a server and client, the configuration is close to
-{@link io.vertx.core.net.NetClientOptions} and {@link io.vertx.core.net.NetServerOptions}.
-
-[source,$lang]
-----
-{@link examples.EventBusExamples#example13}
-----
-
-The previous snippet depicts how you can use SSL connections for the event bus, instead of plain TCP
-connections.
-
-**WARNING**: to enforce the security in clustered mode, you **must** configure the
-cluster manager to use encryption or enforce security. Refer to the documentation of the cluster
-manager for further details.
-
-The event bus configuration needs to be consistent in all the cluster nodes.
-
-The {@link io.vertx.core.eventbus.EventBusOptions} also lets you specify whether or not the event bus is
-clustered, the port and host, as you would do with {@link io.vertx.core.VertxOptions#setClustered(boolean)},
- {@link io.vertx.core.VertxOptions#getClusterHost()} and {@link io.vertx.core.VertxOptions#getClusterPort()}.
-
-When used in containers, you can also configure the public host and port:
-
-[source,$lang]
-----
-{@link examples.EventBusExamples#example14}
-----
+include::override/configuring-eventbus.adoc[]

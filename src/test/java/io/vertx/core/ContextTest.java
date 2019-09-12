@@ -11,20 +11,17 @@
 
 package io.vertx.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.TaskQueue;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.WorkerPool;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -129,6 +126,44 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
+  public void testExecuteBlockingThreadSyncComplete() throws Exception {
+    Context context = vertx.getOrCreateContext();
+    context.<Void>runOnContext(v -> {
+      Thread expected = Thread.currentThread();
+      context.executeBlocking(Promise::complete, r -> {
+        assertSame(expected, Thread.currentThread());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testExecuteBlockingThreadAsyncComplete() throws Exception {
+    Context context = vertx.getOrCreateContext();
+    context.<Void>runOnContext(v -> {
+      Thread expected = Thread.currentThread();
+      context.executeBlocking(fut -> {
+        new Thread(() -> {
+          try {
+            // Wait some time to allow the worker thread to set the handler on the future and have the future
+            // handler callback to be done this thread
+            Thread.sleep(200);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+          fut.complete();
+        }).start();
+      }, r -> {
+        assertSame(context, Vertx.currentContext());
+        assertSame(expected, Thread.currentThread());
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
   public void testEventLoopExecuteFromIo() throws Exception {
     ContextInternal eventLoopContext = (ContextInternal) vertx.getOrCreateContext();
 
@@ -170,10 +205,12 @@ public class ContextTest extends VertxTestBase {
     awaitLatch(latch);
     workerContext.get().nettyEventLoop().execute(() -> {
       assertNull(Vertx.currentContext());
-      workerContext.get().executeFromIO(v -> {
-        assertSame(workerContext.get(), Vertx.currentContext());
-        assertTrue(Context.isOnWorkerThread());
-        testComplete();
+      workerContext.get().nettyEventLoop().execute(() -> {
+        workerContext.get().executeFromIO(v -> {
+          assertSame(workerContext.get(), Vertx.currentContext());
+          assertTrue(Context.isOnWorkerThread());
+          testComplete();
+        });
       });
     });
     await();
@@ -261,13 +298,44 @@ public class ContextTest extends VertxTestBase {
     ctx.runOnContext(v -> {
       vertx.deployVerticle(new AbstractVerticle() {
         @Override
-        public void start(Future<Void> startFuture) throws Exception {
+        public void start(Promise<Void> startFuture) throws Exception {
           context.runOnContext(startFuture::complete);
         }
       }, ar -> {
         throw failure;
       });
     });
+    await();
+  }
+
+  @Test
+  public void testExceptionInExecutingBlockingWithContextExceptionHandler() {
+    RuntimeException expected = new RuntimeException("test");
+    Context context = vertx.getOrCreateContext();
+    context.exceptionHandler(t -> {
+      assertSame(expected, t);
+      complete();
+    });
+    vertx.exceptionHandler(t -> {
+      fail("Should not be invoked");
+    });
+    context.executeBlocking(promise -> {
+      throw expected;
+    }, null);
+    await();
+  }
+
+  @Test
+  public void testExceptionInExecutingBlockingWithVertxExceptionHandler() {
+    RuntimeException expected = new RuntimeException("test");
+    Context context = vertx.getOrCreateContext();
+    vertx.exceptionHandler(t -> {
+      assertSame(expected, t);
+      complete();
+    });
+    context.executeBlocking(promise -> {
+      throw expected;
+    }, null);
     await();
   }
 
@@ -354,5 +422,48 @@ public class ContextTest extends VertxTestBase {
       }
     }
     await();
+  }
+
+  @Test
+  public void testExecuteFromIOEventLoopFromNonVertxThread() {
+    assertEquals("true", System.getProperty("vertx.threadChecks"));
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    AtomicBoolean called = new AtomicBoolean();
+    try {
+      ctx.executeFromIO(v -> {
+        called.set(true);
+      });
+      fail();
+    } catch (IllegalStateException ignore) {
+      //
+    }
+    assertFalse(called.get());
+  }
+
+  @Test
+  public void testExecuteFromIOWorkerFromNonVertxThread() {
+    assertEquals("true", System.getProperty("vertx.threadChecks"));
+    ExecutorService a = Executors.newSingleThreadExecutor();
+    ContextInternal ctx = ((VertxInternal) vertx).createWorkerContext(false, null, new WorkerPool(a, null), null, Thread.currentThread().getContextClassLoader());
+    AtomicBoolean called = new AtomicBoolean();
+    try {
+      ctx.executeFromIO(v -> {
+        called.set(true);
+      });
+      fail();
+    } catch (IllegalStateException ignore) {
+      //
+    }
+    assertFalse(called.get());
+  }
+
+  @Test
+  public void testReportExceptionToContext() {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    RuntimeException expected = new RuntimeException();
+    AtomicReference<Throwable> err = new AtomicReference<>();
+    ctx.exceptionHandler(err::set);
+    ctx.reportException(expected);
+    assertSame(expected, err.get());
   }
 }

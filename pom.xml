@@ -20,7 +20,7 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>3.6.0-SNAPSHOT</version>
+  <version>3.8.2-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -44,7 +44,7 @@
   </scm>
 
   <properties>
-    <tcnative.version>2.0.12.Final</tcnative.version>
+    <tcnative.version>2.0.25.Final</tcnative.version>
     <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
     <log4j2.version>2.8.2</log4j2.version>
@@ -52,7 +52,7 @@
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>3.6.0-SNAPSHOT</stack.version>
+    <stack.version>3.8.2-SNAPSHOT</stack.version>
     <jetty.alpnAgent.argLine/>
     <jmh.version>1.19</jmh.version>
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
@@ -234,6 +234,7 @@
               <vertx.handle100Continue>true</vertx.handle100Continue>
               <vertx.useNativeTransport>${vertx.testNativeTransport}</vertx.useNativeTransport>
               <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
+              <vertx.threadChecks>true</vertx.threadChecks>
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->
@@ -484,6 +485,26 @@
               </includes>
             </configuration>
           </execution>
+          <execution>
+            <id>no-jackson</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/JsonTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+              </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
           <!-- Check some netty compat (dns / http2) with unstable classes -->
           <!-- Uncomment to run them, you need to have also the dependencies in the repo as they won't be downloaded automatically -->
           <!-- It is possible to have them easily by running the build with -Dnetty.version=4.1.9.Final -Dtcnative.version=2.0.0.Final -->
@@ -641,7 +662,7 @@
     <profile>
       <id>java-8</id>
       <properties>
-        <jetty.alpnAgent.version>2.0.7</jetty.alpnAgent.version>
+        <jetty.alpnAgent.version>2.0.9</jetty.alpnAgent.version>
         <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
         <jetty.alpnAgent.argLine>-javaagent:"${jetty.alpnAgent.path}"</jetty.alpnAgent.argLine>
       </properties>

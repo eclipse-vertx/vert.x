@@ -20,10 +20,12 @@ import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
+import java.util.function.Function;
+
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
+public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexHandler {
 
   public static ByteBuf safeBuffer(ByteBufHolder holder, ByteBufAllocator allocator) {
     return safeBuffer(holder.content(), allocator);
@@ -51,21 +53,34 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
 
   private static final Handler<Object> NULL_HANDLER = m -> { };
 
+  public static <C extends ConnectionBase> VertxHandler<C> create(C connection) {
+    return create(connection.context, ctx -> connection);
+  }
+
+  public static <C extends ConnectionBase> VertxHandler<C> create(ContextInternal context, Function<ChannelHandlerContext, C> connectionFactory) {
+    return new VertxHandler<>(context, connectionFactory);
+  }
+
+  private final Function<ChannelHandlerContext, C> connectionFactory;
+  private final ContextInternal context;
   private C conn;
-  private Handler<Void> endReadAndFlush;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
   private Handler<Object> messageHandler;
 
+  private VertxHandler(ContextInternal context, Function<ChannelHandlerContext, C> connectionFactory) {
+    this.context = context;
+    this.connectionFactory = connectionFactory;
+  }
+
   /**
-   * Set the connection, this is usually called by subclasses when the channel is added to the pipeline.
+   * Set the connection, this is called when the channel is added to the pipeline.
    *
    * @param connection the connection
    */
-  protected void setConnection(C connection) {
+  private void setConnection(C connection) {
     conn = connection;
-    endReadAndFlush = v -> conn.endReadAndFlush();
-    messageHandler = ((ConnectionBase)conn)::handleRead; // Dubious cast to make compiler happy
+    messageHandler = ((ConnectionBase)conn)::handleMessage; // Dubious cast to make compiler happy
     if (addHandler != null) {
       addHandler.handle(connection);
     }
@@ -80,6 +95,11 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   void fail(Throwable error) {
     messageHandler = NULL_HANDLER;
     conn.chctx.pipeline().fireExceptionCaught(error);
+  }
+
+  @Override
+  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    setConnection(connectionFactory.apply(ctx));
   }
 
   /**
@@ -111,7 +131,6 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
   @Override
   public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
     C conn = getConnection();
-    ContextInternal context = conn.getContext();
     context.executeFromIO(v -> conn.handleInterestedOpsChanged());
   }
 
@@ -121,7 +140,6 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
     C connection = getConnection();
     if (connection != null) {
-      ContextInternal context = conn.getContext();
       context.executeFromIO(v -> {
         try {
           if (ch.isOpen()) {
@@ -141,27 +159,26 @@ public abstract class VertxHandler<C extends ConnectionBase> extends ChannelDupl
     if (removeHandler != null) {
       removeHandler.handle(conn);
     }
-    ContextInternal context = conn.getContext();
     context.executeFromIO(v -> conn.handleClosed());
   }
 
   @Override
   public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-    ContextInternal context = conn.getContext();
-    context.executeFromIO(endReadAndFlush);
+    conn.endReadAndFlush();
   }
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    ContextInternal ctx = conn.getContext();
-    ctx.executeFromIO(msg, messageHandler);
+    conn.setRead();
+    context.executeFromIO(msg, messageHandler);
   }
 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
     if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
-      ctx.close();
+      context.executeFromIO(v -> conn.handleIdle());
+    } else {
+      ctx.fireUserEventTriggered(evt);
     }
-    ctx.fireUserEventTriggered(evt);
   }
 }

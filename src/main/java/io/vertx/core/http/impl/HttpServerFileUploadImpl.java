@@ -11,15 +11,13 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.queue.Queue;
-import io.vertx.core.streams.Pump;
+import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
 import java.nio.charset.Charset;
@@ -35,42 +33,64 @@ import java.nio.charset.Charset;
  */
 class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
-  private final HttpServerRequest req;
-  private final Vertx vertx;
+  private final ReadStream<Buffer> stream;
+  private final Context context;
   private final String name;
   private final String filename;
   private final String contentType;
   private final String contentTransferEncoding;
   private final Charset charset;
 
+  private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private AsyncFile file;
   private Handler<Throwable> exceptionHandler;
 
   private long size;
-  private Queue<Buffer> pending;
-  private boolean complete;
   private boolean lazyCalculateSize;
 
-  HttpServerFileUploadImpl(Vertx vertx, HttpServerRequest req, String name, String filename, String contentType,
+  HttpServerFileUploadImpl(Context context, ReadStream<Buffer> stream, String name, String filename, String contentType,
                            String contentTransferEncoding,
                            Charset charset, long size) {
-    this.vertx = vertx;
-    this.req = req;
+    this.context = context;
+    this.stream = stream;
     this.name = name;
     this.filename = filename;
     this.contentType = contentType;
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.size = size;
-    this.pending = Queue.<Buffer>queue()
-      .emptyHandler(v -> {
-        if (complete) {
-          handleComplete();
-        }
-      });
-    if (size == 0) {
-      lazyCalculateSize = true;
+    this.lazyCalculateSize = size == 0;
+
+    stream.handler(this::handleData);
+    stream.endHandler(v -> this.handleEnd());
+  }
+
+  private void handleData(Buffer data) {
+    Handler<Buffer> h;
+    synchronized (HttpServerFileUploadImpl.this) {
+      h = dataHandler;
+      size += data.length();
+    }
+    if (h != null) {
+      h.handle(data);
+    }
+  }
+
+  private void handleEnd() {
+    Handler<Void> handler;
+    synchronized (this) {
+      lazyCalculateSize = false;
+      handler = endHandler;
+    }
+    if (handler != null) {
+      handler.handle(null);
+    }
+  }
+
+  private void notifyExceptionHandler(Throwable cause) {
+    if (exceptionHandler != null) {
+      exceptionHandler.handle(cause);
     }
   }
 
@@ -105,26 +125,26 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public HttpServerFileUpload handler(Handler<Buffer> handler) {
-    pending.handler(handler);
+  public synchronized HttpServerFileUpload handler(Handler<Buffer> handler) {
+    dataHandler = handler;
     return this;
   }
 
   @Override
   public HttpServerFileUpload pause() {
-    pending.pause();
+    stream.pause();
     return this;
   }
 
   @Override
   public HttpServerFileUpload fetch(long amount) {
-    pending.resume();
+    stream.fetch(amount);
     return this;
   }
 
   @Override
   public HttpServerFileUpload resume() {
-    pending.resume();
+    stream.resume();
     return this;
   }
 
@@ -142,14 +162,24 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   @Override
   public HttpServerFileUpload streamToFileSystem(String filename) {
-    pause();
-    vertx.fileSystem().open(filename, new OpenOptions(), ar -> {
+    Pipe<Buffer> pipe = stream.pipe().endOnComplete(false);
+    context.owner().fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         file =  ar.result();
-        Pump p = Pump.pump(HttpServerFileUploadImpl.this, ar.result());
-        p.start();
-        resume();
+        pipe.to(file, ar2 -> {
+          file.close(ar3 -> {
+            Throwable failure = ar2.failed() ? ar2.cause() : ar3.failed() ? ar3.cause() : null;
+            if (failure != null) {
+              notifyExceptionHandler(failure);
+            }
+            synchronized (HttpServerFileUploadImpl.this) {
+              size = file.getWritePos();
+            }
+            handleEnd();
+          });
+        });
       } else {
+        pipe.close();
         notifyExceptionHandler(ar.cause());
       }
     });
@@ -161,53 +191,8 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     return !lazyCalculateSize;
   }
 
-  synchronized void receiveData(Buffer data) {
-    if (data.length() != 0) {
-      // Can sometimes receive zero length packets from Netty!
-      if (lazyCalculateSize) {
-        size += data.length();
-      }
-      doReceiveData(data);
-    }
-  }
-
-  synchronized void doReceiveData(Buffer data) {
-    if (!pending.add(data)) {
-      req.pause();
-    }
-  }
-
-  synchronized void complete() {
-    if (pending.isEmpty()) {
-      handleComplete();
-    } else {
-      complete = true;
-    }
-  }
-
-  private void handleComplete() {
-    lazyCalculateSize = false;
-    if (file == null) {
-      notifyEndHandler();
-    } else {
-      file.close(ar -> {
-        if (ar.failed()) {
-          notifyExceptionHandler(ar.cause());
-        }
-        notifyEndHandler();
-      });
-    }
-  }
-
-  private void notifyEndHandler() {
-    if (endHandler != null) {
-      endHandler.handle(null);
-    }
-  }
-
-  private void notifyExceptionHandler(Throwable cause) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(cause);
-    }
+  @Override
+  public synchronized AsyncFile file() {
+    return file;
   }
 }

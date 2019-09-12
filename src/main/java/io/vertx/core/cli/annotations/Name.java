@@ -32,4 +32,9 @@ public @interface Name {
    */
   String value();
 
+  /**
+   * The command priority. If more than 1 with same name are available on the classpath the one with highest priority
+   * replaces the existing.
+   */
+  int priority() default 0;
 }

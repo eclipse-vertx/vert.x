@@ -26,16 +26,16 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
-import io.vertx.core.http.impl.VertxHttpHandler;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.ChannelFutureListenerAdapter;
 import io.vertx.core.net.impl.SocketAddressImpl;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.metrics.*;
-import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 import java.net.InetAddress;
@@ -87,7 +87,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   private void init() {
-    channel.pipeline().addLast("handler", new DatagramServerHandler(this));
+    channel.pipeline().addLast("handler", VertxHandler.create(context, this::createConnection));
   }
 
   @Override
@@ -216,7 +216,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   @SuppressWarnings("unchecked")
   final void addListener(ChannelFuture future, Handler<AsyncResult<DatagramSocket>> handler) {
     if (handler != null) {
-      future.addListener(new DatagramChannelFutureListener<>(this, handler, context));
+      future.addListener(new ChannelFutureListenerAdapter<>(context, this, handler));
     }
   }
 
@@ -318,7 +318,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     channel.flush();
     ChannelFuture future = channel.close();
     if (handler != null) {
-      future.addListener(new DatagramChannelFutureListener<>(null, handler, context));
+      future.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
     }
   }
 
@@ -345,7 +345,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     super.finalize();
   }
 
-  Connection createConnection(ChannelHandlerContext chctx) {
+  private Connection createConnection(ChannelHandlerContext chctx) {
     return new Connection(context.owner(), chctx, context);
   }
 
@@ -398,13 +398,14 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         DatagramPacket packet = (DatagramPacket) msg;
         ByteBuf content = packet.content();
         if (content.isDirect())  {
-          content = VertxHttpHandler.safeBuffer(content, chctx.alloc());
+          content = VertxHandler.safeBuffer(content, chctx.alloc());
         }
         handlePacket(new DatagramPacketImpl(packet.sender(), Buffer.buffer(content)));
       }
     }
 
     void handlePacket(io.vertx.core.datagram.DatagramPacket packet) {
+      Handler<io.vertx.core.datagram.DatagramPacket> handler;
       synchronized (DatagramSocketImpl.this) {
         if (metrics != null) {
           metrics.bytesRead(null, packet.sender(), packet.data().length());
@@ -413,10 +414,13 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
           if (demand != Long.MAX_VALUE) {
             demand--;
           }
-          if (packetHandler != null) {
-            packetHandler.handle(packet);
-          }
+          handler = packetHandler;
+        } else {
+          handler = null;
         }
+      }
+      if (handler != null) {
+        handler.handle(packet);
       }
     }
   }

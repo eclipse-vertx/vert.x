@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class DefaultCLI implements CLI {
 
   protected String name;
+  protected int priority;
   protected String description;
   protected String summary;
   protected boolean hidden;
@@ -236,6 +237,17 @@ public class DefaultCLI implements CLI {
   @Override
   public CLI usage(StringBuilder builder, String prefix) {
     new UsageMessageFormatter().usage(builder, prefix, this);
+    return this;
+  }
+
+  @Override
+  public int getPriority() {
+    return priority;
+  }
+
+  @Override
+  public CLI setPriority(int priority) {
+    this.priority = priority;
     return this;
   }
 }
