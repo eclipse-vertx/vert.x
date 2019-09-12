@@ -4,21 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonMapper;
 
 /**
  * Converter and mapper for {@link io.vertx.core.eventbus.EventBusOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.eventbus.EventBusOptions} original class using Vert.x codegen.
  */
-public class EventBusOptionsConverter implements JsonMapper<EventBusOptions, JsonObject> {
+public class EventBusOptionsConverter {
 
-  public static final EventBusOptionsConverter INSTANCE = new EventBusOptionsConverter();
-
-  @Override public JsonObject serialize(EventBusOptions value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public EventBusOptions deserialize(JsonObject value) { return (value != null) ? new EventBusOptions(value) : null; }
-
-  @Override public Class<EventBusOptions> getTargetClass() { return EventBusOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, EventBusOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

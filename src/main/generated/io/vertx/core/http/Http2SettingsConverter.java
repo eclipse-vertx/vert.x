@@ -4,21 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonMapper;
 
 /**
  * Converter and mapper for {@link io.vertx.core.http.Http2Settings}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.http.Http2Settings} original class using Vert.x codegen.
  */
-public class Http2SettingsConverter implements JsonMapper<Http2Settings, JsonObject> {
+public class Http2SettingsConverter {
 
-  public static final Http2SettingsConverter INSTANCE = new Http2SettingsConverter();
-
-  @Override public JsonObject serialize(Http2Settings value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public Http2Settings deserialize(JsonObject value) { return (value != null) ? new Http2Settings(value) : null; }
-
-  @Override public Class<Http2Settings> getTargetClass() { return Http2Settings.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, Http2Settings obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

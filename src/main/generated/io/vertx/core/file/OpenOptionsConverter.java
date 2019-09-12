@@ -4,19 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonDeserializer;
 
 /**
  * Converter and mapper for {@link io.vertx.core.file.OpenOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.file.OpenOptions} original class using Vert.x codegen.
  */
-public class OpenOptionsConverter implements JsonDeserializer<OpenOptions, JsonObject> {
+public class OpenOptionsConverter {
 
-  public static final OpenOptionsConverter INSTANCE = new OpenOptionsConverter();
-
-  @Override public OpenOptions deserialize(JsonObject value) { return (value != null) ? new OpenOptions(value) : null; }
-
-  @Override public Class<OpenOptions> getTargetClass() { return OpenOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, OpenOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

@@ -4,19 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonSerializer;
 
 /**
  * Converter and mapper for {@link io.vertx.core.net.NetworkOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.NetworkOptions} original class using Vert.x codegen.
  */
-public class NetworkOptionsConverter implements JsonSerializer<NetworkOptions, JsonObject> {
+public class NetworkOptionsConverter {
 
-  public static final NetworkOptionsConverter INSTANCE = new NetworkOptionsConverter();
-
-  @Override public JsonObject serialize(NetworkOptions value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public Class<NetworkOptions> getTargetClass() { return NetworkOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, NetworkOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

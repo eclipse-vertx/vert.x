@@ -4,19 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonSerializer;
 
 /**
  * Converter and mapper for {@link io.vertx.core.net.TCPSSLOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.TCPSSLOptions} original class using Vert.x codegen.
  */
-public class TCPSSLOptionsConverter implements JsonSerializer<TCPSSLOptions, JsonObject> {
+public class TCPSSLOptionsConverter {
 
-  public static final TCPSSLOptionsConverter INSTANCE = new TCPSSLOptionsConverter();
-
-  @Override public JsonObject serialize(TCPSSLOptions value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public Class<TCPSSLOptions> getTargetClass() { return TCPSSLOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, TCPSSLOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

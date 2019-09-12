@@ -4,19 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonSerializer;
 
 /**
  * Converter and mapper for {@link io.vertx.core.net.ClientOptionsBase}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.ClientOptionsBase} original class using Vert.x codegen.
  */
-public class ClientOptionsBaseConverter implements JsonSerializer<ClientOptionsBase, JsonObject> {
+public class ClientOptionsBaseConverter {
 
-  public static final ClientOptionsBaseConverter INSTANCE = new ClientOptionsBaseConverter();
-
-  @Override public JsonObject serialize(ClientOptionsBase value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public Class<ClientOptionsBase> getTargetClass() { return ClientOptionsBase.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, ClientOptionsBase obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

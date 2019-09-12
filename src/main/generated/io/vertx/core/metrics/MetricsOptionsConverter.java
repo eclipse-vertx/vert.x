@@ -4,21 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonMapper;
 
 /**
  * Converter and mapper for {@link io.vertx.core.metrics.MetricsOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.metrics.MetricsOptions} original class using Vert.x codegen.
  */
-public class MetricsOptionsConverter implements JsonMapper<MetricsOptions, JsonObject> {
+public class MetricsOptionsConverter {
 
-  public static final MetricsOptionsConverter INSTANCE = new MetricsOptionsConverter();
-
-  @Override public JsonObject serialize(MetricsOptions value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public MetricsOptions deserialize(JsonObject value) { return (value != null) ? new MetricsOptions(value) : null; }
-
-  @Override public Class<MetricsOptions> getTargetClass() { return MetricsOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, MetricsOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

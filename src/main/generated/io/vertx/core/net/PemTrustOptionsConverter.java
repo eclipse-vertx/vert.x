@@ -4,21 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonMapper;
 
 /**
  * Converter and mapper for {@link io.vertx.core.net.PemTrustOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.PemTrustOptions} original class using Vert.x codegen.
  */
-public class PemTrustOptionsConverter implements JsonMapper<PemTrustOptions, JsonObject> {
+public class PemTrustOptionsConverter {
 
-  public static final PemTrustOptionsConverter INSTANCE = new PemTrustOptionsConverter();
-
-  @Override public JsonObject serialize(PemTrustOptions value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public PemTrustOptions deserialize(JsonObject value) { return (value != null) ? new PemTrustOptions(value) : null; }
-
-  @Override public Class<PemTrustOptions> getTargetClass() { return PemTrustOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, PemTrustOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

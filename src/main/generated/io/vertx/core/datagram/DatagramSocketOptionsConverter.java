@@ -4,21 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonMapper;
 
 /**
  * Converter and mapper for {@link io.vertx.core.datagram.DatagramSocketOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.datagram.DatagramSocketOptions} original class using Vert.x codegen.
  */
-public class DatagramSocketOptionsConverter implements JsonMapper<DatagramSocketOptions, JsonObject> {
+public class DatagramSocketOptionsConverter {
 
-  public static final DatagramSocketOptionsConverter INSTANCE = new DatagramSocketOptionsConverter();
-
-  @Override public JsonObject serialize(DatagramSocketOptions value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public DatagramSocketOptions deserialize(JsonObject value) { return (value != null) ? new DatagramSocketOptions(value) : null; }
-
-  @Override public Class<DatagramSocketOptions> getTargetClass() { return DatagramSocketOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, DatagramSocketOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {

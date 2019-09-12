@@ -4,21 +4,13 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import io.vertx.core.spi.json.JsonMapper;
 
 /**
  * Converter and mapper for {@link io.vertx.core.VertxOptions}.
  * NOTE: This class has been automatically generated from the {@link io.vertx.core.VertxOptions} original class using Vert.x codegen.
  */
-public class VertxOptionsConverter implements JsonMapper<VertxOptions, JsonObject> {
+public class VertxOptionsConverter {
 
-  public static final VertxOptionsConverter INSTANCE = new VertxOptionsConverter();
-
-  @Override public JsonObject serialize(VertxOptions value) { return (value != null) ? value.toJson() : null; }
-
-  @Override public VertxOptions deserialize(JsonObject value) { return (value != null) ? new VertxOptions(value) : null; }
-
-  @Override public Class<VertxOptions> getTargetClass() { return VertxOptions.class; }
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, VertxOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
