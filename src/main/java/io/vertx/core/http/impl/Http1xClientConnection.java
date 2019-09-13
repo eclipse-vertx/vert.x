@@ -743,8 +743,10 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
             if (metrics != null) {
               ws.setMetric(metrics.connected(endpointMetric, metric(), ws));
             }
+            ws.headers(new HeadersAdaptor(ar.result().headers()));
           }
           wsHandler.handle(res);
+          ws.headers(null);
         });
       });
       p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);

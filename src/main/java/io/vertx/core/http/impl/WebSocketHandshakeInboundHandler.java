@@ -33,12 +33,12 @@ import io.vertx.core.http.WebsocketRejectedException;
  */
 class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
 
-  private final Handler<AsyncResult<Void>> wsHandler;
+  private final Handler<AsyncResult<FullHttpResponse>> wsHandler;
   private final WebSocketClientHandshaker handshaker;
   private ChannelHandlerContext chctx;
   private FullHttpResponse response;
 
-  WebSocketHandshakeInboundHandler(WebSocketClientHandshaker handshaker, Handler<AsyncResult<Void>> wsHandler) {
+  WebSocketHandshakeInboundHandler(WebSocketClientHandshaker handshaker, Handler<AsyncResult<FullHttpResponse>> wsHandler) {
     this.handshaker = handshaker;
     this.wsHandler = wsHandler;
   }
@@ -76,20 +76,20 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
             // remove decompressor as its not needed anymore once connection was upgraded to websockets
             ctx.pipeline().remove(handler);
           }
-          Future<Void> fut = handshakeComplete(response);
+          Future<FullHttpResponse> fut = handshakeComplete(response);
           wsHandler.handle(fut);
         }
       }
     }
   }
 
-  private Future<Void> handshakeComplete(FullHttpResponse response) {
+  private Future<FullHttpResponse> handshakeComplete(FullHttpResponse response) {
     if (response.status().code() != 101) {
       return Future.failedFuture(new WebsocketRejectedException(response.status().code()));
     } else {
       try {
         handshaker.finishHandshake(chctx.channel(), response);
-        return Future.succeededFuture();
+        return Future.succeededFuture(response);
       } catch (WebSocketHandshakeException e) {
         return Future.failedFuture(e);
       }
