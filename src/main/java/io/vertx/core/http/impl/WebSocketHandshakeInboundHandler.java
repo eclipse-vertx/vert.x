@@ -14,12 +14,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshaker;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.core.AsyncResult;
@@ -33,12 +28,12 @@ import io.vertx.core.http.WebsocketRejectedException;
  */
 class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
 
-  private final Handler<AsyncResult<FullHttpResponse>> wsHandler;
+  private final Handler<AsyncResult<HeadersAdaptor>> wsHandler;
   private final WebSocketClientHandshaker handshaker;
   private ChannelHandlerContext chctx;
   private FullHttpResponse response;
 
-  WebSocketHandshakeInboundHandler(WebSocketClientHandshaker handshaker, Handler<AsyncResult<FullHttpResponse>> wsHandler) {
+  WebSocketHandshakeInboundHandler(WebSocketClientHandshaker handshaker, Handler<AsyncResult<HeadersAdaptor>> wsHandler) {
     this.handshaker = handshaker;
     this.wsHandler = wsHandler;
   }
@@ -76,20 +71,20 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
             // remove decompressor as its not needed anymore once connection was upgraded to websockets
             ctx.pipeline().remove(handler);
           }
-          Future<FullHttpResponse> fut = handshakeComplete(response);
+          Future<HeadersAdaptor> fut = handshakeComplete(response);
           wsHandler.handle(fut);
         }
       }
     }
   }
 
-  private Future<FullHttpResponse> handshakeComplete(FullHttpResponse response) {
+  private Future<HeadersAdaptor> handshakeComplete(FullHttpResponse response) {
     if (response.status().code() != 101) {
       return Future.failedFuture(new WebsocketRejectedException(response.status().code()));
     } else {
       try {
         handshaker.finishHandshake(chctx.channel(), response);
-        return Future.succeededFuture(response);
+        return Future.succeededFuture(new HeadersAdaptor(response.headers()));
       } catch (WebSocketHandshakeException e) {
         return Future.failedFuture(e);
       }
