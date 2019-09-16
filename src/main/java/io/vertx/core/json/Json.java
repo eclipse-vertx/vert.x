@@ -11,13 +11,36 @@
 
 package io.vertx.core.json;
 
+import io.vertx.core.ServiceHelper;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.jackson.JacksonCodec;
+import io.vertx.core.spi.JsonFactory;
 import io.vertx.core.spi.json.JsonCodec;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Json {
+
+  /**
+   *
+   */
+  public static final JsonCodec CODEC = JsonFactory.INSTANCE.codec();
+
+  /**
+   * Load the factory with the {@code ServiceLoader}, when no factory is found then a factory
+   * using Jackson will be returned.
+   * <br/>
+   * When {@code jackson-databind} is available then a codec using it will be used otherwise
+   * the codec will only use {@code jackson-core} and provide best effort mapping.
+   */
+  public static io.vertx.core.spi.JsonFactory load() {
+    io.vertx.core.spi.JsonFactory factory = ServiceHelper.loadFactoryOrNull(io.vertx.core.spi.JsonFactory.class);
+    if (factory == null) {
+      factory = () -> JacksonCodec.INSTANCE;
+    }
+    return factory;
+  }
 
   /**
    * Encode a POJO to JSON using the underlying Jackson mapper.
@@ -27,7 +50,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encode(Object obj) throws EncodeException {
-    return JsonCodec.INSTANCE.toString(obj);
+    return CODEC.toString(obj);
   }
 
   /**
@@ -38,7 +61,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static Buffer encodeToBuffer(Object obj) throws EncodeException {
-    return JsonCodec.INSTANCE.toBuffer(obj);
+    return CODEC.toBuffer(obj);
   }
 
   /**
@@ -49,7 +72,7 @@ public class Json {
    * @throws EncodeException if a property cannot be encoded.
    */
   public static String encodePrettily(Object obj) throws EncodeException {
-    return JsonCodec.INSTANCE.toString(obj, true);
+    return CODEC.toString(obj, true);
   }
 
   /**
@@ -61,7 +84,7 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
-    return JsonCodec.INSTANCE.fromString(str, clazz);
+    return CODEC.fromString(str, clazz);
   }
 
   /**
@@ -97,6 +120,6 @@ public class Json {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
-    return JsonCodec.INSTANCE.fromBuffer(buf, clazz);
+    return CODEC.fromBuffer(buf, clazz);
   }
 }

@@ -11,7 +11,7 @@
 
 package io.vertx.core.spi;
 
-import io.vertx.core.json.jackson.DefaultJsonFactory;
+import io.vertx.core.json.Json;
 import io.vertx.core.spi.json.JsonCodec;
 
 /**
@@ -21,7 +21,7 @@ import io.vertx.core.spi.json.JsonCodec;
  */
 public interface JsonFactory {
 
-  JsonFactory INSTANCE = DefaultJsonFactory.load();
+  JsonFactory INSTANCE = Json.load();
 
   JsonCodec codec();
 

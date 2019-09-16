@@ -34,6 +34,8 @@ import java.util.Map;
  */
 public class DatabindCodec extends JacksonCodec {
 
+  public static final DatabindCodec INSTANCE = new DatabindCodec();
+
   private static final ObjectMapper mapper = new ObjectMapper();
   private static final ObjectMapper prettyMapper = new ObjectMapper();
 

@@ -107,7 +107,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     if (obj == null) {
       return null;
     } else {
-      return new JsonObject((Map<String, Object>) JsonCodec.INSTANCE.fromValue(obj, Map.class));
+      return new JsonObject((Map<String, Object>) Json.CODEC.fromValue(obj, Map.class));
     }
   }
 
@@ -121,7 +121,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *          if the type cannot be instantiated.
    */
   public <T> T mapTo(Class<T> type) {
-    return JsonCodec.INSTANCE.fromValue(map, type);
+    return Json.CODEC.fromValue(map, type);
   }
 
   /**
@@ -782,7 +782,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the string encoding.
    */
   public String encode() {
-    return JsonCodec.INSTANCE.toString(this, false);
+    return Json.CODEC.toString(this, false);
   }
 
   /**
@@ -792,7 +792,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the pretty string encoding.
    */
   public String encodePrettily() {
-    return JsonCodec.INSTANCE.toString(this, true);
+    return Json.CODEC.toString(this, true);
   }
 
   /**
@@ -801,7 +801,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return the buffer encoding.
    */
   public Buffer toBuffer() {
-    return JsonCodec.INSTANCE.toBuffer(this, false);
+    return Json.CODEC.toBuffer(this, false);
   }
 
   /**
@@ -971,11 +971,11 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   private void fromJson(String json) {
-    map = JsonCodec.INSTANCE.fromString(json, Map.class);
+    map = Json.CODEC.fromString(json, Map.class);
   }
 
   private void fromBuffer(Buffer buf) {
-    map = JsonCodec.INSTANCE.fromBuffer(buf, Map.class);
+    map = Json.CODEC.fromBuffer(buf, Map.class);
   }
 
   private class Iter implements Iterator<Map.Entry<String, Object>> {

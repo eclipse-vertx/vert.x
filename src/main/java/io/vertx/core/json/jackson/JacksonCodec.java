@@ -49,6 +49,19 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JacksonCodec implements JsonCodec {
 
+  public static JacksonCodec INSTANCE;
+
+  static {
+    JacksonCodec codec;
+    try {
+      codec = DatabindCodec.INSTANCE;
+    } catch (Throwable ignore) {
+      // No databind
+      codec = new JacksonCodec();
+    }
+    INSTANCE = codec;
+  }
+
   private static final JsonFactory factory = new JsonFactory();
 
   static {
