@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.json.DatabindCodec;
 import io.vertx.core.json.json.JacksonCodec;
 import io.vertx.core.spi.json.JsonCodec;
 
@@ -27,13 +28,23 @@ import java.time.Instant;
  */
 public class Json {
 
+  /**
+   * @deprecated instead use {@link DatabindCodec#mapper()}
+   */
+  @Deprecated
   public static ObjectMapper mapper = new ObjectMapper();
+
+  /**
+   * @deprecated instead use {@link DatabindCodec#prettyMapper()}
+   */
+  @Deprecated
   public static ObjectMapper prettyMapper = new ObjectMapper();
 
   static {
     initialize();
   }
 
+  @SuppressWarnings("deprecation")
   private static void initialize() {
     // Non-standard JSON but we allow C style comments in our JSON
     mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
@@ -119,7 +130,9 @@ public class Json {
    * @param <T> the generic type.
    * @return an instance of T
    * @throws DecodeException when there is a parsing or invalid mapping.
+   * @deprecated Instead use {@link JacksonCodec#decodeValue(String, TypeReference)}
    */
+  @Deprecated
   public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
     return JacksonCodec.fromString(str, type);
   }
@@ -143,7 +156,9 @@ public class Json {
    * @param <T> the generic type.
    * @return an instance of T
    * @throws DecodeException when there is a parsing or invalid mapping.
+   * @deprecated Instead use {@link JacksonCodec#decodeValue(Buffer, TypeReference)}
    */
+  @Deprecated
   public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
     return JacksonCodec.fromBuffer(buf, type);
   }

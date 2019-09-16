@@ -316,6 +316,7 @@ public class JsonParserImpl implements JsonParser {
     int depth;
     TokenBuffer buffer;
 
+    @SuppressWarnings("deprecation")
     @Override
     public void handle(JsonToken event) {
       try {
@@ -374,6 +375,7 @@ public class JsonParserImpl implements JsonParser {
       }
     }
 
+    @SuppressWarnings("deprecation")
     <T> T convert(Class<T> type) {
       try {
         return Json.mapper.readValue(buffer.asParser(), type);

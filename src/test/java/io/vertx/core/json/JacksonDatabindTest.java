@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.json.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -57,12 +58,12 @@ public class JacksonDatabindTest extends VertxTestBase {
     String json = Json.encode(Collections.singletonList(original));
     List<Pojo> correct;
 
-    correct = Json.decodeValue(json, new TypeReference<List<Pojo>>() {});
+    correct = JacksonCodec.decodeValue(json, new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 
     // same must apply if instead of string we use a buffer
-    correct = Json.decodeValue(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
+    correct = JacksonCodec.decodeValue(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 

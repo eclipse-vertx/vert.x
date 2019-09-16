@@ -33,6 +33,7 @@ import java.util.Map;
  */
 public class JacksonCodec implements JsonCodec {
 
+  @SuppressWarnings("deprecation")
   @Override
   public <T> T fromValue(Object json, Class<T> clazz) {
     T value = Json.mapper.convertValue(json, clazz);
@@ -42,6 +43,7 @@ public class JacksonCodec implements JsonCodec {
     return value;
   }
 
+  @SuppressWarnings("deprecation")
   public static <T> T fromValue(Object json, TypeReference<T> type) {
     T value = Json.mapper.convertValue(json, type);
     if (type.getType() == Object.class) {
@@ -68,6 +70,7 @@ public class JacksonCodec implements JsonCodec {
     return fromParser(createParser(buf), type);
   }
 
+  @SuppressWarnings("deprecation")
   private static JsonParser createParser(Buffer buf) {
     try {
       return Json.mapper.getFactory().createParser((InputStream) new ByteBufInputStream(buf.getByteBuf()));
@@ -76,6 +79,7 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
+  @SuppressWarnings("deprecation")
   private static JsonParser createParser(String str) {
     try {
       return Json.mapper.getFactory().createParser(str);
@@ -84,6 +88,7 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
+  @SuppressWarnings("deprecation")
   private static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
     T value;
     try {
@@ -99,6 +104,7 @@ public class JacksonCodec implements JsonCodec {
     return value;
   }
 
+  @SuppressWarnings("deprecation")
   private static <T> T fromParser(JsonParser parser, TypeReference<T> type) throws DecodeException {
     T value;
     try {
@@ -138,6 +144,7 @@ public class JacksonCodec implements JsonCodec {
   }
 
 
+  @SuppressWarnings("deprecation")
   @Override
   public String toString(Object object, boolean pretty) throws EncodeException {
     try {
@@ -148,6 +155,7 @@ public class JacksonCodec implements JsonCodec {
     }
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
     try {
@@ -156,5 +164,29 @@ public class JacksonCodec implements JsonCodec {
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
+  }
+
+  /**
+   * Decode a given JSON string to a POJO of the given type.
+   * @param str the JSON string.
+   * @param type the type to map to.
+   * @param <T> the generic type.
+   * @return an instance of T
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
+  public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
+    return JacksonCodec.fromString(str, type);
+  }
+
+  /**
+   * Decode a given JSON buffer to a POJO of the given class type.
+   * @param buf the JSON buffer.
+   * @param type the type to map to.
+   * @param <T> the generic type.
+   * @return an instance of T
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
+  public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
+    return JacksonCodec.fromBuffer(buf, type);
   }
 }

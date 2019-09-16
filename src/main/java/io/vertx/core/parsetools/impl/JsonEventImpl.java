@@ -94,6 +94,7 @@ public class JsonEventImpl implements JsonEvent {
     return value instanceof JsonArray;
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public <T> T mapTo(Class<T> type) {
     if (buffer != null) {
@@ -107,6 +108,7 @@ public class JsonEventImpl implements JsonEvent {
     }
   }
 
+  @SuppressWarnings("deprecation")
   @Override
   public <T> T mapTo(TypeReference<T> type) {
     if (buffer != null) {

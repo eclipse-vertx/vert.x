@@ -13,6 +13,7 @@ package io.vertx.core.json;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.json.json.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -380,14 +381,14 @@ public class JsonCodecTest {
     Type type = ref.getType();
     Class<?> clazz = type instanceof Class ? (Class<?>) type : (Class<?>) ((ParameterizedType) type).getRawType();
     assertEquals(expected, Json.decodeValue(buffer, clazz));
-    assertEquals(expected, Json.decodeValue(buffer, ref));
+    assertEquals(expected, JacksonCodec.decodeValue(buffer, ref));
     assertEquals(expected, Json.decodeValue(buffer.toString(StandardCharsets.UTF_8), clazz));
-    assertEquals(expected, Json.decodeValue(buffer.toString(StandardCharsets.UTF_8), ref));
+    assertEquals(expected, JacksonCodec.decodeValue(buffer.toString(StandardCharsets.UTF_8), ref));
     Buffer nullValue = Buffer.buffer("null");
     assertNull(Json.decodeValue(nullValue, clazz));
-    assertNull(Json.decodeValue(nullValue, ref));
+    assertNull(JacksonCodec.decodeValue(nullValue, ref));
     assertNull(Json.decodeValue(nullValue.toString(StandardCharsets.UTF_8), clazz));
-    assertNull(Json.decodeValue(nullValue.toString(StandardCharsets.UTF_8), ref));
+    assertNull(JacksonCodec.decodeValue(nullValue.toString(StandardCharsets.UTF_8), ref));
   }
 
   @Test
