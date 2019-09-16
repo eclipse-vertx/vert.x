@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.jackson.DatabindCodec;
+import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -29,8 +30,6 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JacksonDatabindTest extends VertxTestBase {
-
-  private DatabindCodec mapper = new DatabindCodec();
 
   @Test
   public void testGetMapper() {
@@ -52,12 +51,12 @@ public class JacksonDatabindTest extends VertxTestBase {
     String json = Json.encode(Collections.singletonList(original));
     List<Pojo> correct;
 
-    correct = mapper.fromString(json, new TypeReference<List<Pojo>>() {});
+    correct = JacksonCodec.decodeValue(json, new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 
     // same must apply if instead of string we use a buffer
-    correct = mapper.fromBuffer(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
+    correct = JacksonCodec.decodeValue(Buffer.buffer(json, "UTF8"), new TypeReference<List<Pojo>>() {});
     assertTrue(((List)correct).get(0) instanceof Pojo);
     assertEquals(original.value, correct.get(0).value);
 

@@ -381,4 +381,28 @@ public class JacksonCodec implements JsonCodec {
       return clazz.cast(o);
     }
   }
+
+  /**
+   * Decode a given JSON string to a POJO of the given type.
+   * @param str the JSON string.
+   * @param type the type to map to.
+   * @param <T> the generic type.
+   * @return an instance of T
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
+  public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
+    return INSTANCE.fromString(str, type);
+  }
+
+  /**
+   * Decode a given JSON buffer to a POJO of the given class type.
+   * @param buf the JSON buffer.
+   * @param type the type to map to.
+   * @param <T> the generic type.
+   * @return an instance of T
+   * @throws DecodeException when there is a parsing or invalid mapping.
+   */
+  public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
+    return INSTANCE.fromBuffer(buf, type);
+  }
 }
