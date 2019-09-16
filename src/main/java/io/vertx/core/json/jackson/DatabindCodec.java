@@ -34,8 +34,8 @@ import java.util.Map;
  */
 public class DatabindCodec extends JacksonCodec {
 
-  public static ObjectMapper mapper = new ObjectMapper();
-  public static ObjectMapper prettyMapper = new ObjectMapper();
+  private static final ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper prettyMapper = new ObjectMapper();
 
   static {
     initialize();
@@ -60,6 +60,20 @@ public class DatabindCodec extends JacksonCodec {
 
     mapper.registerModule(module);
     prettyMapper.registerModule(module);
+  }
+
+  /**
+   * @return the {@link ObjectMapper} used for data binding.
+   */
+  public static ObjectMapper mapper() {
+    return mapper;
+  }
+
+  /**
+   * @return the {@link ObjectMapper} used for data binding configured for indenting output.
+   */
+  public static ObjectMapper prettyMapper() {
+    return prettyMapper;
   }
 
   @Override

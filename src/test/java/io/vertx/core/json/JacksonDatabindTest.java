@@ -33,23 +33,15 @@ public class JacksonDatabindTest extends VertxTestBase {
   private DatabindCodec mapper = new DatabindCodec();
 
   @Test
-  public void testGetSetMapper() {
-    ObjectMapper mapper = DatabindCodec.mapper;
+  public void testGetMapper() {
+    ObjectMapper mapper = DatabindCodec.mapper();
     assertNotNull(mapper);
-    ObjectMapper newMapper = new ObjectMapper();
-    DatabindCodec.mapper = newMapper;
-    assertSame(newMapper, DatabindCodec.mapper);
-    DatabindCodec.mapper = mapper;
   }
 
   @Test
-  public void testGetSetPrettyMapper() {
-    ObjectMapper mapper = DatabindCodec.prettyMapper;
+  public void testGetPrettyMapper() {
+    ObjectMapper mapper = DatabindCodec.prettyMapper();
     assertNotNull(mapper);
-    ObjectMapper newMapper = new ObjectMapper();
-    DatabindCodec.prettyMapper = newMapper;
-    assertSame(newMapper, DatabindCodec.prettyMapper);
-    DatabindCodec.prettyMapper = mapper;
   }
 
   @Test
