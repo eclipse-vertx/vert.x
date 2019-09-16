@@ -49,19 +49,6 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JacksonCodec implements JsonCodec {
 
-  public static JacksonCodec INSTANCE;
-
-  static {
-    JacksonCodec codec;
-    try {
-      codec = DatabindCodec.INSTANCE;
-    } catch (Throwable ignore) {
-      // No databind
-      codec = new JacksonCodec();
-    }
-    INSTANCE = codec;
-  }
-
   private static final JsonFactory factory = new JsonFactory();
 
   static {
@@ -391,7 +378,7 @@ public class JacksonCodec implements JsonCodec {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(String str, TypeReference<T> type) throws DecodeException {
-    return INSTANCE.fromString(str, type);
+    return JacksonFactory.CODEC.fromString(str, type);
   }
 
   /**
@@ -403,6 +390,6 @@ public class JacksonCodec implements JsonCodec {
    * @throws DecodeException when there is a parsing or invalid mapping.
    */
   public static <T> T decodeValue(Buffer buf, TypeReference<T> type) throws DecodeException {
-    return INSTANCE.fromBuffer(buf, type);
+    return JacksonFactory.CODEC.fromBuffer(buf, type);
   }
 }

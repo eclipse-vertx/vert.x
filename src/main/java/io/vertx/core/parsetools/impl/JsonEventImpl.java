@@ -16,7 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.jackson.JacksonCodec;
+import io.vertx.core.json.jackson.JacksonFactory;
 import io.vertx.core.parsetools.JsonEvent;
 import io.vertx.core.parsetools.JsonEventType;
 
@@ -88,7 +88,7 @@ public class JsonEventImpl implements JsonEvent {
   @Override
   public <T> T mapTo(Class<T> type) {
     try {
-      return JacksonCodec.INSTANCE.fromValue(value, type);
+      return JacksonFactory.CODEC.fromValue(value, type);
     } catch (Exception e) {
       throw new DecodeException(e.getMessage(), e);
     }
@@ -97,7 +97,7 @@ public class JsonEventImpl implements JsonEvent {
   @Override
   public <T> T mapTo(TypeReference<T> type) {
     try {
-      return JacksonCodec.INSTANCE.fromValue(value, type);
+      return JacksonFactory.CODEC.fromValue(value, type);
     } catch (Exception e) {
       throw new DecodeException(e.getMessage(), e);
     }
