@@ -1,4 +1,4 @@
-package io.vertx.core.json.impl;
+package io.vertx.core.json.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;

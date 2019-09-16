@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.json.impl;
+package io.vertx.core.json.jackson;
 
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.spi.JsonFactory;

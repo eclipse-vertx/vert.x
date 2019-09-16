@@ -13,8 +13,8 @@ package io.vertx.benchmarks;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.impl.DatabindCodec;
-import io.vertx.core.json.impl.JacksonCodec;
+import io.vertx.core.json.jackson.DatabindCodec;
+import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.core.spi.json.JsonCodec;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
