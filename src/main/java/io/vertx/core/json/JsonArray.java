@@ -459,6 +459,193 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
+   * Set an enum to the JSON array at position {@code pos}.
+   * <p>
+   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name()}
+   * method and the value added as a String.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, Enum value) {
+    list.set(pos, value != null ? value.name() : null);
+    return this;
+  }
+
+  /**
+   * Set a CharSequence to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, CharSequence value) {
+    list.set(pos, value != null ? value.toString() : null);
+    return this;
+  }
+
+  /**
+   * Set a String to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, String value) {
+    list.set(pos, value);
+    return this;
+  }
+
+  /**
+   * Set an Integer to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, Integer value) {
+    list.set(pos, value);
+    return this;
+  }
+
+  /**
+   * Set a Long to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, Long value) {
+    list.set(pos, value);
+    return this;
+  }
+
+  /**
+   * Set a Double to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, Double value) {
+    list.set(pos, value);
+    return this;
+  }
+
+  /**
+   * Set a Float to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, Float value) {
+    list.set(pos, value);
+    return this;
+  }
+
+  /**
+   * Set a Boolean to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, Boolean value) {
+    list.set(pos, value);
+    return this;
+  }
+
+  /**
+   * Set a null value to the JSON array at position {@code pos}.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray setNull(int pos) {
+    list.set(pos, null);
+    return this;
+  }
+
+  /**
+   * Set a JSON object to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, JsonObject value) {
+    list.set(pos, value);
+    return this;
+  }
+
+  /**
+   * Set another JSON array to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, JsonArray value) {
+    list.set(pos, value);
+    return this;
+  }
+
+  /**
+   * Set a binary value to the JSON array at position {@code pos}.
+   * <p>
+   * JSON has no notion of binary so the binary will be base64 encoded to a String, and the String added.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, byte[] value) {
+    list.set(pos, value != null ? Base64.getEncoder().encodeToString(value) : null);
+    return this;
+  }
+
+  /**
+   * Set a Instant value to the JSON array at position {@code pos}.
+   * <p>
+   * JSON has no notion of Temporal data so the Instant will be ISOString encoded, and the String added.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, Instant value) {
+    list.set(pos, value != null ? ISO_INSTANT.format(value) : null);
+    return this;
+  }
+
+  /**
+   * Set an Object to the JSON array at position {@code pos}.
+   *
+   * @param pos position in the array
+   * @param value the value
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray set(int pos, Object value) {
+    value = JsonObject.checkAndCopy(value, false);
+    list.set(pos, value);
+    return this;
+  }
+
+  /**
    * Does the JSON array contain the specified value? This method will scan the entire array until it finds a value
    * or reaches the end.
    *
