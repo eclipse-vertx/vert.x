@@ -16,6 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.FrameType;
 
 import java.nio.charset.StandardCharsets;
@@ -29,6 +30,25 @@ import java.nio.charset.StandardCharsets;
  */
 public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCounted {
 
+  public static WebSocketFrame binaryFrame(Buffer data, boolean isFinal) {
+    return new WebSocketFrameImpl(FrameType.BINARY, data.getByteBuf(), isFinal);
+  }
+
+  public static WebSocketFrame textFrame(String str, boolean isFinal) {
+    return new WebSocketFrameImpl(str, isFinal);
+  }
+
+  public static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
+    return new WebSocketFrameImpl(FrameType.CONTINUATION, data.getByteBuf(), isFinal);
+  }
+
+  public static WebSocketFrame pingFrame(Buffer data) {
+    return new WebSocketFrameImpl(FrameType.PING, data.getByteBuf(), true);
+  }
+
+  public static WebSocketFrame pongFrame(Buffer data) {
+    return new WebSocketFrameImpl(FrameType.PONG, data.getByteBuf(), true);
+  }
 
   private final FrameType type;
   private final boolean isFinalFrame;

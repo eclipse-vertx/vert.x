@@ -16,6 +16,8 @@ import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import java.util.Objects;
+
 /**
  * Pumps data from a {@link io.vertx.core.streams.ReadStream} to a {@link io.vertx.core.streams.WriteStream} and performs flow control where necessary to
  * prevent the write stream buffer from getting overfull.<p>
@@ -46,12 +48,14 @@ public class PumpImpl<T> implements Pump {
    * Create a new {@code Pump} with the given {@code ReadStream} and {@code WriteStream}. Set the write queue max size
    * of the write stream to {@code maxWriteQueueSize}
    */
-  PumpImpl(ReadStream<T> rs, WriteStream<T> ws, int maxWriteQueueSize) {
+  public PumpImpl(ReadStream<T> rs, WriteStream<T> ws, int maxWriteQueueSize) {
     this(rs, ws);
     this.writeStream.setWriteQueueMaxSize(maxWriteQueueSize);
   }
 
-  PumpImpl(ReadStream<T> rs, WriteStream<T> ws) {
+  public PumpImpl(ReadStream<T> rs, WriteStream<T> ws) {
+    Objects.requireNonNull(rs);
+    Objects.requireNonNull(ws);
     this.readStream = rs;
     this.writeStream = ws;
     drainHandler = v-> readStream.resume();

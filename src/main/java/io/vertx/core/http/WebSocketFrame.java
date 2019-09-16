@@ -12,11 +12,9 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.CacheReturn;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.ServiceHelper;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.spi.WebSocketFrameFactory;
+import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 
 /**
  * A WebSocket frame that represents either text or binary data.
@@ -44,7 +42,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame binaryFrame(Buffer data, boolean isFinal) {
-    return factory.binaryFrame(data, isFinal);
+    return WebSocketFrameImpl.binaryFrame(data, isFinal);
   }
 
   /**
@@ -55,7 +53,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame textFrame(String str, boolean isFinal) {
-    return factory.textFrame(str, isFinal);
+    return WebSocketFrameImpl.textFrame(str, isFinal);
   }
 
   /**
@@ -65,7 +63,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame pingFrame(Buffer data) {
-    return factory.pingFrame(data);
+    return WebSocketFrameImpl.pingFrame(data);
   }
 
   /**
@@ -75,7 +73,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame pongFrame(Buffer data) {
-    return factory.pongFrame(data);
+    return WebSocketFrameImpl.pongFrame(data);
   }
 
   /**
@@ -86,7 +84,7 @@ public interface WebSocketFrame {
    * @return the frame
    */
   static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
-    return factory.continuationFrame(data, isFinal);
+    return WebSocketFrameImpl.continuationFrame(data, isFinal);
   }
 
   /**
@@ -137,6 +135,4 @@ public interface WebSocketFrame {
    */
   String closeReason();
 
-  @GenIgnore
-  WebSocketFrameFactory factory = ServiceHelper.loadFactory(WebSocketFrameFactory.class);
 }

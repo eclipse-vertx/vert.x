@@ -12,10 +12,8 @@
 package io.vertx.core.streams;
 
 import io.vertx.codegen.annotations.Fluent;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.ServiceHelper;
-import io.vertx.core.spi.PumpFactory;
+import io.vertx.core.streams.impl.PumpImpl;
 
 /**
  * Pumps data from a {@link ReadStream} to a {@link WriteStream} and performs flow control where necessary to
@@ -51,7 +49,7 @@ public interface Pump {
    * @return the pump
    */
   static <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws) {
-    return factory.pump(rs, ws);
+    return new PumpImpl<>(rs, ws);
   }
 
   /**
@@ -64,7 +62,7 @@ public interface Pump {
    * @return the pump
    */
   static <T> Pump pump(ReadStream<T> rs, WriteStream<T> ws, int writeQueueMaxSize) {
-    return factory.pump(rs, ws, writeQueueMaxSize);
+    return new PumpImpl<>(rs, ws, writeQueueMaxSize);
   }
 
   /**
@@ -96,9 +94,5 @@ public interface Pump {
    * Return the total number of items pumped by this pump.
    */
   int numberPumped();
-
-  @GenIgnore
-  PumpFactory factory = ServiceHelper.loadFactory(PumpFactory.class);
-
 
 }

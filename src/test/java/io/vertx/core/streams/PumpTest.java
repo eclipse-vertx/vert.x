@@ -14,9 +14,6 @@ package io.vertx.core.streams;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.streams.Pump;
-import io.vertx.core.streams.ReadStream;
-import io.vertx.core.streams.WriteStream;
 import org.junit.Test;
 
 import java.util.ArrayList;
