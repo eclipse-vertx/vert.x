@@ -1,1 +1,1 @@
-io.vertx.core.json.impl.JacksonCodec
+io.vertx.core.json.json.JacksonCodec
