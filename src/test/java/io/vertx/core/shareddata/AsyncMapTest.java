@@ -23,11 +23,9 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -112,32 +110,34 @@ public abstract class AsyncMapTest extends VertxTestBase {
   public void testMapPutTtl() {
     getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.put("pipo", "molo", 10, onSuccess(vd -> {
-        vertx.setTimer(15, l -> {
-          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
-            map2.get("pipo", onSuccess(res -> {
-              assertNull(res);
-              testComplete();
-            }));
-          }));
-        });
+        getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
+          assertWaitUntil(map2, "pipo", 15, Objects::isNull);
+        }));
       }));
     }));
     await();
   }
 
+  private void assertWaitUntil(AsyncMap<String, String> map, String key, long delay, Function<String, Boolean> checks) {
+    vertx.setTimer(delay, l -> {
+      map.get(key, onSuccess(value -> {
+        if (checks.apply(value)) {
+          testComplete();
+        } else {
+          assertWaitUntil(map, key, delay, checks);
+        }
+      }));
+    });
+  }
+
   @Test
   public void testMapPutTtlThenPut() {
-    getVertx().sharedData().getAsyncMap("foo", onSuccess(map -> {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.put("pipo", "molo", 10, onSuccess(vd -> {
         map.put("pipo", "mili", onSuccess(vd2 -> {
-          vertx.setTimer(20, l -> {
-            getVertx().sharedData().getAsyncMap("foo", onSuccess(map2 -> {
-              map2.get("pipo", onSuccess(res -> {
-                assertEquals("mili", res);
-                testComplete();
-              }));
-            }));
-          });
+          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
+            assertWaitUntil(map2, "pipo", 20, s -> "mili".equals(s));
+          }));
         }));
       }));
     }));
@@ -219,14 +219,9 @@ public abstract class AsyncMapTest extends VertxTestBase {
     getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.putIfAbsent("pipo", "molo", 10, onSuccess(vd -> {
         assertNull(vd);
-        vertx.setTimer(15, l -> {
-          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
-            map2.get("pipo", onSuccess(res -> {
-              assertNull(res);
-              testComplete();
-            }));
-          }));
-        });
+        getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
+          assertWaitUntil(map2, "pipo", 15, Objects::isNull);
+        }));
       }));
     }));
     await();
