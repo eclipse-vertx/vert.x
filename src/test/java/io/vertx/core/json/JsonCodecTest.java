@@ -13,7 +13,7 @@ package io.vertx.core.json;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Utils;
-import io.vertx.core.json.json.JacksonCodec;
+import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 

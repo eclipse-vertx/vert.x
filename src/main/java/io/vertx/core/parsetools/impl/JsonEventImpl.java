@@ -18,7 +18,7 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.json.JacksonCodec;
+import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.core.parsetools.JsonEvent;
 import io.vertx.core.parsetools.JsonEventType;
 import io.vertx.core.spi.json.JsonCodec;

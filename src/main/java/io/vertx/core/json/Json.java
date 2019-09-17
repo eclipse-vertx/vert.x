@@ -17,8 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.json.DatabindCodec;
-import io.vertx.core.json.json.JacksonCodec;
+import io.vertx.core.json.jackson.DatabindCodec;
+import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.core.spi.json.JsonCodec;
 
 import java.time.Instant;

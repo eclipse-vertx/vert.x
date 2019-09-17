@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.json.json;
+package io.vertx.core.json.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.Json;
