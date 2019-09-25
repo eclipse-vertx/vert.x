@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -25,6 +26,8 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  *
  */
 public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
+
+  private MultiMap headers;
 
   public WebSocketImpl(Http1xClientConnection conn,
                        boolean supportsContinuation,
@@ -43,4 +46,18 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
     }
     super.handleClosed();
   }
+
+  @Override
+  public MultiMap headers() {
+    synchronized(conn) {
+      return headers;
+    }
+  }
+
+  void headers(MultiMap responseHeaders) {
+    synchronized(conn) {
+      this.headers = responseHeaders;
+    }
+  }
+
 }

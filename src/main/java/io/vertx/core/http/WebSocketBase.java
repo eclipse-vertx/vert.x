@@ -106,15 +106,6 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   String closeReason();
 
   /**
-   *  Returns the HTTP response headers during the websocket connection handler.
-   *  <p/>
-   *  After the completion handler callback has completed the response headers will be {@code null}
-   *
-   * @return the response headers
-   */
-  MultiMap headers();
-
-  /**
    * Write a WebSocket frame to the connection
    *
    * @param frame  the frame to write

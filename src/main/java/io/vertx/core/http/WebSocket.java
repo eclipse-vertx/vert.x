@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 
 /**
@@ -89,4 +90,13 @@ public interface WebSocket extends WebSocketBase {
 
   @Override
   WebSocket frameHandler(Handler<WebSocketFrame> handler);
+
+  /**
+   *  Returns the HTTP response headers during the websocket connection handler.
+   *  <p/>
+   *  After the completion handler callback has completed the response headers will be {@code null}
+   *
+   * @return the response headers
+   */
+  MultiMap headers();
 }
