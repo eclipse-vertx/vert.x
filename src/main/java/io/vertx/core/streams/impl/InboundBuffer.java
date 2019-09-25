@@ -107,7 +107,7 @@ public class InboundBuffer<E> {
    * it is possible, otherwise it will be queued for later delivery.
    *
    * @param element the element to add
-   * @return {@code true} when the buffer is full and the producer should stop writing
+   * @return {@code false} when the producer should stop writing
    */
   public boolean write(E element) {
     checkThread();
@@ -144,7 +144,7 @@ public class InboundBuffer<E> {
    *
    * @see #write(E)
    * @param elements the elements to add
-   * @return {@code true} if the buffer is full
+   * @return {@code false} when the producer should stop writing
    */
   public boolean write(Iterable<E> elements) {
     checkThread();
