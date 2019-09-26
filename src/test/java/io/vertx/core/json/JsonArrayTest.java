@@ -983,4 +983,213 @@ public class JsonArrayTest {
     } catch (NullPointerException ignore) {
     }
   }
+
+  @Test
+  public void testSetEnum() {
+    try {
+      jsonArray.set(0, JsonObjectTest.SomeEnum.FOO);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, JsonObjectTest.SomeEnum.FOO));
+    assertEquals(JsonObjectTest.SomeEnum.FOO.toString(), jsonArray.getString(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetString() {
+    try {
+      jsonArray.set(0, "foo");
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, "foo"));
+    assertEquals("foo", jsonArray.getString(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetCharSequence() {
+    try {
+      jsonArray.set(0, new StringBuilder("foo"));
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, new StringBuilder("foo")));
+    assertEquals("foo", jsonArray.getString(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetInteger() {
+    try {
+      jsonArray.set(0, 123);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, 123));
+    assertEquals(Integer.valueOf(123), jsonArray.getInteger(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetLong() {
+    try {
+      jsonArray.set(0, 123l);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, 123l));
+    assertEquals(Long.valueOf(123), jsonArray.getLong(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetFloat() {
+    try {
+      jsonArray.set(0, 123f);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, 123f));
+    assertEquals(Float.valueOf(123), jsonArray.getFloat(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetDouble() {
+    try {
+      jsonArray.set(0, 123d);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, 123d));
+    assertEquals(Double.valueOf(123), jsonArray.getDouble(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetBoolean() {
+    try {
+      jsonArray.set(0, true);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, true));
+    assertEquals(Boolean.TRUE, jsonArray.getBoolean(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetJsonObject() {
+    JsonObject obj = new JsonObject().put("foo", "bar");
+    try {
+      jsonArray.set(0, obj);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, obj));
+    assertEquals(obj, jsonArray.getJsonObject(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetJsonArray() {
+    JsonArray arr = new JsonArray().add("foo");
+    try {
+      jsonArray.set(0, arr);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, arr));
+    assertEquals(arr, jsonArray.getJsonArray(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetBinary() {
+    byte[] bytes = TestUtils.randomByteArray(10);
+    try {
+      jsonArray.set(0, bytes);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, bytes));
+    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetInstant() {
+    Instant now = Instant.now();
+    try {
+      jsonArray.set(0, now);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, now));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testSetObject() {
+    jsonArray.add("bar");
+    try {
+      jsonArray.set(0, new SomeClass());
+      fail();
+    } catch (IllegalStateException e) {
+      // OK
+    }
+    try {
+      jsonArray.set(0, new BigDecimal(123));
+      fail();
+    } catch (IllegalStateException e) {
+      // OK
+    }
+    try {
+      jsonArray.set(0, new Date());
+      fail();
+    } catch (IllegalStateException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testSetNull() {
+    try {
+      jsonArray.setNull(0);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.setNull(0));
+    assertNull(jsonArray.getString(0));
+    assertEquals(1, jsonArray.size());
+  }
 }
