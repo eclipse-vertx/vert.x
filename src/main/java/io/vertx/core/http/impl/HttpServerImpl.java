@@ -12,7 +12,8 @@
 package io.vertx.core.http.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -226,10 +227,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       applicationProtocols =  applicationProtocols.stream().filter(v -> v != HttpVersion.HTTP_2).collect(Collectors.toList());
     }
     sslHelper.setApplicationProtocols(applicationProtocols);
-    synchronized (vertx.sharedHttpServers()) {
+    Map<ServerID, HttpServerImpl> sharedHttpServers = vertx.sharedHttpServers();
+    synchronized (sharedHttpServers) {
       this.actualPort = port; // Will be updated on bind for a wildcard port
       id = new ServerID(port, host);
-      HttpServerImpl shared = vertx.sharedHttpServers().get(id);
+      HttpServerImpl shared = sharedHttpServers.get(id);
       if (shared == null || port == 0) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
@@ -243,7 +245,9 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           bindFuture = AsyncResolveConnectHelper.doBind(vertx, address, bootstrap);
           bindFuture.addListener(res -> {
             if (res.failed()) {
-              vertx.sharedHttpServers().remove(id);
+              synchronized (sharedHttpServers) {
+                sharedHttpServers.remove(id);
+              }
             } else {
               Channel serverChannel = res.result();
               if (serverChannel.localAddress() instanceof InetSocketAddress) {
@@ -265,7 +269,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
           listening = false;
           return this;
         }
-        vertx.sharedHttpServers().put(id, this);
+        sharedHttpServers.put(id, this);
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
