@@ -171,11 +171,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     listenContext = vertx.getOrCreateContext();
     registeredHandler = handler;
 
-    synchronized (vertx.sharedNetServers()) {
+    Map<ServerID, NetServerImpl> sharedNetServers = vertx.sharedNetServers();
+    synchronized (sharedNetServers) {
       this.actualPort = socketAddress.port(); // Will be updated on bind for a wildcard port
       String hostOrPath = socketAddress.host() != null ? socketAddress.host() : socketAddress.path();
       id = new ServerID(actualPort, hostOrPath);
-      NetServerImpl shared = vertx.sharedNetServers().get(id);
+      NetServerImpl shared = sharedNetServers.get(id);
       if (shared == null || actualPort == 0) { // Wildcard port will imply a new actual server each time
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
 
@@ -238,13 +239,17 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
               }
               NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
               serverChannelGroup.add(ch);
-              vertx.sharedNetServers().put(id, NetServerImpl.this);
+              synchronized (sharedNetServers) {
+                sharedNetServers.put(id, NetServerImpl.this);
+              }
               VertxMetrics metrics = vertx.metricsSPI();
               if (metrics != null) {
                 this.metrics = metrics.createNetServerMetrics(options, new SocketAddressImpl(id.port, id.host));
               }
             } else {
-              vertx.sharedNetServers().remove(id);
+              synchronized (sharedNetServers) {
+                sharedNetServers.remove(id);
+              }
             }
           });
 
@@ -260,7 +265,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
           return;
         }
         if (actualPort != 0) {
-          vertx.sharedNetServers().put(id, this);
+          sharedNetServers.put(id, this);
         }
         actualServer = this;
       } else {
