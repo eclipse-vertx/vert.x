@@ -1025,6 +1025,35 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  // Test if websocket compression is enabled by checking that the switch protocols response header contains the requested compression
+  public void testWSPermessageDeflateCompressionEnabled() throws Exception {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(1));
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      assertEquals("upgrade", ws.headers().get("Connection"));
+      assertEquals("permessage-deflate", ws.headers().get("sec-websocket-extensions"));
+      ws.close();
+    });
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(ar -> {
+
+      HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", resp -> {
+        assertEquals(101, resp.statusCode());
+        assertEquals("permessage-deflate", resp.headers().get("sec-websocket-extensions"));
+        resp.endHandler(v1 -> {
+          testComplete();
+        });
+      })
+        .putHeader("origin", DEFAULT_HTTP_HOST)
+        .putHeader("Upgrade", "Websocket")
+        .putHeader("Connection", "upgrade")
+        .putHeader("Sec-WebSocket-Extensions", "permessage-deflate");
+
+      req.end();
+    }));
+    await();
+  }
+
+  @Test
   // Test server accepting no compression
   public void testConnectWithWebsocketComressionDisabled() throws Exception {
 	  String path = "/some/path";

@@ -89,7 +89,7 @@ public class HttpHandlers implements Handler<HttpServerConnection> {
     if (!extensionHandshakers.isEmpty()) {
       WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(
         extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[extensionHandshakers.size()]));
-      pipeline.addLast("websocketExtensionHandler", extensionHandler);
+      pipeline.addBefore("handler", "websocketExtensionHandler", extensionHandler);
     }
   }
 
