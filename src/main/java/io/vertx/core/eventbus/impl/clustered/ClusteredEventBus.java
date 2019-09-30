@@ -15,25 +15,22 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.impl.CodecManager;
-import io.vertx.core.eventbus.impl.EventBusImpl;
-import io.vertx.core.eventbus.impl.HandlerHolder;
-import io.vertx.core.eventbus.impl.MessageImpl;
-import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
+import io.vertx.core.eventbus.impl.*;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.HAManager;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
-import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.DeliveryStrategy;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -57,10 +54,12 @@ public class ClusteredEventBus extends EventBusImpl {
   private static final String SERVER_ID_HA_KEY = "server_id";
   private static final String SUBS_MAP_NAME = "__vertx.subs";
 
+  private final EventBusOptions options;
   private final ClusterManager clusterManager;
+  private final DeliveryStrategy deliveryStrategy = null;
+
   private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
 
-  private EventBusOptions options;
   private AsyncMultiMap<String, ClusterNodeInfo> subs;
   private Set<String> ownSubs = new ConcurrentHashSet<>();
   private ServerID serverID;
@@ -206,31 +205,26 @@ public class ClusteredEventBus extends EventBusImpl {
   protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
     if (((ClusteredMessage) sendContext.message).getRepliedTo() != null) {
       clusteredSendReply(((ClusteredMessage) sendContext.message).getRepliedTo(), sendContext);
+    } else if (sendContext.options.isLocalOnly()) {
+      super.sendOrPub(sendContext);
+    } else if (Vertx.currentContext() != sendContext.ctx) {
+      // Current event-loop might be null when sending from non vertx thread
+      sendContext.ctx.runOnContext(v -> {
+        deliveryStrategy.chooseNodes(sendContext.message, ar -> onNodesChosen(ar, sendContext));
+      });
     } else {
-      if (sendContext.options.isLocalOnly()) {
-        super.sendOrPub(sendContext);
-      } else if (Vertx.currentContext() != sendContext.ctx) {
-        // Current event-loop might be null when sending from non vertx thread
-        sendContext.ctx.runOnContext(v -> {
-          subs.get(sendContext.message.address(), ar -> onSubsReceived(ar, sendContext));
-        });
-      } else {
-        subs.get(sendContext.message.address(), ar -> onSubsReceived(ar, sendContext));
-      }
+      deliveryStrategy.chooseNodes(sendContext.message, ar -> onNodesChosen(ar, sendContext));
     }
   }
 
-  private <T> void onSubsReceived(AsyncResult<ChoosableIterable<ClusterNodeInfo>> asyncResult, OutboundDeliveryContext<T> sendContext) {
-    if (asyncResult.succeeded()) {
-      ChoosableIterable<ClusterNodeInfo> serverIDs = asyncResult.result();
-      if (serverIDs != null && !serverIDs.isEmpty()) {
-        sendToSubs(serverIDs, sendContext);
-      } else {
-        super.sendOrPub(sendContext);
-      }
+  private <T> void onNodesChosen(AsyncResult<List<ServerID>> ar, OutboundDeliveryContext<T> sendContext) {
+    if (ar.succeeded()) {
+      sendToSubs(ar.result(), sendContext);
     } else {
-      log.error("Failed to send message", asyncResult.cause());
-      sendContext.written(asyncResult.cause());
+      if (log.isDebugEnabled()) {
+        log.error("Failed to send message", ar.cause());
+      }
+      sendContext.written(ar.cause());
     }
   }
 
@@ -315,24 +309,12 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToSubs(ChoosableIterable<ClusterNodeInfo> subs, OutboundDeliveryContext<T> sendContext) {
-    if (sendContext.message.isSend()) {
-      // Choose one
-      ClusterNodeInfo ci = subs.choose();
-      ServerID sid = ci == null ? null : ci.serverID;
+  private <T> void sendToSubs(List<ServerID> serverIds, OutboundDeliveryContext<T> sendContext) {
+    for (ServerID sid : serverIds) {
       if (sid != null && !sid.equals(serverID)) {  //We don't send to this node
         sendRemote(sendContext, sid, sendContext.message);
       } else {
         super.sendOrPub(sendContext);
-      }
-    } else {
-      // Publish
-      for (ClusterNodeInfo ci : subs) {
-        if (!ci.serverID.equals(serverID)) {  //We don't send to this node
-          sendRemote(sendContext, ci.serverID, sendContext.message);
-        } else {
-          super.sendOrPub(sendContext);
-        }
       }
     }
   }
