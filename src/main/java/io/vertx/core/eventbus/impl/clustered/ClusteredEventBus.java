@@ -16,32 +16,28 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.*;
-import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.impl.HAManager;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.parsetools.RecordParser;
-import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.DeliveryStrategy;
+import io.vertx.core.spi.cluster.NodeInfo;
+import io.vertx.core.spi.cluster.RegistrationInfo;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Predicate;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An event bus implementation that clusters with other Vert.x nodes
  *
- * @author <a href="http://tfox.org">Tim Fox</a>   7                                                                                     T
+ * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ClusteredEventBus extends EventBusImpl {
 
@@ -51,24 +47,18 @@ public class ClusteredEventBus extends EventBusImpl {
   public static final String CLUSTER_PUBLIC_PORT_PROP_NAME = "vertx.cluster.public.port";
 
   private static final Buffer PONG = Buffer.buffer(new byte[]{(byte) 1});
-  private static final String SERVER_ID_HA_KEY = "server_id";
-  private static final String SUBS_MAP_NAME = "__vertx.subs";
 
   private final EventBusOptions options;
   private final ClusterManager clusterManager;
   private final DeliveryStrategy deliveryStrategy = null;
+  private final AtomicLong handlerSequence = new AtomicLong(0);
 
-  private final ConcurrentMap<ServerID, ConnectionHolder> connections = new ConcurrentHashMap<>();
+  private final ConcurrentMap<NodeInfo, ConnectionHolder> connections = new ConcurrentHashMap<>();
 
-  private AsyncMultiMap<String, ClusterNodeInfo> subs;
-  private Set<String> ownSubs = new ConcurrentHashSet<>();
-  private ServerID serverID;
-  private ClusterNodeInfo nodeInfo;
+  private NodeInfo nodeInfo;
   private NetServer server;
 
-  public ClusteredEventBus(VertxInternal vertx,
-                           VertxOptions options,
-                           ClusterManager clusterManager) {
+  public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager) {
     super(vertx);
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
@@ -111,39 +101,16 @@ public class ClusteredEventBus extends EventBusImpl {
 
   @Override
   public void start(Handler<AsyncResult<Void>> resultHandler) {
-    // Get the HA manager, it has been constructed but it's not yet initialized
-    HAManager haManager = vertx.haManager();
-    setClusterViewChangedHandler(haManager);
-    clusterManager.<String, ClusterNodeInfo>getAsyncMultiMap(SUBS_MAP_NAME, ar1 -> {
-      if (ar1.succeeded()) {
-        subs = ar1.result();
-        server = vertx.createNetServer(getServerOptions());
-
-        server.connectHandler(getServerHandler());
-        server.listen(asyncResult -> {
-          if (asyncResult.succeeded()) {
-            int serverPort = getClusterPublicPort(options, server.actualPort());
-            String serverHost = getClusterPublicHost(options);
-            serverID = new ServerID(serverPort, serverHost);
-            nodeInfo = new ClusterNodeInfo(clusterManager.getNodeID(), serverID);
-            vertx.executeBlocking(fut -> {
-              haManager.addDataToAHAInfo(SERVER_ID_HA_KEY, new JsonObject().put("host", serverID.host).put("port", serverID.port));
-              fut.complete();
-            }, false, ar2 -> {
-              if (ar2.succeeded()) {
-                started = true;
-                resultHandler.handle(Future.succeededFuture());
-              } else {
-                resultHandler.handle(Future.failedFuture(ar2.cause()));
-              }
-            });
-          } else {
-            resultHandler.handle(Future.failedFuture(asyncResult.cause()));
-          }
-        });
-      } else {
-        resultHandler.handle(Future.failedFuture(ar1.cause()));
+    server = vertx.createNetServer(getServerOptions());
+    server.connectHandler(getServerHandler());
+    server.listen(ar -> {
+      if (ar.succeeded()) {
+        int serverPort = getClusterPublicPort(options, server.actualPort());
+        String serverHost = getClusterPublicHost(options);
+        nodeInfo = new NodeInfo(clusterManager.getNodeID(), serverHost, serverPort);
+        started = true;
       }
+      resultHandler.handle(ar.mapEmpty());
     });
   }
 
@@ -176,26 +143,43 @@ public class ClusteredEventBus extends EventBusImpl {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    ClusteredMessage msg = new ClusteredMessage(serverID, address, headers, body, codec, send, this);
+    ClusteredMessage msg = new ClusteredMessage(nodeInfo, address, headers, body, codec, send, this);
     return msg;
   }
 
   @Override
-  protected <T> void addRegistration(boolean newAddress, HandlerHolder<T> holder, Handler<AsyncResult<Void>> completionHandler) {
-    if (newAddress && subs != null && !holder.replyHandler && !holder.localOnly) {
-      // Propagate the information
-      subs.add(holder.address, nodeInfo, completionHandler);
-      ownSubs.add(holder.address);
+  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Handler<AsyncResult<Void>> completionHandler) {
+    if (!handlerHolder.isReplyHandler()) {
+      // FIXME set metadata from eventbus options
+      RegistrationInfo registrationInfo = new RegistrationInfo(
+        nodeInfo,
+        handlerHolder.getHandler().address,
+        handlerHolder.getSeq(),
+        handlerHolder.isLocalOnly(),
+        null
+      );
+      clusterManager.register(registrationInfo, completionHandler);
     } else {
       completionHandler.handle(Future.succeededFuture());
     }
   }
 
   @Override
-  protected <T> void removeRegistration(HandlerHolder<T> lastHolder, String address, Promise<Void> completionHandler) {
-    if (lastHolder != null && subs != null && !lastHolder.isLocalOnly()) {
-      ownSubs.remove(address);
-      removeSub(address, nodeInfo, completionHandler);
+  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, ContextInternal context) {
+    return new ClusteredHandlerHolder<>(registration, replyHandler, localOnly, context, handlerSequence.getAndIncrement());
+  }
+
+  @Override
+  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, Promise<Void> completionHandler) {
+    if (!handlerHolder.isReplyHandler()) {
+      RegistrationInfo registrationInfo = new RegistrationInfo(
+        nodeInfo,
+        handlerHolder.getHandler().address,
+        handlerHolder.getSeq(),
+        handlerHolder.isLocalOnly(),
+        null
+      );
+      clusterManager.unregister(registrationInfo, completionHandler);
     } else {
       completionHandler.complete();
     }
@@ -217,9 +201,9 @@ public class ClusteredEventBus extends EventBusImpl {
     }
   }
 
-  private <T> void onNodesChosen(AsyncResult<List<ServerID>> ar, OutboundDeliveryContext<T> sendContext) {
+  private <T> void onNodesChosen(AsyncResult<List<NodeInfo>> ar, OutboundDeliveryContext<T> sendContext) {
     if (ar.succeeded()) {
-      sendToSubs(ar.result(), sendContext);
+      sendToNodes(ar.result(), sendContext);
     } else {
       if (log.isDebugEnabled()) {
         log.error("Failed to send message", ar.cause());
@@ -238,24 +222,6 @@ public class ClusteredEventBus extends EventBusImpl {
   protected boolean isMessageLocal(MessageImpl msg) {
     ClusteredMessage clusteredMessage = (ClusteredMessage) msg;
     return !clusteredMessage.isFromWire();
-  }
-
-  private void setClusterViewChangedHandler(HAManager haManager) {
-    haManager.setClusterViewChangedHandler(members -> {
-      ownSubs.forEach(address -> {
-        subs.add(address, nodeInfo, addResult -> {
-          if (addResult.failed()) {
-            log.warn("Failed to update subs map with self", addResult.cause());
-          }
-        });
-      });
-
-      subs.removeAllMatching((Serializable & Predicate<ClusterNodeInfo>) ci -> !members.contains(ci.nodeId), removeResult -> {
-        if (removeResult.failed()) {
-          log.warn("Error removing subs", removeResult.cause());
-        }
-      });
-    });
   }
 
   private int getClusterPublicPort(EventBusOptions options, int actualPort) {
@@ -309,37 +275,37 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToSubs(List<ServerID> serverIds, OutboundDeliveryContext<T> sendContext) {
-    for (ServerID sid : serverIds) {
-      if (sid != null && !sid.equals(serverID)) {  //We don't send to this node
-        sendRemote(sendContext, sid, sendContext.message);
+  private <T> void sendToNodes(List<NodeInfo> remoteNodes, OutboundDeliveryContext<T> sendContext) {
+    for (NodeInfo remoteNodeInfo : remoteNodes) {
+      if (remoteNodeInfo != null && !remoteNodeInfo.equals(nodeInfo)) {
+        sendRemote(sendContext, remoteNodeInfo, sendContext.message);
       } else {
         super.sendOrPub(sendContext);
       }
     }
   }
 
-  private <T> void clusteredSendReply(ServerID replyDest, OutboundDeliveryContext<T> sendContext) {
+  private <T> void clusteredSendReply(NodeInfo replyDest, OutboundDeliveryContext<T> sendContext) {
     MessageImpl message = sendContext.message;
-    if (!replyDest.equals(serverID)) {
+    if (!replyDest.equals(nodeInfo)) {
       sendRemote(sendContext, replyDest, message);
     } else {
       super.sendOrPub(sendContext);
     }
   }
 
-  private void sendRemote(OutboundDeliveryContext<?> sendContext, ServerID theServerID, MessageImpl message) {
+  private void sendRemote(OutboundDeliveryContext<?> sendContext, NodeInfo remoteNodeInfo, MessageImpl message) {
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
     // This can also be invoked concurrently from different threads, so it gets a little
     // tricky
-    ConnectionHolder holder = connections.get(theServerID);
+    ConnectionHolder holder = connections.get(remoteNodeInfo);
     if (holder == null) {
       // When process is creating a lot of connections this can take some time
       // so increase the timeout
-      holder = new ConnectionHolder(this, theServerID, options);
-      ConnectionHolder prevHolder = connections.putIfAbsent(theServerID, holder);
+      holder = new ConnectionHolder(this, remoteNodeInfo, options);
+      ConnectionHolder prevHolder = connections.putIfAbsent(remoteNodeInfo, holder);
       if (prevHolder != null) {
         // Another one sneaked in
         holder = prevHolder;
@@ -350,21 +316,7 @@ public class ClusteredEventBus extends EventBusImpl {
     holder.writeMessage(sendContext);
   }
 
-  private void removeSub(String subName, ClusterNodeInfo node, Promise<Void> completionHandler) {
-    subs.remove(subName, node, ar -> {
-      if (!ar.succeeded()) {
-        log.error("Failed to remove sub", ar.cause());
-      } else {
-        if (ar.result()) {
-          completionHandler.complete();
-        } else {
-          completionHandler.fail("sub not found");
-        }
-      }
-    });
-  }
-
-  ConcurrentMap<ServerID, ConnectionHolder> connections() {
+  ConcurrentMap<NodeInfo, ConnectionHolder> connections() {
     return connections;
   }
 

@@ -14,7 +14,6 @@ package io.vertx.core.spi.cluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.net.impl.ServerID;
 
 import java.util.List;
 
@@ -36,6 +35,6 @@ public interface DeliveryStrategy {
   /**
    * Choose nodes the given {@code message} should be delivered to.
    */
-  void chooseNodes(Message<?> message, Handler<AsyncResult<List<ServerID>>> handler);
+  void chooseNodes(Message<?> message, Handler<AsyncResult<List<NodeInfo>>> handler);
 
 }

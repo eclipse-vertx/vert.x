@@ -15,7 +15,6 @@ package io.vertx.core.spi.cluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -45,11 +44,6 @@ import java.util.Map;
 public interface ClusterManager {
 
   void setVertx(Vertx vertx);
-
-  /**
-   * Return an async multi-map for the given name
-   */
-  <K, V> void getAsyncMultiMap(String name, Handler<AsyncResult<AsyncMultiMap<K, V>>> resultHandler);
 
   /**
    * Return an async map for the given name
@@ -96,7 +90,11 @@ public interface ClusterManager {
   /**
    * Is the cluster manager active?
    *
-   * @return  true if active, false otherwise
+   * @return true if active, false otherwise
    */
   boolean isActive();
+
+  void register(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler);
+
+  void unregister(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler);
 }

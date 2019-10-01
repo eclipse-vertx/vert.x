@@ -23,7 +23,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetClientImpl;
-import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
 import java.util.ArrayDeque;
@@ -40,7 +40,7 @@ class ConnectionHolder {
 
   private final ClusteredEventBus eventBus;
   private final NetClient client;
-  private final ServerID serverID;
+  private final NodeInfo nodeInfo;
   private final Vertx vertx;
   private final EventBusMetrics metrics;
 
@@ -50,9 +50,9 @@ class ConnectionHolder {
   private long timeoutID = -1;
   private long pingTimeoutID = -1;
 
-  ConnectionHolder(ClusteredEventBus eventBus, ServerID serverID, EventBusOptions options) {
+  ConnectionHolder(ClusteredEventBus eventBus, NodeInfo nodeInfo, EventBusOptions options) {
     this.eventBus = eventBus;
-    this.serverID = serverID;
+    this.nodeInfo = nodeInfo;
     this.vertx = eventBus.vertx();
     this.metrics = eventBus.getMetrics();
     NetClientOptions clientOptions = new NetClientOptions(options.toJson());
@@ -65,11 +65,11 @@ class ConnectionHolder {
     if (connected) {
       throw new IllegalStateException("Already connected");
     }
-    client.connect(serverID.port, serverID.host, res -> {
+    client.connect(nodeInfo.getPort(), nodeInfo.getHost(), res -> {
       if (res.succeeded()) {
         connected(res.result());
       } else {
-        log.warn("Connecting to server " + serverID + " failed", res.cause());
+        log.warn("Connecting to server " + nodeInfo + " failed", res.cause());
         close(res.cause());
       }
     });
@@ -86,7 +86,7 @@ class ConnectionHolder {
     } else {
       if (pending == null) {
         if (log.isDebugEnabled()) {
-          log.debug("Not connected to server " + serverID + " - starting queuing");
+          log.debug("Not connected to server " + nodeInfo + " - starting queuing");
         }
         pending = new ArrayDeque<>();
       }
@@ -117,11 +117,11 @@ class ConnectionHolder {
       client.close();
     } catch (Exception ignore) {
     }
-    // The holder can be null or different if the target server is restarted with same serverid
+    // The holder can be null or different if the target server is restarted with same nodeInfo
     // before the cleanup for the previous one has been processed
-    if (eventBus.connections().remove(serverID, this)) {
+    if (eventBus.connections().remove(nodeInfo, this)) {
       if (log.isDebugEnabled()) {
-        log.debug("Cluster connection closed for server " + serverID);
+        log.debug("Cluster connection closed for server " + nodeInfo);
       }
     }
   }
@@ -132,11 +132,11 @@ class ConnectionHolder {
       // If we don't get a pong back in time we close the connection
       timeoutID = vertx.setTimer(options.getClusterPingReplyInterval(), id2 -> {
         // Didn't get pong in time - consider connection dead
-        log.warn("No pong from server " + serverID + " - will consider it dead");
+        log.warn("No pong from server " + nodeInfo + " - will consider it dead");
         close();
       });
       ClusteredMessage pingMessage =
-        new ClusteredMessage<>(serverID, PING_ADDRESS, null, null, new PingMessageCodec(), true, eventBus);
+        new ClusteredMessage<>(nodeInfo, PING_ADDRESS, null, null, new PingMessageCodec(), true, eventBus);
       Buffer data = pingMessage.encodeToWire();
       socket.write(data);
     });
@@ -158,7 +158,7 @@ class ConnectionHolder {
     schedulePing();
     if (pending != null) {
       if (log.isDebugEnabled()) {
-        log.debug("Draining the queue for server " + serverID);
+        log.debug("Draining the queue for server " + nodeInfo);
       }
       for (OutboundDeliveryContext<?> ctx : pending) {
         Buffer data = ((ClusteredMessage<?, ?>)ctx.message).encodeToWire();

@@ -11,7 +11,6 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.Context;
 import io.vertx.core.impl.ContextInternal;
 
 /**
@@ -20,20 +19,14 @@ import io.vertx.core.impl.ContextInternal;
 public class HandlerHolder<T> {
 
   public final ContextInternal context;
-  public final String address;
   public final HandlerRegistration<T> handler;
   public final boolean replyHandler;
   public final boolean localOnly;
   private boolean removed;
 
-  public HandlerHolder(HandlerRegistration<T> handler,
-                       String address,
-                       boolean replyHandler,
-                       boolean localOnly,
-                       ContextInternal context) {
+  public HandlerHolder(HandlerRegistration<T> handler, boolean replyHandler, boolean localOnly, ContextInternal context) {
     this.context = context;
     this.handler = handler;
-    this.address = address;
     this.replyHandler = replyHandler;
     this.localOnly = localOnly;
   }
@@ -70,6 +63,10 @@ public class HandlerHolder<T> {
     return handler != null ? handler.hashCode() : 0;
   }
 
+  public long getSeq() {
+    return 0;
+  }
+
   public ContextInternal getContext() {
     return context;
   }
@@ -85,5 +82,4 @@ public class HandlerHolder<T> {
   public boolean isLocalOnly() {
     return localOnly;
   }
-;
 }
