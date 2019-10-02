@@ -13,7 +13,6 @@ package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
@@ -33,32 +32,32 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * The default hostname to use when clustering = "localhost"
    */
-  public static final String DEFAULT_CLUSTER_HOST = VertxOptions.DEFAULT_CLUSTER_HOST;
+  public static final String DEFAULT_CLUSTER_HOST = "localhost";
 
   /**
    * The default port to use when clustering = 0 (meaning assign a random port)
    */
-  public static final int DEFAULT_CLUSTER_PORT = VertxOptions.DEFAULT_CLUSTER_PORT;
+  public static final int DEFAULT_CLUSTER_PORT = 0;
 
   /**
    * The default cluster public host to use = null which means use the same as the cluster host
    */
-  public static final String DEFAULT_CLUSTER_PUBLIC_HOST = VertxOptions.DEFAULT_CLUSTER_PUBLIC_HOST;
+  public static final String DEFAULT_CLUSTER_PUBLIC_HOST = null;
 
   /**
    * The default cluster public port to use = -1 which means use the same as the cluster port
    */
-  public static final int DEFAULT_CLUSTER_PUBLIC_PORT = VertxOptions.DEFAULT_CLUSTER_PUBLIC_PORT;
+  public static final int DEFAULT_CLUSTER_PUBLIC_PORT = -1;
 
   /**
    * The default value of cluster ping interval = 20000 ms.
    */
-  public static final long DEFAULT_CLUSTER_PING_INTERVAL = VertxOptions.DEFAULT_CLUSTER_PING_INTERVAL;
+  public static final long DEFAULT_CLUSTER_PING_INTERVAL = TimeUnit.SECONDS.toMillis(20);
 
   /**
    * The default value of cluster ping reply interval = 20000 ms.
    */
-  public static final long DEFAULT_CLUSTER_PING_REPLY_INTERVAL = VertxOptions.DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
+  public static final long DEFAULT_CLUSTER_PING_REPLY_INTERVAL = TimeUnit.SECONDS.toMillis(20);
 
   private String clusterPublicHost = DEFAULT_CLUSTER_PUBLIC_HOST;
   private int clusterPublicPort = DEFAULT_CLUSTER_PUBLIC_PORT;
@@ -247,7 +246,7 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * @return the port, which can be configured from the {@link VertxOptions#setClusterPort(int)}, or
+   * @return the port, which can be configured from the {@link #setPort(int)}, or
    * using the {@code --cluster-port} command line option.
    * @see NetServerOptions#getPort()
    */
