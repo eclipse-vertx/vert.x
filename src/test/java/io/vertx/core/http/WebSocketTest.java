@@ -1056,34 +1056,26 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   // Test server accepting no compression
-  public void testConnectWithWebsocketComressionDisabled() throws Exception {
-	  String path = "/some/path";
-	  Buffer buff = Buffer.buffer("AAA");
+  public void testConnectWithWebSocketCompressionDisabled() throws Exception {
+    String path = "/some/path";
+    Buffer buff = Buffer.buffer("AAA");
 
-	  // Server should have basic compression enabled by default,
-	  // client needs to ask for it
-	  server = vertx.createHttpServer(new HttpServerOptions()
-			  .setPort(DEFAULT_HTTP_PORT)
-			  .setPerFrameWebsocketCompressionSupported(false)
-			  .setPerMessageWebsocketCompressionSupported(false)
-			  ).websocketHandler(ws -> {
+    // Server should have basic compression enabled by default,
+    // client needs to ask for it
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setPort(DEFAULT_HTTP_PORT)
+      .setPerFrameWebsocketCompressionSupported(false)
+      .setPerMessageWebsocketCompressionSupported(false)
+    ).websocketHandler(ws -> {
+      assertEquals("upgrade", ws.headers().get("Connection"));
+      assertNull(ws.headers().get("sec-websocket-extensions"));
+      ws.writeFrame(WebSocketFrame.binaryFrame(buff,  true));
+    });
 
-		  assertEquals("upgrade", ws.headers().get("Connection"));
-		  assertNull(ws.headers().get("sec-websocket-extensions"));
-
-		  ws.writeFrame(WebSocketFrame.binaryFrame(buff,  true));
-	  });
-
-
-	  server.listen(ar -> {
-		  assertTrue(ar.succeeded());
-
-		  HttpClientOptions options = new HttpClientOptions();
-
-	      client = vertx.createHttpClient(options);
-
-		  client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(ws -> {
-
+    server.listen(onSuccess(s -> {
+      HttpClientOptions options = new HttpClientOptions();
+      client = vertx.createHttpClient(options);
+      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -1094,8 +1086,8 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
       }));
-	  });
-	  await();
+    }));
+    await();
   }
 
   private void testValidSubProtocol(WebsocketVersion version) throws Exception {
