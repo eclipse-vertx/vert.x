@@ -284,7 +284,31 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @return the composed future
    */
   default <U> Future<U> compose(Function<T, Future<U>> mapper) {
-    if (mapper == null) {
+    return compose(mapper, Future::failedFuture);
+  }
+
+  /**
+   * Compose this future with a {@code successMapper} and {@code failureMapper} functions.<p>
+   *
+   * When this future (the one on which {@code compose} is called) succeeds, the {@code successMapper} will be called with
+   * the completed value and this mapper returns another future object. This returned future completion will complete
+   * the future returned by this method call.<p>
+   *
+   * When this future (the one on which {@code compose} is called) fails, the {@code failureMapper} will be called with
+   * the failure and this mapper returns another future object. This returned future completion will complete
+   * the future returned by this method call.<p>
+   *
+   * If any mapper function throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * @param successMapper the function mapping the success
+   * @param failureMapper the function mapping the failure
+   * @return the composed future
+   */
+  default <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
+    if (successMapper == null) {
+      throw new NullPointerException();
+    }
+    if (failureMapper == null) {
       throw new NullPointerException();
     }
     Promise<U> ret = Promise.promise();
@@ -292,14 +316,21 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
       if (ar.succeeded()) {
         Future<U> apply;
         try {
-          apply = mapper.apply(ar.result());
+          apply = successMapper.apply(ar.result());
         } catch (Throwable e) {
           ret.fail(e);
           return;
         }
         apply.setHandler(ret);
       } else {
-        ret.fail(ar.cause());
+        Future<U> apply;
+        try {
+          apply = failureMapper.apply(ar.cause());
+        } catch (Throwable e) {
+          ret.fail(e);
+          return;
+        }
+        apply.setHandler(ret);
       }
     });
     return ret.future();
