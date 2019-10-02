@@ -99,12 +99,6 @@ public interface ServerWebSocket extends WebSocketBase {
   String query();
 
   /**
-   * @return the headers in the WebSocket handshake
-   */
-  @CacheReturn
-  MultiMap headers();
-
-  /**
    * Accept the WebSocket and terminate the WebSocket handshake.
    * <p/>
    * This method should be called from the WebSocket handler to explicitly accept the WebSocket and
