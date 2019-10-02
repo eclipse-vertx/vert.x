@@ -767,6 +767,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
-    return CookieImpl.removeCookie(cookies, name, invalidate);
+    return CookieImpl.removeCookie(cookies(), name, invalidate);
   }
 }

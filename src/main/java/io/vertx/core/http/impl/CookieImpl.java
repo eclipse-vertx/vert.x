@@ -50,9 +50,6 @@ public class CookieImpl implements ServerCookie {
 
 
   static Cookie removeCookie(Map<String, ServerCookie> cookieMap, String name, boolean invalidate) {
-    if (cookieMap == null) {
-      return null;
-    }
     ServerCookie cookie = cookieMap.get(name);
     if (cookie != null) {
       if (invalidate && cookie.isFromUserAgent()) {
