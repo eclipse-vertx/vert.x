@@ -14,6 +14,7 @@ package io.vertx.core.spi.cluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.impl.VertxInternal;
 
 import java.util.List;
 
@@ -31,6 +32,11 @@ import java.util.List;
  * Consequently, implementations must be aware local {@link io.vertx.core.eventbus.EventBus} registrations.
  */
 public interface DeliveryStrategy {
+
+  /**
+   * Invoked after the cluster manager has started.
+   */
+  void setVertx(VertxInternal vertx);
 
   /**
    * Choose nodes the given {@code message} should be delivered to.

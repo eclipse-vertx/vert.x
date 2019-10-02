@@ -14,6 +14,7 @@ package io.vertx.core.spi.cluster.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.DeliveryStrategy;
 import io.vertx.core.spi.cluster.NodeInfo;
 
@@ -25,6 +26,13 @@ import java.util.List;
  * @author Thomas Segismont
  */
 public class DefaultDeliveryStrategy implements DeliveryStrategy {
+
+  private VertxInternal vertx;
+
+  @Override
+  public void setVertx(VertxInternal vertx) {
+    this.vertx = vertx;
+  }
 
   @Override
   public void chooseNodes(Message<?> message, Handler<AsyncResult<List<NodeInfo>>> handler) {
