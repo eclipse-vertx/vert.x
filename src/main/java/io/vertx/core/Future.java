@@ -233,6 +233,13 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
   boolean failed();
 
   /**
+   * Alias for {@link #compose(Function)}.
+   */
+  default <U> Future<U> flatMap(Function<T, Future<U>> mapper) {
+    return compose(mapper);
+  }
+
+  /**
    * Compose this future with a provided {@code next} future.<p>
    *
    * When this (the one on which {@code compose} is called) future succeeds, the {@code handler} will be called with
