@@ -50,7 +50,7 @@ public class ClusteredEventBus extends EventBusImpl {
 
   private final EventBusOptions options;
   private final ClusterManager clusterManager;
-  private final DeliveryStrategy deliveryStrategy = null;
+  private final DeliveryStrategy deliveryStrategy;
   private final AtomicLong handlerSequence = new AtomicLong(0);
 
   private final ConcurrentMap<NodeInfo, ConnectionHolder> connections = new ConcurrentHashMap<>();
@@ -58,10 +58,11 @@ public class ClusteredEventBus extends EventBusImpl {
   private NodeInfo nodeInfo;
   private NetServer server;
 
-  public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager) {
+  public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager, DeliveryStrategy deliveryStrategy) {
     super(vertx);
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
+    this.deliveryStrategy = deliveryStrategy;
   }
 
   private NetServerOptions getServerOptions() {

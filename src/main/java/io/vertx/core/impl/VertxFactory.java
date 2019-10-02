@@ -11,19 +11,18 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-import io.vertx.core.ServiceHelper;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.file.impl.FileResolver;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.DeliveryStrategy;
+import io.vertx.core.spi.cluster.impl.DefaultDeliveryStrategy;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -36,6 +35,7 @@ public class VertxFactory {
   private VertxOptions options;
   private Transport transport;
   private ClusterManager clusterManager;
+  private DeliveryStrategy deliveryStrategy;
   private VertxTracer tracer;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
@@ -43,6 +43,7 @@ public class VertxFactory {
   public VertxFactory(VertxOptions options) {
     this.options = options;
     this.clusterManager = options.getClusterManager();
+    this.deliveryStrategy = options.getEventBusOptions().getDeliveryStrategy();
   }
 
   public VertxFactory() {
@@ -59,6 +60,11 @@ public class VertxFactory {
     return this;
   }
 
+  public VertxFactory deliveryStrategy(DeliveryStrategy deliveryStrategy) {
+    this.deliveryStrategy = deliveryStrategy;
+    return this;
+  }
+
   public VertxFactory tracer(VertxTracer tracer) {
     this.tracer = tracer;
     return this;
@@ -70,13 +76,13 @@ public class VertxFactory {
   }
 
   public Vertx vertx() {
-    VertxImpl vertx = new VertxImpl(options, null, createMetrics(), createTracer(), createTransport(), createFileResolver());
+    VertxImpl vertx = new VertxImpl(options, null, null, createMetrics(), createTracer(), createTransport(), createFileResolver());
     vertx.init();
     return vertx;
   }
 
   public void clusteredVertx(Handler<AsyncResult<Vertx>> handler) {
-    VertxImpl vertx = new VertxImpl(options, createClusterManager(), createMetrics(), createTracer(), createTransport(), createFileResolver());
+    VertxImpl vertx = new VertxImpl(options, createClusterManager(), createDeliveryStrategy(), createMetrics(), createTracer(), createTransport(), createFileResolver());
     vertx.joinCluster(options, handler);
   }
 
@@ -99,6 +105,14 @@ public class VertxFactory {
       }
     }
     return clusterManager;
+  }
+
+  private DeliveryStrategy createDeliveryStrategy() {
+    if (deliveryStrategy == null) {
+      Collection<DeliveryStrategy> strategies = ServiceHelper.loadFactories(DeliveryStrategy.class);
+      deliveryStrategy = !strategies.isEmpty() ? strategies.iterator().next() : new DefaultDeliveryStrategy();
+    }
+    return deliveryStrategy;
   }
 
   private Transport createTransport() {

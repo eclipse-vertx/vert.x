@@ -55,6 +55,7 @@ import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.DeliveryStrategy;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -122,7 +123,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Transport transport;
   final VertxTracer tracer;
 
-  VertxImpl(VertxOptions options, ClusterManager clusterManager, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver) {
+  VertxImpl(VertxOptions options, ClusterManager clusterManager, DeliveryStrategy deliveryStrategy, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -160,7 +161,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.tracer = tracer;
     this.clusterManager = clusterManager;
-    this.eventBus = clusterManager != null ? new ClusteredEventBus(this, options, clusterManager) : new EventBusImpl(this);
+    this.eventBus = clusterManager != null ? new ClusteredEventBus(this, options, clusterManager, deliveryStrategy) : new EventBusImpl(this);
     this.sharedData = new SharedDataImpl(this, clusterManager);
     this.deploymentManager = new DeploymentManager(this);
     this.verticleManager = new VerticleManager(this, deploymentManager);
