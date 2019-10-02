@@ -15,7 +15,7 @@ package io.vertx.core.spi.cluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
@@ -43,7 +43,7 @@ import java.util.Map;
  */
 public interface ClusterManager {
 
-  void setVertx(Vertx vertx);
+  void setVertx(VertxInternal vertx);
 
   /**
    * Return an async map for the given name

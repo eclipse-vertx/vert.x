@@ -14,7 +14,6 @@ package io.vertx.test.fakecluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
@@ -46,8 +45,8 @@ public class FakeClusterManager implements ClusterManager {
   private NodeListener nodeListener;
   private VertxInternal vertx;
 
-  public void setVertx(Vertx vertx) {
-    this.vertx = (VertxInternal) vertx;
+  public void setVertx(VertxInternal vertx) {
+    this.vertx = vertx;
   }
 
   private static void doJoin(String nodeID, FakeClusterManager node) {
