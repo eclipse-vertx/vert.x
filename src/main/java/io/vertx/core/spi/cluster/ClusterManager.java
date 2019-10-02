@@ -94,7 +94,13 @@ public interface ClusterManager {
    */
   boolean isActive();
 
+  /**
+   * Share a new messaging handler registration with other nodes in the cluster.
+   */
   void register(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler);
 
+  /**
+   * Signal removal of a messaging handler registration to other nodes in the cluster.
+   */
   void unregister(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler);
 }
