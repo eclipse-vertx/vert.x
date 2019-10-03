@@ -13,11 +13,10 @@ package io.vertx.core.streams.impl;
 import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.Arguments;
+import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextInternal;
 
 import java.util.ArrayDeque;
-import java.util.Objects;
 
 /**
  * A buffer that transfers elements to an handler with back-pressure.
@@ -87,8 +86,12 @@ public class InboundBuffer<E> {
   }
 
   public InboundBuffer(Context context, long highWaterMark) {
-    Objects.requireNonNull(context, "context must not be null");
-    Arguments.require(highWaterMark >= 0, "highWaterMark " + highWaterMark + " >= 0");
+    if (context == null) {
+      throw new NullPointerException("context must not be null");
+    }
+    if (highWaterMark < 0) {
+      throw new IllegalArgumentException("highWaterMark " + highWaterMark + " >= 0");
+    }
     this.context = (ContextInternal) context;
     this.highWaterMark = highWaterMark;
     this.demand = Long.MAX_VALUE;
