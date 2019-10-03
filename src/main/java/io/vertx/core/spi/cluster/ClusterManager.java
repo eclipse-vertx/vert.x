@@ -103,4 +103,13 @@ public interface ClusterManager {
    * Signal removal of a messaging handler registration to other nodes in the cluster.
    */
   void unregister(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler);
+
+  /**
+   * Get a {@link RegistrationStream} for the given {@code address}.
+   * <p>
+   * After {@link #register(RegistrationInfo, Handler)} or {@link #unregister(RegistrationInfo, Handler)} is invoked
+   * on this node or any other node in the cluster, the stream will emit a new list of {@link RegistrationInfo}.
+   * This list represents the new state of registrations for the given {@code address}.
+   */
+  void listenToRegistrations(String address, Handler<AsyncResult<RegistrationStream>> resultHandler);
 }
