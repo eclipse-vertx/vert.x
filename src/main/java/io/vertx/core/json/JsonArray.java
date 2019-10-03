@@ -36,6 +36,9 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareable {
 
+  private static final Base64.Decoder B64DEC = Base64.getUrlDecoder();
+  private static final Base64.Encoder B64ENC = Base64.getUrlEncoder().withoutPadding();
+
   private List<Object> list;
 
   /**
@@ -233,7 +236,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     if (val == null) {
       return null;
     } else {
-      return Base64.getDecoder().decode(val);
+      return B64DEC.decode(val);
     }
   }
 
@@ -418,7 +421,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return  a reference to this, so the API can be used fluently
    */
   public JsonArray add(byte[] value) {
-    list.add(value != null ? Base64.getEncoder().encodeToString(value) : null);
+    list.add(value != null ? B64ENC.encodeToString(value) : null);
     return this;
   }
 
@@ -612,7 +615,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a reference to this, so the API can be used fluently
    */
   public JsonArray set(int pos, byte[] value) {
-    list.set(pos, value != null ? Base64.getEncoder().encodeToString(value) : null);
+    list.set(pos, value != null ? B64ENC.encodeToString(value) : null);
     return this;
   }
 

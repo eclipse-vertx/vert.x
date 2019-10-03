@@ -14,7 +14,6 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
-import io.vertx.core.spi.json.JsonCodec;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -39,6 +38,9 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterSerializable, Shareable {
+
+  private static final Base64.Decoder B64DEC = Base64.getUrlDecoder();
+  private static final Base64.Encoder B64ENC = Base64.getUrlEncoder().withoutPadding();
 
   private Map<String, Object> map;
 
@@ -273,7 +275,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public byte[] getBinary(String key) {
     Objects.requireNonNull(key);
     String encoded = (String) map.get(key);
-    return encoded == null ? null : Base64.getDecoder().decode(encoded);
+    return encoded == null ? null : B64DEC.decode(encoded);
   }
 
   /**
@@ -464,7 +466,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public byte[] getBinary(String key, byte[] def) {
     Objects.requireNonNull(key);
     Object val = map.get(key);
-    return val != null || map.containsKey(key) ? (val == null ? null : Base64.getDecoder().decode((String)val)) : def;
+    return val != null || map.containsKey(key) ? (val == null ? null : B64DEC.decode((String)val)) : def;
   }
 
   /**
@@ -670,7 +672,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public JsonObject put(String key, byte[] value) {
     Objects.requireNonNull(key);
-    map.put(key, value == null ? null : Base64.getEncoder().encodeToString(value));
+    map.put(key, value == null ? null : B64ENC.encodeToString(value));
     return this;
   }
 
@@ -1068,7 +1070,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
         val = new JsonArray((List)val);
       }
     } else if (val instanceof byte[]) {
-      val = Base64.getEncoder().encodeToString((byte[])val);
+      val = B64ENC.encodeToString((byte[])val);
     } else if (val instanceof Instant) {
       val = ISO_INSTANT.format((Instant) val);
     } else {

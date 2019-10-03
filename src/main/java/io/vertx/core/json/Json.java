@@ -122,4 +122,38 @@ public class Json {
   public static <T> T decodeValue(Buffer buf, Class<T> clazz) throws DecodeException {
     return CODEC.fromBuffer(buf, clazz);
   }
+
+  /**
+   * Convert a base64url encoded string to a base64 encoded string.
+   *
+   * Example:
+   * <code>
+   *     toBase64("qL8R4QIcQ_ZsRqOAbeRfcZhilN_MksRtDaErMA");
+   *     "qL8R4QIcQ/ZsRqOAbeRfcZhilN/MksRtDaErMA=="
+   * </code>
+   *
+   * JsonObject and JsonArray implement the RFC-7493 which defines how binary data is encoded. However
+   * the implementation on Vert.x 3.x was incorrect and did not use the correct encoding <code>base64url</code>.
+   *
+   * In order to interact with older Vert.x applications or other systems that use plain Base64 encoding this
+   * utility method will convert base64url strings to base64.
+   *
+   * @param base64url base64 url without padding string.
+   * @return base64 with padding encoded string.
+   */
+  public static String toBase64(String base64url) {
+    // padding is at most 3 '=' characters
+    final String padding = "===";
+    int stringLength = base64url.length();
+    int diff = stringLength % 4;
+    // if the modulus is 0 then no padding is needed
+    if (diff != 0) {
+      // padding needed, just append the difference to 4 of the modulus with '=' characters.
+      base64url = base64url + padding.substring(0, 4 - diff);
+    }
+    // replace the characters that are modified in the base64 alphabets.
+    return base64url
+      .replace('-', '+')
+      .replace('_', '/');
+  }
 }

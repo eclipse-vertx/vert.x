@@ -22,11 +22,13 @@ import java.util.Base64;
 
 class ByteArrayDeserializer extends JsonDeserializer<byte[]> {
 
+  private static final Base64.Decoder B64DEC = Base64.getUrlDecoder();
+
   @Override
   public byte[] deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
     String text = p.getText();
     try {
-      return Base64.getDecoder().decode(text);
+      return B64DEC.decode(text);
     } catch (IllegalArgumentException e) {
       throw new InvalidFormatException(p, "Expected a base64 encoded byte array", text, Instant.class);
     }

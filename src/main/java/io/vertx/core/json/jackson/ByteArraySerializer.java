@@ -19,8 +19,10 @@ import java.util.Base64;
 
 class ByteArraySerializer extends JsonSerializer<byte[]> {
 
+  private static final Base64.Encoder B64ENC = Base64.getUrlEncoder().withoutPadding();
+
   @Override
   public void serialize(byte[] value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-    jgen.writeString(Base64.getEncoder().encodeToString(value));
+    jgen.writeString(B64ENC.encodeToString(value));
   }
 }

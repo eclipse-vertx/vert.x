@@ -50,6 +50,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 public class JacksonCodec implements JsonCodec {
 
   private static final JsonFactory factory = new JsonFactory();
+  private static final Base64.Encoder B64ENC = Base64.getUrlEncoder().withoutPadding();
 
   static {
     // Non-standard JSON but we allow C style comments in our JSON
@@ -295,7 +296,7 @@ public class JacksonCodec implements JsonCodec {
       } else if (json instanceof Instant) {
         generator.writeString((ISO_INSTANT.format((Instant)json)));
       } else if (json instanceof byte[]) {
-        generator.writeString(Base64.getEncoder().encodeToString((byte[]) json));
+        generator.writeString(B64ENC.encodeToString((byte[]) json));
       } else if (json == null) {
         generator.writeNull();
       } else {

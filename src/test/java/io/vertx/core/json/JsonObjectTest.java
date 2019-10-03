@@ -442,12 +442,12 @@ public class JsonObjectTest {
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
     assertArrayEquals(bytes, jsonObject.getBinary("foo"));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonObject.getValue("foo"));
+    assertEquals(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes), jsonObject.getValue("foo"));
 
     // Can also get as string:
     String val = jsonObject.getString("foo");
     assertNotNull(val);
-    byte[] retrieved = Base64.getDecoder().decode(val);
+    byte[] retrieved = Base64.getUrlDecoder().decode(val);
     assertTrue(TestUtils.byteArraysEqual(bytes, retrieved));
 
     jsonObject.put("foo", 123);
@@ -535,9 +535,9 @@ public class JsonObjectTest {
     byte[] defBytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
     assertArrayEquals(bytes, jsonObject.getBinary("foo", defBytes));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonObject.getValue("foo", Base64.getEncoder().encode(defBytes)));
+    assertEquals(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes), jsonObject.getValue("foo", Base64.getUrlEncoder().withoutPadding().encode(defBytes)));
     assertArrayEquals(bytes, jsonObject.getBinary("foo", null));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonObject.getValue("foo", null));
+    assertEquals(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes), jsonObject.getValue("foo", null));
 
     jsonObject.put("foo", 123);
     try {
@@ -732,7 +732,7 @@ public class JsonObjectTest {
     assertEquals(arr, jsonObject.getValue("foo"));
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String) jsonObject.getValue("foo"))));
+    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getUrlDecoder().decode((String) jsonObject.getValue("foo"))));
     jsonObject.putNull("foo");
     assertNull(jsonObject.getValue("foo"));
     assertNull(jsonObject.getValue("absent"));
@@ -787,8 +787,8 @@ public class JsonObjectTest {
     assertEquals(arr, jsonObject.getValue("foo", null));
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String) jsonObject.getValue("foo", "blah"))));
-    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getDecoder().decode((String)jsonObject.getValue("foo", null))));
+    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getUrlDecoder().decode((String) jsonObject.getValue("foo", "blah"))));
+    assertTrue(TestUtils.byteArraysEqual(bytes, Base64.getUrlDecoder().decode((String)jsonObject.getValue("foo", null))));
     jsonObject.putNull("foo");
     assertNull(jsonObject.getValue("foo", "blah"));
     assertNull(jsonObject.getValue("foo", null));
@@ -1044,15 +1044,15 @@ public class JsonObjectTest {
 
     assertSame(jsonObject, jsonObject.put("foo", bin1));
     assertArrayEquals(bin1, jsonObject.getBinary("foo"));
-    assertEquals(Base64.getEncoder().encodeToString(bin1), jsonObject.getValue("foo"));
+    assertEquals(Base64.getUrlEncoder().withoutPadding().encodeToString(bin1), jsonObject.getValue("foo"));
     jsonObject.put("quux", bin2);
     assertArrayEquals(bin2, jsonObject.getBinary("quux"));
-    assertEquals(Base64.getEncoder().encodeToString(bin2), jsonObject.getValue("quux"));
+    assertEquals(Base64.getUrlEncoder().withoutPadding().encodeToString(bin2), jsonObject.getValue("quux"));
     assertArrayEquals(bin1, jsonObject.getBinary("foo"));
-    assertEquals(Base64.getEncoder().encodeToString(bin1), jsonObject.getValue("foo"));
+    assertEquals(Base64.getUrlEncoder().withoutPadding().encodeToString(bin1), jsonObject.getValue("foo"));
     jsonObject.put("foo", bin3);
     assertArrayEquals(bin3, jsonObject.getBinary("foo"));
-    assertEquals(Base64.getEncoder().encodeToString(bin3), jsonObject.getValue("foo"));
+    assertEquals(Base64.getUrlEncoder().withoutPadding().encodeToString(bin3), jsonObject.getValue("foo"));
 
     jsonObject.put("foo", (byte[]) null);
     assertTrue(jsonObject.containsKey("foo"));
@@ -1130,7 +1130,7 @@ public class JsonObjectTest {
     assertEquals(Float.valueOf(1.23f), jsonObject.getFloat("float"));
     assertEquals(Double.valueOf(1.23d), jsonObject.getDouble("double"));
     assertArrayEquals(bytes, jsonObject.getBinary("binary"));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonObject.getValue("binary"));
+    assertEquals(Base64.getUrlEncoder().withoutPadding().encodeToString(bytes), jsonObject.getValue("binary"));
     assertEquals(now, jsonObject.getInstant("instant"));
     assertEquals(now.toString(), jsonObject.getValue("instant"));
     assertEquals(obj, jsonObject.getJsonObject("obj"));
