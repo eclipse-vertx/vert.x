@@ -39,6 +39,11 @@ public interface DeliveryStrategy {
   void setVertx(VertxInternal vertx);
 
   /**
+   * Invoked after the {@link io.vertx.core.eventbus.EventBus} has started
+   */
+  void setNodeInfo(NodeInfo nodeInfo);
+
+  /**
    * Choose nodes the given {@code message} should be delivered to.
    */
   void chooseNodes(Message<?> message, Handler<AsyncResult<List<NodeInfo>>> handler);

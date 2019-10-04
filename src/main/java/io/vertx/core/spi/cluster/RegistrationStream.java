@@ -18,10 +18,17 @@ import java.util.List;
 
 /**
  * A stream of  the state of {@link io.vertx.core.eventbus.EventBus} registrations for a given address.
+ * <p>
+ * Always invoke {@link #close()} eventually to avoid leaking resources.
  *
  * @author Thomas Segismont
  */
 public interface RegistrationStream extends ReadStream<List<RegistrationInfo>> {
+
+  /**
+   * Return the {@link io.vertx.core.eventbus.EventBus} address related to this stream.
+   */
+  String address();
 
   /**
    * Return the initial state of registrations for a given address.
@@ -47,4 +54,12 @@ public interface RegistrationStream extends ReadStream<List<RegistrationInfo>> {
 
   @Override
   RegistrationStream endHandler(Handler<Void> endHandler);
+
+  /**
+   * Close the stream.
+   * <p>
+   * Note this has the same effect as calling {@link #handler(Handler)} with a {@code null} value.
+   * argument.
+   */
+  void close();
 }

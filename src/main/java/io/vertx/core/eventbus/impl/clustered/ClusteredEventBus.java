@@ -109,10 +109,16 @@ public class ClusteredEventBus extends EventBusImpl {
         int serverPort = getClusterPublicPort(options, server.actualPort());
         String serverHost = getClusterPublicHost(options);
         nodeInfo = new NodeInfo(clusterManager.getNodeID(), serverHost, serverPort);
+        deliveryStrategy.setNodeInfo(nodeInfo);
         started = true;
       }
       resultHandler.handle(ar.mapEmpty());
     });
+  }
+
+  @Override
+  public NodeInfo getNodeInfo() {
+    return nodeInfo;
   }
 
   @Override

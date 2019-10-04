@@ -111,5 +111,5 @@ public interface ClusterManager {
    * on this node or any other node in the cluster, the stream will emit a new list of {@link RegistrationInfo}.
    * This list represents the new state of registrations for the given {@code address}.
    */
-  void listenToRegistrations(String address, Handler<AsyncResult<RegistrationStream>> resultHandler);
+  void registrationListener(String address, Handler<AsyncResult<RegistrationStream>> resultHandler);
 }

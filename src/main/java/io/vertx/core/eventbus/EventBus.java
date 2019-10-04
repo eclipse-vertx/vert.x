@@ -257,22 +257,6 @@ public interface EventBus extends Measured {
   EventBus unregisterDefaultCodec(Class clazz);
 
   /**
-   * Start the event bus. This would not normally be called in user code
-   *
-   * @param completionHandler  handler will be called when event bus is started
-   */
-  @GenIgnore
-  void start(Handler<AsyncResult<Void>> completionHandler);
-
-  /**
-   * Close the event bus and release any resources held. This would not normally be called in user code
-   *
-   * @param completionHandler may be {@code null}
-   */
-  @GenIgnore
-  void close(Handler<AsyncResult<Void>> completionHandler);
-
-  /**
    * Add an interceptor that will be called whenever a message is sent from Vert.x
    *
    * @param interceptor  the interceptor

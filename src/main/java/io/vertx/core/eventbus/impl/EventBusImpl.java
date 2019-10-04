@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>                                                                                        T
  */
-public class EventBusImpl implements EventBus, MetricsProvider {
+public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 

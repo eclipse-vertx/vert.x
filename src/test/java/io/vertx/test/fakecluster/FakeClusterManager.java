@@ -25,6 +25,7 @@ import io.vertx.core.shareddata.impl.LocalAsyncMapImpl;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 import io.vertx.core.spi.cluster.RegistrationInfo;
+import io.vertx.core.spi.cluster.RegistrationStream;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -196,6 +197,11 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public void unregister(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler) {
+    throw new UnsupportedOperationException("Not implemented yet");
+  }
+
+  @Override
+  public void registrationListener(String address, Handler<AsyncResult<RegistrationStream>> resultHandler) {
     throw new UnsupportedOperationException("Not implemented yet");
   }
 

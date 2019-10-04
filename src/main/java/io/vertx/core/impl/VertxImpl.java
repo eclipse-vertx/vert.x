@@ -28,6 +28,7 @@ import io.vertx.core.dns.DnsClientOptions;
 import io.vertx.core.dns.impl.DnsClientImpl;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.impl.EventBusImpl;
+import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.impl.FileResolver;
@@ -109,7 +110,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final BlockedThreadChecker checker;
   private final AddressResolver addressResolver;
   private final AddressResolverOptions addressResolverOptions;
-  private final EventBus eventBus;
+  private final EventBusInternal eventBus;
   private volatile HAManager haManager;
   private boolean closed;
   private volatile Handler<Throwable> exceptionHandler;
