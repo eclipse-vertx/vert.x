@@ -283,12 +283,16 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   private <T> void sendToNodes(List<NodeInfo> remoteNodes, OutboundDeliveryContext<T> sendContext) {
-    for (NodeInfo remoteNodeInfo : remoteNodes) {
-      if (remoteNodeInfo != null && !remoteNodeInfo.equals(nodeInfo)) {
-        sendRemote(sendContext, remoteNodeInfo, sendContext.message);
-      } else {
-        super.sendOrPub(sendContext);
+    if (!remoteNodes.isEmpty()) {
+      for (NodeInfo remoteNodeInfo : remoteNodes) {
+        if (!remoteNodeInfo.equals(nodeInfo)) {
+          sendRemote(sendContext, remoteNodeInfo, sendContext.message);
+        } else {
+          super.sendOrPub(sendContext);
+        }
       }
+    } else {
+      super.sendOrPub(sendContext);
     }
   }
 

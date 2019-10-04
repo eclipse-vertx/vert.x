@@ -45,6 +45,8 @@ public interface DeliveryStrategy {
 
   /**
    * Choose nodes the given {@code message} should be delivered to.
+   * <p>
+   * The result must not be null and must hold distinct values.
    */
   void chooseNodes(Message<?> message, Handler<AsyncResult<List<NodeInfo>>> handler);
 
