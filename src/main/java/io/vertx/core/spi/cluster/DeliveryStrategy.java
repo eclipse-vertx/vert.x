@@ -29,7 +29,7 @@ import java.util.List;
  * </ul>
  * <p>
  * This strategy is skipped by the <em>CEB</em> only when the user raises the {@link io.vertx.core.eventbus.DeliveryOptions#setLocalOnly(boolean)} flag.
- * Consequently, implementations must be aware local {@link io.vertx.core.eventbus.EventBus} registrations.
+ * Consequently, implementations must be aware of local {@link io.vertx.core.eventbus.EventBus} registrations.
  */
 public interface DeliveryStrategy {
 
