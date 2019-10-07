@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFram
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -37,6 +38,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.FutureListenerAdapter;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -298,8 +300,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
     }
 
-    private void sendRequest(
-      HttpRequest request, ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
+    private void sendRequest(HttpRequest request, ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
       if (end) {
         if (buf != null) {
           request = new AssembledFullHttpRequest(request, buf);
@@ -311,7 +312,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           request = new AssembledHttpRequest(request, buf);
         }
       }
-      conn.writeToChannel(request, conn.toPromise(handler));
+      conn.writeToChannel(request, conn.toPromise(toFutureListener(handler)));
     }
 
     private boolean handleChunk(Buffer buff) {
@@ -335,7 +336,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         msg = new DefaultHttpContent(buff);
       }
       bytesWritten += msg.content().readableBytes();
-      conn.writeToChannel(msg, conn.toPromise(handler));
+      conn.writeToChannel(msg, conn.toPromise(toFutureListener(handler)));
     }
 
     @Override
@@ -542,6 +543,10 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       } else {
         promise.tryFail(cause);
       }
+    }
+
+    private FutureListener<Void> toFutureListener(Handler<AsyncResult<Void>> handler) {
+      return handler == null ? null : FutureListenerAdapter.toVoid(context, handler);
     }
   }
 

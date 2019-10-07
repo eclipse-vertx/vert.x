@@ -15,6 +15,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -129,20 +130,13 @@ public abstract class ConnectionBase {
    * @param handler the handler
    * @return a promise
    */
-  public final ChannelPromise toPromise(Handler<AsyncResult<Void>> handler) {
+  public final ChannelPromise toPromise(FutureListener<Void> handler) {
     return handler == null ? voidPromise : wrap(handler);
   }
 
-  private ChannelPromise wrap(Handler<AsyncResult<Void>> handler) {
+  private ChannelPromise wrap(FutureListener<Void> handler) {
     ChannelPromise promise = chctx.newPromise();
-    promise.addListener((fut) -> {
-        if (fut.isSuccess()) {
-          handler.handle(Future.succeededFuture());
-        } else {
-          handler.handle(Future.failedFuture(fut.cause()));
-        }
-      }
-    );
+    promise.addListener(handler);
     return promise;
   }
 
@@ -225,7 +219,7 @@ public abstract class ConnectionBase {
       .addListener((ChannelFutureListener) f -> {
       ChannelFuture closeFut = chctx.channel().close();
       if (handler != null) {
-        closeFut.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
+        closeFut.addListener(FutureListenerAdapter.toVoid(context, handler));
       }
     });
     flush(promise);

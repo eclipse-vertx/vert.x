@@ -37,8 +37,8 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.ChannelFutureListenerAdapter;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.FutureListenerAdapter;
 
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
@@ -156,12 +156,12 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
           fut.addListener((ChannelFutureListener) f -> {
             ChannelFuture closeFut = chctx.channel().close();
             if (handler != null) {
-              closeFut.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
+              closeFut.addListener(FutureListenerAdapter.toVoid(context, handler));
             }
           });
         } else {
           if (handler != null) {
-            fut.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
+            fut.addListener(FutureListenerAdapter.toVoid(context, handler));
           }
         }
       });

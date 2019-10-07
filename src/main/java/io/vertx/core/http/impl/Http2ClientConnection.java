@@ -22,6 +22,7 @@ import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -428,12 +429,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
+    public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener) {
       if (buf == null && end) {
         buf = Unpooled.EMPTY_BUFFER;
       }
       if (buf != null) {
-        writeData(buf, end, handler);
+        writeData(buf, end, listener);
       }
       if (end) {
         handlerContext.flush();

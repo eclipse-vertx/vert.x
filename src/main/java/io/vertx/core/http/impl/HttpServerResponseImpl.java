@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -40,6 +41,7 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.FutureListenerAdapter;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.io.File;
@@ -311,7 +313,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
-    write(chunk.getByteBuf(), conn.toPromise(handler));
+    write(chunk.getByteBuf(), handler);
   }
 
   @Override
@@ -323,7 +325,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk, enc).getByteBuf(), conn.toPromise(handler));
+    write(Buffer.buffer(chunk, enc).getByteBuf(), handler);
   }
 
   @Override
@@ -335,7 +337,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void write(String chunk, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk).getByteBuf(), conn.toPromise(handler));
+    write(Buffer.buffer(chunk).getByteBuf(), handler);
   }
 
   @Override
@@ -373,10 +375,6 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
-    end(chunk, conn.toPromise(handler));
-  }
-
-  private void end(Buffer chunk, ChannelPromise promise) {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
@@ -392,7 +390,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       } else {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
-      conn.writeToChannel(msg, promise);
+      conn.writeToChannel(msg, conn.toPromise(toFutureListener(handler)));
       written = true;
       conn.responseComplete();
       if (bodyEndHandler != null) {
@@ -677,7 +675,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private HttpServerResponseImpl write(ByteBuf chunk, ChannelPromise promise) {
+  private HttpServerResponseImpl write(ByteBuf chunk, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException("Response has already been written");
@@ -695,7 +693,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       } else {
         msg = new DefaultHttpContent(chunk);
       }
-      conn.writeToChannel(msg, promise);
+      conn.writeToChannel(msg, conn.toPromise(toFutureListener(handler)));
       return this;
     }
   }
@@ -768,5 +766,9 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
     return CookieImpl.removeCookie(cookies(), name, invalidate);
+  }
+
+  private FutureListener<Void> toFutureListener(Handler<AsyncResult<Void>> handler) {
+    return handler == null ? null : FutureListenerAdapter.toVoid(context, handler);
   }
 }

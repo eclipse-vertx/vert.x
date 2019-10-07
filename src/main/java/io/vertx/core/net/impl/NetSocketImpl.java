@@ -131,7 +131,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocketInternal writeMessage(Object message, Handler<AsyncResult<Void>> handler) {
-    writeToChannel(message, toPromise(handler));
+    writeToChannel(message, toPromise(FutureListenerAdapter.toVoid(handler)));
     return this;
   }
 

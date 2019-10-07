@@ -38,6 +38,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.FutureListenerAdapter;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -408,7 +409,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public Future<Void> close() {
     Promise<Void> promise = Promise.promise();
-    ChannelPromise channelPromise = toPromise(promise);
+    ChannelPromise channelPromise = chctx.newPromise().addListener(FutureListenerAdapter.toVoid(promise));
     flush(channelPromise);
     channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L));
     return promise.future();

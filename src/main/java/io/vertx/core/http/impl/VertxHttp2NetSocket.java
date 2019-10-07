@@ -28,6 +28,7 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.FutureListenerAdapter;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -237,7 +238,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public void write(Buffer message, Handler<AsyncResult<Void>> handler) {
-    conn.handler.writeData(stream, message.getByteBuf(), false, handler);
+    conn.handler.writeData(stream, message.getByteBuf(), false, FutureListenerAdapter.toVoid(context, handler));
   }
 
   @Override
