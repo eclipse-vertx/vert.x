@@ -30,49 +30,6 @@ import static io.vertx.core.Future.factory;
 public interface Promise<T> extends Handler<AsyncResult<T>> {
 
   /**
-   * Create a succeeded promise with a {@code null} result
-   *
-   * @param <T>  the result type
-   * @return  the promise
-   */
-  static <T> Promise<T> succeededPromise() {
-    return factory.succeededPromise();
-  }
-
-  /**
-   * Created a succeeded promise with the specified {@code result}.
-   *
-   * @param result  the result
-   * @param <T>  the result type
-   * @return  the promise
-   */
-  static <T> Promise<T> succeededPromise(T result) {
-    return factory.succeededPromise(result);
-  }
-
-  /**
-   * Create a failed promise with the specified failure {@code cause}.
-   *
-   * @param cause  the failure cause as a Throwable
-   * @param <T>  the result type
-   * @return  the promise
-   */
-  static <T> Promise<T> failedPromise(Throwable cause) {
-    return factory.failedPromise(cause);
-  }
-
-  /**
-   * Create a failed promise with the specified {@code failureMessage}.
-   *
-   * @param failureMessage  the failure message
-   * @param <T>  the result type
-   * @return  the promise
-   */
-  static <T> Promise<T> failedPromise(String failureMessage) {
-    return factory.failurePromise(failureMessage);
-  }
-
-  /**
    * Create a promise that hasn't completed yet
    *
    * @param <T>  the result type

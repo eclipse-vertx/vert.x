@@ -90,33 +90,33 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testSetResultOnCompletedPromise() {
-    ArrayList<Promise<Object>> promises = new ArrayList<>();
-    promises.add(Promise.succeededPromise());
-    promises.add(Promise.succeededPromise());
-    promises.add(Promise.succeededPromise(new Object()));
-    promises.add(Promise.succeededPromise(new Object()));
-    promises.add(Promise.failedPromise(new Exception()));
-    promises.add(Promise.failedPromise(new Exception()));
-    for (Promise<Object> promise : promises) {
+  public void testSetResultOnCompletedFuture() {
+    ArrayList<Future<Object>> futures = new ArrayList<>();
+    futures.add(Future.succeededFuture());
+    futures.add(Future.succeededFuture());
+    futures.add(Future.succeededFuture(new Object()));
+    futures.add(Future.succeededFuture(new Object()));
+    futures.add(Future.failedFuture(new Exception()));
+    futures.add(Future.failedFuture(new Exception()));
+    for (Future<Object> future : futures) {
       try {
-        promise.complete(new Object());
+        future.complete(new Object());
         fail();
       } catch (IllegalStateException ignore) {
       }
-      assertFalse(promise.tryComplete(new Object()));
+      assertFalse(future.tryComplete(new Object()));
       try {
-        promise.complete(null);
+        future.complete(null);
         fail();
       } catch (IllegalStateException ignore) {
       }
-      assertFalse(promise.tryComplete(null));
+      assertFalse(future.tryComplete(null));
       try {
-        promise.fail(new Exception());
+        future.fail(new Exception());
         fail();
       } catch (IllegalStateException ignore) {
       }
-      assertFalse(promise.tryFail(new Exception()));
+      assertFalse(future.tryFail(new Exception()));
     }
   }
 

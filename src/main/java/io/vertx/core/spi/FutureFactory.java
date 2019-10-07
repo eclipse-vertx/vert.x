@@ -21,14 +21,6 @@ public interface FutureFactory {
 
   <T> Promise<T> promise();
 
-  <T> Promise<T> succeededPromise();
-
-  <T> Promise<T> succeededPromise(T result);
-
-  <T> Promise<T> failedPromise(Throwable t);
-
-  <T> Promise<T> failurePromise(String failureMessage);
-
   <T> Future<T> future();
 
   <T> Future<T> succeededFuture();

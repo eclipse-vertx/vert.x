@@ -28,28 +28,6 @@ public class FutureFactoryImpl implements FutureFactory {
   }
 
   @Override
-  public <T> Promise<T> succeededPromise() {
-    @SuppressWarnings("unchecked")
-    Promise<T> promise = EMPTY;
-    return promise;
-  }
-
-  @Override
-  public <T> Promise<T> succeededPromise(T result) {
-    return new SucceededFuture<>(result);
-  }
-
-  @Override
-  public <T> Promise<T> failedPromise(Throwable t) {
-    return new FailedFuture<>(t);
-  }
-
-  @Override
-  public <T> Promise<T> failurePromise(String failureMessage) {
-    return new FailedFuture<>(failureMessage);
-  }
-
-  @Override
   public <T> Future<T> future() {
     return new FutureImpl<>();
   }
