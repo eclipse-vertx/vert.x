@@ -689,8 +689,8 @@ public class HTTPExamples {
   public void exampleAsynchronousHandshake(HttpServer server) {
     server.websocketHandler(websocket -> {
       Promise<Integer> promise = Promise.promise();
-      websocket.setHandshake(promise);
-      authenticate(websocket, ar -> {
+      websocket.setHandshake(promise.future());
+      authenticate(websocket.headers(), ar -> {
         if (ar.succeeded()) {
           // Terminate the handshake with the status code 101 (Switching Protocol)
           // Reject the handshake with 401 (Unauthorized)
@@ -703,7 +703,7 @@ public class HTTPExamples {
     });
   }
 
-  private static void authenticate(ServerWebSocket ws, Handler<AsyncResult<Boolean>> handler) {
+  private static void authenticate(MultiMap headers, Handler<AsyncResult<Boolean>> handler) {
 
   }
 

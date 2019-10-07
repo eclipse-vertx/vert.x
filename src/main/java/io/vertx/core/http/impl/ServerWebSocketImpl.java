@@ -189,7 +189,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   Boolean tryHandshake(int sc) {
     synchronized (conn) {
       if (status == null && handshakePromise == null) {
-        setHandshake(Promise.succeededPromise(sc));
+        setHandshake(Future.succeededFuture(sc));
       }
       return status == null ? null : status == sc;
     }
@@ -197,25 +197,30 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
 
   @Override
   public void setHandshake(Future<Integer> future) {
-    setHandshake((Promise<Integer>) future);
+    setHandshake(future, null);
   }
 
   @Override
-  public void setHandshake(Promise<Integer> promise) {
-    if (promise == null) {
+  public void setHandshake(Future<Integer> future, Handler<AsyncResult<Integer>> handler) {
+    if (future == null) {
       throw new NullPointerException();
     }
+    Promise<Integer> promise = Promise.promise();
     synchronized (conn) {
       if (handshakePromise != null) {
         throw new IllegalStateException();
       }
       handshakePromise = promise;
     }
+    future.setHandler(promise);
     promise.future().setHandler(ar -> {
       if (ar.succeeded()) {
         handleHandshake(ar.result());
       } else {
         handleHandshake(500);
+      }
+      if (handler != null) {
+        handler.handle(ar);
       }
     });
   }

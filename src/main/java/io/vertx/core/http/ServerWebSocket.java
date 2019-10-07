@@ -167,15 +167,14 @@ public interface ServerWebSocket extends WebSocketBase {
    * Calling this method will override the {@code future} completion handler.
    *
    * @param future the future to complete with
+   * @param handler the completion handler
    * @throws IllegalStateException when the WebSocket has already an asynchronous result
    */
-  void setHandshake(Promise<Integer> future);
+  void setHandshake(Future<Integer> future, Handler<AsyncResult<Integer>> handler);
 
   /**
-   * @deprecated instead use {@link #setHandshake(Promise)}
+   * Like {@link #setHandshake(Future, Handler)} but without a completion handler.
    */
-  @GenIgnore
-  @Deprecated
   void setHandshake(Future<Integer> future);
 
   /**
