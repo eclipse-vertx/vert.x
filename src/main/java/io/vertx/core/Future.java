@@ -62,7 +62,11 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> succeededFuture(T result) {
-    return factory.succeededFuture(result);
+    if (result == null) {
+      return factory.succeededFuture();
+    } else {
+      return factory.succeededFuture(result);
+    }
   }
 
   /**
