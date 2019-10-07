@@ -90,37 +90,6 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testSetResultOnCompletedPromise() {
-    ArrayList<Promise<Object>> promises = new ArrayList<>();
-    promises.add(Promise.succeededPromise());
-    promises.add(Promise.succeededPromise());
-    promises.add(Promise.succeededPromise(new Object()));
-    promises.add(Promise.succeededPromise(new Object()));
-    promises.add(Promise.failedPromise(new Exception()));
-    promises.add(Promise.failedPromise(new Exception()));
-    for (Promise<Object> promise : promises) {
-      try {
-        promise.complete(new Object());
-        fail();
-      } catch (IllegalStateException ignore) {
-      }
-      assertFalse(promise.tryComplete(new Object()));
-      try {
-        promise.complete(null);
-        fail();
-      } catch (IllegalStateException ignore) {
-      }
-      assertFalse(promise.tryComplete(null));
-      try {
-        promise.fail(new Exception());
-        fail();
-      } catch (IllegalStateException ignore) {
-      }
-      assertFalse(promise.tryFail(new Exception()));
-    }
-  }
-
-  @Test
   public void testCallSetHandlerBeforeCompletion() {
     AtomicBoolean called = new AtomicBoolean();
     Promise<Object> promise = Promise.promise();

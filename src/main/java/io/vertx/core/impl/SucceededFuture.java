@@ -19,7 +19,7 @@ import io.vertx.core.Promise;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class SucceededFuture<T> implements Future<T>, Promise<T> {
+class SucceededFuture<T> implements Future<T> {
 
   private final T result;
 
@@ -48,46 +48,6 @@ class SucceededFuture<T> implements Future<T>, Promise<T> {
   }
 
   @Override
-  public void complete(T result) {
-    throw new IllegalStateException("Result is already complete: succeeded");
-  }
-
-  @Override
-  public void complete() {
-    throw new IllegalStateException("Result is already complete: succeeded");
-  }
-
-  @Override
-  public void fail(Throwable cause) {
-    throw new IllegalStateException("Result is already complete: succeeded");
-  }
-
-  @Override
-  public void fail(String failureMessage) {
-    throw new IllegalStateException("Result is already complete: succeeded");
-  }
-
-  @Override
-  public boolean tryComplete(T result) {
-    return false;
-  }
-
-  @Override
-  public boolean tryComplete() {
-    return false;
-  }
-
-  @Override
-  public boolean tryFail(Throwable cause) {
-    return false;
-  }
-
-  @Override
-  public boolean tryFail(String failureMessage) {
-    return false;
-  }
-
-  @Override
   public T result() {
     return result;
   }
@@ -105,16 +65,6 @@ class SucceededFuture<T> implements Future<T>, Promise<T> {
   @Override
   public boolean failed() {
     return false;
-  }
-
-  @Override
-  public void handle(AsyncResult<T> asyncResult) {
-    throw new IllegalStateException("Result is already complete: succeeded");
-  }
-
-  @Override
-  public Future<T> future() {
-    return this;
   }
 
   @Override
