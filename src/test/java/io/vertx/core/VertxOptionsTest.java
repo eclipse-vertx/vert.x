@@ -360,16 +360,17 @@ public class VertxOptionsTest extends VertxTestBase {
     TimeUnit warningExceptionTimeUnit = TimeUnit.MINUTES;
     TimeUnit blockedThreadCheckIntervalUnit = TimeUnit.MINUTES;
     options = new VertxOptions(new JsonObject().
-        put("clusterPort", clusterPort).
-        put("clusterPublicPort", clusterPublicPort).
+        put("eventBusOptions", new JsonObject().
+          put("port", clusterPort).
+          put("clusterPublicPort", clusterPublicPort).
+          put("host", clusterHost).
+          put("clusterPublicHost", clusterPublicHost).
+          put("clusterPingInterval", clusterPingInterval).
+          put("clusterPingReplyInterval", clusterPingReplyInterval)).
         put("eventLoopPoolSize", eventLoopPoolSize).
         put("internalBlockingPoolSize", internalBlockingPoolSize).
         put("workerPoolSize", workerPoolSize).
         put("blockedThreadCheckInterval", blockedThreadCheckInterval).
-        put("clusterHost", clusterHost).
-        put("clusterPublicHost", clusterPublicHost).
-        put("clusterPingInterval", clusterPingInterval).
-        put("clusterPingReplyInterval", clusterPingReplyInterval).
         put("maxEventLoopExecuteTime", maxEventLoopExecuteTime).
         put("maxWorkerExecuteTime", maxWorkerExecuteTime).
         put("proxyOperationTimeout", proxyOperationTimeout).
