@@ -87,4 +87,15 @@ public final class RegistrationInfo implements ClusterSerializable {
     result = 31 * result + (int) (seq ^ (seq >>> 32));
     return result;
   }
+
+  @Override
+  public String toString() {
+    return "RegistrationInfo{" +
+      "nodeInfo=" + nodeInfo +
+      ", address='" + address + '\'' +
+      ", seq=" + seq +
+      ", localOnly=" + localOnly +
+      ", metadata=" + metadata +
+      '}';
+  }
 }

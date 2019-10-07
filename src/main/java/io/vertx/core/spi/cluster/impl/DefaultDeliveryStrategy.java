@@ -193,7 +193,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
     }
 
     boolean isNodeAccessible(RegistrationInfo registrationInfo) {
-      return !registrationInfo.isLocalOnly() || !registrationInfo.getNodeInfo().equals(nodeInfo);
+      return !registrationInfo.isLocalOnly() || registrationInfo.getNodeInfo().equals(nodeInfo);
     }
 
     List<NodeInfo> selectNode(Message<?> message) {

@@ -186,7 +186,11 @@ public class ClusteredEventBus extends EventBusImpl {
         handlerHolder.isLocalOnly(),
         null
       );
-      clusterManager.unregister(registrationInfo, completionHandler);
+      clusterManager.unregister(registrationInfo, completionHandler != null ? completionHandler : ar -> {
+        if (ar.failed()) {
+          log.error("Failed to remove sub", ar.cause());
+        }
+      });
     } else {
       completionHandler.complete();
     }
