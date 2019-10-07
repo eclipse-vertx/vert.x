@@ -725,7 +725,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
             ws.headers(ar.result());
           }
           wsHandler.handle(res);
-          ws.headers(null);
+          if (res.succeeded()) {
+            ws.headers(null);
+          }
         });
       });
       p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
