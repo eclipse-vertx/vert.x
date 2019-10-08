@@ -31,7 +31,7 @@ public final class NodeInfo {
   public NodeInfo(String nodeId, String host, int port, JsonObject metadata) {
     Objects.requireNonNull(nodeId, "nodeId is null");
     Objects.requireNonNull(host, "host is null");
-    Arguments.requireInRange(port, 1, 65535, "Not an actual port");
+    Arguments.requireInRange(port, 1, 65535, "Not an actual port: " + port);
     this.nodeId = nodeId;
     this.host = host;
     this.port = port;

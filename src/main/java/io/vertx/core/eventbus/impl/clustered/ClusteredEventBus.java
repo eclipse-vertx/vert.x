@@ -235,7 +235,7 @@ public class ClusteredEventBus extends EventBusImpl {
   private int getClusterPublicPort(EventBusOptions options, int actualPort) {
     // We retain the old system property for backwards compat
     int publicPort = Integer.getInteger(CLUSTER_PUBLIC_PORT_PROP_NAME, options.getClusterPublicPort());
-    if (publicPort == -1) {
+    if (publicPort < 1) {
       // Get the actual port, wildcard port of zero might have been specified
       publicPort = actualPort;
     }
