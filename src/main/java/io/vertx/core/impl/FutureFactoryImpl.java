@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.spi.FutureFactory;
 
 /**
@@ -20,10 +19,10 @@ import io.vertx.core.spi.FutureFactory;
  */
 public class FutureFactoryImpl implements FutureFactory {
 
-  private static final SucceededFuture EMPTY = new SucceededFuture<>(null);
+  private static final SucceededFuture EMPTY = new SucceededFuture<>(null, null);
 
   @Override
-  public <T> Promise<T> promise() {
+  public <T> PromiseInternal<T> promise() {
     return new FutureImpl<>();
   }
 
@@ -36,16 +35,41 @@ public class FutureFactoryImpl implements FutureFactory {
 
   @Override
   public <T> Future<T> succeededFuture(T result) {
-    return new SucceededFuture<>(result);
+    return new SucceededFuture<>(null, result);
   }
 
   @Override
   public <T> Future<T> failedFuture(Throwable t) {
-    return new FailedFuture<>(t);
+    return new FailedFuture<>(null, t);
   }
 
   @Override
   public <T> Future<T> failureFuture(String failureMessage) {
-    return new FailedFuture<>(failureMessage);
+    return new FailedFuture<>(null, failureMessage);
+  }
+
+  @Override
+  public <T> PromiseInternal<T> promise(ContextInternal context) {
+    return new FutureImpl<>(context);
+  }
+
+  @Override
+  public <T> Future<T> succeededFuture(ContextInternal context) {
+    return new SucceededFuture<>(context, null);
+  }
+
+  @Override
+  public <T> Future<T> succeededFuture(ContextInternal context, T result) {
+    return new SucceededFuture<>(context, result);
+  }
+
+  @Override
+  public <T> Future<T> failedFuture(ContextInternal context, Throwable t) {
+    return new FailedFuture<>(context, t);
+  }
+
+  @Override
+  public <T> Future<T> failedFuture(ContextInternal context, String failureMessage) {
+    return new FailedFuture<>(context, failureMessage);
   }
 }

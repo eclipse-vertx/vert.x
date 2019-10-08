@@ -14,6 +14,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -37,6 +38,31 @@ public interface ContextInternal extends Context {
    * @return the EventLoop
    */
   EventLoop nettyEventLoop();
+
+  /**
+   * @return a {@link Promise} associated with this context
+   */
+  <T> PromiseInternal<T> promise();
+
+  /**
+   * @return an empty succeeded {@link Future} associated with this context
+   */
+  <T> Future<T> succeededFuture();
+
+  /**
+   * @return a succeeded {@link Future} of the {@code result} associated with this context
+   */
+  <T> Future<T> succeededFuture(T result);
+
+  /**
+   * @return a {@link Future} failed with the {@code failure} associated with this context
+   */
+  <T> Future<T> failedFuture(Throwable failure);
+
+  /**
+   * @return a {@link Future} failed with the {@code message} associated with this context
+   */
+  <T> Future<T> failedFuture(String message);
 
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} but uses the {@code queue} to order the tasks instead

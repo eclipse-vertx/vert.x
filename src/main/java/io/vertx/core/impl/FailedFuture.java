@@ -20,22 +20,29 @@ import io.vertx.core.Handler;
  */
 public class FailedFuture<T> implements Future<T> {
 
+  private final ContextInternal context;
   private final Throwable cause;
 
   /**
    * Create a future that has already failed
    * @param t the throwable
    */
-  FailedFuture(Throwable t) {
-    cause = t != null ? t : new NoStackTraceThrowable(null);
+  FailedFuture(ContextInternal context, Throwable t) {
+    this.context = context;
+    this.cause = t != null ? t : new NoStackTraceThrowable(null);
   }
 
   /**
    * Create a future that has already failed
    * @param failureMessage the failure message
    */
-  FailedFuture(String failureMessage) {
-    this(new NoStackTraceThrowable(failureMessage));
+  FailedFuture(ContextInternal context, String failureMessage) {
+    this(context, new NoStackTraceThrowable(failureMessage));
+  }
+
+  @Override
+  public ContextInternal context() {
+    return context;
   }
 
   @Override

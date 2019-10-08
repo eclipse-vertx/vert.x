@@ -12,14 +12,15 @@
 package io.vertx.core.spi;
 
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public interface FutureFactory {
 
-  <T> Promise<T> promise();
+  <T> PromiseInternal<T> promise();
 
   <T> Future<T> succeededFuture();
 
@@ -28,4 +29,15 @@ public interface FutureFactory {
   <T> Future<T> failedFuture(Throwable t);
 
   <T> Future<T> failureFuture(String failureMessage);
+
+  <T> PromiseInternal<T> promise(ContextInternal context);
+
+  <T> Future<T> succeededFuture(ContextInternal context);
+
+  <T> Future<T> succeededFuture(ContextInternal context, T result);
+
+  <T> Future<T> failedFuture(ContextInternal context, Throwable t);
+
+  <T> Future<T> failedFuture(ContextInternal context, String failureMessage);
+
 }

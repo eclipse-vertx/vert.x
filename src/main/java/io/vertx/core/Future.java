@@ -14,6 +14,7 @@ package io.vertx.core;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.FutureFactory;
 
 import java.util.function.Function;
@@ -177,6 +178,13 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   * @return the context associated with this future or {@code null} when
+   */
+  default Context context() {
+    return null;
+  }
+
+  /**
    * Compose this future with a {@code successMapper} and {@code failureMapper} functions.<p>
    *
    * When this future (the one on which {@code compose} is called) succeeds, the {@code successMapper} will be called with
@@ -200,7 +208,13 @@ public interface Future<T> extends AsyncResult<T> {
     if (failureMapper == null) {
       throw new NullPointerException();
     }
-    Promise<U> ret = Promise.promise();
+    ContextInternal ctx = (ContextInternal) context();
+    Promise<U> ret;
+    if (ctx != null) {
+      ret = ctx.promise();
+    } else {
+      ret = Promise.promise();
+    }
     setHandler(ar -> {
       if (ar.succeeded()) {
         Future<U> apply;
@@ -243,7 +257,13 @@ public interface Future<T> extends AsyncResult<T> {
     if (mapper == null) {
       throw new NullPointerException();
     }
-    Promise<U> ret = Promise.promise();
+    ContextInternal ctx = (ContextInternal) context();
+    Promise<U> ret;
+    if (ctx != null) {
+      ret = ctx.promise();
+    } else {
+      ret = Promise.promise();
+    }
     setHandler(ar -> {
       if (ar.succeeded()) {
         U mapped;
@@ -272,7 +292,13 @@ public interface Future<T> extends AsyncResult<T> {
    * @return the mapped future
    */
   default <V> Future<V> map(V value) {
-    Promise<V> ret = Promise.promise();
+    ContextInternal ctx = (ContextInternal) context();
+    Promise<V> ret;
+    if (ctx != null) {
+      ret = ctx.promise();
+    } else {
+      ret = Promise.promise();
+    }
     setHandler(ar -> {
       if (ar.succeeded()) {
         ret.complete(value);
@@ -310,7 +336,13 @@ public interface Future<T> extends AsyncResult<T> {
     if (mapper == null) {
       throw new NullPointerException();
     }
-    Promise<T> ret = Promise.promise();
+    ContextInternal ctx = (ContextInternal) context();
+    Promise<T> ret;
+    if (ctx != null) {
+      ret = ctx.promise();
+    } else {
+      ret = Promise.promise();
+    }
     setHandler(ar -> {
       if (ar.succeeded()) {
         ret.complete(result());
@@ -346,7 +378,13 @@ public interface Future<T> extends AsyncResult<T> {
     if (mapper == null) {
       throw new NullPointerException();
     }
-    Promise<T> ret = Promise.promise();
+    ContextInternal ctx = (ContextInternal) context();
+    Promise<T> ret;
+    if (ctx != null) {
+      ret = ctx.promise();
+    } else {
+      ret = Promise.promise();
+    }
     setHandler(ar -> {
       if (ar.succeeded()) {
         ret.complete(result());
@@ -375,7 +413,13 @@ public interface Future<T> extends AsyncResult<T> {
    * @return the mapped future
    */
   default Future<T> otherwise(T value) {
-    Promise<T> ret = Promise.promise();
+    ContextInternal ctx = (ContextInternal) context();
+    Promise<T> ret;
+    if (ctx != null) {
+      ret = ctx.promise();
+    } else {
+      ret = Promise.promise();
+    }
     setHandler(ar -> {
       if (ar.succeeded()) {
         ret.complete(result());

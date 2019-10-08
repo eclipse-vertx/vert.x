@@ -14,10 +14,10 @@ package io.vertx.core.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 
-class FutureImpl<T> implements Promise<T>, Future<T> {
+class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
 
+  private final ContextInternal context;
   private boolean failed;
   private boolean succeeded;
   private Handler<AsyncResult<T>> handler;
@@ -28,6 +28,19 @@ class FutureImpl<T> implements Promise<T>, Future<T> {
    * Create a future that hasn't completed yet
    */
   FutureImpl() {
+    this(null);
+  }
+
+
+  /**
+   * Create a future that hasn't completed yet
+   */
+  FutureImpl(ContextInternal context) {
+    this.context = context;
+  }
+
+  public ContextInternal context() {
+    return context;
   }
 
   /**
@@ -71,15 +84,28 @@ class FutureImpl<T> implements Promise<T>, Future<T> {
   public Future<T> setHandler(Handler<AsyncResult<T>> handler) {
     boolean callHandler;
     synchronized (this) {
-      callHandler = isComplete();
-      if (!callHandler) {
-        this.handler = handler;
+      if (handler == null) {
+        this.handler = null;
+        return this;
+      } else {
+        callHandler = isComplete();
+        if (!callHandler) {
+          this.handler = handler;
+        }
       }
     }
     if (callHandler) {
-      handler.handle(this);
+      dispatch(handler);
     }
     return this;
+  }
+
+  protected void dispatch(Handler<AsyncResult<T>> handler) {
+    if (context != null) {
+      context.execute(this, handler);
+    } else {
+      handler.handle(this);
+    }
   }
 
   @Override
@@ -128,7 +154,7 @@ class FutureImpl<T> implements Promise<T>, Future<T> {
       handler = null;
     }
     if (h != null) {
-      h.handle(this);
+      dispatch(h);
     }
     return true;
   }
@@ -168,7 +194,7 @@ class FutureImpl<T> implements Promise<T>, Future<T> {
       handler = null;
     }
     if (h != null) {
-      h.handle(this);
+      dispatch(h);
     }
     return true;
   }
@@ -181,6 +207,15 @@ class FutureImpl<T> implements Promise<T>, Future<T> {
   @Override
   public Future<T> future() {
     return this;
+  }
+
+  @Override
+  public void operationComplete(io.netty.util.concurrent.Future<T> future) {
+    if (future.isSuccess()) {
+      complete(future.getNow());
+    } else {
+      fail(future.cause());
+    }
   }
 
   @Override

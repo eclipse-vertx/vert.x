@@ -11,16 +11,20 @@
 
 package io.vertx.core;
 
+import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -801,6 +805,202 @@ public class ContextTest extends VertxTestBase {
       assertSame(cl, Thread.currentThread().getContextClassLoader());
       testComplete();
     });
+    await();
+  }
+
+  @Test
+  public void testEventLoopContextPromiseReentrantSuccess() {
+    testEventLoopContextPromiseReentrantCompletion(p -> p.complete("the-value"));
+  }
+
+  private void testEventLoopContextPromiseReentrantCompletion(Consumer<Promise<String>> action) {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = context.promise();
+    context.runOnContext(v -> {
+      Thread th = Thread.currentThread();
+      promise.future().setHandler(ar -> {
+        assertSame(th, Thread.currentThread());
+        testComplete();
+      });
+      action.accept(promise);
+    });
+    await();
+  }
+
+  @Test
+  public void testEventLoopContextPromiseReentrantFailingSuccess() {
+    testEventLoopContextPromiseReentrantFailingCompletion(p -> p.complete("the-value"));
+  }
+
+  @Test
+  public void testEventLoopContextPromiseReentrantFailingFailure() {
+    testEventLoopContextPromiseReentrantFailingCompletion(p -> p.fail(new Exception()));
+  }
+
+  private void testEventLoopContextPromiseReentrantFailingCompletion(Consumer<Promise<String>> action) {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = context.promise();
+    context.runOnContext(v -> {
+      List<Throwable> exceptions = new ArrayList<>();
+      context.exceptionHandler(exceptions::add);
+      RuntimeException failure = new RuntimeException();
+      promise.future().setHandler(ar -> {
+        throw failure;
+      });
+      action.accept(promise);
+      assertEquals(1, exceptions.size());
+      assertSame(failure, exceptions.get(0));
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testEventLoopContextPromiseSucceededByAnotherEventLoopThread() {
+    testEventLoopContextPromiseCompletedByAnotherEventLoopThread(p -> p.complete("the-value"));
+  }
+
+  @Test
+  public void testEventLoopContextPromiseFailedByAnotherEventLoopThread() {
+    testEventLoopContextPromiseCompletedByAnotherEventLoopThread(p -> p.fail(new Exception()));
+  }
+
+  void testEventLoopContextPromiseCompletedByAnotherEventLoopThread(Consumer<Promise<String>> action) {
+    Context any = vertx.getOrCreateContext();
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = context.promise();
+    context.runOnContext(v1 -> {
+      Thread th = Thread.currentThread();
+      promise.future().setHandler(ar -> {
+        assertSame(th, Thread.currentThread());
+        testComplete();
+      });
+      any.runOnContext(v2 -> {
+        action.accept(promise);
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testEventLoopContextPromiseSucceededByWorkerThread() {
+    testEventLoopContextPromiseCompletedByWorkerThread(p -> p.complete("the-value"));
+  }
+
+  @Test
+  public void testEventLoopContextPromiseFailedByWorkerThread() {
+    testEventLoopContextPromiseCompletedByWorkerThread(p -> p.fail(new Exception()));
+  }
+
+  private void testEventLoopContextPromiseCompletedByWorkerThread(Consumer<Promise<String>> action) {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = context.promise();
+    context.runOnContext(v -> {
+      Thread th = Thread.currentThread();
+      promise.future().setHandler(ar -> {
+        assertSame(th, Thread.currentThread());
+        testComplete();
+      });
+      context.executeBlocking(fut -> {
+        action.accept(promise);
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testEventLoopContextPromiseSucceededByNonVertxThread() {
+    testEventLoopContextPromiseCompletedByNonVertxThread(p -> p.complete("the-value"));
+  }
+
+  @Test
+  public void testEventLoopContextPromiseFailedByNonVertxThread() {
+    testEventLoopContextPromiseCompletedByNonVertxThread(p -> p.fail(new Exception()));
+  }
+
+  private void testEventLoopContextPromiseCompletedByNonVertxThread(Consumer<Promise<String>> action) {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = context.promise();
+    context.runOnContext(v -> {
+      Thread th = Thread.currentThread();
+      promise.future().setHandler(ar -> {
+        assertSame(th, Thread.currentThread());
+        testComplete();
+      });
+      new Thread(() -> action.accept(promise)).start();
+    });
+    await();
+  }
+
+  @Test
+  public void testEventLoopContextPromiseListenerSuccess() {
+    testEventLoopContextPromiseListenerCompletion(p -> p.setSuccess("the-value"));
+  }
+
+  @Test
+  public void testEventLoopContextPromiseListenerFailure() {
+    testEventLoopContextPromiseListenerCompletion(p -> p.setFailure(new Exception()));
+  }
+
+  private void testEventLoopContextPromiseListenerCompletion(Consumer<io.netty.util.concurrent.Promise<String>> action) {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    PromiseInternal<String> promise = context.promise();
+    promise.future().setHandler(ar -> {
+      assertSame(context, Vertx.currentContext());
+      testComplete();
+    });
+    EventLoop eventLoop = context.nettyEventLoop();
+    action.accept(eventLoop.<String>newPromise().addListener(promise));
+    await();
+  }
+
+  @Test
+  public void testSetNullHandlerAfterCompletion() throws Exception {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = context.promise();
+    promise.complete();
+    promise.future().setHandler(null);
+  }
+
+  @Test
+  public void testComposeContextPropagation1() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = context.promise();
+    Future<String> future = promise.future().compose(res -> Future.succeededFuture("value-2"));
+    promise.complete("value-1");
+    future.setHandler(ar -> {
+      assertSame(context, vertx.getOrCreateContext());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testComposeContextPropagation2() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = context.promise();
+    Future<String> future = promise.future().compose(res -> Future.succeededFuture("value-2"));
+    future.setHandler(ar -> {
+      assertSame(context, vertx.getOrCreateContext());
+      testComplete();
+    });
+    promise.complete("value-1");
+    await();
+  }
+
+  @Test
+  public void testComposeContextPropagation3() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = context.promise();
+    ContextInternal anotherContext = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> anotherPromise = anotherContext.promise();
+    Future<String> future = promise.future().compose(res -> anotherPromise.future());
+    promise.complete("value-1");
+    future.setHandler(ar -> {
+      assertSame(context, vertx.getOrCreateContext());
+      testComplete();
+    });
+    anotherPromise.complete("value-2");
     await();
   }
 }

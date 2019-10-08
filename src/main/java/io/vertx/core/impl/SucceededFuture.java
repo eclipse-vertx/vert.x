@@ -14,21 +14,28 @@ package io.vertx.core.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class SucceededFuture<T> implements Future<T> {
 
+  private final ContextInternal context;
   private final T result;
 
   /**
    * Create a future that has already succeeded
+   * @param context the context
    * @param result the result
    */
-  SucceededFuture(T result) {
+  SucceededFuture(ContextInternal context, T result) {
+    this.context = context;
     this.result = result;
+  }
+
+  @Override
+  public ContextInternal context() {
+    return context;
   }
 
   @Override
