@@ -114,6 +114,11 @@ public class EventBusOptionsConverter {
             obj.setLogActivity((Boolean)member.getValue());
           }
           break;
+        case "nodeMetaData":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setNodeMetaData(((JsonObject)member.getValue()).copy());
+          }
+          break;
         case "openSslEngineOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setOpenSslEngineOptions(new io.vertx.core.net.OpenSSLEngineOptions((io.vertx.core.json.JsonObject)member.getValue()));
@@ -293,6 +298,9 @@ public class EventBusOptionsConverter {
       json.put("keyStoreOptions", obj.getKeyStoreOptions().toJson());
     }
     json.put("logActivity", obj.getLogActivity());
+    if (obj.getNodeMetaData() != null) {
+      json.put("nodeMetaData", obj.getNodeMetaData());
+    }
     if (obj.getOpenSslEngineOptions() != null) {
       json.put("openSslEngineOptions", obj.getOpenSslEngineOptions().toJson());
     }

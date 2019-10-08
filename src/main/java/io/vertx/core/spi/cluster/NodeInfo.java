@@ -11,9 +11,8 @@
 
 package io.vertx.core.spi.cluster;
 
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.shareddata.impl.ClusterSerializable;
+import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
 
@@ -22,19 +21,21 @@ import java.util.Objects;
  *
  * @author Thomas Segismont
  */
-public final class NodeInfo implements ClusterSerializable {
+public final class NodeInfo {
 
   private final String nodeId;
   private final String host;
   private final int port;
+  private final JsonObject metadata;
 
-  public NodeInfo(String nodeId, String host, int port) {
+  public NodeInfo(String nodeId, String host, int port, JsonObject metadata) {
     Objects.requireNonNull(nodeId, "nodeId is null");
     Objects.requireNonNull(host, "host is null");
     Arguments.requireInRange(port, 1, 65535, "Not an actual port");
     this.nodeId = nodeId;
     this.host = host;
     this.port = port;
+    this.metadata = metadata;
   }
 
   public String getNodeId() {
@@ -49,14 +50,8 @@ public final class NodeInfo implements ClusterSerializable {
     return port;
   }
 
-  @Override
-  public void writeToBuffer(Buffer buffer) {
-    throw new UnsupportedOperationException("Not implemented yet");
-  }
-
-  @Override
-  public int readFromBuffer(int pos, Buffer buffer) {
-    throw new UnsupportedOperationException("Not implemented yet");
+  public JsonObject getMetadata() {
+    return metadata;
   }
 
   @Override

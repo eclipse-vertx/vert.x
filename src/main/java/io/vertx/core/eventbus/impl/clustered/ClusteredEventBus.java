@@ -108,7 +108,7 @@ public class ClusteredEventBus extends EventBusImpl {
       if (ar.succeeded()) {
         int serverPort = getClusterPublicPort(options, server.actualPort());
         String serverHost = getClusterPublicHost(options);
-        nodeInfo = new NodeInfo(clusterManager.getNodeID(), serverHost, serverPort);
+        nodeInfo = new NodeInfo(clusterManager.getNodeID(), serverHost, serverPort, options.getNodeMetaData());
         deliveryStrategy.setNodeInfo(nodeInfo);
         started = true;
       }
@@ -157,13 +157,11 @@ public class ClusteredEventBus extends EventBusImpl {
   @Override
   protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Handler<AsyncResult<Void>> completionHandler) {
     if (!handlerHolder.isReplyHandler()) {
-      // FIXME set metadata from eventbus options
       RegistrationInfo registrationInfo = new RegistrationInfo(
         nodeInfo,
         handlerHolder.getHandler().address,
         handlerHolder.getSeq(),
-        handlerHolder.isLocalOnly(),
-        null
+        handlerHolder.isLocalOnly()
       );
       clusterManager.register(registrationInfo, completionHandler);
     } else {
@@ -183,8 +181,7 @@ public class ClusteredEventBus extends EventBusImpl {
         nodeInfo,
         handlerHolder.getHandler().address,
         handlerHolder.getSeq(),
-        handlerHolder.isLocalOnly(),
-        null
+        handlerHolder.isLocalOnly()
       );
       clusterManager.unregister(registrationInfo, completionHandler != null ? completionHandler : ar -> {
         if (ar.failed()) {

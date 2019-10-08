@@ -189,7 +189,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     int headersLength = buffer.getInt(pos);
     pos += headersLength;
     bodyPos = pos;
-    sender = new NodeInfo(senderId, senderHost, senderPort);
+    sender = new NodeInfo(senderId, senderHost, senderPort, null);
     wireBuffer = buffer;
     fromWire = true;
   }

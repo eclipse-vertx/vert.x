@@ -64,6 +64,7 @@ public class EventBusOptions extends TCPSSLOptions {
   private int clusterPublicPort = DEFAULT_CLUSTER_PUBLIC_PORT;
   private long clusterPingInterval = DEFAULT_CLUSTER_PING_INTERVAL;
   private long clusterPingReplyInterval = DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
+  private JsonObject nodeMetaData;
   private DeliveryStrategy deliveryStrategy;
 
   // Attributes used to configure the server of the event bus when the event bus is clustered.
@@ -151,6 +152,7 @@ public class EventBusOptions extends TCPSSLOptions {
     this.clusterPublicPort = other.clusterPublicPort;
     this.clusterPingInterval = other.clusterPingInterval;
     this.clusterPingReplyInterval = other.clusterPingReplyInterval;
+    this.nodeMetaData = other.nodeMetaData == null ? null : other.nodeMetaData.copy();
     this.deliveryStrategy = other.deliveryStrategy;
 
     this.port = other.port;
@@ -640,6 +642,36 @@ public class EventBusOptions extends TCPSSLOptions {
       throw new IllegalArgumentException("clusterPublicPort p must be in range 0 <= p <= 65535");
     }
     this.clusterPublicPort = clusterPublicPort;
+    return this;
+  }
+
+  /**
+   * User-supplied information about this node when Vert.x is clustered.
+   * <p>
+   * The data may be used by the {@link DeliveryStrategy} to select a recipient for a given message.
+   * For example, it could be used to implement a partioning strategy.
+   * <p>
+   * The default {@link DeliveryStrategy} does not use the node metadata.
+   *
+   * @return user-supplied information about this node when Vert.x is clustered
+   */
+  public JsonObject getNodeMetaData() {
+    return nodeMetaData;
+  }
+
+  /**
+   * Set information about this node when Vert.x is clustered.
+   * <p>
+   * The data may be used by the {@link DeliveryStrategy} to select a recipient for a given message.
+   * For example, it could be used to implement a partioning strategy.
+   * <p>
+   * The default {@link DeliveryStrategy} does not use the node metadata.
+   *
+   * @param nodeMetaData user-supplied information about this node when Vert.x is clustered
+   * @return a reference to this, so the API can be used fluently
+   */
+  public EventBusOptions setNodeMetaData(JsonObject nodeMetaData) {
+    this.nodeMetaData = nodeMetaData;
     return this;
   }
 
