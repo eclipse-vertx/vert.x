@@ -120,12 +120,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public synchronized NetSocketInternal writeMessage(Object message) {
+  public synchronized Future<Void> writeMessage(Object message) {
     if (closed) {
       throw new IllegalStateException("Socket is closed");
     }
-    writeToChannel(message);
-    return this;
+    Promise<Void> promise = Promise.promise();
+    writeMessage(message, promise);
+    return promise.future();
   }
 
   @Override

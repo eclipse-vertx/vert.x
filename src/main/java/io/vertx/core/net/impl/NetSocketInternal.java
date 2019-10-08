@@ -14,6 +14,7 @@ package io.vertx.core.net.impl;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.net.NetSocket;
 
@@ -56,7 +57,7 @@ public interface NetSocketInternal extends NetSocket {
    * @param message the message to write, it should be handled by one of the channel pipeline handlers
    * @return a reference to this, so the API can be used fluently
    */
-  NetSocketInternal writeMessage(Object message);
+  Future<Void> writeMessage(Object message);
 
   /**
    * Like {@link #writeMessage(Object)} but with an {@code handler} called when the message has been written
