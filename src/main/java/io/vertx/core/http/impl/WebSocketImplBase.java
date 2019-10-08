@@ -281,24 +281,37 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
-    synchronized (conn) {
-      checkClosed();
-      writeFrame(WebSocketFrame.binaryFrame(data, true), handler);
+    writeFrame(WebSocketFrame.binaryFrame(data, true), handler);
+  }
+
+  @Override
+  public Future<Void> writePing(Buffer data) {
+    Promise<Void> promise = Promise.promise();
+    writePing(data, promise);
+    return promise.future();
+  }
+
+  @Override
+  public WebSocketBase writePing(Buffer data, Handler<AsyncResult<Void>> handler) {
+    if(data.length() > maxWebSocketFrameSize || data.length() > 125) {
+      throw new IllegalStateException("Ping cannot exceed maxWebSocketFrameSize or 125 bytes");
     }
+    return writeFrame(WebSocketFrame.pingFrame(data), handler);
   }
 
   @Override
-  public S writePing(Buffer data) {
-    if(data.length() > maxWebSocketFrameSize || data.length() > 125) throw new IllegalStateException("Ping cannot exceed maxWebSocketFrameSize or 125 bytes");
-    writeFrame(WebSocketFrame.pingFrame(data), null);
-    return (S) this;
+  public Future<Void> writePong(Buffer data) {
+    Promise<Void> promise = Promise.promise();
+    writePong(data, promise);
+    return promise.future();
   }
 
   @Override
-  public S writePong(Buffer data) {
-    if(data.length() > maxWebSocketFrameSize || data.length() > 125) throw new IllegalStateException("Pong cannot exceed maxWebSocketFrameSize or 125 bytes");
-    writeFrame(WebSocketFrame.pongFrame(data), null);
-    return (S) this;
+  public WebSocketBase writePong(Buffer data, Handler<AsyncResult<Void>> handler) {
+    if(data.length() > maxWebSocketFrameSize || data.length() > 125) {
+      throw new IllegalStateException("Pong cannot exceed maxWebSocketFrameSize or 125 bytes");
+    }
+    return writeFrame(WebSocketFrame.pongFrame(data), handler);
   }
 
   /**

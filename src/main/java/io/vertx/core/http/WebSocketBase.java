@@ -191,10 +191,17 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * states that the only response to a ping frame is a pong frame with identical contents.
    *
    * @param data the data to write, may be at most 125 bytes
-   * @return a future completed with the result
+   * @param handler called when the ping frame has been successfully written
+   * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  WebSocketBase writePing(Buffer data);
+  WebSocketBase writePing(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #writePing(Buffer, Handler)} but with an {@code handler} called when the message has been written
+   * or failed to be written.
+   */
+  Future<Void> writePing(Buffer data);
 
   /**
    * Writes a pong frame to the connection. This will be written in a single frame. Pong frames may be at most 125 bytes (octets).
@@ -207,10 +214,17 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * to implement a one way heartbeat.
    *
    * @param data the data to write, may be at most 125 bytes
+   * @param handler called when the pong frame has been successfully written
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  WebSocketBase writePong(Buffer data);
+  WebSocketBase writePong(Buffer data, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #writePong(Buffer, Handler)} but with an {@code handler} called when the message has been written
+   * or failed to be written.
+   */
+  Future<Void> writePong(Buffer data);
 
   /**
    * Set a close handler. This will be called when the WebSocket is closed.
