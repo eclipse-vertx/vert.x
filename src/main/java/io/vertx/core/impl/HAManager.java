@@ -247,10 +247,6 @@ public class HAManager {
     this.failoverCompleteHandler = failoverCompleteHandler;
   }
 
-  public void setClusterViewChangedHandler(Consumer<Set<String>> handler) {
-    this.clusterViewChangedHandler = handler;
-  }
-
   public boolean isKilled() {
     return killed;
   }
@@ -303,8 +299,6 @@ public class HAManager {
 
     checkQuorum();
     if (attainedQuorum) {
-      checkSubs(leftNodeID);
-
       // Check for failover
       String sclusterInfo = clusterMap.get(leftNodeID);
 
@@ -339,9 +333,6 @@ public class HAManager {
   private synchronized void checkQuorumWhenAdded(final String nodeID, final long start) {
     if (clusterMap.containsKey(nodeID)) {
       checkQuorum();
-      if (attainedQuorum) {
-        checkSubs(nodeID);
-      }
     } else {
       vertx.setTimer(200, tid -> {
         // This can block on a monitor so it needs to run as a worker
@@ -498,16 +489,6 @@ public class HAManager {
           failoverCompleteHandler.handle(failedNodeID, theHAInfo, false);
         }
       });
-    }
-  }
-
-  private void checkSubs(String failedNodeID) {
-    if (clusterViewChangedHandler == null) {
-      return;
-    }
-    String chosen = chooseHashedNode(null, failedNodeID.hashCode());
-    if (chosen != null && chosen.equals(this.nodeID)) {
-      runOnContextAndWait(() -> clusterViewChangedHandler.accept(new HashSet<>(clusterManager.getNodes())));
     }
   }
 
