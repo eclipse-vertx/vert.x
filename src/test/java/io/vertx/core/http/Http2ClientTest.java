@@ -428,34 +428,36 @@ public class Http2ClientTest extends Http2TestBase {
       });
     });
     startServer();
-    HttpClientRequest req = client.post(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
-      testComplete();
-    }).setChunked(true).exceptionHandler(err -> {
-      fail();
-    });
-    AtomicInteger sent = new AtomicInteger();
-    AtomicInteger count = new AtomicInteger();
-    AtomicInteger drained = new AtomicInteger();
-    vertx.setPeriodic(1, timerID -> {
-      Context ctx = vertx.getOrCreateContext();
-      if (req.writeQueueFull()) {
-        assertTrue(paused.get());
-        assertEquals(1, numPause.get());
-        req.drainHandler(v -> {
-          assertOnIOContext(ctx);
-          assertEquals(0, drained.getAndIncrement());
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      HttpClientRequest req = client.post(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
+        testComplete();
+      }).setChunked(true).exceptionHandler(err -> {
+        fail();
+      });
+      AtomicInteger sent = new AtomicInteger();
+      AtomicInteger count = new AtomicInteger();
+      AtomicInteger drained = new AtomicInteger();
+      vertx.setPeriodic(1, timerID -> {
+        if (req.writeQueueFull()) {
+          assertTrue(paused.get());
           assertEquals(1, numPause.get());
-          assertFalse(paused.get());
-          req.end();
-        });
-        vertx.cancelTimer(timerID);
-        done.complete(null);
-      } else {
-        count.incrementAndGet();
-        expected.appendString(chunk);
-        req.write(chunk);
-        sent.addAndGet(chunk.length());
-      }
+          req.drainHandler(v2 -> {
+            assertOnIOContext(ctx);
+            assertEquals(0, drained.getAndIncrement());
+            assertEquals(1, numPause.get());
+            assertFalse(paused.get());
+            req.end();
+          });
+          vertx.cancelTimer(timerID);
+          done.complete(null);
+        } else {
+          count.incrementAndGet();
+          expected.appendString(chunk);
+          req.write(chunk);
+          sent.addAndGet(chunk.length());
+        }
+      });
     });
     await();
   }

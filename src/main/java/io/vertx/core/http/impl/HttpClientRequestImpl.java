@@ -54,6 +54,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   private final VertxInternal vertx;
+  private final ContextInternal context;
   private boolean chunked;
   private String hostHeader;
   private String rawMethod;
@@ -81,6 +82,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     super(client, ssl, method, server, host, port, relativeURI);
     this.chunked = false;
     this.vertx = vertx;
+    this.context = vertx.getOrCreateContext();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
   }
 
@@ -437,15 +439,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         initializer = h2;
       }
-      ContextInternal connectCtx = vertx.getOrCreateContext();
-
-
 
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
       connecting = true;
-      client.getConnectionForRequest(connectCtx, peerAddress, ssl, server, ar1 -> {
+      client.getConnectionForRequest(context, peerAddress, ssl, server, ar1 -> {
         if (ar1.succeeded()) {
           HttpClientStream stream = ar1.result();
           ContextInternal ctx = stream.getContext();
