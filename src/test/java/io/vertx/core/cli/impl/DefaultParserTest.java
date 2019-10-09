@@ -802,4 +802,48 @@ public class DefaultParserTest {
 
   }
 
+  @Test
+  public void testGetOptionValueWithCaseSensitivityConflict() {
+    final CLI cli = CLI.create("test")
+      .addOption(new Option().setShortName("a").setLongName("longname"))
+      .addOption(new Option().setShortName("A").setLongName("LONGNAME"));
+
+    String lowercaseValue = "someValue";
+    String uppercaseValue = "someOtherValue";
+
+    CommandLine commandLine = cli.parse(Arrays.asList("-a", lowercaseValue, "-A", uppercaseValue));
+    assertThat((String) commandLine.getOptionValue("a")).isEqualTo(lowercaseValue);
+    assertThat((String) commandLine.getOptionValue("A")).isEqualTo(uppercaseValue);
+    assertThat((String) commandLine.getOptionValue("longname")).isEqualTo(lowercaseValue);
+    assertThat((String) commandLine.getOptionValue("LONGNAME")).isEqualTo(uppercaseValue);
+
+    commandLine = cli.parse(Arrays.asList("--longname", lowercaseValue, "--LONGNAME", uppercaseValue));
+    assertThat((String) commandLine.getOptionValue("a")).isEqualTo(lowercaseValue);
+    assertThat((String) commandLine.getOptionValue("A")).isEqualTo(uppercaseValue);
+    assertThat((String) commandLine.getOptionValue("longname")).isEqualTo(lowercaseValue);
+    assertThat((String) commandLine.getOptionValue("LONGNAME")).isEqualTo(uppercaseValue);
+  }
+
+  @Test
+  public void testGetOptionValueWithoutCaseSensitivityConflict() {
+    // If there's no case-sensitivity conflict for a given short name, then using the opposite case when getting that
+    // option value should still work.
+    final CLI cli = CLI.create("test")
+      .addOption(new Option().setShortName("a").setLongName("lowercase"));
+
+    String value = "foo";
+
+    CommandLine commandLine = cli.parse(Arrays.asList("-a", value));
+    assertThat((String) commandLine.getOptionValue("a")).isEqualTo(value);
+    assertThat((String) commandLine.getOptionValue("A")).isEqualTo(value);
+    assertThat((String) commandLine.getOptionValue("lowercase")).isEqualTo(value);
+    assertThat((String) commandLine.getOptionValue("LOWERCASE")).isEqualTo(value);
+
+    commandLine = cli.parse(Arrays.asList("--lowercase", value));
+    assertThat((String) commandLine.getOptionValue("a")).isEqualTo(value);
+    assertThat((String) commandLine.getOptionValue("A")).isEqualTo(value);
+    assertThat((String) commandLine.getOptionValue("lowercase")).isEqualTo(value);
+    assertThat((String) commandLine.getOptionValue("LOWERCASE")).isEqualTo(value);
+  }
+
 }

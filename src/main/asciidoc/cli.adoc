@@ -41,8 +41,10 @@ contain more details. Each option and argument are also added on the `CLI` objec
 
 An {@link io.vertx.core.cli.Option} is a command line parameter identified by a _key_ present in the user command
 line. Options must have at least a long name or a short name. Long name are generally used using a `--` prefix,
-while short names are used with a single `-`. Options can get a description displayed in the usage (see below).
-Options can receive 0, 1 or several values. An option receiving 0 values is a `flag`, and must be declared using
+while short names are used with a single `-`. Names are case-sensitive; however, case-insensitive name matching
+will be used during the <<query_interrogation_stage, Query / Interrogation Stage>> if no exact match is found.
+Options can get a description displayed in the usage (see below). Options can receive 0, 1 or several values. An
+option receiving 0 values is a `flag`, and must be declared using
 {@link io.vertx.core.cli.Option#setFlag(boolean)}. By default, options receive a single value, however, you can
 configure the option to receive several values using {@link io.vertx.core.cli.Option#setMultiValued(boolean)}:
 
@@ -152,6 +154,7 @@ This is useful if you want to check an argument or option is present even if the
 You can check whether or not the
 {@link io.vertx.core.cli.CommandLine} is valid using {@link io.vertx.core.cli.CommandLine#isValid()}.
 
+[[query_interrogation_stage]]
 === Query / Interrogation Stage
 
 Once parsed, you can retrieve the values of the options and arguments from the
@@ -163,8 +166,8 @@ method:
 {@link examples.cli.CLIExamples#example8}
 ----
 
-One of your option can have been marked as "help". If a user command line enabled a "help" option, the validation
-won't failed, but give you the opportunity to check if the user asks for help:
+One of your options can be marked as "help". If a user command line enabled a "help" option, the validation
+won't fail, but you have the opportunity to check if the user asks for help:
 
 [source,$lang]
 ----
