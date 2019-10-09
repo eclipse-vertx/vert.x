@@ -53,7 +53,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
-  private final VertxInternal vertx;
   private final ContextInternal context;
   private boolean chunked;
   private String hostHeader;
@@ -76,12 +75,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public HttpClientStream stream;
   private boolean connecting;
 
-  HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, SocketAddress server,
+  HttpClientRequestImpl(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method, SocketAddress server,
                         String host, int port,
                         String relativeURI, VertxInternal vertx) {
     super(client, ssl, method, server, host, port, relativeURI);
     this.chunked = false;
-    this.vertx = vertx;
     this.context = vertx.getOrCreateContext();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
   }

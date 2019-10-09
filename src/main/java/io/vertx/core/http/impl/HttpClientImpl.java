@@ -96,7 +96,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   private final VertxInternal vertx;
   private final HttpClientOptions options;
-  private final ContextInternal creatingContext;
+  private final ContextInternal context;
   private final ConnectionManager websocketCM; // The queue manager for websockets
   private final ConnectionManager httpCM; // The queue manager for requests
   private final Closeable closeHook;
@@ -129,16 +129,16 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).
         setApplicationProtocols(alpnVersions);
     sslHelper.validate(vertx);
-    this.creatingContext = vertx.getContext();
+    context = vertx.getOrCreateContext();
     closeHook = completionHandler -> {
       HttpClientImpl.this.close();
       completionHandler.handle(Future.succeededFuture());
     };
-    if (creatingContext != null) {
-      if(options.getProtocolVersion() == HttpVersion.HTTP_2 && Context.isOnWorkerThread()) {
-        throw new IllegalStateException("Cannot use HttpClient with HTTP_2 in a worker");
-      }
-      creatingContext.addCloseHook(closeHook);
+    if(options.getProtocolVersion() == HttpVersion.HTTP_2 && Context.isOnWorkerThread()) {
+      throw new IllegalStateException("Cannot use HttpClient with HTTP_2 in a worker");
+    }
+    if (context.deploymentID() != null) {
+      context.addCloseHook(closeHook);
     }
     if (!keepAlive && pipelining) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
@@ -158,10 +158,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public void webSocket(WebSocketConnectOptions connectOptions, Handler<AsyncResult<WebSocket>> handler) {
-    ContextInternal ctx = vertx.getOrCreateContext();
     SocketAddress addr = SocketAddress.inetSocketAddress(connectOptions.getPort(), connectOptions.getHost());
     websocketCM.getConnection(
-      ctx,
+      context,
       addr,
       connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(),
       addr, ar -> {
@@ -169,7 +168,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
           Http1xClientConnection conn = (Http1xClientConnection) ar.result();
           conn.toWebSocket(connectOptions.getURI(), connectOptions.getHeaders(), connectOptions.getVersion(), connectOptions.getSubProtocols(), HttpClientImpl.this.options.getMaxWebsocketFrameSize(), handler);
         } else {
-          ctx.schedule(v -> handler.handle(Future.failedFuture(ar.cause())));
+          context.schedule(v -> handler.handle(Future.failedFuture(ar.cause())));
         }
       });
   }
@@ -416,28 +415,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClient getNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    return requestNow(HttpMethod.GET, options, responseHandler);
-  }
-
-  @Override
-  public HttpClient getNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    get(port, host, requestURI, responseHandler).end();
-    return this;
-  }
-
-  @Override
-  public HttpClient getNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    return getNow(options.getDefaultPort(), host, requestURI, responseHandler);
-  }
-
-  @Override
-  public HttpClient getNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    get(requestURI, responseHandler).end();
-    return this;
-  }
-
-  @Override
   public HttpClientRequest post(RequestOptions options) {
     return request(HttpMethod.POST, options);
   }
@@ -538,28 +515,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public HttpClient headNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    return requestNow(HttpMethod.HEAD, options, responseHandler);
-  }
-
-  @Override
-  public HttpClient headNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    head(port, host, requestURI, responseHandler).end();
-    return this;
-  }
-
-  @Override
-  public HttpClient headNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    return headNow(options.getDefaultPort(), host, requestURI, responseHandler);
-  }
-
-  @Override
-  public HttpClient headNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    head(requestURI, responseHandler).end();
-    return this;
-  }
-
-  @Override
   public HttpClientRequest options(RequestOptions options) {
     return request(HttpMethod.OPTIONS, options);
   }
@@ -607,28 +562,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public HttpClientRequest optionsAbs(String absoluteURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
     return requestAbs(HttpMethod.OPTIONS, absoluteURI, responseHandler);
-  }
-
-  @Override
-  public HttpClient optionsNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    return requestNow(HttpMethod.OPTIONS, options, responseHandler);
-  }
-
-  @Override
-  public HttpClient optionsNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    options(port, host, requestURI, responseHandler).end();
-    return this;
-  }
-
-  @Override
-  public HttpClient optionsNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    return optionsNow(options.getDefaultPort(), host, requestURI, responseHandler);
-  }
-
-  @Override
-  public HttpClient optionsNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    options(requestURI, responseHandler).end();
-    return this;
   }
 
   @Override
@@ -737,8 +670,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       checkClosed();
       closed = true;
     }
-    if (creatingContext != null) {
-      creatingContext.removeCloseHook(closeHook);
+    if (context.deploymentID() != null) {
+      context.removeCloseHook(closeHook);
     }
     websocketCM.close();
     httpCM.close();
@@ -819,11 +752,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
   }
 
-  private HttpClient requestNow(HttpMethod method, RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    createRequest(method, null, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null).setHandler(responseHandler).end();
-    return this;
-  }
-
   private HttpClientRequest createRequest(HttpMethod method, SocketAddress serverAddress, String host, int port, Boolean ssl, String relativeURI, MultiMap headers) {
     return createRequest(method, serverAddress, ssl==null || ssl==false ? "http" : "https", host, port, ssl, relativeURI, headers);
   }
@@ -853,13 +781,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
-      req = new HttpClientRequestImpl(this, useSSL, method, SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost()),
+      req = new HttpClientRequestImpl(this, context, useSSL, method, SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost()),
           host, port, relativeURI, vertx);
     } else {
       if (server == null) {
         server = SocketAddress.inetSocketAddress(port, host);
       }
-      req = new HttpClientRequestImpl(this, useSSL, method, server, host, port, relativeURI, vertx);
+      req = new HttpClientRequestImpl(this, context, useSSL, method, server, host, port, relativeURI, vertx);
     }
     if (headers != null) {
       req.headers().setAll(headers);

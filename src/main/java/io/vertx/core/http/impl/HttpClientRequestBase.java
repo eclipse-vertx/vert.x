@@ -18,6 +18,7 @@ import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
 
 /**

@@ -18,7 +18,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.SocketAddress;
 
@@ -306,15 +305,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient getNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient getNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    get(options, responseHandler);
+    return this;
+  }
 
   /**
    * Like {@link #getNow(RequestOptions, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> getNow(RequestOptions options) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    getNow(options, promise);
-    return promise.future();
+    HttpClientRequest request = get(options);
+    request.end();
+    return request;
   }
 
   /**
@@ -327,15 +329,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient getNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient getNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    get(port, host, requestURI, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #getNow(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> getNow(int port, String host, String requestURI) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    getNow(port, host, requestURI, promise);
-    return promise.future();
+    HttpClientRequest request = get(port, host, requestURI);
+    request.end();
+    return request;
   }
 
   /**
@@ -347,15 +352,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient getNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient getNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    get(host, requestURI, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #getNow(String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> getNow(String host, String requestURI) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    getNow(host, requestURI, promise);
-    return promise.future();
+    HttpClientRequest request = get(host, requestURI);
+    request.end();
+    return request;
   }
 
   /**
@@ -366,15 +374,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient getNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient getNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    get(requestURI, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #getNow(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> getNow(String requestURI) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    getNow(requestURI, promise);
-    return promise.future();
+    HttpClientRequest request = get(requestURI);
+    request.end();
+    return request;
   }
 
   /**
@@ -557,15 +568,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient headNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient headNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    head(options, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #headNow(RequestOptions, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> headNow(RequestOptions options) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    headNow(options, promise);
-    return promise.future();
+    HttpClientRequest request = head(options);
+    request.end();
+    return request;
   }
 
   /**
@@ -578,15 +592,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient headNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient headNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    head(port, host, requestURI, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #headNow(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> headNow(int port, String host, String requestURI) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    headNow(port, host, requestURI, promise);
-    return promise.future();
+    HttpClientRequest request = head(port, host, requestURI);
+    request.end();
+    return request;
   }
 
   /**
@@ -598,15 +615,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient headNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient headNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    head(host, requestURI, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #headNow(String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> headNow(String host, String requestURI) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    headNow(host, requestURI, promise);
-    return promise.future();
+    HttpClientRequest request = head(host, requestURI);
+    request.end();
+    return request;
   }
 
   /**
@@ -617,15 +637,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient headNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient headNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    head(requestURI, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #headNow(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> headNow(String requestURI) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    headNow(requestURI, promise);
-    return promise.future();
+    HttpClientRequest request = head(requestURI);
+    request.end();
+    return request;
   }
 
   /**
@@ -722,15 +745,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient optionsNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient optionsNow(RequestOptions options, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    options(options, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #optionsNow(RequestOptions, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> optionsNow(RequestOptions options) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    options(options, promise);
-    return promise.future();
+    HttpClientRequest request = options(options);
+    request.end();
+    return request;
   }
 
   /**
@@ -743,15 +769,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient optionsNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient optionsNow(int port, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    options(port, host, requestURI, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #optionsNow(int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> optionsNow(int port, String host, String requestURI) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    options(port, host, requestURI, promise);
-    return promise.future();
+    HttpClientRequest request = options(port, host, requestURI);
+    request.end();
+    return request;
   }
 
   /**
@@ -763,15 +792,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient optionsNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient optionsNow(String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    options(host, requestURI, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #optionsNow(String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> optionsNow(String host, String requestURI) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    options(host, requestURI, promise);
-    return promise.future();
+    HttpClientRequest request = options(host, requestURI);
+    request.end();
+    return request;
   }
 
   /**
@@ -782,15 +814,18 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient optionsNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+  default HttpClient optionsNow(String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    options(requestURI, responseHandler).end();
+    return this;
+  }
 
   /**
    * Like {@link #optionsNow(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default Future<HttpClientResponse> optionsNow(String requestURI) {
-    Promise<HttpClientResponse> promise = Promise.promise();
-    options(requestURI, promise);
-    return promise.future();
+    HttpClientRequest request = options(requestURI);
+    request.end();
+    return request;
   }
 
   /**
