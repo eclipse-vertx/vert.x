@@ -28,11 +28,6 @@ public class FutureFactoryImpl implements FutureFactory {
   }
 
   @Override
-  public <T> Future<T> future() {
-    return new FutureImpl<>();
-  }
-
-  @Override
   public <T> Future<T> succeededFuture() {
     @SuppressWarnings("unchecked")
     Future<T> fut = EMPTY;

@@ -21,8 +21,6 @@ public interface FutureFactory {
 
   <T> Promise<T> promise();
 
-  <T> Future<T> future();
-
   <T> Future<T> succeededFuture();
 
   <T> Future<T> succeededFuture(T result);
