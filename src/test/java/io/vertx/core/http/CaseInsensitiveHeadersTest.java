@@ -981,4 +981,5 @@ public class CaseInsensitiveHeadersTest {
     assertEquals("value1", mmap.get("header"));
     assertEquals(Arrays.asList("value1", "value2", "value3"), mmap.getAll("header"));
   }
+
 }

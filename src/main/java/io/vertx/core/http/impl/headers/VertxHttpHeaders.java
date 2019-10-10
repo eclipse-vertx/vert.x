@@ -517,7 +517,10 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     }
   }
 
-  private void add0(int h, int i, final CharSequence name, final CharSequence value) {
+  private VertxHttpHeaders add0(int h, int i, final CharSequence name, final CharSequence value) {
+    if (value == null) {
+      return this;
+    }
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
@@ -529,6 +532,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
     // Update the linked list.
     newEntry.addBefore(head);
+    return this;
   }
 
   private VertxHttpHeaders set0(final CharSequence name, final CharSequence strVal) {

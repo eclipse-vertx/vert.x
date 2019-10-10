@@ -16,8 +16,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -47,4 +46,23 @@ public class VertxHttpHeadersTest extends CaseInsensitiveHeadersTest {
   public void testHashMININT() {
     // Does not apply
   }
+
+  @Test
+  public void testSet0NullHeader() {
+    VertxHttpHeaders headers = new VertxHttpHeaders();
+    headers.set("Test-Header", (String) null);
+    String value = headers.get("Test-Header");
+    assertNull(value);
+    assertFalse(headers.contains("Test-Header"));
+  }
+
+  @Test
+  public void testAdd0NullHeader() {
+    VertxHttpHeaders headers = new VertxHttpHeaders();
+    headers.add("Test-Header", (String) null);
+    String value = headers.get("Test-Header");
+    assertNull(value);
+    assertFalse(headers.contains("Test-Header"));
+  }
+
 }
