@@ -18,7 +18,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -162,7 +161,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public <T> MessageConsumer<T> consumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new HandlerRegistration<>(vertx, metrics, this, address, null, false, false);
+    return new HandlerRegistration<>(vertx, vertx.getOrCreateContext(), metrics, this, address, null, false, false);
   }
 
   @Override
@@ -177,7 +176,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public <T> MessageConsumer<T> localConsumer(String address) {
     checkStarted();
     Objects.requireNonNull(address, "address");
-    return new HandlerRegistration<>(vertx, metrics, this, address, null, true, false);
+    return new HandlerRegistration<>(vertx, vertx.getOrCreateContext(), metrics, this, address, null, true, false);
   }
 
   @Override
@@ -269,8 +268,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
                                                            boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(address, "address");
 
-    Context context = vertx.getOrCreateContext();
-    registration.setHandlerContext(context);
+    Context context = registration.context;
 
     HandlerHolder<T> holder = new HandlerHolder<>(registration, replyHandler, localOnly, context);
 
@@ -324,7 +322,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         // Guarantees the order when there is no current context in clustered mode
         ctx = sendNoContext;
       }
-      ReplyHandler<T> handler = createReplyHandler(replyMessage, replierMessage.src, options, replyHandler);
+      ReplyHandler<T> handler = replyHandler != null ? createReplyHandler(replyMessage, replierMessage.src, options, replyHandler) : null;
       new OutboundDeliveryContext<>(ctx, replyMessage, options, handler, replierMessage).next();
     }
   }
@@ -450,18 +448,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
                                                  boolean src,
                                                  DeliveryOptions options,
                                                  Handler<AsyncResult<Message<T>>> replyHandler) {
-    if (replyHandler != null) {
-      long timeout = options.getSendTimeout();
-      String replyAddress = generateReplyAddress();
-      message.setReplyAddress(replyAddress);
-      HandlerRegistration<T> registration = new HandlerRegistration<>(vertx, metrics, this, replyAddress, message.address, true, src);
-      ReplyHandler<T> handler = new ReplyHandler<>(registration, timeout);
-      handler.result.future().setHandler(replyHandler);
-      registration.handler(handler);
-      return handler;
-    } else {
-      return null;
-    }
+    long timeout = options.getSendTimeout();
+    String replyAddress = generateReplyAddress();
+    message.setReplyAddress(replyAddress);
+    HandlerRegistration<T> registration = new HandlerRegistration<>(vertx, vertx.getOrCreateContext(), metrics, this, replyAddress, message.address, true, src);
+    ReplyHandler<T> handler = new ReplyHandler<>(registration, timeout);
+    handler.result.future().setHandler(replyHandler);
+    registration.handler(handler);
+    return handler;
   }
 
   public class ReplyHandler<T> implements Handler<Message<T>> {
@@ -480,7 +474,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
 
     private void trace(Object reply, Throwable failure) {
-      ContextInternal ctx = registration.handlerContext();
+      ContextInternal ctx = registration.context;
       VertxTracer tracer = ctx.tracer();
       if (tracer != null && registration.src) {
         tracer.receiveResponse(ctx, reply, trace, failure, TagExtractor.empty());
@@ -512,7 +506,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   public <T> void sendOrPubInternal(MessageImpl message, DeliveryOptions options,
                                      Handler<AsyncResult<Message<T>>> replyHandler) {
     checkStarted();
-    ReplyHandler<T> handler = createReplyHandler(message, true, options, replyHandler);
+    ReplyHandler<T> handler = replyHandler != null ? createReplyHandler(message, true, options, replyHandler) : null;
     ContextInternal ctx = vertx.getContext();
     if (ctx == null) {
       // Guarantees the order when there is no current context in clustered mode

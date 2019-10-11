@@ -43,13 +43,13 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private final Vertx vertx;
   private final EventBusMetrics metrics;
   private final EventBusImpl eventBus;
+  final ContextInternal context;
   final String address;
   final String repliedAddress;
   private final boolean localOnly;
   protected final boolean src;
   private HandlerHolder<T> registered;
   private Handler<Message<T>> handler;
-  private ContextInternal handlerContext;
   private AsyncResult<Void> result;
   private Handler<AsyncResult<Void>> completionHandler;
   private Handler<Void> endHandler;
@@ -59,7 +59,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private long demand = Long.MAX_VALUE;
   private Object metric;
 
-  public HandlerRegistration(Vertx vertx, EventBusMetrics metrics, EventBusImpl eventBus, String address,
+  public HandlerRegistration(Vertx vertx, ContextInternal context, EventBusMetrics metrics, EventBusImpl eventBus, String address,
                              String repliedAddress, boolean localOnly, boolean src) {
     this.vertx = vertx;
     this.metrics = metrics;
@@ -68,6 +68,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     this.repliedAddress = repliedAddress;
     this.localOnly = localOnly;
     this.src = src;
+    this.context = context;
   }
 
   @Override
@@ -152,7 +153,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       if (pending.size() > 0 && discardHandler != null) {
         Deque<Message<T>> discarded = new ArrayDeque<>(pending);
         Handler<Message<T>> handler = discardHandler;
-        handlerContext.runOnContext(v -> {
+        context.runOnContext(v -> {
           Message<T> msg;
           while ((msg = discarded.poll()) != null) {
             handler.handle(msg);
@@ -179,10 +180,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     if (completionHandler != null) {
       vertx.runOnContext(v -> completionHandler.handle(result));
     }
-  }
-
-  synchronized void setHandlerContext(Context context) {
-    handlerContext = (ContextInternal) context;
   }
 
   public synchronized void setResult(AsyncResult<Void> result) {
@@ -231,7 +228,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         }
         theHandler = handler;
       }
-      ctx = handlerContext;
+      ctx = context;
     }
     deliver(theHandler, message, ctx);
   }
@@ -250,14 +247,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     checkNextTick();
   }
 
-  ContextInternal handlerContext() {
-    return handlerContext;
-  }
-
   private synchronized void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!pending.isEmpty() && demand > 0L) {
-      handlerContext.runOnContext(v -> {
+      context.runOnContext(v -> {
         Message<T> message;
         Handler<Message<T>> theHandler;
         ContextInternal ctx;
@@ -269,7 +262,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
             demand--;
           }
           theHandler = handler;
-          ctx = handlerContext;
+          ctx = context;
         }
         deliver(theHandler, message, ctx);
       });
@@ -400,7 +393,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           if (metrics != null) {
             metrics.beginHandleMessage(metric, local);
           }
-          VertxTracer tracer = handlerContext.tracer();
+          VertxTracer tracer = HandlerRegistration.this.context.tracer();
           if (tracer != null && !src) {
             Object trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
             handler.handle(message);
