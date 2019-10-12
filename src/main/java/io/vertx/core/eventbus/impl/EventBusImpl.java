@@ -269,12 +269,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
                                                            boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(address, "address");
 
-    Context context = Vertx.currentContext();
-    boolean hasContext = context != null;
-    if (!hasContext) {
-      // Embedded
-      context = vertx.getOrCreateContext();
-    }
+    Context context = vertx.getOrCreateContext();
     registration.setHandlerContext(context);
 
     HandlerHolder<T> holder = new HandlerHolder<>(registration, replyHandler, localOnly, context);
@@ -285,7 +280,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       handlers,
       (old, prev) -> old.add(prev.first()));
 
-    if (hasContext) {
+    if (context.deploymentID() != null) {
       HandlerEntry entry = new HandlerEntry<>(address, registration);
       context.addCloseHook(entry);
     }
@@ -313,7 +308,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       ConcurrentCyclicSequence<HandlerHolder> next = val.remove(holder);
       return next.size() == 0 ? null : next;
     }) == null;
-    if (holder.setRemoved()) {
+    if (holder.setRemoved() && holder.getContext().deploymentID() != null) {
       holder.getContext().removeCloseHook(new HandlerEntry<>(address, holder.getHandler()));
     }
     return last;
