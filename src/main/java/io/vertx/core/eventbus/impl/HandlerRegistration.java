@@ -121,8 +121,10 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   }
 
   @Override
-  public void unregister() {
-    doUnregister(null);
+  public Future<Void> unregister() {
+    Promise<Void> promise = Promise.promise();
+    doUnregister(promise);
+    return promise.future();
   }
 
   @Override

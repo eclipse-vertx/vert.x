@@ -13,6 +13,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.streams.ReadStream;
 
@@ -92,7 +93,7 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
   /**
    * Unregisters the handler which created this registration
    */
-  void unregister();
+  Future<Void> unregister();
 
   /**
    * Unregisters the handler which created this registration
