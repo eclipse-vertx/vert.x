@@ -429,7 +429,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     return !listening;
   }
 
-  public synchronized int actualPort() {
+  public int actualPort() {
     return actualPort;
   }
 
