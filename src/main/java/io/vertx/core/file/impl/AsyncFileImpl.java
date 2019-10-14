@@ -382,21 +382,28 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
 
-  private synchronized void handleBuffer(Buffer buff) {
+  private void handleBuffer(Buffer buff) {
+    Handler<Buffer> handler;
+    synchronized (this) {
+      handler = this.handler;
+    }
     if (handler != null) {
       checkContext();
       handler.handle(buff);
     }
   }
 
-  private synchronized void handleEnd() {
-    handler = null;
+  private void handleEnd() {
+    Handler<Void> endHandler;
+    synchronized (this) {
+      handler = null;
+      endHandler = this.endHandler;
+    }
     if (endHandler != null) {
       checkContext();
       endHandler.handle(null);
     }
   }
-
 
   private synchronized void doFlush(Handler<AsyncResult<Void>> handler) {
     checkClosed();
