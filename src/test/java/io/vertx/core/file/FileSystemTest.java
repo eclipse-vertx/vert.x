@@ -1565,6 +1565,25 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  public void testReadStreamNoLock() throws Exception {
+    String fileName = "some-file.dat";
+    int chunkSize = 16384;
+    int chunks = 1;
+    byte[] content = TestUtils.randomByteArray(chunkSize * chunks);
+    createFile(fileName, content);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(rs -> {
+      rs.handler(buff -> {
+        assertFalse(Thread.holdsLock(rs));
+      });
+      rs.endHandler(v -> {
+        assertFalse(Thread.holdsLock(rs));
+        testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   public void testPumpFileStreams() throws Exception {
     String fileName1 = "some-file.dat";
