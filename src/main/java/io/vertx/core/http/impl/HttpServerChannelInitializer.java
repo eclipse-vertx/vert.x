@@ -237,7 +237,7 @@ public class HttpServerChannelInitializer extends ChannelInitializer<Channel> {
     if (disableH2C) {
       configureHttp1(pipeline, holder);
     } else {
-      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, holder));
+      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, holder, options.isCompressionSupported(), options.isDecompressionSupported()));
     }
   }
 
