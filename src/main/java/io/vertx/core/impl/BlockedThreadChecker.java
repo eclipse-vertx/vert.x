@@ -15,9 +15,6 @@ import io.vertx.core.VertxException;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,8 +25,6 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class BlockedThreadChecker {
-
-  private final ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
 
   /**
    * A checked task.
@@ -63,14 +58,6 @@ public class BlockedThreadChecker {
               if (warningExceptionTimeUnit.convert(dur, TimeUnit.NANOSECONDS) <= warningExceptionTime) {
                 log.warn(message);
               } else {
-
-                // Check for deadlocks
-                long[] deadlockedThreadIds = mbean.findDeadlockedThreads();
-                if (deadlockedThreadIds != null) {
-                  ThreadInfo[] threadInfos = mbean.getThreadInfo(deadlockedThreadIds);
-                  handleDeadlock(threadInfos);
-                }
-
                 VertxException stackTrace = new VertxException("Thread blocked");
                 stackTrace.setStackTrace(entry.getKey().getStackTrace());
                 log.warn(message, stackTrace);
@@ -81,24 +68,6 @@ public class BlockedThreadChecker {
       }
     }, intervalUnit.toMillis(interval), intervalUnit.toMillis(interval));
   }
-
-  private void handleDeadlock(final ThreadInfo[] deadlockedThreads) {
-    System.err.println("Deadlock detected!");
-    Map<Thread, StackTraceElement[]> stackTraceMap = Thread.getAllStackTraces();
-    for (ThreadInfo threadInfo : deadlockedThreads) {
-      if (threadInfo != null) {
-        for (Thread thread : Thread.getAllStackTraces().keySet()) {
-          if (thread.getId() == threadInfo.getThreadId()) {
-            System.err.println(threadInfo.toString().trim());
-            for (StackTraceElement ste : thread.getStackTrace()) {
-              System.err.println("\t" + ste.toString().trim());
-            }
-          }
-        }
-      }
-    }
-  }
-
 
   synchronized void registerThread(Thread thread, Task checked) {
     threads.put(thread, checked);
