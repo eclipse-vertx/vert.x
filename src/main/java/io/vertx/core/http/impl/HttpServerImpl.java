@@ -17,6 +17,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -71,7 +72,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
-  private AsyncResolveConnectHelper bindFuture;
+  private io.netty.util.concurrent.Future<Channel> bindFuture;
   private ServerID id;
   private HttpServerImpl actualServer;
   private volatile int actualPort;
@@ -233,13 +234,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         addHandlers(this, listenContext);
         try {
           bindFuture = AsyncResolveConnectHelper.doBind(vertx, address, bootstrap);
-          bindFuture.addListener(res -> {
-            if (res.failed()) {
+          bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
+            if (!res.isSuccess()) {
               synchronized (sharedHttpServers) {
                 sharedHttpServers.remove(id);
               }
             } else {
-              Channel serverChannel = res.result();
+              Channel serverChannel = res.getNow();
               if (serverChannel.localAddress() instanceof InetSocketAddress) {
                 HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
               } else {
@@ -269,17 +270,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         VertxMetrics metrics = vertx.metricsSPI();
         this.metrics = metrics != null ? metrics.createHttpServerMetrics(options, address) : null;
       }
-      actualServer.bindFuture.addListener(future -> {
+      actualServer.bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
         if (listenHandler != null) {
           final AsyncResult<HttpServer> res;
-          if (future.succeeded()) {
+          if (future.isSuccess()) {
             res = Future.succeededFuture(HttpServerImpl.this);
           } else {
             res = Future.failedFuture(future.cause());
             listening = false;
           }
           listenContext.runOnContext((v) -> listenHandler.handle(res));
-        } else if (future.failed()) {
+        } else if (!future.isSuccess()) {
           listening  = false;
           if (metrics != null) {
             metrics.close();

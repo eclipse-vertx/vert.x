@@ -23,6 +23,7 @@ import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
@@ -72,7 +73,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private Handler<NetSocket> registeredHandler;
   private volatile ServerID id;
   private NetServerImpl actualServer;
-  private AsyncResolveConnectHelper bindFuture;
+  private io.netty.util.concurrent.Future<Channel> bindFuture;
   private volatile int actualPort;
   private ContextInternal listenContext;
   private TCPMetrics metrics;
@@ -186,7 +187,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
         bootstrap.childHandler(new ChannelInitializer<Channel>() {
           @Override
-          protected void initChannel(Channel ch) throws Exception {
+          protected void initChannel(Channel ch) {
             if (!accept()) {
               ch.close();
               return;
@@ -229,9 +230,9 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
         try {
           bindFuture = AsyncResolveConnectHelper.doBind(vertx, socketAddress, bootstrap);
-          bindFuture.addListener(res -> {
-            if (res.succeeded()) {
-              Channel ch = res.result();
+          bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
+            if (res.isSuccess()) {
+              Channel ch = res.getNow();
               log.trace("Net server listening on " + (hostOrPath) + ":" + ch.localAddress());
               // Update port to actual port - wildcard port 0 might have been used
               if (NetServerImpl.this.actualPort != -1) {
@@ -278,10 +279,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
       }
 
       // just add it to the future so it gets notified once the bind is complete
-      actualServer.bindFuture.addListener(res -> {
+      actualServer.bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
         if (listenHandler != null) {
           AsyncResult<Void> ares;
-          if (res.succeeded()) {
+          if (res.isSuccess()) {
             ares = Future.succeededFuture();
           } else {
             listening = false;
@@ -291,14 +292,13 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
           // Netty will call future handler immediately with calling thread
           // which might be a non Vert.x thread (if running embedded)
           listenContext.runOnContext(v -> listenHandler.handle(ares));
-        } else if (res.failed()) {
+        } else if (!res.isSuccess()) {
           // No handler - log so user can see failure
           log.error("Failed to listen", res.cause());
           listening = false;
         }
       });
     }
-    return;
   }
 
   public synchronized void close() {
@@ -424,7 +424,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     return !listening;
   }
 
-  public synchronized int actualPort() {
+  public int actualPort() {
     return actualPort;
   }
 
