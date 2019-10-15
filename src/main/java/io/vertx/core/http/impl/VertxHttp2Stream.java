@@ -92,8 +92,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void onWritabilityChanged() {
     synchronized (conn) {
       writable = !writable;
-      handleInterestedOpsChanged();
     }
+    handleInterestedOpsChanged();
   }
 
   void onEnd() {
