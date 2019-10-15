@@ -204,12 +204,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized boolean writeQueueFull() {
     checkEnded();
-    if (stream == null) {
-      // Should actually check with max queue size and not always blindly return false
-      return false;
-    } else {
-      return stream.isNotWritable();
+    synchronized (this) {
+      checkEnded();
+      if (stream == null) {
+        // Should actually check with max queue size and not always blindly return false
+        return false;
+      }
     }
+    return stream.isNotWritable();
   }
 
   @Override
