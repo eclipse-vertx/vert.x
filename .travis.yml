@@ -21,11 +21,13 @@ jobs:
     - if: type != pull_request
       name: "OpenJDK 8 / native transport"
       jdk: openjdk8
-      script: mvn -q clean verify -B -PtestNativeTransport
+      # Workaround, only execute some tests as Netty epoll has slow shutdown (https://github.com/netty/netty/issues/9678)
+      script: mvn -q clean verify -B -PtestNativeTransport -Dtest=NetTest,Http*Test,HostnameResolutionTest
     - if: type != pull_request
       name: "OpenJDK 8 / domain sockets"
       jdk: openjdk8
-      script: mvn -q clean verify -B -PtestDomainSockets
+      # Workaround, only execute some tests as Netty epoll has slow shutdown (https://github.com/netty/netty/issues/9678)
+      script: mvn -q clean verify -B -PtestDomainSockets -Dtest=NetTest,Http*Test,HostnameResolutionTest
     - stage: deploy
       name: "Deploy to Sonatype's snapshots repository"
       jdk: openjdk8
