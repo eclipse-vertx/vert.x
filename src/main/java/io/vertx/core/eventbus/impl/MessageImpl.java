@@ -43,12 +43,11 @@ public class MessageImpl<U, V> implements Message<V> {
     this.src = src;
   }
 
-  public MessageImpl(String address, String replyAddress, MultiMap headers, U sentBody,
+  public MessageImpl(String address, MultiMap headers, U sentBody,
                      MessageCodec<U, V> messageCodec,
                      boolean send, boolean src, EventBusImpl bus) {
     this.messageCodec = messageCodec;
     this.address = address;
-    this.replyAddress = replyAddress;
     this.headers = headers;
     this.sentBody = sentBody;
     this.send = send;

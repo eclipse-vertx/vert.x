@@ -11,9 +11,6 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
@@ -139,7 +136,7 @@ class ConnectionHolder {
         close();
       });
       ClusteredMessage pingMessage =
-        new ClusteredMessage<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true, true, eventBus);
+        new ClusteredMessage<>(serverID, PING_ADDRESS, null, null, new PingMessageCodec(), true, true, eventBus);
       Buffer data = pingMessage.encodeToWire();
       socket.write(data);
     });

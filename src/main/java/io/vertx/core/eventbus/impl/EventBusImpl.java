@@ -235,7 +235,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    MessageImpl msg = new MessageImpl(address, null, headers, body, codec, send, src, this);
+    MessageImpl msg = new MessageImpl(address, headers, body, codec, send, src, this);
     return msg;
   }
 

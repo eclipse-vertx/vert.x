@@ -46,9 +46,9 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     super(src, bus);
   }
 
-  public ClusteredMessage(ServerID sender, String address, String replyAddress, MultiMap headers, U sentBody,
+  public ClusteredMessage(ServerID sender, String address, MultiMap headers, U sentBody,
                           MessageCodec<U, V> messageCodec, boolean send, boolean src, EventBusImpl bus) {
-    super(address, replyAddress, headers, sentBody, messageCodec, send, src, bus);
+    super(address, headers, sentBody, messageCodec, send, src, bus);
     this.sender = sender;
   }
 
