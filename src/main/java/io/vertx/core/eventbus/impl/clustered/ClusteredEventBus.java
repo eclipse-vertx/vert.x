@@ -19,6 +19,7 @@ import io.vertx.core.eventbus.impl.CodecManager;
 import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.HandlerHolder;
 import io.vertx.core.eventbus.impl.MessageImpl;
+import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.HAManager;
 import io.vertx.core.impl.VertxInternal;
@@ -35,7 +36,6 @@ import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;

@@ -44,7 +44,7 @@ import java.util.function.BiConsumer;
  */
 public class EventBusImpl implements EventBus, MetricsProvider {
 
-  private static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
+  static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
   private final List<Handler<DeliveryContext>> sendInterceptors = new CopyOnWriteArrayList<>();
   private final List<Handler<DeliveryContext>> receiveInterceptors = new CopyOnWriteArrayList<>();
@@ -321,8 +321,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         // Guarantees the order when there is no current context in clustered mode
         ctx = sendNoContext;
       }
-      new OutboundDeliveryContext<>(ctx, replyMessage, options, replyHandler, replierMessage).next();
+      send(new OutboundDeliveryContext<>(ctx, replyMessage, options, replyHandler, replierMessage));
     }
+  }
+
+  private void send(OutboundDeliveryContext ctx) {
+    ctx.iter = sendInterceptors.iterator();
+    ctx.bus = this;
+    ctx.next();
   }
 
   protected <T> void sendReply(OutboundDeliveryContext<T> sendContext, MessageImpl replierMessage) {
@@ -500,68 +506,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       // Guarantees the order when there is no current context in clustered mode
       ctx = sendNoContext;
     }
-    OutboundDeliveryContext<T> sendContext = new OutboundDeliveryContext<>(ctx, message, options, handler);
-    sendContext.next();
-  }
-
-  protected class OutboundDeliveryContext<T> implements DeliveryContext<T> {
-
-    public final ContextInternal ctx;
-    public final MessageImpl message;
-    public final DeliveryOptions options;
-    public final Iterator<Handler<DeliveryContext>> iter;
-    public final ReplyHandler<T> replyHandler;
-    private final MessageImpl replierMessage;
-
-    private OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, ReplyHandler<T> replyHandler) {
-      this(ctx, message, options, replyHandler, null);
-    }
-
-    private OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, ReplyHandler<T> replyHandler, MessageImpl replierMessage) {
-      this.ctx = ctx;
-      this.message = message;
-      this.options = options;
-      this.iter = sendInterceptors.iterator();
-      this.replierMessage = replierMessage;
-      this.replyHandler = replyHandler;
-    }
-
-    @Override
-    public Message<T> message() {
-      return message;
-    }
-
-    @Override
-    public void next() {
-      if (iter.hasNext()) {
-        Handler<DeliveryContext> handler = iter.next();
-        try {
-          if (handler != null) {
-            handler.handle(this);
-          } else {
-            next();
-          }
-        } catch (Throwable t) {
-          log.error("Failure in interceptor", t);
-        }
-      } else {
-        if (replierMessage == null) {
-          sendOrPub(this);
-        } else {
-          sendReply(this, replierMessage);
-        }
-      }
-    }
-
-    @Override
-    public boolean send() {
-      return message.isSend();
-    }
-
-    @Override
-    public Object body() {
-      return message.sentBody;
-    }
+    send(new OutboundDeliveryContext<>(ctx, message, options, handler));
   }
 
   private void unregisterAll() {
