@@ -207,21 +207,20 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void sendReply(OutboundDeliveryContext<T> sendContext, MessageImpl replierMessage) {
-    clusteredSendReply(((ClusteredMessage) replierMessage).getSender(), sendContext);
-  }
-
-  @Override
   protected <T> void sendOrPub(OutboundDeliveryContext<T> sendContext) {
-    if (sendContext.options.isLocalOnly()) {
-      super.sendOrPub(sendContext);
-    } else if (Vertx.currentContext() != sendContext.ctx) {
-      // Current event-loop might be null when sending from non vertx thread
-      sendContext.ctx.runOnContext(v -> {
-        subs.get(sendContext.message.address(), ar -> onSubsReceived(ar, sendContext));
-      });
+    if (((ClusteredMessage) sendContext.message).getRepliedTo() != null) {
+      clusteredSendReply(((ClusteredMessage) sendContext.message).getRepliedTo(), sendContext);
     } else {
-      subs.get(sendContext.message.address(), ar -> onSubsReceived(ar, sendContext));
+      if (sendContext.options.isLocalOnly()) {
+        super.sendOrPub(sendContext);
+      } else if (Vertx.currentContext() != sendContext.ctx) {
+        // Current event-loop might be null when sending from non vertx thread
+        sendContext.ctx.runOnContext(v -> {
+          subs.get(sendContext.message.address(), ar -> onSubsReceived(ar, sendContext));
+        });
+      } else {
+        subs.get(sendContext.message.address(), ar -> onSubsReceived(ar, sendContext));
+      }
     }
   }
 

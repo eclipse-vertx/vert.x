@@ -109,7 +109,7 @@ public class MessageImpl<U, V> implements Message<V> {
   @Override
   public void reply(Object message, DeliveryOptions options) {
     if (replyAddress != null) {
-      MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName());
+      MessageImpl reply = createReply(message, options);
       bus.sendReply(reply, this, options, null);
     }
   }
@@ -117,13 +117,17 @@ public class MessageImpl<U, V> implements Message<V> {
   @Override
   public <R> Future<Message<R>> replyAndRequest(Object message, DeliveryOptions options) {
     if (replyAddress != null) {
-      MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName());
+      MessageImpl reply = createReply(message, options);
       EventBusImpl.ReplyHandler<R> handler = bus.createReplyHandler(reply, reply.src, options);
       bus.sendReply(reply, this, options, handler);
       return handler.result.future();
     } else {
       throw new IllegalStateException();
     }
+  }
+
+  protected MessageImpl createReply(Object message, DeliveryOptions options) {
+    return bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName());
   }
 
   @Override

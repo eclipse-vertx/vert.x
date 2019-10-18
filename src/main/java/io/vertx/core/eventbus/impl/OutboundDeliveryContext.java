@@ -32,7 +32,6 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
   public final MessageImpl message;
   public final DeliveryOptions options;
   public final EventBusImpl.ReplyHandler<T> replyHandler;
-  private final MessageImpl replierMessage;
   private final Promise<Void> writePromise;
 
   private Object trace;
@@ -42,14 +41,9 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
   EventBusMetrics metrics;
 
   OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, EventBusImpl.ReplyHandler<T> replyHandler, Promise<Void> writePromise) {
-    this(ctx, message, options, replyHandler, null, writePromise);
-  }
-
-  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, EventBusImpl.ReplyHandler<T> replyHandler, MessageImpl replierMessage, Promise<Void> writePromise) {
     this.ctx = ctx;
     this.message = message;
     this.options = options;
-    this.replierMessage = replierMessage;
     this.replyHandler = replyHandler;
     this.writePromise = writePromise;
   }
@@ -120,11 +114,7 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
         BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
         trace = tracer.sendRequest(ctx, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
       }
-      if (replierMessage == null) {
-        bus.sendOrPub(this);
-      } else {
-        bus.sendReply(this, replierMessage);
-      }
+      bus.sendOrPub(this);
     }
   }
 

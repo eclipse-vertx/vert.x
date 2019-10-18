@@ -14,6 +14,7 @@ package io.vertx.core.eventbus.impl.clustered;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.CodecManager;
 import io.vertx.core.eventbus.impl.EventBusImpl;
@@ -36,6 +37,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   private static final byte WIRE_PROTOCOL_VERSION = 1;
 
   private ServerID sender;
+  private ServerID repliedTo;
   private Buffer wireBuffer;
   private int bodyPos;
   private int headersPos;
@@ -61,6 +63,13 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
       this.headersPos = other.headersPos;
     }
     this.fromWire = other.fromWire;
+  }
+
+  @Override
+  protected MessageImpl createReply(Object message, DeliveryOptions options) {
+    ClusteredMessage reply = (ClusteredMessage) super.createReply(message, options);
+    reply.repliedTo = sender;
+    return reply;
   }
 
   public ClusteredMessage<U, V> copyBeforeReceive(boolean src) {
@@ -238,6 +247,10 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
   ServerID getSender() {
     return sender;
+  }
+
+  ServerID getRepliedTo() {
+    return repliedTo;
   }
 
   public boolean isFromWire() {
