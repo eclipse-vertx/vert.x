@@ -310,8 +310,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return last;
   }
 
-  protected <T> void sendReply(MessageImpl replyMessage, MessageImpl replierMessage, DeliveryOptions options,
-                               ReplyHandler<T> replyHandler) {
+  protected <T> void sendReply(MessageImpl replyMessage, DeliveryOptions options, ReplyHandler<T> replyHandler) {
     if (replyMessage.address() == null) {
       throw new IllegalStateException("address not specified");
     } else {

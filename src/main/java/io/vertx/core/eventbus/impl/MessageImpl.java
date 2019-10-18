@@ -110,7 +110,7 @@ public class MessageImpl<U, V> implements Message<V> {
   public void reply(Object message, DeliveryOptions options) {
     if (replyAddress != null) {
       MessageImpl reply = createReply(message, options);
-      bus.sendReply(reply, this, options, null);
+      bus.sendReply(reply, options, null);
     }
   }
 
@@ -119,7 +119,7 @@ public class MessageImpl<U, V> implements Message<V> {
     if (replyAddress != null) {
       MessageImpl reply = createReply(message, options);
       EventBusImpl.ReplyHandler<R> handler = bus.createReplyHandler(reply, reply.src, options);
-      bus.sendReply(reply, this, options, handler);
+      bus.sendReply(reply, options, handler);
       return handler.result.future();
     } else {
       throw new IllegalStateException();
