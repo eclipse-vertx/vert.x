@@ -268,7 +268,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
     Context context = registration.context;
 
-    HandlerHolder<T> holder = new HandlerHolder<>(registration, replyHandler, localOnly, context);
+    HandlerHolder<T> holder = new HandlerHolder<>(registration, address, replyHandler, localOnly, context);
 
     ConcurrentCyclicSequence<HandlerHolder> handlers = new ConcurrentCyclicSequence<HandlerHolder>().add(holder);
     ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
@@ -287,7 +287,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   protected <T> void removeRegistration(HandlerHolder<T> holder, Handler<AsyncResult<Void>> completionHandler) {
     boolean last = removeLocalRegistration(holder);
-    removeRegistration(last ? holder : null, holder.getHandler().address(), completionHandler);
+    removeRegistration(last ? holder : null, holder.address, completionHandler);
   }
 
   protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, String address,
@@ -296,8 +296,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   private <T> boolean removeLocalRegistration(HandlerHolder<T> holder) {
-    String address = holder.getHandler().address();
-    boolean last = handlerMap.compute(address, (key, val) -> {
+    boolean last = handlerMap.compute(holder.address, (key, val) -> {
       if (val == null) {
         return null;
       }
@@ -305,7 +304,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       return next.size() == 0 ? null : next;
     }) == null;
     if (holder.setRemoved() && holder.getContext().deploymentID() != null) {
-      holder.getContext().removeCloseHook(new HandlerEntry<>(address, holder.getHandler()));
+      holder.getContext().removeCloseHook(new HandlerEntry<>(holder.address, holder.getHandler()));
     }
     return last;
   }

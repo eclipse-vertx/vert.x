@@ -12,7 +12,6 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.Context;
-import io.vertx.core.spi.metrics.EventBusMetrics;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -20,15 +19,20 @@ import io.vertx.core.spi.metrics.EventBusMetrics;
 public class HandlerHolder<T> {
 
   private final Context context;
+  final String address;
   private final HandlerRegistration<T> handler;
   private final boolean replyHandler;
   private final boolean localOnly;
   private boolean removed;
 
-  public HandlerHolder(HandlerRegistration<T> handler, boolean replyHandler, boolean localOnly,
+  public HandlerHolder(HandlerRegistration<T> handler,
+                       String address,
+                       boolean replyHandler,
+                       boolean localOnly,
                        Context context) {
     this.context = context;
     this.handler = handler;
+    this.address = address;
     this.replyHandler = replyHandler;
     this.localOnly = localOnly;
   }
