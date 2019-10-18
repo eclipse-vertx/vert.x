@@ -10,35 +10,90 @@
  */
 package io.vertx.core.eventbus.impl;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.tracing.TagExtractor;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.Iterator;
+import java.util.function.BiConsumer;
 
-public class OutboundDeliveryContext<T> implements DeliveryContext<T> {
+public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<AsyncResult<Void>> {
 
   public final ContextInternal ctx;
   public final MessageImpl message;
   public final DeliveryOptions options;
   public final EventBusImpl.ReplyHandler<T> replyHandler;
   private final MessageImpl replierMessage;
+  private final Promise<Void> writePromise;
+
+  private Object trace;
 
   Iterator<Handler<DeliveryContext>> iter;
   EventBusImpl bus;
+  EventBusMetrics metrics;
 
-  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, EventBusImpl.ReplyHandler<T> replyHandler) {
-    this(ctx, message, options, replyHandler, null);
+  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, EventBusImpl.ReplyHandler<T> replyHandler, Promise<Void> writePromise) {
+    this(ctx, message, options, replyHandler, null, writePromise);
   }
 
-  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, EventBusImpl.ReplyHandler<T> replyHandler, MessageImpl replierMessage) {
+  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, EventBusImpl.ReplyHandler<T> replyHandler, MessageImpl replierMessage, Promise<Void> writePromise) {
     this.ctx = ctx;
     this.message = message;
     this.options = options;
     this.replierMessage = replierMessage;
     this.replyHandler = replyHandler;
+    this.writePromise = writePromise;
+  }
+
+  @Override
+  public void handle(AsyncResult<Void> event) {
+    written(event.cause());
+  }
+
+  public void written(Throwable failure) {
+
+    // Metrics
+    if (metrics != null) {
+      boolean remote = (message instanceof ClusteredMessage) && ((ClusteredMessage<?, ?>)message).isToWire();
+      metrics.messageSent(message.address(), !message.send, !remote, remote);
+    }
+
+    // Tracing
+    VertxTracer tracer = ctx.tracer();
+    if (tracer != null) {
+      if (message.src) {
+        if (replyHandler != null) {
+          replyHandler.trace = trace;
+        } else {
+          tracer.receiveResponse(ctx, null, trace, failure, TagExtractor.empty());
+        }
+      }
+    }
+
+    // Fail fast reply handler
+    if (failure instanceof ReplyException) {
+      if (replyHandler != null) {
+        replyHandler.fail((ReplyException) failure);
+      }
+    }
+
+    // Notify promise finally
+    if (writePromise != null) {
+      if (failure == null) {
+        writePromise.complete();
+      } else {
+        writePromise.fail(failure);
+      }
+    }
   }
 
   @Override
@@ -60,6 +115,11 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T> {
         EventBusImpl.log.error("Failure in interceptor", t);
       }
     } else {
+      VertxTracer tracer = ctx.tracer();
+      if (tracer != null && message.src) {
+        BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
+        trace = tracer.sendRequest(ctx, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
+      }
       if (replierMessage == null) {
         bus.sendOrPub(this);
       } else {

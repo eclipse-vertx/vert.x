@@ -32,8 +32,6 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.AsyncMultiMap;
 import io.vertx.core.spi.cluster.ChoosableIterable;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.tracing.TagExtractor;
-import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -176,11 +174,11 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  public MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName, Promise<Void> writeHandler) {
+  public MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send, src, this, writeHandler);
+    ClusteredMessage msg = new ClusteredMessage(serverID, address, null, headers, body, codec, send, src, this);
     return msg;
   }
 
@@ -237,7 +235,7 @@ public class ClusteredEventBus extends EventBusImpl {
       }
     } else {
       log.error("Failed to send message", asyncResult.cause());
-      sendContext.message.written(asyncResult.cause());
+      sendContext.written(asyncResult.cause());
     }
   }
 
@@ -354,17 +352,6 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   private void sendRemote(OutboundDeliveryContext<?> sendContext, ServerID theServerID, MessageImpl message) {
-    Object trace = messageSent(sendContext, false, true);
-
-    // SAME CODE THAN IN PARENT!!!!
-    VertxTracer tracer = sendContext.ctx.tracer();
-    if (tracer != null && sendContext.message.src) {
-      if (sendContext.replyHandler == null) {
-        tracer.receiveResponse(sendContext.ctx, null, trace, null, TagExtractor.empty());
-      } else {
-        sendContext.replyHandler.trace = trace;
-      }
-    }
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
@@ -383,7 +370,7 @@ public class ClusteredEventBus extends EventBusImpl {
         holder.connect();
       }
     }
-    holder.writeMessage((ClusteredMessage) message);
+    holder.writeMessage(sendContext);
   }
 
   private void removeSub(String subName, ClusterNodeInfo node, Handler<AsyncResult<Void>> completionHandler) {

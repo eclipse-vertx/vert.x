@@ -12,10 +12,7 @@
 package io.vertx.core.eventbus.impl.clustered;
 
 import io.netty.util.CharsetUtil;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.CodecManager;
@@ -43,14 +40,15 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   private int bodyPos;
   private int headersPos;
   private boolean fromWire;
+  private boolean toWire;
 
   public ClusteredMessage(boolean src, EventBusImpl bus) {
     super(src, bus);
   }
 
   public ClusteredMessage(ServerID sender, String address, String replyAddress, MultiMap headers, U sentBody,
-                          MessageCodec<U, V> messageCodec, boolean send, boolean src, EventBusImpl bus, Promise<Void> writeHandler) {
-    super(address, replyAddress, headers, sentBody, messageCodec, send, src, bus, writeHandler);
+                          MessageCodec<U, V> messageCodec, boolean send, boolean src, EventBusImpl bus) {
+    super(address, replyAddress, headers, sentBody, messageCodec, send, src, bus);
     this.sender = sender;
   }
 
@@ -100,6 +98,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   }
 
   public Buffer encodeToWire() {
+    toWire = true;
     int length = 1024; // TODO make this configurable
     Buffer buffer = Buffer.buffer(length);
     buffer.appendInt(0);
@@ -243,6 +242,10 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
   public boolean isFromWire() {
     return fromWire;
+  }
+
+  public boolean isToWire() {
+    return toWire;
   }
 
   protected boolean isLocal() {
