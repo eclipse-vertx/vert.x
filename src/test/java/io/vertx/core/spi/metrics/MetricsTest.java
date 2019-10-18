@@ -295,7 +295,6 @@ public class MetricsTest extends VertxTestBase {
   private void testHandlerProcessMessage(Vertx from, Vertx to, int expectedLocalCount) {
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(to.eventBus());
     CountDownLatch latch1 = new CountDownLatch(1);
-    CountDownLatch latch2 = new CountDownLatch(1);
     to.runOnContext(v -> {
       to.eventBus().consumer(ADDRESS1, msg -> {
         HandlerMetric registration = assertRegistration(metrics);
@@ -311,11 +310,6 @@ public class MetricsTest extends VertxTestBase {
       }).completionHandler(onSuccess(v2 -> {
         to.runOnContext(v3 -> {
           latch1.countDown();
-          try {
-            awaitLatch(latch2);
-          } catch (InterruptedException e) {
-            fail(e);
-          }
         });
       }));
     });
@@ -338,8 +332,6 @@ public class MetricsTest extends VertxTestBase {
       testComplete();
     });
     assertWaitUntil(() -> registration.scheduleCount.get() == 1);
-    assertEquals(0, registration.beginCount.get());
-    latch2.countDown();
     await();
   }
 

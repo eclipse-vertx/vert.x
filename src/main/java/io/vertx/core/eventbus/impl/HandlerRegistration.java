@@ -202,6 +202,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   @Override
   public void handle(Message<T> message) {
+    if (metrics != null) {
+      metrics.scheduleMessage(metric, ((MessageImpl)message).isLocal());
+    }
     Handler<Message<T>> theHandler;
     ContextInternal ctx;
     synchronized (this) {
@@ -350,10 +353,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   public Handler<Message<T>> getHandler() {
     return handler;
-  }
-
-  public Object getMetric() {
-    return metric;
   }
 
   protected class InboundDeliveryContext implements DeliveryContext<T> {

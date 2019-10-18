@@ -595,10 +595,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     // Each handler gets a fresh copy
     MessageImpl copied = msg.copyBeforeReceive(holder.getHandler().src);
 
-    if (metrics != null) {
-      metrics.scheduleMessage(holder.getHandler().getMetric(), msg.isLocal());
-    }
-
     holder.getContext().runOnContext((v) -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
       // before it was received
