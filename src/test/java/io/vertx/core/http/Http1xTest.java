@@ -2072,7 +2072,9 @@ public class Http1xTest extends HttpTest {
     });
     startServer(testAddress);
     Context clientCtx = vertx.getOrCreateContext();
+    client.close();
     clientCtx.runOnContext(v -> {
+      client = vertx.createHttpClient(createBaseClientOptions());
       HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
         assertSameEventLoop(clientCtx, Vertx.currentContext());
         complete();
@@ -2148,12 +2150,15 @@ public class Http1xTest extends HttpTest {
     awaitLatch(latch);
     CountDownLatch latch2 = new CountDownLatch(1);
     int numConns = 4;
-    // There should be a context per *connection*
+    // There should be a context per request
     Set<Context> contexts = new ConcurrentHashSet<>();
     Set<Thread> threads = new ConcurrentHashSet<>();
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numConns));
     Context clientCtx = vertx.getOrCreateContext();
+    clientCtx.runOnContext(v -> {
+      client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numConns));
+    });
+    waitUntil(() -> client != null);
     for (int i = 0; i < numReqs; i++) {
       int val = i;
       CompletableFuture<Void> cf = new CompletableFuture<>();
@@ -2174,7 +2179,7 @@ public class Http1xTest extends HttpTest {
           resp.endHandler(v2 -> {
             assertSameEventLoop(clientCtx, Vertx.currentContext());
             if (cnt.incrementAndGet() == numReqs) {
-              assertEquals(numReqs, contexts.size());
+              assertEquals(4, contexts.size());
               assertEquals(1, threads.size());
               latch2.countDown();
             }

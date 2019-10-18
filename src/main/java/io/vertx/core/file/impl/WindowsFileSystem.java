@@ -40,8 +40,7 @@ public class WindowsFileSystem extends FileSystemImpl {
   }
 
   @Override
-  protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms,
-                                               Handler<AsyncResult<Void>> handler) {
+  protected BlockingAction<Void> chmodInternal(String path, String perms, String dirPerms) {
     Objects.requireNonNull(path);
     Objects.requireNonNull(perms);
     logInternal(perms);
@@ -49,7 +48,7 @@ public class WindowsFileSystem extends FileSystemImpl {
     if (log.isDebugEnabled()) {
       log.debug("You are running on Windows and POSIX style file permissions are not supported!");
     }
-    return new BlockingAction<Void>(handler) {
+    return new BlockingAction<Void>() {
       @Override
       public Void perform() {
         return null;
@@ -58,10 +57,9 @@ public class WindowsFileSystem extends FileSystemImpl {
   }
 
   @Override
-  protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents,
-                                               Handler<AsyncResult<Void>> handler) {
+  protected BlockingAction<Void> mkdirInternal(String path, final String perms, final boolean createParents) {
     logInternal(perms);
-    return super.mkdirInternal(path, null, createParents, handler);
+    return super.mkdirInternal(path, null, createParents);
   }
 
   @Override
@@ -72,16 +70,16 @@ public class WindowsFileSystem extends FileSystemImpl {
   }
 
   @Override
-  protected BlockingAction<Void> createFileInternal(String p, final String perms, Handler<AsyncResult<Void>> handler) {
+  protected BlockingAction<Void> createFileInternal(String p, final String perms) {
     logInternal(perms);
-    return super.createFileInternal(p, null, handler);
+    return super.createFileInternal(p, null);
   }
 
   @Override
-  protected BlockingAction<Void> chownInternal(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
+  protected BlockingAction<Void> chownInternal(String path, String user, String group) {
     if (group != null && log.isDebugEnabled()) {
       log.debug("You are running on Windows and POSIX style file ownership is not supported");
     }
-    return super.chownInternal(path, user, group, handler);
+    return super.chownInternal(path, user, group);
   }
 }

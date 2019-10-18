@@ -15,7 +15,8 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+
+import java.util.Objects;
 
 /**
  * An asynchronous counter that can be used to across the cluster to maintain a consistent count.
@@ -32,64 +33,60 @@ public interface Counter {
    *
    * @param resultHandler handler which will be passed the value
    */
-  void get(Handler<AsyncResult<Long>> resultHandler);
+  default void get(Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    get().setHandler(resultHandler);
+  }
 
   /**
    * Same as {@link #get(Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Long> get() {
-    Promise<Long> promise = Promise.promise();
-    get(promise);
-    return promise.future();
-  }
+  Future<Long> get();
 
   /**
    * Increment the counter atomically and return the new count
    *
    * @param resultHandler handler which will be passed the value
    */
-  void incrementAndGet(Handler<AsyncResult<Long>> resultHandler);
+  default void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    incrementAndGet().setHandler(resultHandler);
+  }
 
   /**
    * Same as {@link #incrementAndGet(Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Long> incrementAndGet() {
-    Promise<Long> promise = Promise.promise();
-    incrementAndGet(promise);
-    return promise.future();
-  }
+  Future<Long> incrementAndGet();
 
   /**
    * Increment the counter atomically and return the value before the increment.
    *
    * @param resultHandler handler which will be passed the value
    */
-  void getAndIncrement(Handler<AsyncResult<Long>> resultHandler);
+  default void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    getAndIncrement().setHandler(resultHandler);
+  }
 
   /**
    * Same as {@link #getAndIncrement(Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Long> getAndIncrement() {
-    Promise<Long> promise = Promise.promise();
-    getAndIncrement(promise);
-    return promise.future();
-  }
+  Future<Long> getAndIncrement();
 
   /**
    * Decrement the counter atomically and return the new count
    *
    * @param resultHandler handler which will be passed the value
    */
-  void decrementAndGet(Handler<AsyncResult<Long>> resultHandler);
+  default void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    decrementAndGet().setHandler(resultHandler);
+  }
 
   /**
    * Same as {@link #decrementAndGet(Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Long> decrementAndGet() {
-    Promise<Long> promise = Promise.promise();
-    decrementAndGet(promise);
-    return promise.future();
-  }
+  Future<Long> decrementAndGet();
 
   /**
    * Add the value to the counter atomically and return the new count
@@ -97,16 +94,15 @@ public interface Counter {
    * @param value  the value to add
    * @param resultHandler handler which will be passed the value
    */
-  void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler);
+  default void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    addAndGet(value).setHandler(resultHandler);
+  }
 
   /**
    * Same as {@link #addAndGet(long, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Long> addAndGet(long value) {
-    Promise<Long> promise = Promise.promise();
-    addAndGet(value, promise);
-    return promise.future();
-  }
+  Future<Long> addAndGet(long value);
 
   /**
    * Add the value to the counter atomically and return the value before the add
@@ -114,16 +110,15 @@ public interface Counter {
    * @param value  the value to add
    * @param resultHandler handler which will be passed the value
    */
-  void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler);
+  default void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    getAndAdd(value).setHandler(resultHandler);
+  }
 
   /**
    * Same as {@link #getAndAdd(long, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Long> getAndAdd(long value) {
-    Promise<Long> promise = Promise.promise();
-    getAndAdd(value, promise);
-    return promise.future();
-  }
+  Future<Long> getAndAdd(long value);
 
   /**
    * Set the counter to the specified value only if the current value is the expectec value. This happens
@@ -133,14 +128,13 @@ public interface Counter {
    * @param value  the new value
    * @param resultHandler  the handler will be passed true on success
    */
-  void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler);
+  default void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    compareAndSet(expected, value).setHandler(resultHandler);
+  }
 
   /**
    * Same as {@link #compareAndSet(long, long, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Boolean> compareAndSet(long expected, long value) {
-    Promise<Boolean> promise = Promise.promise();
-    compareAndSet(expected, value, promise);
-    return promise.future();
-  }
+  Future<Boolean> compareAndSet(long expected, long value);
 }

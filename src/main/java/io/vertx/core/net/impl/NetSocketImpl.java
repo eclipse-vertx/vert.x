@@ -124,22 +124,26 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     if (closed) {
       throw new IllegalStateException("Socket is closed");
     }
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     writeMessage(message, promise);
     return promise.future();
   }
 
   @Override
   public NetSocketInternal writeMessage(Object message, Handler<AsyncResult<Void>> handler) {
-    writeToChannel(message, toPromise(FutureListenerAdapter.toVoid(handler)));
+    if (closed) {
+      throw new IllegalStateException("Socket is closed");
+    }
+    if (message instanceof ByteBuf) {
+      reportBytesWritten(((ByteBuf)message).readableBytes());
+    }
+    writeToChannel(message, toPromise(context.toFutureListener(handler)));
     return this;
   }
 
   @Override
   public Future<Void> write(Buffer data) {
-    Promise<Void> promise = Promise.promise();
-    write(data, promise);
-    return promise.future();
+    return writeMessage(data.getByteBuf());
   }
 
   @Override
@@ -149,16 +153,12 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public Future<Void> write(String str) {
-    Promise<Void> promise = Promise.promise();
-    write(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8), promise);
-    return promise.future();
+    return writeMessage(Unpooled.copiedBuffer(str, CharsetUtil.UTF_8));
   }
 
   @Override
   public Future<Void> write(String str, String enc) {
-    Promise<Void> promise = Promise.promise();
-    write(Unpooled.copiedBuffer(str, Charset.forName(enc)), promise);
-    return promise.future();
+    return writeMessage(Unpooled.copiedBuffer(str, Charset.forName(enc)));
   }
 
   @Override
@@ -243,6 +243,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
+  public Future<Void> sendFile(String filename, long offset, long length) {
+    Promise<Void> promise = context.promise();
+    sendFile(filename, offset, length, promise);
+    return promise.future();
+  }
+
+  @Override
   public NetSocket sendFile(String filename, long offset, long length, final Handler<AsyncResult<Void>> resultHandler) {
     File f = vertx.resolveFile(filename);
     if (f.isDirectory()) {
@@ -286,6 +293,20 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public NetSocketImpl closeHandler(Handler<Void> handler) {
     return (NetSocketImpl) super.closeHandler(handler);
+  }
+
+  @Override
+  public Future<Void> upgradeToSsl() {
+    Promise<Void> promise = context.promise();
+    upgradeToSsl(promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<Void> upgradeToSsl(String serverName) {
+    Promise<Void> promise = context.promise();
+    upgradeToSsl(serverName, promise);
+    return promise.future();
   }
 
   @Override

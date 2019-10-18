@@ -17,8 +17,9 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
@@ -123,10 +124,12 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       options = null;
     }
     ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options);
+    // SocketAddress.inetSocketAddress(server.port(), peerHost)
+    Future<Channel> fut = channelProvider.connect(server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl);
 
-    Handler<AsyncResult<Channel>> channelHandler = res -> {
-      if (res.succeeded()) {
-        Channel ch = res.result();
+    fut.addListener((GenericFutureListener<Future<Channel>>) res -> {
+      if (res.isSuccess()) {
+        Channel ch = res.getNow();
         if (ssl) {
           String protocol = channelProvider.applicationProtocol();
           if (useAlpn) {
@@ -161,10 +164,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       } else {
         connectFailed(channelProvider.channel(), listener, res.cause(), future);
       }
-    };
-
-    // SocketAddress.inetSocketAddress(server.port(), peerHost)
-    channelProvider.connect(server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, channelHandler);
+    });
   }
 
   private void applyConnectionOptions(boolean domainSocket, Bootstrap bootstrap) {

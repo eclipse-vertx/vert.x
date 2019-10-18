@@ -175,35 +175,35 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public Future<WebSocket> webSocket(int port, String host, String requestURI) {
-    Promise<WebSocket> promise = Promise.promise();
+    Promise<WebSocket> promise = context.promise();
     webSocket(port, host, requestURI, promise);
     return promise.future();
   }
 
   @Override
   public Future<WebSocket> webSocket(String host, String requestURI) {
-    Promise<WebSocket> promise = Promise.promise();
+    Promise<WebSocket> promise = context.promise();
     webSocket(host, requestURI, promise);
     return promise.future();
   }
 
   @Override
   public Future<WebSocket> webSocket(String requestURI) {
-    Promise<WebSocket> promise = Promise.promise();
+    Promise<WebSocket> promise = context.promise();
     webSocket(requestURI, promise);
     return promise.future();
   }
 
   @Override
   public Future<WebSocket> webSocket(WebSocketConnectOptions options) {
-    Promise<WebSocket> promise = Promise.promise();
+    Promise<WebSocket> promise = context.promise();
     webSocket(options, promise);
     return promise.future();
   }
 
   @Override
   public Future<WebSocket> webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols) {
-    Promise<WebSocket> promise = Promise.promise();
+    Promise<WebSocket> promise = context.promise();
     webSocketAbs(url, headers, version, subProtocols, promise);
     return promise.future();
   }
@@ -723,7 +723,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                boolean ssl,
                                SocketAddress server,
                                Handler<AsyncResult<HttpClientStream>> handler) {
-    httpCM.getConnection(ctx, peerAddress, ssl, server, ar -> {
+    httpCM.getConnection(context, peerAddress, ssl, server, ar -> {
       if (ar.succeeded()) {
         ar.result().createStream(ctx, handler);
       } else {
@@ -769,6 +769,16 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     checkClosed();
     HttpClientRequest req;
     boolean useProxy = !useSSL && proxyType == ProxyType.HTTP;
+
+    // Create the appropriate sub context
+    ContextInternal sub;
+    ContextInternal current = (ContextInternal) Vertx.currentContext();
+    if (current != null) {
+      sub = context.duplicate(current);
+    } else {
+      sub = context.duplicate();
+    }
+
     if (useProxy) {
       int defaultPort = protocol.equals("ftp") ? 21 : 80;
       String addPort = (port != -1 && port != defaultPort) ? (":" + port) : "";
@@ -781,13 +791,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
-      req = new HttpClientRequestImpl(this, context, useSSL, method, SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost()),
+      req = new HttpClientRequestImpl(this, sub, useSSL, method, SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost()),
           host, port, relativeURI, vertx);
     } else {
       if (server == null) {
         server = SocketAddress.inetSocketAddress(port, host);
       }
-      req = new HttpClientRequestImpl(this, context, useSSL, method, server, host, port, relativeURI, vertx);
+      req = new HttpClientRequestImpl(this, sub, useSSL, method, server, host, port, relativeURI, vertx);
     }
     if (headers != null) {
       req.headers().setAll(headers);

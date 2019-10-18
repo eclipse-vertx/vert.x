@@ -15,7 +15,6 @@ import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -147,11 +146,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param length length
    * @return a future result of the send operation
    */
-  default Future<Void> sendFile(String filename, long offset, long length) {
-    Promise<Void> promise = Promise.promise();
-    sendFile(filename, offset, length, promise);
-    return promise.future();
-  }
+  Future<Void> sendFile(String filename, long offset, long length);
 
   /**
    * Same as {@link #sendFile(String)} but also takes a handler that will be called when the send has completed or
@@ -252,11 +247,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Like {@link #upgradeToSsl(Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> upgradeToSsl() {
-    Promise<Void> promise = Promise.promise();
-    upgradeToSsl(promise);
-    return promise.future();
-  }
+  Future<Void> upgradeToSsl();
 
   /**
    * Upgrade channel to use SSL/TLS. Be aware that for this to work SSL must be configured.
@@ -271,11 +262,7 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Like {@link #upgradeToSsl(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> upgradeToSsl(String serverName) {
-    Promise<Void> promise = Promise.promise();
-    upgradeToSsl(serverName, promise);
-    return promise.future();
-  }
+  Future<Void> upgradeToSsl(String serverName);
 
   /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS.

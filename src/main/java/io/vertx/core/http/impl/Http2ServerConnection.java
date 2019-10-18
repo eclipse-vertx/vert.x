@@ -34,8 +34,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 
-import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -158,7 +156,8 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     super.onSettingsRead(ctx, settings);
   }
 
-  synchronized void sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Handler<AsyncResult<HttpServerResponse>> completionHandler) {
+  synchronized Future<HttpServerResponse> sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority) {
+    Promise<HttpServerResponse> promise = context.promise();
     Http2Headers headers_ = new DefaultHttp2Headers();
     if (method == HttpMethod.OTHER) {
       throw new IllegalArgumentException("Cannot push HttpMethod.OTHER");
@@ -182,21 +181,22 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
             String contentEncoding = HttpUtils.determineContentEncoding(headers_);
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
             boolean writable = handler.encoder().flowController().isWritable(promisedStream);
-            Push push = new Push(promisedStream, context, contentEncoding, method, path, writable, completionHandler);
+            Push push = new Push(promisedStream, context, contentEncoding, method, path, writable, promise);
             push.priority(streamPriority);
             streams.put(promisedStreamId, push);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
-              context.dispatch(v -> push.complete());
+              push.complete();
             } else {
               pendingPushes.add(push);
             }
           }
         } else {
-          context.dispatch(Future.failedFuture(ar.cause()), completionHandler);
+          promise.fail(ar.cause());
         }
       }
     });
+    return promise.future();
   }
 
   protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
@@ -206,7 +206,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
 
   private class Push extends Http2ServerStream {
 
-    private final Promise<HttpServerResponse> completionHandler;
+    private final Promise<HttpServerResponse> promise;
 
     public Push(Http2Stream stream,
                 ContextInternal context,
@@ -214,11 +214,9 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
                 HttpMethod method,
                 String uri,
                 boolean writable,
-                Handler<AsyncResult<HttpServerResponse>> completionHandler) {
+                Promise<HttpServerResponse> promise) {
       super(Http2ServerConnection.this, context, stream, contentEncoding, method, uri, writable);
-      Promise<HttpServerResponse> promise = Promise.promise();
-      promise.future().setHandler(ar -> context.dispatch(ar, completionHandler));
-      this.completionHandler = promise;
+      this.promise = promise;
     }
 
     @Override
@@ -242,7 +240,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
 
     @Override
     void handleReset(long errorCode) {
-      if (!completionHandler.tryFail(new StreamResetException(errorCode))) {
+      if (!promise.tryFail(new StreamResetException(errorCode))) {
         response.handleReset(errorCode);
       }
     }
@@ -258,15 +256,13 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     void handleClose() {
       super.handleClose();
       if (pendingPushes.remove(this)) {
-        completionHandler.fail("Push reset by client");
+        promise.fail("Push reset by client");
       } else {
         concurrentStreams--;
         while ((maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) && pendingPushes.size() > 0) {
           Push push = pendingPushes.pop();
           concurrentStreams++;
-          context.runOnContext(v -> {
-            push.complete();
-          });
+          push.complete();
         }
         response.handleClose();
       }
@@ -274,7 +270,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
 
     void complete() {
       registerMetrics();
-      completionHandler.complete(response);
+      promise.complete(response);
     }
   }
 }

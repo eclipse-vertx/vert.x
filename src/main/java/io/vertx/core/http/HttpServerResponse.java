@@ -16,7 +16,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.WriteStream;
 
@@ -327,11 +326,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @param length the number of bytes to send
    * @return a future completed with the body result
    */
-  default Future<Void> sendFile(String filename, long offset, long length) {
-    Promise<Void> promise = Promise.promise();
-    sendFile(filename, offset, length, promise);
-    return promise.future();
-  }
+  Future<Void> sendFile(String filename, long offset, long length);
 
   /**
    * Like {@link #sendFile(String)} but providing a handler which will be notified once the file has been completely
@@ -434,11 +429,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #push(HttpMethod, String, String, Handler)} but with an {@code handler} called when the operation completes
    */
-  default Future<HttpServerResponse> push(HttpMethod method, String host, String path) {
-    Promise<HttpServerResponse> promise = Promise.promise();
-    push(method, host, path, promise);
-    return promise.future();
-  }
+  Future<HttpServerResponse> push(HttpMethod method, String host, String path);
 
   /**
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
@@ -449,11 +440,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #push(HttpMethod, String, MultiMap, Handler)} but with an {@code handler} called when the operation completes
    */
-  default Future<HttpServerResponse> push(HttpMethod method, String path, MultiMap headers) {
-    Promise<HttpServerResponse> promise = Promise.promise();
-    push(method, path, headers, promise);
-    return promise.future();
-  }
+  Future<HttpServerResponse> push(HttpMethod method, String path, MultiMap headers);
 
   /**
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
@@ -464,11 +451,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #push(HttpMethod, String, Handler)} but with an {@code handler} called when the operation completes
    */
-  default Future<HttpServerResponse> push(HttpMethod method, String path) {
-    Promise<HttpServerResponse> promise = Promise.promise();
-    push(method, path, promise);
-    return promise.future();
-  }
+  Future<HttpServerResponse> push(HttpMethod method, String path);
 
   /**
    * Push a response to the client.<p/>
@@ -494,11 +477,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Same as {@link #push(HttpMethod, String, String, MultiMap, Handler)} but with an {@code handler} called when the operation completes
    */
-  default Future<HttpServerResponse> push(HttpMethod method, String host, String path, MultiMap headers) {
-    Promise<HttpServerResponse> promise = Promise.promise();
-    push(method, host, path, headers, promise);
-    return promise.future();
-  }
+  Future<HttpServerResponse> push(HttpMethod method, String host, String path, MultiMap headers);
 
   /**
    * Reset this HTTP/2 stream with the error code {@code 0}.

@@ -25,7 +25,6 @@ import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFram
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -38,7 +37,6 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.net.impl.FutureListenerAdapter;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -212,7 +210,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     StreamImpl(ContextInternal context, Http1xClientConnection conn, int id, Handler<AsyncResult<HttpClientStream>> handler) {
       this.context = context;
       this.conn = conn;
-      this.promise = Promise.promise();
+      this.promise = context.promise();
       this.id = id;
       this.queue = new InboundBuffer<>(context, 5);
 
@@ -312,7 +310,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           request = new AssembledHttpRequest(request, buf);
         }
       }
-      conn.writeToChannel(request, conn.toPromise(toFutureListener(handler)));
+      conn.writeToChannel(request, conn.toPromise(context.toFutureListener(handler)));
     }
 
     private boolean handleChunk(Buffer buff) {
@@ -336,7 +334,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         msg = new DefaultHttpContent(buff);
       }
       bytesWritten += msg.content().readableBytes();
-      conn.writeToChannel(msg, conn.toPromise(toFutureListener(handler)));
+      conn.writeToChannel(msg, conn.toPromise(context.toFutureListener(handler)));
     }
 
     @Override
@@ -543,10 +541,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       } else {
         promise.tryFail(cause);
       }
-    }
-
-    private FutureListener<Void> toFutureListener(Handler<AsyncResult<Void>> handler) {
-      return handler == null ? null : FutureListenerAdapter.toVoid(context, handler);
     }
   }
 
@@ -853,15 +847,14 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler) {
     StreamImpl stream;
     synchronized (this) {
-      ContextInternal sub = getContext().duplicate(context);
-      stream = new StreamImpl(sub, this, seq++, handler);
+      stream = new StreamImpl(context, this, seq++, handler);
       if (requestInProgress != null) {
         requestInProgress.append(stream);
         return;
       }
       requestInProgress = stream;
     }
-    stream.context.dispatch(Future.succeededFuture(stream), stream.promise);
+    stream.promise.complete(stream);
   }
 
   private void recycle() {

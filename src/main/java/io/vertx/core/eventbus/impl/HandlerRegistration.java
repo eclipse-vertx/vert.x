@@ -57,17 +57,14 @@ abstract class HandlerRegistration<T> {
 
   protected abstract void doUnregister();
 
-  synchronized Future<Void> register(String repliedAddress, boolean localOnly) {
+  synchronized void register(String repliedAddress, boolean localOnly, Handler<AsyncResult<Void>> promise) {
     if (registered != null) {
       throw new IllegalStateException();
     }
-    Promise<Void> p = Promise.promise();
-    Future<Void> fut = p.future();
-    registered = bus.addRegistration(address, this, repliedAddress != null, localOnly, p);
+    registered = bus.addRegistration(address, this, repliedAddress != null, localOnly, promise);
     if (bus.metrics != null) {
       metric = bus.metrics.handlerRegistered(address, repliedAddress);
     }
-    return fut;
   }
 
   public synchronized boolean isRegistered() {
@@ -75,7 +72,6 @@ abstract class HandlerRegistration<T> {
   }
 
   public void unregister(Handler<AsyncResult<Void>> completionHandler) {
-    doUnregister();
     synchronized (this) {
       if (registered != null) {
         bus.removeRegistration(registered, completionHandler);
@@ -90,6 +86,7 @@ abstract class HandlerRegistration<T> {
         }
       }
     }
+    doUnregister();
   }
 
   void dispatch(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {

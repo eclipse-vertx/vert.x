@@ -28,7 +28,6 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.FutureListenerAdapter;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -175,7 +174,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   @Override
   public Future<Void> write(Buffer data) {
     synchronized (conn) {
-      Promise<Void> promise = Promise.promise();
+      Promise<Void> promise = context.promise();
       writeData(data.getByteBuf(), false, promise);
       return promise.future();
     }
@@ -213,7 +212,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public Future<Void> write(String str) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     write(str, null, promise);
     return promise.future();
   }
@@ -225,7 +224,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public Future<Void> write(String str, String enc) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     write(str, enc, promise);
     return promise.future();
   }
@@ -238,7 +237,14 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public void write(Buffer message, Handler<AsyncResult<Void>> handler) {
-    conn.handler.writeData(stream, message.getByteBuf(), false, FutureListenerAdapter.toVoid(context, handler));
+    conn.handler.writeData(stream, message.getByteBuf(), false, context.toFutureListener(handler));
+  }
+
+  @Override
+  public Future<Void> sendFile(String filename, long offset, long length) {
+    Promise<Void> promise = context.promise();
+    sendFile(filename, offset, length, promise);
+    return promise.future();
   }
 
   @Override
@@ -270,7 +276,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
       long contentLength = Math.min(length, file.length() - offset);
 
-      Promise<Long> result = Promise.promise();
+      Promise<Long> result = context.promise();
       result.future().setHandler(ar -> {
         if (resultHandler != null) {
           resultCtx.runOnContext(v -> {
@@ -307,7 +313,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public Future<Void> end() {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     end(promise);
     return promise.future();
   }
@@ -354,6 +360,16 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   @Override
   public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
     throw new UnsupportedOperationException("Cannot upgrade HTTP/2 stream to SSL");
+  }
+
+  @Override
+  public Future<Void> upgradeToSsl() {
+    return Future.failedFuture("Cannot upgrade HTTP/2 stream to SSL");
+  }
+
+  @Override
+  public Future<Void> upgradeToSsl(String serverName) {
+    return Future.failedFuture("Cannot upgrade HTTP/2 stream to SSL");
   }
 
   @Override

@@ -156,7 +156,35 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     }
   }
 
-  public synchronized void listen(Handler<NetSocket> handler, SocketAddress socketAddress, Handler<AsyncResult<Void>> listenHandler) {
+  public Future<Void> close() {
+    Promise<Void> promise = Promise.promise();
+    close(promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<NetServer> listen(int port, String host) {
+    return listen(SocketAddress.inetSocketAddress(port, host));
+  }
+
+
+  @Override
+  public NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
+    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
+  }
+
+  @Override
+  public Future<NetServer> listen(int port) {
+    return listen(port, "0.0.0.0");
+  }
+
+  @Override
+  public NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler) {
+    return listen(port, "0.0.0.0", listenHandler);
+  }
+
+  @Override
+  public synchronized Future<NetServer> listen(SocketAddress localAddress) {
     if (handler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
@@ -170,8 +198,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
     Map<ServerID, NetServerImpl> sharedNetServers = vertx.sharedNetServers();
     synchronized (sharedNetServers) {
-      this.actualPort = socketAddress.port(); // Will be updated on bind for a wildcard port
-      String hostOrPath = socketAddress.host() != null ? socketAddress.host() : socketAddress.path();
+      this.actualPort = localAddress.port(); // Will be updated on bind for a wildcard port
+      String hostOrPath = localAddress.host() != null ? localAddress.host() : localAddress.path();
       id = new ServerID(actualPort, hostOrPath);
       NetServerImpl shared = sharedNetServers.get(id);
       if (shared == null || actualPort == 0) { // Wildcard port will imply a new actual server each time
@@ -220,21 +248,21 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
           }
         });
 
-        applyConnectionOptions(socketAddress.path() != null, bootstrap);
+        applyConnectionOptions(localAddress.path() != null, bootstrap);
 
         handlerManager.addHandler(new Handlers(this, handler, exceptionHandler), listenContext);
 
         try {
-          bindFuture = AsyncResolveConnectHelper.doBind(vertx, socketAddress, bootstrap);
+          bindFuture = AsyncResolveConnectHelper.doBind(vertx, localAddress, bootstrap);
           bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
             if (res.isSuccess()) {
               Channel ch = res.getNow();
               log.trace("Net server listening on " + (hostOrPath) + ":" + ch.localAddress());
               // Update port to actual port - wildcard port 0 might have been used
-              if (NetServerImpl.this.actualPort != -1) {
-                NetServerImpl.this.actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+              if (actualPort != -1) {
+                actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
               }
-              NetServerImpl.this.id = new ServerID(NetServerImpl.this.actualPort, id.host);
+              id = new ServerID(NetServerImpl.this.actualPort, id.host);
               serverChannelGroup.add(ch);
               synchronized (sharedNetServers) {
                 sharedNetServers.put(id, NetServerImpl.this);
@@ -247,19 +275,12 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
               synchronized (sharedNetServers) {
                 sharedNetServers.remove(id);
               }
+              listening  = false;
             }
           });
-
         } catch (Throwable t) {
-          // Make sure we send the exception back through the handler (if any)
-          if (listenHandler != null) {
-            vertx.runOnContext(v ->  listenHandler.handle(Future.failedFuture(t)));
-          } else {
-            // No handler - log so user can see failure
-            log.error(t);
-          }
           listening = false;
-          return;
+          return listenContext.failedFuture(t);
         }
         if (actualPort != 0) {
           sharedNetServers.put(id, this);
@@ -275,80 +296,35 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
       }
 
       // just add it to the future so it gets notified once the bind is complete
-      actualServer.bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
-        if (listenHandler != null) {
-          AsyncResult<Void> ares;
-          if (res.isSuccess()) {
-            ares = Future.succeededFuture();
-          } else {
-            listening = false;
-            ares = Future.failedFuture(res.cause());
-          }
-          // Call with expectRightThread = false as if server is already listening
-          // Netty will call future handler immediately with calling thread
-          // which might be a non Vert.x thread (if running embedded)
-          listenContext.runOnContext(v -> listenHandler.handle(ares));
-        } else if (!res.isSuccess()) {
-          // No handler - log so user can see failure
-          log.error("Failed to listen", res.cause());
-          listening = false;
+      Promise<NetServer> promise = listenContext.promise();
+      actualServer.bindFuture.addListener(res -> {
+        if (res.isSuccess()) {
+          promise.complete(this);
+        } else {
+          promise.fail(res.cause());
         }
       });
+      return promise.future();
     }
-  }
-
-  public Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
-    close(promise);
-    return promise.future();
-  }
-
-  @Override
-  public Future<NetServer> listen(int port, String host) {
-    Promise<NetServer> promise = Promise.promise();
-    listen(port, host, promise);
-    return promise.future();
-  }
-
-  @Override
-  public Future<NetServer> listen(int port) {
-    Promise<NetServer> promise = Promise.promise();
-    listen(port, "0.0.0.0", promise);
-    return promise.future();
-  }
-
-  @Override
-  public NetServer listen(int port, Handler<AsyncResult<NetServer>> listenHandler) {
-    return listen(port, "0.0.0.0", listenHandler);
-  }
-
-  @Override
-  public Future<NetServer> listen(SocketAddress localAddress) {
-    Promise<NetServer> promise = Promise.promise();
-    listen(localAddress, promise);
-    return promise.future();
   }
 
   @Override
   public synchronized NetServer listen(SocketAddress localAddress, Handler<AsyncResult<NetServer>> listenHandler) {
-    listen(handler, localAddress, ar -> {
-      if (listenHandler != null) {
-        listenHandler.handle(ar.map(this));
-      }
-    });
+    if (listenHandler == null) {
+      listenHandler = res -> {
+        if (res.failed()) {
+          // No handler - log so user can see failure
+          log.error("Failed to listen", res.cause());
+        }
+      };
+    }
+    listen(localAddress).setHandler(listenHandler);
     return this;
   }
 
   @Override
-  public Future<NetServer> listen() {
-    Promise<NetServer> promise = Promise.promise();
-    listen(promise);
-    return promise.future();
-  }
-
-  @Override
-  public NetServer listen(int port, String host, Handler<AsyncResult<NetServer>> listenHandler) {
-    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
+  public synchronized Future<NetServer> listen() {
+    return listen(options.getPort(), options.getHost());
   }
 
   @Override

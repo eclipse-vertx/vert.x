@@ -18,6 +18,7 @@ import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -204,25 +205,22 @@ public abstract class ConnectionBase {
    * Close the connection
    */
   public Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
-    close(promise);
+    PromiseInternal<Void> promise = context.promise();
+    // make sure everything is flushed out on close
+    ChannelPromise channelPromise = chctx
+      .newPromise()
+      .addListener((ChannelFutureListener) f -> {
+        chctx.channel().close().addListener(promise);
+      });
+    flush(channelPromise);
     return promise.future();
   }
 
   /**
    * Close the connection and notifies the {@code handler}
    */
-  public void close(Handler<AsyncResult<Void>> handler) {
-    // make sure everything is flushed out on close
-    ChannelPromise promise = chctx
-      .newPromise()
-      .addListener((ChannelFutureListener) f -> {
-      ChannelFuture closeFut = chctx.channel().close();
-      if (handler != null) {
-        closeFut.addListener(FutureListenerAdapter.toVoid(context, handler));
-      }
-    });
-    flush(promise);
+  public final void close(Handler<AsyncResult<Void>> handler) {
+    close().setHandler(handler);
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {

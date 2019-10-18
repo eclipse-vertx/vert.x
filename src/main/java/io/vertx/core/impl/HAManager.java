@@ -282,7 +282,7 @@ public class HAManager {
         }
       });
     };
-    deploymentManager.deployVerticle(verticleName, deploymentOptions, wrappedHandler);
+    deploymentManager.deployVerticle(verticleName, deploymentOptions).setHandler(wrappedHandler);
   }
 
   // A node has joined the cluster
@@ -431,7 +431,7 @@ public class HAManager {
       if (dep != null) {
         if (dep.deploymentOptions().isHa()) {
           ContextImpl.executeIsolated(v -> {
-            deploymentManager.undeployVerticle(deploymentID, result -> {
+            deploymentManager.undeployVerticle(deploymentID).setHandler(result -> {
               if (result.succeeded()) {
                 log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
                 addToHADeployList(dep.verticleIdentifier(), dep.deploymentOptions(), result1 -> {

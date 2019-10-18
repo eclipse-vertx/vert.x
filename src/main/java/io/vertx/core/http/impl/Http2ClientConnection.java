@@ -114,19 +114,18 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
-    ContextInternal sub = getContext().duplicate(context);
     Future<HttpClientStream> fut;
     synchronized (this) {
       Http2Connection conn = handler.connection();
       try {
         int id = conn.local().lastStreamCreated() == 0 ? 1 : conn.local().lastStreamCreated() + 2;
-        Http2ClientStream stream = createStream(sub, conn.local().createStream(id, false));
+        Http2ClientStream stream = createStream(context, conn.local().createStream(id, false));
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
       }
     }
-    sub.dispatch(fut, completionHandler);
+    context.dispatch(fut, completionHandler);
   }
 
   private Http2ClientStream createStream(ContextInternal context, Http2Stream stream) {

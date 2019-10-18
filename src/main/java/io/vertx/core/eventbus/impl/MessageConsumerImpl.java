@@ -47,7 +47,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private int maxBufferedMessages = DEFAULT_MAX_BUFFERED_MESSAGES;
   private Queue<Message<T>> pending = new ArrayDeque<>(8);
   private long demand = Long.MAX_VALUE;
-  private Future<Void> result;
+  private Promise<Void> result;
 
   MessageConsumerImpl(Vertx vertx, ContextInternal context, EventBusImpl eventBus, String address, boolean localOnly) {
     super(context, eventBus, address, false);
@@ -100,8 +100,11 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   @Override
   public synchronized void completionHandler(Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(handler);
-    completionHandler = handler;
-    checkCompletionHandler();
+    if (result != null) {
+      result.future().setHandler(handler);
+    } else {
+      completionHandler = handler;
+    }
   }
 
   @Override
@@ -128,10 +131,11 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
         }
       });
     }
-    result = Future.failedFuture("blah");
-    checkCompletionHandler();
     discardHandler = null;
-    result = null;
+    if (result != null) {
+      result.tryFail("blah");
+      result = null;
+    }
   }
 
   protected void doReceive(Message<T> message) {
@@ -208,26 +212,22 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       synchronized (this) {
         handler = h;
         if (result == null) {
-          result = register(null, localOnly);
-          result.setHandler(ar -> checkCompletionHandler());
+          Promise<Void> p = context.promise();
+          result = p;
+          result.future().setHandler(completionHandler);
+          register(null, localOnly, ar -> {
+            if (ar.succeeded()) {
+              p.tryComplete();
+            } else {
+              p.tryFail(ar.cause());
+            }
+          });
         }
       }
     } else {
       unregister();
     }
     return this;
-  }
-
-  private synchronized void checkCompletionHandler() {
-    Handler<AsyncResult<Void>> completionHandler = this.completionHandler;
-    Future<Void> result = this.result;
-    if (completionHandler != null && result != null && result.isComplete()) {
-      this.completionHandler = null;
-      this.result = null;
-      context.runOnContext(v -> {
-        completionHandler.handle(result);
-      });
-    }
   }
 
   @Override

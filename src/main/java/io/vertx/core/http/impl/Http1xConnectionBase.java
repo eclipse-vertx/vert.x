@@ -28,7 +28,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
@@ -36,9 +35,9 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.net.impl.FutureListenerAdapter;
 
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
@@ -129,42 +128,32 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
 
   @Override
   public Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
-    close(promise);
-    return promise.future();
+    return closeWithPayload((short) 1000, null);
   }
 
-  @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    closeWithPayload((short) 1000, null, handler);
-  }
-
-  void closeWithPayload(short code, String reason, Handler<AsyncResult<Void>> handler) {
+  Future<Void> closeWithPayload(short code, String reason) {
     if (ws == null) {
-      super.close(handler);
+      return super.close();
     } else {
+      PromiseInternal<Void> promise = context.promise();
       // make sure everything is flushed out on close
       ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(code, reason);
       CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
-      ChannelPromise promise = chctx.newPromise();
-      flush(promise);
+      ChannelPromise channelPromise = chctx.newPromise();
+      flush(channelPromise);
       // close the WebSocket connection by sending a close frame with specified payload.
-      promise.addListener((ChannelFutureListener) future -> {
+      channelPromise.addListener((ChannelFutureListener) future -> {
         ChannelFuture fut = chctx.writeAndFlush(frame);
         boolean server = this instanceof Http1xServerConnection;
         if (server) {
           fut.addListener((ChannelFutureListener) f -> {
-            ChannelFuture closeFut = chctx.channel().close();
-            if (handler != null) {
-              closeFut.addListener(FutureListenerAdapter.toVoid(context, handler));
-            }
+            chctx.channel().close().addListener(promise);
           });
         } else {
-          if (handler != null) {
-            fut.addListener(FutureListenerAdapter.toVoid(context, handler));
-          }
+          fut.addListener(promise);
         }
       });
+      return promise.future();
     }
   }
 

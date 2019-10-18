@@ -11,14 +11,12 @@
 
 package io.vertx.core.shareddata.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.Counter;
 
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -40,51 +38,58 @@ public class AsynchronousCounter implements Counter {
   }
 
   @Override
-  public void get(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.get())));
+  public Future<Long> get() {
+    ContextInternal context = vertx.getOrCreateContext();
+    Promise<Long> promise = context.promise();
+    promise.complete(counter.get());
+    return promise.future();
   }
 
   @Override
-  public void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.incrementAndGet())));
+  public Future<Long> incrementAndGet() {
+    ContextInternal context = vertx.getOrCreateContext();
+    Promise<Long> promise = context.promise();
+    promise.complete(counter.incrementAndGet());
+    return promise.future();
   }
 
   @Override
-  public void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.getAndIncrement())));
+  public Future<Long> getAndIncrement() {
+    ContextInternal context = vertx.getOrCreateContext();
+    Promise<Long> promise = context.promise();
+    promise.complete(counter.getAndIncrement());
+    return promise.future();
   }
 
   @Override
-  public void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.decrementAndGet())));
+  public Future<Long> decrementAndGet() {
+    ContextInternal context = vertx.getOrCreateContext();
+    Promise<Long> promise = context.promise();
+    promise.complete(counter.decrementAndGet());
+    return promise.future();
   }
 
   @Override
-  public void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.addAndGet(value))));
+  public Future<Long> addAndGet(long value) {
+    ContextInternal context = vertx.getOrCreateContext();
+    Promise<Long> promise = context.promise();
+    promise.complete(counter.addAndGet(value));
+    return promise.future();
   }
 
   @Override
-  public void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.getAndAdd(value))));
+  public Future<Long> getAndAdd(long value) {
+    ContextInternal context = vertx.getOrCreateContext();
+    Promise<Long> promise = context.promise();
+    promise.complete(counter.getAndAdd(value));
+    return promise.future();
   }
 
   @Override
-  public void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
-    Objects.requireNonNull(resultHandler, "resultHandler");
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter.compareAndSet(expected, value))));
+  public Future<Boolean> compareAndSet(long expected, long value) {
+    ContextInternal context = vertx.getOrCreateContext();
+    Promise<Boolean> promise = context.promise();
+    promise.complete(counter.compareAndSet(expected, value));
+    return promise.future();
   }
 }

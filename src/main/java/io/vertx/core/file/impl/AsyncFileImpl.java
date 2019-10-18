@@ -118,7 +118,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     closeInternal(promise);
     return promise.future();
   }
@@ -130,7 +130,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public Future<Void> end() {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     close(promise);
     return promise.future();
   }
@@ -142,21 +142,21 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
-    Objects.requireNonNull(buffer, "buffer");
     Objects.requireNonNull(handler, "handler");
-    Arguments.require(offset >= 0, "offset must be >= 0");
-    Arguments.require(position >= 0, "position must be >= 0");
-    Arguments.require(length >= 0, "length must be >= 0");
-    check();
-    ByteBuffer bb = ByteBuffer.allocate(length);
-    doRead(buffer, offset, bb, position, handler);
+    read(buffer, offset, position, length).setHandler(handler);
     return this;
   }
 
   @Override
   public Future<Buffer> read(Buffer buffer, int offset, long position, int length) {
-    Promise<Buffer> promise = Promise.promise();
-    read(buffer, offset, position, length, promise);
+    Promise<Buffer> promise = context.promise();
+    Objects.requireNonNull(buffer, "buffer");
+    Arguments.require(offset >= 0, "offset must be >= 0");
+    Arguments.require(position >= 0, "position must be >= 0");
+    Arguments.require(length >= 0, "length must be >= 0");
+    check();
+    ByteBuffer bb = ByteBuffer.allocate(length);
+    doRead(buffer, offset, bb, position, promise);
     return promise.future();
   }
 
@@ -174,7 +174,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public Future<Void> write(Buffer buffer, long position) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     write(buffer, position, promise);
     return promise.future();
   }
@@ -217,7 +217,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public Future<Void> write(Buffer buffer) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     write(buffer, promise);
     return promise.future();
   }
@@ -306,7 +306,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   @Override
   public Future<Void> flush() {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     doFlush(promise);
     return promise.future();
   }
@@ -385,7 +385,8 @@ public class AsyncFileImpl implements AsyncFile {
     Buffer buff = Buffer.buffer(readBufferSize);
     int readSize = (int) Math.min((long)readBufferSize, readLength);
     bb.limit(readSize);
-    doRead(buff, 0, bb, readPos, ar -> {
+    Promise<Buffer> promise = context.promise();
+    promise.future().setHandler(ar -> {
       if (ar.succeeded()) {
         Buffer buffer = ar.result();
         readPos += buffer.length();
@@ -398,6 +399,7 @@ public class AsyncFileImpl implements AsyncFile {
         handleException(ar.cause());
       }
     });
+    doRead(buff, 0, bb, readPos, promise);
   }
 
 
@@ -481,19 +483,17 @@ public class AsyncFileImpl implements AsyncFile {
     });
   }
 
-  private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position, Handler<AsyncResult<Buffer>> handler) {
+  private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position, Promise<Buffer> promise) {
 
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
       long pos = position;
 
       private void done() {
-        context.runOnContext((v) -> {
-          buff.flip();
-          writeBuff.setBytes(offset, buff);
-          buff.compact();
-          handler.handle(Future.succeededFuture(writeBuff));
-        });
+        buff.flip();
+        writeBuff.setBytes(offset, buff);
+        buff.compact();
+        promise.complete(writeBuff);
       }
 
       public void completed(Integer bytesRead, Object attachment) {
@@ -504,7 +504,7 @@ public class AsyncFileImpl implements AsyncFile {
           // partial read
           pos += bytesRead;
           // resubmit
-          doRead(writeBuff, offset, buff, pos, handler);
+          doRead(writeBuff, offset, buff, pos, promise);
         } else {
           // It's been fully written
           done();
@@ -512,7 +512,7 @@ public class AsyncFileImpl implements AsyncFile {
       }
 
       public void failed(Throwable t, Object attachment) {
-        context.runOnContext((v) -> handler.handle(Future.failedFuture(t)));
+        promise.fail(t);
       }
     });
   }
@@ -535,8 +535,7 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   private void doClose(Handler<AsyncResult<Void>> handler) {
-    ContextInternal handlerContext = vertx.getOrCreateContext();
-    handlerContext.executeBlockingInternal(res -> {
+    context.executeBlockingInternal(res -> {
       try {
         ch.close();
         res.complete(null);

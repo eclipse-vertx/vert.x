@@ -40,7 +40,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long lastDataReceived;
   protected final Promise<HttpClientResponse> responsePromise;
 
-  HttpClientRequestBase(HttpClientImpl client, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
     this.uri = uri;
     this.method = method;
@@ -50,7 +50,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
     this.query = HttpUtils.parseQuery(uri);
     this.ssl = ssl;
-    this.responsePromise = Promise.promise();
+    this.responsePromise = context.promise();
   }
 
   protected String hostHeader() {

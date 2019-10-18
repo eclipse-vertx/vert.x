@@ -41,7 +41,6 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.net.impl.FutureListenerAdapter;
 import io.vertx.core.spi.metrics.Metrics;
 
 import java.io.File;
@@ -306,8 +305,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> write(Buffer chunk) {
-    Promise<Void> promise = Promise.promise();
-    write(chunk, promise);
+    Promise<Void> promise = context.promise();
+    write(chunk.getByteBuf(), promise);
     return promise.future();
   }
 
@@ -318,8 +317,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    Promise<Void> promise = Promise.promise();
-    write(chunk, enc, promise);
+    Promise<Void> promise = context.promise();
+    write(Buffer.buffer(chunk, enc).getByteBuf(), promise);
     return promise.future();
   }
 
@@ -330,8 +329,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> write(String chunk) {
-    Promise<Void> promise = Promise.promise();
-    write(chunk, promise);
+    Promise<Void> promise = context.promise();
+    write(Buffer.buffer(chunk).getByteBuf(), promise);
     return promise.future();
   }
 
@@ -368,7 +367,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     end(chunk, promise);
     return promise.future();
   }
@@ -390,7 +389,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       } else {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
-      conn.writeToChannel(msg, conn.toPromise(toFutureListener(handler)));
+      conn.writeToChannel(msg, conn.toPromise(context.toFutureListener(handler)));
       written = true;
       conn.responseComplete();
       if (bodyEndHandler != null) {
@@ -428,6 +427,13 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   @Override
   public void end(Handler<AsyncResult<Void>> handler) {
     end(EMPTY_BUFFER, handler);
+  }
+
+  @Override
+  public Future<Void> sendFile(String filename, long offset, long length) {
+    Promise<Void> promise = context.promise();
+    sendFile(filename, offset, length, promise);
+    return promise.future();
   }
 
   @Override
@@ -693,7 +699,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       } else {
         msg = new DefaultHttpContent(chunk);
       }
-      conn.writeToChannel(msg, conn.toPromise(toFutureListener(handler)));
+      conn.writeToChannel(msg, conn.toPromise(context.toFutureListener(handler)));
       return this;
     }
   }
@@ -722,6 +728,34 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void reset(long code) {
+  }
+
+  @Override
+  public Future<HttpServerResponse> push(HttpMethod method, String host, String path) {
+    Promise<HttpServerResponse> promise = context.promise();
+    push(method, host, path, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<HttpServerResponse> push(HttpMethod method, String path, MultiMap headers) {
+    Promise<HttpServerResponse> promise = context.promise();
+    push(method, path, headers, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<HttpServerResponse> push(HttpMethod method, String path) {
+    Promise<HttpServerResponse> promise = context.promise();
+    push(method, path, promise);
+    return promise.future();
+  }
+
+  @Override
+  public Future<HttpServerResponse> push(HttpMethod method, String host, String path, MultiMap headers) {
+    Promise<HttpServerResponse> promise = context.promise();
+    push(method, host, path, headers, promise);
+    return promise.future();
   }
 
   @Override
@@ -768,7 +802,4 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     return CookieImpl.removeCookie(cookies(), name, invalidate);
   }
 
-  private FutureListener<Void> toFutureListener(Handler<AsyncResult<Void>> handler) {
-    return handler == null ? null : FutureListenerAdapter.toVoid(context, handler);
-  }
 }

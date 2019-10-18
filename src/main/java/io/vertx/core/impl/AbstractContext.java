@@ -12,6 +12,7 @@ package io.vertx.core.impl;
 
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.concurrent.FastThreadLocalThread;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -210,8 +211,24 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
+  public final <T> void executeBlockingInternal(Handler<Promise<T>> action, Handler<AsyncResult<T>> resultHandler) {
+    Future<T> fut = executeBlockingInternal(action);
+    setResultHandler(this, fut, resultHandler);
+  }
+
+  @Override
   public final <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
     executeBlocking(blockingCodeHandler, true, resultHandler);
+  }
+
+  public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+    Promise<T> promise = promise();
+    executeBlocking(blockingCodeHandler, ordered, promise);
+    return promise.future();
+  }
+
+  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
+    return executeBlocking(blockingCodeHandler, true);
   }
 
   @Override
@@ -274,5 +291,17 @@ abstract class AbstractContext implements ContextInternal {
   @Override
   public final boolean removeLocal(String key) {
     return localContextData().remove(key) != null;
+  }
+
+  static <T> void setResultHandler(ContextInternal ctx, Future<T> fut, Handler<AsyncResult<T>> resultHandler) {
+    if (resultHandler != null) {
+      fut.setHandler(resultHandler);
+    } else {
+      fut.setHandler(ar -> {
+        if (ar.failed()) {
+          ctx.reportException(ar.cause());
+        }
+      });
+    }
   }
 }

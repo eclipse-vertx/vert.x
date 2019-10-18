@@ -14,7 +14,8 @@ package io.vertx.core.shareddata.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 
 import java.util.HashMap;
@@ -35,48 +36,72 @@ import static java.util.stream.Collectors.*;
  */
 public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
 
-  private final Vertx vertx;
+  private final VertxInternal vertx;
   private final ConcurrentMap<K, Holder<V>> map;
 
-  public LocalAsyncMapImpl(Vertx vertx) {
+  public LocalAsyncMapImpl(VertxInternal vertx) {
     this.vertx = vertx;
     map = new ConcurrentHashMap<>();
   }
 
   @Override
-  public void get(final K k, Handler<AsyncResult<V>> resultHandler) {
+  public Future<V> get(K k) {
+    ContextInternal ctx = vertx.getOrCreateContext();
     Holder<V> h = map.get(k);
     if (h != null && h.hasNotExpired()) {
-      resultHandler.handle(Future.succeededFuture(h.value));
+      return ctx.succeededFuture(h.value);
     } else {
-      resultHandler.handle(Future.succeededFuture());
+      return ctx.succeededFuture();
     }
   }
 
   @Override
-  public void put(final K k, final V v, Handler<AsyncResult<Void>> resultHandler) {
+  public void get(final K k, Handler<AsyncResult<V>> resultHandler) {
+    get(k).setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<Void> put(K k, V v) {
+    ContextInternal ctx = vertx.getOrCreateContext();
     Holder<V> previous = map.put(k, new Holder<>(v));
     if (previous != null && previous.expires()) {
       vertx.cancelTimer(previous.timerId);
     }
-    resultHandler.handle(Future.succeededFuture());
+    return ctx.succeededFuture();
+  }
+
+  @Override
+  public void put(final K k, final V v, Handler<AsyncResult<Void>> resultHandler) {
+    put(k, v).setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<V> putIfAbsent(K k, V v) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    Holder<V> h = map.putIfAbsent(k, new Holder<>(v));
+    return ctx.succeededFuture(h == null ? null : h.value);
   }
 
   @Override
   public void putIfAbsent(K k, V v, Handler<AsyncResult<V>> resultHandler) {
-    Holder<V> h = map.putIfAbsent(k, new Holder<>(v));
-    resultHandler.handle(Future.succeededFuture(h == null ? null : h.value));
+    putIfAbsent(k, v).setHandler(resultHandler);
   }
 
   @Override
-  public void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler) {
+  public Future<Void> put(K k, V v, long ttl) {
+    ContextInternal ctx = vertx.getOrCreateContext();
     long timestamp = System.nanoTime();
-    long timerId = vertx.setTimer(timeout, l -> removeIfExpired(k));
-    Holder<V> previous = map.put(k, new Holder<>(v, timerId, timeout, timestamp));
+    long timerId = vertx.setTimer(ttl, l -> removeIfExpired(k));
+    Holder<V> previous = map.put(k, new Holder<>(v, timerId, ttl, timestamp));
     if (previous != null && previous.expires()) {
       vertx.cancelTimer(previous.timerId);
     }
-    completionHandler.handle(Future.succeededFuture());
+    return ctx.succeededFuture();
+  }
+
+  @Override
+  public void put(K k, V v, long ttl, Handler<AsyncResult<Void>> completionHandler) {
+    put(k, v, ttl).setHandler(completionHandler);
   }
 
   private void removeIfExpired(K k) {
@@ -84,22 +109,29 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
   }
 
   @Override
-  public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
+  public Future<V> putIfAbsent(K k, V v, long ttl) {
+    ContextInternal ctx = vertx.getOrCreateContext();
     long timestamp = System.nanoTime();
-    long timerId = vertx.setTimer(timeout, l -> removeIfExpired(k));
-    Holder<V> existing = map.putIfAbsent(k, new Holder<>(v, timerId, timeout, timestamp));
+    long timerId = vertx.setTimer(ttl, l -> removeIfExpired(k));
+    Holder<V> existing = map.putIfAbsent(k, new Holder<>(v, timerId, ttl, timestamp));
     if (existing != null) {
       if (existing.expires()) {
         vertx.cancelTimer(timerId);
       }
-      completionHandler.handle(Future.succeededFuture(existing.value));
+      return ctx.succeededFuture(existing.value);
     } else {
-      completionHandler.handle(Future.succeededFuture());
+      return ctx.succeededFuture();
     }
   }
 
   @Override
-  public void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
+  public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
+    putIfAbsent(k, v, timeout).setHandler(completionHandler);
+  }
+
+  @Override
+  public Future<Boolean> removeIfPresent(K k, V v) {
+    ContextInternal ctx = vertx.getOrCreateContext();
     AtomicBoolean result = new AtomicBoolean();
     map.computeIfPresent(k, (key, holder) -> {
       if (holder.value.equals(v)) {
@@ -111,24 +143,36 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
       }
       return holder;
     });
-    resultHandler.handle(Future.succeededFuture(result.get()));
+    return ctx.succeededFuture(result.get());
   }
 
   @Override
-  public void replace(K k, V v, Handler<AsyncResult<V>> resultHandler) {
+  public void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
+    removeIfPresent(k, v).setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<V> replace(K k, V v) {
+    ContextInternal ctx = vertx.getOrCreateContext();
     Holder<V> previous = map.replace(k, new Holder<>(v));
     if (previous != null) {
       if (previous.expires()) {
         vertx.cancelTimer(previous.timerId);
       }
-      resultHandler.handle(Future.succeededFuture(previous.value));
+      return ctx.succeededFuture(previous.value);
     } else {
-      resultHandler.handle(Future.succeededFuture());
+      return ctx.succeededFuture();
     }
   }
 
   @Override
-  public void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
+  public void replace(K k, V v, Handler<AsyncResult<V>> resultHandler) {
+    replace(k, v).setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue) {
+    ContextInternal ctx = vertx.getOrCreateContext();
     Holder<V> h = new Holder<>(newValue);
     Holder<V> result = map.computeIfPresent(k, (key, holder) -> {
       if (holder.value.equals(oldValue)) {
@@ -139,56 +183,97 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
       }
       return holder;
     });
-    resultHandler.handle(Future.succeededFuture(h == result));
+    return ctx.succeededFuture(h == result);
+  }
+
+  @Override
+  public void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
+    replaceIfPresent(k, oldValue, newValue).setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<Void> clear() {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    map.clear();
+    return ctx.succeededFuture();
   }
 
   @Override
   public void clear(Handler<AsyncResult<Void>> resultHandler) {
-    map.clear();
-    resultHandler.handle(Future.succeededFuture());
+    clear().setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<Integer> size() {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    return ctx.succeededFuture(map.size());
   }
 
   @Override
   public void size(Handler<AsyncResult<Integer>> resultHandler) {
-    resultHandler.handle(Future.succeededFuture(map.size()));
+    size().setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<Set<K>> keys() {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    return ctx.succeededFuture(new HashSet<>(map.keySet()));
   }
 
   @Override
   public void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
-    resultHandler.handle(Future.succeededFuture(new HashSet<>(map.keySet())));
+    keys().setHandler(resultHandler);
   }
 
   @Override
-  public void values(Handler<AsyncResult<List<V>>> asyncResultHandler) {
+  public Future<List<V>> values() {
+    ContextInternal ctx = vertx.getOrCreateContext();
     List<V> result = map.values().stream()
       .filter(Holder::hasNotExpired)
       .map(h -> h.value)
       .collect(toList());
-    asyncResultHandler.handle(Future.succeededFuture(result));
+    return ctx.succeededFuture(result);
   }
 
   @Override
-  public void entries(Handler<AsyncResult<Map<K, V>>> asyncResultHandler) {
+  public void values(Handler<AsyncResult<List<V>>> asyncResultHandler) {
+    values().setHandler(asyncResultHandler);
+  }
+
+  @Override
+  public Future<Map<K, V>> entries() {
+    ContextInternal ctx = vertx.getOrCreateContext();
     Map<K, V> result = new HashMap<>(map.size());
     map.forEach((key, holder) -> {
       if (holder.hasNotExpired()) {
         result.put(key, holder.value);
       }
     });
-    asyncResultHandler.handle(Future.succeededFuture(result));
+    return ctx.succeededFuture(result);
   }
 
   @Override
-  public void remove(final K k, Handler<AsyncResult<V>> resultHandler) {
+  public void entries(Handler<AsyncResult<Map<K, V>>> asyncResultHandler) {
+    entries().setHandler(asyncResultHandler);
+  }
+
+  @Override
+  public Future<V> remove(K k) {
+    ContextInternal ctx = vertx.getOrCreateContext();
     Holder<V> previous = map.remove(k);
     if (previous != null) {
       if (previous.expires()) {
         vertx.cancelTimer(previous.timerId);
       }
-      resultHandler.handle(Future.succeededFuture(previous.value));
+      return ctx.succeededFuture(previous.value);
     } else {
-      resultHandler.handle(Future.succeededFuture());
+      return ctx.succeededFuture();
     }
+  }
+
+  @Override
+  public void remove(final K k, Handler<AsyncResult<V>> resultHandler) {
+    remove(k).setHandler(resultHandler);
   }
 
   private static class Holder<V> {

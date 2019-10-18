@@ -429,7 +429,9 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     Context ctx = vertx.getOrCreateContext();
+    client.close();
     ctx.runOnContext(v -> {
+      client = vertx.createHttpClient(createBaseClientOptions());
       HttpClientRequest req = client.post(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", resp -> {
         testComplete();
       }).setChunked(true).exceptionHandler(err -> {
@@ -659,7 +661,9 @@ public class Http2ClientTest extends Http2TestBase {
       assertEquals(8, reset.getCode());
       complete();
     };
+    client.close();
     ctx.runOnContext(v -> {
+      client = vertx.createHttpClient(createBaseClientOptions());
       client.post(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onSuccess(resp -> {
         resp.exceptionHandler(resetHandler);
         resp.handler(buff -> {
@@ -1131,8 +1135,10 @@ public class Http2ClientTest extends Http2TestBase {
     });
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
+      client.close();
       Context ctx = vertx.getOrCreateContext();
       ctx.runOnContext(v -> {
+        client = vertx.createHttpClient(createBaseClientOptions());
         client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onSuccess(resp -> {
           resp.exceptionHandler(err -> {
             assertOnIOContext(ctx);
@@ -1174,7 +1180,9 @@ public class Http2ClientTest extends Http2TestBase {
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       Context ctx = vertx.getOrCreateContext();
+      client.close();
       ctx.runOnContext(v -> {
+        client = vertx.createHttpClient(createBaseClientOptions());
         client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onSuccess(resp -> {
           resp.exceptionHandler(err -> {
             assertOnIOContext(ctx);
@@ -1214,7 +1222,9 @@ public class Http2ClientTest extends Http2TestBase {
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       Context ctx = vertx.getOrCreateContext();
+      client.close();
       ctx.runOnContext(v -> {
+        client = vertx.createHttpClient(createBaseClientOptions());
         client.get(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onFailure(err -> {
           assertOnIOContext(ctx);
           if (err instanceof NumberFormatException) {
@@ -1583,9 +1593,9 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.close();
-    client = vertx.createHttpClient(clientOptions.setIdleTimeout(2));
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
+      client = vertx.createHttpClient(clientOptions.setIdleTimeout(2));
       HttpClientRequest req = client.get("/somepath", onSuccess(resp -> {
         resp.exceptionHandler(err -> {
           assertOnIOContext(ctx);

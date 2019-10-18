@@ -1266,6 +1266,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Repeat(times = 10)
   @Test
   public void testClientExceptionHandlerCalledWhenServerTerminatesConnection() throws Exception {
     int numReqs = 10;
@@ -1277,9 +1278,7 @@ public abstract class HttpTest extends HttpTestBase {
       for (int i = 0; i < numReqs; i++) {
         client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
           complete();
-        }))
-          .exceptionHandler(error -> fail("Exception handler should not be called"))
-          .end();
+        })).end();
       }
     }));
     await();
@@ -5479,6 +5478,41 @@ public abstract class HttpTest extends HttpTestBase {
         clientChecker.accept(resp);
         testComplete();
       })).putHeader(HttpHeaders.COOKIE.toString(), cookieHeader).end();
+    await();
+  }
+
+  @Test
+  public void testClientRequestFutureSetHandlerFromAnotherThread() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    client.close();
+    Context ctx = vertx.getOrCreateContext();
+    CompletableFuture<HttpClientRequest> reqFut = new CompletableFuture<>();
+    ctx.runOnContext(v -> {
+      client = vertx.createHttpClient(createBaseClientOptions());
+      HttpClientRequest req = client.request(
+        HttpMethod.GET,
+        testAddress,
+        new RequestOptions()
+          .setPort(DEFAULT_HTTP_PORT)
+          .setHost(DEFAULT_HTTP_HOST)
+          .setURI(DEFAULT_TEST_URI), onSuccess(resp -> {
+          complete();
+        }));
+      reqFut.complete(req);
+    });
+    HttpClientRequest req = reqFut.get(10, TimeUnit.SECONDS);
+    Future<Void> endFut = req.end("msg");
+    waitUntil(endFut::succeeded);
+    // Set the handler after the future
+    endFut.setHandler(onSuccess(v -> {
+      assertNotNull(Vertx.currentContext());
+      assertSameEventLoop(ctx, Vertx.currentContext());
+      complete();
+    }));
     await();
   }
 }

@@ -54,6 +54,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
   private final ContextInternal context;
+  private final Promise<Void> endPromise;
+  private final Future<Void> endFuture;
   private boolean chunked;
   private String hostHeader;
   private String rawMethod;
@@ -62,8 +64,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<HttpClientRequest> pushHandler;
   private Handler<HttpConnection> connectionHandler;
   private Handler<Throwable> exceptionHandler;
-  private Promise<Void> endPromise = Promise.promise();
-  private Future<Void> endFuture = endPromise.future();
   private boolean ended;
   private Throwable reset;
   private ByteBuf pendingChunks;
@@ -78,9 +78,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   HttpClientRequestImpl(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method, SocketAddress server,
                         String host, int port,
                         String relativeURI, VertxInternal vertx) {
-    super(client, ssl, method, server, host, port, relativeURI);
+    super(client, context, ssl, method, server, host, port, relativeURI);
     this.chunked = false;
-    this.context = vertx.getOrCreateContext();
+    this.context = context;
+    this.endPromise = context.promise();
+    this.endFuture = endPromise.future();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
   }
 
@@ -506,7 +508,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> end(String chunk) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     end(chunk, promise);
     return promise.future();
   }
@@ -518,7 +520,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> end(String chunk, String enc) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     end(chunk, enc, promise);
     return promise.future();
   }
@@ -531,7 +533,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     write(chunk.getByteBuf(), true, promise);
     return promise.future();
   }
@@ -543,7 +545,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> end() {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     end(promise);
     return promise.future();
   }
@@ -555,7 +557,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> write(Buffer chunk) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     write(chunk, promise);
     return promise.future();
   }
@@ -568,7 +570,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> write(String chunk) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     write(chunk, promise);
     return promise.future();
   }
@@ -580,7 +582,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     write(chunk, enc, promise);
     return promise.future();
   }

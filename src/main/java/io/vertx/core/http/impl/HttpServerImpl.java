@@ -160,6 +160,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
+  public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
+    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
+  }
+
+  @Override
   public Future<HttpServer> listen(int port) {
     Promise<HttpServer> promise = Promise.promise();
     listen(port, "0.0.0.0", promise);
@@ -169,17 +174,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   @Override
   public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
     return listen(port, "0.0.0.0", listenHandler);
-  }
-
-  public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
-    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
-  }
-
-  @Override
-  public Future<HttpServer> listen(SocketAddress address) {
-    Promise<HttpServer> promise = Promise.promise();
-    listen(address, promise);
-    return promise.future();
   }
 
   private ChannelHandler childHandler(SocketAddress address, String serverOrigin) {
@@ -212,7 +206,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     };
   }
 
-  public synchronized HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
+  @Override
+  public Future<HttpServer> listen(SocketAddress address) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
       throw new IllegalStateException("Set request or websocket handler first");
     }
@@ -249,6 +244,11 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
               synchronized (sharedHttpServers) {
                 sharedHttpServers.remove(id);
               }
+              listening  = false;
+              if (metrics != null) {
+                metrics.close();
+                metrics = null;
+              }
             } else {
               Channel serverChannel = res.getNow();
               if (serverChannel.localAddress() instanceof InetSocketAddress) {
@@ -260,15 +260,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
             }
           });
         } catch (final Throwable t) {
-          // Make sure we send the exception back through the handler (if any)
-          if (listenHandler != null) {
-            vertx.runOnContext(v -> listenHandler.handle(Future.failedFuture(t)));
-          } else {
-            // No handler - log so user can see failure
-            log.error(t);
-          }
           listening = false;
-          return this;
+          return listenContext.failedFuture(t);
         }
         sharedHttpServers.put(id, this);
         actualServer = this;
@@ -280,27 +273,29 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         VertxMetrics metrics = vertx.metricsSPI();
         this.metrics = metrics != null ? metrics.createHttpServerMetrics(options, address) : null;
       }
-      actualServer.bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
-        if (listenHandler != null) {
-          final AsyncResult<HttpServer> res;
-          if (future.isSuccess()) {
-            res = Future.succeededFuture(HttpServerImpl.this);
-          } else {
-            res = Future.failedFuture(future.cause());
-            listening = false;
-          }
-          listenContext.runOnContext((v) -> listenHandler.handle(res));
-        } else if (!future.isSuccess()) {
-          listening  = false;
-          if (metrics != null) {
-            metrics.close();
-            metrics = null;
-          }
-          // No handler - log so user can see failure
-          log.error(future.cause());
+      Promise<HttpServer> promise = listenContext.promise();
+      actualServer.bindFuture.addListener(res -> {
+        if (res.isSuccess()) {
+          promise.complete(this);
+        } else {
+          promise.fail(res.cause());
         }
       });
+      return promise.future();
     }
+  }
+
+  @Override
+  public HttpServer listen(SocketAddress address, Handler<AsyncResult<HttpServer>> listenHandler) {
+    if (listenHandler == null) {
+      listenHandler = res -> {
+        if (res.failed()) {
+          // No handler - log so user can see failure
+          log.error("Failed to listen", res.cause());
+        }
+      };
+    }
+    listen(address).setHandler(listenHandler);
     return this;
   }
 

@@ -28,7 +28,6 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.FutureListenerAdapter;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -110,7 +109,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     close(promise);
     return promise.future();
   }
@@ -122,7 +121,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> close(short statusCode) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     close(statusCode, promise);
     return promise.future();
   }
@@ -134,21 +133,19 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> close(short statusCode, String reason) {
-    Promise<Void> promise = Promise.promise();
-    close(statusCode, reason, promise);
-    return promise.future();
-  }
-
-  @Override
-  public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       if (closed) {
-        return;
+        return context.succeededFuture();
       }
       closed = true;
     }
     unregisterHandlers();
-    conn.closeWithPayload(statusCode, reason, handler);
+    return conn.closeWithPayload(statusCode, reason);
+  }
+
+  @Override
+  public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
+    close(statusCode, reason).setHandler(handler);
   }
 
   @Override
@@ -178,7 +175,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeFinalTextFrame(String text) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     writeFinalTextFrame(text, promise);
     return promise.future();
   }
@@ -190,7 +187,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeFinalBinaryFrame(Buffer data) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     writeFinalBinaryFrame(data, promise);
     return promise.future();
   }
@@ -242,7 +239,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeBinaryMessage(Buffer data) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     writeBinaryMessage(data, promise);
     return promise.future();
   }
@@ -258,7 +255,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeTextMessage(String text) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     writeTextMessage(text, promise);
     return promise.future();
   }
@@ -275,7 +272,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> write(Buffer data) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     write(data, promise);
     return promise.future();
   }
@@ -287,7 +284,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writePing(Buffer data) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     writePing(data, promise);
     return promise.future();
   }
@@ -302,7 +299,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writePong(Buffer data) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     writePong(data, promise);
     return promise.future();
   }
@@ -357,7 +354,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeFrame(WebSocketFrame frame) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = context.promise();
     writeFrame(frame, promise);
     return promise.future();
   }
@@ -366,7 +363,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     synchronized (conn) {
       checkClosed();
       conn.reportBytesWritten(((WebSocketFrameInternal)frame).length());
-      conn.writeToChannel(conn.encodeFrame((WebSocketFrameImpl) frame), conn.toPromise(FutureListenerAdapter.toVoid(handler)));
+      conn.writeToChannel(conn.encodeFrame((WebSocketFrameImpl) frame), conn.toPromise(context.toFutureListener(handler)));
     }
     return (S) this;
   }

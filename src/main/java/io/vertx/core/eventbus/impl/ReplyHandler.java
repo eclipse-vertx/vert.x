@@ -35,7 +35,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Message<
     super(context, eventBus, address, src);
     this.eventBus = eventBus;
     this.context = context;
-    this.result = Promise.promise();
+    this.result = context.promise();
     this.src = src;
     this.repliedAddress = repliedAddress;
     this.timeoutID = eventBus.vertx.setTimer(timeout, id -> {
@@ -74,7 +74,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Message<
   }
 
   void register() {
-    register(repliedAddress, true);
+    register(repliedAddress, true, ar -> {});
   }
 
   @Override

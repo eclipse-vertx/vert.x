@@ -35,10 +35,10 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.net.impl.FutureListenerAdapter;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -408,8 +408,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
-    ChannelPromise channelPromise = chctx.newPromise().addListener(FutureListenerAdapter.toVoid(promise));
+    PromiseInternal<Void> promise = context.promise();
+    ChannelPromise channelPromise = chctx.newPromise().addListener(promise);
     flush(channelPromise);
     channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L));
     return promise.future();
@@ -433,15 +433,15 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public Future<Void> updateSettings(io.vertx.core.http.Http2Settings settings) {
-    Promise<Void> promise = Promise.promise();
-    updateSettings(settings, promise);
+    Promise<Void> promise = context.promise();
+    Http2Settings settingsUpdate = HttpUtils.fromVertxSettings(settings);
+    updateSettings(settingsUpdate, promise);
     return promise.future();
   }
 
   @Override
   public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, @Nullable Handler<AsyncResult<Void>> completionHandler) {
-    Http2Settings settingsUpdate = HttpUtils.fromVertxSettings(settings);
-    updateSettings(settingsUpdate, completionHandler);
+    updateSettings(settings).setHandler(completionHandler);
     return this;
   }
 

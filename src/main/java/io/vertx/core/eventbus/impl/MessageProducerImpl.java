@@ -17,6 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.impl.VertxInternal;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -82,7 +83,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public synchronized Future<Void> write(T data) {
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = ((VertxInternal)vertx).getOrCreateContext().promise();
     write(data, promise);
     return promise.future();
   }
@@ -91,7 +92,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   public void write(T data, Handler<AsyncResult<Void>> handler) {
     Promise<Void> promise = null;
     if (handler != null) {
-      promise = Promise.promise();
+      promise = ((VertxInternal)vertx).getOrCreateContext().promise();
       promise.future().setHandler(handler);
     }
     write(data, promise);

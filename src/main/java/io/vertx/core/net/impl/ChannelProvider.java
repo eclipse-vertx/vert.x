@@ -17,10 +17,8 @@ import io.netty.handler.proxy.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.resolver.NoopAddressResolverGroup;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
@@ -72,23 +70,21 @@ public final class ChannelProvider {
     return channel;
   }
 
-  public void connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Handler<AsyncResult<Channel>> channelHandler) {
-    Handler<AsyncResult<Channel>> handler = res -> {
-      if (Context.isOnEventLoopThread()) {
-        channelHandler.handle(res);
-      } else {
-        // We are on the GlobalEventExecutor
-        context.nettyEventLoop().execute(() -> channelHandler.handle(res));
-      }
-    };
+  public Future<Channel> connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl) {
+    Promise<Channel> p = context.nettyEventLoop().newPromise();
+    connect(remoteAddress, peerAddress, serverName, ssl, p);
+    return p;
+  }
+
+  private void connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Promise<Channel> p) {
     if (proxyOptions != null) {
-      handleProxyConnect(remoteAddress, peerAddress, serverName, ssl, handler);
+      handleProxyConnect(remoteAddress, peerAddress, serverName, ssl, p);
     } else {
-      handleConnect(remoteAddress, peerAddress, serverName, ssl, handler);
+      handleConnect(remoteAddress, peerAddress, serverName, ssl, p);
     }
   }
 
-  private void initSSL(SocketAddress peerAddress, String serverName, boolean ssl, Channel ch, Handler<AsyncResult<Channel>> channelHandler) {
+  private void initSSL(SocketAddress peerAddress, String serverName, boolean ssl, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
       SslHandler sslHandler = new SslHandler(sslHelper.createEngine(context.owner(), peerAddress, serverName));
       sslHandler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
@@ -104,11 +100,11 @@ public final class ChannelProvider {
               // Remove from the pipeline after handshake result
               ctx.pipeline().remove(this);
               applicationProtocol = sslHandler.applicationProtocol();
-              channelHandler.handle(io.vertx.core.Future.succeededFuture(channel));
+              channelHandler.setSuccess(channel);
             } else {
               SSLHandshakeException sslException = new SSLHandshakeException("Failed to create SSL connection");
               sslException.initCause(completion.cause());
-              channelHandler.handle(io.vertx.core.Future.failedFuture(sslException));
+              channelHandler.setFailure(sslException);
             }
           }
           ctx.fireUserEventTriggered(evt);
@@ -122,7 +118,7 @@ public final class ChannelProvider {
   }
 
 
-  private void handleConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Handler<AsyncResult<Channel>> channelHandler) {
+  private void handleConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Promise<Channel> channelHandler) {
     VertxInternal vertx = context.owner();
     bootstrap.resolver(vertx.nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
@@ -136,7 +132,7 @@ public final class ChannelProvider {
       if (res.isSuccess()) {
         connected(fut.channel(), ssl, channelHandler);
       } else {
-        channelHandler.handle(io.vertx.core.Future.failedFuture(res.cause()));
+        channelHandler.setFailure(res.cause());
       }
     });
   }
@@ -147,18 +143,18 @@ public final class ChannelProvider {
    * @param channel the channel
    * @param channelHandler the channel handler
    */
-  private void connected(Channel channel, boolean ssl, Handler<AsyncResult<Channel>> channelHandler) {
+  private void connected(Channel channel, boolean ssl, Promise<Channel> channelHandler) {
     this.channel = channel;
     if (!ssl) {
       // No handshake
-      channelHandler.handle(io.vertx.core.Future.succeededFuture(this.channel));
+      channelHandler.setSuccess(channel);
     }
   }
 
   /**
    * A channel provider that connects via a Proxy : HTTP or SOCKS
    */
-  private void handleProxyConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Handler<AsyncResult<Channel>> channelHandler) {
+  private void handleProxyConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Promise<Channel> channelHandler) {
 
     final VertxInternal vertx = context.owner();
     final String proxyHost = proxyOptions.getHost();
@@ -212,7 +208,7 @@ public final class ChannelProvider {
 
               @Override
               public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-                channelHandler.handle(Future.failedFuture(cause));
+                channelHandler.setFailure(cause);
               }
             });
           }
@@ -221,11 +217,11 @@ public final class ChannelProvider {
 
         future.addListener(res -> {
           if (!res.isSuccess()) {
-            channelHandler.handle(Future.failedFuture(res.cause()));
+            channelHandler.setFailure(res.cause());
           }
         });
       } else {
-        channelHandler.handle(Future.failedFuture(dnsRes.cause()));
+        channelHandler.setFailure(dnsRes.cause());
       }
     });
   }

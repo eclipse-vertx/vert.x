@@ -19,7 +19,6 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.impl.launcher.commands.ExecUtils;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.impl.FutureListenerAdapter;
 import io.vertx.core.spi.resolver.ResolverProvider;
 
 import java.io.File;
@@ -81,7 +80,7 @@ public class AddressResolver {
     ContextInternal callback = (ContextInternal) vertx.getOrCreateContext();
     io.netty.resolver.AddressResolver<InetSocketAddress> resolver = resolverGroup.getResolver(callback.nettyEventLoop());
     io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolve(InetSocketAddress.createUnresolved(hostname, 0));
-    fut.addListener(FutureListenerAdapter.toValue(callback, InetSocketAddress::getAddress, resultHandler));
+    fut.addListener(callback.toFutureListener(InetSocketAddress::getAddress, resultHandler));
   }
 
   AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {

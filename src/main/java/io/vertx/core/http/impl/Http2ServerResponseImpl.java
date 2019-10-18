@@ -337,7 +337,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   @Override
   public Future<Void> write(Buffer chunk) {
     ByteBuf buf = chunk.getByteBuf();
-    Promise<Void> promise = Promise.promise();
+    Promise<Void> promise = stream.context.promise();
     write(buf, false, promise);
     return promise.future();
   }
@@ -350,8 +350,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    Promise<Void> promise = Promise.promise();
-    write(chunk, enc, promise);
+    Promise<Void> promise = stream.context.promise();
+    write(Buffer.buffer(chunk, enc).getByteBuf(), false, promise);
     return promise.future();
   }
 
@@ -362,8 +362,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> write(String chunk) {
-    Promise<Void> promise = Promise.promise();
-    write(chunk, promise);
+    Promise<Void> promise = stream.context.promise();
+    write(Buffer.buffer(chunk).getByteBuf(), false, promise);
     return promise.future();
   }
 
@@ -399,9 +399,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    Promise<Void> promose = Promise.promise();
-    end(chunk, promose);
-    return promose.future();
+    Promise<Void> promise = stream.context.promise();
+    write(chunk.getByteBuf(), true, promise);
+    return promise.future();
   }
 
   @Override
@@ -411,8 +411,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> end() {
-    Promise<Void> promise = Promise.promise();
-    end((ByteBuf) null, promise);
+    Promise<Void> promise = stream.context.promise();
+    write(null, true, promise);
     return promise.future();
   }
 
@@ -573,6 +573,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
+  public Future<Void> sendFile(String filename, long offset, long length) {
+    Promise<Void> promise = stream.context.promise();
+    sendFile(filename, offset, length, promise);
+    return promise.future();
+  }
+
+  @Override
   public HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
     synchronized (conn) {
       checkValid();
@@ -698,30 +705,53 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return push(method, host, path, null, handler);
+  public Future<HttpServerResponse> push(HttpMethod method, String host, String path) {
+    return push(method, host, path, (MultiMap) null);
   }
 
   @Override
-  public HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return push(method, null, path, headers, handler);
+  public Future<HttpServerResponse> push(HttpMethod method, String path, MultiMap headers) {
+    return push(method, null, path, headers);
   }
 
   @Override
-  public HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+  public Future<HttpServerResponse> push(HttpMethod method, String path) {
+    return push(method, host, path);
+  }
+
+  @Override
+  public Future<HttpServerResponse> push(HttpMethod method, String host, String path, MultiMap headers) {
     synchronized (conn) {
       if (push) {
         throw new IllegalStateException("A push response cannot promise another push");
       }
       checkValid();
-      conn.sendPush(stream.id(), host, method, headers, path, stream.priority(), handler);
-      return this;
+      return conn.sendPush(stream.id(), host, method, headers, path, stream.priority());
     }
   }
 
   @Override
+  public HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    push(method, host, path).setHandler(handler);
+    return this;
+  }
+
+  @Override
+  public HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+    push(method, path, headers).setHandler(handler);
+    return this;
+  }
+
+  @Override
+  public HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+    push(method, host, path, headers).setHandler(handler);
+    return this;
+  }
+
+  @Override
   public HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return push(method, host, path, handler);
+    push(method, path).setHandler(handler);
+    return this;
   }
 
   @Override

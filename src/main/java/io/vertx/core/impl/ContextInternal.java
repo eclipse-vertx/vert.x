@@ -12,6 +12,7 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -21,6 +22,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -64,6 +66,21 @@ public interface ContextInternal extends Context {
    */
   <T> Future<T> failedFuture(String message);
 
+  default <U, T> FutureListener<U> toFutureListener(Function<U, T> adapter, Handler<AsyncResult<T>> handler) {
+    if (handler != null) {
+      return future -> {
+        Future<T> res = future.isSuccess() ? Future.succeededFuture(adapter.apply(future.getNow())) : Future.failedFuture(future.cause());
+        executeFromIO(res, handler);
+      };
+    } else {
+      return null;
+    }
+  }
+
+  default FutureListener<Void> toFutureListener(Handler<AsyncResult<Void>> handler) {
+    return handler == null || handler instanceof FutureListener<?> ? (FutureListener<Void>) handler : ContextImpl.toListenerFuture(this, handler);
+  }
+
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} but uses the {@code queue} to order the tasks instead
    * of the internal queue of this context.
@@ -74,6 +91,11 @@ public interface ContextInternal extends Context {
    * Execute an internal task on the internal blocking ordered executor.
    */
   <T> void executeBlockingInternal(Handler<Promise<T>> action, Handler<AsyncResult<T>> resultHandler);
+
+  /**
+   * Like {@link #executeBlockingInternal(Handler, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action);
 
   /**
    * @return the deployment associated with this context or {@code null}

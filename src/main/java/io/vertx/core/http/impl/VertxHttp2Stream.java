@@ -16,7 +16,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -24,7 +23,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.FutureListenerAdapter;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 /**
@@ -140,7 +138,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void writeHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), toFutureListener(handler));
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), context.toFutureListener(handler));
   }
 
   private void writePriorityFrame(StreamPriority priority) {
@@ -153,7 +151,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
     bytesWritten += chunk.readableBytes();
-    conn.handler.writeData(stream, chunk, end, toFutureListener(handler));
+    conn.handler.writeData(stream, chunk, end, context.toFutureListener(handler));
   }
 
   void writeReset(long code) {
@@ -201,7 +199,4 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   abstract void handlePriorityChange(StreamPriority streamPriority);
 
-  public FutureListener<Void> toFutureListener(Handler<AsyncResult<Void>> handler) {
-    return handler == null ? null : FutureListenerAdapter.toVoid(context, handler);
-  }
 }
