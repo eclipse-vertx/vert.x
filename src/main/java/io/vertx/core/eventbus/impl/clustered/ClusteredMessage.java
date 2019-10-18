@@ -15,6 +15,7 @@ import io.netty.util.CharsetUtil;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.CodecManager;
@@ -48,7 +49,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   }
 
   public ClusteredMessage(ServerID sender, String address, String replyAddress, MultiMap headers, U sentBody,
-                          MessageCodec<U, V> messageCodec, boolean send, boolean src, EventBusImpl bus, Handler<AsyncResult<Void>> writeHandler) {
+                          MessageCodec<U, V> messageCodec, boolean send, boolean src, EventBusImpl bus, Promise<Void> writeHandler) {
     super(address, replyAddress, headers, sentBody, messageCodec, send, src, bus, writeHandler);
     this.sender = sender;
   }

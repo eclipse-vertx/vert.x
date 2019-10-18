@@ -18,7 +18,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 
 /**
  * Represents a message that is received from the event bus in a handler.
@@ -78,7 +77,9 @@ public interface Message<T> {
    *
    * @param message  the message to reply with.
    */
-  void reply(Object message);
+  default void reply(Object message) {
+    reply(message, new DeliveryOptions());
+  }
 
   /**
    * Link {@link #reply(Object)} but allows you to specify delivery options for the reply.
@@ -99,15 +100,15 @@ public interface Message<T> {
    * @param message  the message to reply with.
    * @param replyHandler  the reply handler for the reply.
    */
-  <R> void replyAndRequest(Object message, Handler<AsyncResult<Message<R>>> replyHandler);
+  default <R> void replyAndRequest(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
+    replyAndRequest(message, new DeliveryOptions(), replyHandler);
+  }
 
   /**
    * Like {@link #replyAndRequest(Object, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default <R> Future<Message<R>> replyAndRequest(Object message) {
-    Promise<Message<R>> promise = Promise.promise();
-    replyAndRequest(message, promise);
-    return promise.future();
+    return replyAndRequest(message, new DeliveryOptions());
   }
 
   /**
@@ -118,16 +119,14 @@ public interface Message<T> {
    * @param options  delivery options
    * @param replyHandler  reply handler will be called when any reply from the recipient is received
    */
-  <R> void replyAndRequest(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler);
+  default <R> void replyAndRequest(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
+    this.<R>replyAndRequest(message, options).setHandler(replyHandler);
+  }
 
   /**
    * Like {@link #replyAndRequest(Object, DeliveryOptions, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default <R> Future<Message<R>> replyAndRequest(Object message, DeliveryOptions options) {
-    Promise<Message<R>> promise = Promise.promise();
-    replyAndRequest(message, options, promise);
-    return promise.future();
-  }
+  <R> Future<Message<R>> replyAndRequest(Object message, DeliveryOptions options);
 
   /**
    * Signal to the sender that processing of this message failed.
@@ -138,6 +137,8 @@ public interface Message<T> {
    * @param failureCode A failure code to pass back to the sender
    * @param message A message to pass back to the sender
    */
-  void fail(int failureCode, String message);
+  default void fail(int failureCode, String message) {
+    reply(new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message));
+  }
 
 }

@@ -176,7 +176,7 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  public MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName, Handler<AsyncResult<Void>> writeHandler) {
+  public MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName, Promise<Void> writeHandler) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
@@ -237,10 +237,7 @@ public class ClusteredEventBus extends EventBusImpl {
       }
     } else {
       log.error("Failed to send message", asyncResult.cause());
-      Handler<AsyncResult<Void>> handler = sendContext.message.writeHandler();
-      if (handler != null) {
-        handler.handle(asyncResult.mapEmpty());
-      }
+      sendContext.message.written(asyncResult.cause());
     }
   }
 

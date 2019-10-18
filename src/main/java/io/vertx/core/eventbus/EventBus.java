@@ -17,7 +17,6 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.metrics.Measured;
 
 /**
@@ -70,15 +69,15 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  <T> EventBus request(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
+  default <T> EventBus request(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
+    return request(address, message, new DeliveryOptions(), replyHandler);
+  }
 
   /**
    * Like {@link #request(String, Object, Handler)} but returns a {@code Future} of the asynchronous result
    */
   default <T> Future<Message<T>> request(String address, Object message) {
-    Promise<Message<T>> promise = Promise.promise();
-    request(address, message, promise);
-    return promise.future();
+    return request(address, message, new DeliveryOptions());
   }
 
   /**
@@ -91,16 +90,16 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  <T> EventBus request(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
+  default <T> EventBus request(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
+    Future<Message<T>> reply = request(address, message, options);
+    reply.setHandler(replyHandler);
+    return this;
+  }
 
   /**
    * Like {@link #request(String, Object, DeliveryOptions, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default <T> Future<Message<T>> request(String address, Object message, DeliveryOptions options) {
-    Promise<Message<T>> promise = Promise.promise();
-    request(address, message, options, promise);
-    return promise.future();
-  }
+  <T> Future<Message<T>> request(String address, Object message, DeliveryOptions options);
 
   /**
    * Publish a message.<p>

@@ -17,6 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.impl.VertxInternal;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -89,13 +90,27 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public void write(T data, Handler<AsyncResult<Void>> handler) {
-    if (send) {
-      doSend(data, null, handler);
-    } else {
-      MessageImpl msg = bus.createMessage(false, true, address, options.getHeaders(), data, options.getCodecName(), handler);
-      msg.writeHandler = handler;
-      bus.sendOrPubInternal(msg, options, null);
+    Promise<Void> promise = null;
+    if (handler != null) {
+      promise = Promise.promise();
+      promise.future().setHandler(handler);
     }
+    write(data, promise);
+  }
+
+  private void write(T data, Promise<Void> handler) {
+    MessageImpl msg = bus.createMessage(send, true, address, options.getHeaders(), data, options.getCodecName(), handler);
+    if (send) {
+      synchronized (this) {
+        if (credits > 0) {
+          credits--;
+        } else {
+          pending.add(msg);
+          return;
+        }
+      }
+    }
+    bus.sendOrPubInternal(msg, options, null);
   }
 
   @Override
@@ -160,16 +175,6 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   protected void finalize() throws Throwable {
     close();
     super.finalize();
-  }
-
-  private synchronized <R> void doSend(T data, Handler<AsyncResult<Message<R>>> replyHandler, Handler<AsyncResult<Void>> handler) {
-    MessageImpl msg = bus.createMessage(true, true, address, options.getHeaders(), data, options.getCodecName(), handler);
-    if (credits > 0) {
-      credits--;
-      bus.sendOrPubInternal(msg, options, replyHandler);
-    } else {
-      pending.add(msg);
-    }
   }
 
   private synchronized void doReceiveCredit(int credit) {

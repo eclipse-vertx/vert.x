@@ -84,7 +84,7 @@ class ConnectionHolder {
       if (metrics != null) {
         metrics.messageWritten(message.address(), data.length());
       }
-      socket.write(data, message.writeHandler());
+      socket.write(data, message.write());
     } else {
       if (pending == null) {
         if (log.isDebugEnabled()) {
@@ -110,12 +110,8 @@ class ConnectionHolder {
     synchronized (this) {
       ClusteredMessage<?, ?> msg;
       if (pending != null) {
-        Future<Void> failure = Future.failedFuture(cause);
         while ((msg = pending.poll()) != null) {
-          Handler<AsyncResult<Void>> handler = msg.writeHandler();
-          if (handler != null) {
-            handler.handle(failure);
-          }
+          msg.written(cause);
         }
       }
     }
@@ -171,7 +167,7 @@ class ConnectionHolder {
         if (metrics != null) {
           metrics.messageWritten(message.address(), data.length());
         }
-        socket.write(data, message.writeHandler());
+        socket.write(data, message.write());
       }
     }
     pending = null;

@@ -123,6 +123,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   @Override
   public Future<Void> unregister() {
+    // Todo when we support multiple listeners per future
     Promise<Void> promise = Promise.promise();
     doUnregister(promise);
     return promise.future();
@@ -359,7 +360,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       this.message = message;
       this.handler = handler;
       this.iter = eventBus.receiveInterceptors();
-      this.context = message.src ? context : context.duplicate();
+
+      // Temporary workaround
+      this.context = handler instanceof EventBusImpl.ReplyHandler ? ((EventBusImpl.ReplyHandler)handler).context : context.duplicate();
     }
 
     @Override

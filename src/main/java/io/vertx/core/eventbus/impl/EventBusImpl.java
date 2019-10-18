@@ -101,23 +101,22 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public EventBus send(String address, Object message) {
-    return request(address, message, new DeliveryOptions(), null);
-  }
-
-  @Override
-  public <T> EventBus request(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
-    return request(address, message, new DeliveryOptions(), replyHandler);
+    return send(address, message, new DeliveryOptions());
   }
 
   @Override
   public EventBus send(String address, Object message, DeliveryOptions options) {
-    return request(address, message, options, null);
+    MessageImpl msg = createMessage(true, true, address, options.getHeaders(), message, options.getCodecName(), null);
+    sendOrPubInternal(msg, options, null);
+    return this;
   }
 
   @Override
-  public <T> EventBus request(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
-    sendOrPubInternal(createMessage(true, true, address, options.getHeaders(), message, options.getCodecName(), null), options, replyHandler);
-    return this;
+  public <T> Future<Message<T>> request(String address, Object message, DeliveryOptions options) {
+    MessageImpl msg = createMessage(true, true, address, options.getHeaders(), message, options.getCodecName(), null);
+    ReplyHandler<T> handler = createReplyHandler(msg, true, options);
+    sendOrPubInternal(msg, options, handler);
+    return handler.result.future();
   }
 
   @Override
@@ -233,7 +232,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return metrics;
   }
 
-  public MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName, Handler<AsyncResult<Void>> writeHandler) {
+  public MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName, Promise<Void> writeHandler) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
@@ -313,7 +312,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   protected <T> void sendReply(MessageImpl replyMessage, MessageImpl replierMessage, DeliveryOptions options,
-                               Handler<AsyncResult<Message<T>>> replyHandler) {
+                               ReplyHandler<T> replyHandler) {
     if (replyMessage.address() == null) {
       throw new IllegalStateException("address not specified");
     } else {
@@ -322,8 +321,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         // Guarantees the order when there is no current context in clustered mode
         ctx = sendNoContext;
       }
-      ReplyHandler<T> handler = replyHandler != null ? createReplyHandler(replyMessage, replierMessage.src, options, replyHandler) : null;
-      new OutboundDeliveryContext<>(ctx, replyMessage, options, handler, replierMessage).next();
+      new OutboundDeliveryContext<>(ctx, replyMessage, options, replyHandler, replierMessage).next();
     }
   }
 
@@ -400,10 +398,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         }
         if (holder != null) {
           deliverToHandler(msg, holder);
-          Handler<AsyncResult<Void>> handler = msg.writeHandler;
-          if (handler != null) {
-            handler.handle(Future.succeededFuture());
-          }
+          msg.written(null);
         } else {
           // RACY issue !!!!!
         }
@@ -415,10 +410,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         for (HandlerHolder holder: handlers) {
           deliverToHandler(msg, holder);
         }
-        Handler<AsyncResult<Void>> handler = msg.writeHandler;
-        if (handler != null) {
-          handler.handle(Future.succeededFuture());
-        }
+        msg.written(null);
       }
       return null;
     } else {
@@ -426,10 +418,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
         metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), 0);
       }
       ReplyException failure = new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + msg.address);
-      Handler<AsyncResult<Void>> handler = msg.writeHandler;
-      if (handler != null) {
-        handler.handle(Future.failedFuture(failure));
-      }
+      msg.written(failure);
       return failure;
     }
   }
@@ -444,28 +433,28 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return "__vertx.reply." + Long.toString(replySequence.incrementAndGet());
   }
 
-  private <T> ReplyHandler<T> createReplyHandler(MessageImpl message,
+  <T> ReplyHandler<T> createReplyHandler(MessageImpl message,
                                                  boolean src,
-                                                 DeliveryOptions options,
-                                                 Handler<AsyncResult<Message<T>>> replyHandler) {
+                                                 DeliveryOptions options) {
     long timeout = options.getSendTimeout();
     String replyAddress = generateReplyAddress();
     message.setReplyAddress(replyAddress);
     HandlerRegistration<T> registration = new HandlerRegistration<>(vertx, vertx.getOrCreateContext(), metrics, this, replyAddress, message.address, true, src);
     ReplyHandler<T> handler = new ReplyHandler<>(registration, timeout);
-    handler.result.future().setHandler(replyHandler);
     registration.handler(handler);
     return handler;
   }
 
   public class ReplyHandler<T> implements Handler<Message<T>> {
 
+    final ContextInternal context;
     final Promise<Message<T>> result;
     final HandlerRegistration<T> registration;
     final long timeoutID;
     public Object trace;
 
     ReplyHandler(HandlerRegistration<T> registration, long timeout) {
+      this.context = registration.context;
       this.result = Promise.promise();
       this.registration = registration;
       this.timeoutID = vertx.setTimer(timeout, id -> {
@@ -504,9 +493,8 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   public <T> void sendOrPubInternal(MessageImpl message, DeliveryOptions options,
-                                     Handler<AsyncResult<Message<T>>> replyHandler) {
+                                    ReplyHandler<T> handler) {
     checkStarted();
-    ReplyHandler<T> handler = replyHandler != null ? createReplyHandler(message, true, options, replyHandler) : null;
     ContextInternal ctx = vertx.getContext();
     if (ctx == null) {
       // Guarantees the order when there is no current context in clustered mode

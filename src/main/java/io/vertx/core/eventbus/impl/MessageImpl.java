@@ -12,8 +12,10 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.impl.logging.Logger;
@@ -38,7 +40,7 @@ public class MessageImpl<U, V> implements Message<V> {
   protected U sentBody;
   protected V receivedBody;
   protected boolean send;
-  protected Handler<AsyncResult<Void>> writeHandler;
+  protected Promise<Void> write;
 
   public MessageImpl(boolean src, EventBusImpl bus) {
     this.bus = bus;
@@ -48,7 +50,7 @@ public class MessageImpl<U, V> implements Message<V> {
   public MessageImpl(String address, String replyAddress, MultiMap headers, U sentBody,
                      MessageCodec<U, V> messageCodec,
                      boolean send, boolean src, EventBusImpl bus,
-                     Handler<AsyncResult<Void>> writeHandler) {
+                     Promise<Void> write) {
     this.messageCodec = messageCodec;
     this.address = address;
     this.replyAddress = replyAddress;
@@ -57,7 +59,7 @@ public class MessageImpl<U, V> implements Message<V> {
     this.send = send;
     this.bus = bus;
     this.src = src;
-    this.writeHandler = writeHandler;
+    this.write = write;
   }
 
   protected MessageImpl(MessageImpl<U, V> other, boolean src) {
@@ -78,7 +80,7 @@ public class MessageImpl<U, V> implements Message<V> {
       this.receivedBody = messageCodec.transform(other.sentBody);
     }
     this.send = other.send;
-    this.writeHandler = other.writeHandler;
+    this.write = other.write;
   }
 
   public MessageImpl<U, V> copyBeforeReceive(boolean src) {
@@ -113,30 +115,22 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   @Override
-  public void fail(int failureCode, String message) {
-    reply(new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message));
-  }
-
-  @Override
-  public void reply(Object message) {
-    replyAndRequest(message, new DeliveryOptions(), null);
-  }
-
-  @Override
-  public <R> void replyAndRequest(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
-    replyAndRequest(message, new DeliveryOptions(), replyHandler);
-  }
-
-  @Override
   public void reply(Object message, DeliveryOptions options) {
-    replyAndRequest(message, options, null);
-  }
-
-  @Override
-  public <R> void replyAndRequest(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     if (replyAddress != null) {
       MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName(), null);
-      bus.sendReply(reply, this, options, replyHandler);
+      bus.sendReply(reply, this, options, null);
+    }
+  }
+
+  @Override
+  public <R> Future<Message<R>> replyAndRequest(Object message, DeliveryOptions options) {
+    if (replyAddress != null) {
+      MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName(), null);
+      EventBusImpl.ReplyHandler<R> handler = bus.createReplyHandler(reply, reply.src, options);
+      bus.sendReply(reply, this, options, handler);
+      return handler.result.future();
+    } else {
+      throw new IllegalStateException();
     }
   }
 
@@ -149,8 +143,18 @@ public class MessageImpl<U, V> implements Message<V> {
     this.replyAddress = replyAddress;
   }
 
-  public Handler<AsyncResult<Void>> writeHandler() {
-    return writeHandler;
+  public void written(Throwable failure) {
+    if (write != null) {
+      if (failure == null) {
+        write.complete();
+      } else {
+        write.fail(failure);
+      }
+    }
+  }
+
+  public Promise<Void> write() {
+    return write;
   }
 
   public MessageCodec<U, V> codec() {
