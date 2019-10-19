@@ -398,9 +398,11 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           }
           VertxTracer tracer = HandlerRegistration.this.context.tracer();
           if (tracer != null && !src) {
-            Object trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
+            message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
             handler.handle(message);
-            tracer.sendResponse(context, null, trace, null, TagExtractor.empty());
+            if (message.replyAddress == null) {
+              tracer.sendResponse(context, null, message.trace, null, TagExtractor.empty());
+            }
           } else {
             handler.handle(message);
           }

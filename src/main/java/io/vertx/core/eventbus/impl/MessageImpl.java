@@ -37,6 +37,7 @@ public class MessageImpl<U, V> implements Message<V> {
   protected U sentBody;
   protected V receivedBody;
   protected boolean send;
+  protected Object trace;
 
   public MessageImpl(boolean src, EventBusImpl bus) {
     this.bus = bus;
@@ -127,7 +128,9 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   protected MessageImpl createReply(Object message, DeliveryOptions options) {
-    return bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName());
+    MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName());
+    reply.trace = trace;
+    return reply;
   }
 
   @Override

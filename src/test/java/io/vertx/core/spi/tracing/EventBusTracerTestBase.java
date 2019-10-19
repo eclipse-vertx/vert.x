@@ -19,6 +19,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -244,9 +245,9 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
       vertx2.eventBus().request("the_address", "msg", new DeliveryOptions().setSendTimeout(100), onFailure(failure -> {
       }));
     });
-    waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 4);
+    waitUntil(() -> ebTracer.sendEvents.size() + ebTracer.receiveEvents.size() == 3);
     assertEquals(Arrays.asList("sendRequest[the_address]", "receiveResponse[TIMEOUT]"), ebTracer.sendEvents);
-    assertEquals(Arrays.asList("receiveRequest[the_address]", "sendResponse[]"), ebTracer.receiveEvents);
+    assertEquals(Arrays.asList("receiveRequest[the_address]"), ebTracer.receiveEvents);
   }
 
   @Test
