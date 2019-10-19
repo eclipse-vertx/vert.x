@@ -105,14 +105,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public EventBus send(String address, Object message, DeliveryOptions options) {
-    MessageImpl msg = createMessage(true, true, address, options.getHeaders(), message, options.getCodecName());
+    MessageImpl msg = createMessage(true, address, options.getHeaders(), message, options.getCodecName());
     sendOrPubInternal(msg, options, null, null);
     return this;
   }
 
   @Override
   public <T> Future<Message<T>> request(String address, Object message, DeliveryOptions options) {
-    MessageImpl msg = createMessage(true, true, address, options.getHeaders(), message, options.getCodecName());
+    MessageImpl msg = createMessage(true, address, options.getHeaders(), message, options.getCodecName());
     ReplyHandler<T> handler = createReplyHandler(msg, true, options);
     sendOrPubInternal(msg, options, handler, null);
     return handler.result.future();
@@ -151,7 +151,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public EventBus publish(String address, Object message, DeliveryOptions options) {
-    sendOrPubInternal(createMessage(false, true, address, options.getHeaders(), message, options.getCodecName()), options, null, null);
+    sendOrPubInternal(createMessage(false, address, options.getHeaders(), message, options.getCodecName()), options, null, null);
     return this;
   }
 
@@ -231,11 +231,11 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return metrics;
   }
 
-  public MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName) {
+  public MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    MessageImpl msg = new MessageImpl(address, headers, body, codec, send, src, this);
+    MessageImpl msg = new MessageImpl(address, headers, body, codec, send, this);
     return msg;
   }
 
@@ -483,7 +483,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   private <T> void deliverToHandler(MessageImpl msg, HandlerHolder<T> holder) {
     // Each handler gets a fresh copy
-    MessageImpl copied = msg.copyBeforeReceive(holder.getHandler().src);
+    MessageImpl copied = msg.copyBeforeReceive();
 
     holder.getContext().runOnContext((v) -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but

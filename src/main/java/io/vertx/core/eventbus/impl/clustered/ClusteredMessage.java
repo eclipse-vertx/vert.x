@@ -44,18 +44,18 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   private boolean fromWire;
   private boolean toWire;
 
-  public ClusteredMessage(boolean src, EventBusImpl bus) {
-    super(src, bus);
+  public ClusteredMessage(EventBusImpl bus) {
+    super(bus);
   }
 
   public ClusteredMessage(ServerID sender, String address, MultiMap headers, U sentBody,
-                          MessageCodec<U, V> messageCodec, boolean send, boolean src, EventBusImpl bus) {
-    super(address, headers, sentBody, messageCodec, send, src, bus);
+                          MessageCodec<U, V> messageCodec, boolean send, EventBusImpl bus) {
+    super(address, headers, sentBody, messageCodec, send, bus);
     this.sender = sender;
   }
 
-  protected ClusteredMessage(ClusteredMessage<U, V> other, boolean src) {
-    super(other, src);
+  protected ClusteredMessage(ClusteredMessage<U, V> other) {
+    super(other);
     this.sender = other.sender;
     if (other.sentBody == null) {
       this.wireBuffer = other.wireBuffer;
@@ -72,8 +72,8 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     return reply;
   }
 
-  public ClusteredMessage<U, V> copyBeforeReceive(boolean src) {
-    return new ClusteredMessage<>(this, src);
+  public ClusteredMessage<U, V> copyBeforeReceive() {
+    return new ClusteredMessage<>(this);
   }
 
   @Override

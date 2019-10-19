@@ -174,11 +174,11 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  public MessageImpl createMessage(boolean send, boolean src, String address, MultiMap headers, Object body, String codecName) {
+  public MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    ClusteredMessage msg = new ClusteredMessage(serverID, address, headers, body, codec, send, src, this);
+    ClusteredMessage msg = new ClusteredMessage(serverID, address, headers, body, codec, send, this);
     return msg;
   }
 
@@ -298,7 +298,7 @@ public class ClusteredEventBus extends EventBusImpl {
             size = buff.getInt(0);
             parser.fixedSizeMode(size);
           } else {
-            ClusteredMessage received = new ClusteredMessage(false, ClusteredEventBus.this);
+            ClusteredMessage received = new ClusteredMessage(ClusteredEventBus.this);
             received.readFromWire(buff, codecManager);
             if (metrics != null) {
               metrics.messageRead(received.address(), buff.length());

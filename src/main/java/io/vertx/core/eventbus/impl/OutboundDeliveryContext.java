@@ -33,6 +33,7 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
   public final DeliveryOptions options;
   public final EventBusImpl.ReplyHandler<T> replyHandler;
   private final Promise<Void> writePromise;
+  private boolean src;
 
   Iterator<Handler<DeliveryContext>> iter;
   EventBusImpl bus;
@@ -62,7 +63,7 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
     // Tracing
     VertxTracer tracer = ctx.tracer();
     if (tracer != null) {
-      if (message.src) {
+      if (src) {
         if (replyHandler != null) {
           replyHandler.trace = message.trace;
         } else {
@@ -109,10 +110,11 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
     } else {
       VertxTracer tracer = ctx.tracer();
       if (tracer != null) {
-        if (message.src) {
+        if (message.trace == null) {
+          src = true;
           BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
           message.trace = tracer.sendRequest(ctx, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
-        } else if (message.trace != null) {
+        } else {
           // Handle failure here
           tracer.sendResponse(ctx, null, message.trace, null, TagExtractor.empty());
         }

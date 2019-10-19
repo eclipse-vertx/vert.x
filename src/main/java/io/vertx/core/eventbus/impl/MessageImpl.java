@@ -30,7 +30,6 @@ public class MessageImpl<U, V> implements Message<V> {
 
   protected MessageCodec<U, V> messageCodec;
   protected final EventBusImpl bus;
-  public final boolean src;
   protected String address;
   protected String replyAddress;
   protected MultiMap headers;
@@ -39,29 +38,26 @@ public class MessageImpl<U, V> implements Message<V> {
   protected boolean send;
   protected Object trace;
 
-  public MessageImpl(boolean src, EventBusImpl bus) {
+  public MessageImpl(EventBusImpl bus) {
     this.bus = bus;
-    this.src = src;
   }
 
   public MessageImpl(String address, MultiMap headers, U sentBody,
                      MessageCodec<U, V> messageCodec,
-                     boolean send, boolean src, EventBusImpl bus) {
+                     boolean send, EventBusImpl bus) {
     this.messageCodec = messageCodec;
     this.address = address;
     this.headers = headers;
     this.sentBody = sentBody;
     this.send = send;
     this.bus = bus;
-    this.src = src;
   }
 
-  protected MessageImpl(MessageImpl<U, V> other, boolean src) {
+  protected MessageImpl(MessageImpl<U, V> other) {
     this.bus = other.bus;
     this.address = other.address;
     this.replyAddress = other.replyAddress;
     this.messageCodec = other.messageCodec;
-    this.src = src;
     if (other.headers != null) {
       List<Map.Entry<String, String>> entries = other.headers.entries();
       this.headers = new CaseInsensitiveHeaders();
@@ -76,8 +72,8 @@ public class MessageImpl<U, V> implements Message<V> {
     this.send = other.send;
   }
 
-  public MessageImpl<U, V> copyBeforeReceive(boolean src) {
-    return new MessageImpl<>(this, src);
+  public MessageImpl<U, V> copyBeforeReceive() {
+    return new MessageImpl<>(this);
   }
 
   @Override
@@ -119,7 +115,7 @@ public class MessageImpl<U, V> implements Message<V> {
   public <R> Future<Message<R>> replyAndRequest(Object message, DeliveryOptions options) {
     if (replyAddress != null) {
       MessageImpl reply = createReply(message, options);
-      EventBusImpl.ReplyHandler<R> handler = bus.createReplyHandler(reply, reply.src, options);
+      EventBusImpl.ReplyHandler<R> handler = bus.createReplyHandler(reply, false, options);
       bus.sendReply(reply, options, handler);
       return handler.result.future();
     } else {
@@ -128,7 +124,7 @@ public class MessageImpl<U, V> implements Message<V> {
   }
 
   protected MessageImpl createReply(Object message, DeliveryOptions options) {
-    MessageImpl reply = bus.createMessage(true, src, replyAddress, options.getHeaders(), message, options.getCodecName());
+    MessageImpl reply = bus.createMessage(true, replyAddress, options.getHeaders(), message, options.getCodecName());
     reply.trace = trace;
     return reply;
   }

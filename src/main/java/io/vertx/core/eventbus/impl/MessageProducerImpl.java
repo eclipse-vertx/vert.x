@@ -98,7 +98,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   }
 
   private void write(T data, Promise<Void> handler) {
-    MessageImpl msg = bus.createMessage(send, true, address, options.getHeaders(), data, options.getCodecName());
+    MessageImpl msg = bus.createMessage(send, address, options.getHeaders(), data, options.getCodecName());
     OutboundDeliveryContext<T> sendCtx = bus.newSendContext(msg, options, null, handler);
     if (send) {
       synchronized (this) {
