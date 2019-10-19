@@ -18,11 +18,11 @@ import io.vertx.core.Context;
  */
 public class HandlerHolder<T> {
 
-  private final Context context;
-  final String address;
-  private final HandlerRegistration<T> handler;
-  private final boolean replyHandler;
-  private final boolean localOnly;
+  public final Context context;
+  public final String address;
+  public final HandlerRegistration<T> handler;
+  public final boolean replyHandler;
+  public final boolean localOnly;
   private boolean removed;
 
   public HandlerHolder(HandlerRegistration<T> handler,

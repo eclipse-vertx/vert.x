@@ -31,7 +31,7 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
   public final ContextInternal ctx;
   public final MessageImpl message;
   public final DeliveryOptions options;
-  public final EventBusImpl.ReplyHandler<T> replyHandler;
+  public final ReplyHandler<T> replyHandler;
   private final Promise<Void> writePromise;
   private boolean src;
 
@@ -39,7 +39,7 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
   EventBusImpl bus;
   EventBusMetrics metrics;
 
-  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, EventBusImpl.ReplyHandler<T> replyHandler, Promise<Void> writePromise) {
+  OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, ReplyHandler<T> replyHandler, Promise<Void> writePromise) {
     this.ctx = ctx;
     this.message = message;
     this.options = options;

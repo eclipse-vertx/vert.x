@@ -183,13 +183,11 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void addRegistration(boolean newAddress, String address,
-                                     boolean replyHandler, boolean localOnly,
-                                     Handler<AsyncResult<Void>> completionHandler) {
-    if (newAddress && subs != null && !replyHandler && !localOnly) {
+  protected <T> void addRegistration(boolean newAddress, HandlerHolder<T> holder, Handler<AsyncResult<Void>> completionHandler) {
+    if (newAddress && subs != null && !holder.replyHandler && !holder.localOnly) {
       // Propagate the information
-      subs.add(address, nodeInfo, completionHandler);
-      ownSubs.add(address);
+      subs.add(holder.address, nodeInfo, completionHandler);
+      ownSubs.add(holder.address);
     } else {
       completionHandler.handle(Future.succeededFuture());
     }

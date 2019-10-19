@@ -115,9 +115,9 @@ public class MessageImpl<U, V> implements Message<V> {
   public <R> Future<Message<R>> replyAndRequest(Object message, DeliveryOptions options) {
     if (replyAddress != null) {
       MessageImpl reply = createReply(message, options);
-      EventBusImpl.ReplyHandler<R> handler = bus.createReplyHandler(reply, false, options);
+      ReplyHandler<R> handler = bus.createReplyHandler(reply, false, options);
       bus.sendReply(reply, options, handler);
-      return handler.result.future();
+      return handler.result();
     } else {
       throw new IllegalStateException();
     }
