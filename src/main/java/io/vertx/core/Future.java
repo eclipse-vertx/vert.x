@@ -38,8 +38,8 @@ public interface Future<T> extends AsyncResult<T> {
     Promise<T> promise = Promise.promise();
     try {
       handler.handle(promise);
-    } catch (Exception e){
-      promise.tryFail(e);
+    } catch (Throwable t){
+      promise.tryFail(t);
     }
     return promise.future();
   }
