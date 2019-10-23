@@ -33,7 +33,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   private final EventBusImpl bus;
   private final boolean send;
   private final String address;
-  private final Queue<MessageImpl<T, ?>> pending = new ArrayDeque<>();
+  private final Queue<OutboundDeliveryContext<T>> pending = new ArrayDeque<>();
   private final MessageConsumer<Integer> creditConsumer;
   private DeliveryOptions options;
   private int maxSize = DEFAULT_WRITE_QUEUE_MAX_SIZE;
@@ -89,13 +89,28 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public void write(T data, Handler<AsyncResult<Void>> handler) {
-    if (send) {
-      doSend(data, null, handler);
-    } else {
-      MessageImpl msg = bus.createMessage(false, true, address, options.getHeaders(), data, options.getCodecName(), handler);
-      msg.writeHandler = handler;
-      bus.sendOrPubInternal(msg, options, null);
+    Promise<Void> promise = null;
+    if (handler != null) {
+      promise = Promise.promise();
+      promise.future().setHandler(handler);
     }
+    write(data, promise);
+  }
+
+  private void write(T data, Promise<Void> handler) {
+    MessageImpl msg = bus.createMessage(send, address, options.getHeaders(), data, options.getCodecName());
+    OutboundDeliveryContext<T> sendCtx = bus.newSendContext(msg, options, null, handler);
+    if (send) {
+      synchronized (this) {
+        if (credits > 0) {
+          credits--;
+        } else {
+          pending.add(sendCtx);
+          return;
+        }
+      }
+    }
+    bus.sendOrPubInternal(msg, options, null, handler);
   }
 
   @Override
@@ -162,25 +177,15 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     super.finalize();
   }
 
-  private synchronized <R> void doSend(T data, Handler<AsyncResult<Message<R>>> replyHandler, Handler<AsyncResult<Void>> handler) {
-    MessageImpl msg = bus.createMessage(true, true, address, options.getHeaders(), data, options.getCodecName(), handler);
-    if (credits > 0) {
-      credits--;
-      bus.sendOrPubInternal(msg, options, replyHandler);
-    } else {
-      pending.add(msg);
-    }
-  }
-
   private synchronized void doReceiveCredit(int credit) {
     credits += credit;
     while (credits > 0) {
-      MessageImpl<T, ?> msg = pending.poll();
-      if (msg == null) {
+      OutboundDeliveryContext<T> sendContext = pending.poll();
+      if (sendContext == null) {
         break;
       } else {
         credits--;
-        bus.sendOrPubInternal(msg, options, null);
+        bus.sendOrPubInternal(sendContext);
       }
     }
     checkDrained();

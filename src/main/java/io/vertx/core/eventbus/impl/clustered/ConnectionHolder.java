@@ -11,12 +11,10 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
+import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
 import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -46,7 +44,7 @@ class ConnectionHolder {
   private final Vertx vertx;
   private final EventBusMetrics metrics;
 
-  private Queue<ClusteredMessage> pending;
+  private Queue<OutboundDeliveryContext<?>> pending;
   private NetSocket socket;
   private boolean connected;
   private long timeoutID = -1;
@@ -78,13 +76,13 @@ class ConnectionHolder {
   }
 
   // TODO optimise this (contention on monitor)
-  synchronized void writeMessage(ClusteredMessage message) {
+  synchronized void writeMessage(OutboundDeliveryContext<?> ctx) {
     if (connected) {
-      Buffer data = message.encodeToWire();
+      Buffer data = ((ClusteredMessage)ctx.message).encodeToWire();
       if (metrics != null) {
-        metrics.messageWritten(message.address(), data.length());
+        metrics.messageWritten(ctx.message.address(), data.length());
       }
-      socket.write(data, message.writeHandler());
+      socket.write(data, ctx);
     } else {
       if (pending == null) {
         if (log.isDebugEnabled()) {
@@ -92,7 +90,7 @@ class ConnectionHolder {
         }
         pending = new ArrayDeque<>();
       }
-      pending.add(message);
+      pending.add(ctx);
     }
   }
 
@@ -108,14 +106,10 @@ class ConnectionHolder {
       vertx.cancelTimer(pingTimeoutID);
     }
     synchronized (this) {
-      ClusteredMessage<?, ?> msg;
+      OutboundDeliveryContext<?> msg;
       if (pending != null) {
-        Future<Void> failure = Future.failedFuture(cause);
         while ((msg = pending.poll()) != null) {
-          Handler<AsyncResult<Void>> handler = msg.writeHandler();
-          if (handler != null) {
-            handler.handle(failure);
-          }
+          msg.written(cause);
         }
       }
     }
@@ -142,7 +136,7 @@ class ConnectionHolder {
         close();
       });
       ClusteredMessage pingMessage =
-        new ClusteredMessage<>(serverID, PING_ADDRESS, null, null, null, new PingMessageCodec(), true, true, eventBus, null);
+        new ClusteredMessage<>(serverID, PING_ADDRESS, null, null, new PingMessageCodec(), true, eventBus);
       Buffer data = pingMessage.encodeToWire();
       socket.write(data);
     });
@@ -166,12 +160,12 @@ class ConnectionHolder {
       if (log.isDebugEnabled()) {
         log.debug("Draining the queue for server " + serverID);
       }
-      for (ClusteredMessage message : pending) {
-        Buffer data = message.encodeToWire();
+      for (OutboundDeliveryContext<?> ctx : pending) {
+        Buffer data = ((ClusteredMessage<?, ?>)ctx.message).encodeToWire();
         if (metrics != null) {
-          metrics.messageWritten(message.address(), data.length());
+          metrics.messageWritten(ctx.message.address(), data.length());
         }
-        socket.write(data, message.writeHandler());
+        socket.write(data, ctx);
       }
     }
     pending = null;
