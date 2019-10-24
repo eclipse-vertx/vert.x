@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -104,17 +104,17 @@ public class HttpServerOptions extends NetServerOptions {
    * Default initial buffer size for HttpObjectDecoder = 128 bytes
    */
   public static final int DEFAULT_DECODER_INITIAL_BUFFER_SIZE = 128;
-  
+
   /**
    * Default support for WebSockets per-frame deflate compression extension = {@code true}
    */
   public static final boolean DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED = true;
-  
+
   /**
    * Default support for WebSockets per-message deflate compression extension = {@code true}
    */
   public static final boolean DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED = true;
-  
+
   /**
    * Default WebSocket deflate compression level = 6
    */
@@ -759,8 +759,8 @@ public class HttpServerOptions extends NetServerOptions {
 	  this.perFrameWebsocketCompressionSupported = supported;
 	  return this;
   }
-  
-  /** 
+
+  /**
    * Get whether WebSocket the per-frame deflate compression extension is supported.
    *
    * @return {@code true} if the http server will accept the per-frame deflate compression extension
@@ -768,7 +768,7 @@ public class HttpServerOptions extends NetServerOptions {
   public boolean getPerFrameWebsocketCompressionSupported() {
 	  return this.perFrameWebsocketCompressionSupported;
   }
-  
+
   /**
    * Enable or disable support for WebSocket per-message deflate compression extension.
    *
@@ -779,7 +779,7 @@ public class HttpServerOptions extends NetServerOptions {
 	  this.perMessageWebsocketCompressionSupported = supported;
 	  return this;
   }
-  
+
   /**
    * Get whether WebSocket per-message deflate compression extension is supported.
    *
@@ -788,7 +788,7 @@ public class HttpServerOptions extends NetServerOptions {
   public boolean getPerMessageWebsocketCompressionSupported() {
 	  return this.perMessageWebsocketCompressionSupported;
   }
-  
+
   /**
    * Set the WebSocket compression level.
    *
@@ -799,14 +799,14 @@ public class HttpServerOptions extends NetServerOptions {
 	  this.websocketCompressionLevel = compressionLevel;
 	  return this;
   }
-  
+
   /**
    * @return the current WebSocket deflate compression level
    */
   public int getWebsocketCompressionLevel() {
 	  return this.websocketCompressionLevel;
   }
-  
+
   /**
    * Set whether the WebSocket server will accept the {@code server_no_context_takeover} parameter of the per-message
    * deflate compression extension offered by the client.
@@ -818,7 +818,7 @@ public class HttpServerOptions extends NetServerOptions {
 	  this.websocketAllowServerNoContext = accept;
 	  return this;
   }
-  
+
   /**
    * @return {@code true} when the WebSocket server will accept the {@code server_no_context_takeover} parameter for the per-message
    * deflate compression extension offered by the client
@@ -826,7 +826,7 @@ public class HttpServerOptions extends NetServerOptions {
   public boolean getWebsocketAllowServerNoContext () {
 	  return this.websocketAllowServerNoContext;
   }
-  
+
   /**
    * Set whether the WebSocket server will accept the {@code client_no_context_takeover} parameter of the per-message
    * deflate compression extension offered by the client.

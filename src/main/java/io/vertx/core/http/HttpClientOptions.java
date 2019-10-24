@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -1208,7 +1208,7 @@ public class HttpClientOptions extends ClientOptionsBase {
 
   /**
    * set to {@code initialBufferSizeHttpDecoder} the initial buffer of the HttpDecoder.
-   * 
+   *
    * @param decoderInitialBufferSize the initial buffer size
    * @return a reference to this, so the API can be used fluently
    */
