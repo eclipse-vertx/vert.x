@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Red Hat, Inc. and others
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -1538,8 +1538,8 @@ public class FileSystemTest extends VertxTestBase {
         rs.setReadBufferSize(readBufferSize);
         final Buffer buff = Buffer.buffer();
         final int[] appendCount = new int[] {0};
-        rs.handler((rsBuff) -> { 
-          buff.appendBuffer(rsBuff); 
+        rs.handler((rsBuff) -> {
+          buff.appendBuffer(rsBuff);
           appendCount[0]++;
           });
         rs.exceptionHandler(t -> fail(t.getMessage()));

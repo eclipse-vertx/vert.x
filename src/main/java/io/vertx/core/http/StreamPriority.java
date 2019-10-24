@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -117,12 +117,12 @@ public class StreamPriority {
     if (this == obj) return true;
     if (obj == null) return false;
     if (getClass() != obj.getClass()) return false;
-    
+
     StreamPriority other = (StreamPriority) obj;
     if (exclusive != other.exclusive) return false;
     if (dependency != other.dependency) return false;
     if (weight != other.weight) return false;
-    
+
     return true;
   }
 

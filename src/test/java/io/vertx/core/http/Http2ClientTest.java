@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -1887,8 +1887,8 @@ public class Http2ClientTest extends Http2TestBase {
 
     await();
   }
-  
-  
+
+
   @Test
   public void testStreamPriority() throws Exception {
     StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
@@ -1968,7 +1968,7 @@ public class Http2ClientTest extends Http2TestBase {
           }
           return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
-      
+
     });
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
@@ -2035,7 +2035,7 @@ public class Http2ClientTest extends Http2TestBase {
           }
           return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
-      
+
     });
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
@@ -2063,5 +2063,5 @@ public class Http2ClientTest extends Http2TestBase {
     }
   }
 
-  
+
 }

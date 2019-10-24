@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -319,7 +319,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       response.handleUnknownFrame(new HttpFrameImpl(type, flags, buff));
     }
 
-    
+
     @Override
     void handlePriorityChange(StreamPriority streamPriority) {
       if(streamPriority != null && !streamPriority.equals(priority())) {
@@ -439,7 +439,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         handlerContext.flush();
       }
     }
-    
+
     @Override
     public void writeFrame(int type, int flags, ByteBuf payload) {
       super.writeFrame(type, flags, payload);
@@ -543,7 +543,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (m == null)  {
           m = metrics.connected(conn.remoteAddress(), conn.remoteName());
           metrics.endpointConnected(queueMetric, m);
-        } 
+        }
         conn.metric(m);
       }
       long concurrency = conn.remoteSettings().getMaxConcurrentStreams();

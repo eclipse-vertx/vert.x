@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -47,13 +47,13 @@ public class DnsClientOptions {
   * The default value for the recursion desired flag (RD) = {@code true}
   */
   public static final boolean DEFAULT_RECURSION_DESIRED = true;
-  
+
   private int port = DEFAULT_PORT;
   private String host = DEFAULT_HOST;
   private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
   private boolean logActivity = DEFAULT_LOG_ENABLED;
   private boolean recursionDesired = DEFAULT_RECURSION_DESIRED;
-  
+
   public DnsClientOptions() {
   }
 
@@ -157,7 +157,7 @@ public class DnsClientOptions {
   public boolean isRecursionDesired() {
     return recursionDesired;
   }
-  
+
   /**
    * Set whether or not recursion is desired
    *
@@ -168,7 +168,7 @@ public class DnsClientOptions {
     this.recursionDesired = recursionDesired;
     return this;
   }
-  
+
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     DnsClientOptionsConverter.toJson(this, json);
