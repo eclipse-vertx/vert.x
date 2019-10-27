@@ -14,8 +14,6 @@ package io.vertx.core.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -31,18 +29,26 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
-  void executeAsync(Handler<Void> task) {
-    execute(null, task);
+  <T> void executeAsync(T value, Handler<T> task) {
+    executeFromIO(value, task);
   }
 
   @Override
-  protected <T> void execute(T value, Handler<T> task) {
+  public <T> void executeFromIO(T value, Handler<T> task) {
+    if (THREAD_CHECKS) {
+      checkEventLoopThread();
+    }
     dispatch(value, task);
   }
 
   @Override
   public <T> void schedule(T value, Handler<T> task) {
     task.handle(value);
+  }
+
+  @Override
+  public <T> void execute(T value, Handler<T> task) {
+    throw new UnsupportedOperationException();
   }
 
   @Override

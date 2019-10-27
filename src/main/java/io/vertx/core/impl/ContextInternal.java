@@ -66,7 +66,7 @@ public interface ContextInternal extends Context {
    * Execute the context task and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
    *
-   * The caller thread should be the the event loop thread of this context.<p/>
+   * The caller thread is assumed to be the event loop thread of this context.<p/>
    *
    * Any exception thrown from the {@literal task} will be reported on this context.
    *
@@ -74,6 +74,17 @@ public interface ContextInternal extends Context {
    * @param task the task to execute with the {@code value} argument
    */
   <T> void executeFromIO(T value, Handler<T> task);
+
+  /**
+   * Execute the context task and switch on this context if necessary, this also associates the
+   * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
+   *
+   * Any exception thrown from the {@literal task} will be reported on this context.
+   *
+   * @param value the argument for the {@code task}
+   * @param task the task to execute with the {@code value} argument
+   */
+  <T> void execute(T value, Handler<T> task);
 
   /**
    * @see #schedule(Object, Handler)

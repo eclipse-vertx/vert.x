@@ -17,6 +17,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Starter;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
@@ -34,8 +35,8 @@ import static io.vertx.core.impl.VertxThread.DISABLE_TCCL;
  */
 abstract class AbstractContext implements ContextInternal {
 
-  private static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
-  private static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
+  static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
+  static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
 
   static Context context() {
     Thread current = Thread.currentThread();
@@ -78,9 +79,7 @@ abstract class AbstractContext implements ContextInternal {
     }
   };
 
-  abstract void executeAsync(Handler<Void> task);
-
-  abstract <T> void execute(T value, Handler<T> task);
+  abstract <T> void executeAsync(T value, Handler<T> task);
 
   @Override
   public abstract boolean isEventLoopContext();
@@ -183,15 +182,7 @@ abstract class AbstractContext implements ContextInternal {
     }
   }
 
-  @Override
-  public final <T> void executeFromIO(T value, Handler<T> task) {
-    if (THREAD_CHECKS) {
-      checkEventLoopThread();
-    }
-    execute(value, task);
-  }
-
-  private void checkEventLoopThread() {
+  static void checkEventLoopThread() {
     Thread current = Thread.currentThread();
     if (!(current instanceof FastThreadLocalThread)) {
       throw new IllegalStateException("Expected to be on Vert.x thread, but actually on: " + current);
@@ -204,7 +195,7 @@ abstract class AbstractContext implements ContextInternal {
   @Override
   public final void runOnContext(Handler<Void> task) {
     try {
-      executeAsync(task);
+      executeAsync(null, task);
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }

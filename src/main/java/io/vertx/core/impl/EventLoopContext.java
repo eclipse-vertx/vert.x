@@ -13,6 +13,7 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -36,8 +37,9 @@ public class EventLoopContext extends ContextImpl {
     super(vertx, tracer, eventLoop, internalBlockingPool, workerPool, deployment, tccl);
   }
 
-  void executeAsync(Handler<Void> task) {
-    nettyEventLoop().execute(() -> dispatch(null, task));
+  @Override
+  <T> void executeAsync(T value, Handler<T> task) {
+    nettyEventLoop().execute(() -> dispatch(value, task));
   }
 
   @Override
@@ -46,8 +48,29 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  <T> void execute(T value, Handler<T> task) {
+  public <T> void executeFromIO(T value, Handler<T> task) {
+    if (THREAD_CHECKS) {
+      checkEventLoopThread();
+    }
     dispatch(value, task);
+  }
+
+  @Override
+  public <T> void execute(T value, Handler<T> task) {
+    execute(this, value, task);
+  }
+
+  private static <T> void execute(AbstractContext ctx, T value, Handler<T> task) {
+    EventLoop eventLoop = ctx.nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      if (AbstractContext.context() == ctx) {
+        ctx.dispatch(value, task);
+      } else {
+        ctx.executeFromIO(value, task);
+      }
+    } else {
+      ctx.executeAsync(value, task);
+    }
   }
 
   @Override
@@ -66,13 +89,22 @@ public class EventLoopContext extends ContextImpl {
       super(delegate, other);
     }
 
-    void executeAsync(Handler<Void> task) {
-      nettyEventLoop().execute(() -> dispatch(null, task));
+    @Override
+    <T> void executeAsync(T value, Handler<T> task) {
+      nettyEventLoop().execute(() -> dispatch(value, task));
     }
 
     @Override
-    <T> void execute(T value, Handler<T> task) {
+    public <T> void executeFromIO(T value, Handler<T> task) {
+      if (THREAD_CHECKS) {
+        checkEventLoopThread();
+      }
       dispatch(value, task);
+    }
+
+    @Override
+    public <T> void execute(T value, Handler<T> task) {
+      EventLoopContext.execute(this, value, task);
     }
 
     @Override
