@@ -152,6 +152,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     websocketCM.start();
   }
 
+  public ContextInternal context() {
+    return context;
+  }
+
   HttpClientMetrics metrics() {
     return metrics;
   }
