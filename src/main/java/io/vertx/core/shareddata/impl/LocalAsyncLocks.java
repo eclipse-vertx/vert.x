@@ -15,6 +15,8 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.shareddata.Lock;
 
 import java.util.ArrayList;
@@ -35,14 +37,14 @@ public class LocalAsyncLocks {
 
     final Context context;
     final String lockName;
-    final Handler<AsyncResult<Lock>> handler;
+    final Promise<Lock> promise;
     final AtomicReference<Status> status;
     final Long timerId;
 
-    LockWaiter(Context context, String lockName, long timeout, Handler<AsyncResult<Lock>> handler) {
+    LockWaiter(Context context, String lockName, long timeout, Promise<Lock> promise) {
       this.context = context;
       this.lockName = lockName;
-      this.handler = handler;
+      this.promise = promise;
       status = new AtomicReference<>(Status.WAITING);
       timerId = timeout != Long.MAX_VALUE ? context.owner().setTimer(timeout, tid -> timeout()) : null;
     }
@@ -53,7 +55,7 @@ public class LocalAsyncLocks {
 
     void timeout() {
       if (status.compareAndSet(Status.WAITING, Status.TIMED_OUT)) {
-        handler.handle(Future.failedFuture("Timed out waiting to get lock"));
+        promise.fail("Timed out waiting to get lock");
       }
     }
 
@@ -62,7 +64,7 @@ public class LocalAsyncLocks {
         if (timerId != null) {
           context.owner().cancelTimer(timerId);
         }
-        context.runOnContext(v -> handler.handle(Future.succeededFuture(new AsyncLock(lockName))));
+        promise.complete(new AsyncLock(lockName));
       } else {
         context.runOnContext(v -> nextWaiter(lockName));
       }
@@ -88,8 +90,9 @@ public class LocalAsyncLocks {
   // Value should never be modified
   private final ConcurrentMap<String, List<LockWaiter>> waitersMap = new ConcurrentHashMap<>();
 
-  public void acquire(Context context, String name, long timeout, Handler<AsyncResult<Lock>> handler) {
-    LockWaiter lockWaiter = new LockWaiter(context, name, timeout, handler);
+  public Future<Lock> acquire(ContextInternal context, String name, long timeout) {
+    Promise<Lock> promise = context.promise();
+    LockWaiter lockWaiter = new LockWaiter(context, name, timeout, promise);
     List<LockWaiter> waiters = waitersMap.compute(name, (s, list) -> {
       List<LockWaiter> result;
       if (list != null) {
@@ -104,6 +107,7 @@ public class LocalAsyncLocks {
     if (waiters.size() == 1) {
       waiters.get(0).acquireLock();
     }
+    return promise.future();
   }
 
   private void nextWaiter(String lockName) {

@@ -16,6 +16,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -54,82 +55,99 @@ public class SharedDataImpl implements SharedData {
 
   @Override
   public <K, V> void getClusterWideMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
-    Objects.requireNonNull(name, "name");
     Objects.requireNonNull(resultHandler, "resultHandler");
+    this.<K, V>getClusterWideMap(name).setHandler(resultHandler);
+  }
+
+  @Override
+  public <K, V> Future<AsyncMap<K, V>> getClusterWideMap(String name) {
+    Objects.requireNonNull(name, "name");
     if (clusterManager == null) {
       throw new IllegalStateException("Can't get cluster wide map if not clustered");
     }
-    clusterManager.<K, V>getAsyncMap(name, ar -> {
-      if (ar.succeeded()) {
-        // Wrap it
-        resultHandler.handle(Future.succeededFuture(new WrappedAsyncMap<K, V>(ar.result())));
-      } else {
-        resultHandler.handle(Future.failedFuture(ar.cause()));
-      }
-    });
+    return clusterManager.<K, V>getAsyncMap(name).map(WrappedAsyncMap::new);
   }
 
   @Override
   public <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
-    Objects.requireNonNull(name, "name");
     Objects.requireNonNull(resultHandler, "resultHandler");
+    this.<K, V>getAsyncMap(name).setHandler(resultHandler);
+  }
+
+  @Override
+  public <K, V> Future<AsyncMap<K, V>> getAsyncMap(String name) {
+    Objects.requireNonNull(name, "name");
     if (clusterManager == null) {
-      getLocalAsyncMap(name, resultHandler);
+      return getLocalAsyncMap(name);
     } else {
-      clusterManager.<K, V>getAsyncMap(name, ar -> {
-        if (ar.succeeded()) {
-          // Wrap it
-          resultHandler.handle(Future.succeededFuture(new WrappedAsyncMap<K, V>(ar.result())));
-        } else {
-          resultHandler.handle(Future.failedFuture(ar.cause()));
-        }
-      });
+      return clusterManager.<K, V>getAsyncMap(name).map(WrappedAsyncMap::new);
     }
   }
 
   @Override
   public void getLock(String name, Handler<AsyncResult<Lock>> resultHandler) {
-    Objects.requireNonNull(name, "name");
-    Objects.requireNonNull(resultHandler, "resultHandler");
     getLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT, resultHandler);
   }
 
   @Override
+  public Future<Lock> getLock(String name) {
+    return getLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT);
+  }
+
+  @Override
   public void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
-    Objects.requireNonNull(name, "name");
     Objects.requireNonNull(resultHandler, "resultHandler");
+    getLockWithTimeout(name, timeout).setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<Lock> getLockWithTimeout(String name, long timeout) {
+    Objects.requireNonNull(name, "name");
     Arguments.require(timeout >= 0, "timeout must be >= 0");
     if (clusterManager == null) {
-      getLocalLockWithTimeout(name, timeout, resultHandler);
+      return getLocalLockWithTimeout(name, timeout);
     } else {
-      clusterManager.getLockWithTimeout(name, timeout, resultHandler);
+      return clusterManager.getLockWithTimeout(name, timeout);
     }
   }
 
   @Override
   public void getLocalLock(String name, Handler<AsyncResult<Lock>> resultHandler) {
-    Objects.requireNonNull(name, "name");
-    Objects.requireNonNull(resultHandler, "resultHandler");
     getLocalLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT, resultHandler);
   }
 
   @Override
+  public Future<Lock> getLocalLock(String name) {
+    return getLocalLockWithTimeout(name, DEFAULT_LOCK_TIMEOUT);
+  }
+
+  @Override
   public void getLocalLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
-    Objects.requireNonNull(name, "name");
     Objects.requireNonNull(resultHandler, "resultHandler");
+    getLocalLockWithTimeout(name, timeout).setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<Lock> getLocalLockWithTimeout(String name, long timeout) {
+    Objects.requireNonNull(name, "name");
     Arguments.require(timeout >= 0, "timeout must be >= 0");
-    localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout, resultHandler);
+    return localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout);
+  }
+
+  @Override
+  public Future<Counter> getCounter(String name) {
+    Objects.requireNonNull(name, "name");
+    if (clusterManager == null) {
+      return getLocalCounter(name);
+    } else {
+      return clusterManager.getCounter(name);
+    }
   }
 
   @Override
   public void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
-    Objects.requireNonNull(name, "name");
     Objects.requireNonNull(resultHandler, "resultHandler");
-    if (clusterManager == null) {
-      getLocalCounter(name, resultHandler);
-    } else {
-      clusterManager.getCounter(name, resultHandler);
-    }
+    getCounter(name).setHandler(resultHandler);
   }
 
   /**
@@ -142,18 +160,31 @@ public class SharedDataImpl implements SharedData {
     return (LocalMap<K, V>) localMaps.computeIfAbsent(name, n -> new LocalMapImpl<>(n, localMaps));
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public <K, V> void getLocalAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    this.<K, V>getLocalAsyncMap(name).setHandler(resultHandler);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <K, V> Future<AsyncMap<K, V>> getLocalAsyncMap(String name) {
     LocalAsyncMapImpl<K, V> asyncMap = (LocalAsyncMapImpl<K, V>) localAsyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl<>(vertx));
-    resultHandler.handle(Future.succeededFuture(new WrappedAsyncMap<>(asyncMap)));
+    ContextInternal context = vertx.getOrCreateContext();
+    return context.succeededFuture(new WrappedAsyncMap<>(asyncMap));
   }
 
   @Override
   public void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
+    Objects.requireNonNull(resultHandler, "resultHandler");
+    getLocalCounter(name).setHandler(resultHandler);
+  }
+
+  @Override
+  public Future<Counter> getLocalCounter(String name) {
     Counter counter = localCounters.computeIfAbsent(name, n -> new AsynchronousCounter(vertx));
-    Context context = vertx.getOrCreateContext();
-    context.runOnContext(v -> resultHandler.handle(Future.succeededFuture(counter)));
+    ContextInternal context = vertx.getOrCreateContext();
+    return context.succeededFuture(counter);
   }
 
   private static void checkType(Object obj) {

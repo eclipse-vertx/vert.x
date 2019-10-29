@@ -15,7 +15,6 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 
 /**
  * Shared data allows you to share data safely between different parts of your application in a safe way.
@@ -52,11 +51,7 @@ public interface SharedData {
   /**
    * Same as {@link #getClusterWideMap(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default <K, V> Future<AsyncMap<K, V>> getClusterWideMap(String name) {
-    Promise<AsyncMap<K, V>> promise = Promise.promise();
-    getClusterWideMap(name, promise);
-    return promise.future();
-  }
+  <K, V> Future<AsyncMap<K, V>> getClusterWideMap(String name);
 
   /**
    * Get the {@link AsyncMap} with the specified name. When clustered, the map is accessible to all nodes in the cluster
@@ -74,11 +69,7 @@ public interface SharedData {
   /**
    * Same as {@link #getAsyncMap(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default <K, V> Future<AsyncMap<K, V>> getAsyncMap(String name) {
-    Promise<AsyncMap<K, V>> promise = Promise.promise();
-    getAsyncMap(name, promise);
-    return promise.future();
-  }
+  <K, V> Future<AsyncMap<K, V>> getAsyncMap(String name);
 
   /**
    * Get the {@link AsyncMap} with the specified name.
@@ -94,11 +85,7 @@ public interface SharedData {
   /**
    * Same as {@link #getLocalAsyncMap(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default <K, V> Future<AsyncMap<K, V>> getLocalAsyncMap(String name) {
-    Promise<AsyncMap<K, V>> promise = Promise.promise();
-    getLocalAsyncMap(name, promise);
-    return promise.future();
-  }
+  <K, V> Future<AsyncMap<K, V>> getLocalAsyncMap(String name);
 
   /**
    * Get an asynchronous lock with the specified name. The lock will be passed to the handler when it is available.
@@ -115,11 +102,7 @@ public interface SharedData {
   /**
    * Same as {@link #getLock(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Lock> getLock(String name) {
-    Promise<Lock> promise = Promise.promise();
-    getLock(name, promise);
-    return promise.future();
-  }
+  Future<Lock> getLock(String name);
 
   /**
    * Like {@link #getLock(String, Handler)} but specifying a timeout. If the lock is not obtained within the timeout
@@ -138,11 +121,7 @@ public interface SharedData {
   /**
    * Same as {@link #getLockWithTimeout(String, long, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Lock> getLockWithTimeout(String name, long timeout) {
-    Promise<Lock> promise = Promise.promise();
-    getLockWithTimeout(name, timeout, promise);
-    return promise.future();
-  }
+  Future<Lock> getLockWithTimeout(String name, long timeout);
 
   /**
    * Get an asynchronous local lock with the specified name. The lock will be passed to the handler when it is available.
@@ -159,11 +138,7 @@ public interface SharedData {
   /**
    * Same as {@link #getLocalLock(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Lock> getLocalLock(String name) {
-    Promise<Lock> promise = Promise.promise();
-    getLocalLock(name, promise);
-    return promise.future();
-  }
+  Future<Lock> getLocalLock(String name);
 
   /**
    * Like {@link #getLocalLock(String, Handler)} but specifying a timeout. If the lock is not obtained within the timeout
@@ -182,11 +157,7 @@ public interface SharedData {
   /**
    * Same as {@link #getLocalLockWithTimeout(String, long, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Lock> getLocalLockWithTimeout(String name, long timeout) {
-    Promise<Lock> promise = Promise.promise();
-    getLocalLockWithTimeout(name, timeout, promise);
-    return promise.future();
-  }
+  Future<Lock> getLocalLockWithTimeout(String name, long timeout);
 
   /**
    * Get an asynchronous counter. The counter will be passed to the handler.
@@ -199,11 +170,7 @@ public interface SharedData {
   /**
    * Same as {@link #getCounter(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Counter> getCounter(String name) {
-    Promise<Counter> promise = Promise.promise();
-    getCounter(name, promise);
-    return promise.future();
-  }
+  Future<Counter> getCounter(String name);
 
   /**
    * Get an asynchronous local counter. The counter will be passed to the handler.
@@ -216,11 +183,7 @@ public interface SharedData {
   /**
    * Same as {@link #getLocalCounter(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Counter> getLocalCounter(String name) {
-    Promise<Counter> promise = Promise.promise();
-    getLocalCounter(name, promise);
-    return promise.future();
-  }
+  Future<Counter> getLocalCounter(String name);
 
   /**
    * Return a {@code LocalMap} with the specific {@code name}.
