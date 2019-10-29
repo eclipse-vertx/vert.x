@@ -11,8 +11,10 @@
 
 package io.vertx.core.impl;
 
+import io.netty.channel.EventLoop;
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.dns.AddressResolverOptions;
@@ -77,10 +79,14 @@ public class AddressResolver {
   }
 
   public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
-    ContextInternal callback = (ContextInternal) vertx.getOrCreateContext();
-    io.netty.resolver.AddressResolver<InetSocketAddress> resolver = resolverGroup.getResolver(callback.nettyEventLoop());
-    io.netty.util.concurrent.Future<InetSocketAddress> fut = resolver.resolve(InetSocketAddress.createUnresolved(hostname, 0));
-    fut.addListener(callback.toFutureListener(InetSocketAddress::getAddress, resultHandler));
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    io.netty.util.concurrent.Future<InetSocketAddress> fut = resolveHostname(context.nettyEventLoop(), hostname);
+    fut.addListener(context.toFutureListener(InetSocketAddress::getAddress, resultHandler));
+  }
+
+  public io.netty.util.concurrent.Future<InetSocketAddress> resolveHostname(EventLoop eventLoop, String hostname) {
+    io.netty.resolver.AddressResolver<InetSocketAddress> resolver = resolverGroup.getResolver(eventLoop);
+    return resolver.resolve(InetSocketAddress.createUnresolved(hostname, 0));
   }
 
   AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {

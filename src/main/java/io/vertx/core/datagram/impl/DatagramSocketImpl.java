@@ -20,14 +20,19 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.concurrent.GenericFutureListener;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -88,16 +93,38 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
 
   @Override
   public DatagramSocket listenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler) {
-    try {
-      addListener(channel.joinGroup(InetAddress.getByName(multicastAddress)), handler);
-    } catch (UnknownHostException e) {
-      notifyException(handler, e);
+    Future<Void> fut = listenMulticastGroup(multicastAddress);
+    if (handler != null) {
+      fut.setHandler(handler);
     }
     return this;
+  }
+
+  @Override
+  public Future<Void> listenMulticastGroup(String multicastAddress) {
+    ChannelFuture fut;
+    try {
+      fut = channel.joinGroup(InetAddress.getByName(multicastAddress));
+    } catch (UnknownHostException e) {
+      return context.failedFuture(e);
+    }
+    PromiseInternal<Void> promise = context.promise();
+    fut.addListener(promise);
+    return promise.future();
   }
 
   @Override
   public DatagramSocket listenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = listenMulticastGroup(multicastAddress, networkInterface, source);
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
+    return this;
+  }
+
+  @Override
+  public Future<Void> listenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source) {
+    ChannelFuture fut;
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -105,26 +132,49 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
       } else {
         sourceAddress = InetAddress.getByName(source);
       }
-      addListener(channel.joinGroup(InetAddress.getByName(multicastAddress),
-              NetworkInterface.getByName(networkInterface), sourceAddress), handler);
+      fut = channel.joinGroup(InetAddress.getByName(multicastAddress), NetworkInterface.getByName(networkInterface), sourceAddress);
     } catch (Exception e) {
-      notifyException(handler, e);
+      return context.failedFuture(e);
     }
-    return this;
+    PromiseInternal<Void> promise = context.promise();
+    fut.addListener(promise);
+    return promise.future();
   }
 
   @Override
   public DatagramSocket unlistenMulticastGroup(String multicastAddress, Handler<AsyncResult<Void>> handler) {
-    try {
-      addListener(channel.leaveGroup(InetAddress.getByName(multicastAddress)), handler);
-    } catch (UnknownHostException e) {
-      notifyException(handler, e);
+    Future<Void> fut = unlistenMulticastGroup(multicastAddress);
+    if (handler != null) {
+      fut.setHandler(handler);
     }
     return this;
   }
 
   @Override
+  public Future<Void> unlistenMulticastGroup(String multicastAddress) {
+    ChannelFuture fut;
+    try {
+      fut = channel.leaveGroup(InetAddress.getByName(multicastAddress));
+    } catch (Exception e) {
+      return context.failedFuture(e);
+    }
+    PromiseInternal<Void> promise = context.promise();
+    fut.addListener(promise);
+    return promise.future();
+  }
+
+  @Override
   public DatagramSocket unlistenMulticastGroup(String multicastAddress, String networkInterface, String source, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = unlistenMulticastGroup(multicastAddress, networkInterface, source);
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
+    return this;
+  }
+
+  @Override
+  public Future<Void> unlistenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source) {
+    ChannelFuture fut;
     try {
       InetAddress sourceAddress;
       if (source == null) {
@@ -132,16 +182,27 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
       } else {
         sourceAddress = InetAddress.getByName(source);
       }
-      addListener(channel.leaveGroup(InetAddress.getByName(multicastAddress),
-              NetworkInterface.getByName(networkInterface), sourceAddress), handler);
+      fut = channel.leaveGroup(InetAddress.getByName(multicastAddress), NetworkInterface.getByName(networkInterface), sourceAddress);
     } catch (Exception e) {
-      notifyException(handler, e);
+      return context.failedFuture(e);
     }
-    return this;
+    PromiseInternal<Void> promise = context.promise();
+    fut.addListener(promise);
+    return promise.future();
   }
 
   @Override
   public DatagramSocket blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = blockMulticastGroup(multicastAddress, networkInterface, sourceToBlock);
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
+    return  this;
+  }
+
+  @Override
+  public Future<Void> blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock) {
+    ChannelFuture fut;
     try {
       InetAddress sourceAddress;
       if (sourceToBlock == null) {
@@ -149,27 +210,47 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
       } else {
         sourceAddress = InetAddress.getByName(sourceToBlock);
       }
-      addListener(channel.block(InetAddress.getByName(multicastAddress),
-              NetworkInterface.getByName(networkInterface), sourceAddress), handler);
+      fut = channel.block(InetAddress.getByName(multicastAddress), NetworkInterface.getByName(networkInterface), sourceAddress);
     } catch (Exception e) {
-      notifyException(handler, e);
+      return context.failedFuture(e);
     }
-    return  this;
+    PromiseInternal<Void> promise = context.promise();
+    fut.addListener(promise);
+    return promise.future();
   }
 
   @Override
   public DatagramSocket blockMulticastGroup(String multicastAddress, String sourceToBlock, Handler<AsyncResult<Void>> handler) {
-    try {
-      addListener(channel.block(InetAddress.getByName(multicastAddress), InetAddress.getByName(sourceToBlock)), handler);
-    } catch (UnknownHostException e) {
-      notifyException(handler, e);
+    Future<Void> fut = blockMulticastGroup(multicastAddress, sourceToBlock);
+    if (handler != null) {
+      fut.setHandler(handler);
     }
     return this;
   }
 
   @Override
+  public Future<Void> blockMulticastGroup(String multicastAddress, String sourceToBlock) {
+    ChannelFuture fut;
+    try {
+      fut = channel.block(InetAddress.getByName(multicastAddress), InetAddress.getByName(sourceToBlock));
+    } catch (Exception e) {
+      return context.failedFuture(e);
+    }
+    PromiseInternal<Void> promise = context.promise();
+    fut.addListener(promise);
+    return promise.future();
+  }
+
+  @Override
   public DatagramSocket listen(int port, String address, Handler<AsyncResult<DatagramSocket>> handler) {
-    return listen(new SocketAddressImpl(port, address), handler);
+    Objects.requireNonNull(handler, "no null handler accepted");
+    listen(new SocketAddressImpl(port, address)).setHandler(handler);
+    return this;
+  }
+
+  @Override
+  public Future<DatagramSocket> listen(int port, String address) {
+    return listen(new SocketAddressImpl(port, address));
   }
 
   @Override
@@ -190,33 +271,28 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     return this;
   }
 
-  private DatagramSocket listen(SocketAddress local, Handler<AsyncResult<DatagramSocket>> handler) {
-    Objects.requireNonNull(handler, "no null handler accepted");
-    context.owner().resolveAddress(local.host(), res -> {
-      if (res.succeeded()) {
-        ChannelFuture future = channel.bind(new InetSocketAddress(res.result(), local.port()));
-        addListener(future, ar -> {
-          if (metrics != null && ar.succeeded()) {
-            metrics.listening(local.host(), localAddress());
-          }
-          handler.handle(ar.map(this));
-        });
+  private Future<DatagramSocket> listen(SocketAddress local) {
+    AddressResolver resolver = context.owner().addressResolver();
+    PromiseInternal<Void> promise = context.promise();
+    io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), local.host());
+    f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {
+      if (res1.isSuccess()) {
+        ChannelFuture f2 = channel.bind(new InetSocketAddress(res1.getNow().getAddress(), local.port()));
+        if (metrics != null) {
+          f2.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Void>>) res2 -> {
+            if (res2.isSuccess()) {
+              metrics.listening(local.host(), localAddress());
+            }
+          });
+        }
+        f2.addListener(promise);
       } else {
-        handler.handle(Future.failedFuture(res.cause()));
+        promise.fail(res1.cause());
       }
     });
-
-    return this;
+    return promise.future().map(this);
   }
 
-  @SuppressWarnings("unchecked")
-  final void addListener(ChannelFuture future, Handler<AsyncResult<Void>> handler) {
-    if (handler != null) {
-      future.addListener(context.toFutureListener(handler));
-    }
-  }
-
-  @SuppressWarnings("unchecked")
   public synchronized DatagramSocket pause() {
     if (demand > 0L) {
       demand = 0L;
@@ -225,7 +301,6 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   public synchronized DatagramSocket resume() {
     if (demand == 0L) {
       demand = Long.MAX_VALUE;
@@ -252,29 +327,40 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public DatagramSocket send(Buffer packet, int port, String host, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = send(packet, port, host);
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
+    return this;
+  }
+
+  @Override
+  public Future<Void> send(Buffer packet, int port, String host) {
     Objects.requireNonNull(packet, "no null packet accepted");
     Objects.requireNonNull(host, "no null host accepted");
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException("port out of range:" + port);
     }
-    context.owner().resolveAddress(host, res -> {
-      if (res.succeeded()) {
-        doSend(packet, new InetSocketAddress(res.result(), port), handler);
+    AddressResolver resolver = context.owner().addressResolver();
+    PromiseInternal<Void> promise = context.promise();
+    io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), host);
+    f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {
+      if (res1.isSuccess()) {
+        ChannelFuture f2 = channel.writeAndFlush(new DatagramPacket(packet.getByteBuf(), new InetSocketAddress(f1.getNow().getAddress(), port)));
+        if (metrics != null) {
+          f2.addListener(fut -> {
+            if (fut.isSuccess()) {
+              metrics.bytesWritten(null, new SocketAddressImpl(port, host), packet.length());
+            }
+          });
+        }
+        f2.addListener(promise);
       } else {
-        handler.handle(Future.failedFuture(res.cause()));
+        promise.fail(res1.cause());
       }
     });
-    if (metrics != null) {
-      metrics.bytesWritten(null, new SocketAddressImpl(port, host), packet.length());
-    }
-    return this;
-  }
-
-  private void doSend(Buffer packet, InetSocketAddress addr, Handler<AsyncResult<Void>> handler) {
-    ChannelFuture future = channel.writeAndFlush(new DatagramPacket(packet.getByteBuf(), addr));
-    addListener(future, handler);
+    return promise.future();
   }
 
   @Override
@@ -290,8 +376,18 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
+  public Future<Void> send(String str, int port, String host) {
+    return send(Buffer.buffer(str), port, host);
+  }
+
+  @Override
   public DatagramSocket send(String str, String enc, int port, String host, Handler<AsyncResult<Void>> handler) {
     return send(Buffer.buffer(str, enc), port, host, handler);
+  }
+
+  @Override
+  public Future<Void> send(String str, String enc, int port, String host) {
+    return send(Buffer.buffer(str, enc), port, host);
   }
 
   @Override
@@ -301,16 +397,24 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   @Override
-  public synchronized void close(final Handler<AsyncResult<Void>> handler) {
+  public void close(Handler<AsyncResult<Void>> handler) {
+    Future<Void> future = close();
+    if (handler != null) {
+      future.setHandler(handler);
+    }
+  }
+
+  @Override
+  public synchronized Future<Void> close() {
     // make sure everything is flushed out on close
     if (!channel.isOpen()) {
-      return;
+      return context.succeededFuture();
     }
     channel.flush();
     ChannelFuture future = channel.close();
-    if (handler != null) {
-      future.addListener(context.toFutureListener(handler));
-    }
+    PromiseInternal<Void> promise = context.promise();
+    future.addListener(promise);
+    return promise.future();
   }
 
   @Override

@@ -15,7 +15,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.Fluent;
@@ -58,11 +57,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #send(Buffer, int, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> send(Buffer packet, int port, String host) {
-    Promise<Void> promise = Promise.promise();
-    send(packet, port, host, promise);
-    return promise.future();
-  }
+  Future<Void> send(Buffer packet, int port, String host);
 
   /**
    * Returns a {@code WriteStream<Buffer>} able to send {@link Buffer} to the
@@ -90,11 +85,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #send(String, int, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> send(String str, int port, String host) {
-    Promise<Void> promise = Promise.promise();
-    send(str, port, host, promise);
-    return promise.future();
-  }
+  Future<Void> send(String str, int port, String host);
 
   /**
    * Write the given {@link String} to the {@link io.vertx.core.net.SocketAddress} using the given encoding.
@@ -113,11 +104,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #send(String, String, int, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> send(String str, String enc, int port, String host) {
-    Promise<Void> promise = Promise.promise();
-    send(str, enc, port, host, promise);
-    return promise.future();
-  }
+  Future<Void> send(String str, String enc, int port, String host);
 
   /**
    * Closes the {@link io.vertx.core.datagram.DatagramSocket} implementation asynchronous
@@ -130,11 +117,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Closes the {@link io.vertx.core.datagram.DatagramSocket}. The close itself is asynchronous.
    */
-  default Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
-    close(promise);
-    return promise.future();
-  }
+  Future<Void> close();
 
   /**
    * Return the {@link io.vertx.core.net.SocketAddress} to which
@@ -159,11 +142,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #listenMulticastGroup(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> listenMulticastGroup(String multicastAddress) {
-    Promise<Void> promise = Promise.promise();
-    listenMulticastGroup(multicastAddress, promise);
-    return promise.future();
-  }
+  Future<Void> listenMulticastGroup(String multicastAddress);
 
   /**
    * Joins a multicast group and listens for packets send to it on the given network interface.
@@ -182,11 +161,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #listenMulticastGroup(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> listenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source) {
-    Promise<Void> promise = Promise.promise();
-    listenMulticastGroup(multicastAddress, networkInterface, source, promise);
-    return promise.future();
-  }
+  Future<Void> listenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source);
 
   /**
    * Leaves a multicast group and stops listening for packets send to it.
@@ -202,11 +177,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #unlistenMulticastGroup(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> unlistenMulticastGroup(String multicastAddress) {
-    Promise<Void> promise = Promise.promise();
-    unlistenMulticastGroup(multicastAddress, promise);
-    return promise.future();
-  }
+  Future<Void> unlistenMulticastGroup(String multicastAddress);
 
   /**
    * Leaves a multicast group and stops listening for packets send to it on the given network interface.
@@ -225,11 +196,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #unlistenMulticastGroup(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> unlistenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source) {
-    Promise<Void> promise = Promise.promise();
-    unlistenMulticastGroup(multicastAddress, networkInterface, source, promise);
-    return promise.future();
-  }
+  Future<Void> unlistenMulticastGroup(String multicastAddress, String networkInterface, @Nullable String source);
 
   /**
    * Block the given address for the given multicast address and notifies the {@link Handler} once
@@ -248,11 +215,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #blockMulticastGroup(String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> blockMulticastGroup(String multicastAddress, String sourceToBlock) {
-    Promise<Void> promise = Promise.promise();
-    blockMulticastGroup(multicastAddress, sourceToBlock, promise);
-    return promise.future();
-  }
+  Future<Void> blockMulticastGroup(String multicastAddress, String sourceToBlock);
 
   /**
    * Block the given address for the given multicast address on the given network interface and notifies
@@ -272,11 +235,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #blockMulticastGroup(String, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<Void> blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock) {
-    Promise<Void> promise = Promise.promise();
-    blockMulticastGroup(multicastAddress, networkInterface, sourceToBlock, promise);
-    return promise.future();
-  }
+  Future<Void> blockMulticastGroup(String multicastAddress, String networkInterface, String sourceToBlock);
 
   /**
    * Start listening on the given port and host. The handler will be called when the socket is listening.
@@ -292,11 +251,7 @@ public interface DatagramSocket extends ReadStream<DatagramPacket>, Measured {
   /**
    * Like {@link #listen(int, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default Future<DatagramSocket> listen(int port, String host) {
-    Promise<DatagramSocket> promise = Promise.promise();
-    listen(port, host, promise);
-    return promise.future();
-  }
+  Future<DatagramSocket> listen(int port, String host);
 
   @Override
   DatagramSocket pause();
