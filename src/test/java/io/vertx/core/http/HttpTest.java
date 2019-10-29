@@ -5487,7 +5487,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().end();
     });
-    startServer();
+    startServer(testAddress);
     client.close();
     Context ctx = vertx.getOrCreateContext();
     CompletableFuture<HttpClientRequest> reqFut = new CompletableFuture<>();
