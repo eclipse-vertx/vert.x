@@ -79,7 +79,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private boolean shutdown;
   private Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
-  private final ArrayDeque<Handler<AsyncResult<Buffer>>> pongHandlers = new ArrayDeque<>();
+  private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
   private Http2Settings localSettings = new Http2Settings();
   private Http2Settings remoteSettings;
   private Handler<GoAway> goAwayHandler;
@@ -275,11 +275,11 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public void onPingAckRead(ChannelHandlerContext ctx, long data) throws Http2Exception {
-    Handler<AsyncResult<Buffer>> handler = pongHandlers.poll();
+  public void onPingAckRead(ChannelHandlerContext ctx, long data) {
+    Promise<Buffer> handler = pongHandlers.poll();
     if (handler != null) {
       Buffer buff = Buffer.buffer().appendLong(data);
-      context.dispatch(Future.succeededFuture(buff), handler);
+      handler.complete(buff);
     }
   }
 
@@ -476,25 +476,28 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public Future<Buffer> ping(Buffer data) {
-    Promise<Buffer> promise = Promise.promise();
-    ping(data, promise);
+    if (data.length() != 8) {
+      throw new IllegalArgumentException("Ping data must be exactly 8 bytes");
+    }
+    Promise<Buffer> promise = context.promise();
+    handler.writePing(data.getLong(0)).addListener(fut -> {
+      if (fut.isSuccess()) {
+        synchronized (Http2ConnectionBase.this) {
+          pongHandlers.add(promise);
+        }
+      } else {
+        promise.fail(fut.cause());
+      }
+    });
     return promise.future();
   }
 
   @Override
   public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
-    if (data.length() != 8) {
-      throw new IllegalArgumentException("Ping data must be exactly 8 bytes");
+    Future<Buffer> fut = ping(data);
+    if (pongHandler != null) {
+      fut.setHandler(pongHandler);
     }
-    handler.writePing(data.getLong(0)).addListener(fut -> {
-      if (fut.isSuccess()) {
-        synchronized (Http2ConnectionBase.this) {
-          pongHandlers.add(pongHandler);
-        }
-      } else {
-        pongHandler.handle(Future.failedFuture(fut.cause()));
-      }
-    });
     return this;
   }
 
