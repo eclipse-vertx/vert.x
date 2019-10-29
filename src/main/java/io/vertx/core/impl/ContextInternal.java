@@ -88,6 +88,12 @@ public interface ContextInternal extends Context {
   <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler);
 
   /**
+   * Like {@link #executeBlocking(Handler, boolean)} but uses the {@code queue} to order the tasks instead
+   * of the internal queue of this context.
+   */
+  <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue);
+
+  /**
    * Execute an internal task on the internal blocking ordered executor.
    */
   <T> void executeBlockingInternal(Handler<Promise<T>> action, Handler<AsyncResult<T>> resultHandler);

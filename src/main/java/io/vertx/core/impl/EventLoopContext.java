@@ -18,8 +18,6 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.tracing.VertxTracer;
 
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

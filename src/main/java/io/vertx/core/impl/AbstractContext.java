@@ -19,7 +19,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Starter;
-import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
@@ -217,14 +216,20 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
-    executeBlocking(blockingCodeHandler, true, resultHandler);
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+    Future<T> fut = executeBlocking(blockingCodeHandler, ordered);
+    setResultHandler(this, fut, resultHandler);
   }
 
-  public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    Promise<T> promise = promise();
-    executeBlocking(blockingCodeHandler, ordered, promise);
-    return promise.future();
+  @Override
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
+    Future<T> fut = executeBlocking(blockingCodeHandler, queue);
+    setResultHandler(this, fut, resultHandler);
+  }
+
+  @Override
+  public final <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+    executeBlocking(blockingCodeHandler, true, resultHandler);
   }
 
   public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {

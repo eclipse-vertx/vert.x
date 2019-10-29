@@ -14,6 +14,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.concurrent.FutureListener;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -151,15 +152,13 @@ abstract class ContextImpl extends AbstractContext {
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    Future<T> fut = executeBlocking(this, blockingCodeHandler, workerPool, ordered ? orderedTasks : null);
-    setResultHandler(this, fut, resultHandler);
+  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+    return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? orderedTasks : null);
   }
 
   @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
-    Future<T> fut = executeBlocking(this, blockingCodeHandler, workerPool, queue);
-    setResultHandler(this, fut, resultHandler);
+  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
+    return executeBlocking(this, blockingCodeHandler, workerPool, queue);
   }
 
   static <T> Future<T> executeBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
@@ -285,15 +284,13 @@ abstract class ContextImpl extends AbstractContext {
     }
 
     @Override
-    public final <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-      Future<T> fut = ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
-      setResultHandler(this, fut, resultHandler);
+    public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+      return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
     }
 
     @Override
-    public final <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue, Handler<AsyncResult<T>> resultHandler) {
-      Future<T> fut = ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
-      setResultHandler(this, fut, resultHandler);
+    public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
+      return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
     }
 
     @Override
