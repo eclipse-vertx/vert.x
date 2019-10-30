@@ -242,6 +242,17 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
+  public <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler) {
+    if (handler instanceof PromiseInternal) {
+      return (PromiseInternal<T>) handler;
+    } else {
+      PromiseInternal<T> promise = promise();
+      promise.future().setHandler(handler);
+      return promise;
+    }
+  }
+
+  @Override
   public <T> Future<T> succeededFuture() {
     return Future.factory.succeededFuture(this);
   }

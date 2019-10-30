@@ -22,7 +22,6 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -36,6 +35,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -305,38 +305,38 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> write(Buffer chunk) {
-    Promise<Void> promise = context.promise();
+    PromiseInternal<Void> promise = context.promise();
     write(chunk.getByteBuf(), promise);
     return promise.future();
   }
 
   @Override
   public void write(Buffer chunk, Handler<AsyncResult<Void>> handler) {
-    write(chunk.getByteBuf(), handler);
+    write(chunk.getByteBuf(), handler == null ? null : context.promise(handler));
   }
 
   @Override
   public Future<Void> write(String chunk, String enc) {
-    Promise<Void> promise = context.promise();
+    PromiseInternal<Void> promise = context.promise();
     write(Buffer.buffer(chunk, enc).getByteBuf(), promise);
     return promise.future();
   }
 
   @Override
   public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk, enc).getByteBuf(), handler);
+    write(Buffer.buffer(chunk, enc).getByteBuf(), handler == null ? null : context.promise(handler));
   }
 
   @Override
   public Future<Void> write(String chunk) {
-    Promise<Void> promise = context.promise();
+    PromiseInternal<Void> promise = context.promise();
     write(Buffer.buffer(chunk).getByteBuf(), promise);
     return promise.future();
   }
 
   @Override
   public void write(String chunk, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk).getByteBuf(), handler);
+    write(Buffer.buffer(chunk).getByteBuf(), handler == null ? null : context.promise(handler));
   }
 
   @Override
@@ -367,13 +367,17 @@ public class HttpServerResponseImpl implements HttpServerResponse {
 
   @Override
   public Future<Void> end(Buffer chunk) {
-    Promise<Void> promise = context.promise();
+    PromiseInternal<Void> promise = context.promise();
     end(chunk, promise);
     return promise.future();
   }
 
   @Override
   public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
+    end(chunk, handler == null ? null : context.promise(handler));
+  }
+
+  private void end(Buffer chunk, PromiseInternal<Void> listener) {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
@@ -389,7 +393,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       } else {
         msg = new AssembledLastHttpContent(data, trailingHeaders);
       }
-      conn.writeToChannel(msg, conn.toPromise(context.toFutureListener(handler)));
+      conn.writeToChannel(msg, listener);
       written = true;
       conn.responseComplete();
       if (bodyEndHandler != null) {
@@ -681,7 +685,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private HttpServerResponseImpl write(ByteBuf chunk, Handler<AsyncResult<Void>> handler) {
+  private HttpServerResponseImpl write(ByteBuf chunk, PromiseInternal<Void> promise) {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException("Response has already been written");
@@ -699,7 +703,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       } else {
         msg = new DefaultHttpContent(chunk);
       }
-      conn.writeToChannel(msg, conn.toPromise(context.toFutureListener(handler)));
+      conn.writeToChannel(msg, promise);
       return this;
     }
   }

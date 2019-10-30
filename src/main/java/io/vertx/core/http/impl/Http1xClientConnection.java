@@ -310,7 +310,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           request = new AssembledHttpRequest(request, buf);
         }
       }
-      conn.writeToChannel(request, conn.toPromise(context.toFutureListener(handler)));
+      conn.writeToChannel(request, handler == null ? null : context.promise(handler));
     }
 
     private boolean handleChunk(Buffer buff) {
@@ -334,7 +334,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         msg = new DefaultHttpContent(buff);
       }
       bytesWritten += msg.content().readableBytes();
-      conn.writeToChannel(msg, conn.toPromise(context.toFutureListener(handler)));
+      conn.writeToChannel(msg, handler == null ? null : context.promise(handler));
     }
 
     @Override

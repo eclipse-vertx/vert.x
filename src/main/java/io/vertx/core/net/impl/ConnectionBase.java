@@ -124,21 +124,14 @@ public abstract class ConnectionBase {
     }
   }
 
-  /**
-   * Provide a promise that will call the {@code handler} upon completion.
-   * When the {@code handler} is {@code null} {@link #voidPromise} is returned.
-   *
-   * @param handler the handler
-   * @return a promise
-   */
-  public final ChannelPromise toPromise(FutureListener<Void> handler) {
-    return handler == null ? voidPromise : wrap(handler);
-  }
-
   private ChannelPromise wrap(FutureListener<Void> handler) {
     ChannelPromise promise = chctx.newPromise();
     promise.addListener(handler);
     return promise;
+  }
+
+  public void writeToChannel(Object msg, FutureListener<Void> listener) {
+    writeToChannel(msg, listener == null ? voidPromise : wrap(listener));
   }
 
   public void writeToChannel(Object msg, ChannelPromise promise) {

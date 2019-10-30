@@ -81,7 +81,9 @@ public class AddressResolver {
   public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     io.netty.util.concurrent.Future<InetSocketAddress> fut = resolveHostname(context.nettyEventLoop(), hostname);
-    fut.addListener(context.toFutureListener(InetSocketAddress::getAddress, resultHandler));
+    PromiseInternal<InetSocketAddress> promise = context.promise();
+    fut.addListener(promise);
+    promise.future().map(InetSocketAddress::getAddress).setHandler(resultHandler);
   }
 
   public io.netty.util.concurrent.Future<InetSocketAddress> resolveHostname(EventLoop eventLoop, String hostname) {

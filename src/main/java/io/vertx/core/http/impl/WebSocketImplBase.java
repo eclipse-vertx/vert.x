@@ -363,7 +363,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     synchronized (conn) {
       checkClosed();
       conn.reportBytesWritten(((WebSocketFrameInternal)frame).length());
-      conn.writeToChannel(conn.encodeFrame((WebSocketFrameImpl) frame), conn.toPromise(context.toFutureListener(handler)));
+      conn.writeToChannel(conn.encodeFrame((WebSocketFrameImpl) frame), handler == null ? null : context.promise(handler));
     }
     return (S) this;
   }

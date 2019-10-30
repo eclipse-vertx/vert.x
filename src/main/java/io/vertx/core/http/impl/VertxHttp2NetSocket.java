@@ -15,6 +15,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.CharsetUtil;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -237,7 +238,8 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public void write(Buffer message, Handler<AsyncResult<Void>> handler) {
-    conn.handler.writeData(stream, message.getByteBuf(), false, context.toFutureListener(handler));
+    FutureListener<Void> promise = handler == null ? null : context.promise(handler);
+    conn.handler.writeData(stream, message.getByteBuf(), false, promise);
   }
 
   @Override

@@ -137,7 +137,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     if (message instanceof ByteBuf) {
       reportBytesWritten(((ByteBuf)message).readableBytes());
     }
-    writeToChannel(message, toPromise(context.toFutureListener(handler)));
+    writeToChannel(message, handler == null ? null : context.promise(handler));
     return this;
   }
 

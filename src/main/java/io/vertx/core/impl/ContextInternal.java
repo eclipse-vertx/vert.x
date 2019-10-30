@@ -47,6 +47,11 @@ public interface ContextInternal extends Context {
   <T> PromiseInternal<T> promise();
 
   /**
+   * @return a {@link Promise} associated with this context
+   */
+  <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler);
+
+  /**
    * @return an empty succeeded {@link Future} associated with this context
    */
   <T> Future<T> succeededFuture();
@@ -65,21 +70,6 @@ public interface ContextInternal extends Context {
    * @return a {@link Future} failed with the {@code message} associated with this context
    */
   <T> Future<T> failedFuture(String message);
-
-  default <U, T> FutureListener<U> toFutureListener(Function<U, T> adapter, Handler<AsyncResult<T>> handler) {
-    if (handler != null) {
-      return future -> {
-        Future<T> res = future.isSuccess() ? Future.succeededFuture(adapter.apply(future.getNow())) : Future.failedFuture(future.cause());
-        executeFromIO(res, handler);
-      };
-    } else {
-      return null;
-    }
-  }
-
-  default FutureListener<Void> toFutureListener(Handler<AsyncResult<Void>> handler) {
-    return handler == null || handler instanceof FutureListener<?> ? (FutureListener<Void>) handler : ContextImpl.toListenerFuture(this, handler);
-  }
 
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} but uses the {@code queue} to order the tasks instead
