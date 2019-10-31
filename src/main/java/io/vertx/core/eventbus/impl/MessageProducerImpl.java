@@ -17,6 +17,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 
 import java.util.ArrayDeque;
@@ -153,21 +154,18 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
 
   @Override
   public Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
-    close(promise);
-    return promise.future();
+    if (creditConsumer != null) {
+      return creditConsumer.unregister();
+    } else {
+      return ((ContextInternal)vertx.getOrCreateContext()).succeededFuture();
+    }
   }
 
   @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    if (creditConsumer != null) {
-      creditConsumer.unregister(handler);
-    } else {
-      vertx.runOnContext(v -> {
-        if (handler != null) {
-          handler.handle(Future.succeededFuture());
-        }
-      });
+    Future<Void> fut = close();
+    if (handler != null) {
+      fut.setHandler(handler);
     }
   }
 
