@@ -835,17 +835,12 @@ public abstract class AsyncMapTest extends VertxTestBase {
 
   public static final class SomeClusterSerializableObject implements ClusterSerializable {
     private String str;
-    // Trick smart data grid marshallers: make sure ClusterSerializable methods are the only way to serialize and deserialize this class
-    @SuppressWarnings("unused")
-    private final Vertx vertx;
 
     public SomeClusterSerializableObject() {
-      vertx = Vertx.vertx();
     }
 
     public SomeClusterSerializableObject(String str) {
       this.str = str;
-      vertx = Vertx.vertx();
     }
 
     @Override
