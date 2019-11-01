@@ -12,6 +12,8 @@
 package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.*;
+import io.vertx.core.cli.CLIException;
+import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.annotations.*;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
@@ -54,6 +56,9 @@ public class BareCommand extends ClasspathHandler {
 
   protected Vertx vertx;
 
+  protected boolean cluster;
+  protected boolean ha;
+
   protected int clusterPort;
   protected String clusterHost;
   protected int clusterPublicPort;
@@ -67,6 +72,13 @@ public class BareCommand extends ClasspathHandler {
 
   protected Runnable finalAction;
 
+  public BareCommand() {
+      // indicates that run command won't run on cluster automatically
+      cluster = true;
+      
+      // indicates that run command won't have high availability automatically
+      ha = true;
+  }  
   /**
    * Sets the quorum option.
    *
@@ -78,6 +90,30 @@ public class BareCommand extends ClasspathHandler {
   @DefaultValue("-1")
   public void setQuorum(int quorum) {
     this.quorum = quorum;
+  }
+
+  /**
+   * Enables / disables the high-availability.
+   *
+   * @param ha whether or not to enable the HA.
+   */
+  @Option(longName = "ha", acceptValue = false, flag = true)
+  @Description("If specified the verticle will be deployed as a high availability (HA) deployment. This means it can " +
+      "fail over to any other nodes in the cluster started with the same HA group.")
+  public void setHighAvailability(boolean ha) {
+    this.ha = ha;
+  }
+
+  /**
+   * Enables / disables the clustering.
+   *
+   * @param cluster whether or not to start vert.x in clustered mode.
+   */
+  @Option(longName = "cluster", acceptValue = false, flag = true)
+  @Description("If specified then the vert.x instance will form a cluster with any other vert.x instances on the " +
+      "network.")
+  public void setCluster(boolean cluster) {
+    this.cluster = cluster;
   }
 
   /**
@@ -159,11 +195,11 @@ public class BareCommand extends ClasspathHandler {
   }
 
   /**
-   * @return whether or not the vert.x instance should be clustered. This implementation
-   * returns {@code true}.
+   * @return whether the {@code cluster} option or the {@code ha} option are enabled. Also {@code true} when a custom
+   * launcher modifies the Vert.x options to set `clustered` to {@code true}
    */
   public boolean isClustered() {
-    return true;
+    return cluster || ha || (options != null && options.getEventBusOptions().isClustered());
   }
 
   /**
@@ -171,7 +207,7 @@ public class BareCommand extends ClasspathHandler {
    * implementation returns {@code true}.
    */
   public boolean getHA() {
-    return true;
+    return ha;
   }
 
   /**
@@ -179,7 +215,7 @@ public class BareCommand extends ClasspathHandler {
    */
   @Override
   public void run() {
-    this.run(null);
+    this.run(this::afterStoppingVertx);
   }
 
   /**
@@ -192,6 +228,35 @@ public class BareCommand extends ClasspathHandler {
     vertx = startVertx();
   }
 
+  /**
+   * Validates the command line parameters.
+   *
+   * @param context - the execution context
+   * @throws CLIException - validation failed
+   */
+  @Override
+  public void setUp(ExecutionContext context) throws CLIException {
+    super.setUp(context);
+    
+    CommandLine commandLine = executionContext.commandLine();
+    if (!isClustered() && (
+      commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-host"))
+        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-port"))
+        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-public-host"))
+        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-public-port"))
+    )) {
+      throw new CLIException("The -cluster-xxx options require -cluster to be enabled");
+    }
+
+    // If quorum and / or ha-group, ha need to have been explicitly set
+    io.vertx.core.cli.Option haGroupOption = executionContext.cli().getOption("hagroup");
+    io.vertx.core.cli.Option quorumOption = executionContext.cli().getOption("quorum");
+    if (!ha &&
+        (commandLine.isOptionAssigned(haGroupOption) || commandLine.isOptionAssigned(quorumOption))) {
+      throw new CLIException("The option -hagroup and -quorum requires -ha to be enabled");
+    }
+  }
+  
   /**
    * Starts the vert.x instance.
    *
@@ -282,27 +347,27 @@ public class BareCommand extends ClasspathHandler {
   }
 
   protected JsonObject getJsonFromFileOrString(String jsonFileOrString, String argName) {
+    if (jsonFileOrString == null) {
+        return null;
+    }
+      
     JsonObject conf;
-    if (jsonFileOrString != null) {
-      try (Scanner scanner = new Scanner(new File(jsonFileOrString), "UTF-8").useDelimiter("\\A")) {
-        String sconf = scanner.next();
-        try {
-          conf = new JsonObject(sconf);
-        } catch (DecodeException e) {
-          log.error("Configuration file " + sconf + " does not contain a valid JSON object");
-          return null;
-        }
-      } catch (FileNotFoundException e) {
-        try {
-          conf = new JsonObject(jsonFileOrString);
-        } catch (DecodeException e2) {
-          // The configuration is not printed for security purpose, it can contain sensitive data.
-          log.error("The -" + argName + " argument does not point to an existing file or is not a valid JSON object", e2);
-          return null;
-        }
+    try (Scanner scanner = new Scanner(new File(jsonFileOrString), "UTF-8")) {
+      String sconf = scanner.useDelimiter("\\A").next();
+      try {
+        conf = new JsonObject(sconf);
+      } catch (DecodeException e) {
+        log.error("Configuration file " + sconf + " does not contain a valid JSON object");
+        conf = null;
       }
-    } else {
-      conf = null;
+    } catch (FileNotFoundException e) {
+      try {
+        conf = new JsonObject(jsonFileOrString);
+      } catch (DecodeException e2) {
+        // The configuration is not printed for security purpose, it can contain sensitive data.
+        log.error("The -" + argName + " argument does not point to an existing file or is not a valid JSON object", e2);
+        conf = null;
+      }
     }
     return conf;
   }
@@ -330,6 +395,20 @@ public class BareCommand extends ClasspathHandler {
       ((VertxLifecycleHooks) main).beforeStartingVertx(options);
     }
   }
+
+  protected void beforeStoppingVertx(Vertx vertx) {
+      final Object main = executionContext.main();
+      if (main instanceof VertxLifecycleHooks) {
+        ((VertxLifecycleHooks) main).beforeStoppingVertx(vertx);
+      }
+    }
+
+  protected void afterStoppingVertx() {
+      final Object main = executionContext.main();
+      if (main instanceof VertxLifecycleHooks) {
+        ((VertxLifecycleHooks) main).afterStoppingVertx();
+      }
+    }
 
   /**
    * @return the metric options.
@@ -397,7 +476,7 @@ public class BareCommand extends ClasspathHandler {
     }
   }
 
-  private Method getSetter(String fieldName, Class<?> clazz) {
+  protected Method getSetter(String fieldName, Class<?> clazz) {
     Method[] meths = clazz.getDeclaredMethods();
     for (Method meth : meths) {
       if (("set" + fieldName).toLowerCase().equals(meth.getName().toLowerCase())) {

@@ -11,23 +11,29 @@
 
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.cli.CLIException;
-import io.vertx.core.cli.CommandLine;
-import io.vertx.core.cli.annotations.*;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.launcher.VertxLifecycleHooks;
-import io.vertx.core.json.JsonObject;
-import io.vertx.core.spi.launcher.ExecutionContext;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.cli.CLIException;
+import io.vertx.core.cli.CommandLine;
+import io.vertx.core.cli.annotations.Argument;
+import io.vertx.core.cli.annotations.DefaultValue;
+import io.vertx.core.cli.annotations.Description;
+import io.vertx.core.cli.annotations.Hidden;
+import io.vertx.core.cli.annotations.Name;
+import io.vertx.core.cli.annotations.Option;
+import io.vertx.core.cli.annotations.ParsedAsList;
+import io.vertx.core.cli.annotations.Summary;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.launcher.VertxLifecycleHooks;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.launcher.ExecutionContext;
 
 /**
  * The vert.x run command that lets you execute verticles.
@@ -39,9 +45,6 @@ import java.util.stream.Collectors;
 public class RunCommand extends BareCommand {
 
   protected DeploymentOptions deploymentOptions;
-
-  protected boolean cluster;
-  protected boolean ha;
 
   protected int instances;
   protected String config;
@@ -58,30 +61,15 @@ public class RunCommand extends BareCommand {
   private long redeployGracePeriod;
   private long redeployTerminationPeriod;
 
-  /**
-   * Enables / disables the high-availability.
-   *
-   * @param ha whether or not to enable the HA.
-   */
-  @Option(longName = "ha", acceptValue = false, flag = true)
-  @Description("If specified the verticle will be deployed as a high availability (HA) deployment. This means it can " +
-      "fail over to any other nodes in the cluster started with the same HA group.")
-  public void setHighAvailability(boolean ha) {
-    this.ha = ha;
-  }
+  public RunCommand() {
 
-  /**
-   * Enables / disables the clustering.
-   *
-   * @param cluster whether or not to start vert.x in clustered mode.
-   */
-  @Option(longName = "cluster", acceptValue = false, flag = true)
-  @Description("If specified then the vert.x instance will form a cluster with any other vert.x instances on the " +
-      "network.")
-  public void setCluster(boolean cluster) {
-    this.cluster = cluster;
-  }
-
+      // indicates that run command won't run on cluster automatically
+      cluster = false;
+      
+      // indicates that run command won't have high availability automatically
+      ha = false;
+  }   
+  
   /**
    * Whether or not the verticle is deployed as a worker verticle.
    *
@@ -129,7 +117,7 @@ public class RunCommand extends BareCommand {
    *
    * @param verticle the verticle
    */
-  @Argument(index = 0, argName = "main-verticle", required = true)
+  @Argument(index = 0, argName = "main-verticle", required = false)
   @Description("The main verticle to deploy, it can be a fully qualified class name or a file.")
   public void setMainVerticle(String verticle) {
     this.mainVerticle = verticle;
@@ -200,38 +188,17 @@ public class RunCommand extends BareCommand {
   @Override
   public void setUp(ExecutionContext context) throws CLIException {
     super.setUp(context);
-
+ 
     CommandLine commandLine = executionContext.commandLine();
-    if (!isClustered() && (
-      commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-host"))
-        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-port"))
-        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-public-host"))
-        || commandLine.isOptionAssigned(executionContext.cli().getOption("cluster-public-port"))
-    )) {
-      throw new CLIException("The -cluster-xxx options require -cluster to be enabled");
+    if (!commandLine.isArgumentAssigned(
+            executionContext.cli().getArgument("main-verticle"))) {
+        mainVerticle = (String) executionContext.get("Main-Verticle");
+        
+        if (mainVerticle == null) {
+            throw new CLIException(
+                    "The argument 'main-verticle' is required");
+        }
     }
-
-    // If quorum and / or ha-group, ha need to have been explicitly set
-    io.vertx.core.cli.Option haGroupOption = executionContext.cli().getOption("hagroup");
-    io.vertx.core.cli.Option quorumOption = executionContext.cli().getOption("quorum");
-    if (!ha &&
-        (commandLine.isOptionAssigned(haGroupOption) || commandLine.isOptionAssigned(quorumOption))) {
-      throw new CLIException("The option -hagroup and -quorum requires -ha to be enabled");
-    }
-  }
-
-  /**
-   * @return whether the {@code cluster} option or the {@code ha} option are enabled. Also {@code true} when a custom
-   * launcher modifies the Vert.x options to set `clustered` to {@code true}
-   */
-  @Override
-  public boolean isClustered() {
-    return cluster || ha || (options != null && options.getEventBusOptions().isClustered());
-  }
-
-  @Override
-  public boolean getHA() {
-    return ha;
   }
 
   /**
@@ -433,17 +400,4 @@ public class RunCommand extends BareCommand {
     }
   }
 
-  protected void beforeStoppingVertx(Vertx vertx) {
-    final Object main = executionContext.main();
-    if (main instanceof VertxLifecycleHooks) {
-      ((VertxLifecycleHooks) main).beforeStoppingVertx(vertx);
-    }
-  }
-
-  protected void afterStoppingVertx() {
-    final Object main = executionContext.main();
-    if (main instanceof VertxLifecycleHooks) {
-      ((VertxLifecycleHooks) main).afterStoppingVertx();
-    }
-  }
 }
