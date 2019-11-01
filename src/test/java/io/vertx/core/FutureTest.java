@@ -121,6 +121,22 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testSetNullHandler() throws Exception {
+    Promise<String> promise = Promise.promise();
+    try {
+      promise.future().setHandler(null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    promise.complete();
+    try {
+      promise.future().setHandler(null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
   public void testCallSetHandlerBeforeCompletion() {
     AtomicBoolean called = new AtomicBoolean();
     Promise<Object> promise = Promise.promise();
@@ -1362,5 +1378,50 @@ public class FutureTest extends VertxTestBase {
         return fut.failed();
       }
     };
+  }
+
+  @Test
+  public void testSeveralHandlers1() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    Future<String> fut = promise.future();
+    fut.setHandler(ar -> {
+      complete();
+    });
+    fut.setHandler(ar -> {
+      complete();
+    });
+    promise.complete();
+    await();
+  }
+
+  @Test
+  public void testSeveralHandlers2() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    promise.complete();
+    Future<String> fut = promise.future();
+    fut.setHandler(ar -> {
+      complete();
+    });
+    fut.setHandler(ar -> {
+      complete();
+    });
+    await();
+  }
+
+  @Test
+  public void testSeveralHandlers3() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    Future<String> fut = promise.future();
+    fut.setHandler(ar -> {
+      complete();
+    });
+    promise.complete();
+    fut.setHandler(ar -> {
+      complete();
+    });
+    await();
   }
 }
