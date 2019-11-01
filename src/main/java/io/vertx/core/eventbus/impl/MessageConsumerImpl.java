@@ -205,8 +205,10 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
         handler = h;
         if (result == null) {
           Promise<Void> p = context.promise();
+          if (completionHandler != null) {
+            p.future().setHandler(completionHandler);
+          }
           result = p;
-          result.future().setHandler(completionHandler);
           register(null, localOnly, ar -> {
             if (ar.succeeded()) {
               p.tryComplete();
