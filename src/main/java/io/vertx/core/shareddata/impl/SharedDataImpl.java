@@ -12,7 +12,6 @@
 package io.vertx.core.shareddata.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.Arguments;
@@ -222,86 +221,90 @@ public class SharedDataImpl implements SharedData {
     }
 
     @Override
-    public void get(K k, Handler<AsyncResult<V>> asyncResultHandler) {
-      delegate.get(k, asyncResultHandler);
+    public Future<V> get(K k) {
+      checkType(k);
+      return delegate.get(k);
     }
 
     @Override
-    public void put(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
+    public Future<Void> put(K k, V v) {
       checkType(k);
       checkType(v);
-      delegate.put(k, v, completionHandler);
+      return delegate.put(k, v);
     }
 
     @Override
-    public void put(K k, V v, long timeout, Handler<AsyncResult<Void>> completionHandler) {
+    public Future<Void> put(K k, V v, long ttl) {
       checkType(k);
       checkType(v);
-      delegate.put(k, v, timeout, completionHandler);
+      return delegate.put(k, v, ttl);
     }
 
     @Override
-    public void putIfAbsent(K k, V v, Handler<AsyncResult<V>> completionHandler) {
+    public Future<V> putIfAbsent(K k, V v) {
       checkType(k);
       checkType(v);
-      delegate.putIfAbsent(k, v, completionHandler);
+      return delegate.putIfAbsent(k, v);
     }
 
     @Override
-    public void putIfAbsent(K k, V v, long timeout, Handler<AsyncResult<V>> completionHandler) {
+    public Future<V> putIfAbsent(K k, V v, long ttl) {
       checkType(k);
       checkType(v);
-      delegate.putIfAbsent(k, v, timeout, completionHandler);
+      return delegate.putIfAbsent(k, v, ttl);
     }
 
     @Override
-    public void remove(K k, Handler<AsyncResult<V>> resultHandler) {
-      delegate.remove(k, resultHandler);
+    public Future<V> remove(K k) {
+      checkType(k);
+      return delegate.remove(k);
     }
 
     @Override
-    public void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
-      delegate.removeIfPresent(k, v, resultHandler);
-    }
-
-    @Override
-    public void replace(K k, V v, Handler<AsyncResult<V>> resultHandler) {
+    public Future<Boolean> removeIfPresent(K k, V v) {
       checkType(k);
       checkType(v);
-      delegate.replace(k, v, resultHandler);
+      return delegate.removeIfPresent(k, v);
     }
 
     @Override
-    public void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
+    public Future<V> replace(K k, V v) {
+      checkType(k);
+      checkType(v);
+      return delegate.replace(k, v);
+    }
+
+    @Override
+    public Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue) {
       checkType(k);
       checkType(oldValue);
       checkType(newValue);
-      delegate.replaceIfPresent(k, oldValue, newValue, resultHandler);
+      return delegate.replaceIfPresent(k, oldValue, newValue);
     }
 
     @Override
-    public void clear(Handler<AsyncResult<Void>> resultHandler) {
-      delegate.clear(resultHandler);
+    public Future<Void> clear() {
+      return delegate.clear();
     }
 
     @Override
-    public void size(Handler<AsyncResult<Integer>> resultHandler) {
-      delegate.size(resultHandler);
+    public Future<Integer> size() {
+      return delegate.size();
     }
 
     @Override
-    public void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
-      delegate.keys(resultHandler);
+    public Future<Set<K>> keys() {
+      return delegate.keys();
     }
 
     @Override
-    public void values(Handler<AsyncResult<List<V>>> asyncResultHandler) {
-      delegate.values(asyncResultHandler);
+    public Future<List<V>> values() {
+      return delegate.values();
     }
 
     @Override
-    public void entries(Handler<AsyncResult<Map<K, V>>> asyncResultHandler) {
-      delegate.entries(asyncResultHandler);
+    public Future<Map<K, V>> entries() {
+      return delegate.entries();
     }
 
     public AsyncMap<K, V> getDelegate() {
