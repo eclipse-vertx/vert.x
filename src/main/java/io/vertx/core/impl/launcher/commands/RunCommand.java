@@ -61,15 +61,6 @@ public class RunCommand extends BareCommand {
   private long redeployGracePeriod;
   private long redeployTerminationPeriod;
 
-  public RunCommand() {
-
-      // indicates that run command won't run on cluster automatically
-      cluster = false;
-      
-      // indicates that run command won't have high availability automatically
-      ha = false;
-  }   
-  
   /**
    * Whether or not the verticle is deployed as a worker verticle.
    *
@@ -199,6 +190,20 @@ public class RunCommand extends BareCommand {
                     "The argument 'main-verticle' is required");
         }
     }
+  }
+
+  /**
+   * @return whether the {@code cluster} option or the {@code ha} option are enabled. Also {@code true} when a custom
+   * launcher modifies the Vert.x options to set `clustered` to {@code true}
+   */
+  @Override
+  public boolean isClustered() {
+    return cluster || ha || (options != null && options.getEventBusOptions().isClustered());
+  }
+
+  @Override
+  public boolean getHA() {
+    return ha;
   }
 
   /**

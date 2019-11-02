@@ -72,13 +72,6 @@ public class BareCommand extends ClasspathHandler {
 
   protected Runnable finalAction;
 
-  public BareCommand() {
-      // indicates that run command won't run on cluster automatically
-      cluster = true;
-      
-      // indicates that run command won't have high availability automatically
-      ha = true;
-  }  
   /**
    * Sets the quorum option.
    *
@@ -195,11 +188,11 @@ public class BareCommand extends ClasspathHandler {
   }
 
   /**
-   * @return whether the {@code cluster} option or the {@code ha} option are enabled. Also {@code true} when a custom
-   * launcher modifies the Vert.x options to set `clustered` to {@code true}
+   * @return whether or not the vert.x instance should be clustered. This implementation
+   * returns {@code true}.
    */
   public boolean isClustered() {
-    return cluster || ha || (options != null && options.getEventBusOptions().isClustered());
+    return true;
   }
 
   /**
@@ -207,7 +200,7 @@ public class BareCommand extends ClasspathHandler {
    * implementation returns {@code true}.
    */
   public boolean getHA() {
-    return ha;
+    return true;
   }
 
   /**
