@@ -72,7 +72,6 @@ public interface WorkerExecutor extends Measured {
   /**
    * Close the executor.
    */
-  default void close() {
-  }
+  Future<Void> close();
 
 }

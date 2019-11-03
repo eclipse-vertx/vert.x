@@ -67,22 +67,24 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
   }
 
   @Override
-  public void close() {
+  public Future<Void> close() {
     synchronized (this) {
       if (!closed) {
         closed = true;
       } else {
-        return;
+        return Future.succeededFuture();
       }
     }
     ctx.removeCloseHook(this);
     pool.release();
+    return Future.succeededFuture();
   }
 
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
-    close();
-    completionHandler.handle(Future.succeededFuture());
+    Future<Void> fut = close();
+    if (completionHandler != null) {
+      fut.setHandler(completionHandler);
+    }
   }
-
 }
