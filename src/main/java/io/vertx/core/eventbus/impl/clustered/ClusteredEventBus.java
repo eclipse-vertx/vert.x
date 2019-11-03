@@ -194,13 +194,12 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void removeRegistration(HandlerHolder<T> lastHolder, String address,
-                                        Handler<AsyncResult<Void>> completionHandler) {
+  protected <T> void removeRegistration(HandlerHolder<T> lastHolder, String address, Promise<Void> completionHandler) {
     if (lastHolder != null && subs != null && !lastHolder.isLocalOnly()) {
       ownSubs.remove(address);
       removeSub(address, nodeInfo, completionHandler);
     } else {
-      callCompletionHandlerAsync(completionHandler);
+      completionHandler.complete();
     }
   }
 
@@ -370,21 +369,16 @@ public class ClusteredEventBus extends EventBusImpl {
     holder.writeMessage(sendContext);
   }
 
-  private void removeSub(String subName, ClusterNodeInfo node, Handler<AsyncResult<Void>> completionHandler) {
+  private void removeSub(String subName, ClusterNodeInfo node, Promise<Void> completionHandler) {
     subs.remove(subName, node, ar -> {
       if (!ar.succeeded()) {
         log.error("Failed to remove sub", ar.cause());
       } else {
         if (ar.result()) {
-          if (completionHandler != null) {
-            completionHandler.handle(Future.succeededFuture());
-          }
+          completionHandler.complete();
         } else {
-          if (completionHandler != null) {
-            completionHandler.handle(Future.failedFuture("sub not found"));
-          }
+          completionHandler.fail("sub not found");
         }
-
       }
     });
   }

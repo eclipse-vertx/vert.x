@@ -107,14 +107,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     }
   }
 
-  @Override
-  public Future<Void> unregister() {
-    // Todo when we support multiple listeners per future
-    Promise<Void> promise = Promise.promise();
-    unregister(promise);
-    return promise.future();
-  }
-
   protected synchronized void doUnregister() {
     handler = null;
     if (endHandler != null) {

@@ -284,14 +284,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return new LocalRegistrationResult<>(holder, newAddress);
   }
 
-  protected <T> void removeRegistration(HandlerHolder<T> holder, Handler<AsyncResult<Void>> completionHandler) {
+  protected <T> void removeRegistration(HandlerHolder<T> holder, Promise<Void> promise) {
     boolean last = removeLocalRegistration(holder);
-    removeRegistration(last ? holder : null, holder.address, completionHandler);
+    removeRegistration(last ? holder : null, holder.address, promise);
   }
 
   protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, String address,
-                                        Handler<AsyncResult<Void>> completionHandler) {
-    callCompletionHandlerAsync(completionHandler);
+                                        Promise<Void> promise) {
+    promise.complete();
   }
 
   private <T> boolean removeLocalRegistration(HandlerHolder<T> holder) {

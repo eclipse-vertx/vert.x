@@ -71,22 +71,29 @@ abstract class HandlerRegistration<T> {
     return registered != null;
   }
 
-  public void unregister(Handler<AsyncResult<Void>> completionHandler) {
+  public Future<Void> unregister() {
+    Promise<Void> promise = context.promise();
     synchronized (this) {
       if (registered != null) {
-        bus.removeRegistration(registered, completionHandler);
+        bus.removeRegistration(registered, promise);
         registered = null;
         if (bus.metrics != null) {
           bus.metrics.handlerUnregistered(metric);
           metric = null;
         }
       } else {
-        if (completionHandler != null) {
-          context.owner().runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
-        }
+        promise.complete();
       }
     }
     doUnregister();
+    return promise.future();
+  }
+
+  public void unregister(Handler<AsyncResult<Void>> completionHandler) {
+    Future<Void> fut = unregister();
+    if (completionHandler != null) {
+      fut.setHandler(completionHandler);
+    }
   }
 
   void dispatch(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
