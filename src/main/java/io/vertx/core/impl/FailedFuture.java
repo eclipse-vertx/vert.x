@@ -51,7 +51,7 @@ public class FailedFuture<T> implements Future<T> {
   }
 
   @Override
-  public Future<T> setHandler(Handler<AsyncResult<T>> handler) {
+  public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
     handler.handle(this);
     return this;
   }

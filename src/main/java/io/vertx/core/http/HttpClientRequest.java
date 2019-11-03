@@ -441,5 +441,8 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   StreamPriority getStreamPriority();
 
   @Override
-  HttpClientRequest setHandler(Handler<AsyncResult<HttpClientResponse>> handler);
+  default HttpClientRequest setHandler(Handler<AsyncResult<HttpClientResponse>> handler) {
+    onComplete(handler);
+    return this;
+  }
 }

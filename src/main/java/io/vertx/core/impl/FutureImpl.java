@@ -80,10 +80,8 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
     return failed || succeeded;
   }
 
-  /**
-   * Set a handler for the result. It will get called when it's complete
-   */
-  public Future<T> setHandler(Handler<AsyncResult<T>> h) {
+  @Override
+  public Future<T> onComplete(Handler<AsyncResult<T>> h) {
     if (h == null) {
       throw new NullPointerException("No null handler accepted");
     }

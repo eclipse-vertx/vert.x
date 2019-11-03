@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientRequest;
@@ -155,7 +156,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   abstract boolean reset(Throwable cause);
 
   @Override
-  public HttpClientRequest setHandler(Handler<AsyncResult<HttpClientResponse>> handler) {
+  public HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler) {
     responsePromise.future().setHandler(handler);
     return this;
   }

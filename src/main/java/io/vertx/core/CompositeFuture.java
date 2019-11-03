@@ -179,7 +179,25 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   @Override
-  CompositeFuture setHandler(Handler<AsyncResult<CompositeFuture>> handler);
+  default CompositeFuture setHandler(Handler<AsyncResult<CompositeFuture>> handler) {
+    Future.super.setHandler(handler);
+    return this;
+  }
+
+  @Override
+  CompositeFuture onComplete(Handler<AsyncResult<CompositeFuture>> handler);
+
+  @Override
+  default CompositeFuture onSuccess(Handler<CompositeFuture> handler) {
+    Future.super.onSuccess(handler);
+    return this;
+  }
+
+  @Override
+  default CompositeFuture onFailure(Handler<Throwable> handler) {
+    Future.super.onFailure(handler);
+    return this;
+  }
 
   /**
    * Returns a cause of a wrapped future

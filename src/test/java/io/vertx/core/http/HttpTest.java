@@ -4119,7 +4119,7 @@ public abstract class HttpTest extends HttpTestBase {
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
       public HttpClientRequest setStreamPriority(StreamPriority streamPriority) { return this; }
       public StreamPriority getStreamPriority() { return null; }
-      public HttpClientRequest setHandler(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
+      public HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public boolean isComplete() { throw new UnsupportedOperationException(); }
       public Handler<AsyncResult<HttpClientResponse>> getHandler() { throw new UnsupportedOperationException(); }
       public boolean tryComplete(HttpClientResponse result) { throw new UnsupportedOperationException(); }
