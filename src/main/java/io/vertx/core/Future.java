@@ -114,17 +114,51 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
   boolean isComplete();
 
   /**
-   * Set a handler for the result.
-   * <p>
-   * If the future has already been completed it will be called immediately. Otherwise it will be called when the
-   * future is completed.
-   *
-   * @param handler  the Handler that will be called with the result
-   * @return a reference to this, so it can be used fluently
-   *
+   * Like {@link #onComplete(Handler)}.
    */
   @Fluent
   Future<T> setHandler(Handler<AsyncResult<T>> handler);
+
+  /**
+   * Add a handler to be notified of the result.
+   * <br/>
+   * @param handler the handler that will be called with the result
+   * @return a reference to this, so it can be used fluently
+   */
+  @Fluent
+  default Future<T> onComplete(Handler<AsyncResult<T>> handler) {
+    return setHandler(handler);
+  }
+
+  /**
+   * Add a handler to be notified of the succeeded result.
+   * <br/>
+   * @param handler the handler that will be called with the succeeded result
+   * @return a reference to this, so it can be used fluently
+   */
+  @Fluent
+  default Future<T> onSuccess(Handler<T> handler) {
+    return onComplete(ar -> {
+      if (ar.succeeded()) {
+        handler.handle(ar.result());
+      }
+    });
+  }
+
+  /**
+   * Add a handler to be notified of the failed result.
+   * <br/>
+   * @param handler the handler that will be called with the failed result
+   * @return a reference to this, so it can be used fluently
+   */
+  @Fluent
+  default Future<T> onFailure(Handler<Throwable> handler) {
+    return onComplete(ar -> {
+      if (ar.failed()) {
+        handler.handle(ar.cause());
+      }
+    });
+  }
 
   /**
    * Set the result. Any handler will be called, if there is one, and the future will be marked as completed.

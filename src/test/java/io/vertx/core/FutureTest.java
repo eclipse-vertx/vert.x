@@ -1424,4 +1424,45 @@ public class FutureTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testSuccessNotification() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    Future<String> fut = promise.future();
+    fut.onComplete(onSuccess(res -> {
+      assertEquals("foo", res);
+      complete();
+    }));
+    fut.onSuccess(res -> {
+      assertEquals("foo", res);
+      complete();
+    });
+    fut.onFailure(err -> {
+      fail();
+    });
+    promise.complete("foo");
+    await();
+  }
+
+  @Test
+  public void testFailureNotification() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    Future<String> fut = promise.future();
+    Throwable failure = new Throwable();
+    fut.onComplete(onFailure(err -> {
+      assertEquals(failure, err);
+      complete();
+    }));
+    fut.onSuccess(res -> {
+      fail();
+    });
+    fut.onFailure(err -> {
+      assertEquals(failure, err);
+      complete();
+    });
+    promise.fail(failure);
+    await();
+  }
 }

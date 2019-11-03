@@ -181,6 +181,23 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   @Override
   CompositeFuture setHandler(Handler<AsyncResult<CompositeFuture>> handler);
 
+  @Override
+  default CompositeFuture onComplete(Handler<AsyncResult<CompositeFuture>> handler) {
+    return setHandler(handler);
+  }
+
+  @Override
+  default CompositeFuture onSuccess(Handler<CompositeFuture> handler) {
+    Future.super.onSuccess(handler);
+    return this;
+  }
+
+  @Override
+  default CompositeFuture onFailure(Handler<Throwable> handler) {
+    Future.super.onFailure(handler);
+    return this;
+  }
+
   /**
    * Set this instance as result. Any handler will be called, if there is one, and the future will be marked as completed.
    */
