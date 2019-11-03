@@ -806,16 +806,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     } else {
       return false;
     }
-    if (l1.size() != l2.size())
+    if (l1.size() != l2.size()) {
       return false;
+    }
     Iterator<?> iter = l2.iterator();
     for (Object entry : l1) {
       Object other = iter.next();
-      if (entry == null) {
-        if (other != null) {
-          return false;
-        }
-      } else if (!JsonObject.equals(entry, other)) {
+      if (entry == null ? other != null : !JsonObject.equals(entry, other)) {
         return false;
       }
     }
