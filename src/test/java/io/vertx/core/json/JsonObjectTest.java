@@ -1703,6 +1703,17 @@ public class JsonObjectTest {
     } catch (NullPointerException ignore) {
     }
   }
+
+  @Test
+  public void testEquals() {
+    assertNotEquals(new JsonObject().put("a", 1), new JsonObject().put("b", 1));
+    assertNotEquals(new JsonObject().put("a", 1), new JsonObject());
+    assertNotEquals(new JsonObject(), new JsonObject().put("b", 1));
+    assertNotEquals(new JsonObject().put("a", 1), new JsonObject().put("a", 2));
+    assertNotEquals(new JsonObject().put("a", 1), new JsonObject().putNull("a"));
+    assertNotEquals(new JsonObject().putNull("a"), new JsonObject().put("a", 1));
+    assertEquals(new JsonObject().putNull("a"), new JsonObject().putNull("a"));
+  }
 }
 
 

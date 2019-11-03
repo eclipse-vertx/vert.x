@@ -895,7 +895,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     return objectEquals(map, o);
   }
 
-  static boolean objectEquals(Map<?, ?> m1, Object o2) {
+  private static boolean objectEquals(Map<?, ?> m1, Object o2) {
     Map<?, ?> m2;
     if (o2 instanceof JsonObject) {
       m2 = ((JsonObject) o2).map;
@@ -904,26 +904,23 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     } else {
       return false;
     }
-    if (m1.size() != m2.size())
+    if (!m1.keySet().equals(m2.keySet())) {
       return false;
+    }
     for (Map.Entry<?, ?> entry : m1.entrySet()) {
-      Object val = entry.getValue();
-      if (val == null) {
-        if (m2.get(entry.getKey()) != null) {
-          return false;
-        }
-      } else {
-        if (!equals(entry.getValue(), m2.get(entry.getKey()))) {
-          return false;
-        }
+      Object val1 = entry.getValue();
+      Object val2 = m2.get(entry.getKey());
+      if (val1 == null ? val2 != null : !equals(val1, val2)) {
+        return false;
       }
     }
     return true;
   }
 
   static boolean equals(Object o1, Object o2) {
-    if (o1 == o2)
+    if (o1 == o2) {
       return true;
+    }
     if (o1 instanceof JsonObject) {
       return objectEquals(((JsonObject) o1).map, o2);
     }
