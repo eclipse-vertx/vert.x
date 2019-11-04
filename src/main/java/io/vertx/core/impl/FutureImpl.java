@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
 
@@ -82,9 +83,7 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
 
   @Override
   public Future<T> onComplete(Handler<AsyncResult<T>> h) {
-    if (h == null) {
-      throw new NullPointerException("No null handler accepted");
-    }
+    Objects.requireNonNull(h, "No null handler accepted");
     synchronized (this) {
       if (!isComplete()) {
         if (handler == null) {
@@ -114,14 +113,14 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
   protected void dispatch(Handler<AsyncResult<T>> handler) {
     if (handler instanceof Handlers) {
       for (Handler<AsyncResult<T>> h : (Handlers<T>)handler) {
-        dispatch0(h);
+        doDispatch(h);
       }
     } else {
-      dispatch0(handler);
+      doDispatch(handler);
     }
   }
 
-  private void dispatch0(Handler<AsyncResult<T>> handler) {
+  private void doDispatch(Handler<AsyncResult<T>> handler) {
     if (context != null) {
       context.execute(this, handler);
     } else {
