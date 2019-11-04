@@ -15,6 +15,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
+import java.util.ArrayList;
+import java.util.Objects;
+
 class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
 
   private final ContextInternal context;
@@ -78,29 +81,46 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
     return failed || succeeded;
   }
 
-  /**
-   * Set a handler for the result. It will get called when it's complete
-   */
-  public Future<T> setHandler(Handler<AsyncResult<T>> handler) {
-    boolean callHandler;
+  @Override
+  public Future<T> onComplete(Handler<AsyncResult<T>> h) {
+    Objects.requireNonNull(h, "No null handler accepted");
     synchronized (this) {
-      if (handler == null) {
-        this.handler = null;
-        return this;
-      } else {
-        callHandler = isComplete();
-        if (!callHandler) {
-          this.handler = handler;
+      if (!isComplete()) {
+        if (handler == null) {
+          handler = h;
+        } else {
+          addHandler(h);
         }
+        return this;
       }
     }
-    if (callHandler) {
-      dispatch(handler);
-    }
+    dispatch(h);
     return this;
   }
 
+  private void addHandler(Handler<AsyncResult<T>> h) {
+    Handlers<T> handlers;
+    if (handler instanceof Handlers) {
+      handlers = (Handlers<T>) handler;
+    } else {
+      handlers = new Handlers<>();
+      handlers.add(handler);
+      handler = handlers;
+    }
+    handlers.add(h);
+  }
+
   protected void dispatch(Handler<AsyncResult<T>> handler) {
+    if (handler instanceof Handlers) {
+      for (Handler<AsyncResult<T>> h : (Handlers<T>)handler) {
+        doDispatch(h);
+      }
+    } else {
+      doDispatch(handler);
+    }
+  }
+
+  private void doDispatch(Handler<AsyncResult<T>> handler) {
     if (context != null) {
       context.execute(this, handler);
     } else {
@@ -228,6 +248,16 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
         return "Future{cause=" + throwable.getMessage() + "}";
       }
       return "Future{unresolved}";
+    }
+  }
+
+
+  private class Handlers<T> extends ArrayList<Handler<AsyncResult<T>>> implements Handler<AsyncResult<T>> {
+    @Override
+    public void handle(AsyncResult<T> res) {
+      for (Handler<AsyncResult<T>> handler : this) {
+        handler.handle(res);
+      }
     }
   }
 }

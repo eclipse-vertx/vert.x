@@ -955,14 +955,6 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testSetNullHandlerAfterCompletion() throws Exception {
-    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    Promise<String> promise = context.promise();
-    promise.complete();
-    promise.future().setHandler(null);
-  }
-
-  @Test
   public void testComposeContextPropagation1() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     Promise<String> promise = context.promise();

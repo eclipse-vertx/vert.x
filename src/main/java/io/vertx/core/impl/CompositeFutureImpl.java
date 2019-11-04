@@ -137,7 +137,7 @@ public class CompositeFutureImpl implements CompositeFuture {
   }
 
   @Override
-  public CompositeFuture setHandler(Handler<AsyncResult<CompositeFuture>> handler) {
+  public CompositeFuture onComplete(Handler<AsyncResult<CompositeFuture>> handler) {
     boolean call;
     synchronized (this) {
       this.handler = handler;

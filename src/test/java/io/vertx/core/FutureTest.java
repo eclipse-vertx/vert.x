@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -811,7 +810,7 @@ public class FutureTest extends VertxTestBase {
       T result;
       Throwable cause;
       public boolean isComplete() { throw new UnsupportedOperationException(); }
-      public Future<T> setHandler(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
+      public Future<T> onComplete(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
       public Handler<AsyncResult<T>> getHandler() { throw new UnsupportedOperationException(); }
 
       public void complete(T result) {
@@ -1232,10 +1231,19 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testSetNullHandlerAfterCompletion() throws Exception {
+  public void testSetNullHandler() throws Exception {
     Promise<String> promise = Promise.promise();
+    try {
+      promise.future().setHandler(null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
     promise.complete();
-    promise.future().setHandler(null);
+    try {
+      promise.future().setHandler(null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
   }
 
   @Test
@@ -1329,5 +1337,91 @@ public class FutureTest extends VertxTestBase {
         return fut.failed();
       }
     };
+  }
+
+  @Test
+  public void testSeveralHandlers1() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    Future<String> fut = promise.future();
+    fut.setHandler(ar -> {
+      complete();
+    });
+    fut.setHandler(ar -> {
+      complete();
+    });
+    promise.complete();
+    await();
+  }
+
+  @Test
+  public void testSeveralHandlers2() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    promise.complete();
+    Future<String> fut = promise.future();
+    fut.setHandler(ar -> {
+      complete();
+    });
+    fut.setHandler(ar -> {
+      complete();
+    });
+    await();
+  }
+
+  @Test
+  public void testSeveralHandlers3() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    Future<String> fut = promise.future();
+    fut.setHandler(ar -> {
+      complete();
+    });
+    promise.complete();
+    fut.setHandler(ar -> {
+      complete();
+    });
+    await();
+  }
+
+  @Test
+  public void testSuccessNotification() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    Future<String> fut = promise.future();
+    fut.onComplete(onSuccess(res -> {
+      assertEquals("foo", res);
+      complete();
+    }));
+    fut.onSuccess(res -> {
+      assertEquals("foo", res);
+      complete();
+    });
+    fut.onFailure(err -> {
+      fail();
+    });
+    promise.complete("foo");
+    await();
+  }
+
+  @Test
+  public void testFailureNotification() {
+    waitFor(2);
+    Promise<String> promise = Promise.promise();
+    Future<String> fut = promise.future();
+    Throwable failure = new Throwable();
+    fut.onComplete(onFailure(err -> {
+      assertEquals(failure, err);
+      complete();
+    }));
+    fut.onSuccess(res -> {
+      fail();
+    });
+    fut.onFailure(err -> {
+      assertEquals(failure, err);
+      complete();
+    });
+    promise.fail(failure);
+    await();
   }
 }
