@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -27,8 +26,8 @@ class WorkerContext extends ContextImpl {
   }
 
   @Override
-  <T> void executeAsync(T value, Handler<T> task) {
-    executeAsync(this, value, task);
+  <T> void emitAsync(T event, Handler<T> handler) {
+    executeAsync(this, event, handler);
   }
 
   @Override
@@ -39,25 +38,25 @@ class WorkerContext extends ContextImpl {
   // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
   // so we need to execute it on the worker thread
   @Override
-  public <T> void executeFromIO(T value, Handler<T> task) {
+  public <T> void emitFromIO(T event, Handler<T> handler) {
     if (THREAD_CHECKS) {
       checkEventLoopThread();
     }
-    executeAsync(this, value ,task);
+    executeAsync(this, event, handler);
   }
 
   @Override
-  public <T> void execute(T value, Handler<T> task) {
-    execute(this, value, task);
+  public <T> void emit(T event, Handler<T> handler) {
+    execute(this, event, handler);
   }
 
   private static <T> void execute(AbstractContext ctx, T value, Handler<T> task) {
     if (AbstractContext.context() == ctx) {
       ctx.dispatch(value, task);
     } else if (ctx.nettyEventLoop().inEventLoop()) {
-      ctx.executeFromIO(value, task);
+      ctx.emitFromIO(value, task);
     } else {
-      ctx.executeAsync(value, task);
+      ctx.emitAsync(value, task);
     }
   }
 
@@ -108,18 +107,18 @@ class WorkerContext extends ContextImpl {
     }
 
     @Override
-    <T> void executeAsync(T value, Handler<T> task) {
-      executeFromIO(value, task);
+    <T> void emitAsync(T event, Handler<T> handler) {
+      emitFromIO(event, handler);
     }
 
     @Override
-    public <T> void executeFromIO(T value, Handler<T> task) {
-      delegate.executeAsync(this, value, task);
+    public <T> void emitFromIO(T event, Handler<T> handler) {
+      delegate.executeAsync(this, event, handler);
     }
 
     @Override
-    public <T> void execute(T value, Handler<T> task) {
-      delegate.execute(this, value, task);
+    public <T> void emit(T event, Handler<T> handler) {
+      delegate.execute(this, event, handler);
     }
 
     @Override

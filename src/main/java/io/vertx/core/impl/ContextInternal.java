@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -22,7 +21,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Function;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -102,33 +100,33 @@ public interface ContextInternal extends Context {
   VertxInternal owner();
 
   /**
-   * Like {@link #executeFromIO(Object, Handler)} but with no argument.
+   * @see #emit(Object, Handler)
    */
-  void executeFromIO(Handler<Void> task);
+  void emitFromIO(Handler<Void> handler);
 
   /**
-   * Execute the context task and switch on this context if necessary, this also associates the
+   * Emit the {@code event} to the {@code handler} and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
    *
    * The caller thread is assumed to be the event loop thread of this context.<p/>
    *
-   * Any exception thrown from the {@literal task} will be reported on this context.
+   * Any exception thrown from the {@literal handler} will be reported on this context.
    *
-   * @param value the argument for the {@code task}
-   * @param task the task to execute with the {@code value} argument
+   * @param event the event for the {@code handler}
+   * @param handler the handler to execute with the {@code event} argument
    */
-  <T> void executeFromIO(T value, Handler<T> task);
+  <T> void emitFromIO(T event, Handler<T> handler);
 
   /**
-   * Execute the context task and switch on this context if necessary, this also associates the
+   * Emit the {@code event} to the {@code handler} and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
    *
-   * Any exception thrown from the {@literal task} will be reported on this context.
+   * Any exception thrown from the {@literal handler} will be reported on this context.
    *
-   * @param value the argument for the {@code task}
-   * @param task the task to execute with the {@code value} argument
+   * @param event the event for the {@code handler}
+   * @param handler the handler to execute with the {@code event} argument
    */
-  <T> void execute(T value, Handler<T> task);
+  <E> void emit(E event, Handler<E> handler);
 
   /**
    * @see #schedule(Object, Handler)
@@ -148,20 +146,20 @@ public interface ContextInternal extends Context {
   /**
    * @see #dispatch(Object, Handler)
    */
-  void dispatch(Handler<Void> task);
+  void dispatch(Handler<Void> handler);
 
   /**
-   * Dispatch a task on this context. The task is executed directly by the caller thread which must be a
+   * Dispatch a {@code event} to the {@code handler} on this context. The handler is executed directly by the caller thread which must be a
    * {@link VertxThread}.
    * <p>
-   * The task execution is monitored by the blocked thread checker.
+   * The handler execution is monitored by the blocked thread checker.
    * <p>
    * This context is thread-local associated during the task execution.
    *
-   * @param arg the task argument
-   * @param task the task to execute
+   * @param event the event for the {@code handler}
+   * @param handler the handler to execute with the {@code event} argument
    */
-  <T> void dispatch(T arg, Handler<T> task);
+  <E> void dispatch(E event, Handler<E> handler);
 
   /**
    * Begin the dispatch of a task on this context.

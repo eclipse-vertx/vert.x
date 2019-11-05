@@ -38,7 +38,7 @@ import java.util.function.LongSupplier;
  * </ul>
  *
  * A connection is delivered to a {@link Waiter} on the pool's context event loop thread, the waiter must take care of
- * calling {@link io.vertx.core.impl.ContextInternal#executeFromIO} if necessary.
+ * calling {@link io.vertx.core.impl.ContextInternal#emitFromIO} if necessary.
  * <p/>
  * Calls to the pool are synchronized on the pool to avoid race conditions and maintain its invariants. This pool can
  * be called from different threads safely (although it is not encouraged for performance reasons, we benefit from biased

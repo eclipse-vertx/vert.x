@@ -35,7 +35,7 @@ abstract class ContextImpl extends AbstractContext {
   static FutureListener<Void> toListenerFuture(ContextInternal context, Handler<AsyncResult<Void>> handler) {
     return future -> {
       Future<Void> res = future.isSuccess() ? Future.succeededFuture() : Future.failedFuture(future.cause());
-      context.executeFromIO(res, handler);
+      context.emitFromIO(res, handler);
     };
   }
 

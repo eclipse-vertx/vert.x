@@ -449,7 +449,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           HttpClientStream stream = ar1.result();
           ContextInternal ctx = stream.getContext();
           if (stream.id() == 1 && initializer != null) {
-            ctx.executeFromIO(v -> {
+            ctx.emitFromIO(v -> {
               initializer.handle(stream.connection());
             });
           }

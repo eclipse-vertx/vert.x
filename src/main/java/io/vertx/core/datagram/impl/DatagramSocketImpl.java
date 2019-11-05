@@ -25,7 +25,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -428,7 +427,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   private void notifyException(final Handler<AsyncResult<Void>> handler, final Throwable cause) {
-    context.executeFromIO(v -> handler.handle(Future.failedFuture(cause)));
+    context.emitFromIO(v -> handler.handle(Future.failedFuture(cause)));
   }
 
   @Override

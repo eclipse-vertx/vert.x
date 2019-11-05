@@ -12,7 +12,6 @@ package io.vertx.core.impl;
 
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.concurrent.FastThreadLocalThread;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -80,7 +79,13 @@ abstract class AbstractContext implements ContextInternal {
     }
   };
 
-  abstract <T> void executeAsync(T value, Handler<T> task);
+  /**
+   * Emit the {@code event} asynchronously.
+   *
+   * @param event the event for the {@code handler}
+   * @param handler the task to execute with the {@code event} argument
+   */
+  abstract <E> void emitAsync(E event, Handler<E> handler);
 
   @Override
   public abstract boolean isEventLoopContext();
@@ -94,8 +99,8 @@ abstract class AbstractContext implements ContextInternal {
   // In such a case we should already be on an event loop thread (as Netty manages the event loops)
   // but check this anyway, then execute directly
   @Override
-  public final void executeFromIO(Handler<Void> task) {
-    executeFromIO(null, task);
+  public final void emitFromIO(Handler<Void> handler) {
+    emitFromIO(null, handler);
   }
 
   @Override
@@ -104,8 +109,8 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final void dispatch(Handler<Void> task) {
-    dispatch(null, task);
+  public final void dispatch(Handler<Void> handler) {
+    dispatch(null, handler);
   }
 
   public final ContextInternal beginDispatch() {
@@ -172,10 +177,10 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final <T> void dispatch(T arg, Handler<T> task) {
+  public final <T> void dispatch(T event, Handler<T> handler) {
     ContextInternal prev = beginDispatch();
     try {
-      task.handle(arg);
+      handler.handle(event);
     } catch (Throwable t) {
       reportException(t);
     } finally {
@@ -194,9 +199,9 @@ abstract class AbstractContext implements ContextInternal {
 
   // Run the task asynchronously on this same context
   @Override
-  public final void runOnContext(Handler<Void> task) {
+  public final void runOnContext(Handler<Void> handler) {
     try {
-      executeAsync(null, task);
+      emitAsync(null, handler);
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }

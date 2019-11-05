@@ -736,7 +736,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           ws.registerHandler(vertx.eventBus());
 
         }
-        getContext().executeFromIO(wsRes, res -> {
+        getContext().emitFromIO(wsRes, res -> {
           if (res.succeeded()) {
             log.debug("WebSocket handshake complete");
             if (metrics != null) {

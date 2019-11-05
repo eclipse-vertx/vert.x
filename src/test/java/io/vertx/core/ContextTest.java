@@ -187,7 +187,7 @@ public class ContextTest extends VertxTestBase {
 
     // Check from other thread
     try {
-      eventLoopContext.executeFromIO(v -> fail());
+      eventLoopContext.emitFromIO(v -> fail());
       fail();
     } catch (IllegalStateException expected) {
     }
@@ -198,7 +198,7 @@ public class ContextTest extends VertxTestBase {
       assertNull(Vertx.currentContext());
       Thread vertxThread = Thread.currentThread();
       AtomicBoolean nested = new AtomicBoolean(true);
-      eventLoopContext.executeFromIO(v -> {
+      eventLoopContext.emitFromIO(v -> {
         assertTrue(nested.get());
         assertSame(eventLoopContext, Vertx.currentContext());
         assertSame(vertxThread, Thread.currentThread());
@@ -215,7 +215,7 @@ public class ContextTest extends VertxTestBase {
     workerContext.nettyEventLoop().execute(() -> {
       assertNull(Vertx.currentContext());
       workerContext.nettyEventLoop().execute(() -> {
-        workerContext.executeFromIO(v -> {
+        workerContext.emitFromIO(v -> {
           assertSame(workerContext, Vertx.currentContext());
           assertTrue(Context.isOnWorkerThread());
           testComplete();
@@ -439,7 +439,7 @@ public class ContextTest extends VertxTestBase {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     AtomicBoolean called = new AtomicBoolean();
     try {
-      ctx.executeFromIO(v -> {
+      ctx.emitFromIO(v -> {
         called.set(true);
       });
       fail();
@@ -455,7 +455,7 @@ public class ContextTest extends VertxTestBase {
     ContextInternal ctx = createWorkerContext();
     AtomicBoolean called = new AtomicBoolean();
     try {
-      ctx.executeFromIO(v -> {
+      ctx.emitFromIO(v -> {
         called.set(true);
       });
       fail();
@@ -469,7 +469,7 @@ public class ContextTest extends VertxTestBase {
   public void testEventLoopContextExecuteFromAnyThread() {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     Object expected = new Object();
-    ctx.execute(expected, event -> {
+    ctx.emit(expected, event -> {
       assertSame(ctx, Vertx.currentContext());
       assertTrue(Context.isOnEventLoopThread());
       assertSame(expected, event);
@@ -485,7 +485,7 @@ public class ContextTest extends VertxTestBase {
     ctx.runOnContext(v -> {
       ThreadLocal<Boolean> local = new ThreadLocal<>();
       local.set(true);
-      ctx.execute(expected, event -> {
+      ctx.emit(expected, event -> {
         assertSame(ctx, Vertx.currentContext());
         assertTrue(Context.isOnEventLoopThread());
         assertEquals(true, local.get());
@@ -505,7 +505,7 @@ public class ContextTest extends VertxTestBase {
       Thread t = Thread.currentThread();
       ThreadLocal<Boolean> local = new ThreadLocal<>();
       local.set(true);
-      ctx.execute(expected, event -> {
+      ctx.emit(expected, event -> {
         assertSame(t, Thread.currentThread());
         assertSame(ctx, Vertx.currentContext());
         assertTrue(Context.isOnEventLoopThread());
@@ -525,7 +525,7 @@ public class ContextTest extends VertxTestBase {
     Object expected = new Object();
     any.runOnContext(v -> {
       Thread thread = Thread.currentThread();
-      ctx.execute(expected, event -> {
+      ctx.emit(expected, event -> {
         assertNotSame(thread, Thread.currentThread());
         assertSame(ctx, Vertx.currentContext());
         assertTrue(Context.isOnEventLoopThread());
@@ -543,7 +543,7 @@ public class ContextTest extends VertxTestBase {
     Object expected = new Object();
     any.nettyEventLoop().execute(() -> {
       Thread thread = Thread.currentThread();
-      ctx.execute(expected, event -> {
+      ctx.emit(expected, event -> {
         assertNotSame(thread, Thread.currentThread());
         assertSame(ctx, Vertx.currentContext());
         assertTrue(Context.isOnEventLoopThread());
@@ -560,7 +560,7 @@ public class ContextTest extends VertxTestBase {
     RuntimeException failure = new RuntimeException();
     AtomicReference<Throwable> caught = new AtomicReference<>();
     ctx.exceptionHandler(caught::set);
-    ctx.execute(new Object(), event -> {
+    ctx.emit(new Object(), event -> {
       throw failure;
     });
     assertWaitUntil(() -> caught.get() == failure);
@@ -570,7 +570,7 @@ public class ContextTest extends VertxTestBase {
   public void testWorkerContextExecuteFromAnyThread() {
     ContextInternal ctx = createWorkerContext();
     Object expected = new Object();
-    ctx.execute(expected, event -> {
+    ctx.emit(expected, event -> {
       assertSame(ctx, Vertx.currentContext());
       assertTrue(Context.isOnWorkerThread());
       assertSame(expected, event);
@@ -586,7 +586,7 @@ public class ContextTest extends VertxTestBase {
     ctx.runOnContext(v -> {
       ThreadLocal<Boolean> local = new ThreadLocal<>();
       local.set(true);
-      ctx.execute(expected, event -> {
+      ctx.emit(expected, event -> {
         assertSame(ctx, Vertx.currentContext());
         assertTrue(Context.isOnWorkerThread());
         assertEquals(true, local.get());
@@ -606,7 +606,7 @@ public class ContextTest extends VertxTestBase {
       Thread t = Thread.currentThread();
       ThreadLocal<Boolean> local = new ThreadLocal<>();
       local.set(true);
-      ctx.execute(expected, event -> {
+      ctx.emit(expected, event -> {
         assertNotSame(t, Thread.currentThread());
         assertSame(ctx, Vertx.currentContext());
         assertTrue(Context.isOnWorkerThread());
@@ -626,7 +626,7 @@ public class ContextTest extends VertxTestBase {
     Object expected = new Object();
     any.runOnContext(v -> {
       Thread thread = Thread.currentThread();
-      ctx.execute(expected, event -> {
+      ctx.emit(expected, event -> {
         assertNotSame(thread, Thread.currentThread());
         assertSame(ctx, Vertx.currentContext());
         assertTrue(Context.isOnWorkerThread());
@@ -650,7 +650,7 @@ public class ContextTest extends VertxTestBase {
     Object expected = new Object();
     any.nettyEventLoop().execute(() -> {
       Thread thread = Thread.currentThread();
-      ctx.execute(expected, event -> {
+      ctx.emit(expected, event -> {
         assertNotSame(thread, Thread.currentThread());
         assertSame(ctx, Vertx.currentContext());
         assertTrue(Context.isOnWorkerThread());
@@ -667,7 +667,7 @@ public class ContextTest extends VertxTestBase {
     RuntimeException failure = new RuntimeException();
     AtomicReference<Throwable> caught = new AtomicReference<>();
     ctx.exceptionHandler(caught::set);
-    ctx.execute(new Object(), event -> {
+    ctx.emit(new Object(), event -> {
       throw failure;
     });
     assertWaitUntil(() -> caught.get() == failure);

@@ -140,7 +140,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
     // Don't remove the connection at this point, or the handleClosed won't be called when channelInactive is called!
     C connection = getConnection();
     if (connection != null) {
-      context.executeFromIO(v -> {
+      context.emitFromIO(v -> {
         try {
           if (ch.isOpen()) {
             ch.close();
