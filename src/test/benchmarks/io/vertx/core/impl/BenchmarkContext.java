@@ -29,8 +29,16 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
-  <T> void emitAsync(T event, Handler<T> handler) {
-    emitFromIO(event, handler);
+  <T> void execute(T argument, Handler<T> task) {
+    emitFromIO(argument, task);
+  }
+
+  @Override
+  public void execute(Runnable task) {
+    if (THREAD_CHECKS) {
+      checkEventLoopThread();
+    }
+    dispatch(task);
   }
 
   @Override

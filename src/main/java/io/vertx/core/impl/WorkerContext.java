@@ -26,8 +26,13 @@ class WorkerContext extends ContextImpl {
   }
 
   @Override
-  <T> void emitAsync(T event, Handler<T> handler) {
-    executeAsync(this, event, handler);
+  <T> void execute(T argument, Handler<T> task) {
+    execute(this, argument, task);
+  }
+
+  @Override
+  public void execute(Runnable task) {
+    execute(this, task);
   }
 
   @Override
@@ -42,25 +47,43 @@ class WorkerContext extends ContextImpl {
     if (THREAD_CHECKS) {
       checkEventLoopThread();
     }
-    executeAsync(this, event, handler);
+    execute(this, event, handler);
   }
 
   @Override
   public <T> void emit(T event, Handler<T> handler) {
-    execute(this, event, handler);
+    emit(this, event, handler);
   }
 
-  private static <T> void execute(AbstractContext ctx, T value, Handler<T> task) {
+  private static <T> void emit(AbstractContext ctx, T value, Handler<T> task) {
     if (AbstractContext.context() == ctx) {
       ctx.dispatch(value, task);
     } else if (ctx.nettyEventLoop().inEventLoop()) {
       ctx.emitFromIO(value, task);
     } else {
-      ctx.emitAsync(value, task);
+      ctx.execute(value, task);
     }
   }
 
-  private <T> void executeAsync(ContextInternal ctx, T value, Handler<T> task) {
+  private <T> void execute(ContextInternal ctx, Runnable task) {
+    PoolMetrics metrics = workerPool.metrics();
+    Object queueMetric = metrics != null ? metrics.submitted() : null;
+    orderedTasks.execute(() -> {
+      Object execMetric = null;
+      if (metrics != null) {
+        execMetric = metrics.begin(queueMetric);
+      }
+      try {
+        ctx.dispatch(task);
+      } finally {
+        if (metrics != null) {
+          metrics.end(execMetric, true);
+        }
+      }
+    }, workerPool.executor());
+  }
+
+  private <T> void execute(ContextInternal ctx, T value, Handler<T> task) {
     PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     orderedTasks.execute(() -> {
@@ -107,18 +130,23 @@ class WorkerContext extends ContextImpl {
     }
 
     @Override
-    <T> void emitAsync(T event, Handler<T> handler) {
-      emitFromIO(event, handler);
+    <T> void execute(T argument, Handler<T> task) {
+      delegate.execute(this, argument, task);
+    }
+
+    @Override
+    public void execute(Runnable task) {
+      delegate.execute(this, task);
     }
 
     @Override
     public <T> void emitFromIO(T event, Handler<T> handler) {
-      delegate.executeAsync(this, event, handler);
+      execute(event, handler);
     }
 
     @Override
     public <T> void emit(T event, Handler<T> handler) {
-      delegate.execute(this, event, handler);
+      delegate.emit(this, event, handler);
     }
 
     @Override

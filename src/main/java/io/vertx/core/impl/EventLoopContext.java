@@ -35,8 +35,13 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  <T> void emitAsync(T event, Handler<T> handler) {
-    nettyEventLoop().execute(() -> dispatch(event, handler));
+  <T> void execute(T argument, Handler<T> task) {
+    nettyEventLoop().execute(() -> dispatch(argument, task));
+  }
+
+  @Override
+  public void execute(Runnable task) {
+    nettyEventLoop().execute(() -> dispatch(task));
   }
 
   @Override
@@ -54,10 +59,10 @@ public class EventLoopContext extends ContextImpl {
 
   @Override
   public <T> void emit(T event, Handler<T> handler) {
-    execute(this, event, handler);
+    emit(this, event, handler);
   }
 
-  private static <T> void execute(AbstractContext ctx, T value, Handler<T> task) {
+  private static <T> void emit(AbstractContext ctx, T value, Handler<T> task) {
     EventLoop eventLoop = ctx.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       if (AbstractContext.context() == ctx) {
@@ -66,7 +71,7 @@ public class EventLoopContext extends ContextImpl {
         ctx.emitFromIO(value, task);
       }
     } else {
-      ctx.emitAsync(value, task);
+      ctx.execute(value, task);
     }
   }
 
@@ -87,8 +92,13 @@ public class EventLoopContext extends ContextImpl {
     }
 
     @Override
-    <T> void emitAsync(T event, Handler<T> handler) {
-      nettyEventLoop().execute(() -> dispatch(event, handler));
+    <T> void execute(T argument, Handler<T> task) {
+      nettyEventLoop().execute(() -> dispatch(argument, task));
+    }
+
+    @Override
+    public void execute(Runnable task) {
+      nettyEventLoop().execute(() -> dispatch(task));
     }
 
     @Override
@@ -101,7 +111,7 @@ public class EventLoopContext extends ContextImpl {
 
     @Override
     public <T> void emit(T event, Handler<T> handler) {
-      EventLoopContext.execute(this, event, handler);
+      EventLoopContext.emit(this, event, handler);
     }
 
     @Override

@@ -21,6 +21,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface ContextInternal extends Context {
+public interface ContextInternal extends Context, Executor {
 
   /**
    * Return the Netty EventLoop used by this Context. This can be used to integrate
@@ -38,6 +39,15 @@ public interface ContextInternal extends Context {
    * @return the EventLoop
    */
   EventLoop nettyEventLoop();
+
+  /**
+   * {@inheritDoc}
+   * <br/>
+   * Execution follows the same semantics than {@link #runOnContext(Handler)}, simply put it is equivalent
+   * to {@code runOncontext(v -> command.run())}.
+   */
+  @Override
+  void execute(Runnable command);
 
   /**
    * @return a {@link Promise} associated with this context
@@ -142,6 +152,11 @@ public interface ContextInternal extends Context {
    * @param task the task
    */
   <T> void schedule(T value, Handler<T> task);
+
+  /**
+   * @see #dispatch(Handler)
+   */
+  void dispatch(Runnable handler);
 
   /**
    * @see #dispatch(Object, Handler)

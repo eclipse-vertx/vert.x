@@ -80,12 +80,12 @@ abstract class AbstractContext implements ContextInternal {
   };
 
   /**
-   * Emit the {@code event} asynchronously.
+   * Execute the {@code task} on the context.
    *
-   * @param event the event for the {@code handler}
-   * @param handler the task to execute with the {@code event} argument
+   * @param argument the argument for the {@code task}
+   * @param task the task to execute with the provided {@code argument}
    */
-  abstract <E> void emitAsync(E event, Handler<E> handler);
+  abstract <T> void execute(T argument, Handler<T> task);
 
   @Override
   public abstract boolean isEventLoopContext();
@@ -188,6 +188,17 @@ abstract class AbstractContext implements ContextInternal {
     }
   }
 
+  public final void dispatch(Runnable handler) {
+    ContextInternal prev = beginDispatch();
+    try {
+      handler.run();
+    } catch (Throwable t) {
+      reportException(t);
+    } finally {
+      endDispatch(prev);
+    }
+  }
+
   static void checkEventLoopThread() {
     Thread current = Thread.currentThread();
     if (!(current instanceof FastThreadLocalThread)) {
@@ -201,7 +212,7 @@ abstract class AbstractContext implements ContextInternal {
   @Override
   public final void runOnContext(Handler<Void> handler) {
     try {
-      emitAsync(null, handler);
+      execute(null, handler);
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }
