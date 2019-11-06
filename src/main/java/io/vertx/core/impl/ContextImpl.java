@@ -32,13 +32,6 @@ import java.util.concurrent.RejectedExecutionException;
  */
 abstract class ContextImpl extends AbstractContext {
   
-  static FutureListener<Void> toListenerFuture(ContextInternal context, Handler<AsyncResult<Void>> handler) {
-    return future -> {
-      Future<Void> res = future.isSuccess() ? Future.succeededFuture() : Future.failedFuture(future.cause());
-      context.emitFromIO(res, handler);
-    };
-  }
-
   /**
    * Execute the {@code task} disabling the thread-local association for the duration
    * of the execution. {@link Vertx#currentContext()} will return {@code null},
