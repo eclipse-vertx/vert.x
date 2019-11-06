@@ -22,11 +22,11 @@ import io.vertx.core.spi.metrics.PoolMetrics;
  */
 class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
 
-  private final Context ctx;
+  private final ContextInternal ctx;
   private final VertxImpl.SharedWorkerPool pool;
   private boolean closed;
 
-  public WorkerExecutorImpl(Context ctx, VertxImpl.SharedWorkerPool pool) {
+  public WorkerExecutorImpl(ContextInternal ctx, VertxImpl.SharedWorkerPool pool) {
     this.ctx = ctx;
     this.pool = pool;
   }
@@ -63,7 +63,10 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
   }
 
   public synchronized <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
-    executeBlocking(blockingCodeHandler, ordered).setHandler(asyncResultHandler);
+    Future<T> fut = executeBlocking(blockingCodeHandler, ordered);
+    if (asyncResultHandler != null) {
+      fut.setHandler(asyncResultHandler);
+    }
   }
 
   @Override
@@ -72,12 +75,12 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
       if (!closed) {
         closed = true;
       } else {
-        return Future.succeededFuture();
+        return ctx.succeededFuture();
       }
     }
     ctx.removeCloseHook(this);
     pool.release();
-    return Future.succeededFuture();
+    return ctx.succeededFuture();
   }
 
   @Override
