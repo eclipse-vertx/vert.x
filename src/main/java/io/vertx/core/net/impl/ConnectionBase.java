@@ -479,7 +479,7 @@ public abstract class ConnectionBase {
       java.net.SocketAddress addr = chctx.channel().localAddress();
       if (addr != null) {
         address = vertx.transport().convert(addr);
-        remoteAddress = address;
+        localAddress = address;
       }
     }
     return address;
