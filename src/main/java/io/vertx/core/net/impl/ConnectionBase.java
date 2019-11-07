@@ -470,7 +470,7 @@ public abstract class ConnectionBase {
         remoteAddress = address;
       }
     }
-    return remoteAddress;
+    return address;
   }
 
   public SocketAddress localAddress() {
@@ -482,7 +482,7 @@ public abstract class ConnectionBase {
         remoteAddress = address;
       }
     }
-    return remoteAddress;
+    return address;
   }
 
   public void handleMessage(Object msg) {
