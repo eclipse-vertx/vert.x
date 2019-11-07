@@ -62,6 +62,8 @@ public abstract class ConnectionBase {
   private Handler<Void> closeHandler;
   private int writeInProgress;
   private Object metric;
+  private SocketAddress remoteAddress;
+  private SocketAddress localAddress;
 
   // State accessed exclusively from the event loop thread
   private boolean read;
@@ -424,19 +426,27 @@ public abstract class ConnectionBase {
   }
 
   public SocketAddress remoteAddress() {
-    java.net.SocketAddress addr = chctx.channel().remoteAddress();
-    if (addr != null) {
-      return vertx.transport().convert(addr);
+    SocketAddress address = remoteAddress;
+    if (address == null) {
+      java.net.SocketAddress addr = chctx.channel().remoteAddress();
+      if (addr != null) {
+        address = vertx.transport().convert(addr);
+        remoteAddress = address;
+      }
     }
-    return null;
+    return address;
   }
 
   public SocketAddress localAddress() {
-    java.net.SocketAddress addr = chctx.channel().localAddress();
-    if (addr != null) {
-      return vertx.transport().convert(addr);
+    SocketAddress address = localAddress;
+    if (address == null) {
+      java.net.SocketAddress addr = chctx.channel().localAddress();
+      if (addr != null) {
+        address = vertx.transport().convert(addr);
+        localAddress = address;
+      }
     }
-    return null;
+    return address;
   }
 
   public void handleMessage(Object msg) {
