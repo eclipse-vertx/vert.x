@@ -1235,6 +1235,28 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testDeployChildOnParentUndeploy() throws Exception {
+    class ParentVerticle extends AbstractVerticle {
+      @Override
+      public void stop(Promise<Void> stopPromise) {
+        vertx.deployVerticle(ChildVerticle.class.getName())
+          .<Void>mapEmpty()
+          .setHandler(stopPromise);
+      }
+    }
+
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.deployVerticle(new ParentVerticle(), ar1 -> {
+      assertTrue(ar1.succeeded());
+      vertx.undeploy(ar1.result(), ar2 -> {
+        assertFalse(ar2.succeeded());
+        latch.countDown();
+      });
+    });
+    awaitLatch(latch);
+  }
+
+  @Test
   public void testUndeployAllFailureInUndeploy() throws Exception {
     int numVerticles = 10;
     List<MyVerticle> verticles = new ArrayList<>();
