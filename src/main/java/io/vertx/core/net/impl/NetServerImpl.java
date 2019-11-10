@@ -359,7 +359,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     promise.future().setHandler(completionHandler);
   }
 
-  private synchronized void close(Promise<Void> completionHandler) {
+  @Override
+  public synchronized void close(Promise<Void> completionHandler) {
     if (creatingContext != null) {
       creatingContext.removeCloseHook(this);
     }

@@ -51,11 +51,11 @@ public class VertxTest extends AsyncTestBase {
   }
 
   @Test
-  public void testCloseHookFailure1() throws Exception {
+  public void testCloseHookFailure1() {
     AtomicInteger closedCount = new AtomicInteger();
     class Hook implements Closeable {
       @Override
-      public void close(Handler<AsyncResult<Void>> completionHandler) {
+      public void close(Promise<Void> completionHandler) {
         if (closedCount.incrementAndGet() == 1) {
           throw new RuntimeException();
         } else {
@@ -80,7 +80,7 @@ public class VertxTest extends AsyncTestBase {
     AtomicInteger closedCount = new AtomicInteger();
     class Hook implements Closeable {
       @Override
-      public void close(Handler<AsyncResult<Void>> completionHandler) {
+      public void close(Promise<Void> completionHandler) {
         if (closedCount.incrementAndGet() == 1) {
           completionHandler.handle(Future.succeededFuture());
           throw new RuntimeException();

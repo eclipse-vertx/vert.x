@@ -971,11 +971,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
 
     // Called via Context close hook when Verticle is undeployed
-    public void close(Handler<AsyncResult<Void>> completionHandler) {
+    public void close(Promise<Void> completionHandler) {
       if (timeouts.remove(timerID) != null) {
         future.cancel(false);
       }
-      completionHandler.handle(Future.succeededFuture());
+      completionHandler.complete();
     }
   }
 

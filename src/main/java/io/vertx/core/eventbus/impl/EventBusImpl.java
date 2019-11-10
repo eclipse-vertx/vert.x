@@ -479,7 +479,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     }
 
     // Called by context on undeploy
-    public void close(Handler<AsyncResult<Void>> completionHandler) {
+    public void close(Promise<Void> completionHandler) {
       handler.unregister(completionHandler);
     }
 

@@ -25,5 +25,5 @@ public interface Closeable {
    *
    * @param completionHandler the handler to notify when close has completed
    */
-  void close(Handler<AsyncResult<Void>> completionHandler);
+  void close(Promise<Void> completionHandler);
 }
