@@ -142,38 +142,44 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public Future<HttpServer> listen() {
-    Promise<HttpServer> promise = Promise.promise();
-    listen(options.getPort(), options.getHost(), promise);
-    return promise.future();
+    return listen(options.getPort(), options.getHost());
   }
 
   @Override
   public HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler) {
-    return listen(options.getPort(), options.getHost(), listenHandler);
+    Future<HttpServer> fut = listen();
+    if (listenHandler != null) {
+      fut.setHandler(listenHandler);
+    }
+    return this;
   }
 
   @Override
   public Future<HttpServer> listen(int port, String host) {
-    Promise<HttpServer> promise = Promise.promise();
-    listen(port, host, promise);
-    return promise.future();
+    return listen(SocketAddress.inetSocketAddress(port, host));
   }
 
   @Override
   public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
-    return listen(SocketAddress.inetSocketAddress(port, host), listenHandler);
+    Future<HttpServer> fut = listen(port, host);
+    if (listenHandler != null) {
+      fut.setHandler(listenHandler);
+    }
+    return this;
   }
 
   @Override
   public Future<HttpServer> listen(int port) {
-    Promise<HttpServer> promise = Promise.promise();
-    listen(port, "0.0.0.0", promise);
-    return promise.future();
+    return listen(port, "0.0.0.0");
   }
 
   @Override
   public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
-    return listen(port, "0.0.0.0", listenHandler);
+    Future<HttpServer> fut = listen(port);
+    if (listenHandler != null) {
+      fut.setHandler(listenHandler);
+    }
+    return this;
   }
 
   private ChannelHandler childHandler(SocketAddress address, String serverOrigin) {
