@@ -23,6 +23,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -319,32 +320,36 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   @Override
   public Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
+    ContextInternal context = vertx.getOrCreateContext();
+    PromiseInternal<Void> promise = context.promise();
     close(promise);
     return promise.future();
   }
 
   @Override
-  public synchronized void close(Handler<AsyncResult<Void>> done) {
+  public void close(Handler<AsyncResult<Void>> done) {
+    ContextInternal context = vertx.getOrCreateContext();
+    PromiseInternal<Void> promise = context.promise();
+    close(promise);
+    if (done != null) {
+      promise.future().setHandler(done);
+    }
+  }
+
+  public synchronized void close(Promise<Void> done) {
     if (wsStream.endHandler() != null || requestStream.endHandler() != null) {
       Handler<Void> wsEndHandler = wsStream.endHandler();
       wsStream.endHandler(null);
       Handler<Void> requestEndHandler = requestStream.endHandler();
       requestStream.endHandler(null);
-      Handler<AsyncResult<Void>> next = done;
-      done = event -> {
-          if (event.succeeded()) {
-            if (wsEndHandler != null) {
-              wsEndHandler.handle(event.result());
-            }
-            if (requestEndHandler != null) {
-              requestEndHandler.handle(event.result());
-            }
-          }
-          if (next != null) {
-            next.handle(event);
-          }
-      };
+      done.future().setHandler(ar -> {
+        if (wsEndHandler != null) {
+          wsEndHandler.handle(null);
+        }
+        if (requestEndHandler != null) {
+          requestEndHandler.handle(null);
+        }
+      });
     }
 
     ContextInternal context = vertx.getOrCreateContext();

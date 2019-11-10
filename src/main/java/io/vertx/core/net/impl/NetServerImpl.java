@@ -27,6 +27,7 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -157,7 +158,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   public Future<Void> close() {
-    Promise<Void> promise = Promise.promise();
+    ContextInternal context = vertx.getOrCreateContext();
+    Promise<Void> promise = context.promise();
     close(promise);
     return promise.future();
   }
@@ -350,30 +352,24 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   @Override
-  public synchronized void close(Handler<AsyncResult<Void>> completionHandler) {
+  public void close(Handler<AsyncResult<Void>> completionHandler) {
+    ContextInternal context = vertx.getOrCreateContext();
+    Promise<Void> promise = context.promise();
+    close(promise);
+    promise.future().setHandler(completionHandler);
+  }
+
+  private synchronized void close(Promise<Void> completionHandler) {
     if (creatingContext != null) {
       creatingContext.removeCloseHook(this);
     }
-    Handler<AsyncResult<Void>> done;
+    Handler<Void> handler = endHandler;
     if (endHandler != null) {
-      Handler<Void> handler = endHandler;
       endHandler = null;
-      done = event -> {
-        if (event.succeeded()) {
-          handler.handle(event.result());
-        }
-        if (completionHandler != null) {
-          completionHandler.handle(event);
-        }
-      };
-    } else {
-      done = completionHandler;
+      completionHandler.future().setHandler(ar -> handler.handle(null));
     }
-    ContextInternal context = vertx.getOrCreateContext();
     if (!listening) {
-      if (done != null) {
-        executeCloseDone(context, done, null);
-      }
+      completionHandler.complete();
       return;
     }
     listening = false;
@@ -384,19 +380,15 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
-          if (done != null) {
-            executeCloseDone(context, done, null);
-          }
+          completionHandler.complete();
         } else {
           // No Handlers left so close the actual server
           // The done handler needs to be executed on the context that calls close, NOT the context
           // of the actual server
-          actualServer.actualClose(context, done);
+          actualServer.actualClose(completionHandler);
         }
       } else {
-        context.runOnContext(v -> {
-          done.handle(Future.succeededFuture());
-        });
+        completionHandler.complete();
       }
     }
   }
@@ -419,7 +411,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     return metrics;
   }
 
-  private void actualClose(ContextInternal closeContext, Handler<AsyncResult<Void>> done) {
+  private void actualClose(Promise<Void> done) {
     if (id != null) {
       vertx.sharedNetServers().remove(id);
     }
@@ -436,13 +428,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     }
 
     ChannelGroupFuture fut = serverChannelGroup.close();
-    fut.addListener(cg -> {
-      if (metrics != null) {
-        metrics.close();
-      }
-      executeCloseDone(closeContext, done, fut.cause());
-    });
-
+    if (metrics != null) {
+      fut.addListener(cg -> metrics.close());
+    }
+    fut.addListener((PromiseInternal<Void>)done);
   }
 
   private void connected(HandlerHolder<Handlers> handler, Channel ch) {
@@ -463,10 +452,10 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     ch.pipeline().addLast("handler", nh);
   }
 
-  private void executeCloseDone(ContextInternal closeContext, Handler<AsyncResult<Void>> done, Exception e) {
+  private void executeCloseDone(Promise<Void> done, Exception e) {
     if (done != null) {
       Future<Void> fut = e == null ? Future.succeededFuture() : Future.failedFuture(e);
-      closeContext.runOnContext(v -> done.handle(fut));
+      done.handle(fut);
     }
   }
 
