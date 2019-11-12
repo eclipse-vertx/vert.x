@@ -77,7 +77,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
   }
 
   @Override
-  public void close(Promise<Void> completionHandler) {
+  public void close(Promise<Void> completion) {
     synchronized (this) {
       if (!closed) {
         closed = true;
@@ -85,6 +85,6 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
         pool.release();
       }
     }
-    completionHandler.complete();
+    completion.complete();
   }
 }

@@ -360,17 +360,17 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   }
 
   @Override
-  public synchronized void close(Promise<Void> completionHandler) {
+  public synchronized void close(Promise<Void> completion) {
     if (creatingContext != null) {
       creatingContext.removeCloseHook(this);
     }
     Handler<Void> handler = endHandler;
     if (endHandler != null) {
       endHandler = null;
-      completionHandler.future().setHandler(ar -> handler.handle(null));
+      completion.future().setHandler(ar -> handler.handle(null));
     }
     if (!listening) {
-      completionHandler.complete();
+      completion.complete();
       return;
     }
     listening = false;
@@ -381,15 +381,15 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
 
         if (actualServer.handlerManager.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
-          completionHandler.complete();
+          completion.complete();
         } else {
           // No Handlers left so close the actual server
           // The done handler needs to be executed on the context that calls close, NOT the context
           // of the actual server
-          actualServer.actualClose(completionHandler);
+          actualServer.actualClose(completion);
         }
       } else {
-        completionHandler.complete();
+        completion.complete();
       }
     }
   }

@@ -336,13 +336,13 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
   }
 
-  public synchronized void close(Promise<Void> done) {
+  public synchronized void close(Promise<Void> completion) {
     if (wsStream.endHandler() != null || requestStream.endHandler() != null) {
       Handler<Void> wsEndHandler = wsStream.endHandler();
       wsStream.endHandler(null);
       Handler<Void> requestEndHandler = requestStream.endHandler();
       requestStream.endHandler(null);
-      done.future().setHandler(ar -> {
+      completion.future().setHandler(ar -> {
         if (wsEndHandler != null) {
           wsEndHandler.handle(null);
         }
@@ -354,7 +354,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
     ContextInternal context = vertx.getOrCreateContext();
     if (!listening) {
-      executeCloseDone(context, done, null);
+      executeCloseDone(context, completion, null);
       return;
     }
     listening = false;
@@ -374,17 +374,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
         if (actualServer.httpHandlerMgr.hasHandlers()) {
           // The actual server still has handlers so we don't actually close it
-          if (done != null) {
-            executeCloseDone(context, done, null);
+          if (completion != null) {
+            executeCloseDone(context, completion, null);
           }
         } else {
           // No Handlers left so close the actual server
           // The done handler needs to be executed on the context that calls close, NOT the context
           // of the actual server
-          actualServer.actualClose(context, done);
+          actualServer.actualClose(context, completion);
         }
       } else {
-        executeCloseDone(context, done, null);
+        executeCloseDone(context, completion, null);
       }
     }
     if (creatingContext != null) {

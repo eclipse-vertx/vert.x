@@ -21,9 +21,9 @@ package io.vertx.core;
 public interface Closeable {
 
   /**
-   * Close this resource, the {@code completionHandler} must be notified when the operation has completed.
+   * Close this resource, the {@code completion} promise must be notified when the operation has completed.
    *
-   * @param completionHandler the handler to notify when close has completed
+   * @param completion the promise to signal when close has completed
    */
-  void close(Promise<Void> completionHandler);
+  void close(Promise<Void> completion);
 }
