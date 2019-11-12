@@ -11,7 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.core.*;
 import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
@@ -21,6 +20,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URLClassLoader;
+import java.util.concurrent.Callable;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -263,8 +263,8 @@ public class VerticleFactoryTest extends VertxTestBase {
         });
       }
       @Override
-      public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
-        throw new AssertionError("Should not be called");
+      public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+        promise.fail(new AssertionError("Should not be called"));
       }
     }; ;
     vertx.registerVerticleFactory(fact);
@@ -439,55 +439,6 @@ public class VerticleFactoryTest extends VertxTestBase {
   }
 
   @Test
-  public void testNotBlockingCreate() {
-    TestVerticle verticle1 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
-    vertx.registerVerticleFactory(fact1);
-    String name1 = "aa:myverticle1";
-    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
-      assertTrue(ar.succeeded());
-      assertEquals(name1, fact1.identifier);
-      assertFalse(fact1.blockingCreate);
-      assertFalse(fact1.createWorkerThread);
-      testComplete();
-    });
-    await();
-  }
-
-  @Test
-  public void testBlockingCreate() {
-    TestVerticle verticle1 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
-    fact1.blockingCreate = true;
-    vertx.registerVerticleFactory(fact1);
-    String name1 = "aa:myverticle1";
-    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
-      assertTrue(ar.succeeded());
-      assertEquals(name1, fact1.identifier);
-      assertTrue(fact1.blockingCreate);
-      assertTrue(fact1.createWorkerThread);
-      assertTrue(fact1.createContext.isEventLoopContext());
-      testComplete();
-    });
-    await();
-  }
-
-  @Test
-  public void testBlockingCreateFailureInCreate() {
-    TestVerticle verticle1 = new TestVerticle();
-    TestVerticleFactory fact1 = new TestVerticleFactory("aa", verticle1);
-    fact1.blockingCreate = true;
-    fact1.failInCreate = true;
-    vertx.registerVerticleFactory(fact1);
-    String name1 = "aa:myverticle1";
-    vertx.deployVerticle(name1, new DeploymentOptions(), ar -> {
-      assertFalse(ar.succeeded());
-      testComplete();
-    });
-    await();
-  }
-
-  @Test
   public void testDeploymentOnClosedVertxWithCompletionHandler() {
     TestVerticle verticle = new TestVerticle();
     vertx.close(done -> {
@@ -526,7 +477,6 @@ public class VerticleFactoryTest extends VertxTestBase {
     boolean failInResolve;
     Context createContext;
     boolean createWorkerThread;
-    boolean blockingCreate;
 
     TestVerticleFactory(String prefix) {
       this.prefix = prefix;
@@ -610,24 +560,20 @@ public class VerticleFactoryTest extends VertxTestBase {
 
 
     @Override
-    public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
+    public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
       if (failInCreate) {
-        throw new ClassNotFoundException("whatever");
+        promise.fail(new ClassNotFoundException("whatever"));
+        return;
       }
       this.identifier = verticleName;
       this.createContext = Vertx.currentContext();
       this.createWorkerThread = Context.isOnWorkerThread();
-      return verticle;
+      promise.complete(() -> verticle);
     }
 
     @Override
     public void close() {
 
-    }
-
-    @Override
-    public boolean blockingCreate() {
-      return blockingCreate;
     }
   }
 

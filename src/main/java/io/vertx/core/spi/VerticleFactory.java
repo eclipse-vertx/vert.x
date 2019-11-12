@@ -13,9 +13,12 @@ package io.vertx.core.spi;
 
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
+
+import java.util.concurrent.Callable;
 
 /**
  *
@@ -63,15 +66,6 @@ public interface VerticleFactory {
   }
 
   /**
-   * If the {@link #createVerticle(String, ClassLoader)} method might be slow Vert.x will call it using a worker
-   * thread instead of an event loop if this returns true
-   * @return true if {@link #createVerticle(String, ClassLoader)} should be called on a worker thread.
-   */
-  default boolean blockingCreate() {
-    return false;
-  }
-
-  /**
    * Some verticle factories can "resolve" the identifer to another identifier which is then used to look up the real
    * verticle factory. An Example is the Vert.x service factory which takes an identifier of form `service:com.mycompany.clever-db-service"
    * then looks for a JSON file which it loads to get the real identifier (main verticle).
@@ -105,14 +99,12 @@ public interface VerticleFactory {
 
   /**
    * Create a verticle instance. If this method is likely to be slow (e.g. Ruby or JS verticles which might have to
-   * start up a language engine) then make sure it is run on a worker thread by returning `true` from
-   * {@link #blockingCreate()}.
+   * start up a language engine) then make sure it is run on a worker thread by {@link Vertx#executeBlocking}.
    *
    * @param verticleName  The verticle name
    * @param classLoader  The class loader
-   * @return  The instance
-   * @throws Exception
+   * @param promise the promise to complete with the result
    */
-  Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception;
+  void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise);
 
 }

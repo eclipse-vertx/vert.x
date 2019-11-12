@@ -11,9 +11,12 @@
 
 package io.vertx.core.impl;
 
+import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
 import io.vertx.core.impl.verticle.CompilingClassLoader;
 import io.vertx.core.spi.VerticleFactory;
+
+import java.util.concurrent.Callable;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -26,17 +29,22 @@ public class JavaVerticleFactory implements VerticleFactory {
   }
 
   @Override
-  public Verticle createVerticle(String verticleName, ClassLoader classLoader) throws Exception {
+  public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
     verticleName = VerticleFactory.removePrefix(verticleName);
-    Class clazz;
-    if (verticleName.endsWith(".java")) {
-      CompilingClassLoader compilingLoader = new CompilingClassLoader(classLoader, verticleName);
-      String className = compilingLoader.resolveMainClassName();
-      clazz = compilingLoader.loadClass(className);
-    } else {
-      clazz = classLoader.loadClass(verticleName);
+    Class<Verticle> clazz;
+    try {
+      if (verticleName.endsWith(".java")) {
+        CompilingClassLoader compilingLoader = new CompilingClassLoader(classLoader, verticleName);
+        String className = compilingLoader.resolveMainClassName();
+        clazz = (Class<Verticle>) compilingLoader.loadClass(className);
+      } else {
+        clazz = (Class<Verticle>) classLoader.loadClass(verticleName);
+      }
+    } catch (ClassNotFoundException e) {
+      promise.fail(e);
+      return;
     }
-    return (Verticle) clazz.newInstance();
+    promise.complete(clazz::newInstance);
   }
 
 }

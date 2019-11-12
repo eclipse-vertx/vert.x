@@ -18,39 +18,28 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.ServiceHelper;
 import io.vertx.core.Verticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
- *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class DeploymentManager {
@@ -59,28 +48,16 @@ public class DeploymentManager {
 
   private final VertxInternal vertx;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
-  private final Map<String, IsolatingClassLoader> classloaders = new HashMap<>();
-  private final Map<String, List<VerticleFactory>> verticleFactories = new ConcurrentHashMap<>();
-  private final List<VerticleFactory> defaultFactories = new ArrayList<>();
 
   public DeploymentManager(VertxInternal vertx) {
     this.vertx = vertx;
-    loadVerticleFactories();
-  }
-
-  private void loadVerticleFactories() {
-    Collection<VerticleFactory> factories = ServiceHelper.loadFactories(VerticleFactory.class);
-    factories.forEach(this::registerVerticleFactory);
-    VerticleFactory defaultFactory = new JavaVerticleFactory();
-    defaultFactory.init(vertx);
-    defaultFactories.add(defaultFactory);
   }
 
   private String generateDeploymentID() {
     return UUID.randomUUID().toString();
   }
 
-  public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
+  public Future<String> deployVerticle(Callable<Verticle> verticleSupplier, DeploymentOptions options) {
     if (options.getInstances() < 1) {
       throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
     }
@@ -94,127 +71,9 @@ public class DeploymentManager {
       throw new IllegalArgumentException("Can't specify isolatedClasses for already created verticle");
     }
     ContextInternal currentContext = vertx.getOrCreateContext();
-    ClassLoader cl = getClassLoader(options);
-    int nbInstances = options.getInstances();
-    Set<Verticle> verticles = Collections.newSetFromMap(new IdentityHashMap<>());
-    for (int i = 0; i < nbInstances; i++) {
-      Verticle verticle;
-      try {
-        verticle = verticleSupplier.get();
-      } catch (Exception e) {
-        return Future.failedFuture(e);
-      }
-      if (verticle == null) {
-        return Future.failedFuture("Supplied verticle is null");
-      }
-      verticles.add(verticle);
-    }
-    if (verticles.size() != nbInstances) {
-      return Future.failedFuture("Same verticle supplied more than once");
-    }
-    Verticle[] verticlesArray = verticles.toArray(new Verticle[verticles.size()]);
-    String verticleClass = verticlesArray[0].getClass().getName();
-    return doDeploy("java:" + verticleClass, options, currentContext, currentContext, cl, verticlesArray);
-  }
-
-  public Future<String> deployVerticle(String identifier,
-                             DeploymentOptions options) {
-    ContextInternal callingContext = vertx.getOrCreateContext();
-    ClassLoader cl = getClassLoader(options);
-
-
-
-    return doDeployVerticle(identifier, options, callingContext, callingContext, cl);
-  }
-
-  private Future<String> doDeployVerticle(String identifier,
-                                DeploymentOptions options,
-                                ContextInternal parentContext,
-                                ContextInternal callingContext,
-                                ClassLoader cl) {
-    List<VerticleFactory> verticleFactories = resolveFactories(identifier);
-    Iterator<VerticleFactory> iter = verticleFactories.iterator();
-    return doDeployVerticle(iter, null, identifier, options, parentContext, callingContext, cl);
-  }
-
-  private Future<String> doDeployVerticle(Iterator<VerticleFactory> iter,
-                                Throwable prevErr,
-                                String identifier,
-                                DeploymentOptions options,
-                                ContextInternal parentContext,
-                                ContextInternal callingContext,
-                                ClassLoader cl) {
-    if (iter.hasNext()) {
-      VerticleFactory verticleFactory = iter.next();
-      Promise<String> promise = callingContext.promise();
-      if (verticleFactory.requiresResolve()) {
-        try {
-          verticleFactory.resolve(identifier, options, cl, promise);
-        } catch (Exception e) {
-          try {
-            promise.fail(e);
-          } catch (Exception ignore) {
-            // Too late
-          }
-        }
-      } else {
-        promise.complete(identifier);
-      }
-      return promise
-        .future()
-        .compose(resolvedName -> {
-          if (!resolvedName.equals(identifier)) {
-            return deployVerticle(resolvedName, options);
-          } else {
-            if (verticleFactory.blockingCreate()) {
-              return vertx.<Verticle[]>executeBlocking(createFut -> {
-                try {
-                  Verticle[] verticles = createVerticles(verticleFactory, identifier, options.getInstances(), cl);
-                  createFut.complete(verticles);
-                } catch (Exception e) {
-                  createFut.fail(e);
-                }
-              }).compose(verticles -> doDeploy(identifier, options, parentContext, callingContext, cl, verticles));
-            } else {
-              try {
-                Verticle[] verticles = createVerticles(verticleFactory, identifier, options.getInstances(), cl);
-                return doDeploy(identifier, options, parentContext, callingContext, cl, verticles);
-              } catch (Exception e) {
-                return Future.failedFuture(e);
-              }
-            }
-          }
-        }).recover(err -> {
-        // Try the next one
-        return doDeployVerticle(iter, err, identifier, options, parentContext, callingContext, cl);
-      });
-    } else {
-      if (prevErr != null) {
-        // Report failure if there are no more factories to try otherwise try the next one
-        return callingContext.failedFuture(prevErr);
-      } else {
-        // not handled or impossible ?
-        throw new UnsupportedOperationException();
-      }
-    }
-  }
-
-  private Verticle[] createVerticles(VerticleFactory verticleFactory, String identifier, int instances, ClassLoader cl) throws Exception {
-    Verticle[] verticles = new Verticle[instances];
-    for (int i = 0; i < instances; i++) {
-      verticles[i] = verticleFactory.createVerticle(identifier, cl);
-      if (verticles[i] == null) {
-        throw new NullPointerException("VerticleFactory::createVerticle returned null");
-      }
-    }
-    return verticles;
-  }
-
-  private String getSuffix(int pos, String str) {
-    if (pos + 1 >= str.length()) {
-      throw new IllegalArgumentException("Invalid name: " + str);
-    }
-    return str.substring(pos + 1);
+    ClassLoader cl = getCurrentClassLoader();
+    return doDeploy(options, v -> "java:" + v.getClass().getName(), currentContext, currentContext, cl, verticleSupplier)
+      .map(Deployment::deploymentID);
   }
 
   public Future<Void> undeployVerticle(String deploymentID) {
@@ -266,139 +125,6 @@ public class DeploymentManager {
     }
   }
 
-  public void registerVerticleFactory(VerticleFactory factory) {
-    String prefix = factory.prefix();
-    if (prefix == null) {
-      throw new IllegalArgumentException("factory.prefix() cannot be null");
-    }
-    List<VerticleFactory> facts = verticleFactories.get(prefix);
-    if (facts == null) {
-      facts = new ArrayList<>();
-      verticleFactories.put(prefix, facts);
-    }
-    if (facts.contains(factory)) {
-      throw new IllegalArgumentException("Factory already registered");
-    }
-    facts.add(factory);
-    // Sort list in ascending order
-    facts.sort((fact1, fact2) -> fact1.order() - fact2.order());
-    factory.init(vertx);
-  }
-
-  public void unregisterVerticleFactory(VerticleFactory factory) {
-    String prefix = factory.prefix();
-    if (prefix == null) {
-      throw new IllegalArgumentException("factory.prefix() cannot be null");
-    }
-    List<VerticleFactory> facts = verticleFactories.get(prefix);
-    boolean removed = false;
-    if (facts != null) {
-      if (facts.remove(factory)) {
-        removed = true;
-      }
-      if (facts.isEmpty()) {
-        verticleFactories.remove(prefix);
-      }
-    }
-    if (!removed) {
-      throw new IllegalArgumentException("factory isn't registered");
-    }
-  }
-
-  public Set<VerticleFactory> verticleFactories() {
-    Set<VerticleFactory> facts = new HashSet<>();
-    for (List<VerticleFactory> list: verticleFactories.values()) {
-      facts.addAll(list);
-    }
-    return facts;
-  }
-
-  private List<VerticleFactory> resolveFactories(String identifier) {
-    /*
-      We resolve the verticle factory list to use as follows:
-      1. We look for a prefix in the identifier.
-      E.g. the identifier might be "js:app.js" <-- the prefix is "js"
-      If it exists we use that to lookup the verticle factory list
-      2. We look for a suffix (like a file extension),
-      E.g. the identifier might be just "app.js"
-      If it exists we use that to lookup the factory list
-      3. If there is no prefix or suffix OR there is no match then defaults will be used
-    */
-    List<VerticleFactory> factoryList = null;
-    int pos = identifier.indexOf(':');
-    String lookup = null;
-    if (pos != -1) {
-      // Infer factory from prefix, e.g. "java:" or "js:"
-      lookup = identifier.substring(0, pos);
-    } else {
-      // Try and infer name from extension
-      pos = identifier.lastIndexOf('.');
-      if (pos != -1) {
-        lookup = getSuffix(pos, identifier);
-      } else {
-        // No prefix, no extension - use defaults
-        factoryList = defaultFactories;
-      }
-    }
-    if (factoryList == null) {
-      factoryList = verticleFactories.get(lookup);
-      if (factoryList == null) {
-        factoryList = defaultFactories;
-      }
-    }
-    return factoryList;
-  }
-
-  /**
-   * <strong>IMPORTANT</strong> - Isolation groups are not supported on Java 9+ because the application classloader is not
-   * an URLClassLoader anymore. Thus we can't extract the list of jars to configure the IsolatedClassLoader.
-   *
-   */
-  private ClassLoader getClassLoader(DeploymentOptions options) {
-    String isolationGroup = options.getIsolationGroup();
-    ClassLoader cl;
-    if (isolationGroup == null) {
-      cl = getCurrentClassLoader();
-    } else {
-      // IMPORTANT - Isolation groups are not supported on Java 9+, because the system classloader is not an URLClassLoader
-      // anymore. Thus we can't extract the paths from the classpath and isolate the loading.
-      synchronized (this) {
-        IsolatingClassLoader icl = classloaders.get(isolationGroup);
-        if (icl == null) {
-          ClassLoader current = getCurrentClassLoader();
-          if (!(current instanceof URLClassLoader)) {
-            throw new IllegalStateException("Current classloader must be URLClassLoader");
-          }
-          List<URL> urls = new ArrayList<>();
-          // Add any extra URLs to the beginning of the classpath
-          List<String> extraClasspath = options.getExtraClasspath();
-          if (extraClasspath != null) {
-            for (String pathElement: extraClasspath) {
-              File file = new File(pathElement);
-              try {
-                URL url = file.toURI().toURL();
-                urls.add(url);
-              } catch (MalformedURLException e) {
-                throw new IllegalStateException(e);
-              }
-            }
-          }
-          // And add the URLs of the Vert.x classloader
-          URLClassLoader urlc = (URLClassLoader)current;
-          urls.addAll(Arrays.asList(urlc.getURLs()));
-
-          // Create an isolating cl with the urls
-          icl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader(),
-            options.getIsolatedClasses());
-          classloaders.put(isolationGroup, icl);
-        }
-        icl.refCount += options.getInstances();
-        cl = icl;
-      }
-    }
-    return cl;
-  }
-
   private ClassLoader getCurrentClassLoader() {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl == null) {
@@ -406,7 +132,6 @@ public class DeploymentManager {
     }
     return cl;
   }
-
 
   private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> completionHandler) {
     if (completionHandler != null) {
@@ -427,12 +152,38 @@ public class DeploymentManager {
     });
   }
 
-  private Future<String> doDeploy(String identifier,
+  Future<Deployment> doDeploy(DeploymentOptions options,
+                                  Function<Verticle, String> identifierProvider,
+                                  ContextInternal parentContext,
+                                  ContextInternal callingContext,
+                                  ClassLoader tccl, Callable<Verticle> verticleSupplier) {
+    int nbInstances = options.getInstances();
+    Set<Verticle> verticles = Collections.newSetFromMap(new IdentityHashMap<>());
+    for (int i = 0; i < nbInstances; i++) {
+      Verticle verticle;
+      try {
+        verticle = verticleSupplier.call();
+      } catch (Exception e) {
+        return Future.failedFuture(e);
+      }
+      if (verticle == null) {
+        return Future.failedFuture("Supplied verticle is null");
+      }
+      verticles.add(verticle);
+    }
+    if (verticles.size() != nbInstances) {
+      return Future.failedFuture("Same verticle supplied more than once");
+    }
+    Verticle[] verticlesArray = verticles.toArray(new Verticle[0]);
+    return doDeploy(identifierProvider.apply(verticlesArray[0]), options, parentContext, callingContext, tccl, verticlesArray);
+  }
+
+  private Future<Deployment> doDeploy(String identifier,
                         DeploymentOptions options,
                         ContextInternal parentContext,
                         ContextInternal callingContext,
                         ClassLoader tccl, Verticle... verticles) {
-    Promise<String> promise = callingContext.promise();
+    Promise<Deployment> promise = callingContext.promise();
     String poolName = options.getWorkerPoolName();
 
     Deployment parent = parentContext.getDeployment();
@@ -473,7 +224,7 @@ public class DeploymentManager {
               }
               deployments.put(deploymentID, deployment);
               if (deployCount.incrementAndGet() == verticles.length) {
-                promise.complete(deploymentID);
+                promise.complete(deployment);
               }
             } else if (failureReported.compareAndSet(false, true)) {
               deployment.rollback(callingContext, promise, context, ar.cause());
@@ -525,7 +276,7 @@ public class DeploymentManager {
       verticles.add(holder);
     }
 
-    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<String>> completionHandler, ContextImpl context, Throwable cause) {
+    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextImpl context, Throwable cause) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext).setHandler(childrenResult -> {
@@ -595,20 +346,6 @@ public class DeploymentManager {
                   // Log error but we report success anyway
                   log.error("Failed to run close hook", ar2.cause());
                 }
-                String group = options.getIsolationGroup();
-                if (group != null) {
-                  synchronized (DeploymentManager.this) {
-                    IsolatingClassLoader icl = classloaders.get(group);
-                    if (--icl.refCount == 0) {
-                      classloaders.remove(group);
-                      try {
-                        icl.close();
-                      } catch (IOException e) {
-                        log.debug("Issue when closing isolation group loader", e);
-                      }
-                    }
-                  }
-                }
                 if (ar.succeeded()) {
                   p.complete();
                 } else if (ar.failed()) {
@@ -659,6 +396,15 @@ public class DeploymentManager {
     @Override
     public void removeChild(Deployment deployment) {
       children.remove(deployment);
+    }
+
+    @Override
+    public Set<Context> getContexts() {
+      Set<Context> contexts = new HashSet<>();
+      for (VerticleHolder holder: verticles) {
+        contexts.add(holder.context);
+      }
+      return contexts;
     }
 
     @Override

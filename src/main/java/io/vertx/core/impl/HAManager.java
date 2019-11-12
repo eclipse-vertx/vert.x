@@ -102,6 +102,7 @@ public class HAManager {
 
   private final VertxInternal vertx;
   private final DeploymentManager deploymentManager;
+  private final VerticleManager verticleFactoryManager;
   private final ClusterManager clusterManager;
   private final int quorumSize;
   private final String group;
@@ -119,10 +120,11 @@ public class HAManager {
   private volatile boolean killed;
   private Consumer<Set<String>> clusterViewChangedHandler;
 
-  public HAManager(VertxInternal vertx, DeploymentManager deploymentManager, ClusterManager clusterManager,
+  public HAManager(VertxInternal vertx, DeploymentManager deploymentManager, VerticleManager verticleFactoryManager, ClusterManager clusterManager,
                    Map<String, String> clusterMap, int quorumSize, String group, boolean enabled) {
     this.vertx = vertx;
     this.deploymentManager = deploymentManager;
+    this.verticleFactoryManager = verticleFactoryManager;
     this.clusterManager = clusterManager;
     this.clusterMap = clusterMap;
     this.quorumSize = enabled ? quorumSize : 0;
@@ -282,7 +284,7 @@ public class HAManager {
         }
       });
     };
-    deploymentManager.deployVerticle(verticleName, deploymentOptions).setHandler(wrappedHandler);
+    verticleFactoryManager.deployVerticle(verticleName, deploymentOptions).map(Deployment::deploymentID).setHandler(wrappedHandler);
   }
 
   // A node has joined the cluster

@@ -108,6 +108,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
   private final DeploymentManager deploymentManager;
+  private final VerticleManager verticleManager;
   private final FileResolver fileResolver;
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
@@ -169,6 +170,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.deploymentManager = new DeploymentManager(this);
+    this.verticleManager = new VerticleManager(this, deploymentManager);
     this.tracer = initializeTracer(options);
     if (options.getEventBusOptions().isClustered()) {
       this.clusterManager = getClusterManager(options);
@@ -205,7 +207,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }, false, ar -> {
       if (ar.succeeded()) {
         Map<String, String> clusterMap = ar.result();
-        haManager = new HAManager(this, deploymentManager, clusterManager, clusterMap, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
+        haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterMap, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
         startEventBus(resultHandler);
       } else {
         log.error("Failed to start HAManager", ar.cause());
@@ -613,15 +615,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public Future<String> deployVerticle(Verticle verticle) {
-    Promise<String> promise = Promise.promise();
-    deployVerticle(verticle, new DeploymentOptions(), promise);
-    return promise.future();
-  }
-
-  @Override
-  public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticle(verticle, new DeploymentOptions(), completionHandler);
+  public Future<String> deployVerticle(String name) {
+    return deployVerticle(name, new DeploymentOptions());
   }
 
   @Override
@@ -630,86 +625,88 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public Future<String> deployVerticle(String name, DeploymentOptions options) {
+    if (options.isHa() && haManager() != null && haManager().isEnabled()) {
+      Promise<String> promise = getOrCreateContext().promise();
+      haManager().deployVerticle(name, options, promise);
+      return promise.future();
+    } else {
+      return verticleManager.deployVerticle(name, options).map(Deployment::deploymentID);
+    }
+  }
+
+  @Override
+  public void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+    Future<String> fut = deployVerticle(name, options);
+    if (completionHandler != null) {
+      fut.setHandler(completionHandler);
+    }
+  }
+
+  @Override
+  public Future<String> deployVerticle(Verticle verticle) {
+    return deployVerticle(verticle, new DeploymentOptions());
+  }
+
+  @Override
+  public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler) {
+    Future<String> fut = deployVerticle(verticle);
+    if (completionHandler != null) {
+      fut.setHandler(completionHandler);
+    }
+  }
+
+  @Override
   public Future<String> deployVerticle(Verticle verticle, DeploymentOptions options) {
-    Promise<String> promise = Promise.promise();
-    deployVerticle(verticle, options, promise);
-    return promise.future();
-  }
-
-  @Override
-  public Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
-    Promise<String> promise = Promise.promise();
-    deployVerticle(() -> {
-      try {
-        return verticleClass.newInstance();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }, options, promise);
-    return promise.future();
-  }
-
-  @Override
-  public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
-    Promise<String> promise = Promise.promise();
-    deployVerticle(verticleSupplier, options, promise);
-    return promise.future();
+    if (options.getInstances() != 1) {
+      throw new IllegalArgumentException("Can't specify > 1 instances for already created verticle");
+    }
+    return deployVerticle((Callable<Verticle>) () -> verticle, options);
   }
 
   @Override
   public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    if (options.getInstances() != 1) {
-      throw new IllegalArgumentException("Can't specify > 1 instances for already created verticle");
+    Future<String> fut = deployVerticle(verticle, options);
+    if (completionHandler != null) {
+      fut.setHandler(completionHandler);
     }
-    deployVerticle(() -> verticle, options, completionHandler);
+  }
+
+  @Override
+  public Future<String> deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options) {
+    return deployVerticle((Callable<Verticle>) verticleClass::newInstance, options);
   }
 
   @Override
   public void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticle(() -> {
-      try {
-        return verticleClass.newInstance();
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }, options, completionHandler);
+    Future<String> fut = deployVerticle(verticleClass, options);
+    if (completionHandler != null) {
+      fut.setHandler(completionHandler);
+    }
+  }
+
+  @Override
+  public Future<String> deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options) {
+    return deployVerticle((Callable<Verticle>) verticleSupplier::get, options);
   }
 
   @Override
   public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
+    Future<String> fut = deployVerticle(verticleSupplier, options);
+    if (completionHandler != null) {
+      fut.setHandler(completionHandler);
+    }
+  }
+
+  private Future<String> deployVerticle(Callable<Verticle> verticleSupplier, DeploymentOptions options) {
     boolean closed;
     synchronized (this) {
       closed = this.closed;
     }
     if (closed) {
-      if (completionHandler != null) {
-        completionHandler.handle(Future.failedFuture("Vert.x closed"));
-      }
+      return getOrCreateContext().failedFuture("Vert.x closed");
     } else {
-      deploymentManager.deployVerticle(verticleSupplier, options).setHandler(completionHandler);
-    }
-  }
-
-  @Override
-  public Future<String> deployVerticle(String name) {
-    Promise<String> promise = Promise.promise();
-    deployVerticle(name, new DeploymentOptions(), promise);
-    return promise.future();
-  }
-
-  @Override
-  public Future<String> deployVerticle(String name, DeploymentOptions options) {
-    Promise<String> promise = Promise.promise();
-    deployVerticle(name, options, promise);
-    return promise.future();
-  }
-
-  @Override
-  public void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
-    if (options.isHa() && haManager() != null && haManager().isEnabled()) {
-      haManager().deployVerticle(name, options, completionHandler);
-    } else {
-      deploymentManager.deployVerticle(name, options).setHandler(completionHandler);
+      return deploymentManager.deployVerticle(verticleSupplier, options);
     }
   }
 
@@ -747,17 +744,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public void registerVerticleFactory(VerticleFactory factory) {
-    deploymentManager.registerVerticleFactory(factory);
+    verticleManager.registerVerticleFactory(factory);
   }
 
   @Override
   public void unregisterVerticleFactory(VerticleFactory factory) {
-    deploymentManager.unregisterVerticleFactory(factory);
+    verticleManager.unregisterVerticleFactory(factory);
   }
 
   @Override
   public Set<VerticleFactory> verticleFactories() {
-    return deploymentManager.verticleFactories();
+    return verticleManager.verticleFactories();
   }
 
   @Override

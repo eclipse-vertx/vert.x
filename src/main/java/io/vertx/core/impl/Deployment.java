@@ -12,6 +12,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -48,6 +49,8 @@ public interface Deployment {
   String verticleIdentifier();
 
   DeploymentOptions deploymentOptions();
+
+  Set<Context> getContexts();
 
   Set<Verticle> getVerticles();
 
