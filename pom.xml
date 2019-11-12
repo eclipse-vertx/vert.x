@@ -49,6 +49,7 @@
     <slf4j.version>1.7.21</slf4j.version>
     <log4j2.version>2.8.2</log4j2.version>
     <junit.version>4.12</junit.version>
+    <jctools.version>2.1.2</jctools.version>
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
@@ -155,6 +156,14 @@
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
       <scope>provided</scope>
+    </dependency>
+
+    <!-- JCTools -->
+    <dependency>
+      <groupId>org.jctools</groupId>
+      <artifactId>jctools-core</artifactId>
+      <version>${jctools.version}</version>
+      <scope>compile</scope>
     </dependency>
 
     <!-- Generators -->
@@ -550,6 +559,32 @@
       </plugin>
 
       <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <artifactSet>
+                <includes>
+                  <include>org.jctools</include>
+                </includes>
+              </artifactSet>
+              <relocations>
+                <relocation>
+                  <pattern>org.jctools.</pattern>
+                  <shadedPattern>io.vertx.core.impl.shaded.org.jctools.</shadedPattern>
+                </relocation>
+              </relocations>
+              <minimizeJar>true</minimizeJar>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
           <execution>
@@ -614,6 +649,7 @@
                 <Import-Package>org.slf4j*;resolution:=optional,
                   org.apache.log4j;resolution:=optional,
                   org.apache.logging.log4*;resolution:=optional,
+                  !org.jctools.*,
                   *
                 </Import-Package>
               </instructions>
