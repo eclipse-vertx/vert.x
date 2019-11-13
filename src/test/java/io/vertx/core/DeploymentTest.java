@@ -1235,7 +1235,7 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testDeployChildOnParentUndeploy() throws Exception {
+  public void testDeployChildOnParentUndeploy() {
     class ParentVerticle extends AbstractVerticle {
       @Override
       public void stop(Promise<Void> stopPromise) {
@@ -1245,10 +1245,9 @@ public class DeploymentTest extends VertxTestBase {
       }
     }
 
-    CountDownLatch latch = new CountDownLatch(1);
     vertx.deployVerticle(new ParentVerticle(), onSuccess(id ->
-      vertx.undeploy(id, onFailure(u -> latch.countDown()))));
-    awaitLatch(latch);
+      vertx.undeploy(id, onFailure(u -> testComplete()))));
+    await();
   }
 
   @Test
