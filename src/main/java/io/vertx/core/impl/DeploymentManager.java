@@ -561,7 +561,7 @@ public class DeploymentManager {
                   deployment.child = true;
                 } else {
                   // Orphan
-                  deployment.undeploy(null);
+                  deployment.undeploy(event -> reportFailure(new NoStackTraceThrowable("Verticle deployment failed.Could not be added as child of parent verticle"), context, completionHandler));
                   return;
                 }
               }

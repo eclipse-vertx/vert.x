@@ -1302,6 +1302,20 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
+  public void testDeployChildOnParentUndeploy() {
+    class ParentVerticle extends AbstractVerticle {
+      @Override
+      public void stop(Promise<Void> stopPromise) {
+        vertx.deployVerticle(ChildVerticle.class.getName(), ar -> stopPromise.handle(ar.mapEmpty()));
+      }
+    }
+
+    vertx.deployVerticle(new ParentVerticle(), onSuccess(id ->
+      vertx.undeploy(id, onFailure(u -> testComplete()))));
+    await();
+  }
+
+  @Test
   public void testUndeployAllFailureInUndeploy() throws Exception {
     int numVerticles = 10;
     List<MyVerticle> verticles = new ArrayList<>();
