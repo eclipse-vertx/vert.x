@@ -1246,13 +1246,8 @@ public class DeploymentTest extends VertxTestBase {
     }
 
     CountDownLatch latch = new CountDownLatch(1);
-    vertx.deployVerticle(new ParentVerticle(), ar1 -> {
-      assertTrue(ar1.succeeded());
-      vertx.undeploy(ar1.result(), ar2 -> {
-        assertFalse(ar2.succeeded());
-        latch.countDown();
-      });
-    });
+    vertx.deployVerticle(new ParentVerticle(), onSuccess(id ->
+      vertx.undeploy(id, onFailure(u -> latch.countDown()))));
     awaitLatch(latch);
   }
 
