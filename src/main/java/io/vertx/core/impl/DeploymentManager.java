@@ -463,8 +463,7 @@ public class DeploymentManager {
                   deployment.child = true;
                 } else {
                   // Orphan
-                  deployment.undeploy(event -> {});
-                  promise.fail("Verticle deployment failed.Could not be added as child of parent verticle");
+                  deployment.undeploy(event -> promise.fail("Verticle deployment failed.Could not be added as child of parent verticle"));
                   return;
                 }
               }
