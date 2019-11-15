@@ -275,11 +275,7 @@ public class JacksonCodec implements JsonCodec {
         }
         generator.writeEndArray();
       } else if (json instanceof CharSequence) {
-        if (json instanceof String) {
-          generator.writeString((String) json);
-        } else {
-          generator.writeString(((CharSequence) json).toString());
-        }
+        generator.writeString(((CharSequence) json).toString());
       } else if (json instanceof Number) {
         if (json instanceof Short) {
           generator.writeNumber((Short) json);
