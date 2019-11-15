@@ -669,23 +669,21 @@ public class DeploymentTest extends VertxTestBase {
   }
 
   @Test
-  public void testSimpleChildDeployment() throws Exception {
-    Verticle verticle = new MyAsyncVerticle(f -> {
+  public void testSimpleChildDeployment() {
+    waitFor(3);
+    Consumer<Promise<Void>> start = f -> {
       Context parentContext = Vertx.currentContext();
       Verticle child1 = new MyAsyncVerticle(f2 -> {
         Context childContext = Vertx.currentContext();
         assertNotSame(parentContext, childContext);
-        f2.complete(null);
-        testComplete();
-      }, f2 -> f2.complete(null));
-      vertx.deployVerticle(child1, ar -> {
-        assertTrue(ar.succeeded());
-      });
-      f.complete(null);
-    }, f -> f.complete(null));
-    vertx.deployVerticle(verticle, ar -> {
-      assertTrue(ar.succeeded());
-    });
+        f2.complete();
+        complete();
+      }, Promise::complete);
+      vertx.deployVerticle(child1, onSuccess(id -> complete()));
+      f.complete();
+    };
+    Verticle verticle = new MyAsyncVerticle(start, Promise::complete);
+    vertx.deployVerticle(verticle, onSuccess(id -> complete()));
     await();
   }
 
