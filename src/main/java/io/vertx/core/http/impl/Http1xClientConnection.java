@@ -188,6 +188,55 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     return socket;
   }
 
+  private HttpRequest createRequest(
+    HttpMethod method,
+    String rawMethod,
+    String uri,
+    MultiMap headerMap,
+    String hostHeader,
+    boolean chunked) {
+    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpUtils.toNettyHttpMethod(method, rawMethod), uri, false);
+    HttpHeaders headers = request.headers();
+    if (headerMap != null) {
+      for (Map.Entry<String, String> header : headerMap) {
+        headers.add(header.getKey(), header.getValue());
+      }
+    }
+    if (!headers.contains(HOST)) {
+      request.headers().set(HOST, hostHeader);
+    } else {
+      headers.remove(TRANSFER_ENCODING);
+    }
+    if (chunked) {
+      HttpUtil.setTransferEncodingChunked(request, true);
+    }
+    if (options.isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
+      // if compression should be used but nothing is specified by the user support deflate and gzip.
+      request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
+    }
+    if (!options.isKeepAlive() && options.getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
+      request.headers().set(CONNECTION, CLOSE);
+    } else if (options.isKeepAlive() && options.getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
+      request.headers().set(CONNECTION, KEEP_ALIVE);
+    }
+    return request;
+  }
+
+  private void sendRequest(HttpRequest request, ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
+    if (end) {
+      if (buf != null) {
+        request = new AssembledFullHttpRequest(request, buf);
+      } else {
+        request = new AssembledFullHttpRequest(request);
+      }
+    } else {
+      if (buf != null) {
+        request = new AssembledHttpRequest(request, buf);
+      }
+    }
+    writeToChannel(request, handler == null ? null : context.promise(handler));
+  }
+
   private static class StreamImpl implements HttpClientStream {
 
     private final int id;
@@ -252,65 +301,18 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
     @Override
     public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<Void> contHandler, Handler<AsyncResult<Void>> handler) {
-      HttpRequest request = createRequest(method, rawMethod, uri, headers);
-      prepareRequestHeaders(request, hostHeader, chunked);
+      HttpRequest request = conn.createRequest(method, rawMethod, uri, headers, hostHeader, chunked);
+      conn.sendRequest(request, buf, end, handler);
       if (buf != null) {
         bytesWritten += buf.readableBytes();
       }
       continueHandler = contHandler;
-      sendRequest(request, buf, end, handler);
       if (conn.responseInProgress == null) {
         conn.responseInProgress = this;
       } else {
         conn.responseInProgress.append(this);
       }
       next = null;
-    }
-
-    private HttpRequest createRequest(HttpMethod method, String rawMethod, String uri, MultiMap headers) {
-      DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(conn.version), HttpUtils.toNettyHttpMethod(method, rawMethod), uri, false);
-      if (headers != null) {
-        for (Map.Entry<String, String> header : headers) {
-          // Todo : multi valued headers
-          request.headers().add(header.getKey(), header.getValue());
-        }
-      }
-      return request;
-    }
-
-    private void prepareRequestHeaders(HttpRequest request, String hostHeader, boolean chunked) {
-      HttpHeaders headers = request.headers();
-      headers.remove(TRANSFER_ENCODING);
-      if (!headers.contains(HOST)) {
-        request.headers().set(HOST, hostHeader);
-      }
-      if (chunked) {
-        HttpUtil.setTransferEncodingChunked(request, true);
-      }
-      if (conn.options.isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
-        // if compression should be used but nothing is specified by the user support deflate and gzip.
-        request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
-      }
-      if (!conn.options.isKeepAlive() && conn.options.getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
-        request.headers().set(CONNECTION, CLOSE);
-      } else if (conn.options.isKeepAlive() && conn.options.getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_0) {
-        request.headers().set(CONNECTION, KEEP_ALIVE);
-      }
-    }
-
-    private void sendRequest(HttpRequest request, ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
-      if (end) {
-        if (buf != null) {
-          request = new AssembledFullHttpRequest(request, buf);
-        } else {
-          request = new AssembledFullHttpRequest(request);
-        }
-      } else {
-        if (buf != null) {
-          request = new AssembledHttpRequest(request, buf);
-        }
-      }
-      conn.writeToChannel(request, handler == null ? null : context.promise(handler));
     }
 
     private boolean handleChunk(Buffer buff) {
