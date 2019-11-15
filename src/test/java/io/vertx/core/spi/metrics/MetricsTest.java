@@ -108,8 +108,7 @@ public class MetricsTest extends VertxTestBase {
     AtomicInteger receiveCount = new AtomicInteger();
     for (Vertx vertx : to) {
       MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1);
-      consumer.completionHandler(done -> {
-        assertTrue(done.succeeded());
+      consumer.completionHandler(onSuccess(v -> {
         if (broadcastCount.incrementAndGet() == to.length) {
           String msg = TestUtils.randomAlphaString(10);
           if (publish) {
@@ -118,14 +117,15 @@ public class MetricsTest extends VertxTestBase {
             from.eventBus().send(ADDRESS1, msg);
           }
         }
-      });
+      }));
       consumer.handler(msg -> {
         if (receiveCount.incrementAndGet() == to.length) {
-          assertEquals(Arrays.asList(new SentMessage(ADDRESS1, publish, expectedLocal, expectedRemote)), eventBusMetrics.getSentMessages());
           testComplete();
         }
       });
     }
+    waitUntil(() -> eventBusMetrics.getSentMessages().size() == 1);
+    assertEquals(Arrays.asList(new SentMessage(ADDRESS1, publish, expectedLocal, expectedRemote)), eventBusMetrics.getSentMessages());
     await();
   }
 
