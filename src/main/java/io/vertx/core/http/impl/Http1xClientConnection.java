@@ -296,18 +296,20 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
     @Override
     public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<Void> contHandler, Handler<AsyncResult<Void>> handler) {
+      synchronized (conn) {
+        if (buf != null) {
+          bytesWritten += buf.readableBytes();
+        }
+        continueHandler = contHandler;
+        if (conn.responseInProgress == null) {
+          conn.responseInProgress = this;
+        } else {
+          conn.responseInProgress.append(this);
+        }
+        next = null;
+      }
       HttpRequest request = conn.createRequest(method, rawMethod, uri, headers, hostHeader, chunked);
       conn.sendRequest(request, buf, end, handler);
-      if (buf != null) {
-        bytesWritten += buf.readableBytes();
-      }
-      continueHandler = contHandler;
-      if (conn.responseInProgress == null) {
-        conn.responseInProgress = this;
-      } else {
-        conn.responseInProgress.append(this);
-      }
-      next = null;
     }
 
     private boolean handleChunk(Buffer buff) {
