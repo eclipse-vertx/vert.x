@@ -19,17 +19,18 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 
+import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * A representation of a <a href="http://json.org/">JSON</a> array in Java.
- * <p>
+ *
  * Unlike some other languages Java does not have a native understanding of JSON. To enable JSON to be used easily
  * in Vert.x code we use this class to encapsulate the notion of a JSON array.
  *
  * The implementation adheres to the <a href="http://rfc-editor.org/rfc/rfc7493.txt">RFC-7493</a> to support Temporal
  * data types as well as binary data.
- * <p>
+ *
  * Please see the documentation for more information.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -78,7 +79,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Create an instance from a Buffer of JSON.
    *
-   * @param buf  the buffer of JSON.
+   * @param buf the buffer of JSON.
    */
   public JsonArray(Buffer buf) {
     if (buf == null) {
@@ -93,28 +94,43 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Get the String at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the String, or null if a null value present
+   * @param pos the position in the array
+   * @return the String, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to String
    */
   public String getString(int pos) {
-    CharSequence cs = (CharSequence)list.get(pos);
-    return cs == null ? null : cs.toString();
+    Object val = list.get(pos);
+
+    if (val == null) {
+      return null;
+    }
+
+    if (val instanceof CharSequence) {
+      return val.toString();
+    } else if (val instanceof Instant) {
+      return ISO_INSTANT.format((Instant) val);
+    } else if (val instanceof byte[]) {
+      return BASE64_ENCODER.encodeToString((byte[]) val);
+    } else if (val instanceof Enum) {
+      return ((Enum) val).name();
+    }
+
+    throw new ClassCastException("class " + val.getClass().getName() + " cannot be cast to class java.lang.String");
   }
 
   /**
    * Get the Integer at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Integer, or null if a null value present
+   * @param pos the position in the array
+   * @return the Integer, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Integer
    */
   public Integer getInteger(int pos) {
-    Number number = (Number)list.get(pos);
+    Number number = (Number) list.get(pos);
     if (number == null) {
       return null;
     } else if (number instanceof Integer) {
-      return (Integer)number; // Avoids unnecessary unbox/box
+      return (Integer) number; // Avoids unnecessary unbox/box
     } else {
       return number.intValue();
     }
@@ -123,16 +139,16 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Get the Long at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Long, or null if a null value present
+   * @param pos the position in the array
+   * @return the Long, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Long
    */
   public Long getLong(int pos) {
-    Number number = (Number)list.get(pos);
+    Number number = (Number) list.get(pos);
     if (number == null) {
       return null;
     } else if (number instanceof Long) {
-      return (Long)number; // Avoids unnecessary unbox/box
+      return (Long) number; // Avoids unnecessary unbox/box
     } else {
       return number.longValue();
     }
@@ -141,16 +157,16 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Get the Double at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Double, or null if a null value present
+   * @param pos the position in the array
+   * @return the Double, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Double
    */
   public Double getDouble(int pos) {
-    Number number = (Number)list.get(pos);
+    Number number = (Number) list.get(pos);
     if (number == null) {
       return null;
     } else if (number instanceof Double) {
-      return (Double)number; // Avoids unnecessary unbox/box
+      return (Double) number; // Avoids unnecessary unbox/box
     } else {
       return number.doubleValue();
     }
@@ -159,16 +175,16 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Get the Float at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Float, or null if a null value present
+   * @param pos the position in the array
+   * @return the Float, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Float
    */
   public Float getFloat(int pos) {
-    Number number = (Number)list.get(pos);
+    Number number = (Number) list.get(pos);
     if (number == null) {
       return null;
     } else if (number instanceof Float) {
-      return (Float)number; // Avoids unnecessary unbox/box
+      return (Float) number; // Avoids unnecessary unbox/box
     } else {
       return number.floatValue();
     }
@@ -177,109 +193,120 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Get the Boolean at position {@code pos} in the array,
    *
-   * @param pos  the position in the array
-   * @return  the Boolean, or null if a null value present
+   * @param pos the position in the array
+   * @return the Boolean, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Integer
    */
   public Boolean getBoolean(int pos) {
-    return (Boolean)list.get(pos);
+    return (Boolean) list.get(pos);
   }
 
   /**
    * Get the JsonObject at position {@code pos} in the array.
    *
-   * @param pos  the position in the array
-   * @return  the JsonObject, or null if a null value present
+   * @param pos the position in the array
+   * @return the JsonObject, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to JsonObject
    */
   public JsonObject getJsonObject(int pos) {
     Object val = list.get(pos);
     if (val instanceof Map) {
-      val = new JsonObject((Map)val);
+      val = new JsonObject((Map) val);
     }
-    return (JsonObject)val;
+    return (JsonObject) val;
   }
 
   /**
    * Get the JsonArray at position {@code pos} in the array.
    *
-   * @param pos  the position in the array
-   * @return  the Integer, or null if a null value present
+   * @param pos the position in the array
+   * @return the Integer, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to JsonArray
    */
   public JsonArray getJsonArray(int pos) {
     Object val = list.get(pos);
     if (val instanceof List) {
-      val = new JsonArray((List)val);
+      val = new JsonArray((List) val);
     }
-    return (JsonArray)val;
+    return (JsonArray) val;
   }
 
   /**
    * Get the byte[] at position {@code pos} in the array.
-   * <p>
+   *
    * JSON itself has no notion of a binary, so this method assumes there is a String value and
    * it contains a Base64 encoded binary, which it decodes if found and returns.
-   * <p>
-   * This method should be used in conjunction with {@link #add(byte[])}
    *
-   * @param pos  the position in the array
-   * @return  the byte[], or null if a null value present
-   * @throws java.lang.ClassCastException if the value cannot be converted to String
+   * @param pos the position in the array
+   * @return the byte[], or null if a null value present
+   * @throws java.lang.ClassCastException       if the value cannot be converted to String
    * @throws java.lang.IllegalArgumentException if the String value is not a legal Base64 encoded value
    */
   public byte[] getBinary(int pos) {
-    String val = (String)list.get(pos);
+    Object val = list.get(pos);
+    // no-op
     if (val == null) {
       return null;
-    } else {
-      return Base64.getDecoder().decode(val);
     }
+    // no-op if value is already an byte[]
+    if (val instanceof byte[]) {
+      return (byte[]) val;
+    }
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return BASE64_DECODER.decode(encoded);
   }
 
   /**
    * Get the Instant at position {@code pos} in the array.
-   * <p>
+   *
    * JSON itself has no notion of a temporal types, this extension complies to the RFC-7493, so this method assumes
    * there is a String value and it contains an ISO 8601 encoded date and time format such as "2017-04-03T10:25:41Z",
    * which it decodes if found and returns.
-   * <p>
-   * This method should be used in conjunction with {@link #add(Instant)}
    *
-   * @param pos  the position in the array
-   * @return  the Instant, or null if a null value present
-   * @throws java.lang.ClassCastException if the value cannot be converted to String
+   * @param pos the position in the array
+   * @return the Instant, or null if a null value present
+   * @throws java.lang.ClassCastException            if the value cannot be converted to String
    * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
    */
   public Instant getInstant(int pos) {
-    String val = (String)list.get(pos);
+    Object val = list.get(pos);
+    // no-op
     if (val == null) {
       return null;
-    } else {
-      return Instant.from(ISO_INSTANT.parse(val));
     }
+    // no-op if value is already an Instant
+    if (val instanceof Instant) {
+      return (Instant) val;
+    }
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return Instant.from(ISO_INSTANT.parse(encoded));
   }
 
   /**
-   * Get the Object value at position {@code pos} in the array.
+   * Get the value with the specified key, as an Object with types respecting the limitations of JSON.
+   * <ul>
+   *   <li>{@code Map} will be wrapped to {@code JsonObject}</li>
+   *   <li>{@code List} will be wrapped to {@code JsonArray}</li>
+   *   <li>{@code Instant} will be converted to {@code String}</li>
+   *   <li>{@code byte[]} will be converted to {@code String}</li>
+   *   <li>{@code Enum} will be converted to {@code String}</li>
+   * </ul>
    *
-   * @param pos  the position in the array
-   * @return  the Integer, or null if a null value present
+   * @param pos the position in the array
+   * @return the Integer, or null if a null value present
    */
   public Object getValue(int pos) {
-    Object val = list.get(pos);
-    if (val instanceof Map) {
-      val = new JsonObject((Map)val);
-    } else if (val instanceof List) {
-      val = new JsonArray((List)val);
-    }
-    return val;
+    return wrapJsonValue(list.get(pos));
   }
 
   /**
    * Is there a null value at position pos?
    *
-   * @param pos  the position in the array
+   * @param pos the position in the array
    * @return true if null value present, false otherwise
    */
   public boolean hasNull(int pos) {
@@ -287,100 +314,9 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
-   * Add an enum to the JSON array.
-   * <p>
-   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name()}
-   * method and the value added as a String.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(Enum value) {
-    list.add(value != null ? value.name() : null);
-    return this;
-  }
-
-  /**
-   * Add a CharSequence to the JSON array.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(CharSequence value) {
-    list.add(value != null ? value.toString() : null);
-    return this;
-  }
-
-  /**
-   * Add a String to the JSON array.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(String value) {
-    list.add(value);
-    return this;
-  }
-
-  /**
-   * Add an Integer to the JSON array.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(Integer value) {
-    list.add(value);
-    return this;
-  }
-
-  /**
-   * Add a Long to the JSON array.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(Long value) {
-    list.add(value);
-    return this;
-  }
-
-  /**
-   * Add a Double to the JSON array.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(Double value) {
-    list.add(value);
-    return this;
-  }
-
-  /**
-   * Add a Float to the JSON array.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(Float value) {
-    list.add(value);
-    return this;
-  }
-
-  /**
-   * Add a Boolean to the JSON array.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(Boolean value) {
-    list.add(value);
-    return this;
-  }
-
-  /**
    * Add a null value to the JSON array.
    *
-   * @return  a reference to this, so the API can be used fluently
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray addNull() {
     list.add(null);
@@ -388,62 +324,25 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
-   * Add a JSON object to the JSON array.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(JsonObject value) {
-    list.add(value);
-    return this;
-  }
-
-  /**
-   * Add another JSON array to the JSON array.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(JsonArray value) {
-    list.add(value);
-    return this;
-  }
-
-  /**
-   * Add a binary value to the JSON array.
-   * <p>
-   * JSON has no notion of binary so the binary will be base64 encoded to a String, and the String added.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(byte[] value) {
-    list.add(value != null ? Base64.getEncoder().encodeToString(value) : null);
-    return this;
-  }
-
-  /**
-   * Add a Instant value to the JSON array.
-   * <p>
-   * JSON has no notion of Temporal data so the Instant will be ISOString encoded, and the String added.
-   *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
-   */
-  public JsonArray add(Instant value) {
-    list.add(value != null ? ISO_INSTANT.format(value) : null);
-    return this;
-  }
-
-  /**
    * Add an Object to the JSON array.
    *
-   * @param value  the value
-   * @return  a reference to this, so the API can be used fluently
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray add(Object value) {
-    value = JsonObject.checkAndCopy(value, false);
     list.add(value);
+    return this;
+  }
+
+  /**
+   * Add an Object to the JSON array at given position {@code pos}.
+   *
+   * @param pos the position
+   * @param value the value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public JsonArray add(int pos, Object value) {
+    list.add(pos, value);
     return this;
   }
 
@@ -451,117 +350,10 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * Appends all of the elements in the specified array to the end of this JSON array.
    *
    * @param array the array
-   * @return  a reference to this, so the API can be used fluently
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray addAll(JsonArray array) {
     list.addAll(array.list);
-    return this;
-  }
-
-  /**
-   * Set an enum to the JSON array at position {@code pos}.
-   * <p>
-   * JSON has no concept of encoding Enums, so the Enum will be converted to a String using the {@link java.lang.Enum#name()}
-   * method and the value added as a String.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, Enum value) {
-    list.set(pos, value != null ? value.name() : null);
-    return this;
-  }
-
-  /**
-   * Set a CharSequence to the JSON array at position {@code pos}.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, CharSequence value) {
-    list.set(pos, value != null ? value.toString() : null);
-    return this;
-  }
-
-  /**
-   * Set a String to the JSON array at position {@code pos}.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, String value) {
-    list.set(pos, value);
-    return this;
-  }
-
-  /**
-   * Set an Integer to the JSON array at position {@code pos}.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, Integer value) {
-    list.set(pos, value);
-    return this;
-  }
-
-  /**
-   * Set a Long to the JSON array at position {@code pos}.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, Long value) {
-    list.set(pos, value);
-    return this;
-  }
-
-  /**
-   * Set a Double to the JSON array at position {@code pos}.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, Double value) {
-    list.set(pos, value);
-    return this;
-  }
-
-  /**
-   * Set a Float to the JSON array at position {@code pos}.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, Float value) {
-    list.set(pos, value);
-    return this;
-  }
-
-  /**
-   * Set a Boolean to the JSON array at position {@code pos}.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, Boolean value) {
-    list.set(pos, value);
     return this;
   }
 
@@ -576,71 +368,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
-   * Set a JSON object to the JSON array at position {@code pos}.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, JsonObject value) {
-    list.set(pos, value);
-    return this;
-  }
-
-  /**
-   * Set another JSON array to the JSON array at position {@code pos}.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, JsonArray value) {
-    list.set(pos, value);
-    return this;
-  }
-
-  /**
-   * Set a binary value to the JSON array at position {@code pos}.
-   * <p>
-   * JSON has no notion of binary so the binary will be base64 encoded to a String, and the String added.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, byte[] value) {
-    list.set(pos, value != null ? Base64.getEncoder().encodeToString(value) : null);
-    return this;
-  }
-
-  /**
-   * Set a Instant value to the JSON array at position {@code pos}.
-   * <p>
-   * JSON has no notion of Temporal data so the Instant will be ISOString encoded, and the String added.
-   *
-   * @param pos position in the array
-   * @param value the value
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JsonArray set(int pos, Instant value) {
-    list.set(pos, value != null ? ISO_INSTANT.format(value) : null);
-    return this;
-  }
-
-  /**
    * Set an Object to the JSON array at position {@code pos}.
    *
-   * @param pos position in the array
+   * @param pos   position in the array
    * @param value the value
-   *
    * @return a reference to this, so the API can be used fluently
    */
   public JsonArray set(int pos, Object value) {
-    value = JsonObject.checkAndCopy(value, false);
     list.set(pos, value);
     return this;
   }
@@ -649,8 +383,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * Does the JSON array contain the specified value? This method will scan the entire array until it finds a value
    * or reaches the end.
    *
-   * @param value  the value
-   * @return  true if it contains the value, false if not
+   * @param value the value
+   * @return true if it contains the value, false if not
    */
   public boolean contains(Object value) {
     return list.contains(value);
@@ -660,7 +394,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * Remove the specified value from the JSON array. This method will scan the entire array until it finds a value
    * or reaches the end.
    *
-   * @param value  the value to remove
+   * @param value the value to remove
    * @return true if it removed it, false if not found
    */
   public boolean remove(Object value) {
@@ -670,18 +404,12 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Remove the value at the specified position in the JSON array.
    *
-   * @param pos  the position to remove the value at
+   * @param pos the position to remove the value at
    * @return the removed value if removed, null otherwise. If the value is a Map, a {@link JsonObject} is built from
    * this Map and returned. It the value is a List, a {@link JsonArray} is built form this List and returned.
    */
   public Object remove(int pos) {
-    Object removed = list.remove(pos);
-    if (removed instanceof Map) {
-      return new JsonObject((Map) removed);
-    } else if (removed instanceof ArrayList) {
-      return new JsonArray((List) removed);
-    }
-    return removed;
+    return wrapJsonValue(list.remove(pos));
   }
 
   /**
@@ -705,7 +433,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Get the unerlying List
    *
-   * @return  the underlying List
+   * @return the underlying List
    */
   public List getList() {
     return list;
@@ -714,7 +442,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   /**
    * Remove all entries from the JSON array
    *
-   * @return  a reference to this, so the API can be used fluently
+   * @return a reference to this, so the API can be used fluently
    */
   public JsonArray clear() {
     list.clear();
@@ -766,9 +494,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   @Override
   public JsonArray copy() {
     List<Object> copiedList = new ArrayList<>(list.size());
-    for (Object val: list) {
-      val = JsonObject.checkAndCopy(val, true);
-      copiedList.add(val);
+    for (Object val : list) {
+      copiedList.add(checkAndCopy(val));
     }
     return new JsonArray(copiedList);
   }
@@ -789,32 +516,64 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
 
   @Override
   public boolean equals(Object o) {
+    // null check
+    if (o == null)
+      return false;
+    // self check
     if (this == o)
       return true;
-    if (o == null || getClass() != o.getClass())
+    // type check and cast
+    if (getClass() != o.getClass())
       return false;
-    return arrayEquals(list, o);
-  }
 
-  static boolean arrayEquals(List<?> l1, Object o2) {
-    List<?> l2;
-    if (o2 instanceof JsonArray) {
-      l2 = ((JsonArray) o2).list;
-    } else if (o2 instanceof List<?>) {
-      l2 = (List<?>) o2;
-    } else {
+    JsonArray other = (JsonArray) o;
+    // size check
+    if (this.size() != other.size())
       return false;
-    }
-    if (l1.size() != l2.size()) {
-      return false;
-    }
-    Iterator<?> iter = l2.iterator();
-    for (Object entry : l1) {
-      Object other = iter.next();
-      if (entry == null ? other != null : !JsonObject.equals(entry, other)) {
+    // value comparison
+    for (int i = 0; i < this.size(); i++) {
+      Object thisValue = this.getValue(i);
+      Object otherValue = other.getValue(i);
+      // identity check
+      if (thisValue == otherValue) {
+        continue;
+      }
+      // special case for numbers
+      if (thisValue instanceof Number && otherValue instanceof Number && thisValue.getClass() != otherValue.getClass()) {
+        Number n1 = (Number) thisValue;
+        Number n2 = (Number) otherValue;
+        // floating point values
+        if (thisValue instanceof Float || thisValue instanceof Double || otherValue instanceof Float || otherValue instanceof Double) {
+          // compare as floating point double
+          if (n1.doubleValue() == n2.doubleValue()) {
+            // same value check the next entry
+            continue;
+          }
+        }
+        if (thisValue instanceof Integer || thisValue instanceof Long || otherValue instanceof Integer || otherValue instanceof Long) {
+          // compare as integer long
+          if (n1.longValue() == n2.longValue()) {
+            // same value check the next entry
+            continue;
+          }
+        }
+      }
+      // special case for char sequences
+      if (thisValue instanceof CharSequence && otherValue instanceof CharSequence && thisValue.getClass() != otherValue.getClass()) {
+        CharSequence s1 = (CharSequence) thisValue;
+        CharSequence s2 = (CharSequence) otherValue;
+
+        if (Objects.equals(s1.toString(), s2.toString())) {
+          // same value check the next entry
+          continue;
+        }
+      }
+      // fallback to standard object equals checks
+      if (!Objects.equals(thisValue, otherValue)) {
         return false;
       }
     }
+    // all checks passed
     return true;
   }
 
@@ -848,7 +607,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     list = Json.CODEC.fromBuffer(buf, List.class);
   }
 
-  private class Iter implements Iterator<Object> {
+  private static class Iter implements Iterator<Object> {
 
     final Iterator<Object> listIter;
 
@@ -863,13 +622,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
 
     @Override
     public Object next() {
-      Object val = listIter.next();
-      if (val instanceof Map) {
-        val = new JsonObject((Map)val);
-      } else if (val instanceof List) {
-        val = new JsonArray((List)val);
-      }
-      return val;
+      return wrapJsonValue(listIter.next());
     }
 
     @Override
@@ -877,6 +630,4 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       listIter.remove();
     }
   }
-
-
 }

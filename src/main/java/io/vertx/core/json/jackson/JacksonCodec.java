@@ -37,11 +37,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -274,8 +274,12 @@ public class JacksonCodec implements JsonCodec {
           encodeJson(item, generator);
         }
         generator.writeEndArray();
-      } else if (json instanceof String) {
-        generator.writeString((String)json);
+      } else if (json instanceof CharSequence) {
+        if (json instanceof String) {
+          generator.writeString((String) json);
+        } else {
+          generator.writeString(((CharSequence) json).toString());
+        }
       } else if (json instanceof Number) {
         if (json instanceof Short) {
           generator.writeNumber((Short) json);
@@ -295,7 +299,7 @@ public class JacksonCodec implements JsonCodec {
       } else if (json instanceof Instant) {
         generator.writeString((ISO_INSTANT.format((Instant)json)));
       } else if (json instanceof byte[]) {
-        generator.writeString(Base64.getEncoder().encodeToString((byte[]) json));
+        generator.writeString(BASE64_ENCODER.encodeToString((byte[]) json));
       } else if (json == null) {
         generator.writeNull();
       } else {

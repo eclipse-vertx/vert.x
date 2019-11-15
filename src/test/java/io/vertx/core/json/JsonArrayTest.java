@@ -21,6 +21,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
+import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.*;
 
@@ -233,8 +235,8 @@ public class JsonArrayTest {
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonArray.add(bytes);
     assertArrayEquals(bytes, jsonArray.getBinary(0));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(0));
-    assertArrayEquals(bytes, Base64.getDecoder().decode(jsonArray.getString(0)));
+    assertEquals(BASE64_ENCODER.encodeToString(bytes), jsonArray.getValue(0));
+    assertArrayEquals(bytes, BASE64_DECODER.decode(jsonArray.getString(0)));
     try {
       jsonArray.getBinary(-1);
       fail();
@@ -381,7 +383,7 @@ public class JsonArrayTest {
     assertEquals(arr, jsonArray.getValue(8));
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonArray.add(bytes);
-    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(9));
+    assertEquals(BASE64_ENCODER.encodeToString(bytes), jsonArray.getValue(9));
     Instant now = Instant.now();
     jsonArray.add(now);
     assertEquals(now, jsonArray.getInstant(10));
@@ -519,7 +521,7 @@ public class JsonArrayTest {
     byte[] bytes = TestUtils.randomByteArray(10);
     assertSame(jsonArray, jsonArray.add(bytes));
     assertArrayEquals(bytes, jsonArray.getBinary(0));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(0));
+    assertEquals(BASE64_ENCODER.encodeToString(bytes), jsonArray.getValue(0));
     jsonArray.add((byte[])null);
     assertNull(jsonArray.getValue(1));
     assertEquals(2, jsonArray.size());
@@ -559,28 +561,28 @@ public class JsonArrayTest {
     assertEquals(Double.valueOf(1.23d), jsonArray.getDouble(4));
     assertEquals(true, jsonArray.getBoolean(5));
     assertArrayEquals(bytes, jsonArray.getBinary(6));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(6));
+    assertEquals(BASE64_ENCODER.encodeToString(bytes), jsonArray.getValue(6));
     assertEquals(now, jsonArray.getInstant(7));
     assertEquals(now.toString(), jsonArray.getValue(7));
     assertEquals(obj, jsonArray.getJsonObject(8));
     assertEquals(arr, jsonArray.getJsonArray(9));
     try {
       jsonArray.add(new SomeClass());
+      // OK (we can put anything, yet it should fail to encode if a codec is missing)
+    } catch (RuntimeException e) {
       fail();
-    } catch (IllegalStateException e) {
-      // OK
     }
     try {
       jsonArray.add(new BigDecimal(123));
+      // OK (we can put anything, yet it should fail to encode if a codec is missing)
+    } catch (RuntimeException e) {
       fail();
-    } catch (IllegalStateException e) {
-      // OK
     }
     try {
       jsonArray.add(new Date());
+      // OK (we can put anything, yet it should fail to encode if a codec is missing)
+    } catch (RuntimeException e) {
       fail();
-    } catch (IllegalStateException e) {
-      // OK
     }
 
   }
@@ -1137,7 +1139,7 @@ public class JsonArrayTest {
     }
     jsonArray.add("bar");
     assertSame(jsonArray, jsonArray.set(0, bytes));
-    assertEquals(Base64.getEncoder().encodeToString(bytes), jsonArray.getValue(0));
+    assertEquals(BASE64_ENCODER.encodeToString(bytes), jsonArray.getValue(0));
     assertEquals(1, jsonArray.size());
   }
 
@@ -1161,21 +1163,21 @@ public class JsonArrayTest {
     jsonArray.add("bar");
     try {
       jsonArray.set(0, new SomeClass());
+      // OK (we can put anything, yet it should fail to encode if a codec is missing)
+    } catch (RuntimeException e) {
       fail();
-    } catch (IllegalStateException e) {
-      // OK
     }
     try {
       jsonArray.set(0, new BigDecimal(123));
+      // OK (we can put anything, yet it should fail to encode if a codec is missing)
+    } catch (RuntimeException e) {
       fail();
-    } catch (IllegalStateException e) {
-      // OK
     }
     try {
       jsonArray.set(0, new Date());
+      // OK (we can put anything, yet it should fail to encode if a codec is missing)
+    } catch (RuntimeException e) {
       fail();
-    } catch (IllegalStateException e) {
-      // OK
     }
   }
 
@@ -1191,5 +1193,27 @@ public class JsonArrayTest {
     assertSame(jsonArray, jsonArray.setNull(0));
     assertNull(jsonArray.getString(0));
     assertEquals(1, jsonArray.size());
+  }
+
+  @Test
+  public void testAddWithPos() {
+    JsonArray arr = new JsonArray()
+      .add(1)
+      .add(2)
+      .add(3);
+
+    assertEquals(3, arr.size());
+
+    assertEquals(1, arr.getValue(0));
+    assertEquals(2, arr.getValue(1));
+    assertEquals(3, arr.getValue(2));
+
+    // add some values by index
+    arr.add(3, 4);
+
+    // assert that the new length changed
+    assertEquals(4, arr.size());
+    // assert the value got added
+    assertEquals(4, arr.getValue(3));
   }
 }
