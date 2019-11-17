@@ -13,6 +13,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -44,7 +45,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  EventBus send(String address, Object message);
+  EventBus send(String address, @Nullable Object message);
 
   /**
    * Like {@link #send(String, Object)} but specifying {@code options} that can be used to configure the delivery.
@@ -55,7 +56,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  EventBus send(String address, Object message, DeliveryOptions options);
+  EventBus send(String address, @Nullable Object message, DeliveryOptions options);
 
   /**
    * Sends a message and and specify a {@code replyHandler} that will be called if the recipient
@@ -69,14 +70,14 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  default <T> EventBus request(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
+  default <T> EventBus request(String address, @Nullable Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
     return request(address, message, new DeliveryOptions(), replyHandler);
   }
 
   /**
    * Like {@link #request(String, Object, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  default <T> Future<Message<T>> request(String address, Object message) {
+  default <T> Future<Message<T>> request(String address, @Nullable Object message) {
     return request(address, message, new DeliveryOptions());
   }
 
@@ -90,7 +91,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  default <T> EventBus request(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
+  default <T> EventBus request(String address, @Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
     Future<Message<T>> reply = request(address, message, options);
     reply.setHandler(replyHandler);
     return this;
@@ -99,7 +100,7 @@ public interface EventBus extends Measured {
   /**
    * Like {@link #request(String, Object, DeliveryOptions, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  <T> Future<Message<T>> request(String address, Object message, DeliveryOptions options);
+  <T> Future<Message<T>> request(String address, @Nullable Object message, DeliveryOptions options);
 
   /**
    * Publish a message.<p>
@@ -111,7 +112,7 @@ public interface EventBus extends Measured {
    *
    */
   @Fluent
-  EventBus publish(String address, Object message);
+  EventBus publish(String address, @Nullable Object message);
 
   /**
    * Like {@link #publish(String, Object)} but specifying {@code options} that can be used to configure the delivery.
@@ -122,7 +123,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  EventBus publish(String address, Object message, DeliveryOptions options);
+  EventBus publish(String address, @Nullable Object message, DeliveryOptions options);
 
   /**
    * Create a message consumer against the specified address.
