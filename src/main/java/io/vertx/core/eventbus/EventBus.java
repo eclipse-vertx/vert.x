@@ -13,6 +13,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -45,7 +46,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  EventBus send(String address, Object message);
+  EventBus send(String address, @Nullable Object message);
 
   /**
    * Like {@link #send(String, Object)} but specifying a {@code replyHandler} that will be called if the recipient
@@ -59,7 +60,7 @@ public interface EventBus extends Measured {
    */
   @Fluent
   @Deprecated
-  <T> EventBus send(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler);
+  <T> EventBus send(String address, @Nullable Object message, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Like {@link #send(String, Object)} but specifying {@code options} that can be used to configure the delivery.
@@ -70,7 +71,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  EventBus send(String address, Object message, DeliveryOptions options);
+  EventBus send(String address, @Nullable Object message, DeliveryOptions options);
 
   /**
    * Like {@link #send(String, Object, DeliveryOptions)} but specifying a {@code replyHandler} that will be called if the recipient
@@ -85,7 +86,7 @@ public interface EventBus extends Measured {
    */
   @Fluent
   @Deprecated
-  <T> EventBus send(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
+  <T> EventBus send(String address, @Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler);
 
   /**
    * Sends a message and and specify a {@code replyHandler} that will be called if the recipient
@@ -100,7 +101,7 @@ public interface EventBus extends Measured {
    */
   @Fluent
   @SuppressWarnings("deprecation")
-  default <T> EventBus request(String address, Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
+  default <T> EventBus request(String address, @Nullable Object message, Handler<AsyncResult<Message<T>>> replyHandler) {
     return send(address, message, replyHandler);
   }
 
@@ -115,7 +116,7 @@ public interface EventBus extends Measured {
    */
   @Fluent
   @SuppressWarnings("deprecation")
-  default <T> EventBus request(String address, Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
+  default <T> EventBus request(String address, @Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
     return send(address, message, options, replyHandler);
   }
 
@@ -129,7 +130,7 @@ public interface EventBus extends Measured {
    *
    */
   @Fluent
-  EventBus publish(String address, Object message);
+  EventBus publish(String address, @Nullable Object message);
 
   /**
    * Like {@link #publish(String, Object)} but specifying {@code options} that can be used to configure the delivery.
@@ -140,7 +141,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  EventBus publish(String address, Object message, DeliveryOptions options);
+  EventBus publish(String address, @Nullable Object message, DeliveryOptions options);
 
   /**
    * Create a message consumer against the specified address.

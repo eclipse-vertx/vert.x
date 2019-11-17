@@ -90,7 +90,7 @@ public interface Message<T> {
    * @deprecated use {@link #replyAndRequest(Object, Handler)}
    */
   @Deprecated
-  <R> void reply(Object message, Handler<AsyncResult<Message<R>>> replyHandler);
+  <R> void reply(@Nullable Object message, Handler<AsyncResult<Message<R>>> replyHandler);
 
   /**
    * Link {@link #reply(Object)} but allows you to specify delivery options for the reply.
@@ -98,7 +98,7 @@ public interface Message<T> {
    * @param message  the reply message
    * @param options  the delivery options
    */
-  void reply(Object message, DeliveryOptions options);
+  void reply(@Nullable Object message, DeliveryOptions options);
 
   /**
    * The same as {@code reply(R message, DeliveryOptions)} but you can specify handler for the reply - i.e.
@@ -110,7 +110,7 @@ public interface Message<T> {
    * @deprecated use {@link #replyAndRequest(Object, DeliveryOptions, Handler)}
    */
   @Deprecated
-  <R> void reply(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler);
+  <R> void reply(@Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler);
 
   /**
    * Reply to this message, specifying a {@code replyHandler} for the reply - i.e.
@@ -124,7 +124,7 @@ public interface Message<T> {
    * @param replyHandler  the reply handler for the reply.
    */
   @SuppressWarnings("deprecations")
-  default <R> void replyAndRequest(Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
+  default <R> void replyAndRequest(@Nullable Object message, Handler<AsyncResult<Message<R>>> replyHandler) {
     reply(message, replyHandler);
   }
 
@@ -137,7 +137,7 @@ public interface Message<T> {
    * @param replyHandler  reply handler will be called when any reply from the recipient is received
    */
   @SuppressWarnings("deprecations")
-  default <R> void replyAndRequest(Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
+  default <R> void replyAndRequest(@Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
     reply(message, options, replyHandler);
   }
 
