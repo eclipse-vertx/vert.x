@@ -85,30 +85,29 @@ public interface FileSystem {
   /**
    * Copy a file from the path {@code from} to path {@code to}, asynchronously.
    * <p>
-   * If {@code recursive} is {@code true} and {@code from} represents a directory, then the directory and its contents
+   * If {@code from} represents a directory, then the directory and its contents
    * will be copied recursively to the destination {@code to}.
    * <p>
-   * The copy will fail if the destination if the destination already exists.
+   * The copy will fail if the destination already exists.
    *
    * @param from  the path to copy from
    * @param to  the path to copy to
-   * @param recursive
    * @param handler  the handler that will be called on completion
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler);
+  FileSystem copyRecursive(String from, String to, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Like {@link #copyRecursive(String, String, boolean, Handler)} but returns a {@code Future} of the asynchronous result
+   * Like {@link #copyRecursive(String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  Future<Void> copyRecursive(String from, String to, boolean recursive);
+  Future<Void> copyRecursive(String from, String to);
 
   /**
-   * Blocking version of {@link #copyRecursive(String, String, boolean, Handler)}
+   * Blocking version of {@link #copyRecursive(String, String, Handler)}
    */
   @Fluent
-  FileSystem copyRecursiveBlocking(String from, String to, boolean recursive) ;
+  FileSystem copyRecursiveBlocking(String from, String to) ;
 
   /**
    * Move a file from the path {@code from} to path {@code to}, asynchronously.
@@ -406,27 +405,26 @@ public interface FileSystem {
   /**
    * Deletes the file represented by the specified {@code path}, asynchronously.
    * <p>
-   * If the path represents a directory and {@code recursive = true} then the directory and its contents will be
+   * If the path represents a directory then the directory and its contents will be
    * deleted recursively.
    *
    * @param path  path to the file
-   * @param recursive  delete recursively?
    * @param handler  the handler that will be called on completion
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler);
+  FileSystem deleteRecursive(String path, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Like {@link #deleteRecursive(String, boolean, Handler)} but returns a {@code Future} of the asynchronous result
+   * Like {@link #deleteRecursive(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  Future<Void> deleteRecursive(String path, boolean recursive);
+  Future<Void> deleteRecursive(String path);
 
   /**
-   * Blocking version of {@link #deleteRecursive(String, boolean, Handler)}
+   * Blocking version of {@link #deleteRecursive(String, Handler)}
    */
   @Fluent
-  FileSystem deleteRecursiveBlocking(String path, boolean recursive) ;
+  FileSystem deleteRecursiveBlocking(String path) ;
 
   /**
    * Create the directory represented by {@code path}, asynchronously.
