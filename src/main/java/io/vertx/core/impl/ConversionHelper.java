@@ -47,7 +47,7 @@ public class ConversionHelper {
     } else if (obj instanceof CharSequence) {
       return obj.toString();
     } else if (obj instanceof Buffer) {
-      return Base64.getEncoder().encodeToString(((Buffer) obj).getBytes());
+      return BASE64_ENCODER.encodeToString(((Buffer) obj).getBytes());
     }
     return obj;
   }
