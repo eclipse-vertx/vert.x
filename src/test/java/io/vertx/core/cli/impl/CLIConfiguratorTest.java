@@ -192,6 +192,7 @@ public class CLIConfiguratorTest {
     CLIConfigurator.inject(evaluatedCLI, command);
 
     assertThat(command.aBoolean).isTrue();
+    assertThat(command.acceptValueBoolean).isTrue();
     assertThat(command.aShort).isEqualTo((short) 1);
     assertThat(command.aByte).isEqualTo((byte) 1);
     assertThat(command.anInt).isEqualTo(1);
@@ -201,11 +202,12 @@ public class CLIConfiguratorTest {
     assertThat(command.aChar).isEqualTo('c');
     assertThat(command.aString).isEqualTo("hello");
 
-    evaluatedCLI = parse(cli, "--boolean2", "--short2=1", "--byte2=1", "--int2=1", "--long2=1",
+    evaluatedCLI = parse(cli, "--boolean2", "--acceptValueBoolean=false", "--short2=1", "--byte2=1", "--int2=1", "--long2=1",
         "--double2=1.1", "--float2=1.1", "--char2=c", "--string=hello");
     CLIConfigurator.inject(evaluatedCLI, command);
 
     assertThat(command.anotherBoolean).isTrue();
+    assertThat(command.acceptValueBoolean).isFalse();
     assertThat(command.anotherShort).isEqualTo((short) 1);
     assertThat(command.anotherByte).isEqualTo((byte) 1);
     assertThat(command.anotherInt).isEqualTo(1);
@@ -214,6 +216,13 @@ public class CLIConfiguratorTest {
     assertThat(command.anotherFloat).isEqualTo(1.1f);
     assertThat(command.anotherChar).isEqualTo('c');
     assertThat(command.aString).isEqualTo("hello");
+
+    evaluatedCLI = parse(cli, "--acceptValueBoolean=xxx");
+    CLIConfigurator.inject(evaluatedCLI, command);
+    assertThat(command.acceptValueBoolean).isFalse();
+    evaluatedCLI = parse(cli, "--acceptValueBoolean=true");
+    CLIConfigurator.inject(evaluatedCLI, command);
+    assertThat(command.acceptValueBoolean).isTrue();
 
     evaluatedCLI = parse(cli, "--state=NEW");
     CLIConfigurator.inject(evaluatedCLI, command);
@@ -400,6 +409,7 @@ public class CLIConfiguratorTest {
     Thread.State aState;
 
     boolean aBoolean;
+    boolean acceptValueBoolean;
     Boolean anotherBoolean;
 
     byte aByte;
@@ -431,6 +441,12 @@ public class CLIConfiguratorTest {
     @io.vertx.core.cli.annotations.Option(longName = "boolean", shortName = "Z", flag = true)
     public void setaBoolean(boolean aBoolean) {
       this.aBoolean = aBoolean;
+    }
+
+    @io.vertx.core.cli.annotations.Option(longName = "acceptValueBoolean", flag = false, acceptValue = true)
+    @DefaultValue("true")
+    public void setAcceptValueBoolean(boolean acceptValueBoolean) {
+      this.acceptValueBoolean = acceptValueBoolean;
     }
 
     @io.vertx.core.cli.annotations.Option(longName = "byte", shortName = "B")
