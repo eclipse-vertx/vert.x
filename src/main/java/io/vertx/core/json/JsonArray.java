@@ -398,7 +398,23 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return true if it removed it, false if not found
    */
   public boolean remove(Object value) {
-    return list.remove(value);
+    final Object wrappedValue = wrapJsonValue(value);
+    for (int i = 0; i < list.size(); i++) {
+      // perform comparision on wrapped types
+      final Object otherWrapperValue = getValue(i);
+      if (wrappedValue == null) {
+        if (otherWrapperValue == null) {
+          list.remove(i);
+          return true;
+        }
+      } else {
+        if (wrappedValue.equals(otherWrapperValue)) {
+          list.remove(i);
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /**

@@ -651,6 +651,23 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testRemoveByWrappedObject() {
+    JsonArray arr = new JsonArray("[1, 2, 3]");
+    jsonArray.add(arr);
+    assertEquals(1, jsonArray.size());
+    assertTrue(jsonArray.remove(arr));
+    assertEquals(0, jsonArray.size());
+    assertTrue(jsonArray.isEmpty());
+    // this is OK,
+    // now test using unwrapped objects
+    jsonArray.add(arr.getList());
+    assertEquals(1, jsonArray.size());
+    assertTrue(jsonArray.remove(arr));
+    assertEquals(0, jsonArray.size());
+    assertTrue(jsonArray.isEmpty());
+  }
+
+  @Test
   public void testRemoveByPos() {
     jsonArray.add("wibble");
     jsonArray.add(true);
