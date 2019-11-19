@@ -796,12 +796,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
       req = new HttpClientRequestImpl(this, sub, useSSL, method, SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost()),
-          host, port, relativeURI, vertx);
+          host, port, relativeURI);
     } else {
       if (server == null) {
         server = SocketAddress.inetSocketAddress(port, host);
       }
-      req = new HttpClientRequestImpl(this, sub, useSSL, method, server, host, port, relativeURI, vertx);
+      req = new HttpClientRequestImpl(this, sub, useSSL, method, server, host, port, relativeURI);
     }
     if (headers != null) {
       req.headers().setAll(headers);

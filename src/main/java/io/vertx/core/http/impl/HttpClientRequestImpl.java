@@ -26,7 +26,6 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
@@ -75,9 +74,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public HttpClientStream stream;
   private boolean connecting;
 
-  HttpClientRequestImpl(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method, SocketAddress server,
-                        String host, int port,
-                        String relativeURI, VertxInternal vertx) {
+  HttpClientRequestImpl(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method,
+                        SocketAddress server, String host, int port, String relativeURI) {
     super(client, context, ssl, method, server, host, port, relativeURI);
     this.chunked = false;
     this.context = context;
