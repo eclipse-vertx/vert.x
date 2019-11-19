@@ -63,6 +63,8 @@ public class CookieImpl implements ServerCookie {
   private final io.netty.handler.codec.http.cookie.Cookie nettyCookie;
   private boolean changed;
   private boolean fromUserAgent;
+  // extension features
+  private String sameSite;
 
   public CookieImpl(String name, String value) {
     this.nettyCookie = new DefaultCookie(name, value);
@@ -137,8 +139,42 @@ public class CookieImpl implements ServerCookie {
   }
 
   @Override
+  public Cookie setSameSite(final String sameSite) {
+    if (sameSite != null) {
+      // validate
+      int length = sameSite.length();
+      switch (length) {
+        case 3:
+          if (!sameSite.equalsIgnoreCase("LAX")) {
+            throw new IllegalArgumentException("sameSite contains an invalid value: " + sameSite);
+          }
+          break;
+        case 4:
+          if (!sameSite.equalsIgnoreCase("NONE")) {
+            throw new IllegalArgumentException("sameSite contains an invalid value: " + sameSite);
+          }
+          break;
+        case 6:
+          if (!sameSite.equalsIgnoreCase("STRICT")) {
+            throw new IllegalArgumentException("sameSite contains an invalid value: " + sameSite);
+          }
+          break;
+        default:
+          throw new IllegalArgumentException("sameSite contains an invalid value: " + sameSite);
+      }
+    }
+    this.sameSite = sameSite;
+    this.changed = true;
+    return this;
+  }
+
+  @Override
   public String encode() {
-    return ServerCookieEncoder.STRICT.encode(nettyCookie);
+    if (sameSite != null) {
+      return ServerCookieEncoder.STRICT.encode(nettyCookie) + "; SameSite=" + sameSite;
+    } else {
+      return ServerCookieEncoder.STRICT.encode(nettyCookie);
+    }
   }
 
   public boolean isChanged() {
