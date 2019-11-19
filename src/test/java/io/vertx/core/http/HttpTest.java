@@ -5585,6 +5585,56 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testCookieSameSiteFieldEncoding() throws Exception {
+    Cookie cookie = Cookie.cookie("foo", "bar").setSameSite("lax");
+    assertEquals("foo", cookie.getName());
+    assertEquals("bar", cookie.getValue());
+    assertEquals("foo=bar; SameSite=lax", cookie.encode());
+
+    cookie.setSecure(true);
+    assertEquals("foo=bar; Secure; SameSite=lax", cookie.encode());
+    cookie.setHttpOnly(true);
+    assertEquals("foo=bar; Secure; HTTPOnly; SameSite=lax", cookie.encode());
+  }
+
+  @Test
+  public void testCookieSameSiteFieldValidation() throws Exception {
+    Cookie cookie = Cookie.cookie("foo", "bar");
+
+    try {
+      cookie.setSameSite("Lax");
+      // OK
+      cookie.setSameSite("Strict");
+      // OK
+      cookie.setSameSite("NoNe");
+      // OK
+      cookie.setSameSite(null);
+      // OK
+    } catch (RuntimeException e) {
+      fail();
+    }
+
+    try {
+      cookie.setSameSite("XYZ");
+      fail();
+    } catch (RuntimeException e) {
+      // OK
+    }
+    try {
+      cookie.setSameSite("DURP");
+      fail();
+    } catch (RuntimeException e) {
+      // OK
+    }
+    try {
+      cookie.setSameSite("some random stuff");
+      fail();
+    } catch (RuntimeException e) {
+      // OK
+    }
+  }
+
+  @Test
   public void testRemoveCookies() throws Exception {
     testCookies("foo=bar", req -> {
       Cookie removed = req.response().removeCookie("foo");
