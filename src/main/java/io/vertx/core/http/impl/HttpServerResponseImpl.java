@@ -563,7 +563,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           } else {
             res = Future.failedFuture(future.cause());
           }
-          ctx.emitFromIO(v -> resultHandler.handle(res));
+          ctx.dispatchFromIO(v -> resultHandler.handle(res));
         }
 
         // signal body end handler
@@ -572,7 +572,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           handler = bodyEndHandler;
         }
         if (handler != null) {
-          context.emitFromIO(v -> {
+          context.dispatchFromIO(v -> {
             handler.handle(null);
           });
         }

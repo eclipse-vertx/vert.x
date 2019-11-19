@@ -110,33 +110,33 @@ public interface ContextInternal extends Context, Executor {
   VertxInternal owner();
 
   /**
-   * @see #emit(Object, Handler)
+   * @see #dispatch(Object, Handler)
    */
-  void emitFromIO(Handler<Void> handler);
+  void dispatchFromIO(Handler<Void> handler);
 
   /**
-   * Emit the {@code event} to the {@code handler} and switch on this context if necessary, this also associates the
+   * Dispatch the {@code argument} to the {@code task} and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
    *
    * The caller thread is assumed to be the event loop thread of this context.<p/>
    *
    * Any exception thrown from the {@literal handler} will be reported on this context.
    *
-   * @param event the event for the {@code handler}
-   * @param handler the handler to execute with the {@code event} argument
+   * @param argument the event for the {@code handler}
+   * @param task the handler to execute with the {@code event} argument
    */
-  <T> void emitFromIO(T event, Handler<T> handler);
+  <T> void dispatchFromIO(T argument, Handler<T> task);
 
   /**
-   * Emit the {@code event} to the {@code handler} and switch on this context if necessary, this also associates the
+   * Dispatch the given {@code argument} to the {@code task} and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
    *
-   * Any exception thrown from the {@literal handler} will be reported on this context.
+   * Any exception thrown from the {@literal task} will be reported on this context.
    *
-   * @param event the event for the {@code handler}
-   * @param handler the handler to execute with the {@code event} argument
+   * @param argument the {@code task} argument
+   * @param task the handler to execute with the {@code event} argument
    */
-  <E> void emit(E event, Handler<E> handler);
+  <T> void dispatch(T argument, Handler<T> task);
 
   /**
    * @see #schedule(Object, Handler)
@@ -148,33 +148,33 @@ public interface ContextInternal extends Context, Executor {
    * context concurrency model, on an event-loop context, the task is executed directly, on a worker
    * context the task is executed on the worker thread pool.
    *
-   * @param value the task value
+   * @param argument the {@code task} argument
    * @param task the task
    */
-  <T> void schedule(T value, Handler<T> task);
+  <T> void schedule(T argument, Handler<T> task);
 
   /**
-   * @see #dispatch(Handler)
+   * @see #emit(Handler)
    */
-  void dispatch(Runnable handler);
+  void emit(Runnable handler);
 
   /**
-   * @see #dispatch(Object, Handler)
+   * @see #emit(Object, Handler)
    */
-  void dispatch(Handler<Void> handler);
+  void emit(Handler<Void> handler);
 
   /**
-   * Dispatch a {@code event} to the {@code handler} on this context. The handler is executed directly by the caller thread which must be a
-   * {@link VertxThread}.
+   * Emit an {@code event} to the {@code handler} on this context. The handler is executed directly by the caller thread
+   * which must be a {@link VertxThread}.
    * <p>
    * The handler execution is monitored by the blocked thread checker.
    * <p>
    * This context is thread-local associated during the task execution.
    *
    * @param event the event for the {@code handler}
-   * @param handler the handler to execute with the {@code event} argument
+   * @param handler the handler to execute with the {@code event}
    */
-  <E> void dispatch(E event, Handler<E> handler);
+  <E> void emit(E event, Handler<E> handler);
 
   /**
    * Begin the dispatch of a task on this context.
@@ -186,15 +186,15 @@ public interface ContextInternal extends Context, Executor {
    * @return the previous context that shall be restored after or {@code null} if there is none
    * @throws IllegalStateException when the current thread of execution cannot execute this task
    */
-  ContextInternal beginDispatch();
+  ContextInternal beginEmission();
 
   /**
    * End the dispatch of a task on this context.
    *
-   * @param prev the previous context to restore or {@code null} if there is none
+   * @param previous the previous context to restore or {@code null} if there is none
    * @throws IllegalStateException when the current thread of execution cannot execute this task
    */
-  void endDispatch(ContextInternal prev);
+  void endEmission(ContextInternal previous);
 
   /**
    * Report an exception to this context synchronously.

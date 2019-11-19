@@ -150,7 +150,7 @@ import java.util.function.Function;
   private void handleException(Channel ch, Throwable cause) {
     HandlerHolder<? extends Handler<Throwable>> holder = errorHandler.apply(ch.eventLoop());
     if (holder != null) {
-      holder.context.emitFromIO(cause, holder.handler);
+      holder.context.dispatchFromIO(cause, holder.handler);
     }
   }
 
@@ -205,7 +205,7 @@ import java.util.function.Function;
       if (options.getHttp2ConnectionWindowSize() > 0) {
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
       }
-      ctx.emitFromIO(conn, handler_);
+      ctx.dispatchFromIO(conn, handler_);
     });
     return handler;
   }
@@ -253,9 +253,9 @@ import java.util.function.Function;
     pipeline.addLast("handler", handler);
     Http1xServerConnection conn = handler.getConnection();
     if (metrics != null) {
-      holder.context.emitFromIO(v -> conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName())));
+      holder.context.dispatchFromIO(v -> conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName())));
     }
-    holder.context.emitFromIO(conn, holder.handler);
+    holder.context.dispatchFromIO(conn, holder.handler);
   }
 
 

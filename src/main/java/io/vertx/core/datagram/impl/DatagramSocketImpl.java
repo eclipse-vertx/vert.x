@@ -427,7 +427,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   private void notifyException(final Handler<AsyncResult<Void>> handler, final Throwable cause) {
-    context.emitFromIO(v -> handler.handle(Future.failedFuture(cause)));
+    context.dispatchFromIO(v -> handler.handle(Future.failedFuture(cause)));
   }
 
   @Override
@@ -483,7 +483,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         metrics.close();
       }
       if (handler != null) {
-        context.dispatch(handler);
+        context.emit(handler);
       }
     }
 
@@ -514,7 +514,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         }
       }
       if (handler != null) {
-        context.dispatch(packet, handler);
+        context.emit(packet, handler);
       }
     }
   }

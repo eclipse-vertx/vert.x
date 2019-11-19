@@ -218,7 +218,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
         // FileNotFoundException for domain sockets
         boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
         if (connectError && (remainingAttempts > 0 || remainingAttempts == -1)) {
-          context.emitFromIO(v -> {
+          context.dispatchFromIO(v -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
@@ -239,7 +239,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     VertxHandler<NetSocketImpl> handler = VertxHandler.create(context, ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics));
     handler.addHandler(sock -> {
       socketMap.put(ch, sock);
-      context.emitFromIO(v -> {
+      context.dispatchFromIO(v -> {
         if (metrics != null) {
           sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
         }
@@ -257,7 +257,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     if (ch != null) {
       ch.close();
     }
-    context.emitFromIO(th, connectHandler::tryFail);
+    context.dispatchFromIO(th, connectHandler::tryFail);
   }
 
   @Override

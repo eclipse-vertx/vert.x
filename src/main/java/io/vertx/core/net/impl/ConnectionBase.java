@@ -276,7 +276,7 @@ public abstract class ConnectionBase {
       metrics.exceptionOccurred(metric, remoteAddress(), t);
     }
     if (exceptionHandler != null) {
-      context.dispatch(t, exceptionHandler);
+      context.emit(t, exceptionHandler);
     } else {
       if (log.isDebugEnabled()) {
         log.error(t.getMessage(), t);
@@ -296,7 +296,7 @@ public abstract class ConnectionBase {
       handler = closeHandler;
     }
     if (handler != null) {
-      context.dispatch(handler);
+      context.emit(handler);
     }
   }
 

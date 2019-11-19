@@ -116,7 +116,7 @@ abstract class HandlerRegistration<T> {
     }
 
     void dispatch() {
-      context.dispatch(v -> {
+      context.emit(v -> {
         next();
       });
     }

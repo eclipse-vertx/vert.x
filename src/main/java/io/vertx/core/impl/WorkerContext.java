@@ -43,23 +43,23 @@ class WorkerContext extends ContextImpl {
   // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
   // so we need to execute it on the worker thread
   @Override
-  public <T> void emitFromIO(T event, Handler<T> handler) {
+  public <T> void dispatchFromIO(T argument, Handler<T> task) {
     if (THREAD_CHECKS) {
       checkEventLoopThread();
     }
-    execute(this, event, handler);
+    execute(this, argument, task);
   }
 
   @Override
-  public <T> void emit(T event, Handler<T> handler) {
-    emit(this, event, handler);
+  public <T> void dispatch(T argument, Handler<T> task) {
+    dispatch(this, argument, task);
   }
 
-  private static <T> void emit(AbstractContext ctx, T value, Handler<T> task) {
+  private static <T> void dispatch(AbstractContext ctx, T value, Handler<T> task) {
     if (AbstractContext.context() == ctx) {
-      ctx.dispatch(value, task);
+      ctx.emit(value, task);
     } else if (ctx.nettyEventLoop().inEventLoop()) {
-      ctx.emitFromIO(value, task);
+      ctx.dispatchFromIO(value, task);
     } else {
       ctx.execute(value, task);
     }
@@ -74,7 +74,7 @@ class WorkerContext extends ContextImpl {
         execMetric = metrics.begin(queueMetric);
       }
       try {
-        ctx.dispatch(task);
+        ctx.emit(task);
       } finally {
         if (metrics != null) {
           metrics.end(execMetric, true);
@@ -92,7 +92,7 @@ class WorkerContext extends ContextImpl {
         execMetric = metrics.begin(queueMetric);
       }
       try {
-        ctx.dispatch(value, task);
+        ctx.emit(value, task);
       } finally {
         if (metrics != null) {
           metrics.end(execMetric, true);
@@ -102,7 +102,7 @@ class WorkerContext extends ContextImpl {
   }
 
   @Override
-  public <T> void schedule(T value, Handler<T> task) {
+  public <T> void schedule(T argument, Handler<T> task) {
     PoolMetrics metrics = workerPool.metrics();
     Object metric = metrics != null ? metrics.submitted() : null;
     orderedTasks.execute(() -> {
@@ -110,7 +110,7 @@ class WorkerContext extends ContextImpl {
         metrics.begin(metric);
       }
       try {
-        task.handle(value);
+        task.handle(argument);
       } finally {
         if (metrics != null) {
           metrics.end(metric, true);
@@ -140,13 +140,13 @@ class WorkerContext extends ContextImpl {
     }
 
     @Override
-    public <T> void emitFromIO(T event, Handler<T> handler) {
-      execute(event, handler);
+    public <T> void dispatchFromIO(T argument, Handler<T> task) {
+      execute(argument, task);
     }
 
     @Override
-    public <T> void emit(T event, Handler<T> handler) {
-      delegate.emit(this, event, handler);
+    public <T> void dispatch(T argument, Handler<T> task) {
+      delegate.dispatch(this, argument, task);
     }
 
     @Override

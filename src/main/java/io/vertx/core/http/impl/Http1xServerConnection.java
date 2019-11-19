@@ -22,7 +22,6 @@ import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.impl.ContextInternal;
@@ -135,13 +134,13 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         req.handleBegin();
       }
       ContextInternal ctx = req.context;
-      ContextInternal prev = ctx.beginDispatch();
+      ContextInternal prev = ctx.beginEmission();
       try {
         requestHandler.handle(req);
       } catch (Throwable t) {
         ctx.reportException(t);
       } finally {
-        ctx.endDispatch(prev);
+        ctx.endEmission(prev);
       }
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       handleEnd();
@@ -166,7 +165,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
       request = requestInProgress;
     }
-    request.context.dispatch(v -> {
+    request.context.emit(v -> {
       request.handleContent(buffer);
     });
     //TODO chunk trailers
@@ -184,7 +183,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       request = requestInProgress;
       requestInProgress = null;
     }
-    request.context.dispatch(v -> {
+    request.context.emit(v -> {
       request.handleEnd();
     });
   }
@@ -399,7 +398,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   public synchronized void handleInterestedOpsChanged() {
     if (!isNotWritable()) {
       if (responseInProgress != null) {
-        responseInProgress.context.dispatch(v -> responseInProgress.response().handleDrained());
+        responseInProgress.context.emit(v -> responseInProgress.response().handleDrained());
       } else if (ws != null) {
         ws.handleDrained();
       }
@@ -424,17 +423,17 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
     }
     if (requestInProgress != null) {
-      requestInProgress.context.dispatch(v -> {
+      requestInProgress.context.emit(v -> {
         requestInProgress.handleException(CLOSED_EXCEPTION);
       });
     }
     if (responseInProgress != null && responseInProgress != requestInProgress) {
-      responseInProgress.context.dispatch(v -> {
+      responseInProgress.context.emit(v -> {
         responseInProgress.handleException(CLOSED_EXCEPTION);
       });
     }
     if (ws != null) {
-      ws.context.dispatch(v -> ws.handleClosed());
+      ws.context.emit(v -> ws.handleClosed());
     }
     super.handleClosed();
   }
@@ -460,7 +459,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       responseInProgress.handleException(t);
     }
     if (ws != null) {
-      ws.context.dispatch(v -> ws.handleException(t));
+      ws.context.emit(v -> ws.handleException(t));
     }
   }
 

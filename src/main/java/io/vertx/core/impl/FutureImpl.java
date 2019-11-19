@@ -122,7 +122,7 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
 
   private void doDispatch(Handler<AsyncResult<T>> handler) {
     if (context != null) {
-      context.emit(this, handler);
+      context.dispatch(this, handler);
     } else {
       handler.handle(this);
     }

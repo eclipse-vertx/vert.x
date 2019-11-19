@@ -99,8 +99,8 @@ abstract class AbstractContext implements ContextInternal {
   // In such a case we should already be on an event loop thread (as Netty manages the event loops)
   // but check this anyway, then execute directly
   @Override
-  public final void emitFromIO(Handler<Void> handler) {
-    emitFromIO(null, handler);
+  public final void dispatchFromIO(Handler<Void> handler) {
+    dispatchFromIO(null, handler);
   }
 
   @Override
@@ -109,17 +109,17 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final void dispatch(Handler<Void> handler) {
-    dispatch(null, handler);
+  public final void emit(Handler<Void> handler) {
+    emit(null, handler);
   }
 
-  public final ContextInternal beginDispatch() {
+  public final ContextInternal beginEmission() {
     ContextInternal prev;
     Thread th = Thread.currentThread();
     if (th instanceof VertxThread) {
-      prev = ((VertxThread)th).beginDispatch(this);
+      prev = ((VertxThread)th).beginEmission(this);
     } else {
-      prev = beginNettyThreadDispatch(th);
+      prev = beginNettyThreadEmit(th);
     }
     if (!DISABLE_TCCL) {
       th.setContextClassLoader(classLoader());
@@ -127,7 +127,7 @@ abstract class AbstractContext implements ContextInternal {
     return prev;
   }
 
-  private ContextInternal beginNettyThreadDispatch(Thread th) {
+  private ContextInternal beginNettyThreadEmit(Thread th) {
     if (th instanceof FastThreadLocalThread) {
       Holder holder = holderLocal.get();
       ContextInternal prev = holder.ctx;
@@ -150,19 +150,19 @@ abstract class AbstractContext implements ContextInternal {
     }
   }
 
-  public final void endDispatch(ContextInternal prev) {
+  public final void endEmission(ContextInternal previous) {
     Thread th = Thread.currentThread();
     if (!DISABLE_TCCL) {
-      th.setContextClassLoader(prev != null ? prev.classLoader() : null);
+      th.setContextClassLoader(previous != null ? previous.classLoader() : null);
     }
     if (th instanceof VertxThread) {
-      ((VertxThread)th).endDispatch(prev);
+      ((VertxThread)th).endEmission(previous);
     } else {
-      endNettyThreadDispatch(th, prev);
+      endNettyThreadAssociation(th, previous);
     }
   }
 
-  private void endNettyThreadDispatch(Thread th, ContextInternal prev) {
+  private void endNettyThreadAssociation(Thread th, ContextInternal prev) {
     if (th instanceof FastThreadLocalThread) {
       Holder holder = holderLocal.get();
       holder.ctx = prev;
@@ -177,25 +177,25 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final <T> void dispatch(T event, Handler<T> handler) {
-    ContextInternal prev = beginDispatch();
+  public final <T> void emit(T event, Handler<T> handler) {
+    ContextInternal prev = beginEmission();
     try {
       handler.handle(event);
     } catch (Throwable t) {
       reportException(t);
     } finally {
-      endDispatch(prev);
+      endEmission(prev);
     }
   }
 
-  public final void dispatch(Runnable handler) {
-    ContextInternal prev = beginDispatch();
+  public final void emit(Runnable handler) {
+    ContextInternal prev = beginEmission();
     try {
       handler.run();
     } catch (Throwable t) {
       reportException(t);
     } finally {
-      endDispatch(prev);
+      endEmission(prev);
     }
   }
 

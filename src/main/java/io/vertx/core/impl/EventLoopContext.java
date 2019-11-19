@@ -36,39 +36,39 @@ public class EventLoopContext extends ContextImpl {
 
   @Override
   <T> void execute(T argument, Handler<T> task) {
-    nettyEventLoop().execute(() -> dispatch(argument, task));
+    nettyEventLoop().execute(() -> emit(argument, task));
   }
 
   @Override
   public void execute(Runnable task) {
-    nettyEventLoop().execute(() -> dispatch(task));
+    nettyEventLoop().execute(() -> emit(task));
   }
 
   @Override
-  public <T> void schedule(T value, Handler<T> task) {
-    task.handle(value);
+  public <T> void schedule(T argument, Handler<T> task) {
+    task.handle(argument);
   }
 
   @Override
-  public <T> void emitFromIO(T event, Handler<T> handler) {
+  public <T> void dispatchFromIO(T argument, Handler<T> task) {
     if (THREAD_CHECKS) {
       checkEventLoopThread();
     }
-    dispatch(event, handler);
+    emit(argument, task);
   }
 
   @Override
-  public <T> void emit(T event, Handler<T> handler) {
-    emit(this, event, handler);
+  public <T> void dispatch(T argument, Handler<T> task) {
+    dispatch(this, argument, task);
   }
 
-  private static <T> void emit(AbstractContext ctx, T value, Handler<T> task) {
+  private static <T> void dispatch(AbstractContext ctx, T value, Handler<T> task) {
     EventLoop eventLoop = ctx.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       if (AbstractContext.context() == ctx) {
-        ctx.dispatch(value, task);
+        ctx.emit(value, task);
       } else {
-        ctx.emitFromIO(value, task);
+        ctx.dispatchFromIO(value, task);
       }
     } else {
       ctx.execute(value, task);
@@ -93,25 +93,25 @@ public class EventLoopContext extends ContextImpl {
 
     @Override
     <T> void execute(T argument, Handler<T> task) {
-      nettyEventLoop().execute(() -> dispatch(argument, task));
+      nettyEventLoop().execute(() -> emit(argument, task));
     }
 
     @Override
     public void execute(Runnable task) {
-      nettyEventLoop().execute(() -> dispatch(task));
+      nettyEventLoop().execute(() -> emit(task));
     }
 
     @Override
-    public <T> void emitFromIO(T event, Handler<T> handler) {
+    public <T> void dispatchFromIO(T argument, Handler<T> task) {
       if (THREAD_CHECKS) {
         checkEventLoopThread();
       }
-      dispatch(event, handler);
+      emit(argument, task);
     }
 
     @Override
-    public <T> void emit(T event, Handler<T> handler) {
-      EventLoopContext.emit(this, event, handler);
+    public <T> void dispatch(T argument, Handler<T> task) {
+      EventLoopContext.dispatch(this, argument, task);
     }
 
     @Override

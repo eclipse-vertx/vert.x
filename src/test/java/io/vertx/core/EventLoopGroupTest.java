@@ -65,14 +65,14 @@ public class EventLoopGroupTest extends VertxTestBase {
       @Override
       protected void initChannel(SocketChannel ch) throws Exception {
         assertSame(contextThread.get(), Thread.currentThread());
-        context.emitFromIO(v -> {
+        context.dispatchFromIO(v -> {
           assertSame(contextThread.get(), Thread.currentThread());
           assertSame(context, Vertx.currentContext());
           ch.pipeline().addLast(new ChannelInboundHandlerAdapter() {
             @Override
             public void channelActive(ChannelHandlerContext ctx) throws Exception {
               assertSame(contextThread.get(), Thread.currentThread());
-              context.emitFromIO(v -> {
+              context.dispatchFromIO(v -> {
                 assertSame(contextThread.get(), Thread.currentThread());
                 assertSame(context, Vertx.currentContext());
               });
@@ -82,7 +82,7 @@ public class EventLoopGroupTest extends VertxTestBase {
               ByteBuf buf = (ByteBuf) msg;
               assertEquals("hello", buf.toString(StandardCharsets.UTF_8));
               assertSame(contextThread.get(), Thread.currentThread());
-              context.emitFromIO(v -> {
+              context.dispatchFromIO(v -> {
                 assertSame(contextThread.get(), Thread.currentThread());
                 assertSame(context, Vertx.currentContext());
               });
@@ -90,7 +90,7 @@ public class EventLoopGroupTest extends VertxTestBase {
             @Override
             public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
               assertSame(contextThread.get(), Thread.currentThread());
-              context.emitFromIO(v -> {
+              context.dispatchFromIO(v -> {
                 assertSame(contextThread.get(), Thread.currentThread());
                 assertSame(context, Vertx.currentContext());
                 ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
@@ -99,7 +99,7 @@ public class EventLoopGroupTest extends VertxTestBase {
             @Override
             public void channelInactive(ChannelHandlerContext ctx) throws Exception {
               assertSame(contextThread.get(), Thread.currentThread());
-              context.emitFromIO(v -> {
+              context.dispatchFromIO(v -> {
                 assertSame(contextThread.get(), Thread.currentThread());
                 assertSame(context, Vertx.currentContext());
                 testComplete();

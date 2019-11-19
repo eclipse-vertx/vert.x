@@ -613,7 +613,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         ctx = stream.context;
       }
       if (handler != null) {
-        ctx.dispatch(null, handler);
+        ctx.emit(null, handler);
       }
     } else {
       StreamImpl stream;
@@ -624,7 +624,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         request = stream.request;
         response = stream.beginResponse(resp);
       }
-      stream.context.dispatch(v -> request.handleResponse(response));
+      stream.context.emit(v -> request.handleResponse(response));
     }
   }
 
@@ -634,7 +634,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       resp = responseInProgress;
     }
     if (resp != null) {
-      resp.context.dispatch(v -> {
+      resp.context.emit(v -> {
         if (!resp.handleChunk(buff)) {
           doPause();
         }
@@ -652,7 +652,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
       responseInProgress = stream.next;
     }
-    stream.context.dispatch(v -> {
+    stream.context.emit(v -> {
       if (stream.endResponse(trailer)) {
         checkLifecycle();
       }
@@ -740,7 +740,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           ws.registerHandler(vertx.eventBus());
 
         }
-        getContext().emitFromIO(wsRes, res -> {
+        getContext().dispatchFromIO(wsRes, res -> {
           if (res.succeeded()) {
             log.debug("WebSocket handshake complete");
             if (metrics != null) {
@@ -788,7 +788,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     if (!isNotWritable()) {
       StreamImpl current = requestInProgress;
       if (current != null) {
-        current.context.dispatch(v -> current.request.handleDrained());
+        current.context.emit(v -> current.request.handleDrained());
       } else if (ws != null) {
         ws.handleDrained();
       }
@@ -822,7 +822,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       ws.handleClosed();
     }
     for (StreamImpl stream : list) {
-      stream.context.dispatch(v -> stream.handleException(CLOSED_EXCEPTION));
+      stream.context.emit(v -> stream.handleException(CLOSED_EXCEPTION));
     }
   }
 

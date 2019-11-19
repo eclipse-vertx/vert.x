@@ -207,7 +207,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(context, chctx -> {
       Http1xClientConnection conn = new Http1xClientConnection(listener, upgrade ? HttpVersion.HTTP_1_1 : version, client, endpointMetric, chctx, ssl, server, context, metrics);
       if (metrics != null) {
-        context.emitFromIO(v -> {
+        context.dispatchFromIO(v -> {
           Object socketMetric = metrics.connected(conn.remoteAddress(), conn.remoteName());
           conn.metric(socketMetric);
           metrics.endpointConnected(endpointMetric, socketMetric);

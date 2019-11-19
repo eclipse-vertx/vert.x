@@ -74,15 +74,15 @@ public final class VertxThread extends FastThreadLocalThread implements BlockedT
   }
 
   /**
-   * Begin the dispatch of a context task.
+   * Begin the emission of a context event.
    * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
+   * This is a low level interface that should not be used, instead {@link ContextInternal#emit(Object, io.vertx.core.Handler)}
    * shall be used.
    *
-   * @param context the context on which the task is dispatched on
+   * @param context the context on which the event is emitted on
    * @return the current context that shall be restored
    */
-  ContextInternal beginDispatch(ContextInternal context) {
+  ContextInternal beginEmission(ContextInternal context) {
     if (!ContextImpl.DISABLE_TIMINGS) {
       executeStart();
     }
@@ -92,14 +92,14 @@ public final class VertxThread extends FastThreadLocalThread implements BlockedT
   }
 
   /**
-   * End the dispatch of a context task.
+   * End the emission of a context task.
    * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
+   * This is a low level interface that should not be used, instead {@link ContextInternal#emit(Object, io.vertx.core.Handler)}
    * shall be used.
    *
    * @param prev the previous context thread to restore, might be {@code null}
    */
-  void endDispatch(ContextInternal prev) {
+  void endEmission(ContextInternal prev) {
     // We don't unset the context after execution - this is done later when the context is closed via
     // VertxThreadFactory
     context = prev;

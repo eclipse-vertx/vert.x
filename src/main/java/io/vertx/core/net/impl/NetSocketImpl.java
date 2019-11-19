@@ -320,7 +320,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     if (sslHandler == null) {
       chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
         if (handler != null) {
-          context.emitFromIO(ar.mapEmpty(), handler);
+          context.dispatchFromIO(ar.mapEmpty(), handler);
         }
       }));
       if (remoteAddress != null) {
@@ -341,7 +341,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   protected void handleInterestedOpsChanged() {
-    context.dispatch(v -> callDrainHandler());
+    context.emit(v -> callDrainHandler());
   }
 
   @Override
@@ -373,7 +373,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   public void handleMessage(Object msg) {
-    context.dispatch(msg, o -> {
+    context.emit(msg, o -> {
       if (!pending.write(msg)) {
         doPause();
       }

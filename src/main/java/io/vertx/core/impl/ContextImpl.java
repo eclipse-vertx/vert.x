@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
@@ -42,11 +41,11 @@ abstract class ContextImpl extends AbstractContext {
     Thread currentThread = Thread.currentThread();
     if (currentThread instanceof VertxThread) {
       VertxThread vertxThread = (VertxThread) currentThread;
-      ContextInternal prev = vertxThread.beginDispatch(null);
+      ContextInternal prev = vertxThread.beginEmission(null);
       try {
         task.handle(null);
       } finally {
-        vertxThread.endDispatch(prev);
+        vertxThread.endEmission(prev);
       }
     } else {
       task.handle(null);
@@ -166,7 +165,7 @@ abstract class ContextImpl extends AbstractContext {
         if (metrics != null) {
           execMetric = metrics.begin(queueMetric);
         }
-        context.dispatch(promise, f -> {
+        context.emit(promise, f -> {
           try {
             blockingCodeHandler.handle(promise);
           } catch (Throwable e) {
@@ -287,8 +286,8 @@ abstract class ContextImpl extends AbstractContext {
     }
 
     @Override
-    public final <T> void schedule(T value, Handler<T> task) {
-      delegate.schedule(value, task);
+    public final <T> void schedule(T argument, Handler<T> task) {
+      delegate.schedule(argument, task);
     }
 
     @Override

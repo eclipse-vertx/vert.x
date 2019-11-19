@@ -137,7 +137,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
     if (endOfStream) {
       VertxHttp2Stream finalStream = stream;
-      finalStream.context.dispatch(v -> finalStream.onEnd());
+      finalStream.context.emit(v -> finalStream.onEnd());
     }
   }
 
@@ -234,7 +234,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     @Override
     void handleInterestedOpsChanged() {
       if (response != null) {
-        context.dispatch(v -> response.writabilityChanged());
+        context.emit(v -> response.writabilityChanged());
       }
     }
 

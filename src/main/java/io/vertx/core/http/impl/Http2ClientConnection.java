@@ -22,7 +22,6 @@ import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -125,7 +124,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         fut = Future.failedFuture(e);
       }
     }
-    context.dispatch(fut, completionHandler);
+    context.emit(fut, completionHandler);
   }
 
   private Http2ClientStream createStream(ContextInternal context, Http2Stream stream) {
@@ -149,7 +148,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         .setDependency(streamDependency)
         .setWeight(weight)
         .setExclusive(exclusive);
-      stream.context.dispatch(v -> {
+      stream.context.emit(v -> {
         stream.handleHeaders(headers, streamPriority, endOfStream);
       });
     }
@@ -159,7 +158,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
     Http2ClientStream stream = (Http2ClientStream) streams.get(streamId);
     if (stream != null) {
-      stream.context.dispatch(v -> {
+      stream.context.emit(v -> {
         stream.handleHeaders(headers, null, endOfStream);
       });
     }
@@ -192,7 +191,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           pushReq.getStream().metric = metrics.responsePushed(queueMetric, metric(), localAddress(), remoteAddress(), pushReq);
         }
         streams.put(promisedStreamId, pushReq.getStream());
-        stream.context.dispatch(pushReq, pushHandler);
+        stream.context.emit(pushReq, pushHandler);
         return;
       }
     }
@@ -345,7 +344,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         }
         if (status == 100) {
           if (continueHandler != null) {
-            context.dispatch(continueHandler);
+            context.emit(continueHandler);
           }
           return;
         }
