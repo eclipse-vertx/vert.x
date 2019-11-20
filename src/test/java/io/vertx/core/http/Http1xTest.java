@@ -4445,6 +4445,31 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testPipeliningQueueDelayed() throws Exception {
+    waitFor(3);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      complete();
+    }).sendHead();
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      complete();
+    }).end();
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+      complete();
+    }).end();
+    // Need to wait a little so requests 2 and 3 are appended to the first request
+    Thread.sleep(300);
+    // This will end request 1 and make requests 2 and 3 progress
+    req1.end();
+    await();
+  }
+
+  @Test
   public void testHttpClientResponseBufferedWithPausedEnd() throws Exception {
     AtomicInteger i = new AtomicInteger();
     server.requestHandler(req -> {
