@@ -39,6 +39,13 @@ import java.util.concurrent.TimeUnit;
  */
 public interface VertxInternal extends Vertx {
 
+  /**
+   * @return a promise associated with the context returned by {@link #getOrCreateContext()}.
+   */
+  <T> PromiseInternal<T> promise();
+
+  <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler);
+
   long maxEventLoopExecTime();
 
   TimeUnit maxEventLoopExecTimeUnit();

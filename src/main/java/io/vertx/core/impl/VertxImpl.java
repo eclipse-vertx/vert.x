@@ -352,6 +352,23 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new TimeoutStreamImpl(delay, false);
   }
 
+  @Override
+  public <T> PromiseInternal<T> promise() {
+    ContextInternal context = getOrCreateContext();
+    return context.promise();
+  }
+
+  @Override
+  public <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler) {
+    if (handler instanceof PromiseInternal) {
+      return (PromiseInternal<T>) handler;
+    } else {
+      PromiseInternal<T> promise = promise();
+      promise.future().setHandler(handler);
+      return promise;
+    }
+  }
+
   public void runOnContext(Handler<Void> task) {
     ContextInternal context = getOrCreateContext();
     context.runOnContext(task);
