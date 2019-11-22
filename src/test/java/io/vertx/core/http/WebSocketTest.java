@@ -997,24 +997,24 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   // Test normal negotiation of websocket compression
   public void testNormalWSPermessageDeflateCompressionNegotiation() throws Exception {
-	  String path = "/some/path";
-	  Buffer buff = Buffer.buffer("AAA");
+    String path = "/some/path";
+    Buffer buff = Buffer.buffer("AAA");
 
-	  // Server should have basic compression enabled by default,
-	  // client needs to ask for it
-	  server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
-		  assertEquals("upgrade", ws.headers().get("Connection"));
-		  assertEquals("permessage-deflate;client_max_window_bits", ws.headers().get("sec-websocket-extensions"));
-		  ws.writeFrame(WebSocketFrame.binaryFrame(buff,  true));
-	  });
+    // Server should have basic compression enabled by default,
+    // client needs to ask for it
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
+      assertEquals("upgrade", ws.headers().get("Connection"));
+      assertEquals("permessage-deflate;client_max_window_bits", ws.headers().get("sec-websocket-extensions"));
+      ws.writeFrame(WebSocketFrame.binaryFrame(buff, true));
+    });
 
-	  server.listen(ar -> {
-		  assertTrue(ar.succeeded());
+    server.listen(ar -> {
+      assertTrue(ar.succeeded());
 
-		  HttpClientOptions options = new HttpClientOptions();
-	      options.setTryUsePerMessageWebsocketCompression(true);
-	      client = vertx.createHttpClient(options);
-		  client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(ws -> {
+      HttpClientOptions options = new HttpClientOptions();
+      options.setTryUsePerMessageWebsocketCompression(true);
+      client = vertx.createHttpClient(options);
+      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(ws -> {
         final Buffer received = Buffer.buffer();
         ws.handler(data -> {
           received.appendBuffer(data);
@@ -1025,8 +1025,8 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
       }));
-	  });
-	  await();
+    });
+    await();
   }
 
   @Test

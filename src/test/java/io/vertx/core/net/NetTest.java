@@ -2724,7 +2724,7 @@ public class NetTest extends VertxTestBase {
   }
 
   private TestLoggerFactory testLogging() throws Exception {
-	return TestUtils.testLogging(() -> {
+    return TestUtils.testLogging(() -> {
       server.connectHandler(so -> {
         so.end(Buffer.buffer("fizzbuzz"));
       });
@@ -2734,7 +2734,7 @@ public class NetTest extends VertxTestBase {
         }));
       }));
       await();
-	});
+    });
   }
 
   /**

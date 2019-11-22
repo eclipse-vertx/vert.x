@@ -4443,7 +4443,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private TestLoggerFactory testLogging() throws Exception {
     return TestUtils.testLogging(() -> {
-   	  try {
+       try {
         server.requestHandler(req -> {
           req.response().end();
         });
@@ -4452,9 +4452,9 @@ public abstract class HttpTest extends HttpTestBase {
           testComplete();
         });
         await();
-   	  } catch (Exception e) {
-   	    throw new RuntimeException(e);
-   	  }
+       } catch (Exception e) {
+         throw new RuntimeException(e);
+       }
     });
   }
 

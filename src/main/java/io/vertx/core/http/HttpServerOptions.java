@@ -756,8 +756,8 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setPerFrameWebsocketCompressionSupported(boolean supported ) {
-	  this.perFrameWebsocketCompressionSupported = supported;
-	  return this;
+    this.perFrameWebsocketCompressionSupported = supported;
+    return this;
   }
 
   /**
@@ -766,7 +766,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return {@code true} if the http server will accept the per-frame deflate compression extension
    */
   public boolean getPerFrameWebsocketCompressionSupported() {
-	  return this.perFrameWebsocketCompressionSupported;
+    return this.perFrameWebsocketCompressionSupported;
   }
 
   /**
@@ -776,8 +776,8 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setPerMessageWebsocketCompressionSupported(boolean supported ) {
-	  this.perMessageWebsocketCompressionSupported = supported;
-	  return this;
+    this.perMessageWebsocketCompressionSupported = supported;
+    return this;
   }
 
   /**
@@ -786,7 +786,7 @@ public class HttpServerOptions extends NetServerOptions {
    * @return {@code true} if the http server will accept the per-message deflate compression extension
    */
   public boolean getPerMessageWebsocketCompressionSupported() {
-	  return this.perMessageWebsocketCompressionSupported;
+    return this.perMessageWebsocketCompressionSupported;
   }
 
   /**
@@ -796,15 +796,15 @@ public class HttpServerOptions extends NetServerOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebsocketCompressionLevel(int compressionLevel) {
-	  this.websocketCompressionLevel = compressionLevel;
-	  return this;
+    this.websocketCompressionLevel = compressionLevel;
+    return this;
   }
 
   /**
    * @return the current WebSocket deflate compression level
    */
   public int getWebsocketCompressionLevel() {
-	  return this.websocketCompressionLevel;
+    return this.websocketCompressionLevel;
   }
 
   /**
@@ -815,8 +815,8 @@ public class HttpServerOptions extends NetServerOptions {
    * @return  a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebsocketAllowServerNoContext(boolean accept) {
-	  this.websocketAllowServerNoContext = accept;
-	  return this;
+    this.websocketAllowServerNoContext = accept;
+    return this;
   }
 
   /**
@@ -824,7 +824,7 @@ public class HttpServerOptions extends NetServerOptions {
    * deflate compression extension offered by the client
    */
   public boolean getWebsocketAllowServerNoContext () {
-	  return this.websocketAllowServerNoContext;
+    return this.websocketAllowServerNoContext;
   }
 
   /**
@@ -835,8 +835,8 @@ public class HttpServerOptions extends NetServerOptions {
    * @return  a reference to this, so the API can be used fluently
    */
   public HttpServerOptions setWebsocketPreferredClientNoContext(boolean accept) {
-	  this.websocketPreferredClientNoContext = accept;
-	  return this;
+    this.websocketPreferredClientNoContext = accept;
+    return this;
   }
 
   /**
@@ -844,7 +844,7 @@ public class HttpServerOptions extends NetServerOptions {
    * deflate compression extension offered by the client
    */
   public boolean getWebsocketPreferredClientNoContext() {
-	  return this.websocketPreferredClientNoContext;
+    return this.websocketPreferredClientNoContext;
   }
 
 }

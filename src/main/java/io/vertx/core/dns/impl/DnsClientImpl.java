@@ -63,7 +63,7 @@ public final class DnsClientImpl implements DnsClient {
 
     this.dnsServer = new InetSocketAddress(options.getHost(), options.getPort());
     if (this.dnsServer.isUnresolved()) {
-    	throw new IllegalArgumentException("Cannot resolve the host to a valid ip address");
+      throw new IllegalArgumentException("Cannot resolve the host to a valid ip address");
     }
     this.vertx = vertx;
 

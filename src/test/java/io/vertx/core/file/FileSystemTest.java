@@ -1486,7 +1486,7 @@ public class FileSystemTest extends VertxTestBase {
 
   @Test
   public void testReadStreamSetReadLength() throws Exception {
-	String fileName = "some-file.dat";
+    String fileName = "some-file.dat";
     int chunkSize = 1000;
     int chunks = 10;
     byte[] content = TestUtils.randomByteArray(chunkSize * chunks);

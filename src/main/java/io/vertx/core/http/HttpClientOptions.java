@@ -1105,8 +1105,8 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
  public HttpClientOptions setTryUsePerFrameWebsocketCompression (boolean offer)
  {
-	 this.tryUsePerFrameWebsocketCompression = offer;
-	 return this;
+   this.tryUsePerFrameWebsocketCompression = offer;
+   return this;
  }
 
  /**
@@ -1114,7 +1114,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   */
  public boolean getTryWebsocketDeflateFrameCompression()
  {
-	 return this.tryUsePerFrameWebsocketCompression;
+   return this.tryUsePerFrameWebsocketCompression;
  }
 
 /**
@@ -1125,8 +1125,8 @@ public class HttpClientOptions extends ClientOptionsBase {
  */
  public HttpClientOptions setTryUsePerMessageWebsocketCompression (boolean offer)
  {
-	 this.tryUsePerMessageWebsocketCompression = offer;
-	 return this;
+   this.tryUsePerMessageWebsocketCompression = offer;
+   return this;
  }
 
  /**
@@ -1134,7 +1134,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   */
  public boolean getTryUsePerMessageWebsocketCompression()
  {
-	 return this.tryUsePerMessageWebsocketCompression;
+   return this.tryUsePerMessageWebsocketCompression;
  }
 
  /**
@@ -1145,8 +1145,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   */
  public HttpClientOptions setWebsocketCompressionLevel (int compressionLevel)
  {
-	 this.websocketCompressionLevel = compressionLevel;
-	 return this;
+   this.websocketCompressionLevel = compressionLevel;
+   return this;
  }
 
  /**
@@ -1154,7 +1154,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   */
  public int getWebsocketCompressionLevel()
  {
-	 return this.websocketCompressionLevel;
+   return this.websocketCompressionLevel;
  }
 
   /**
@@ -1166,8 +1166,8 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
  public HttpClientOptions setWebsocketCompressionAllowClientNoContext(boolean offer)
  {
-	 this.websocketAllowClientNoContext = offer;
-	 return this;
+   this.websocketAllowClientNoContext = offer;
+   return this;
  }
 
   /**
@@ -1176,7 +1176,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
  public boolean getWebsocketCompressionAllowClientNoContext()
  {
-	 return this.websocketAllowClientNoContext;
+   return this.websocketAllowClientNoContext;
  }
 
   /**
@@ -1188,8 +1188,8 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
  public HttpClientOptions setWebsocketCompressionRequestServerNoContext(boolean offer)
  {
-	this.websocketRequestServerNoContext = offer;
-	return this;
+  this.websocketRequestServerNoContext = offer;
+  return this;
  }
 
   /**
@@ -1198,7 +1198,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
  public boolean getWebsocketCompressionRequestServerNoContext()
  {
-	 return this.websocketRequestServerNoContext;
+   return this.websocketRequestServerNoContext;
  }
 
   /**
