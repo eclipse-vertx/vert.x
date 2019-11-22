@@ -134,34 +134,6 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
   }
 
   @Override
-  public void complete(T result) {
-    if (!tryComplete(result)) {
-      throw new IllegalStateException("Result is already complete: " + (succeeded ? "succeeded" : "failed"));
-    }
-  }
-
-  @Override
-  public void complete() {
-    if (!tryComplete()) {
-      throw new IllegalStateException("Result is already complete: " + (succeeded ? "succeeded" : "failed"));
-    }
-  }
-
-  @Override
-  public void fail(Throwable cause) {
-    if (!tryFail(cause)) {
-      throw new IllegalStateException("Result is already complete: " + (succeeded ? "succeeded" : "failed"));
-    }
-  }
-
-  @Override
-  public void fail(String failureMessage) {
-    if (!tryFail(failureMessage)) {
-      throw new IllegalStateException("Result is already complete: " + (succeeded ? "succeeded" : "failed"));
-    }
-  }
-
-  @Override
   public boolean tryComplete(T result) {
     Handler<AsyncResult<T>> h;
     synchronized (this) {
@@ -179,25 +151,11 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
     return true;
   }
 
-  @Override
-  public boolean tryComplete() {
-    return tryComplete(null);
-  }
-
   public void handle(Future<T> ar) {
     if (ar.succeeded()) {
       complete(ar.result());
     } else {
       fail(ar.cause());
-    }
-  }
-
-  @Override
-  public void handle(AsyncResult<T> asyncResult) {
-    if (asyncResult.succeeded()) {
-      complete(asyncResult.result());
-    } else {
-      fail(asyncResult.cause());
     }
   }
 
@@ -217,11 +175,6 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
       dispatch(h);
     }
     return true;
-  }
-
-  @Override
-  public boolean tryFail(String failureMessage) {
-    return tryFail(new NoStackTraceThrowable(failureMessage));
   }
 
   @Override
