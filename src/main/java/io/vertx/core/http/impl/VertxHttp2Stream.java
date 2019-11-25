@@ -73,7 +73,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
         handleData(data);
       }
     });
-    pending.exceptionHandler(context.exceptionHandler());
+    pending.exceptionHandler(context::reportException);
 
     pending.resume();
   }

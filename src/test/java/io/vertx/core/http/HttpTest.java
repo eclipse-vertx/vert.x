@@ -28,6 +28,7 @@ import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -1301,17 +1302,20 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testContextExceptionHandlerCalledWhenExceptionOnDataHandler() throws Exception {
+    client.close();
     server.requestHandler(request -> {
       request.response().end("foo");
     }).listen(testAddress, onSuccess(s -> {
       // Exception handler should be called for any exceptions in the data handler
+      Context ctx = vertx.getOrCreateContext();
+      RuntimeException cause = new RuntimeException("should be caught");
+      ctx.exceptionHandler(err -> {
+        if (err == cause) {
+          testComplete();
+        }
+      });
+      client = vertx.createHttpClient(createBaseClientOptions());
       client.request(HttpMethod.GET, testAddress,  DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        RuntimeException cause = new RuntimeException("should be caught");
-        resp.exceptionHandler(err -> {
-          if (err == cause) {
-            testComplete();
-          }
-        });
         resp.handler(data -> {
           throw cause;
         });
@@ -1321,18 +1325,21 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testClientExceptionHandlerCalledWhenExceptionOnBodyHandler() throws Exception {
+  public void testClientExceptionHandlerCalledWhenExceptionOnBodyHandler() {
+    client.close();
     server.requestHandler(request -> {
       request.response().end("foo");
     }).listen(testAddress, onSuccess(s -> {
+      client = vertx.createHttpClient(createBaseClientOptions());
       // Exception handler should be called for any exceptions in the data handler
+      Context ctx = vertx.getOrCreateContext();
+      RuntimeException cause = new RuntimeException("should be caught");
+      ctx.exceptionHandler(err -> {
+        if (err == cause) {
+          testComplete();
+        }
+      });
       client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        RuntimeException cause = new RuntimeException("should be caught");
-        resp.exceptionHandler(err -> {
-          if (err == cause) {
-            testComplete();
-          }
-        });
         resp.bodyHandler(data -> {
           throw cause;
         });
@@ -4934,8 +4941,9 @@ public abstract class HttpTest extends HttpTestBase {
       NetSocket so = req.netSocket();
       so.write("hello");
     });
-
+    client.close();
     server.listen(testAddress, onSuccess(s -> {
+      client = vertx.createHttpClient(createBaseClientOptions());
       HttpClientRequest req = client.request(HttpMethod.CONNECT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
       }));
       req.netSocket(onSuccess(so -> {
@@ -4966,7 +4974,9 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       }));
     });
+    client.close();
     server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient(createBaseClientOptions());
       HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
         complete();
       }));

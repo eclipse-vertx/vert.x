@@ -199,11 +199,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   void handleUnknownFrame(HttpFrame frame) {
     synchronized (conn) {
       if (customFrameHandler != null) {
-        try {
-          customFrameHandler.handle(frame);
-        } catch (Throwable t) {
-          handleException(t);
-        }
+        customFrameHandler.handle(frame);
       }
     }
   }
@@ -215,11 +211,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       handler = dataHandler;
     }
     if (handler != null) {
-      try {
-        handler.handle(data);
-      } catch (Throwable t) {
-        handleException(t);
-      }
+      handler.handle(data);
     }
   }
 
@@ -231,17 +223,16 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       endHandler = null;
     }
     if (handler != null) {
-      try {
-        handler.handle(null);
-      } catch (Throwable t) {
-        handleException(t);
-      }
+      handler.handle(null);
     }
   }
 
   void handleException(Throwable e) {
     Handler<Throwable> handler;
     synchronized (conn) {
+      if (trailers != null) {
+        return;
+      }
       handler = exceptionHandler;
       if (handler == null) {
         handler = log::error;

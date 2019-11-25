@@ -86,8 +86,10 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     private Http1xClientConnection conn;
     private HttpClientStream stream;
 
-    UpgradingStream(HttpClientStream stream, Http1xClientConnection conn) {
+    UpgradingStream(HttpClientStream stream, HttpClientRequestImpl request, Promise<NetSocket> netSocketPromise, Http1xClientConnection conn) {
       this.conn = conn;
+      this.request = request;
+      this.netSocketPromise = netSocketPromise;
       this.stream = stream;
     }
 
@@ -109,7 +111,6 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                           ByteBuf buf,
                           boolean end,
                           StreamPriority priority,
-                          Handler<Void> continueHandler,
                           Handler<AsyncResult<Void>> listener) {
       ChannelPipeline pipeline = conn.channel().pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
@@ -144,12 +145,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
           // Now we need to upgrade this to an HTTP2
           ConnectionListener<HttpClientConnection> listener = conn.listener();
           VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, conn.endpointMetric(), listener, conn.getContext(), current.metric(), (conn, concurrency) -> {
-            conn.upgradeStream(stream.metric(), stream.getContext(), ar -> {
+            conn.upgradeStream(stream.metric(), request, netSocketPromise, stream.getContext(), ar -> {
               UpgradingStream.this.conn.closeHandler(null);
               UpgradingStream.this.conn.exceptionHandler(null);
               if (ar.succeeded()) {
                 HttpClientStream upgradedStream = ar.result();
-                upgradedStream.beginRequest(request, netSocketPromise);
                 current = conn;
                 conn.closeHandler(closeHandler);
                 conn.exceptionHandler(exceptionHandler);
@@ -171,7 +171,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, continueHandler, listener);
+      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, listener);
     }
 
     @Override
@@ -230,17 +230,6 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public void beginRequest(HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise) {
-      request = req;
-      stream.beginRequest(req, netSocketPromise);
-    }
-
-    @Override
-    public void endRequest() {
-      stream.endRequest();
-    }
-
-    @Override
     public StreamPriority priority() {
       return stream.priority();
     }
@@ -252,19 +241,19 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler) {
+  public void createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<HttpClientStream>> handler) {
     if (current instanceof Http1xClientConnection) {
-      current.createStream(context, ar -> {
+      current.createStream(context, req, netSocketPromise, ar -> {
         if (ar.succeeded()) {
           HttpClientStream stream = ar.result();
-          UpgradingStream upgradingStream = new UpgradingStream(stream, (Http1xClientConnection) current);
+          UpgradingStream upgradingStream = new UpgradingStream(stream, req, netSocketPromise, (Http1xClientConnection) current);
           handler.handle(Future.succeededFuture(upgradingStream));
         } else {
           handler.handle(ar);
         }
       });
     } else {
-      current.createStream(context, handler);
+      current.createStream(context, req, netSocketPromise, handler);
     }
   }
 

@@ -23,6 +23,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
@@ -724,12 +725,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   void getConnectionForRequest(ContextInternal ctx,
                                SocketAddress peerAddress,
+                               HttpClientRequestImpl req,
+                               Promise<NetSocket> netSocketPromise,
                                boolean ssl,
                                SocketAddress server,
                                Handler<AsyncResult<HttpClientStream>> handler) {
     httpCM.getConnection(context, peerAddress, ssl, server, ar -> {
       if (ar.succeeded()) {
-        ar.result().createStream(ctx, handler);
+        ar.result().createStream(ctx, req, netSocketPromise, handler);
       } else {
         ctx.emit(Future.failedFuture(ar.cause()), handler);
       }
@@ -775,12 +778,19 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     boolean useProxy = !useSSL && proxyType == ProxyType.HTTP;
 
     // Create the appropriate sub context
-    ContextInternal sub;
     ContextInternal current = (ContextInternal) Vertx.currentContext();
-    if (current != null) {
-      sub = context.duplicate(current);
+    if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
+      if (current != null) {
+        current = context.duplicate(current);
+      } else {
+        current = context;
+      }
     } else {
-      sub = context.duplicate();
+      // Only supported by HTTP/1 for now
+      if (current == null) {
+        // Reuse pool context
+        current = context;
+      }
     }
 
     if (useProxy) {
@@ -795,13 +805,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
             .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
-      req = new HttpClientRequestImpl(this, sub, useSSL, method, SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost()),
+      req = new HttpClientRequestImpl(this, current, useSSL, method, SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost()),
           host, port, relativeURI);
     } else {
       if (server == null) {
         server = SocketAddress.inetSocketAddress(port, host);
       }
-      req = new HttpClientRequestImpl(this, sub, useSSL, method, server, host, port, relativeURI);
+      req = new HttpClientRequestImpl(this, current, useSSL, method, server, host, port, relativeURI);
     }
     if (headers != null) {
       req.headers().setAll(headers);

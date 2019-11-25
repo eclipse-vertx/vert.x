@@ -46,7 +46,7 @@ import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
  */
 abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends ConnectionBase implements io.vertx.core.http.HttpConnection {
 
-  protected S ws;
+  protected S webSocket;
   private boolean closeFrameSent;
 
   Http1xConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
@@ -119,7 +119,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
           }
           break;
       }
-      w = ws;
+      w = webSocket;
     }
     if (w != null) {
       w.context.emit(frame, ((WebSocketImplBase)w)::handleFrame);
@@ -132,7 +132,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   Future<Void> closeWithPayload(short code, String reason) {
-    if (ws == null) {
+    if (webSocket == null) {
       return super.close();
     } else {
       PromiseInternal<Void> promise = context.promise();

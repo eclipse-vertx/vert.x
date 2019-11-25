@@ -36,10 +36,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final int port;
   protected final SocketAddress server;
   protected final boolean ssl;
+  protected final Promise<HttpClientResponse> responsePromise;
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
-  protected final Promise<HttpClientResponse> responsePromise;
 
   HttpClientRequestBase(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
@@ -98,6 +98,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   void handleException(Throwable t) {
     cancelTimeout();
+    responsePromise.tryFail(t);
+    HttpClientResponseImpl response = (HttpClientResponseImpl) responsePromise.future().result();
+    if (response != null) {
+      response.handleException(t);
+    }
   }
 
   void handleResponse(HttpClientResponse resp) {

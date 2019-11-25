@@ -97,11 +97,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     super.onStreamClosed(nettyStream);
   }
 
-  void upgradeStream(Object metric, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  void upgradeStream(Object metric, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
-        Http2ClientStream stream = createStream(context, handler.connection().stream(1));
+        Http2ClientStream stream = createStream_(context, req, netSocketPromise, handler.connection().stream(1));
         stream.metric = metric;
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
@@ -112,13 +112,18 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  public void createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
       Http2Connection conn = handler.connection();
       try {
         int id = conn.local().lastStreamCreated() == 0 ? 1 : conn.local().lastStreamCreated() + 2;
-        Http2ClientStream stream = createStream(context, conn.local().createStream(id, false));
+        Http2ClientStream stream = createStream_(context, req, netSocketPromise, conn.local().createStream(id, false));
+        VertxTracer tracer = context.tracer();
+        if (tracer != null) {
+          BiConsumer<String, String> headers = (key, val) -> req.headers().add(key, val);
+          stream.trace = tracer.sendRequest(context, req, req.method.name(), headers, HttpUtils.CLIENT_REQUEST_TAG_EXTRACTOR);
+        }
         fut = Future.succeededFuture(stream);
       } catch (Exception e) {
         fut = Future.failedFuture(e);
@@ -127,9 +132,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     context.emit(fut, completionHandler);
   }
 
-  private Http2ClientStream createStream(ContextInternal context, Http2Stream stream) {
+  private Http2ClientStream createStream_(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Http2Stream stream) {
     boolean writable = handler.encoder().flowController().isWritable(stream);
-    Http2ClientStream clientStream = new Http2ClientStream(this, context, stream, writable);
+    Http2ClientStream clientStream = new Http2ClientStream(this, context, req, netSocketPromise, stream, writable);
     streams.put(clientStream.stream.id(), clientStream);
     return clientStream;
   }
@@ -200,22 +205,18 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   static class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> implements HttpClientStream {
 
-    private HttpClientRequestBase request;
+    private final HttpClientRequestBase request;
     private Promise<NetSocket> netSocketPromise;
     private HttpClientResponseImpl response;
-    private Handler<Void> continueHandler;
     private boolean requestEnded;
     private boolean responseEnded;
     private Object trace;
     private Object metric;
 
-    Http2ClientStream(Http2ClientConnection conn, ContextInternal context, Http2Stream stream, boolean writable) {
-      super(conn, context, stream, writable);
-    }
-
-    Http2ClientStream(Http2ClientConnection conn, ContextInternal context, HttpClientRequestPushPromise request, Http2Stream stream, boolean writable) {
+    Http2ClientStream(Http2ClientConnection conn, ContextInternal context, HttpClientRequestBase request, Promise<NetSocket> netSocketPromise, Http2Stream stream, boolean writable) {
       super(conn, context, stream, writable);
       this.request = request;
+      this.netSocketPromise = netSocketPromise;
     }
 
     @Override
@@ -344,8 +345,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           return;
         }
         if (status == 100) {
-          if (continueHandler != null) {
-            context.emit(continueHandler);
+          if (request instanceof HttpClientRequestImpl) {
+            HttpClientRequestImpl rr = (HttpClientRequestImpl) request;
+            context.emit(null, v -> rr.handleContinue());
           }
           return;
         }
@@ -382,16 +384,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     void handleException(Throwable exception) {
       HttpClientRequestBase req;
-      HttpClientResponseImpl resp;
       synchronized (conn) {
-        req = (!requestEnded || response == null || response.statusCode() == 100) ? request : null;
-        resp = response;
+        req = request;
       }
       if (req != null) {
         req.handleException(exception);
-      }
-      if (resp != null) {
-        resp.handleException(exception);
       }
       if (netSocketPromise != null) {
         netSocketPromise.fail(exception);
@@ -403,7 +400,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<Void> contHandler, Handler<AsyncResult<Void>> handler) {
+    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
       if (method == HttpMethod.CONNECT) {
@@ -428,7 +425,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (conn.client.getOptions().isTryUseCompression() && h.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
-      continueHandler = contHandler;
       if (conn.metrics != null) {
         metric = conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
       }
@@ -439,6 +435,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       } else {
         writeHeaders(h, end, handler);
         handlerContext.flush();
+      }
+      if (end) {
+        endRequest();
       }
     }
 
@@ -452,6 +451,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
       if (end) {
         handlerContext.flush();
+        endRequest();
       }
     }
 
@@ -474,19 +474,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       return super.isNotWritable();
     }
 
-    @Override
-    public void beginRequest(HttpClientRequestImpl req, Promise<NetSocket> promise) {
-      request = req;
-      netSocketPromise = promise;
-      VertxTracer tracer = context.tracer();
-      if (tracer != null) {
-        BiConsumer<String, String> headers = (key, val) -> req.headers().add(key, val);
-        trace = tracer.sendRequest(context, request, request.method.name(), headers, HttpUtils.CLIENT_REQUEST_TAG_EXTRACTOR);
-      }
-    }
-
-    @Override
-    public void endRequest() {
+    private void endRequest() {
       if (conn.metrics != null) {
         conn.metrics.requestEnd(metric);
       }

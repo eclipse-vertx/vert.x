@@ -2020,7 +2020,7 @@ public class Http1xTest extends HttpTest {
         // checker.accept(req4);
         assertEquals(1, contexts.stream().map(context -> ((ContextInternal)context).nettyEventLoop()).distinct().count());
         assertEquals(1, connections.size());
-        assertNotSame(Vertx.currentContext(), ctx);
+        assertSame(Vertx.currentContext(), ctx);
         testComplete();
       }));
       req3.exceptionHandler(this::fail);
@@ -2134,9 +2134,8 @@ public class Http1xTest extends HttpTest {
     });
     waitUntil(() -> client != null);
     for (int i = 0; i < numReqs; i++) {
-      int val = i;
       CompletableFuture<Void> cf = new CompletableFuture<>();
-      String path = "/" + val;
+      String path = "/" + i;
       requestResumeMap.put(path, cf);
       clientCtx.runOnContext(v -> {
         HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path, onSuccess(resp -> {
@@ -2153,7 +2152,7 @@ public class Http1xTest extends HttpTest {
           resp.endHandler(v2 -> {
             assertSameEventLoop(clientCtx, Vertx.currentContext());
             if (cnt.incrementAndGet() == numReqs) {
-              assertEquals(4, contexts.size());
+              assertEquals(1, contexts.size());
               assertEquals(1, threads.size());
               latch2.countDown();
             }
@@ -3095,10 +3094,10 @@ public class Http1xTest extends HttpTest {
       }));
       awaitLatch(latch);
       client.close();
-      client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setKeepAlive(keepAlive).setPipelining(pipelined));
       // There might be a race between the request write and the request reset
       // so we do it on the context thread to avoid it
       vertx.runOnContext(v -> {
+        client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setKeepAlive(keepAlive).setPipelining(pipelined));
         HttpClientRequest post = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {
         }));
         post.setChunked(true).write(TestUtils.randomBuffer(1024));
@@ -4205,22 +4204,27 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testConnectionCloseDuringShouldCallHandleExceptionOnlyOnce() throws Exception {
+    CompletableFuture<Void> continuation = new CompletableFuture<>();
     server.requestHandler(req -> {
-      vertx.setTimer(500, id -> {
+      req.response().setChunked(true).write("chunk");
+      continuation.thenAccept(v -> {
         req.connection().close();
       });
     });
     AtomicInteger count = new AtomicInteger();
     startServer(testAddress);
-    HttpClientRequest post = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onFailure(res -> {}));
+    HttpClientRequest post = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(res -> {
+      continuation.complete(null);
+    }));
     post.setChunked(true);
     post.write(TestUtils.randomBuffer(10000));
     CountDownLatch latch = new CountDownLatch(1);
     post.exceptionHandler(x-> {
-      count.incrementAndGet();
-      vertx.setTimer(10, id -> {
-        latch.countDown();
-      });
+      if (count.incrementAndGet() == 1) {
+        vertx.setTimer(100, id -> {
+          latch.countDown();
+        });
+      }
     });
     // then stall until timeout and the exception handler will be called.
     awaitLatch(latch);

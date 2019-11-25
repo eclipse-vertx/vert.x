@@ -173,10 +173,8 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
       client.getNow(8080, "localhost", "/", onSuccess(resp -> {
-        assertEquals(1, seq.get());
         resp.endHandler(v2 -> {
           vertx.runOnContext(v -> {
-            assertEquals(2, seq.get());
             assertNull(tracerMap.get(key));
             testComplete();
           });

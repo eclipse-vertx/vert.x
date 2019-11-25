@@ -284,8 +284,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   ServerWebSocketImpl createWebSocket(HttpServerRequestImpl request) {
-    if (ws != null) {
-      return ws;
+    if (webSocket != null) {
+      return webSocket;
     }
     if (!(request.nettyRequest() instanceof FullHttpRequest)) {
       throw new IllegalStateException();
@@ -294,12 +294,12 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     if (handshaker == null) {
       return null;
     }
-    ws = new ServerWebSocketImpl(vertx.getOrCreateContext(), this, handshaker.version() != WebSocketVersion.V00,
+    webSocket = new ServerWebSocketImpl(vertx.getOrCreateContext(), this, handshaker.version() != WebSocketVersion.V00,
       request, handshaker, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
-      ws.setMetric(metrics.connected(metric(), request.metric(), ws));
+      webSocket.setMetric(metrics.connected(metric(), request.metric(), webSocket));
     }
-    return ws;
+    return webSocket;
   }
 
   private WebSocketServerHandshaker createHandshaker(HttpServerRequestImpl request) {
@@ -399,8 +399,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     if (!isNotWritable()) {
       if (responseInProgress != null) {
         responseInProgress.context.emit(v -> responseInProgress.response().handleDrained());
-      } else if (ws != null) {
-        ws.handleDrained();
+      } else if (webSocket != null) {
+        webSocket.handleDrained();
       }
     }
   }
@@ -414,7 +414,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     HttpServerRequestImpl requestInProgress;
     ServerWebSocketImpl ws;
     synchronized (this) {
-      ws = this.ws;
+      ws = this.webSocket;
       requestInProgress = this.requestInProgress;
       responseInProgress = this.responseInProgress;
       if (METRICS_ENABLED && metrics != null && ws != null) {
@@ -445,7 +445,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     HttpServerRequestImpl requestInProgress;
     ServerWebSocketImpl ws;
     synchronized (this) {
-      ws = this.ws;
+      ws = this.webSocket;
       requestInProgress = this.requestInProgress;
       responseInProgress = this.responseInProgress;
       if (METRICS_ENABLED && metrics != null) {

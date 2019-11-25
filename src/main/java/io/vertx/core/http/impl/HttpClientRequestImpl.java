@@ -99,7 +99,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
     handler.handle(t);
     endPromise.tryFail(t);
-    responsePromise.tryFail(t);
   }
 
   @Override
@@ -386,6 +385,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     });
   }
 
+  void handleContinue() {
+    Handler<Void> handler;
+    synchronized (this) {
+      handler = continueHandler;
+    }
+    if (handler != null) {
+      handler.handle(null);
+    }
+  }
+
   void handleResponse(HttpClientResponse resp, long timeoutMs) {
     if (reset == null) {
       int statusCode = resp.statusCode();
@@ -455,7 +464,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
       connecting = true;
-      client.getConnectionForRequest(context, peerAddress, ssl, server, ar1 -> {
+      client.getConnectionForRequest(context, peerAddress, this, netSocketPromise, ssl, server, ar1 -> {
         if (ar1.succeeded()) {
           HttpClientStream stream = ar1.result();
           ContextInternal ctx = stream.getContext();
@@ -481,7 +490,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private void connected(Handler<HttpVersion> headersHandler, HttpClientStream stream) {
     synchronized (this) {
       this.stream = stream;
-      stream.beginRequest(this, netSocketPromise);
 
       // If anything was written or the request ended before we got the connection, then
       // we need to write it now
@@ -503,10 +511,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           };
         }
       }
-      stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, ended, priority, continueHandler, handler);
+      stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, ended, priority, handler);
       if (ended) {
         // we also need to write the head so optimize this and write all out in once
-        stream.endRequest();
         tryComplete();
       }
       this.connecting = false;
@@ -657,7 +664,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
     s.writeBuffer(buff, end, completionHandler);
     if (end) {
-      s.endRequest();
       tryComplete();
     }
   }

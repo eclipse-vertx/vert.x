@@ -16,8 +16,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.NetSocket;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -30,7 +32,7 @@ public interface HttpClientConnection extends HttpConnection {
 
   Future<Void> close();
 
-  void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler);
+  void createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<HttpClientStream>> handler);
 
   ContextInternal getContext();
 
