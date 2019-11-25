@@ -17,6 +17,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -348,6 +349,36 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    */
   @Fluent
   HttpClientRequest pushHandler(Handler<HttpClientRequest> handler);
+
+  /**
+   * Get a {@link NetSocket} for the underlying connection of this request.
+   * <p>
+   * The {@code handler} is called after the response headers are received.
+   * <p>
+   * This shall be used when using a {@link HttpMethod#CONNECT} method.
+   * <p>
+   * HTTP/1.1 pipe-lined requests cannot support net socket upgrade.
+   * <p>
+   * Pooled connection is removed from the pool.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  default HttpClientRequest netSocket(Handler<AsyncResult<NetSocket>> handler) {
+    Future<NetSocket> fut = netSocket();
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
+    return this;
+  }
+
+  /**
+   * Like {@link #netSocket(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<NetSocket> netSocket() {
+    return Future.failedFuture("Cannot use socket connect");
+  }
 
   /**
    * Reset this stream with the error code {@code 0}.

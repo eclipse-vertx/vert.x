@@ -201,6 +201,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   static class Http2ClientStream extends VertxHttp2Stream<Http2ClientConnection> implements HttpClientStream {
 
     private HttpClientRequestBase request;
+    private Promise<NetSocket> netSocketPromise;
     private HttpClientResponseImpl response;
     private Handler<Void> continueHandler;
     private boolean requestEnded;
@@ -361,6 +362,16 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           conn.metrics.responseBegin(metric, response);
         }
         request.handleResponse(response);
+        Promise<NetSocket> promise = this.netSocketPromise;
+        netSocketPromise = null;
+        if (promise != null) {
+          if (response.statusCode() == 200) {
+            NetSocket ns = conn.toNetSocket(this);
+            promise.complete(ns);
+          } else {
+            promise.fail("Server responded with " + response.statusCode() + " code instead of 200");
+          }
+        }
         if (end) {
           onEnd();
         }
@@ -382,6 +393,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (resp != null) {
         resp.handleException(exception);
       }
+      if (netSocketPromise != null) {
+        netSocketPromise.fail(exception);
+      }
     }
 
     Handler<HttpClientRequest> pushHandler() {
@@ -397,6 +411,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           throw new IllegalArgumentException("Missing :authority / host header");
         }
         h.authority(hostHeader);
+        // don't end stream for CONNECT
+        end = false;
       } else {
         h.path(uri);
         h.scheme(conn.isSsl() ? "https" : "http");
@@ -459,8 +475,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void beginRequest(HttpClientRequestImpl req) {
+    public void beginRequest(HttpClientRequestImpl req, Promise<NetSocket> promise) {
       request = req;
+      netSocketPromise = promise;
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers = (key, val) -> req.headers().add(key, val);
@@ -498,11 +515,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public HttpClientConnection connection() {
       return conn;
-    }
-
-    @Override
-    public NetSocket createNetSocket() {
-      return conn.toNetSocket(this);
     }
   }
 

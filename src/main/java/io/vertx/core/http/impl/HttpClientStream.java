@@ -16,6 +16,7 @@ import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
@@ -54,10 +55,8 @@ public interface HttpClientStream {
   void doFetch(long amount);
 
   void reset(Throwable cause);
-  void beginRequest(HttpClientRequestImpl req);
+  void beginRequest(HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise);
   void endRequest();
-
-  NetSocket createNetSocket();
 
   StreamPriority priority();
   void updatePriority(StreamPriority streamPriority);

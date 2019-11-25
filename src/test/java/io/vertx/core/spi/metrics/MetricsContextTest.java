@@ -157,7 +157,7 @@ public class MetricsContextTest extends VertxTestBase {
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient();
     client.put(8080, "localhost", "/", onSuccess(resp -> {
-      resp.netSocket().closeHandler(v -> {
+      resp.request().connection().closeHandler(v -> {
         vertx.close(v4 -> {
           assertTrue(requestBeginCalled.get());
           assertTrue(responseEndCalled.get());

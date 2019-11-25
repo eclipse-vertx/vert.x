@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
 import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
+import io.netty.util.ReferenceCounted;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -1995,9 +1996,10 @@ public class WebSocketTest extends VertxTestBase {
     HttpClientRequest request = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/",
       onSuccess(resp -> {
         assertEquals(101, resp.statusCode());
-        handler.handle(resp.netSocket());
       })
-    );
+    ).netSocket(onSuccess(socket -> {
+      handler.handle(socket);
+    }));
     request
       .putHeader("Upgrade", "websocket")
       .putHeader("Connection", "Upgrade")
@@ -2701,15 +2703,21 @@ public class WebSocketTest extends VertxTestBase {
         so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
         String reason = TestUtils.randomAlphaString(10);
         so.writeMessage(new CloseWebSocketFrame(status, reason));
-        Deque<Object> received = new ArrayDeque<>();
-        so.messageHandler(received::add);
+        AtomicBoolean closeFrameReceived = new AtomicBoolean();
+        so.messageHandler(msg -> {
+          if (msg instanceof CloseWebSocketFrame) {
+            CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
+            assertEquals(status, frame.statusCode());
+            assertEquals(reason, frame.reasonText());
+            closeFrameReceived.set(true);
+          }
+          if (msg instanceof ReferenceCounted) {
+            // release to avoid leaks
+            ((ReferenceCounted)msg).release();
+          }
+        });
         so.closeHandler(v2 -> {
-          assertEquals(1, received.size());
-          Object msg = received.getFirst();
-          assertEquals(msg.getClass(), CloseWebSocketFrame.class);
-          CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
-          assertEquals(status, frame.statusCode());
-          assertEquals(reason, frame.reasonText());
+          assertTrue(closeFrameReceived.get());
           complete();
         });
       });

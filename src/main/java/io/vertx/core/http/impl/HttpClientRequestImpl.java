@@ -28,6 +28,7 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.ArrayList;
@@ -73,6 +74,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private StreamPriority priority;
   public HttpClientStream stream;
   private boolean connecting;
+  private Promise<NetSocket> netSocketPromise;
 
   HttpClientRequestImpl(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method,
                         SocketAddress server, String host, int port, String relativeURI) {
@@ -103,6 +105,17 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized int streamId() {
     return stream == null ? -1 : stream.id();
+  }
+
+  @Override
+  public synchronized Future<NetSocket> netSocket() {
+    if (client.getOptions().isPipelining()) {
+      return Future.failedFuture("Cannot upgrade a pipe-lined request");
+    }
+    if (netSocketPromise == null) {
+      netSocketPromise = context.promise();
+    }
+    return netSocketPromise.future();
   }
 
   @Override
@@ -468,7 +481,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private void connected(Handler<HttpVersion> headersHandler, HttpClientStream stream) {
     synchronized (this) {
       this.stream = stream;
-      stream.beginRequest(this);
+      stream.beginRequest(this, netSocketPromise);
 
       // If anything was written or the request ended before we got the connection, then
       // we need to write it now

@@ -20,7 +20,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.net.NetSocket;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +49,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<StreamPriority> priorityHandler;
-  private NetSocket netSocket;
 
   // Cache these for performance
   private MultiMap headers;
@@ -250,16 +248,6 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       }
     }
     handler.handle(e);
-  }
-
-  @Override
-  public NetSocket netSocket() {
-    synchronized (conn) {
-      if (netSocket == null) {
-        netSocket = stream.createNetSocket();
-      }
-      return netSocket;
-    }
   }
 
   @Override

@@ -1313,7 +1313,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testNetSocketConnect() throws Exception {
-    waitFor(2);
+    waitFor(3);
     final AtomicInteger writeHandlerCounter = new AtomicInteger(0);
     Handler<AsyncResult<Void>> writeHandler = (result) -> {
       if(result.succeeded()) {
@@ -1353,7 +1353,8 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     client.request(HttpMethod.CONNECT, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onSuccess(resp -> {
       assertEquals(200, resp.statusCode());
-      NetSocket socket = resp.netSocket();
+      complete();
+    })).netSocket(onSuccess(socket -> {
       StringBuilder received = new StringBuilder();
       AtomicInteger count = new AtomicInteger();
       socket.handler(buff -> {
@@ -1375,13 +1376,13 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
       socket.write(Buffer.buffer("some-data"));
-    })).sendHead();
+    })).end();
     await();
   }
 
   @Test
   public void testServerCloseNetSocket() throws Exception {
-    waitFor(2);
+    waitFor(3);
     AtomicInteger status = new AtomicInteger();
     server.requestHandler(req -> {
       NetSocket socket = req.netSocket();
@@ -1411,7 +1412,8 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     client.request(HttpMethod.CONNECT, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", onSuccess(resp -> {
       assertEquals(200, resp.statusCode());
-      NetSocket socket = resp.netSocket();
+      complete();
+    })).netSocket(onSuccess(socket -> {
       AtomicInteger count = new AtomicInteger();
       socket.handler(buff -> {
         switch (count.getAndIncrement()) {
@@ -1432,7 +1434,7 @@ public class Http2ClientTest extends Http2TestBase {
         complete();
       });
       socket.write(Buffer.buffer("some-data"));
-    })).sendHead();
+    })).end();
     await();
   }
 

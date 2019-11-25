@@ -20,6 +20,7 @@ import io.netty.channel.ChannelOutboundHandler;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCounted;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -55,9 +56,9 @@ import java.util.UUID;
 public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   private static final Handler<Object> NULL_MSG_HANDLER = event -> {
-    if (event instanceof ByteBuf) {
-      ByteBuf byteBuf = (ByteBuf) event;
-      byteBuf.release();
+    if (event instanceof ReferenceCounted) {
+      ReferenceCounted refCounter = (ReferenceCounted) event;
+      refCounter.release();
     }
   };
 

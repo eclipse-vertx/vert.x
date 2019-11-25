@@ -17,7 +17,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
@@ -151,21 +150,6 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    */
   @Fluent
   HttpClientResponse customFrameHandler(Handler<HttpFrame> handler);
-
-  /**
-   * Get a net socket for the underlying connection of this request.
-   * <p>
-   * USE THIS WITH CAUTION! Writing to the socket directly if you don't know what you're doing can easily break the HTTP protocol.
-   * <p>
-   * HTTP/1.1 pipe-lined requests cannot support net socket upgrade.
-   * <p>
-   * One valid use-case for calling this is to receive the {@link io.vertx.core.net.NetSocket} after a HTTP CONNECT was issued to the
-   * remote peer and it responded with a status code of 200.
-   *
-   * @return the net socket
-   */
-  @CacheReturn
-  NetSocket netSocket();
 
   /**
    * @return the corresponding request

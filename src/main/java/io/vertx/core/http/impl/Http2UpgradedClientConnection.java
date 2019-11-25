@@ -82,6 +82,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   private class UpgradingStream implements HttpClientStream {
 
     private HttpClientRequestImpl request;
+    private Promise<NetSocket> netSocketPromise;
     private Http1xClientConnection conn;
     private HttpClientStream stream;
 
@@ -148,7 +149,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
               UpgradingStream.this.conn.exceptionHandler(null);
               if (ar.succeeded()) {
                 HttpClientStream upgradedStream = ar.result();
-                upgradedStream.beginRequest(request);
+                upgradedStream.beginRequest(request, netSocketPromise);
                 current = conn;
                 conn.closeHandler(closeHandler);
                 conn.exceptionHandler(exceptionHandler);
@@ -229,19 +230,14 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public void beginRequest(HttpClientRequestImpl req) {
+    public void beginRequest(HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise) {
       request = req;
-      stream.beginRequest(req);
+      stream.beginRequest(req, netSocketPromise);
     }
 
     @Override
     public void endRequest() {
       stream.endRequest();
-    }
-
-    @Override
-    public NetSocket createNetSocket() {
-      return stream.createNetSocket();
     }
 
     @Override

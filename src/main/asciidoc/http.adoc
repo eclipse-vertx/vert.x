@@ -1199,6 +1199,18 @@ cannot be a logical protocol constraint):
 {@link examples.HTTPExamples#example50_2}
 ----
 
+==== Creating HTTP tunnels
+
+HTTP tunnels can be created with {@link io.vertx.core.http.HttpClientRequest#netSocket}:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#clientTunnel}
+----
+
+The handler will be called after the HTTP response header is received, the socket will be ready for tunneling
+and will send and receive buffers.
+
 ==== Client push
 
 Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.

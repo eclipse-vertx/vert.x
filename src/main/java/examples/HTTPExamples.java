@@ -21,6 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
 import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.streams.Pump;
@@ -719,6 +720,27 @@ public class HTTPExamples {
         }
       }
     });
+  }
+
+  public void clientTunnel(HttpClient client) {
+
+    HttpClientRequest request = client.request(HttpMethod.CONNECT, "some-uri", ar -> {
+      if (ar.succeeded()) {
+        HttpClientResponse response = ar.result();
+        if (response.statusCode() != 200) {
+          // Connect failed for some reason
+        }
+      }
+    });
+
+    request.netSocket(ar -> {
+      if (ar.succeeded()) {
+        NetSocket socket = ar.result();
+        // Perform tunneling now
+      }
+    });
+
+    request.end();
   }
 
   public void example51(HttpServer server) {

@@ -32,14 +32,17 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
+import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -77,7 +80,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   private StreamImpl requestInProgress;
   
   private boolean close;
-  private boolean upgraded;
+  private Promise<NetSocket> netSocketPromise;
   private int keepAliveTimeout;
   private int seq = 1;
 
@@ -108,84 +111,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
   ConnectionListener<HttpClientConnection> listener() {
     return listener;
-  }
-
-  private synchronized NetSocket upgrade(StreamImpl stream) {
-    if (options.isPipelining()) {
-      throw new IllegalStateException("Cannot upgrade a pipe-lined request");
-    }
-    if (upgraded) {
-      throw new IllegalStateException("Request already upgraded to NetSocket");
-    }
-    upgraded = true;
-
-    // connection was upgraded to raw TCP socket
-    AtomicBoolean paused = new AtomicBoolean(false);
-    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics) {
-      {
-        super.pause();
-      }
-      @Override
-      public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
-        return super.handler(dataHandler);
-      }
-      @Override
-      public synchronized NetSocket pause() {
-        paused.set(true);
-        return super.pause();
-      }
-      @Override
-      public synchronized NetSocket resume() {
-        paused.set(false);
-        return super.resume();
-      }
-
-      @Override
-      public synchronized void handleMessage(Object msg) {
-        if (msg instanceof HttpContent) {
-          if (msg instanceof LastHttpContent) {
-            stream.endResponse((LastHttpContent) msg);
-          }
-          ReferenceCountUtil.release(msg);
-          return;
-        }
-        super.handleMessage(msg);
-      }
-
-      @Override
-      protected void handleClosed() {
-        listener.onEvict();
-        super.handleClosed();
-      }
-    };
-    socket.metric(metric());
-
-    // Flush out all pending data
-    flush();
-
-    // remove old http handlers and replace the old handler with one that handle plain sockets
-    ChannelPipeline pipeline = chctx.pipeline();
-    ChannelHandler inflater = pipeline.get(HttpContentDecompressor.class);
-    if (inflater != null) {
-      pipeline.remove(inflater);
-    }
-    pipeline.replace("handler", "handler", VertxHandler.create(socket));
-
-    // Removing this codec might fire pending buffers in the HTTP decoder
-    // this happens when the channel reads the HTTP response and the following data in a single buffer
-    pipeline.remove("codec");
-
-    // Async check to deliver the pending messages
-    // because the netSocket access in HttpClientResponse is synchronous
-    // we need to pause the NetSocket to avoid losing or reordering buffers
-    // and then asynchronously un-pause it unless it was actually paused by the application
-    context.runOnContext(v -> {
-      if (!paused.get()) {
-        socket.resume();
-      }
-    });
-
-    return socket;
   }
 
   private HttpRequest createRequest(
@@ -400,12 +325,13 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    public void beginRequest(HttpClientRequestImpl req) {
+    public void beginRequest(HttpClientRequestImpl req, Promise<NetSocket> promise) {
       synchronized (conn) {
         if (request != null) {
           throw new IllegalStateException("Already writing a request");
         }
         request = req;
+        conn.netSocketPromise = promise;
         if (conn.metrics != null) {
           metric = conn.metrics.requestBegin(conn.endpointMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
         }
@@ -441,16 +367,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       conn.reportBytesWritten(bytesWritten);
       if (recycle) {
         conn.recycle();
-      }
-    }
-
-    @Override
-    public NetSocket createNetSocket() {
-      synchronized (conn) {
-        if (responseEnded) {
-          throw new IllegalStateException("Response already ended");
-        }
-        return conn.upgrade(this);
       }
     }
 
@@ -558,14 +474,14 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   private void checkLifecycle() {
-    if (upgraded) {
-      // Do nothing
-    } else if (close) {
+    if (close) {
       close();
     } else {
       recycle();
     }
   }
+
+
 
   private Throwable validateMessage(Object msg) {
     if (msg instanceof HttpObject) {
@@ -634,6 +550,44 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         response = stream.beginResponse(resp);
       }
       stream.context.emit(v -> request.handleResponse(response));
+
+      Promise<NetSocket> promise = netSocketPromise;
+      netSocketPromise = null;
+      if (promise != null) {
+        if (response.statusCode() == 200) {
+          // remove connection from the pool
+          listener.onEvict();
+
+          // remove old http handlers
+          ChannelPipeline pipeline = chctx.pipeline();
+          ChannelHandler inflater = pipeline.get(HttpContentDecompressor.class);
+          if (inflater != null) {
+            pipeline.remove(inflater);
+          }
+          pipeline.remove("codec");
+
+          // replace the old handler with one that handle plain sockets
+          NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics) {
+            @Override
+            protected void handleClosed() {
+              if (metrics != null) {
+                metrics.responseEnd(stream.metric, response);
+              }
+              super.handleClosed();
+            }
+          };
+          socket.metric(metric());
+          pipeline.replace("handler", "handler", VertxHandler.create(socket));
+
+          // removing this codec might fire pending buffers in the HTTP decoder
+          // this happens when the channel reads the HTTP response and the following data in a single buffer
+
+          // Handle back response
+          promise.complete(socket);
+        } else {
+          promise.fail("Server responded with " + response.statusCode() + " code instead of 200");
+        }
+      }
     }
   }
 
@@ -812,6 +766,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         }
         list.add(r);
       }
+    }
+    if (netSocketPromise != null) {
+      netSocketPromise.fail(ConnectionBase.CLOSED_EXCEPTION);
     }
     if (ws != null) {
       ws.handleClosed();
