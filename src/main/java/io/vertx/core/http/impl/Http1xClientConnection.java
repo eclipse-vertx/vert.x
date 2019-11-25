@@ -554,7 +554,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       Promise<NetSocket> promise = netSocketPromise;
       netSocketPromise = null;
       if (promise != null) {
-        if (response.statusCode() == 200) {
+        if ((request.method == HttpMethod.CONNECT &&
+             response.statusCode() == 200) || (
+             request.method == HttpMethod.GET &&
+             request.headers().contains("connection", "Upgrade", false) &&
+             response.statusCode() == 101)) {
           // remove connection from the pool
           listener.onEvict();
 
