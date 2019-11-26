@@ -20,5 +20,11 @@ import io.vertx.codegen.annotations.VertxGen;
  */
 @VertxGen
 public enum HttpMethod {
-  OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER
+  // http://www.iana.org/assignments/http-methods/http-methods.xhtml
+  ACL, BIND, CHECKIN, CHECKOUT, CONNECT, COPY, DELETE, GET, HEAD,
+  LABEL, LINK, LOCK, MERGE, MKACTIVITY, MKCALENDAR, MKCOL, MKREDIRECTREF,
+  MKWORKSPACE, MOVE, OPTIONS, ORDERPATCH, PATCH, POST, PRI, PROPFIND, PROPPATCH,
+  PUT, REBIND, REPORT, SEARCH, TRACE, UNBIND, UNCHECKOUT, UNLINK, UNLOCK, UPDATE, UPDATEREDIRECTREF,
+  // https://stackoverflow.com/questions/25857508/what-is-the-http-method-purge
+  PURGE
 }
