@@ -29,9 +29,10 @@ public class VerticleFactoryTest extends VertxTestBase {
 
   public void setUp() throws Exception {
     super.setUp();
-    // Unregister the factory that's loaded from the classpath
-    VerticleFactory factory = vertx.verticleFactories().iterator().next();
-    vertx.unregisterVerticleFactory(factory);
+    // Unregister the factories that are loaded from the classpath
+    for (VerticleFactory factory : vertx.verticleFactories()) {
+      vertx.unregisterVerticleFactory(factory);
+    }
   }
 
   @Test
