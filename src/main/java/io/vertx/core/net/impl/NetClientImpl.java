@@ -197,7 +197,6 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     sslHelper.validate(vertx);
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
-    bootstrap.channelFactory(vertx.transport().channelFactory(remoteAddress.path() != null));
 
     applyConnectionOptions(remoteAddress.path() != null, bootstrap);
 

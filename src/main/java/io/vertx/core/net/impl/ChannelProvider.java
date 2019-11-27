@@ -77,6 +77,12 @@ public final class ChannelProvider {
   }
 
   private void connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Promise<Channel> p) {
+    try {
+      bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.path() != null));
+    } catch (Exception e) {
+      p.setFailure(e);
+      return;
+    }
     if (proxyOptions != null) {
       handleProxyConnect(remoteAddress, peerAddress, serverName, ssl, p);
     } else {
