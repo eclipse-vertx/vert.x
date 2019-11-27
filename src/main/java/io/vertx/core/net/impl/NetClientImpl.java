@@ -176,7 +176,6 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     sslHelper.validate(vertx);
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
-    bootstrap.channelFactory(vertx.transport().channelFactory(remoteAddress.path() != null));
 
     applyConnectionOptions(remoteAddress.path() != null, bootstrap);
 
@@ -237,7 +236,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     if (ch != null) {
       ch.close();
     }
-    context.executeFromIO(v -> doFailed(connectHandler, th));
+    context.runOnContext(v -> doFailed(connectHandler, th));
   }
 
   private void doFailed(Handler<AsyncResult<NetSocket>> connectHandler, Throwable th) {

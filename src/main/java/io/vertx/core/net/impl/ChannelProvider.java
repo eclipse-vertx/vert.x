@@ -81,6 +81,12 @@ public final class ChannelProvider {
         context.nettyEventLoop().execute(() -> channelHandler.handle(res));
       }
     };
+    try {
+      bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.path() != null));
+    } catch (Exception e) {
+      channelHandler.handle(Future.failedFuture(e));
+      return;
+    }
     if (proxyOptions != null) {
       handleProxyConnect(remoteAddress, peerAddress, serverName, ssl, handler);
     } else {

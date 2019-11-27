@@ -35,7 +35,12 @@ public class AsyncResolveConnectHelper {
                                                                 SocketAddress socketAddress,
                                                                 ServerBootstrap bootstrap) {
     Promise<Channel> promise = vertx.getAcceptorEventLoopGroup().next().newPromise();
-    bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.path() != null));
+    try {
+      bootstrap.channelFactory(vertx.transport().serverChannelFactory(socketAddress.path() != null));
+    } catch (Exception e) {
+      promise.setFailure(e);
+      return promise;
+    }
     if (socketAddress.path() != null) {
       java.net.SocketAddress converted = vertx.transport().convert(socketAddress, true);
       ChannelFuture future = bootstrap.bind(converted);
