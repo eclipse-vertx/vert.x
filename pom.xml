@@ -362,8 +362,8 @@
             <id>no-alpn</id>
             <goals>
               <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
-            <phase>integration-test</phase>
             <configuration>
               <includes>
                 <include>io/vertx/it/SSLEngineTest.java</include>
@@ -381,8 +381,8 @@
             <id>openssl-alpn</id>
             <goals>
               <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
-            <phase>integration-test</phase>
             <configuration>
               <includes>
                 <include>io/vertx/it/SSLEngineTest.java</include>
@@ -398,8 +398,8 @@
             <id>jdk-alpn</id>
             <goals>
               <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
-            <phase>integration-test</phase>
             <configuration>
               <argLine>${jetty.alpnAgent.argLine}</argLine>
               <includes>
@@ -419,8 +419,8 @@
             <id>jdk-openssl-alpn</id>
             <goals>
               <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
-            <phase>integration-test</phase>
             <configuration>
               <argLine>${jetty.alpnAgent.argLine}</argLine>
               <includes>
@@ -437,8 +437,8 @@
             <id>no-native</id>
             <goals>
               <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
-            <phase>integration-test</phase>
             <configuration>
               <includes>
                 <include>io/vertx/it/TransportTest.java</include>
@@ -453,8 +453,8 @@
             <id>slf4j</id>
             <goals>
               <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
-            <phase>integration-test</phase>
             <configuration>
               <includes>
                 <include>io/vertx/it/SLF4JLogDelegateTest.java</include>
@@ -465,8 +465,8 @@
             <id>jul</id>
             <goals>
               <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
-            <phase>integration-test</phase>
             <configuration>
               <includes>
                 <include>io/vertx/it/JULLogDelegateTest.java</include>
@@ -477,8 +477,8 @@
             <id>log4j2</id>
             <goals>
               <goal>integration-test</goal>
+              <goal>verify</goal>
             </goals>
-            <phase>integration-test</phase>
             <configuration>
               <includes>
                 <include>io/vertx/it/Log4J2LogDelegateTest.java</include>
