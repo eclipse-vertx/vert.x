@@ -13,7 +13,9 @@ package io.vertx.core.spi.tracing;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -174,7 +176,9 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       tracerMap.put(key, val);
       client.getNow(8080, "localhost", "/", onSuccess(resp -> {
         resp.endHandler(v2 -> {
-          vertx.runOnContext(v -> {
+          // Updates are done on the HTTP client context, so we need to run task on this context
+          // to avoid data race
+          ((HttpClientImpl)client).context().runOnContext(v -> {
             assertNull(tracerMap.get(key));
             testComplete();
           });

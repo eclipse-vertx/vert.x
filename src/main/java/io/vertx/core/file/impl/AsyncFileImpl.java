@@ -330,6 +330,11 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
+  public synchronized long getReadLength() {
+    return readLength;
+  }
+
+  @Override
   public synchronized AsyncFile setWritePos(long writePos) {
     this.writePos = writePos;
     return this;

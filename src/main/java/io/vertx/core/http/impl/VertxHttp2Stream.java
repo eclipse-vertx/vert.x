@@ -12,19 +12,28 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.OpenOptions;
+import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.impl.InboundBuffer;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -36,32 +45,22 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
-  protected final ChannelHandlerContext handlerContext;
-  protected final Http2Stream stream;
+
+  protected Http2Stream stream;
 
   private final InboundBuffer<Object> pending;
-  private int pendingBytes;
   private MultiMap trailers;
-  private boolean writable;
+  private boolean writable; // SHOULD BE CLEAR ABOUT VISIBILITY : currently it's modified by connection and read by stream
   private StreamPriority priority;
   private long bytesRead;
   private long bytesWritten;
 
-  VertxHttp2Stream(C conn, ContextInternal context, Http2Stream stream, boolean writable) {
+  VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
     this.vertx = conn.vertx();
-    this.handlerContext = conn.handlerContext;
-    this.stream = stream;
     this.context = context;
-    this.writable = writable;
     this.pending = new InboundBuffer<>(context, 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
-
-    pending.drainHandler(v -> {
-      int numBytes = pendingBytes;
-      pendingBytes = 0;
-      conn.handler.consume(stream, numBytes);
-    });
 
     pending.handler(buff -> {
       if (buff == InboundBuffer.END_SENTINEL) {
@@ -69,7 +68,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
         handleEnd(trailers);
       } else {
         Buffer data = (Buffer) buff;
-        bytesRead += data.length();
+        int len = data.length();
+        conn.getContext().dispatch(null, v -> conn.consumeCredits(this.stream, len));
+        bytesRead += len;
         handleData(data);
       }
     });
@@ -78,23 +79,45 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     pending.resume();
   }
 
-  void onResetRead(long code) {
-    handleReset(code);
+  void init(Http2Stream stream) {
+    this.stream = stream;
+    this.writable = this.conn.handler.encoder().flowController().isWritable(stream);
+    this.conn.streams.put(stream.id(), this);
   }
 
-  boolean onDataRead(Buffer data) {
-    boolean read = pending.write(data);
-    if (!read) {
-      pendingBytes += data.length();
+  void onClose() {
+    conn.reportBytesWritten(bytesWritten);
+    context.dispatch(null, v -> this.handleClose());
+  }
+
+  void onError(Throwable cause) {
+    context.dispatch(cause, this::handleException);
+  }
+
+  void onReset(long code) {
+    context.dispatch(code, this::handleReset);
+  }
+
+  void onPriorityChange(StreamPriority priority) {
+    if (this.priority != null && !this.priority.equals(priority)) {
+      this.priority = priority;
+      context.dispatch(priority, this::handlePriorityChange);
     }
-    return read;
+  }
+
+  void onCustomFrame(HttpFrame frame) {
+    context.dispatch(frame, this::handleCustomFrame);
+  }
+
+  void onData(Buffer data) {
+    context.dispatch(data, pending::write);
   }
 
   void onWritabilityChanged() {
     synchronized (conn) {
       writable = !writable;
     }
-    handleInterestedOpsChanged();
+    context.dispatch(null, v -> handleInterestedOpsChanged());
   }
 
   void onEnd() {
@@ -105,10 +128,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     synchronized (conn) {
       trailers = map;
     }
-    pending.write(InboundBuffer.END_SENTINEL);
+    context.dispatch(InboundBuffer.END_SENTINEL, pending::write);
   }
 
-  int id() {
+  public int id() {
     return stream.id();
   }
 
@@ -128,23 +151,27 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     pending.fetch(amount);
   }
 
-  boolean isNotWritable() {
+  public boolean isNotWritable() {
     synchronized (conn) {
       return !writable;
     }
   }
 
-  void writeFrame(int type, int flags, ByteBuf payload) {
-    conn.handler.writeFrame(stream, (byte) type, (short) flags, payload);
+  public void writeFrame(int type, int flags, ByteBuf payload) {
+    conn.writeFrame(stream, type, flags, payload);
   }
 
   void writeHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), promise);
+    conn.writeHeaders(stream, headers, end, priority, promise);
+  }
+
+  void flush() {
+    conn.flush(stream);
   }
 
   private void writePriorityFrame(StreamPriority priority) {
-    conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+    conn.writePriority(stream, priority);
   }
 
   void writeData(ByteBuf chunk, boolean end) {
@@ -154,11 +181,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
     bytesWritten += chunk.readableBytes();
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    conn.handler.writeData(stream, chunk, end, promise);
+    conn.writeData(stream, chunk, end, promise);
   }
 
   void writeReset(long code) {
-    conn.handler.writeReset(stream.id(), code);
+    conn.writeReset(stream.id(), code);
   }
 
   void handleInterestedOpsChanged() {
@@ -167,7 +194,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void handleData(Buffer buf) {
   }
 
-  void handleCustomFrame(int type, int flags, Buffer buff) {
+  void handleCustomFrame(HttpFrame frame) {
   }
 
   void handleEnd(MultiMap trailers) {
@@ -180,7 +207,6 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void handleClose() {
-    conn.reportBytesWritten(bytesWritten);
   }
 
   synchronized void priority(StreamPriority streamPriority) {
@@ -194,7 +220,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   synchronized void updatePriority(StreamPriority priority) {
     if (!this.priority.equals(priority)) {
       this.priority = priority;
-      if (stream.isHeadersSent()) {
+      if (stream != null) {
         writePriorityFrame(priority);
       }
     }
@@ -202,4 +228,26 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   abstract void handlePriorityChange(StreamPriority streamPriority);
 
+  void resolveFile(String filename, long offset, long length, Handler<AsyncResult<AsyncFile>> resultHandler) {
+    File file_ = vertx.resolveFile(filename);
+    if (!file_.exists()) {
+      resultHandler.handle(Future.failedFuture(new FileNotFoundException()));
+      return;
+    }
+    try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
+    } catch (IOException e) {
+      resultHandler.handle(Future.failedFuture(e));
+      return;
+    }
+    FileSystem fs = conn.vertx().fileSystem();
+    fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
+      if (ar.succeeded()) {
+        AsyncFile file = ar.result();
+        long contentLength = Math.min(length, file_.length() - offset);
+        file.setReadPos(offset);
+        file.setReadLength(contentLength);
+      }
+      resultHandler.handle(ar);
+    });
+  }
 }

@@ -11,7 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -19,7 +18,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 /**
@@ -28,29 +26,28 @@ import io.vertx.core.net.SocketAddress;
 class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   private final Http2ClientConnection conn;
-  private final Http2ClientConnection.Http2ClientStream stream;
+  private final Http2ClientConnection.StreamImpl stream;
   private final String rawMethod;
   private final MultiMap headers;
 
   public HttpClientRequestPushPromise(
-      Http2ClientConnection conn,
-      Http2Stream stream,
-      HttpClientImpl client,
-      boolean ssl,
-      HttpMethod method,
-      String rawMethod,
-      String uri,
-      String host,
-      int port,
-      MultiMap headers) {
+    Http2ClientConnection conn,
+    HttpClientImpl client,
+    boolean ssl,
+    HttpMethod method,
+    String rawMethod,
+    String uri,
+    String host,
+    int port,
+    MultiMap headers) {
     super(client, conn.getContext(), ssl, method, SocketAddress.inetSocketAddress(port, host), host, port, uri);
     this.conn = conn;
-    this.stream = new Http2ClientConnection.Http2ClientStream(conn, conn.getContext(), this, null, stream, false);
+    this.stream = new Http2ClientConnection.StreamImpl(conn, conn.getContext(), this, null);
     this.rawMethod = rawMethod;
     this.headers = headers;
   }
 
-  Http2ClientConnection.Http2ClientStream getStream() {
+  Http2ClientConnection.StreamImpl getStream() {
     return stream;
   }
 

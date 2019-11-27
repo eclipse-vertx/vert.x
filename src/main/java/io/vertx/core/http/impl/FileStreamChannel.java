@@ -144,7 +144,7 @@ class FileStreamChannel extends AbstractChannel {
     while (!stream.isNotWritable() && (chunk = (ByteBuf) in.current()) != null) {
       bytesWritten += chunk.readableBytes();
       stream.writeData(chunk.retain(), false);
-      stream.handlerContext.flush();
+      stream.flush();
       in.remove();
     }
   }

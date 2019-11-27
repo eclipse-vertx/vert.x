@@ -35,12 +35,10 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
 
   Http2ServerStream(Http2ServerConnection conn,
                     ContextInternal context,
-                    Http2Stream stream,
                     String contentEncoding,
                     HttpMethod method,
-                    String uri,
-                    boolean writable) {
-    super(conn, context, stream, writable);
+                    String uri) {
+    super(conn, context);
 
     this.headers = null;
     this.method = method;
@@ -51,8 +49,8 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     this.response = new Http2ServerResponseImpl(conn, this, method, true, contentEncoding, null);
   }
 
-  Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Stream stream, Http2Headers headers, String contentEncoding, String serverOrigin, boolean writable) {
-    super(conn, context, stream, writable);
+  Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Headers headers, String contentEncoding, String serverOrigin) {
+    super(conn, context);
 
     String host = headers.get(":authority") != null ? headers.get(":authority").toString() : null;
     if (host == null) {

@@ -102,8 +102,9 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   private Http2ServerRequestImpl createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-    boolean writable = handler.encoder().flowController().isWritable(stream);
-    return new Http2ServerRequestImpl(this, context.duplicate(), stream, metrics, serverOrigin, headers, contentEncoding, writable, streamEnded);
+    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, context.duplicate(), metrics, serverOrigin, headers, contentEncoding, streamEnded);
+    request.init(stream);
+    return request;
   }
 
   @Override
@@ -130,7 +131,6 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
               headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
         req.response().writeContinue();
       }
-      streams.put(streamId, req);
       req.dispatch(requestHandler);
     } else {
       // Http server request trailer - not implemented yet (in api)
@@ -180,10 +180,9 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
             int promisedStreamId = ar.result();
             String contentEncoding = HttpUtils.determineContentEncoding(headers_);
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-            boolean writable = handler.encoder().flowController().isWritable(promisedStream);
-            Push push = new Push(promisedStream, context, contentEncoding, method, path, writable, promise);
+            Push push = new Push(context, contentEncoding, method, path, promise);
             push.priority(streamPriority);
-            streams.put(promisedStreamId, push);
+            push.init(promisedStream);
             if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
               push.complete();
@@ -208,14 +207,12 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
 
     private final Promise<HttpServerResponse> promise;
 
-    public Push(Http2Stream stream,
-                ContextInternal context,
+    public Push(ContextInternal context,
                 String contentEncoding,
                 HttpMethod method,
                 String uri,
-                boolean writable,
                 Promise<HttpServerResponse> promise) {
-      super(Http2ServerConnection.this, context, stream, contentEncoding, method, uri, writable);
+      super(Http2ServerConnection.this, context, contentEncoding, method, uri);
       this.promise = promise;
     }
 

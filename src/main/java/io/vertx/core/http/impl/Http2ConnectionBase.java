@@ -24,6 +24,7 @@ import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.collection.IntObjectHashMap;
 import io.netty.util.collection.IntObjectMap;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -103,9 +104,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   NetSocket toNetSocket(VertxHttp2Stream stream) {
-    VertxHttp2NetSocket<Http2ConnectionBase> rempl = new VertxHttp2NetSocket<>(this, stream.context, stream.stream, !stream.isNotWritable());
-    streams.put(stream.stream.id(), rempl);
-    return rempl;
+    VertxHttp2NetSocket<Http2ConnectionBase> socketStream = new VertxHttp2NetSocket<>(this, stream.context);
+    socketStream.init(stream.stream);
+    return socketStream;
   }
 
   @Override
@@ -147,8 +148,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       stream = streams.get(streamId);
     }
     if (stream != null) {
-      stream.context.emit(v -> stream.handleException(cause));
+      onStreamError(stream, cause);
     }
+  }
+
+  void onStreamError(VertxHttp2Stream stream, Throwable cause) {
+    stream.context.emit(v -> stream.handleException(cause));
   }
 
   void onStreamWritabilityChanged(Http2Stream s) {
@@ -165,12 +170,15 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     VertxHttp2Stream removed;
     synchronized (this) {
       removed = streams.remove(stream.id());
-      if (removed == null) {
-        return;
-      }
     }
-    removed.context.emit(v -> removed.handleClose());
+    if (removed != null) {
+      onStreamClosed(removed);
+    }
     checkShutdownHandler();
+  }
+
+  protected void onStreamClosed(VertxHttp2Stream stream) {
+    stream.onClose();
   }
 
   boolean onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
@@ -214,7 +222,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
           .setDependency(streamDependency)
           .setWeight(weight)
           .setExclusive(exclusive);
-        stream.context.emit(v -> stream.handlePriorityChange(streamPriority));
+        stream.onPriorityChange(streamPriority);
       }
   }
 
@@ -299,49 +307,42 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId,
                              Http2Flags flags, ByteBuf payload) {
-    VertxHttp2Stream req;
+    VertxHttp2Stream stream;
     synchronized (this) {
-      req = streams.get(streamId);
+      stream = streams.get(streamId);
     }
-    if (req != null) {
+    if (stream != null) {
       Buffer buff = Buffer.buffer(safeBuffer(payload, ctx.alloc()));
-      req.context.emit(v -> req.handleCustomFrame(frameType, flags.value(), buff));
+      stream.onCustomFrame(new HttpFrameImpl(frameType, flags.value(), buff));
     }
   }
 
   @Override
   public void onRstStreamRead(ChannelHandlerContext ctx, int streamId, long errorCode) {
-    VertxHttp2Stream req;
+    VertxHttp2Stream stream;
     synchronized (this) {
-      req = streams.get(streamId);
-      if (req == null) {
-        return;
-      }
+      stream = streams.get(streamId);
     }
-    req.context.emit(v -> req.onResetRead(errorCode));
+    if (stream != null) {
+      stream.onReset(errorCode);
+    }
   }
 
   @Override
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
-    int[] consumed = { padding };
-    VertxHttp2Stream req;
+    VertxHttp2Stream stream;
     synchronized (this) {
-      req = streams.get(streamId);
+      stream = streams.get(streamId);
     }
-    if (req != null) {
+    if (stream != null) {
       data = safeBuffer(data, ctx.alloc());
       Buffer buff = Buffer.buffer(data);
-      req.context.emit(v -> {
-        int len = buff.length();
-        if (req.onDataRead(buff)) {
-          consumed[0] += len;
-        }
-      });
+      stream.onData(buff);
       if (endOfStream) {
-        req.context.emit(v -> req.onEnd());
+        stream.onEnd();
       }
     }
-    return consumed[0];
+    return padding;
   }
 
   @Override
@@ -511,6 +512,36 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public Http2ConnectionBase exceptionHandler(Handler<Throwable> handler) {
     return (Http2ConnectionBase) super.exceptionHandler(handler);
+  }
+
+  //
+
+  void writeFrame(Http2Stream stream, int type, int flags, ByteBuf payload) {
+    this.handler.writeFrame(stream, (byte) type, (short) flags, payload);
+  }
+
+  void writeHeaders(Http2Stream stream, Http2Headers headers, boolean end, StreamPriority priority, FutureListener<Void> promise) {
+    this.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), promise);
+  }
+
+  void writePriority(Http2Stream stream, StreamPriority priority) {
+    this.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
+  }
+
+  void writeData(Http2Stream stream, ByteBuf chunk, boolean end, FutureListener<Void> promise) {
+    this.handler.writeData(stream, chunk, end, promise);
+  }
+
+  void writeReset(int streamId, long code) {
+    this.handler.writeReset(streamId, code);
+  }
+
+  void consumeCredits(Http2Stream stream, int numBytes) {
+    this.handler.consume(stream, numBytes);
+  }
+
+  void flush(Http2Stream stream) {
+    handlerContext.flush();
   }
 
   // Private

@@ -28,8 +28,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
-import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -41,10 +39,6 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.Map;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
@@ -583,62 +577,37 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   public HttpServerResponse sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
     synchronized (conn) {
       checkValid();
-
-      Handler<AsyncResult<Void>> h;
-      if (resultHandler != null) {
-        Context resultCtx = stream.vertx.getOrCreateContext();
-        h = ar -> {
-          resultCtx.runOnContext((v) -> {
-            resultHandler.handle(ar);
-          });
-        };
-      } else {
-        h = ar -> {};
-      }
-
-      File file_ = stream.vertx.resolveFile(filename);
-      if (!file_.exists()) {
-        if (resultHandler != null) {
-          h.handle(Future.failedFuture(new FileNotFoundException()));
-        } else {
-          log.error("File not found: " + filename);
-        }
-        return this;
-      }
-      try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
-      } catch (IOException e) {
-        if (resultHandler != null) {
-          h.handle(Future.failedFuture(e));
-        } else {
-          log.error("Failed to send file", e);
-        }
-        return this;
-      }
-
-      long contentLength = Math.min(length, file_.length() - offset);
-
-      FileSystem fs = conn.vertx().fileSystem();
-      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
-        if (ar.succeeded()) {
-          AsyncFile file = ar.result();
-          if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
-            putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
-          }
-          if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
-            String contentType = MimeMapping.getMimeTypeForFilename(filename);
-            if (contentType != null) {
-              putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
-            }
-          }
-          checkSendHeaders(false);
-          file.setReadPos(offset);
-          file.setReadLength(contentLength);
-          file.pipeTo(this, h);
-        } else {
-          h.handle(ar.mapEmpty());
-        }
-      });
     }
+    Handler<AsyncResult<Void>> h;
+    if (resultHandler != null) {
+      Context resultCtx = stream.vertx.getOrCreateContext();
+      h = ar -> {
+        resultCtx.runOnContext((v) -> {
+          resultHandler.handle(ar);
+        });
+      };
+    } else {
+      h = ar -> {};
+    }
+    stream.resolveFile(filename, offset, length, ar -> {
+      if (ar.succeeded()) {
+        AsyncFile file = ar.result();
+        long contentLength = Math.min(length, file.getReadLength());
+        if (headers.get(HttpHeaderNames.CONTENT_LENGTH) == null) {
+          putHeader(HttpHeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+        }
+        if (headers.get(HttpHeaderNames.CONTENT_TYPE) == null) {
+          String contentType = MimeMapping.getMimeTypeForFilename(filename);
+          if (contentType != null) {
+            putHeader(HttpHeaderNames.CONTENT_TYPE, contentType);
+          }
+        }
+        checkSendHeaders(false);
+        file.pipeTo(this, h);
+      } else {
+        h.handle(ar.mapEmpty());
+      }
+    });
     return this;
   }
 

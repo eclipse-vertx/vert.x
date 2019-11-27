@@ -777,21 +777,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     HttpClientRequest req;
     boolean useProxy = !useSSL && proxyType == ProxyType.HTTP;
 
-    // Create the appropriate sub context
-    ContextInternal current = (ContextInternal) Vertx.currentContext();
-    if (options.getProtocolVersion() == HttpVersion.HTTP_2) {
-      if (current != null) {
-        current = context.duplicate(current);
-      } else {
-        current = context;
-      }
-    } else {
-      // Only supported by HTTP/1 for now
-      if (current == null) {
-        // Reuse pool context
-        current = context;
-      }
-    }
+    // Get the request context
+    ContextInternal current = vertx.getOrCreateContext();
 
     if (useProxy) {
       int defaultPort = protocol.equals("ftp") ? 21 : 80;

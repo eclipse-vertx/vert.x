@@ -659,10 +659,11 @@ public class Http2ClientTest extends Http2TestBase {
     Context ctx = vertx.getOrCreateContext();
     Handler<Throwable> resetHandler = err -> {
       assertOnIOContext(ctx);
-      assertTrue(err instanceof StreamResetException);
-      StreamResetException reset = (StreamResetException) err;
-      assertEquals(8, reset.getCode());
-      complete();
+      if (err instanceof StreamResetException) {
+        StreamResetException reset = (StreamResetException) err;
+        assertEquals(8, reset.getCode());
+        complete();
+      }
     };
     client.close();
     ctx.runOnContext(v -> {

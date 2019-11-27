@@ -155,6 +155,11 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   AsyncFile setReadLength(long readLength);
 
   /**
+   * @return the number of bytes that will be read when using the file as a {@link io.vertx.core.streams.ReadStream}
+   */
+  long getReadLength();
+
+  /**
    * Sets the position from which data will be written when using the file as a {@link io.vertx.core.streams.WriteStream}.
    *
    * @param writePos  the position in the file

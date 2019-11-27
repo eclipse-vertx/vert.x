@@ -12,8 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
@@ -24,6 +22,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
@@ -33,10 +32,6 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.charset.Charset;
 
 /**
@@ -50,8 +45,8 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   private Handler<Buffer> dataHandler;
   private Handler<Void> drainHandler;
 
-  public VertxHttp2NetSocket(C conn, ContextInternal context, Http2Stream stream, boolean writable) {
-    super(conn, context, stream, writable);
+  public VertxHttp2NetSocket(C conn, ContextInternal context) {
+    super(conn, context);
   }
 
   // Stream impl
@@ -239,7 +234,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   @Override
   public void write(Buffer message, Handler<AsyncResult<Void>> handler) {
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    conn.handler.writeData(stream, message.getByteBuf(), false, promise);
+    conn.writeData(stream, message.getByteBuf(), false, promise);
   }
 
   @Override
@@ -251,55 +246,26 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
 
   @Override
   public NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler) {
-    synchronized (conn) {
-      Context resultCtx = resultHandler != null ? vertx.getOrCreateContext() : null;
 
-      File file = vertx.resolveFile(filename);
-      if (!file.exists()) {
-        if (resultHandler != null) {
-          resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(new FileNotFoundException())));
-        } else {
-          // log.error("File not found: " + filename);
-        }
-        return this;
-      }
-
-      RandomAccessFile raf;
-      try {
-        raf = new RandomAccessFile(file, "r");
-      } catch (IOException e) {
-        if (resultHandler != null) {
-          resultCtx.runOnContext((v) -> resultHandler.handle(Future.failedFuture(e)));
-        } else {
-          //log.error("Failed to send file", e);
-        }
-        return this;
-      }
-
-      long contentLength = Math.min(length, file.length() - offset);
-
-      Promise<Long> result = context.promise();
-      result.future().setHandler(ar -> {
-        if (resultHandler != null) {
-          resultCtx.runOnContext(v -> {
-            resultHandler.handle(Future.succeededFuture());
-          });
-        }
-      });
-
-      FileStreamChannel fileChannel = new FileStreamChannel(result, this, offset, contentLength);
-      drainHandler(fileChannel.drainHandler);
-      handlerContext.channel()
-        .eventLoop()
-        .register(fileChannel)
-        .addListener((ChannelFutureListener) future -> {
-          if (future.isSuccess()) {
-            fileChannel.pipeline().fireUserEventTriggered(raf);
-          } else {
-            result.tryFail(future.cause());
-          }
+    Handler<AsyncResult<Void>> h;
+    if (resultHandler != null) {
+      Context resultCtx = vertx.getOrCreateContext();
+      h = ar -> {
+        resultCtx.runOnContext((v) -> {
+          resultHandler.handle(ar);
         });
+      };
+    } else {
+      h = ar -> {};
     }
+    resolveFile(filename, offset, length, ar -> {
+      if (ar.succeeded()) {
+        AsyncFile file = ar.result();
+        file.pipeTo(this, h);
+      } else {
+        h.handle(ar.mapEmpty());
+      }
+    });
     return this;
   }
 

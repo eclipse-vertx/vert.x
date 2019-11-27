@@ -406,6 +406,9 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         connection.onHeadersRead(ctx, 1, frame.headers(), frame.padding(), frame.isEndStream());
       } else if (msg instanceof Http2DataFrame) {
         Http2DataFrame frame = (Http2DataFrame) msg;
+        Http2LocalFlowController controller = decoder().flowController();
+        Http2Stream stream = decoder().connection().stream(1);
+        controller.receiveFlowControlledFrame(stream, frame.content(), frame.padding(), frame.isEndStream());
         connection.onDataRead(ctx, 1, frame.content(), frame.padding(), frame.isEndStream());
       }
     } else {

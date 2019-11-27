@@ -21,7 +21,6 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -91,9 +90,9 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
 
   private Handler<StreamPriority> streamPriorityHandler;
 
-  public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, Http2Stream stream, HttpServerMetrics metrics,
-      String serverOrigin, Http2Headers headers, String contentEncoding, boolean writable, boolean streamEnded) {
-    super(conn, context, stream, headers, contentEncoding, serverOrigin, writable);
+  public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, HttpServerMetrics metrics,
+      String serverOrigin, Http2Headers headers, String contentEncoding, boolean streamEnded) {
+    super(conn, context, headers, contentEncoding, serverOrigin);
 
     String scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
 
@@ -185,9 +184,9 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
-  void handleCustomFrame(int type, int flags, Buffer buff) {
+  void handleCustomFrame(HttpFrame frame) {
     if (customFrameHandler != null) {
-      customFrameHandler.handle(new HttpFrameImpl(type, flags, buff));
+      customFrameHandler.handle(frame);
     }
   }
 
@@ -557,15 +556,10 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   @Override
   void handlePriorityChange(StreamPriority streamPriority) {
     Handler<StreamPriority> handler;
-    boolean priorityChanged = false;
     synchronized (conn) {
       handler = streamPriorityHandler;
-      if (streamPriority != null && !streamPriority.equals(streamPriority())) {
-        priority(streamPriority);
-        priorityChanged = true;
-      }
     }
-    if (handler != null && priorityChanged) {
+    if (handler != null) {
       handler.handle(streamPriority);
     }
   }
