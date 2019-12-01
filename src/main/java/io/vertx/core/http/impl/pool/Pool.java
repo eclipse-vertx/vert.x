@@ -90,8 +90,9 @@ public class Pool<C> {
   /**
    * Pool state associated with a connection.
    */
-  public class Holder implements ConnectionListener<C> {
+  private class Holder implements ConnectionListener<C> {
 
+    boolean initialized;      // Initialized
     boolean removed;          // Removed
     C connection;             // The connection instance
     long concurrency;         // How many times we can borrow from the connection
@@ -172,6 +173,7 @@ public class Pool<C> {
               boolean fifo) {
     this.clock = clock;
     this.context = (ContextInternal) context;
+    this.weight = 0;
     this.maxWeight = maxWeight;
     this.initialWeight = initialWeight;
     this.connector = connector;
@@ -345,10 +347,21 @@ public class Pool<C> {
    * Handle connect success, a number of waiters will be satisfied according to the connection's concurrency.
    */
   private void connectSucceeded(Holder holder, ConnectResult<C> result) {
+
+    connector.init(result.connection());
+
     List<Waiter<C>> waiters;
     synchronized (this) {
+
       connecting--;
-      weight += initialWeight - result.weight();
+      weight -= initialWeight;
+
+      if (holder.removed) {
+        checkProgress();
+        return;
+      }
+      holder.initialized = true;
+      weight += result.weight();
       holder.init(result.concurrency(), result.connection(), result.weight());
       waiters = new ArrayList<>();
       while (holder.capacity > 0 && waitersQueue.size() > 0) {
@@ -434,17 +447,19 @@ public class Pool<C> {
     if (holder.removed) {
       return;
     }
-    evictConnection(holder);
-    checkProgress();
+    holder.removed = true;
+    if (holder.initialized) {
+      evictConnection(holder);
+      checkProgress();
+    }
   }
 
   private void evictConnection(Holder holder) {
-    holder.removed = true;
     connectionRemoved.accept(holder.connection);
     if (holder.capacity > 0) {
       capacity -= holder.capacity;
-      available.remove(holder);
       holder.capacity = 0;
+      available.remove(holder);
     }
     weight -= holder.weight;
   }

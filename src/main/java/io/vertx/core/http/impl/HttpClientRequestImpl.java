@@ -62,7 +62,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Void> continueHandler;
   private Handler<Void> drainHandler;
   private Handler<HttpClientRequest> pushHandler;
-  private Handler<HttpConnection> connectionHandler;
   private Handler<Throwable> exceptionHandler;
   private boolean ended;
   private Throwable reset;
@@ -329,12 +328,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) {
-    connectionHandler = handler;
-    return this;
-  }
-
-  @Override
   public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) {
     HttpClientStream s;
     synchronized (this) {
@@ -443,36 +436,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         peerAddress = SocketAddress.inetSocketAddress(port, peerHost);
       }
 
-      // Capture some stuff
-      Handler<HttpConnection> h1 = connectionHandler;
-      Handler<HttpConnection> h2 = client.connectionHandler();
-      Handler<HttpConnection> initializer;
-      if (h1 != null) {
-        if (h2 != null) {
-          initializer = conn -> {
-            h1.handle(conn);
-            h2.handle(conn);
-          };
-        } else {
-          initializer = h1;
-        }
-      } else {
-        initializer = h2;
-      }
-
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
       connecting = true;
-      client.getConnectionForRequest(context, peerAddress, this, netSocketPromise, ssl, server, ar1 -> {
-        if (ar1.succeeded()) {
-          HttpClientStream stream = ar1.result();
-          ContextInternal ctx = stream.getContext();
-          if (stream.id() == 1 && initializer != null) {
-            ctx.dispatchFromIO(v -> {
-              initializer.handle(stream.connection());
-            });
-          }
+      client.getConnectionForRequest(context, peerAddress, this, netSocketPromise, ssl, server, ar -> {
+        if (ar.succeeded()) {
+          HttpClientStream stream = ar.result();
           // No need to synchronize as the thread is the same that set exceptionOccurred to true
           // exceptionOccurred=true getting the connection => it's a TimeoutException
           if (reset != null) {
@@ -481,7 +451,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             connected(headersHandler, stream);
           }
         } else {
-          handleException(ar1.cause());
+          handleException(ar.cause());
         }
       });
     }

@@ -23,6 +23,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectResult;
 import io.vertx.core.http.impl.pool.ConnectionListener;
@@ -91,6 +92,15 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   @Override
   public void close(HttpClientConnection conn) {
     conn.close();
+  }
+
+  @Override
+  public void init(HttpClientConnection conn) {
+    Handler<HttpConnection> handler = client.connectionHandler();
+    if (handler != null) {
+      ContextInternal ctx = client.context();
+      ctx.dispatchFromIO(conn, handler);
+    }
   }
 
   @Override

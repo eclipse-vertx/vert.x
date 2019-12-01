@@ -284,11 +284,11 @@ public class Http2Test extends HttpTest {
       }
     });
     startServer(testAddress);
-    AtomicBoolean closed = new AtomicBoolean();
+    AtomicInteger closed = new AtomicInteger();
+    client.connectionHandler(conn -> conn.closeHandler(v -> closed.incrementAndGet()));
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onFailure(err -> {}))
-      .connectionHandler(conn -> conn.closeHandler(v -> closed.set(true)))
       .end();
-    AsyncTestBase.assertWaitUntil(closed::get);
+    AsyncTestBase.assertWaitUntil(() -> closed.get() == 1);
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       testComplete();
     }).exceptionHandler(err -> {
@@ -370,6 +370,7 @@ public class Http2Test extends HttpTest {
 
   @Test
   public void testInitialMaxConcurrentStreamZero() throws Exception {
+    waitFor(2);
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(0)));
     server.requestHandler(req -> {
@@ -381,10 +382,15 @@ public class Http2Test extends HttpTest {
       });
     });
     startServer(testAddress);
+    client.connectionHandler(conn -> {
+      assertEquals(0, conn.remoteSettings().getMaxConcurrentStreams());
+      conn.remoteSettingsHandler(settings -> {
+        assertEquals(10, conn.remoteSettings().getMaxConcurrentStreams());
+        complete();
+      });
+    });
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
-      testComplete();
-    }).connectionHandler(conn -> {
-      assertEquals(10, conn.remoteSettings().getMaxConcurrentStreams());
+      complete();
     }).setTimeout(10000).exceptionHandler(this::fail).end();
     await();
   }

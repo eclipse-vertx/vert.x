@@ -412,15 +412,6 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   HttpConnection connection();
 
   /**
-   * Set a connection handler called when an HTTP connection has been established.
-   *
-   * @param handler the handler
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler);
-
-  /**
    * Write an HTTP/2 frame to the request, allowing to extend the HTTP/2 protocol.<p>
    *
    * The frame is sent immediatly and is not subject to flow control.<p>

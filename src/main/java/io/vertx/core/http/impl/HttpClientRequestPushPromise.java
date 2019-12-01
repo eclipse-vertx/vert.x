@@ -70,11 +70,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler) {
-    return this;
-  }
-
-  @Override
   boolean reset(Throwable cause) {
     stream.reset(cause);
     return true;

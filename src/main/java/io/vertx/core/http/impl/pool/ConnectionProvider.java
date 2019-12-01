@@ -32,6 +32,13 @@ public interface ConnectionProvider<C> {
   void connect(ConnectionListener<C> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<C>>> resultHandler);
 
   /**
+   * Initialize the connection.
+   *
+   * @param conn the connection
+   */
+  void init(C conn);
+
+  /**
    * Close a connection.
    *
    * @param conn the connection
