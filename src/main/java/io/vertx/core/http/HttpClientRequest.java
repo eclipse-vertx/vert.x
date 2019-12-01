@@ -427,7 +427,9 @@ public interface HttpClientRequest extends WriteStream<Buffer>, ReadStream<HttpC
    *
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link HttpClient#connectionHandler(Handler)}
    */
+  @Deprecated
   @Fluent
   HttpClientRequest connectionHandler(@Nullable Handler<HttpConnection> handler);
 

@@ -1369,7 +1369,7 @@ The {@link io.vertx.core.http.HttpClientRequest#connection()} method returns the
 {@link examples.HTTP2Examples#example18}
 ----
 
-A connection handler can be set on the request to be notified when the connection happens:
+A connection handler can be set on the client to be notified when a connection has been established happens:
 
 [source,$lang]
 ----
