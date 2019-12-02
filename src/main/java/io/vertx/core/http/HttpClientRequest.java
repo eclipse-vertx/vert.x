@@ -239,15 +239,14 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * @return a reference to this, so the API can be used fluently
    * @throws java.lang.IllegalStateException when no response handler is set
    */
-  @Fluent
-  HttpClientRequest sendHead();
+  Future<HttpVersion> sendHead();
 
   /**
    * Like {@link #sendHead()} but with an handler after headers have been sent. The handler will be called with
    * the {@link HttpVersion} if it can be determined or null otherwise.<p>
    */
   @Fluent
-  HttpClientRequest sendHead(Handler<HttpVersion> completionHandler);
+  HttpClientRequest sendHead(Handler<AsyncResult<HttpVersion>> completionHandler);
 
   /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding

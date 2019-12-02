@@ -119,7 +119,9 @@ public class Http2Test extends HttpTest {
     HttpClientRequest req = client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", onSuccess(resp -> {
       assertEquals(200, resp.statusCode());
       testComplete();
-    })).setChunked(true).sendHead();
+    }))
+      .setChunked(true);
+    req.sendHead();
     awaitLatch(latch2); // The next write won't be buffered
     req.write("hello ");
     req.end("world");

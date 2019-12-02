@@ -4429,9 +4429,10 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
-    HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
+    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       complete();
-    }).sendHead();
+    });
+    req.sendHead();
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       complete();
     }).end();
@@ -4441,7 +4442,7 @@ public class Http1xTest extends HttpTest {
     // Need to wait a little so requests 2 and 3 are appended to the first request
     Thread.sleep(300);
     // This will end request 1 and make requests 2 and 3 progress
-    req1.end();
+    req.end();
     await();
   }
 

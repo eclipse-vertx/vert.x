@@ -264,12 +264,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public HttpClientRequest sendHead() {
-    return sendHead(null);
+  public Future<HttpVersion> sendHead() {
+    Promise<HttpVersion> promise = context.promise();
+    sendHead(promise);
+    return promise.future();
   }
 
   @Override
-  public synchronized HttpClientRequest sendHead(Handler<HttpVersion> headersHandler) {
+  public synchronized HttpClientRequest sendHead(Handler<AsyncResult<HttpVersion>> headersHandler) {
     checkEnded();
     checkResponseHandler();
     if (stream != null) {
@@ -413,7 +415,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return hostHeader != null ? hostHeader : super.hostHeader();
   }
 
-  private synchronized void connect(Handler<HttpVersion> headersHandler) {
+  private synchronized void connect(Handler<AsyncResult<HttpVersion>> headersHandler) {
     if (!connecting) {
 
       if (method == HttpMethod.OTHER && rawMethod == null) {
@@ -457,7 +459,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
   }
 
-  private void connected(Handler<HttpVersion> headersHandler, HttpClientStream stream) {
+  private void connected(Handler<AsyncResult<HttpVersion>> headersHandler, HttpClientStream stream) {
     synchronized (this) {
       this.stream = stream;
 
@@ -481,16 +483,21 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           };
         }
       }
+      if (headersHandler != null) {
+        Handler<AsyncResult<Void>> others = handler;
+        handler = ar -> {
+          if (others != null) {
+            others.handle(ar);
+          }
+          headersHandler.handle(ar.map(stream.version()));
+        };
+      }
       stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, ended, priority, handler);
       if (ended) {
-        // we also need to write the head so optimize this and write all out in once
         tryComplete();
       }
       this.connecting = false;
       this.stream = stream;
-    }
-    if (headersHandler != null) {
-      headersHandler.handle(stream.version());
     }
   }
 

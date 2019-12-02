@@ -196,12 +196,12 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest sendHead() {
+  public Future<HttpVersion> sendHead() {
     throw new IllegalStateException();
   }
 
   @Override
-  public HttpClientRequest sendHead(Handler<HttpVersion> completionHandler) {
+  public HttpClientRequest sendHead(Handler<AsyncResult<HttpVersion>> completionHandler) {
     throw new IllegalStateException();
   }
 
