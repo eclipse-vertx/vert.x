@@ -37,6 +37,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
@@ -2012,7 +2013,7 @@ public class WebSocketTest extends VertxTestBase {
 
   private void testRaceConditionWithWebsocketClient(Context context) {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
-    // Handcrafted websocket handshake for sending a frame immediatly after the handshake
+    // Handcrafted websocket handshake for sending a frame immediately after the handshake
     server.requestHandler(req -> {
       NetSocket so = handshake(req);
       if (so != null) {

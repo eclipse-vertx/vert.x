@@ -296,10 +296,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   void handlePriorityChange(StreamPriority streamPriority) {
     Handler<StreamPriority> handler;
     synchronized (conn) {
-      if ((handler = priorityHandler) == null) {
-        return;
-      }
+      handler = priorityHandler;
     }
-    handler.handle(streamPriority);
+    if (handler != null) {
+      handler.handle(streamPriority);
+    }
   }
 }

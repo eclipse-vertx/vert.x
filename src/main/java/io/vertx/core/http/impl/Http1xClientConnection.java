@@ -167,7 +167,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     writeToChannel(request, handler == null ? null : context.promise(handler));
   }
 
-  private void endRequest(Stream s, long bytesWritten) {
+  private void endRequest(Stream s) {
     Stream next;
     boolean recycle;
     synchronized (this) {
@@ -179,6 +179,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
     }
     reportBytesWritten(bytesWritten);
+    bytesWritten = 0L;
     if (next != null) {
       next.promise.complete((HttpClientStream) next);
     }
@@ -258,12 +259,19 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       this.conn = conn;
       this.netSocketPromise = netSocketPromise;
       this.queue = new InboundBuffer<>(context, 5)
-        .drainHandler(v -> drained())
+        .drainHandler(v -> {
+          EventLoop eventLoop = conn.context.nettyEventLoop();
+          if (eventLoop.inEventLoop()) {
+            drained();
+          } else {
+            eventLoop.execute(this::drained);
+          }
+        })
         .exceptionHandler(context::reportException);
     }
 
     private void drained() {
-      conn.context.dispatch(null, v -> conn.drainResponse(this));
+      conn.drainResponse(this);
     }
 
     @Override
@@ -293,11 +301,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
     @Override
     public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
-      synchronized (conn) {
-        if (buf != null) {
-          bytesWritten += buf.readableBytes();
-        }
-      }
       HttpRequest request = conn.createRequest(method, rawMethod, uri, headers, hostHeader, chunked);
       if (end) {
         if (buf != null) {
@@ -337,7 +340,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       } else {
         msg = new DefaultHttpContent(buff);
       }
-      bytesWritten += msg.content().readableBytes();
       conn.writeToChannel(msg, handler == null ? null : context.promise(handler));
       if (end) {
         endRequest();
@@ -378,16 +380,29 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         reset = true;
       }
       handleException(cause);
-      conn.context.dispatch(this, conn::resetRequest);
+      EventLoop eventLoop = conn.context.nettyEventLoop();
+      if (eventLoop.inEventLoop()) {
+        doReset();
+      } else {
+        eventLoop.execute(this::doReset);
+      }
+    }
+
+    private void doReset() {
+      conn.resetRequest(this);
     }
 
     private void endRequest() {
-      long bytesWritten;
-      synchronized (conn) {
-        bytesWritten = this.bytesWritten;
+      EventLoop eventLoop = conn.context.nettyEventLoop();
+      if (eventLoop.inEventLoop()) {
+        doEndRequest();
+      } else {
+        eventLoop.execute(() -> doEndRequest());
       }
+    }
 
-      conn.context.dispatch(null, v -> conn.endRequest(this, bytesWritten));
+    private void doEndRequest() {
+      conn.endRequest(this);
     }
 
     @Override
@@ -577,7 +592,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
             }
           };
           socket.metric(metric());
-          pipeline.replace("handler", "handler", VertxHandler.create(socket));
+          pipeline.replace("handler", "handler", VertxHandler.create(ctx -> socket));
 
           // Handle back response
           promise.complete(socket);
@@ -703,12 +718,12 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           webSocket.registerHandler(vertx.eventBus());
 
         }
-        getContext().dispatchFromIO(wsRes, res -> {
+        log.debug("WebSocket handshake complete");
+        if (metrics != null) {
+          webSocket.setMetric(metrics.connected(endpointMetric, metric(), webSocket));
+        }
+        getContext().dispatch(wsRes, res -> {
           if (res.succeeded()) {
-            log.debug("WebSocket handshake complete");
-            if (metrics != null) {
-              webSocket.setMetric(metrics.connected(endpointMetric, metric(), webSocket));
-            }
             webSocket.headers(ar.result());
           }
           wsHandler.handle(res);

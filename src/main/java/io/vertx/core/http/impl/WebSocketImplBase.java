@@ -362,7 +362,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public S writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       checkClosed();
-      conn.reportBytesWritten(((WebSocketFrameInternal)frame).length());
       conn.writeToChannel(conn.encodeFrame((WebSocketFrameImpl) frame), handler == null ? null : context.promise(handler));
     }
     return (S) this;
@@ -385,7 +384,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   void handleFrame(WebSocketFrameInternal frame) {
     synchronized (conn) {
       if (frame.type() != FrameType.CLOSE) {
-        conn.reportBytesRead(frame.length());
         if (!pending.write(frame.binaryData())) {
           conn.doPause();
         }

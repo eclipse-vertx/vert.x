@@ -87,7 +87,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   private void init() {
-    channel.pipeline().addLast("handler", VertxHandler.create(context, this::createConnection));
+    channel.pipeline().addLast("handler", VertxHandler.create(this::createConnection));
   }
 
   @Override
@@ -483,7 +483,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         metrics.close();
       }
       if (handler != null) {
-        context.emit(handler);
+        context.dispatch(null, handler);
       }
     }
 
@@ -514,7 +514,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         }
       }
       if (handler != null) {
-        context.emit(packet, handler);
+        context.dispatch(packet, handler);
       }
     }
   }

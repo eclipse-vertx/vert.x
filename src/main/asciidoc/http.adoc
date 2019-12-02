@@ -59,8 +59,6 @@ The settings define how the client can use the connection, the default initial s
 - {@link io.vertx.core.http.Http2Settings#getMaxConcurrentStreams}: `100` as recommended by the HTTP/2 RFC
 - the default HTTP/2 settings values for the others
 
-NOTE: Worker Verticles are not compatible with HTTP/2
-
 === Logging network server activity
 
 For debugging purposes, network activity can be logged.

@@ -563,7 +563,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
           } else {
             res = Future.failedFuture(future.cause());
           }
-          ctx.dispatchFromIO(v -> resultHandler.handle(res));
+          ctx.dispatch(null, v -> resultHandler.handle(res));
         }
 
         // signal body end handler
@@ -666,6 +666,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
       setCookies();
     }
     if (Metrics.METRICS_ENABLED) {
+      // TODO : DONE SOMEWHERE ELSE FROM EVENT LOOP
       reportResponseBegin();
     }
     headWritten = true;
@@ -735,52 +736,8 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public Future<HttpServerResponse> push(HttpMethod method, String host, String path) {
-    Promise<HttpServerResponse> promise = context.promise();
-    push(method, host, path, promise);
-    return promise.future();
-  }
-
-  @Override
-  public Future<HttpServerResponse> push(HttpMethod method, String path, MultiMap headers) {
-    Promise<HttpServerResponse> promise = context.promise();
-    push(method, path, headers, promise);
-    return promise.future();
-  }
-
-  @Override
-  public Future<HttpServerResponse> push(HttpMethod method, String path) {
-    Promise<HttpServerResponse> promise = context.promise();
-    push(method, path, promise);
-    return promise.future();
-  }
-
-  @Override
   public Future<HttpServerResponse> push(HttpMethod method, String host, String path, MultiMap headers) {
-    Promise<HttpServerResponse> promise = context.promise();
-    push(method, host, path, headers, promise);
-    return promise.future();
-  }
-
-  @Override
-  public HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return push(method, null, path, headers, handler);
-  }
-
-  @Override
-  public HttpServerResponse push(io.vertx.core.http.HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return push(method, path, handler);
-  }
-
-  @Override
-  public HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
-    return push(method, path, null, null, handler);
-  }
-
-  @Override
-  public HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
-    handler.handle(Future.failedFuture("Push promise is only supported with HTTP2"));
-    return this;
+    return context.failedFuture("HTTP/1 does not support response push");
   }
 
   @Override
@@ -805,5 +762,4 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
     return CookieImpl.removeCookie(cookies(), name, invalidate);
   }
-
 }

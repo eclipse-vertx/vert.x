@@ -438,16 +438,14 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
   private void connected(HandlerHolder<Handlers> handler, Channel ch) {
     NetServerImpl.this.initChannel(ch.pipeline());
 
-    VertxHandler<NetSocketImpl> nh = VertxHandler.create(handler.context, ctx -> new NetSocketImpl(vertx, ctx, handler.context, sslHelper, metrics));
+    VertxHandler<NetSocketImpl> nh = VertxHandler.create(ctx -> new NetSocketImpl(vertx, ctx, handler.context, sslHelper, metrics));
     nh.addHandler(conn -> {
       socketMap.put(ch, conn);
-      handler.context.dispatchFromIO(v -> {
-        if (metrics != null) {
-          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-        }
-        conn.registerEventBusHandler();
-        handler.handler.connectionHandler.handle(conn);
-      });
+      if (metrics != null) {
+        conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+      }
+      conn.registerEventBusHandler();
+      handler.context.dispatchFromIO(conn, handler.handler.connectionHandler::handle);
     });
     nh.removeHandler(conn -> socketMap.remove(ch));
     ch.pipeline().addLast("handler", nh);

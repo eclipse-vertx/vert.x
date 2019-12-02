@@ -17,7 +17,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
-import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -32,13 +31,11 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.util.Map;
@@ -73,15 +70,17 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private String path;
   private String query;
 
+  // Accessed on event loop
+  HttpServerRequestImpl next;
+  Object metric;
+  Object trace;
+
   private HttpServerResponseImpl response;
-  private HttpServerRequestImpl next;
-  private Object metric;
-  private Object trace;
 
   private Handler<Buffer> dataHandler;
   private Handler<Throwable> exceptionHandler;
 
-  //Cache this for performance
+  // Cache this for performance
   private MultiMap params;
   private MultiMap headers;
   private String absoluteURI;
@@ -174,16 +173,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
    */
   HttpServerRequestImpl next() {
     return next;
-  }
-
-  void reportRequestBegin() {
-    if (conn.metrics != null) {
-      metric = conn.metrics.requestBegin(conn.metric(), this);
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      trace = tracer.receiveRequest(context, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
-    }
   }
 
   private void check100() {
@@ -292,26 +281,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public String getHeader(String headerName) {
-    return headers().get(headerName);
-  }
-
-  @Override
-  public String getHeader(CharSequence headerName) {
-    return headers().get(headerName);
-  }
-
-  @Override
   public MultiMap params() {
     if (params == null) {
       params = HttpUtils.params(uri());
     }
     return params;
-  }
-
-  @Override
-  public String getParam(String paramName) {
-    return params().get(paramName);
   }
 
   @Override
@@ -371,16 +345,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public boolean isSSL() {
-    return conn.isSsl();
-  }
-
-  @Override
-  public SocketAddress remoteAddress() {
-    return conn.remoteAddress();
-  }
-
-  @Override
   public String absoluteURI() {
     if (absoluteURI == null) {
       try {
@@ -390,11 +354,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
       }
     }
     return absoluteURI;
-  }
-
-  @Override
-  public SSLSession sslSession() {
-    return conn.sslSession();
   }
 
   @Override
@@ -476,11 +435,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     synchronized (conn) {
       return decoder != null;
     }
-  }
-
-  @Override
-  public SocketAddress localAddress() {
-    return conn.localAddress();
   }
 
   @Override
@@ -646,7 +600,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     }
   }
 
-
   private MultiMap attributes() {
     // Create it lazily
     if (attributes == null) {
@@ -655,24 +608,9 @@ public class HttpServerRequestImpl implements HttpServerRequest {
     return attributes;
   }
 
-
-  private static String urlDecode(String str) {
-    return QueryStringDecoder.decodeComponent(str, CharsetUtil.UTF_8);
-  }
-
   @Override
   public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
     return this;
-  }
-
-  @Override
-  public @Nullable Cookie getCookie(String name) {
-    return response.cookies().get(name);
-  }
-
-  @Override
-  public int cookieCount() {
-    return response.cookies().size();
   }
 
   @Override

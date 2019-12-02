@@ -226,9 +226,6 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     String host = address.host() != null ? address.host() : "localhost";
     int port = address.port();
     List<HttpVersion> applicationProtocols = options.getAlpnVersions();
-    if (listenContext.isWorkerContext()) {
-      applicationProtocols =  applicationProtocols.stream().filter(v -> v != HttpVersion.HTTP_2).collect(Collectors.toList());
-    }
     sslHelper.setApplicationProtocols(applicationProtocols);
     Map<ServerID, HttpServerImpl> sharedHttpServers = vertx.sharedHttpServers();
     synchronized (sharedHttpServers) {

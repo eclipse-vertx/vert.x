@@ -240,7 +240,7 @@ import java.util.function.Function;
   }
 
   void configureHttp1(ChannelPipeline pipeline, HandlerHolder<? extends Handler<HttpServerConnection>> holder) {
-    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(holder.context, chctx -> {
+    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
       Http1xServerConnection conn = new Http1xServerConnection(holder.context.owner(),
         sslHelper,
         options,
@@ -253,7 +253,7 @@ import java.util.function.Function;
     pipeline.addLast("handler", handler);
     Http1xServerConnection conn = handler.getConnection();
     if (metrics != null) {
-      holder.context.dispatchFromIO(v -> conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName())));
+      conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
     }
     holder.context.dispatchFromIO(conn, holder.handler);
   }

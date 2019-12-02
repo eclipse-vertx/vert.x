@@ -24,7 +24,6 @@ import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.test.core.VertxTestBase;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -38,7 +37,6 @@ import java.util.function.Function;
  */
 public class MetricsContextTest extends VertxTestBase {
 
-  @Ignore
   @Test
   public void testFactory() throws Exception {
     AtomicReference<Thread> metricsThread = new AtomicReference<>();
@@ -52,7 +50,6 @@ public class MetricsContextTest extends VertxTestBase {
     assertNull(metricsContext.get());
   }
 
-  @Ignore
   @Test
   public void testFactoryInCluster() throws Exception {
     AtomicReference<Thread> metricsThread = new AtomicReference<>();
@@ -74,19 +71,17 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testHttpServerRequestEventLoop() throws Exception {
-    testHttpServerRequest(eventLoopContextFactory, eventLoopChecker);
+    testHttpServerRequest(eventLoopContextFactory);
   }
 
-  @Ignore
   @Test
   public void testHttpServerRequestWorker() throws Exception {
-    testHttpServerRequest(workerContextFactory, workerChecker);
+    testHttpServerRequest(workerContextFactory);
   }
 
-  private void testHttpServerRequest(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
+  private void testHttpServerRequest(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean requestBeginCalled = new AtomicBoolean();
@@ -103,34 +98,34 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public Void requestBegin(Void socketMetric, HttpServerRequest request) {
             requestBeginCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void responseEnd(Void requestMetric, HttpServerResponse response) {
             responseEndCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void close() {
@@ -175,19 +170,17 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testHttpServerWebsocketEventLoop() throws Exception {
-    testHttpServerWebsocket(eventLoopContextFactory, eventLoopChecker);
+    testHttpServerWebsocket(eventLoopContextFactory);
   }
 
-  @Ignore
   @Test
   public void testHttpServerWebsocketWorker() throws Exception {
-    testHttpServerWebsocket(workerContextFactory, workerChecker);
+    testHttpServerWebsocket(workerContextFactory);
   }
 
-  private void testHttpServerWebsocket(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
+  private void testHttpServerWebsocket(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean websocketConnected = new AtomicBoolean();
@@ -204,34 +197,35 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public Void connected(Void socketMetric, Void requestMetric, ServerWebSocket serverWebSocket) {
             websocketConnected.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            // FIXME
+            // assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void serverWebSocketMetric) {
             websocketDisconnected.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void close() {
@@ -278,19 +272,17 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testHttpClientRequestEventLoop() throws Exception {
-    testHttpClientRequest(eventLoopContextFactory, eventLoopChecker);
+    testHttpClientRequest(eventLoopContextFactory);
   }
 
-  @Ignore
   @Test
   public void testHttpClientRequestWorker() throws Exception {
-    testHttpClientRequest(workerContextFactory, workerChecker);
+    testHttpClientRequest(workerContextFactory);
   }
 
-  private void testHttpClientRequest(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
+  private void testHttpClientRequest(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean requestBeginCalled = new AtomicBoolean();
@@ -316,23 +308,23 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void close() {
@@ -360,7 +352,7 @@ public class MetricsContextTest extends VertxTestBase {
       expectedThread.set(Thread.currentThread());
       expectedContext.set(Vertx.currentContext());
       HttpClient client = vertx.createHttpClient();
-      checker.accept(expectedThread.get(), expectedContext.get());
+      assertSame(expectedThread.get(), Thread.currentThread());
       HttpClientRequest req = client.put(8080, "localhost", "/");
       req.setHandler(resp -> {
         executeInVanillaThread(() -> {
@@ -383,21 +375,18 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testHttpClientWebsocketEventLoop() throws Exception {
-    testHttpClientWebsocket(eventLoopContextFactory, eventLoopChecker);
+    testHttpClientWebsocket(eventLoopContextFactory);
   }
 
   // FIXME!! This test intermittently fails
   @Test
   public void testHttpClientWebsocketWorker() throws Exception {
-    testHttpClientWebsocket(workerContextFactory, workerChecker);
+    testHttpClientWebsocket(workerContextFactory);
   }
 
-  private void testHttpClientWebsocket(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
-    AtomicReference<Thread> expectedThread = new AtomicReference<>();
-    AtomicReference<Context> expectedContext = new AtomicReference<>();
+  private void testHttpClientWebsocket(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicBoolean websocketConnected = new AtomicBoolean();
     AtomicBoolean websocketDisconnected = new AtomicBoolean();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
@@ -412,7 +401,7 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public Void connected(Void endpointMetric, Void socketMetric, WebSocket webSocket) {
             websocketConnected.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
@@ -422,23 +411,23 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void close() {
@@ -461,10 +450,7 @@ public class MetricsContextTest extends VertxTestBase {
     awaitLatch(latch);
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
-      expectedThread.set(Thread.currentThread());
-      expectedContext.set(Vertx.currentContext());
       HttpClient client = vertx.createHttpClient();
-      checker.accept(expectedThread.get(), expectedContext.get());
       client.webSocket(8080, "localhost", "/", onSuccess(ws -> {
         ws.handler(buf -> {
           ws.closeHandler(v2 -> {
@@ -490,19 +476,17 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testNetServerEventLoop() throws Exception {
-    testNetServer(eventLoopContextFactory, eventLoopChecker);
+    testNetServer(eventLoopContextFactory);
   }
 
-  @Ignore
   @Test
   public void testNetServerWorker() throws Exception {
-    testNetServer(workerContextFactory, workerChecker);
+    testNetServer(workerContextFactory);
   }
 
-  private void testNetServer(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
+  private void testNetServer(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
@@ -517,23 +501,23 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void close() {
@@ -554,7 +538,7 @@ public class MetricsContextTest extends VertxTestBase {
       server.listen(1234, "localhost", onSuccess(s -> {
         expectedThread.set(Thread.currentThread());
         expectedContext.set(Vertx.currentContext());
-        checker.accept(expectedThread.get(), expectedContext.get());
+        assertSame(expectedThread.get(), Thread.currentThread());
         latch.countDown();
       }));
     });
@@ -581,19 +565,17 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testNetClientEventLoop() throws Exception {
-    testNetClient(eventLoopContextFactory, eventLoopChecker);
+    testNetClient(eventLoopContextFactory);
   }
 
-  @Ignore
   @Test
   public void testNetClientWorker() throws Exception {
-    testNetClient(workerContextFactory, workerChecker);
+    testNetClient(workerContextFactory);
   }
 
-  private void testNetClient(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
+  private void testNetClient(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
@@ -608,23 +590,23 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
             socketConnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
             socketDisconnectedCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void close() {
@@ -672,19 +654,17 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testDatagramEventLoop() throws Exception {
-    testDatagram(eventLoopContextFactory, eventLoopChecker);
+    testDatagram(eventLoopContextFactory);
   }
 
-  @Ignore
   @Test
   public void testDatagramWorker() throws Exception {
-    testDatagram(workerContextFactory, workerChecker);
+    testDatagram(workerContextFactory);
   }
 
-  private void testDatagram(Function<Vertx, Context> contextFactory, BiConsumer<Thread, Context> checker) throws Exception {
+  private void testDatagram(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean listening = new AtomicBoolean();
@@ -698,17 +678,17 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public void listening(String localName, SocketAddress localAddress) {
             listening.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesReadCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
             bytesWrittenCalled.set(true);
-            checker.accept(expectedThread.get(), expectedContext.get());
+            assertTrue(Context.isOnEventLoopThread());
           }
           @Override
           public void close() {
@@ -723,24 +703,19 @@ public class MetricsContextTest extends VertxTestBase {
       expectedThread.set(Thread.currentThread());
       expectedContext.set(Vertx.currentContext());
       DatagramSocket socket = vertx.createDatagramSocket();
-      socket.listen(1234, "localhost", ar1 -> {
-        assertTrue(ar1.succeeded());
-        checker.accept(expectedThread.get(), expectedContext.get());
+      socket.listen(1234, "localhost", onSuccess(v2 -> {
         socket.handler(packet -> {
           assertTrue(listening.get());
           assertTrue(bytesReadCalled.get());
           assertTrue(bytesWrittenCalled.get());
           executeInVanillaThread(socket::close);
         });
-        socket.send(Buffer.buffer("msg"), 1234, "localhost", ar2 -> {
-          assertTrue(ar2.succeeded());
-        });
-      });
+        socket.send(Buffer.buffer("msg"), 1234, "localhost", onSuccess(v3 -> {}));
+      }));
     });
     awaitLatch(closeCalled);
   }
 
-  @Ignore
   @Test
   public void testEventBusLifecycle() {
     AtomicBoolean closeCalled = new AtomicBoolean();
@@ -766,19 +741,17 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testMessageHandler() {
-    testMessageHandler((vertx, handler) -> handler.handle(null), eventLoopChecker);
+    testMessageHandler((vertx, handler) -> handler.handle(null));
   }
 
-  @Ignore
   @Test
   public void testMessageHandlerEventLoop() {
-    testMessageHandler((vertx, handler) -> eventLoopContextFactory.apply(vertx).runOnContext(handler), eventLoopChecker);
+    testMessageHandler((vertx, handler) -> eventLoopContextFactory.apply(vertx).runOnContext(handler));
   }
 
-  private void testMessageHandler(BiConsumer<Vertx, Handler<Void>> runOnContext, BiConsumer<Thread, Context> checker) {
+  private void testMessageHandler(BiConsumer<Vertx, Handler<Void>> runOnContext) {
     AtomicReference<Thread> consumerThread = new AtomicReference<>();
     AtomicReference<Context> consumerContext = new AtomicReference<>();
     AtomicBoolean registeredCalled = new AtomicBoolean();
@@ -807,7 +780,7 @@ public class MetricsContextTest extends VertxTestBase {
           @Override
           public void endHandleMessage(Void handler, Throwable failure) {
             endHandleCalled.set(true);
-            checker.accept(consumerThread.get(), consumerContext.get());
+            assertSame(consumerThread.get(), Thread.currentThread());
           }
         };
       }
@@ -817,7 +790,7 @@ public class MetricsContextTest extends VertxTestBase {
     runOnContext.accept(vertx, v -> {
       MessageConsumer<Object> consumer = eb.consumer("the_address");
       consumer.handler(msg -> {
-        checker.accept(consumerThread.get(), consumerContext.get());
+        assertSame(consumerThread.get(), Thread.currentThread());
         executeInVanillaThread(() -> {
           vertx.getOrCreateContext().runOnContext(v2 -> {
             consumer.unregister(onSuccess(v3 -> {
@@ -836,19 +809,17 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testDeployEventLoop() {
-    testDeploy(false, eventLoopChecker);
+    testDeploy(false);
   }
 
-  @Ignore
   @Test
   public void testDeployWorker() {
-    testDeploy(true, workerChecker);
+    testDeploy(true);
   }
 
-  private void testDeploy(boolean worker, BiConsumer<Thread, Context> checker) {
+  private void testDeploy(boolean worker) {
     AtomicReference<Thread> verticleThread = new AtomicReference<>();
     AtomicReference<Context> verticleContext = new AtomicReference<>();
     AtomicBoolean deployedCalled = new AtomicBoolean();
@@ -857,12 +828,14 @@ public class MetricsContextTest extends VertxTestBase {
       @Override
       public void verticleDeployed(Verticle verticle) {
         deployedCalled.set(true);
-        checker.accept(verticleThread.get(), verticleContext.get());
+        // TODO FIXME
+        // assertTrue(Context.isOnEventLoopThread());
       }
       @Override
       public void verticleUndeployed(Verticle verticle) {
         undeployedCalled.set(true);
-        checker.accept(verticleThread.get(), verticleContext.get());
+        // TODO FIXME
+        // assertTrue(Context.isOnEventLoopThread());
       }
     };
     Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
@@ -890,10 +863,6 @@ public class MetricsContextTest extends VertxTestBase {
 
   private Function<Vertx, Context> eventLoopContextFactory = Vertx::getOrCreateContext;
 
-  private BiConsumer<Thread, Context> eventLoopChecker = (thread, ctx) -> {
-    assertSame(Thread.currentThread(), thread);
-  };
-
   private Function<Vertx, Context> workerContextFactory = vertx -> {
     AtomicReference<Context> ctx = new AtomicReference<>();
     vertx.deployVerticle(new AbstractVerticle() {
@@ -905,9 +874,5 @@ public class MetricsContextTest extends VertxTestBase {
     }, new DeploymentOptions().setWorker(true));
     assertWaitUntil(() -> ctx.get() != null);
     return ctx.get();
-  };
-
-  private BiConsumer<Thread, Context> workerChecker = (thread, ctx) -> {
-    assertTrue(Context.isOnWorkerThread());
   };
 }

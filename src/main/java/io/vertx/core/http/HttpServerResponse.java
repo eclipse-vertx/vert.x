@@ -424,34 +424,46 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with no headers.
    */
   @Fluent
-  HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler);
+  default HttpServerResponse push(HttpMethod method, String host, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, host, path, null, handler);
+  }
 
   /**
    * Same as {@link #push(HttpMethod, String, String, Handler)} but with an {@code handler} called when the operation completes
    */
-  Future<HttpServerResponse> push(HttpMethod method, String host, String path);
+  default Future<HttpServerResponse> push(HttpMethod method, String host, String path) {
+    return push(method, host, path, (MultiMap) null);
+  }
 
   /**
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
    */
   @Fluent
-  HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
+  default HttpServerResponse push(HttpMethod method, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, null, path, headers, handler);
+  }
 
   /**
    * Same as {@link #push(HttpMethod, String, MultiMap, Handler)} but with an {@code handler} called when the operation completes
    */
-  Future<HttpServerResponse> push(HttpMethod method, String path, MultiMap headers);
+  default Future<HttpServerResponse> push(HttpMethod method, String path, MultiMap headers) {
+    return push(method, null, path, headers);
+  }
 
   /**
    * Like {@link #push(HttpMethod, String, String, MultiMap, Handler)} with the host copied from the current request.
    */
   @Fluent
-  HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler);
+  default HttpServerResponse push(HttpMethod method, String path, Handler<AsyncResult<HttpServerResponse>> handler) {
+    return push(method, null, path, null, handler);
+  }
 
   /**
    * Same as {@link #push(HttpMethod, String, Handler)} but with an {@code handler} called when the operation completes
    */
-  Future<HttpServerResponse> push(HttpMethod method, String path);
+  default Future<HttpServerResponse> push(HttpMethod method, String path) {
+    return push(method, null, path);
+  }
 
   /**
    * Push a response to the client.<p/>
@@ -472,7 +484,13 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler);
+  default HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
+    Future<HttpServerResponse> fut = push(method, host, path, headers);
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
+    return this;
+  }
 
   /**
    * Same as {@link #push(HttpMethod, String, String, MultiMap, Handler)} but with an {@code handler} called when the operation completes

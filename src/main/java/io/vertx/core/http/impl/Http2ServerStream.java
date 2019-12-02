@@ -10,12 +10,14 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
@@ -28,7 +30,6 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
   protected final String rawMethod;
   protected final HttpMethod method;
   protected final String uri;
-  protected final String contentEncoding;
   protected final String host;
   protected final Http2ServerResponseImpl response;
   private Object metric;
@@ -43,10 +44,9 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     this.headers = null;
     this.method = method;
     this.rawMethod = method.name();
-    this.contentEncoding = contentEncoding;
     this.uri = uri;
     this.host = null;
-    this.response = new Http2ServerResponseImpl(conn, this, method, true, contentEncoding, null);
+    this.response = new Http2ServerResponseImpl(conn, this, true, contentEncoding, null);
   }
 
   Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Headers headers, String contentEncoding, String serverOrigin) {
@@ -60,11 +60,10 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
 
     this.headers = headers;
     this.host = host;
-    this.contentEncoding = contentEncoding;
     this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;
     this.rawMethod = headers.get(":method") != null ? headers.get(":method").toString() : null;
     this.method = HttpUtils.toVertxMethod(rawMethod);
-    this.response = new Http2ServerResponseImpl(conn, this, method, false, contentEncoding, host);
+    this.response = new Http2ServerResponseImpl(conn, this, false, contentEncoding, host);
   }
 
   void registerMetrics() {
@@ -80,11 +79,29 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     }
   }
 
-  void writeHead(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
-    if (Metrics.METRICS_ENABLED && metric != null) {
+  @Override
+  void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
+    if (streamPriority != null) {
+      priority(streamPriority);
+    }
+    registerMetrics();
+    CharSequence value = headers.get(HttpHeaderNames.EXPECT);
+    if (conn.options.isHandle100ContinueAutomatically() &&
+      ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
+        headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
+      response.writeContinue();
+    }
+    dispatch(conn.requestHandler);
+  }
+
+  abstract void dispatch(Handler<HttpServerRequest> handler);
+
+  @Override
+  void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
+    if (Metrics.METRICS_ENABLED && !end && metric != null) {
       conn.metrics().responseBegin(metric, response);
     }
-    writeHeaders(headers, end, handler);
+    super.doWriteHeaders(headers, end, handler);
   }
 
   @Override

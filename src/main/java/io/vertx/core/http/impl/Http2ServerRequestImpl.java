@@ -42,13 +42,10 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
@@ -67,45 +64,44 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private final String serverOrigin;
   private final MultiMap headersMap;
   private final String scheme;
-  private String path;
-  private String query;
+
+  // Accessed on event loop
+  private Object trace;
+
+  // Accessed on context thread
   private MultiMap params;
   private String absoluteURI;
   private MultiMap attributes;
-  private Object trace;
-
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
   private boolean streamEnded;
   private boolean ended;
-
   private Buffer body;
   private Promise<Buffer> bodyPromise;
-
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder postRequestDecoder;
-
   private Handler<Throwable> exceptionHandler;
   private Handler<HttpFrame> customFrameHandler;
-
   private Handler<StreamPriority> streamPriorityHandler;
 
-  public Http2ServerRequestImpl(Http2ServerConnection conn, ContextInternal context, HttpServerMetrics metrics,
-      String serverOrigin, Http2Headers headers, String contentEncoding, boolean streamEnded) {
+  Http2ServerRequestImpl(Http2ServerConnection conn,
+                         ContextInternal context,
+                         String serverOrigin,
+                         Http2Headers headers,
+                         String contentEncoding,
+                         boolean streamEnded) {
     super(conn, context, headers, contentEncoding, serverOrigin);
 
     String scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
-
     headers.remove(":method");
     headers.remove(":scheme");
     headers.remove(":path");
     headers.remove(":authority");
-    Http2HeadersAdaptor headersMap = new Http2HeadersAdaptor(headers);
 
     this.serverOrigin = serverOrigin;
     this.streamEnded = streamEnded;
     this.scheme = scheme;
-    this.headersMap = headersMap;
+    this.headersMap = new Http2HeadersAdaptor(headers);
   }
 
   void dispatch(Handler<HttpServerRequest> handler) {
@@ -116,7 +112,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       tags.add(new AbstractMap.SimpleEntry<>("http.method", method.name()));
       trace = tracer.receiveRequest(context, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
-    context.emit(this, handler);
+    context.dispatch(this, handler);
   }
 
   @Override
@@ -161,21 +157,28 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
+  void onClose() {
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      Throwable failure;
+      synchronized (conn) {
+        if (!streamEnded && (!ended || !response.ended())) {
+          failure = ConnectionBase.CLOSED_EXCEPTION;
+        } else {
+          failure = null;
+        }
+      }
+      tracer.sendResponse(context, failure == null ? response : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+    }
+    super.onClose();
+  }
+
+  @Override
   void handleClose() {
     super.handleClose();
     boolean notify;
-    Throwable failure;
     synchronized (conn) {
       notify = !streamEnded;
-      if (!streamEnded && (!ended || !response.ended())) {
-        failure = ConnectionBase.CLOSED_EXCEPTION;
-      } else {
-        failure = null;
-      }
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      tracer.sendResponse(context, failure == null ? response : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
     if (notify) {
       notifyException(new ClosedChannelException());
@@ -328,11 +331,6 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
-  public boolean isSSL() {
-    return conn.isSsl();
-  }
-
-  @Override
   public String uri() {
     return uri;
   }
@@ -340,16 +338,14 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   @Override
   public String path() {
     synchronized (conn) {
-      this.path = uri != null ? HttpUtils.parsePath(uri) : null;
-      return path;
+      return uri != null ? HttpUtils.parsePath(uri) : null;
     }
   }
 
   @Override
   public String query() {
     synchronized (conn) {
-      this.query = uri != null ? HttpUtils.parseQuery(uri) : null;
-      return query;
+      return uri != null ? HttpUtils.parseQuery(uri) : null;
     }
   }
 
@@ -379,16 +375,6 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
-  public String getHeader(String headerName) {
-    return headers().get(headerName);
-  }
-
-  @Override
-  public String getHeader(CharSequence headerName) {
-    return headers().get(headerName);
-  }
-
-  @Override
   public MultiMap params() {
     synchronized (conn) {
       if (params == null) {
@@ -396,26 +382,6 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       }
       return params;
     }
-  }
-
-  @Override
-  public String getParam(String paramName) {
-    return params().get(paramName);
-  }
-
-  @Override
-  public SocketAddress remoteAddress() {
-    return conn.remoteAddress();
-  }
-
-  @Override
-  public SocketAddress localAddress() {
-    return conn.localAddress();
-  }
-
-  @Override
-  public SSLSession sslSession() {
-    return conn.sslSession();
   }
 
   @Override
@@ -513,7 +479,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
 
   @Override
   public ServerWebSocket upgrade() {
-    throw new UnsupportedOperationException("HTTP/2 request cannot be upgraded to a websocket");
+    throw new UnsupportedOperationException("HTTP/2 request cannot be upgraded to a WebSocket");
   }
 
   @Override
@@ -545,6 +511,10 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     return bodyPromise.future();
   }
 
+  public StreamPriority streamPriority() {
+    return priority();
+  }
+
   @Override
   public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
     synchronized (conn) {
@@ -562,21 +532,6 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     if (handler != null) {
       handler.handle(streamPriority);
     }
-  }
-
-  @Override
-  public StreamPriority streamPriority() {
-    return priority();
-  }
-
-  @Override
-  public @Nullable Cookie getCookie(String name) {
-    return response.cookies().get(name);
-  }
-
-  @Override
-  public int cookieCount() {
-    return response.cookies().size();
   }
 
   @Override

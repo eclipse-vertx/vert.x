@@ -15,6 +15,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.Objects;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -84,6 +86,7 @@ class WorkerContext extends ContextImpl {
   }
 
   private <T> void execute(ContextInternal ctx, T value, Handler<T> task) {
+    Objects.requireNonNull(task, "Task handler must not be null");
     PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     orderedTasks.execute(() -> {

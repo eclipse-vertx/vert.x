@@ -37,14 +37,10 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.Http1xServerConnection;
-import io.vertx.core.http.impl.HttpHandlers;
 import io.vertx.core.http.impl.VertxHttpRequestDecoder;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.VertxHandler;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
@@ -231,7 +227,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
           .add(HEADER_CONTENT_LENGTH, HELLO_WORLD_LENGTH);
       response.end(HELLO_WORLD_BUFFER);
     };
-    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(context, chctx -> {
+    VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
       Http1xServerConnection conn = new Http1xServerConnection(
         context.owner(),
         null,

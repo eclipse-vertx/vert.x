@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.FutureListener;
@@ -103,7 +104,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   }
 
   @Override
-  void handlePriorityChange(StreamPriority streamPriority) {
+  void handlePriorityChange(StreamPriority newPriority) {
   }
 
 // NetSocket impl
@@ -168,15 +169,6 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   }
 
   @Override
-  public Future<Void> write(Buffer data) {
-    synchronized (conn) {
-      Promise<Void> promise = context.promise();
-      writeData(data.getByteBuf(), false, promise);
-      return promise.future();
-    }
-  }
-
-  @Override
   public NetSocket setWriteQueueMaxSize(int maxSize) {
     return this;
   }
@@ -206,35 +198,76 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
     return null;
   }
 
-  @Override
-  public Future<Void> write(String str) {
+  private Future<Void> write(ByteBuf data, boolean end) {
     Promise<Void> promise = context.promise();
-    write(str, null, promise);
+    writeData(data, end, promise);
     return promise.future();
   }
 
   @Override
-  public void write(String str, Handler<AsyncResult<Void>> handler) {
-    write(str, null, handler);
+  public Future<Void> write(Buffer data) {
+    return write(data.getByteBuf(), false);
+  }
+
+  @Override
+  public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = write(data);
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
   }
 
   @Override
   public Future<Void> write(String str, String enc) {
-    Promise<Void> promise = context.promise();
-    write(str, enc, promise);
-    return promise.future();
+    Charset cs = enc != null ? Charset.forName(enc) : CharsetUtil.UTF_8;
+    return write(Unpooled.copiedBuffer(str, cs), false);
   }
 
   @Override
   public void write(String str, String enc, Handler<AsyncResult<Void>> handler) {
-    Charset cs = enc != null ? Charset.forName(enc) : CharsetUtil.UTF_8;
-    writeData(Unpooled.copiedBuffer(str, cs), false, handler);
+    Future<Void> fut = write(str, enc);
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
   }
 
   @Override
-  public void write(Buffer message, Handler<AsyncResult<Void>> handler) {
-    FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    conn.writeData(stream, message.getByteBuf(), false, promise);
+  public Future<Void> write(String str) {
+    return write(str, (String) null);
+  }
+
+  @Override
+  public void write(String str, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = write(str);
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
+  }
+
+  @Override
+  public Future<Void> end(Buffer data) {
+    return write(data.getByteBuf(), true);
+  }
+
+  @Override
+  public void end(Buffer buffer, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = end(buffer);
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
+  }
+
+  @Override
+  public Future<Void> end() {
+    return write(Unpooled.EMPTY_BUFFER, true);
+  }
+
+  @Override
+  public void end(Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = end();
+    if (handler != null) {
+      fut.setHandler(handler);
+    }
   }
 
   @Override
@@ -277,23 +310,6 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   @Override
   public SocketAddress localAddress() {
     return conn.localAddress();
-  }
-
-  @Override
-  public Future<Void> end() {
-    Promise<Void> promise = context.promise();
-    end(promise);
-    return promise.future();
-  }
-
-  @Override
-  public void end(Buffer buffer, Handler<AsyncResult<Void>> handler) {
-    writeData(buffer.getByteBuf(), true, handler);
-  }
-
-  @Override
-  public void end(Handler<AsyncResult<Void>> handler) {
-    writeData(Unpooled.EMPTY_BUFFER, true, handler);
   }
 
   @Override

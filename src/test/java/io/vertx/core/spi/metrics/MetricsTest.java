@@ -613,7 +613,7 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
     awaitLatch(listenLatch);
-    client = vertx.createHttpClient();
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAliveTimeout(0));
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
     CountDownLatch responsesLatch = new CountDownLatch(5);
     for (int i = 0;i < 5;i++) {

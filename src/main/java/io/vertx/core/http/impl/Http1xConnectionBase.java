@@ -17,6 +17,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.FileRegion;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpMessage;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
@@ -24,6 +27,7 @@ import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
+import io.netty.handler.stream.ChunkedFile;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -47,6 +51,7 @@ import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends ConnectionBase implements io.vertx.core.http.HttpConnection {
 
   protected S webSocket;
+  protected long bytesWritten;
   private boolean closeFrameSent;
 
   Http1xConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
@@ -122,7 +127,8 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
       w = webSocket;
     }
     if (w != null) {
-      w.context.emit(frame, ((WebSocketImplBase)w)::handleFrame);
+      reportBytesRead(frame.length());
+      w.context.dispatchFromIO(frame, ((WebSocketImplBase)w)::handleFrame);
     }
   }
 
@@ -230,5 +236,36 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   @Override
   public Future<Buffer> ping(Buffer data) {
     throw new UnsupportedOperationException("HTTP/1.x connections don't support PING");
+  }
+
+  @Override
+  protected void reportsBytesWritten(Object msg) {
+    if (msg instanceof HttpMessage) {
+      bytesWritten += getBytes(msg);
+    } else if (msg instanceof WebSocketFrame) {
+      // Only report WebSocket messages since HttpMessage are reported by streams
+      reportBytesWritten(getBytes(msg));
+    }
+  }
+
+  static long getBytes(Object obj) {
+    if (obj == null) {
+      return 0;
+    } else if (obj instanceof Buffer) {
+      return ((Buffer) obj).length();
+    } else if (obj instanceof ByteBuf) {
+      return ((ByteBuf) obj).readableBytes();
+    } else if (obj instanceof HttpContent) {
+      return ((HttpContent) obj).content().readableBytes();
+    } else if (obj instanceof WebSocketFrame) {
+      return ((WebSocketFrame) obj).content().readableBytes();
+    } else if (obj instanceof FileRegion) {
+      return ((FileRegion) obj).count();
+    } else if (obj instanceof ChunkedFile) {
+      ChunkedFile file = (ChunkedFile) obj;
+      return file.endOffset() - file.startOffset();
+    } else {
+      return -1;
+    }
   }
 }

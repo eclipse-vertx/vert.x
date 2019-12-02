@@ -17,6 +17,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandler;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
@@ -135,11 +136,15 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     if (closed) {
       throw new IllegalStateException("Socket is closed");
     }
-    if (message instanceof ByteBuf) {
-      reportBytesWritten(((ByteBuf)message).readableBytes());
-    }
     writeToChannel(message, handler == null ? null : context.promise(handler));
     return this;
+  }
+
+  @Override
+  protected void reportsBytesWritten(Object msg) {
+    if (msg instanceof ByteBuf) {
+      reportBytesWritten(((ByteBuf)msg).readableBytes());
+    }
   }
 
   @Override
@@ -342,7 +347,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   protected void handleInterestedOpsChanged() {
-    context.emit(v -> callDrainHandler());
+    context.dispatch(null, v -> callDrainHandler());
   }
 
   @Override
@@ -374,7 +379,10 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   public void handleMessage(Object msg) {
-    context.emit(msg, o -> {
+    if (msg instanceof ByteBuf) {
+      reportBytesRead(((ByteBuf)msg).readableBytes());
+    }
+    context.dispatch(msg, o -> {
       if (!pending.write(msg)) {
         doPause();
       }
@@ -397,7 +405,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         ByteBuf byteBuf = (ByteBuf) event;
         byteBuf = VertxHandler.safeBuffer(byteBuf, allocator);
         Buffer data = Buffer.buffer(byteBuf);
-        reportBytesRead(data.length());
         dataHandler.handle(data);
       }
     }

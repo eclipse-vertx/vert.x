@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
@@ -51,9 +52,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private final InboundBuffer<Object> pending;
   private MultiMap trailers;
   private boolean writable; // SHOULD BE CLEAR ABOUT VISIBILITY : currently it's modified by connection and read by stream
-  private StreamPriority priority;
   private long bytesRead;
   private long bytesWritten;
+
+  // Client context
+  private StreamPriority priority;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
@@ -82,7 +85,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void init(Http2Stream stream) {
     this.stream = stream;
     this.writable = this.conn.handler.encoder().flowController().isWritable(stream);
-    this.conn.streams.put(stream.id(), this);
+    stream.setProperty(conn.streamKey, this);
   }
 
   void onClose() {
@@ -98,15 +101,20 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     context.dispatch(code, this::handleReset);
   }
 
-  void onPriorityChange(StreamPriority priority) {
-    if (this.priority != null && !this.priority.equals(priority)) {
-      this.priority = priority;
-      context.dispatch(priority, this::handlePriorityChange);
-    }
+  void onPriorityChange(StreamPriority newPriority) {
+    context.dispatch(newPriority, priority -> {
+      if (!this.priority.equals(priority)) {
+        this.priority = priority;
+        handlePriorityChange(priority);
+      }
+    });
   }
 
   void onCustomFrame(HttpFrame frame) {
     context.dispatch(frame, this::handleCustomFrame);
+  }
+
+  void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
   }
 
   void onData(Buffer data) {
@@ -157,13 +165,31 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  public void writeFrame(int type, int flags, ByteBuf payload) {
-    conn.writeFrame(stream, type, flags, payload);
+  public final void writeFrame(int type, int flags, ByteBuf payload) {
+    EventLoop eventLoop = conn.getContext().nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      doWriteFrame(type, flags, payload);
+    } else {
+      eventLoop.execute(() -> doWriteFrame(type, flags, payload));
+    }
   }
 
-  void writeHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
+  private void doWriteFrame(int type, int flags, ByteBuf payload) {
+    conn.handler.writeFrame(stream, (byte) type, (short) flags, payload);
+  }
+
+  final void writeHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
+    EventLoop eventLoop = conn.getContext().nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      doWriteHeaders(headers, end, handler);
+    } else {
+      eventLoop.execute(() -> doWriteHeaders(headers, end, handler));
+    }
+  }
+
+  void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    conn.writeHeaders(stream, headers, end, priority, promise);
+    conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), promise);
   }
 
   void flush() {
@@ -171,21 +197,39 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   private void writePriorityFrame(StreamPriority priority) {
-    conn.writePriority(stream, priority);
+    conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
   void writeData(ByteBuf chunk, boolean end) {
     writeData(chunk, end, null);
   }
 
-  void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
-    bytesWritten += chunk.readableBytes();
-    FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    conn.writeData(stream, chunk, end, promise);
+  final void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+    EventLoop eventLoop = conn.getContext().nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      doWriteData(chunk, end, handler);
+    } else {
+      eventLoop.execute(() -> doWriteData(chunk, end, handler));
+    }
   }
 
-  void writeReset(long code) {
-    conn.writeReset(stream.id(), code);
+  void doWriteData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
+    bytesWritten += chunk.readableBytes();
+    FutureListener<Void> promise = handler == null ? null : context.promise(handler);
+    conn.handler.writeData(stream, chunk, end, promise);
+  }
+
+  final void writeReset(long code) {
+    EventLoop eventLoop = conn.getContext().nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      doWriteReset(code);
+    } else {
+      eventLoop.execute(() -> doWriteReset(code));
+    }
+  }
+
+  private void doWriteReset(long code) {
+    conn.handler.writeReset(stream.id(), code);
   }
 
   void handleInterestedOpsChanged() {
@@ -226,7 +270,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  abstract void handlePriorityChange(StreamPriority streamPriority);
+  void handlePriorityChange(StreamPriority newPriority) {
+  }
 
   void resolveFile(String filename, long offset, long length, Handler<AsyncResult<AsyncFile>> resultHandler) {
     File file_ = vertx.resolveFile(filename);

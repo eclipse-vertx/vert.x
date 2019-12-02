@@ -80,7 +80,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * @return true if this {@link io.vertx.core.net.NetSocket} is encrypted via SSL/TLS
    */
-  boolean isSSL();
+  default boolean isSSL() {
+    return connection().isSsl();
+  }
 
   /**
    * @return the scheme of the request
@@ -136,7 +138,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return the header value
    */
   @Nullable
-  String getHeader(String headerName);
+  default String getHeader(String headerName) {
+    return headers().get(headerName);
+  }
 
   /**
    * Return the first header value with the specified name
@@ -145,7 +149,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return the header value
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  String getHeader(CharSequence headerName);
+  default String getHeader(CharSequence headerName) {
+    return headers().get(headerName);
+  }
 
   /**
    * @return the query parameters in the request
@@ -160,20 +166,25 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @return the param value
    */
   @Nullable
-  String getParam(String paramName);
-
+  default String getParam(String paramName) {
+    return params().get(paramName);
+  }
 
   /**
    * @return the remote (client side) address of the request
    */
   @CacheReturn
-  SocketAddress remoteAddress();
+  default SocketAddress remoteAddress() {
+    return connection().remoteAddress();
+  }
 
   /**
    * @return the local (server side) address of the server that handles the request
    */
   @CacheReturn
-  SocketAddress localAddress();
+  default SocketAddress localAddress() {
+    return connection().localAddress();
+  }
 
   /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is
@@ -181,7 +192,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @see javax.net.ssl.SSLSession
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  SSLSession sslSession();
+  default SSLSession sslSession() {
+    return connection().sslSession();
+  }
 
   /**
    * Note: Java SE 5+ recommends to use javax.net.ssl.SSLSession#getPeerCertificates() instead of
@@ -376,12 +389,16 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param name  the cookie name
    * @return the cookie
    */
-  @Nullable Cookie getCookie(String name);
+  default @Nullable Cookie getCookie(String name) {
+    return cookieMap().get(name);
+  }
 
   /**
    * @return the number of cookieMap.
    */
-  int cookieCount();
+  default int cookieCount() {
+    return cookieMap().size();
+  }
 
   /**
    * @return a map of all the cookies.

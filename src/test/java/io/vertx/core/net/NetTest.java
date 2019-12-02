@@ -3110,8 +3110,12 @@ public class NetTest extends VertxTestBase {
       public void start() throws Exception {
         NetClient client = vertx.createNetClient();
         client.connect(testAddress, onSuccess(so ->{
+          assertTrue(Context.isOnWorkerThread());
           Buffer received = Buffer.buffer();
-          so.handler(received::appendBuffer);
+          so.handler(buff -> {
+            assertTrue(Context.isOnWorkerThread());
+            received.appendBuffer(buff);
+          });
           so.closeHandler(v -> {
             assertEquals(expected, received.toString());
             testComplete();
@@ -3129,16 +3133,21 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testWorkerServer() throws Exception {
+  public void testWorkerServer() {
     String expected = TestUtils.randomAlphaString(2000);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) throws Exception {
         NetServer server = vertx.createNetServer();
         server.connectHandler(so -> {
+          assertTrue(Context.isOnWorkerThread());
           Buffer received = Buffer.buffer();
-          so.handler(received::appendBuffer);
+          so.handler(buffer -> {
+            assertTrue(Context.isOnWorkerThread());
+            received.appendBuffer(buffer);
+          });
           so.closeHandler(v -> {
+            assertTrue(Context.isOnWorkerThread());
             assertEquals(expected, received.toString());
             testComplete();
           });

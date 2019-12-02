@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+
 /**
  * Abstract base class for TCP connections.
  *
@@ -118,6 +120,9 @@ public abstract class ConnectionBase {
    * @param promise the promise receiving the completion event
    */
   private void write(Object msg, boolean flush, ChannelPromise promise) {
+    if (METRICS_ENABLED) {
+      reportsBytesWritten(msg);
+    }
     needsFlush = !flush;
     if (flush) {
       chctx.writeAndFlush(msg, promise);
@@ -126,17 +131,20 @@ public abstract class ConnectionBase {
     }
   }
 
+  protected void reportsBytesWritten(Object msg) {
+  }
+
   private ChannelPromise wrap(FutureListener<Void> handler) {
     ChannelPromise promise = chctx.newPromise();
     promise.addListener(handler);
     return promise;
   }
 
-  public void writeToChannel(Object msg, FutureListener<Void> listener) {
+  public final void writeToChannel(Object msg, FutureListener<Void> listener) {
     writeToChannel(msg, listener == null ? voidPromise : wrap(listener));
   }
 
-  public void writeToChannel(Object msg, ChannelPromise promise) {
+  public final void writeToChannel(Object msg, ChannelPromise promise) {
     synchronized (this) {
       if (!chctx.executor().inEventLoop() || writeInProgress > 0) {
         // Make sure we serialize all the messages as this method can be called from various threads:
@@ -270,34 +278,42 @@ public abstract class ConnectionBase {
 
   public abstract NetworkMetrics metrics();
 
-  protected synchronized void handleException(Throwable t) {
+  protected void handleException(Throwable t) {
     NetworkMetrics metrics = metrics();
     if (metrics != null) {
       metrics.exceptionOccurred(metric, remoteAddress(), t);
     }
-    if (exceptionHandler != null) {
-      context.emit(t, exceptionHandler);
-    } else {
-      if (log.isDebugEnabled()) {
-        log.error(t.getMessage(), t);
-      } else {
-        log.error(t.getMessage());
+    context.dispatch(t, err -> {
+      Handler<Throwable> handler;
+      synchronized (ConnectionBase.this) {
+        handler = exceptionHandler;
       }
-    }
+      if (handler != null) {
+        handler.handle(err);
+      } else {
+        if (log.isDebugEnabled()) {
+          log.error(t.getMessage(), t);
+        } else {
+          log.error(t.getMessage());
+        }
+      }
+    });
   }
 
   protected void handleClosed() {
-    Handler<Void> handler;
-    synchronized (this) {
-      NetworkMetrics metrics = metrics();
-      if (metrics instanceof TCPMetrics) {
-        ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+    NetworkMetrics metrics = metrics();
+    if (metrics instanceof TCPMetrics) {
+      ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+    }
+    context.dispatch(null, v -> {
+      Handler<Void> handler;
+      synchronized (ConnectionBase.this) {
+        handler = closeHandler;
       }
-      handler = closeHandler;
-    }
-    if (handler != null) {
-      context.emit(handler);
-    }
+      if (handler != null) {
+        handler.handle(null);
+      }
+    });
   }
 
   /**
@@ -326,8 +342,8 @@ public abstract class ConnectionBase {
 
   public void reportBytesWritten(long numberOfBytes) {
     NetworkMetrics metrics = metrics();
-    if (metrics != null) {
-      metrics.bytesWritten(metric(), remoteAddress(), numberOfBytes);
+    if (metrics != null && numberOfBytes > 0) {
+      metrics.bytesWritten(metric, remoteAddress(), numberOfBytes);
     }
   }
 

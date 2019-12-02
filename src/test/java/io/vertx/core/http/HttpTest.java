@@ -3315,6 +3315,38 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testWorkerServer() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        vertx.createHttpServer(createBaseServerOptions())
+          .requestHandler(req -> {
+            Context current = Vertx.currentContext();
+            assertTrue(current.isWorkerContext());
+            assertSameEventLoop(context, current);
+            req.response().end("pong");
+          }).listen()
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    }, new DeploymentOptions().setWorker(true), onSuccess(id -> latch.countDown()));
+    awaitLatch(latch);
+    client.request(
+      HttpMethod.GET,
+      testAddress,
+      new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI(DEFAULT_TEST_URI),
+      onSuccess(resp -> {
+        testComplete();
+      })
+    ).end();
+    await();
+  }
+
+  @Test
   public void testMultipleServerClose() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     AtomicInteger times = new AtomicInteger();

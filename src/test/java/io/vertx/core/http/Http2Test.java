@@ -233,19 +233,25 @@ public class Http2Test extends HttpTest {
     HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/0", resp -> {
       complete();
     }).setChunked(true);
-    while (!req1.writeQueueFull()) {
-      req1.write(Buffer.buffer(TestUtils.randomAlphaString(512)));
-      Thread.sleep(1);
-    }
+    CountDownLatch l = new CountDownLatch(1);
+    req1.sendHead(onSuccess(v -> {
+      vertx.setPeriodic(1 , id -> {
+        req1.write(Buffer.buffer(TestUtils.randomAlphaString(512)));
+        if (req1.writeQueueFull()) {
+          req1.writeQueueFull();
+          vertx.cancelTimer(id);
+          l.countDown();
+        }
+      });
+    }));
+    awaitLatch(l);
     HttpClientRequest req2 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", resp -> {
       complete();
     }).setChunked(true);
     assertFalse(req2.writeQueueFull());
-    req2.sendHead(v -> {
-      assertTrue(req2.writeQueueFull());
-      resumeLatch.complete(null);
-    });
-    resumeLatch.get(20, TimeUnit.SECONDS);
+    req2.sendHead();
+    waitUntil(req2::writeQueueFull);
+    resumeLatch.complete(null);
     AsyncTestBase.assertWaitUntil(() -> !req2.writeQueueFull());
     req1.end();
     req2.end(buffer);

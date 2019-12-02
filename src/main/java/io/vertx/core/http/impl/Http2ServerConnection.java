@@ -11,9 +11,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Error;
@@ -21,7 +19,6 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -39,12 +36,11 @@ import java.util.ArrayDeque;
  */
 public class Http2ServerConnection extends Http2ConnectionBase implements HttpServerConnection {
 
-  private final HttpServerOptions options;
+  final HttpServerOptions options;
   private final String serverOrigin;
   private final HttpServerMetrics metrics;
 
-  private Handler<HttpServerRequest> requestHandler;
-  private Long maxConcurrentStreams;
+  Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
 
@@ -102,62 +98,39 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   private Http2ServerRequestImpl createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, context.duplicate(), metrics, serverOrigin, headers, contentEncoding, streamEnded);
+    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, context.duplicate(), serverOrigin, headers, contentEncoding, streamEnded);
     request.init(stream);
     return request;
   }
 
   @Override
-  public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId,
-                            Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) {
-    VertxHttp2Stream stream = streams.get(streamId);
+  protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
+    VertxHttp2Stream stream = stream(streamId);
     if (stream == null) {
       if (isMalformedRequest(headers)) {
         handler.writeReset(streamId, Http2Error.PROTOCOL_ERROR.code());
         return;
       }
-      Http2ServerRequestImpl req = createRequest(streamId, headers, endOfStream);
-      req.registerMetrics();
-      req.priority(new StreamPriority()
-        .setDependency(streamDependency)
-        .setWeight(weight)
-        .setExclusive(exclusive)
-      );
-
-      stream = req;
-      CharSequence value = headers.get(HttpHeaderNames.EXPECT);
-      if (options.isHandle100ContinueAutomatically() &&
-          ((value != null && HttpHeaderValues.CONTINUE.equals(value)) ||
-              headers.contains(HttpHeaderNames.EXPECT, HttpHeaderValues.CONTINUE))) {
-        req.response().writeContinue();
-      }
-      req.dispatch(requestHandler);
+      stream = createRequest(streamId, headers, endOfStream);
+      stream.onHeaders(headers, streamPriority);
     } else {
       // Http server request trailer - not implemented yet (in api)
     }
     if (endOfStream) {
-      VertxHttp2Stream finalStream = stream;
-      finalStream.context.emit(v -> finalStream.onEnd());
+      stream.onEnd();
     }
   }
 
-  @Override
-  public synchronized void onHeadersRead(ChannelHandlerContext ctx, int streamId,
-                            Http2Headers headers, int padding, boolean endOfStream) {
-    onHeadersRead(ctx, streamId, headers, 0, Http2CodecUtil.DEFAULT_PRIORITY_WEIGHT, false, padding, endOfStream);
-  }
-
-  @Override
-  public synchronized void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) {
-    Long v = settings.maxConcurrentStreams();
-    if (v != null) {
-      maxConcurrentStreams = v;
+  void sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
+    EventLoop eventLoop = context.nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      doSendPush(streamId, host, method, headers, path, streamPriority, promise);
+    } else {
+      eventLoop.execute(() -> doSendPush(streamId, host, method, headers, path, streamPriority, promise));
     }
-    super.onSettingsRead(ctx, settings);
   }
 
-  synchronized Future<HttpServerResponse> sendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority) {
-    Promise<HttpServerResponse> promise = context.promise();
+  private synchronized void doSendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
     Http2Headers headers_ = new DefaultHttp2Headers();
     if (method == HttpMethod.OTHER) {
       throw new IllegalArgumentException("Cannot push HttpMethod.OTHER");
@@ -183,7 +156,8 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
             Push push = new Push(context, contentEncoding, method, path, promise);
             push.priority(streamPriority);
             push.init(promisedStream);
-            if (maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) {
+            int maxConcurrentStreams = handler.maxConcurrentStreams();
+            if (concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
               push.complete();
             } else {
@@ -195,7 +169,6 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
         }
       }
     });
-    return promise.future();
   }
 
   protected void updateSettings(Http2Settings settingsUpdate, Handler<AsyncResult<Void>> completionHandler) {
@@ -217,6 +190,11 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
 
     @Override
+    void dispatch(Handler<HttpServerRequest> handler) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     void handleEnd(MultiMap trailers) {
     }
 
@@ -225,14 +203,12 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
 
     @Override
-    void handlePriorityChange(StreamPriority streamPriority) {
+    void handlePriorityChange(StreamPriority newPriority) {
     }
 
     @Override
     void handleInterestedOpsChanged() {
-      if (response != null) {
-        context.emit(v -> response.writabilityChanged());
-      }
+      response.writabilityChanged();
     }
 
     @Override
@@ -256,7 +232,8 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
         promise.fail("Push reset by client");
       } else {
         concurrentStreams--;
-        while ((maxConcurrentStreams == null || concurrentStreams < maxConcurrentStreams) && pendingPushes.size() > 0) {
+        int maxConcurrentStreams = handler.maxConcurrentStreams();
+        while (concurrentStreams < maxConcurrentStreams && pendingPushes.size() > 0) {
           Push push = pendingPushes.pop();
           concurrentStreams++;
           push.complete();
