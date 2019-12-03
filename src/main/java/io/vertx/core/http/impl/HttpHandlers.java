@@ -21,6 +21,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.ArrayList;
@@ -72,7 +73,16 @@ public class HttpHandlers implements Handler<HttpServerConnection> {
     conn.exceptionHandler(exceptionHandler);
     conn.handler(requestHandler);
     if (connectionHandler != null) {
-      connectionHandler.handle(conn);
+      // We hand roll event-loop execution in case of a worker context
+      ContextInternal ctx = conn.getContext();
+      ContextInternal prev = ctx.beginEmission();
+      try {
+        connectionHandler.handle(conn);
+      } catch (Exception e) {
+        ctx.reportException(e);
+      } finally {
+        ctx.endEmission(prev);
+      }
     }
   }
 

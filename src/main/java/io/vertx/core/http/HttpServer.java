@@ -62,6 +62,8 @@ public interface HttpServer extends Measured {
 
   /**
    * Set a connection handler for the server.
+   * <br/>
+   * The handler will always be called on the event-loop thread.
    *
    * @return a reference to this, so the API can be used fluently
    */

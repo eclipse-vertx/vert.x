@@ -16,17 +16,19 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface HttpServerConnection extends HttpConnection {
 
+  ContextInternal getContext();
+
   Channel channel();
 
   ChannelHandlerContext channelHandlerContext();
 
-  @Fluent
   HttpServerConnection handler(Handler<HttpServerRequest> handler);
 
 }

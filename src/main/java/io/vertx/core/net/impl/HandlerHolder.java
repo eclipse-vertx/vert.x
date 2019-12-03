@@ -17,6 +17,7 @@ import io.vertx.core.impl.ContextInternal;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HandlerHolder<T> {
+
   public final ContextInternal context;
   public final T handler;
 

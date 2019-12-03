@@ -205,7 +205,7 @@ import java.util.function.Function;
       if (options.getHttp2ConnectionWindowSize() > 0) {
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
       }
-      ctx.dispatchFromIO(conn, handler_);
+      handler_.handle(conn);
     });
     return handler;
   }
@@ -255,9 +255,6 @@ import java.util.function.Function;
     if (metrics != null) {
       conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
     }
-    holder.context.dispatchFromIO(conn, holder.handler);
+    holder.handler.handle(conn);
   }
-
-
-
 }

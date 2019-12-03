@@ -3316,7 +3316,11 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testWorkerServer() throws Exception {
+    int numReq = 5; // 5 == the HTTP/1 pool max size
+    waitFor(numReq);
+    CyclicBarrier barrier = new CyclicBarrier(numReq);
     CountDownLatch latch = new CountDownLatch(1);
+    AtomicInteger connCount = new AtomicInteger();
     vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startPromise) {
@@ -3325,25 +3329,39 @@ public abstract class HttpTest extends HttpTestBase {
             Context current = Vertx.currentContext();
             assertTrue(current.isWorkerContext());
             assertSameEventLoop(context, current);
+            try {
+              barrier.await(20, TimeUnit.SECONDS);
+            } catch (Exception e) {
+              fail(e);
+            }
             req.response().end("pong");
-          }).listen()
+          }).connectionHandler(conn -> {
+          Context current = Vertx.currentContext();
+          assertTrue(Context.isOnEventLoopThread());
+          assertTrue(current.isWorkerContext());
+          assertSame(context, current);
+          connCount.incrementAndGet(); // No complete here as we may have 1 or 5 connections depending on the protocol
+        }).listen()
           .<Void>mapEmpty()
           .onComplete(startPromise);
       }
     }, new DeploymentOptions().setWorker(true), onSuccess(id -> latch.countDown()));
     awaitLatch(latch);
-    client.request(
-      HttpMethod.GET,
-      testAddress,
-      new RequestOptions()
-        .setPort(DEFAULT_HTTP_PORT)
-        .setHost(DEFAULT_HTTP_HOST)
-        .setURI(DEFAULT_TEST_URI),
-      onSuccess(resp -> {
-        testComplete();
-      })
-    ).end();
+    for (int i = 0;i < numReq;i++) {
+      client.request(
+        HttpMethod.GET,
+        testAddress,
+        new RequestOptions()
+          .setPort(DEFAULT_HTTP_PORT)
+          .setHost(DEFAULT_HTTP_HOST)
+          .setURI(DEFAULT_TEST_URI),
+        onSuccess(resp -> {
+          complete();
+        })
+      ).end();
+    }
     await();
+    assertTrue(connCount.get() > 0);
   }
 
   @Test
