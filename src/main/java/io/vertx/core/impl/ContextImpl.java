@@ -271,21 +271,6 @@ abstract class ContextImpl extends AbstractContext {
     }
 
     @Override
-    public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
-      return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, delegate.internalOrderedTasks);
-    }
-
-    @Override
-    public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-      return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? delegate.orderedTasks : null);
-    }
-
-    @Override
-    public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
-      return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
-    }
-
-    @Override
     public final <T> void schedule(T argument, Handler<T> task) {
       delegate.schedule(argument, task);
     }

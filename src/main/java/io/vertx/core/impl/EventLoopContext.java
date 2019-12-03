@@ -12,7 +12,10 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
+import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -87,6 +90,8 @@ public class EventLoopContext extends ContextImpl {
 
   static class Duplicated extends ContextImpl.Duplicated<EventLoopContext> {
 
+    private TaskQueue orderedTasks;
+
     Duplicated(EventLoopContext delegate, ContextInternal other) {
       super(delegate, other);
     }
@@ -99,6 +104,32 @@ public class EventLoopContext extends ContextImpl {
     @Override
     public void execute(Runnable task) {
       nettyEventLoop().execute(() -> emit(task));
+    }
+
+    @Override
+    public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
+      return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, delegate.internalOrderedTasks);
+    }
+
+    @Override
+    public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+      TaskQueue queue;
+      if (ordered) {
+        queue = null;
+      } else {
+        synchronized (this) {
+          if (orderedTasks == null) {
+            orderedTasks = new TaskQueue();
+          }
+          queue = orderedTasks;
+        }
+      }
+      return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
+    }
+
+    @Override
+    public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
+      return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
     }
 
     @Override

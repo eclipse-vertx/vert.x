@@ -780,6 +780,65 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
+  public void testDuplicateWorkerConcurrency() throws Exception {
+    ContextInternal ctx = createWorkerContext();
+    ContextInternal dup1 = ctx.duplicate();
+    ContextInternal dup2 = ctx.duplicate();
+    CyclicBarrier barrier = new CyclicBarrier(3);
+    dup1.runOnContext(v -> {
+      assertTrue(Context.isOnWorkerThread());
+      try {
+        barrier.await(10, TimeUnit.SECONDS);
+      } catch (Exception e) {
+        fail(e);
+      }
+    });
+    dup2.runOnContext(v -> {
+      assertTrue(Context.isOnWorkerThread());
+      try {
+        barrier.await(10, TimeUnit.SECONDS);
+      } catch (Exception e) {
+        fail(e);
+      }
+    });
+    barrier.await(10, TimeUnit.SECONDS);
+  }
+
+  @Test
+  public void testDuplicateEventLoopExecuteBlocking() throws Exception {
+    testDuplicateExecuteBlocking((ContextInternal) vertx.getOrCreateContext());
+  }
+
+  @Test
+  public void testDuplicateWorkerExecuteBlocking() throws Exception {
+    testDuplicateExecuteBlocking(createWorkerContext());
+  }
+
+  private void testDuplicateExecuteBlocking(ContextInternal ctx) throws Exception {
+    ContextInternal dup1 = ctx.duplicate();
+    ContextInternal dup2 = ctx.duplicate();
+    CyclicBarrier barrier = new CyclicBarrier(3);
+    dup1.executeBlocking(p -> {
+      assertTrue(Context.isOnWorkerThread());
+      try {
+        barrier.await(10, TimeUnit.SECONDS);
+      } catch (Exception e) {
+        fail(e);
+      }
+      p.complete();
+    });
+    dup2.executeBlocking(p -> {
+      assertTrue(Context.isOnWorkerThread());
+      try {
+        barrier.await(10, TimeUnit.SECONDS);
+      } catch (Exception e) {
+        fail(e);
+      }
+      p.complete();
+    });
+    barrier.await(10, TimeUnit.SECONDS);
+  }
+  @Test
   public void testReentrantDispatch() {
     ClassLoader cl = new URLClassLoader(new URL[0]);
     Thread.currentThread().setContextClassLoader(cl);
