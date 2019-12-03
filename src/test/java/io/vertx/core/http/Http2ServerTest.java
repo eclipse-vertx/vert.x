@@ -250,7 +250,8 @@ public class Http2ServerTest extends Http2TestBase {
     waitFor(2);
     Context ctx = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
-      assertOnIOContext(ctx);
+      assertTrue(Context.isOnEventLoopThread());
+      assertSameEventLoop(vertx.getOrCreateContext(), ctx);
       complete();
     });
     server.requestHandler(req -> fail());

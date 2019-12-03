@@ -19,7 +19,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.FileRegion;
 import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpMessage;
+import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
@@ -240,7 +240,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
 
   @Override
   protected void reportsBytesWritten(Object msg) {
-    if (msg instanceof HttpMessage) {
+    if (msg instanceof HttpObject) {
       bytesWritten += getBytes(msg);
     } else if (msg instanceof WebSocketFrame) {
       // Only report WebSocket messages since HttpMessage are reported by streams

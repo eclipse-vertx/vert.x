@@ -82,6 +82,7 @@ public class MetricsContextTest extends VertxTestBase {
   }
 
   private void testHttpServerRequest(Function<Vertx, Context> contextFactory) throws Exception {
+    waitFor(2);
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
     AtomicBoolean requestBeginCalled = new AtomicBoolean();
@@ -151,8 +152,8 @@ public class MetricsContextTest extends VertxTestBase {
     });
     awaitLatch(latch);
     HttpClient client = vertx.createHttpClient();
-    client.put(8080, "localhost", "/", onSuccess(resp -> {
-      resp.request().connection().closeHandler(v -> {
+    client.connectionHandler(conn -> {
+      conn.closeHandler(v -> {
         vertx.close(v4 -> {
           assertTrue(requestBeginCalled.get());
           assertTrue(responseEndCalled.get());
@@ -161,9 +162,12 @@ public class MetricsContextTest extends VertxTestBase {
           assertTrue(socketConnectedCalled.get());
           assertTrue(socketDisconnectedCalled.get());
           assertTrue(closeCalled.get());
-          testComplete();
+          complete();
         });
       });
+    });
+    client.put(8080, "localhost", "/", onSuccess(resp -> {
+      complete();
     })).exceptionHandler(err -> {
       fail(err.getMessage());
     }).setChunked(true).end(Buffer.buffer("hello"));
