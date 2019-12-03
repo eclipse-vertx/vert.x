@@ -3341,7 +3341,7 @@ public abstract class HttpTest extends HttpTestBase {
           assertTrue(current.isWorkerContext());
           assertSame(context, current);
           connCount.incrementAndGet(); // No complete here as we may have 1 or 5 connections depending on the protocol
-        }).listen()
+        }).listen(testAddress)
           .<Void>mapEmpty()
           .onComplete(startPromise);
       }
