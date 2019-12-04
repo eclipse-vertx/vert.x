@@ -2128,6 +2128,7 @@ public class Http1xTest extends HttpTest {
     Set<Context> contexts = new ConcurrentHashSet<>();
     Set<Thread> threads = new ConcurrentHashSet<>();
     client.close();
+    client = null;
     Context clientCtx = vertx.getOrCreateContext();
     clientCtx.runOnContext(v -> {
       client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numConns));
