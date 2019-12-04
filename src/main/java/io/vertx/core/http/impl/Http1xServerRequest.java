@@ -55,9 +55,9 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerRequestImpl implements HttpServerRequest {
+public class Http1xServerRequest implements HttpServerRequest {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 
   private final Http1xServerConnection conn;
   final ContextInternal context;
@@ -71,11 +71,11 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private String query;
 
   // Accessed on event loop
-  HttpServerRequestImpl next;
+  Http1xServerRequest next;
   Object metric;
   Object trace;
 
-  private HttpServerResponseImpl response;
+  private Http1xServerResponse response;
 
   private Handler<Buffer> dataHandler;
   private Handler<Throwable> exceptionHandler;
@@ -95,7 +95,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private Buffer body;
   private Promise<Buffer> bodyPromise;
 
-  HttpServerRequestImpl(Http1xServerConnection conn, HttpRequest request) {
+  Http1xServerRequest(Http1xServerConnection conn, HttpRequest request) {
     this.conn = conn;
     this.context = conn.getContext().duplicate();
     this.request = request;
@@ -149,7 +149,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   void handleBegin() {
-    response = new HttpServerResponseImpl((VertxInternal) conn.vertx(), context, conn, request, metric);
+    response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric);
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
@@ -160,8 +160,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
    *
    * @param request the enqueued request
    */
-  void enqueue(HttpServerRequestImpl request) {
-    HttpServerRequestImpl current = this;
+  void enqueue(Http1xServerRequest request) {
+    Http1xServerRequest current = this;
     while (current.next != null) {
       current = current.next;
     }
@@ -171,7 +171,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   /**
    * @return the next request following this one
    */
-  HttpServerRequestImpl next() {
+  Http1xServerRequest next() {
     return next;
   }
 
@@ -263,7 +263,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   }
 
   @Override
-  public HttpServerResponseImpl response() {
+  public Http1xServerResponse response() {
     return response;
   }
 
@@ -544,7 +544,7 @@ public class HttpServerRequestImpl implements HttpServerRequest {
 
   void handleException(Throwable t) {
     Handler<Throwable> handler = null;
-    HttpServerResponseImpl resp = null;
+    Http1xServerResponse resp = null;
     InterfaceHttpData upload = null;
     Promise<Buffer> bodyPromise;
     Buffer body;

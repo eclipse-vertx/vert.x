@@ -19,7 +19,6 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
@@ -51,14 +50,14 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   private final String path;
   private final String query;
   private final WebSocketServerHandshaker handshaker;
-  private HttpServerRequestImpl request;
+  private Http1xServerRequest request;
   private Integer status;
   private Promise<Integer> handshakePromise;
 
   ServerWebSocketImpl(ContextInternal context,
                       Http1xServerConnection conn,
                       boolean supportsContinuation,
-                      HttpServerRequestImpl request,
+                      Http1xServerRequest request,
                       WebSocketServerHandshaker handshaker,
                       int maxWebSocketFrameSize,
                       int maxWebSocketMessageSize) {

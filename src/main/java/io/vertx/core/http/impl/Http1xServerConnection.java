@@ -11,13 +11,11 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
-import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
@@ -75,8 +73,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private boolean requestFailed;
   private long bytesRead;
 
-  private HttpServerRequestImpl requestInProgress;
-  private HttpServerRequestImpl responseInProgress;
+  private Http1xServerRequest requestInProgress;
+  private Http1xServerRequest responseInProgress;
   private boolean channelPaused;
   private Handler<HttpServerRequest> requestHandler;
 
@@ -118,7 +116,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         handleError(request);
         return;
       }
-      HttpServerRequestImpl req = new HttpServerRequestImpl(this, request);
+      Http1xServerRequest req = new Http1xServerRequest(this, request);
       requestInProgress = req;
       if (responseInProgress != null) {
         // Deferred until the current response completion
@@ -144,7 +142,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
   }
 
-  private void reportRequestBegin(HttpServerRequestImpl request) {
+  private void reportRequestBegin(Http1xServerRequest request) {
     if (metrics != null) {
       request.metric = metrics.requestBegin(metric(), request);
     }
@@ -161,7 +159,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       return;
     }
     Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content(), chctx.alloc()));
-    HttpServerRequestImpl request;
+    Http1xServerRequest request;
     synchronized (this) {
       if (METRICS_ENABLED) {
         reportBytesRead(buffer);
@@ -176,7 +174,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   private void onEnd() {
-    HttpServerRequestImpl request;
+    Http1xServerRequest request;
     synchronized (this) {
       if (METRICS_ENABLED) {
         reportRequestComplete();
@@ -184,7 +182,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       request = requestInProgress;
       requestInProgress = null;
     }
-    request.context.dispatch(request, HttpServerRequestImpl::handleEnd);
+    request.context.dispatch(request, Http1xServerRequest::handleEnd);
   }
 
   void responseComplete() {
@@ -193,9 +191,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       if (METRICS_ENABLED) {
         reportResponseComplete();
       }
-      HttpServerRequestImpl request = responseInProgress;
+      Http1xServerRequest request = responseInProgress;
       responseInProgress = null;
-      HttpServerRequestImpl next = request.next();
+      Http1xServerRequest next = request.next();
       if (next != null) {
         // Handle pipelined request
         handleNext(next);
@@ -205,7 +203,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
   }
 
-  private void handleNext(HttpServerRequestImpl next) {
+  private void handleNext(Http1xServerRequest next) {
     responseInProgress = next;
     context.dispatch(next, next_ -> {
       next_.handleBegin();
@@ -268,7 +266,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return vertx;
   }
 
-  ServerWebSocketImpl createWebSocket(HttpServerRequestImpl request) {
+  ServerWebSocketImpl createWebSocket(Http1xServerRequest request) {
     if (webSocket != null) {
       return webSocket;
     }
@@ -287,7 +285,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return webSocket;
   }
 
-  private WebSocketServerHandshaker createHandshaker(HttpServerRequestImpl request) {
+  private WebSocketServerHandshaker createHandshaker(Http1xServerRequest request) {
     // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
     // it doesn't send a normal 'Connection: Upgrade' header. Instead it
     // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
@@ -395,8 +393,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   protected void handleClosed() {
-    HttpServerRequestImpl responseInProgress;
-    HttpServerRequestImpl requestInProgress;
+    Http1xServerRequest responseInProgress;
+    Http1xServerRequest requestInProgress;
     ServerWebSocketImpl ws;
     synchronized (this) {
       ws = this.webSocket;
@@ -426,8 +424,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   @Override
   protected void handleException(Throwable t) {
     super.handleException(t);
-    HttpServerRequestImpl responseInProgress;
-    HttpServerRequestImpl requestInProgress;
+    Http1xServerRequest responseInProgress;
+    Http1xServerRequest requestInProgress;
     ServerWebSocketImpl ws;
     synchronized (this) {
       ws = this.webSocket;

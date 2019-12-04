@@ -63,10 +63,10 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpServerResponseImpl implements HttpServerResponse {
+public class Http1xServerResponse implements HttpServerResponse {
 
   private static final Buffer EMPTY_BUFFER = Buffer.buffer(Unpooled.EMPTY_BUFFER);
-  private static final Logger log = LoggerFactory.getLogger(HttpServerResponseImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(Http1xServerResponse.class);
   private static final String RESPONSE_WRITTEN = "Response has already been written";
 
   private final VertxInternal vertx;
@@ -96,7 +96,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   private long bytesWritten;
   private NetSocket netSocket;
 
-  HttpServerResponseImpl(final VertxInternal vertx, ContextInternal context, Http1xServerConnection conn, HttpRequest request, Object requestMetric) {
+  Http1xServerResponse(final VertxInternal vertx, ContextInternal context, Http1xServerConnection conn, HttpRequest request, Object requestMetric) {
     this.vertx = vertx;
     this.conn = conn;
     this.context = context;
@@ -151,7 +151,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl setChunked(boolean chunked) {
+  public Http1xServerResponse setChunked(boolean chunked) {
     synchronized (conn) {
       checkValid();
       // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
@@ -170,7 +170,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl putHeader(String key, String value) {
+  public Http1xServerResponse putHeader(String key, String value) {
     synchronized (conn) {
       checkValid();
       headers.set(key, value);
@@ -179,7 +179,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl putHeader(String key, Iterable<String> values) {
+  public Http1xServerResponse putHeader(String key, Iterable<String> values) {
     synchronized (conn) {
       checkValid();
       headers.set(key, values);
@@ -188,7 +188,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl putTrailer(String key, String value) {
+  public Http1xServerResponse putTrailer(String key, String value) {
     synchronized (conn) {
       checkValid();
       trailers().set(key, value);
@@ -197,7 +197,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public HttpServerResponseImpl putTrailer(String key, Iterable<String> values) {
+  public Http1xServerResponse putTrailer(String key, Iterable<String> values) {
     synchronized (conn) {
       checkValid();
       trailers().set(key, values);
@@ -686,7 +686,7 @@ public class HttpServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  private HttpServerResponseImpl write(ByteBuf chunk, PromiseInternal<Void> promise) {
+  private Http1xServerResponse write(ByteBuf chunk, PromiseInternal<Void> promise) {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException("Response has already been written");

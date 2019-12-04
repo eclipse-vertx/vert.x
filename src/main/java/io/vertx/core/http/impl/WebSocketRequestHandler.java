@@ -11,7 +11,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.vertx.core.Handler;
@@ -45,7 +44,7 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
       .contains(UPGRADE, WEBSOCKET, true)
       || handlers.requestHandler == null) {
       // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
-      handle((HttpServerRequestImpl) req);
+      handle((Http1xServerRequest) req);
     } else {
       handlers.requestHandler.handle(req);
     }
@@ -54,7 +53,7 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
   /**
    * Handle the request when a websocket upgrade header is present.
    */
-  private void handle(HttpServerRequestImpl req) {
+  private void handle(Http1xServerRequest req) {
     Buffer body = Buffer.buffer();
     boolean[] failed = new boolean[1];
     req.handler(buff -> {
@@ -63,7 +62,7 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
         if (body.length() > 8192) {
           failed[0] = true;
           // Request Entity Too Large
-          HttpServerResponseImpl resp = req.response();
+          Http1xServerResponse resp = req.response();
           resp.setStatusCode(413).end();
           resp.close();
         }
@@ -79,7 +78,7 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
   /**
    * Handle the request once we have the full body.
    */
-  private void handle(HttpServerRequestImpl req, Buffer body) {
+  private void handle(Http1xServerRequest req, Buffer body) {
     HttpRequest nettyReq = req.nettyRequest();
     nettyReq = new DefaultFullHttpRequest(
       nettyReq.protocolVersion(),

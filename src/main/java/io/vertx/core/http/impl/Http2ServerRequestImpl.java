@@ -59,7 +59,7 @@ import java.util.AbstractMap;
  */
 public class Http2ServerRequestImpl extends Http2ServerStream implements HttpServerRequest {
 
-  private static final Logger log = LoggerFactory.getLogger(HttpServerRequestImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 
   private final String serverOrigin;
   private final MultiMap headersMap;
