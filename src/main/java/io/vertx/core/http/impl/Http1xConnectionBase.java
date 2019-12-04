@@ -240,7 +240,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
 
   @Override
   protected void reportsBytesWritten(Object msg) {
-    if (msg instanceof HttpObject) {
+    if (msg instanceof HttpObject || msg instanceof FileRegion || msg instanceof ChunkedFile) {
       bytesWritten += getBytes(msg);
     } else if (msg instanceof WebSocketFrame) {
       // Only report WebSocket messages since HttpMessage are reported by streams
