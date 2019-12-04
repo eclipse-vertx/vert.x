@@ -5197,12 +5197,21 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientRequestWriteSuccess() throws Exception {
-    testClientRequestWriteSuccess((resp, handler) -> resp.write(TestUtils.randomBuffer(1024), handler));
+    testClientRequestWriteSuccess((req, handler) -> {
+      req.setChunked(true);
+      req.write(TestUtils.randomBuffer(1024), handler);
+      req.end();
+    });
   }
 
   @Test
-  public void testClientRequestEndSuccess() throws Exception {
-    testServerResponseWriteSuccess((resp, handler) -> resp.end(TestUtils.randomBuffer(1024), handler));
+  public void testClientRequestEnd1Success() throws Exception {
+    testClientRequestWriteSuccess((req, handler) -> req.end(TestUtils.randomBuffer(1024), handler));
+  }
+
+  @Test
+  public void testClientRequestEnd2Success() throws Exception {
+    testClientRequestWriteSuccess(HttpClientRequest::end);
   }
 
   private void testClientRequestWriteSuccess(BiConsumer<HttpClientRequest, Handler<AsyncResult<Void>>> op) throws Exception {
@@ -5211,7 +5220,7 @@ public abstract class HttpTest extends HttpTestBase {
     CompletableFuture<Void> fut = new CompletableFuture<>();
     server.requestHandler(req -> {
       fut.complete(null);
-      req.handler(v -> {
+      req.endHandler(v -> {
         HttpServerResponse resp = req.response();
         if (!resp.ended()) {
           resp.end();
@@ -5222,13 +5231,9 @@ public abstract class HttpTest extends HttpTestBase {
     HttpClientRequest req = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
       complete();
     }));
-    req.setChunked(true);
-    req.sendHead();
-    fut.whenComplete((v1, err) -> {
-      op.accept(req, onSuccess(v2 -> {
-        complete();
-      }));
-    });
+    op.accept(req, onSuccess(v -> {
+      complete();
+    }));
     await();
   }
 

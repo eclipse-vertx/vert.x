@@ -469,19 +469,15 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (pendingMaxSize != -1) {
         stream.doSetWriteQueueMaxSize(pendingMaxSize);
       }
-
-      ByteBuf pending = null;
+      ByteBuf pending = pendingChunks;
+      pendingChunks = null;
       Handler<AsyncResult<Void>> handler = null;
-      if (pendingChunks != null) {
+      if (pendingHandlers != null) {
         List<Handler<AsyncResult<Void>>> handlers = pendingHandlers;
         pendingHandlers = null;
-        pending = pendingChunks;
-        pendingChunks = null;
-        if (handlers != null) {
-          handler = ar -> {
-            handlers.forEach(h -> h.handle(ar));
-          };
-        }
+        handler = ar -> {
+          handlers.forEach(h -> h.handle(ar));
+        };
       }
       if (headersHandler != null) {
         Handler<AsyncResult<Void>> others = handler;
@@ -627,12 +623,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
             }
             pending.addComponent(true, buff);
           }
-          if (completionHandler != null) {
-            if (pendingHandlers == null) {
-              pendingHandlers = new ArrayList<>();
-            }
-            pendingHandlers.add(completionHandler);
+        }
+        if (completionHandler != null) {
+          if (pendingHandlers == null) {
+            pendingHandlers = new ArrayList<>();
           }
+          pendingHandlers.add(completionHandler);
         }
         connect(null);
         return;
