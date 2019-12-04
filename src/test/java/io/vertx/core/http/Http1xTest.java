@@ -3506,12 +3506,16 @@ public class Http1xTest extends HttpTest {
       client.close();
       client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(pipelined).setKeepAlive(true));
       HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/1", onFailure(err -> {
-        sendResponse.complete(null);
-      }));
-      if (pipelined) {
-        requestReceived.thenAccept(v -> {
-          req1.reset();
+        // We need a small delay before the server send the HTTP response
+        // so the stream is reset before the response is received by the client
+        vertx.setTimer(100, id -> {
+          sendResponse.complete(null);
         });
+      }));
+      requestReceived.thenAccept(v -> {
+        req1.reset();
+      });
+      if (pipelined) {
         AtomicInteger connCount = new AtomicInteger();
         client.connectionHandler(conn -> {
           if (connCount.getAndIncrement() == 0) {
@@ -3528,9 +3532,6 @@ public class Http1xTest extends HttpTest {
         });
         req1.end();
       } else {
-        requestReceived.thenAccept(v -> {
-          req1.reset();
-        });
         req1.end();
         client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", onSuccess(resp -> {
           assertEquals(200, resp.statusCode());

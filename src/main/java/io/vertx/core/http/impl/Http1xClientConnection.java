@@ -165,6 +165,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
     }
     writeToChannel(request, handler == null ? null : context.promise(handler));
+    if (request instanceof LastHttpContent) {
+      endRequest(stream);
+    }
   }
 
   private void endRequest(Stream s) {
@@ -191,8 +194,16 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   private void resetRequest(Stream stream) {
     boolean close;
     synchronized (this) {
-      requests.remove(stream);
-      close = responses.remove(stream);
+      if (responses.remove(stream)) {
+        // Already sent
+        close = true;
+      } else if (requests.remove(stream)) {
+        // Not yet sent
+        close = false;
+      } else {
+        // Response received
+        return;
+      }
     }
     if (close) {
       close();
@@ -313,9 +324,15 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           request = new AssembledHttpRequest(request, buf);
         }
       }
-      conn.beginRequest(this, request, handler == null ? null : context.promise(handler));
-      if (end) {
-        endRequest();
+      beginRequest(request, handler == null ? null : context.promise(handler));
+    }
+
+    private void beginRequest(HttpRequest request, Handler<AsyncResult<Void>> handler) {
+      EventLoop eventLoop = conn.context.nettyEventLoop();
+      if (eventLoop.inEventLoop()) {
+        conn.beginRequest(this, request, handler);
+      } else {
+        eventLoop.execute(() -> conn.beginRequest(this, request, handler));
       }
     }
 
@@ -397,7 +414,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       if (eventLoop.inEventLoop()) {
         doEndRequest();
       } else {
-        eventLoop.execute(() -> doEndRequest());
+        eventLoop.execute(this::doEndRequest);
       }
     }
 
