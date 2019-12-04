@@ -24,6 +24,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -818,38 +819,32 @@ public class MetricsTest extends VertxTestBase {
   }
 
   private void testDatagram(String host, Consumer<PacketMetric> checker) throws Exception {
+    waitFor(2);
     DatagramSocket peer1 = vertx.createDatagramSocket();
     DatagramSocket peer2 = vertx.createDatagramSocket();
+    FakeDatagramSocketMetrics peer1Metrics = FakeMetricsBase.getMetrics(peer1);
+    FakeDatagramSocketMetrics peer2Metrics = FakeMetricsBase.getMetrics(peer2);
     try {
       CountDownLatch latch = new CountDownLatch(1);
-      peer1.handler(packet -> {
-        FakeDatagramSocketMetrics peer1Metrics = FakeMetricsBase.getMetrics(peer1);
-        FakeDatagramSocketMetrics peer2Metrics = FakeMetricsBase.getMetrics(peer2);
-        assertEquals(host, peer1Metrics.getLocalName());
-        assertEquals("127.0.0.1", peer1Metrics.getLocalAddress().host());
-        assertNull(peer2Metrics.getLocalAddress());
-        assertEquals(1, peer1Metrics.getReads().size());
-        PacketMetric read = peer1Metrics.getReads().get(0);
-        assertEquals(5, read.numberOfBytes);
-        assertEquals(0, peer1Metrics.getWrites().size());
-        assertEquals(0, peer2Metrics.getReads().size());
-        assertEquals(1, peer2Metrics.getWrites().size());
-        checker.accept(peer2Metrics.getWrites().get(0));
-        testComplete();
-      });
-      peer1.listen(1234, host, ar -> {
-        assertTrue(ar.succeeded());
-        latch.countDown();
-      });
+      peer1.handler(packet -> complete());
+      peer1.listen(1234, host, onSuccess(v -> latch.countDown()));
       awaitLatch(latch);
-      peer2.send("hello", 1234, host, ar -> {
-        assertTrue(ar.succeeded());
-      });
+      peer2.send("hello", 1234, host, onSuccess(v -> complete()));
       await();
     } finally {
       peer1.close();
       peer2.close();
     }
+    assertEquals(host, peer1Metrics.getLocalName());
+    assertEquals("127.0.0.1", peer1Metrics.getLocalAddress().host());
+    assertNull(peer2Metrics.getLocalAddress());
+    assertEquals(1, peer1Metrics.getReads().size());
+    PacketMetric read = peer1Metrics.getReads().get(0);
+    assertEquals(5, read.numberOfBytes);
+    assertEquals(0, peer1Metrics.getWrites().size());
+    assertEquals(0, peer2Metrics.getReads().size());
+    assertEquals(1, peer2Metrics.getWrites().size());
+    checker.accept(peer2Metrics.getWrites().get(0));
   }
 
   @Test
