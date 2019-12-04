@@ -542,56 +542,80 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testStreamWeightAndDependencyNoChange() throws Exception {
-    int requestStreamDependency = 56;
-    short requestStreamWeight = 43;
-    int responseStreamDependency = 98;
-    short responseStreamWeight = 55;
+  public void testServerStreamPriorityNoChange() throws Exception {
+    int dependency = 56;
+    short weight = 43;
+    boolean exclusive = true;
     waitFor(2);
     server.requestHandler(req -> {
-      req.streamPriorityHandler( sp -> {
-          fail("Stream priority handler shoudl not be called");
+      req.streamPriorityHandler(sp -> {
+        fail("Stream priority handler should not be called " + sp);
       });
-      assertEquals(requestStreamWeight, req.streamPriority().getWeight());
-      assertEquals(requestStreamDependency, req.streamPriority().getDependency());
-      req.response().setStreamPriority(new StreamPriority()
-        .setDependency(responseStreamDependency)
-        .setWeight(responseStreamWeight)
-        .setExclusive(false));
-      req.response().write("hello");
-      req.response().setStreamPriority(new StreamPriority()
-        .setDependency(responseStreamDependency)
-        .setWeight(responseStreamWeight)
-        .setExclusive(false));
-      req.response().drainHandler(h -> {});
-      req.response().end("world");
-      complete();
+      assertEquals(weight, req.streamPriority().getWeight());
+      assertEquals(dependency, req.streamPriority().getDependency());
+      assertEquals(exclusive, req.streamPriority().isExclusive());
+      req.response().end();
+      req.endHandler(v -> {
+        complete();
+      });
     });
     startServer(testAddress);
     client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-      assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
-      assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
-      resp.streamPriorityHandler( sp -> {
-          fail("Stream priority handler shoudl not be called");
-          complete();
-        });
-      complete();
+      resp.endHandler(v -> {
+        complete();
+      });
     }));
     request.setStreamPriority(new StreamPriority()
-      .setDependency(requestStreamDependency)
-      .setWeight(requestStreamWeight)
-      .setExclusive(false));
+      .setDependency(dependency)
+      .setWeight(weight)
+      .setExclusive(exclusive));
     request.sendHead(h -> {
       request.setStreamPriority(new StreamPriority()
-        .setDependency(requestStreamDependency)
-        .setWeight(requestStreamWeight)
-        .setExclusive(false));
+        .setDependency(dependency)
+        .setWeight(weight)
+        .setExclusive(exclusive));
       request.end();
     });
     await();
   }
 
+  @Test
+  public void testClientStreamPriorityNoChange() throws Exception {
+    int dependency = 98;
+    short weight = 55;
+    boolean exclusive = false;
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().setStreamPriority(new StreamPriority()
+        .setDependency(dependency)
+        .setWeight(weight)
+        .setExclusive(exclusive));
+      req.response().write("hello");
+      req.response().setStreamPriority(new StreamPriority()
+        .setDependency(dependency)
+        .setWeight(weight)
+        .setExclusive(exclusive));
+      req.response().end("world");
+      req.endHandler(v -> {
+        complete();
+      });
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+      assertEquals(weight, resp.request().getStreamPriority().getWeight());
+      assertEquals(dependency, resp.request().getStreamPriority().getDependency());
+      assertEquals(exclusive, resp.request().getStreamPriority().isExclusive());
+      resp.streamPriorityHandler(sp -> {
+        fail("Stream priority handler should not be called");
+      });
+      resp.endHandler(v -> {
+        complete();
+      });
+    })).end();
+    await();
+  }
 
   @Test
   public void testStreamWeightAndDependencyInheritance() throws Exception {
