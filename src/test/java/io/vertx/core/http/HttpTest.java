@@ -4513,19 +4513,24 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       });
     });
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-      resp.exceptionHandler(err -> {
-        if (exceptionCount.incrementAndGet() == 1) {
-          if (err instanceof Http2Exception) {
-            complete();
-            // Connection is not closed for HTTP/2 only the streams so we need to force it
-            resp.request().connection().close();
-          } else if (err instanceof DecompressionException) {
-            complete();
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, ar -> {
+      if (ar.failed()) {
+        complete();
+      } else {
+        HttpClientResponse resp = ar.result();
+        resp.exceptionHandler(err -> {
+          if (exceptionCount.incrementAndGet() == 1) {
+            if (err instanceof Http2Exception) {
+              complete();
+              // Connection is not closed for HTTP/2 only the streams so we need to force it
+              resp.request().connection().close();
+            } else if (err instanceof DecompressionException) {
+              complete();
+            }
           }
-        }
-      });
-    })).end();
+        });
+      }
+    }).end();
 
     await();
 
