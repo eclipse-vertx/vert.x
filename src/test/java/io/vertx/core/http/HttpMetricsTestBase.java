@@ -179,23 +179,23 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     req.sendHead();
     awaitLatch(requestBeginLatch);
     HttpClientMetric reqMetric = clientMetrics.getMetric(req);
-    assertEquals(0, reqMetric.requestEnded.get());
-    assertEquals(0, reqMetric.responseBegin.get());
+    waitUntil(() -> reqMetric.requestEnded.get() == 0);
+    waitUntil(() -> reqMetric.responseBegin.get() == 0);
     req.write(TestUtils.randomAlphaString(1024));
     awaitLatch(requestBodyLatch);
     assertEquals(0, reqMetric.requestEnded.get());
     assertEquals(0, reqMetric.responseBegin.get());
     req.end();
     awaitLatch(requestEndLatch);
-    assertEquals(1, reqMetric.requestEnded.get());
+    waitUntil(() -> reqMetric.requestEnded.get() == 1);
     assertEquals(0, reqMetric.responseBegin.get());
     beginResponse.complete(null);
     awaitLatch(responseBeginLatch);
     assertEquals(1, reqMetric.requestEnded.get());
-    assertEquals(1, reqMetric.responseBegin.get());
+    waitUntil(() -> reqMetric.responseBegin.get() == 1);
     endResponse.complete(null);
     awaitLatch(responseEndLatch);
-    assertNull(clientMetrics.getMetric(req));
+    waitUntil(() -> clientMetrics.getMetric(req) == null);
     assertEquals(1, reqMetric.requestEnded.get());
     assertEquals(1, reqMetric.responseBegin.get());
   }
