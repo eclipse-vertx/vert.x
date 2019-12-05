@@ -1235,4 +1235,21 @@ public class JsonArrayTest {
     // assert the value got added
     assertEquals(4, arr.getValue(3));
   }
+
+  @Test
+  public void testNoEncode() {
+    Instant now = Instant.now();
+    JsonArray json = new JsonArray();
+    // bypass any custom validation
+    json.getList().add(now);
+    assertEquals(now, json.getInstant(0));
+    assertSame(now, json.getInstant(0));
+
+    // same for byte[]
+    byte[] bytes = "bytes".getBytes();
+    // bypass any custom validation
+    json.getList().add(bytes);
+    assertEquals(bytes, json.getBinary(1));
+    assertSame(bytes, json.getBinary(1));
+  }
 }

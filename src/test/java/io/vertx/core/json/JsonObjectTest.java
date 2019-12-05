@@ -12,6 +12,7 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.test.core.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -1718,6 +1719,23 @@ public class JsonObjectTest {
     assertNotEquals(new JsonObject().put("a", 1), new JsonObject().putNull("a"));
     assertNotEquals(new JsonObject().putNull("a"), new JsonObject().put("a", 1));
     assertEquals(new JsonObject().putNull("a"), new JsonObject().putNull("a"));
+  }
+
+  @Test
+  public void testNoEncode() {
+    Instant now = Instant.now();
+    JsonObject json = new JsonObject();
+    // bypass any custom validation
+    json.getMap().put("now", now);
+    assertEquals(now, json.getInstant("now"));
+    assertSame(now, json.getInstant("now"));
+
+    // same for byte[]
+    byte[] bytes = "bytes".getBytes();
+    // bypass any custom validation
+    json.getMap().put("bytes", bytes);
+    assertEquals(bytes, json.getBinary("bytes"));
+    assertSame(bytes, json.getBinary("bytes"));
   }
 }
 
