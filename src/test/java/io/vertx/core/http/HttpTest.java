@@ -22,13 +22,15 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.impl.HeadersAdaptor;
+import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
+import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -5113,35 +5115,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  // This test check that ending an HttpClientRequest will not hold a lock when sending Netty messages
-  // holding suck lock might deadlock when the ChannelOutboundBuffer is full and becomes drained
-  // doing an HttpClientRequest reentrant during the drain
-  @Repeat(times = 30)
-  @Test
-  public void testClientRequestEndDeadlock() throws Exception {
-    server.requestHandler(req -> req.endHandler(v -> req.response().end()));
-    startServer(testAddress);
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v1 -> {
-      HttpClientRequest request = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        resp.endHandler(v2 -> {
-          testComplete();
-        });
-      }))
-        .setChunked(true);
-      new Thread(() -> {
-        Buffer s = randomBuffer(256);
-        while (!request.writeQueueFull()) {
-          request.write(s);
-        }
-        ctx.runOnContext(v2 -> {
-          request.end();
-        });
-      }).start();
-    });
-    await();
-  }
-
   @Test
   public void testServerResponseWriteSuccess() throws Exception {
     testServerResponseWriteSuccess((resp, handler) -> resp.write(TestUtils.randomBuffer(1024), handler));
@@ -5644,6 +5617,39 @@ public abstract class HttpTest extends HttpTestBase {
       assertSameEventLoop(ctx, Vertx.currentContext());
       complete();
     }));
+    await();
+  }
+
+  @Test
+  public void testClientRequestWithLargeBodyInSmallChunks() throws Exception {
+    StringBuilder sb = new StringBuilder();
+    FakeStream<Buffer> src = new FakeStream<>();
+    src.pause();
+    int numChunks = 1024;
+    int chunkLength = 1024;
+    for (int i = 0;i < numChunks;i++) {
+      String chunk = randomAlphaString(chunkLength);
+      sb.append(chunk);
+      src.write(Buffer.buffer(chunk));
+    }
+    src.end();
+    String expected = sb.toString();
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.bodyHandler(body -> {
+        assertEquals(HttpMethod.PUT, req.method());
+        assertEquals(Buffer.buffer(expected), body);
+        complete();
+        req.response().end();
+      });
+    });
+    startServer();
+    HttpClientRequest stream = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+      assertEquals(200, resp.statusCode());
+      complete();
+    }));
+    stream.putHeader(HttpHeaders.CONTENT_LENGTH, "" + numChunks * chunkLength);
+    src.pipeTo(stream);
     await();
   }
 }

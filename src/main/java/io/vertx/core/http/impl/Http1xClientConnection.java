@@ -24,6 +24,7 @@ import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensio
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -324,21 +325,15 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           request = new AssembledHttpRequest(request, buf);
         }
       }
-      beginRequest(request, handler == null ? null : context.promise(handler));
+      writeHead(request, handler == null ? null : context.promise(handler));
     }
 
-    private void beginRequest(HttpRequest request, Handler<AsyncResult<Void>> handler) {
+    private void writeHead(HttpRequest request, Handler<AsyncResult<Void>> handler) {
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
         conn.beginRequest(this, request, handler);
       } else {
-        eventLoop.execute(() -> conn.beginRequest(this, request, handler));
-      }
-    }
-
-    void handleChunk(Buffer buff) {
-      if (!queue.write(buff)) {
-        conn.doPause();
+        eventLoop.execute(() -> writeHead(request, handler));
       }
     }
 
@@ -357,9 +352,18 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       } else {
         msg = new DefaultHttpContent(buff);
       }
-      conn.writeToChannel(msg, handler == null ? null : context.promise(handler));
-      if (end) {
-        endRequest();
+      writeBuffer(msg, handler == null ? null : context.promise(handler));
+    }
+
+    private void writeBuffer(HttpContent content, FutureListener<Void> listener) {
+      EventLoop eventLoop = conn.context.nettyEventLoop();
+      if (eventLoop.inEventLoop()) {
+        conn.writeToChannel(content, listener);
+        if (content instanceof LastHttpContent) {
+          conn.endRequest(this);
+        }
+      } else {
+        eventLoop.execute(() -> writeBuffer(content, listener));
       }
     }
 
@@ -399,27 +403,14 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       handleException(cause);
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        doReset();
+        reset();
       } else {
-        eventLoop.execute(this::doReset);
+        eventLoop.execute(this::reset);
       }
     }
 
-    private void doReset() {
+    private void reset() {
       conn.resetRequest(this);
-    }
-
-    private void endRequest() {
-      EventLoop eventLoop = conn.context.nettyEventLoop();
-      if (eventLoop.inEventLoop()) {
-        doEndRequest();
-      } else {
-        eventLoop.execute(this::doEndRequest);
-      }
-    }
-
-    private void doEndRequest() {
-      conn.endRequest(this);
     }
 
     @Override
@@ -449,6 +440,12 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         }
       });
       request.handleResponse(response);
+    }
+
+    void handleChunk(Buffer buff) {
+      if (!queue.write(buff)) {
+        conn.doPause();
+      }
     }
 
     void handleEnd(LastHttpContent trailer) {
