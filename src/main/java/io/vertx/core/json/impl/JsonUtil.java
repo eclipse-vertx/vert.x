@@ -101,11 +101,11 @@ public final class JsonUtil {
     } else if (val instanceof List) {
       val = (new JsonArray((List) val)).copy();
     } else if (val instanceof byte[]) {
-      val = BASE64_ENCODER.encodeToString((byte[]) val);
+      // OK
     } else if (val instanceof Instant) {
-      val = ISO_INSTANT.format((Instant) val);
+      // OK
     } else if (val instanceof Enum) {
-      val = ((Enum) val).name();
+      // OK
     } else {
       throw new IllegalStateException("Illegal type in Json: " + val.getClass());
     }
