@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.vertx.core.http.Cookie;
+import io.vertx.core.http.CookieSameSite;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,7 +65,7 @@ public class CookieImpl implements ServerCookie {
   private boolean changed;
   private boolean fromUserAgent;
   // extension features
-  private String sameSite;
+  private CookieSameSite sameSite;
 
   public CookieImpl(String name, String value) {
     this.nettyCookie = new DefaultCookie(name, value);
@@ -139,30 +140,7 @@ public class CookieImpl implements ServerCookie {
   }
 
   @Override
-  public Cookie setSameSite(final String sameSite) {
-    if (sameSite != null) {
-      // validate
-      int length = sameSite.length();
-      switch (length) {
-        case 3:
-          if (!sameSite.equalsIgnoreCase("LAX")) {
-            throw new IllegalArgumentException("sameSite contains an invalid value: " + sameSite);
-          }
-          break;
-        case 4:
-          if (!sameSite.equalsIgnoreCase("NONE")) {
-            throw new IllegalArgumentException("sameSite contains an invalid value: " + sameSite);
-          }
-          break;
-        case 6:
-          if (!sameSite.equalsIgnoreCase("STRICT")) {
-            throw new IllegalArgumentException("sameSite contains an invalid value: " + sameSite);
-          }
-          break;
-        default:
-          throw new IllegalArgumentException("sameSite contains an invalid value: " + sameSite);
-      }
-    }
+  public Cookie setSameSite(final CookieSameSite sameSite) {
     this.sameSite = sameSite;
     this.changed = true;
     return this;
@@ -171,7 +149,7 @@ public class CookieImpl implements ServerCookie {
   @Override
   public String encode() {
     if (sameSite != null) {
-      return ServerCookieEncoder.STRICT.encode(nettyCookie) + "; SameSite=" + sameSite;
+      return ServerCookieEncoder.STRICT.encode(nettyCookie) + "; SameSite=" + sameSite.toString();
     } else {
       return ServerCookieEncoder.STRICT.encode(nettyCookie);
     }

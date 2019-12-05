@@ -5405,15 +5405,15 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testCookieSameSiteFieldEncoding() throws Exception {
-    Cookie cookie = Cookie.cookie("foo", "bar").setSameSite("lax");
+    Cookie cookie = Cookie.cookie("foo", "bar").setSameSite(CookieSameSite.LAX);
     assertEquals("foo", cookie.getName());
     assertEquals("bar", cookie.getValue());
-    assertEquals("foo=bar; SameSite=lax", cookie.encode());
+    assertEquals("foo=bar; SameSite=Lax", cookie.encode());
 
     cookie.setSecure(true);
-    assertEquals("foo=bar; Secure; SameSite=lax", cookie.encode());
+    assertEquals("foo=bar; Secure; SameSite=Lax", cookie.encode());
     cookie.setHttpOnly(true);
-    assertEquals("foo=bar; Secure; HTTPOnly; SameSite=lax", cookie.encode());
+    assertEquals("foo=bar; Secure; HTTPOnly; SameSite=Lax", cookie.encode());
   }
 
   @Test
@@ -5421,35 +5421,16 @@ public abstract class HttpTest extends HttpTestBase {
     Cookie cookie = Cookie.cookie("foo", "bar");
 
     try {
-      cookie.setSameSite("Lax");
+      cookie.setSameSite(CookieSameSite.LAX);
       // OK
-      cookie.setSameSite("Strict");
+      cookie.setSameSite(CookieSameSite.STRICT);
       // OK
-      cookie.setSameSite("NoNe");
+      cookie.setSameSite(CookieSameSite.NONE);
       // OK
       cookie.setSameSite(null);
       // OK
     } catch (RuntimeException e) {
       fail();
-    }
-
-    try {
-      cookie.setSameSite("XYZ");
-      fail();
-    } catch (RuntimeException e) {
-      // OK
-    }
-    try {
-      cookie.setSameSite("DURP");
-      fail();
-    } catch (RuntimeException e) {
-      // OK
-    }
-    try {
-      cookie.setSameSite("some random stuff");
-      fail();
-    } catch (RuntimeException e) {
-      // OK
     }
   }
 
