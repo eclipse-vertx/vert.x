@@ -330,9 +330,11 @@ public class JsonObjectTest {
     jsonObject.put("bar", 123);
     try {
       jsonObject.getString("bar");
-      fail();
+      // OK, get string will not throw if type is not String
+      // instead the value is converted to String using the toString()
+      assertEquals("123", jsonObject.getString("bar"));
     } catch (ClassCastException e) {
-      // Ok
+      fail();
     }
 
     // Null and absent values
@@ -357,9 +359,10 @@ public class JsonObjectTest {
     jsonObject.put("bar", 123);
     try {
       jsonObject.getString("bar", "wibble");
-      fail();
+      // Ok, values are silently casted to string
+      assertEquals("123", jsonObject.getString("bar", "wibble"));
     } catch (ClassCastException e) {
-      // Ok
+      fail();
     }
 
     // Null and absent values
