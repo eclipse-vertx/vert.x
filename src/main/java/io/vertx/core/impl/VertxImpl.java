@@ -171,8 +171,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.fileResolver = new FileResolver(options.getFileSystemOptions());
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
-    this.deploymentManager = new DeploymentManager(this);
-    this.verticleManager = new VerticleManager(this, deploymentManager);
     this.tracer = initializeTracer(options);
     if (options.getEventBusOptions().isClustered()) {
       this.clusterManager = getClusterManager(options);
@@ -182,6 +180,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.eventBus = new EventBusImpl(this);
     }
     this.sharedData = new SharedDataImpl(this, clusterManager);
+    this.deploymentManager = new DeploymentManager(this);
+    this.verticleManager = new VerticleManager(this, deploymentManager);
   }
 
   private void init() {
