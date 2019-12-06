@@ -24,6 +24,7 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.*;
 
+import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -85,7 +86,7 @@ public class JacksonDatabindTest extends VertxTestBase {
   public void testBytesDecoding() {
     Pojo original = new Pojo();
     original.bytes = TestUtils.randomByteArray(12);
-    Pojo decoded = Json.decodeValue("{\"bytes\":\"" + Base64.getEncoder().encodeToString(original.bytes) + "\"}", Pojo.class);
+    Pojo decoded = Json.decodeValue("{\"bytes\":\"" + BASE64_ENCODER.encodeToString(original.bytes) + "\"}", Pojo.class);
     assertArrayEquals(original.bytes, decoded.bytes);
   }
 

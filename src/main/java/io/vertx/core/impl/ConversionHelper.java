@@ -15,11 +15,11 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.util.*;
+
+import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
  * An internal conversion helper, later it could be merged with JsonObject mapFrom/mapTo and moved in Json class
@@ -47,7 +47,7 @@ public class ConversionHelper {
     } else if (obj instanceof CharSequence) {
       return obj.toString();
     } else if (obj instanceof Buffer) {
-      return Base64.getEncoder().encodeToString(((Buffer)obj).getBytes());
+      return BASE64_ENCODER.encodeToString(((Buffer) obj).getBytes());
     }
     return obj;
   }
@@ -66,7 +66,7 @@ public class ConversionHelper {
       return null;
     }
     list = new ArrayList<>(list);
-    for (int i = 0;i < list.size();i++) {
+    for (int i = 0; i < list.size(); i++) {
       list.set(i, toJsonElement(list.get(i)));
     }
     return new JsonArray(list);
@@ -75,11 +75,18 @@ public class ConversionHelper {
   @SuppressWarnings("unchecked")
   public static <T> T fromObject(Object obj) {
     if (obj instanceof JsonObject) {
-      return (T)fromJsonObject((JsonObject)obj);
+      return (T) fromJsonObject((JsonObject) obj);
     } else if (obj instanceof JsonArray) {
-      return (T)fromJsonArray((JsonArray)obj);
+      return (T) fromJsonArray((JsonArray) obj);
+    } else if (obj instanceof Instant) {
+      return (T) ISO_INSTANT.format((Instant) obj);
+    } else if (obj instanceof byte[]) {
+      return (T) BASE64_ENCODER.encodeToString((byte[]) obj);
+    } else if (obj instanceof Enum) {
+      return (T) ((Enum) obj).name();
     }
-    return (T)obj;
+
+    return (T) obj;
   }
 
   public static Map<String, Object> fromJsonObject(JsonObject json) {
@@ -98,7 +105,7 @@ public class ConversionHelper {
       return null;
     }
     List<Object> list = new ArrayList<>(json.getList());
-    for (int i = 0;i < list.size();i++) {
+    for (int i = 0; i < list.size(); i++) {
       list.set(i, fromObject(list.get(i)));
     }
     return list;
