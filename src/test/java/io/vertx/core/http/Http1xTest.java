@@ -4296,15 +4296,18 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
-    for (int i = 0;i < numReq;i++) {
-      String expected = "" + i;
-      client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-        resp.bodyHandler(body -> {
-          assertEquals(expected, body.toString());
-          complete();
-        });
-      })).end(Buffer.buffer(TestUtils.randomAlphaString(1024)));
-    }
+    vertx.runOnContext(v -> {
+      // Run on context so requests are enqueued with a predictable ordering
+      for (int i = 0;i < numReq;i++) {
+        String expected = "" + i;
+        client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+          resp.bodyHandler(body -> {
+            assertEquals(expected, body.toString());
+            complete();
+          });
+        })).end(Buffer.buffer(TestUtils.randomAlphaString(1024)));
+      }
+    });
     await();
   }
 
@@ -4325,15 +4328,18 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
-    for (int i = 0;i < numReq;i++) {
-      String expected = "" + i;
-      client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-        resp.bodyHandler(body -> {
-          assertEquals(expected, body.toString());
-          complete();
-        });
-      })).end(TestUtils.randomAlphaString(1024));
-    }
+    vertx.runOnContext(v -> {
+      // Run on context so requests are enqueued with a predictable ordering
+      for (int i = 0;i < numReq;i++) {
+        String expected = "" + i;
+        client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+          resp.bodyHandler(body -> {
+            assertEquals(expected, body.toString());
+            complete();
+          });
+        })).end(TestUtils.randomAlphaString(1024));
+      }
+    });
     await();
   }
 
