@@ -378,14 +378,22 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   @Override
-  public synchronized void handleInterestedOpsChanged() {
-    if (!isNotWritable()) {
+  public void handleInterestedOpsChanged() {
+    ContextInternal context;
+    Handler<Boolean> handler;
+    synchronized (this) {
       if (responseInProgress != null) {
-        responseInProgress.context.emit(v -> responseInProgress.response().handleDrained());
+        context = responseInProgress.context;
+        handler = responseInProgress.response()::handleWritabilityChanged;
       } else if (webSocket != null) {
-        webSocket.handleDrained();
+        context = webSocket.context;
+        handler = webSocket::handleWritabilityChanged;
+      } else {
+        return;
       }
     }
+    boolean writable = !isNotWritable();
+    context.dispatch(writable, handler);
   }
 
   void write100Continue() {

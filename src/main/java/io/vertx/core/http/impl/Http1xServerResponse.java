@@ -87,6 +87,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   private Handler<Void> endHandler;
   private Handler<Void> headersEndHandler;
   private Handler<Void> bodyEndHandler;
+  private boolean writable;
   private boolean closed;
   private final VertxHttpHeaders headers;
   private Map<String, ServerCookie> cookies;
@@ -105,6 +106,7 @@ public class Http1xServerResponse implements HttpServerResponse {
     this.request = request;
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
+    this.writable = !conn.isNotWritable();
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
@@ -254,7 +256,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   public boolean writeQueueFull() {
     synchronized (conn) {
       checkValid();
-      return conn.isNotWritable();
+      return !writable;
     }
   }
 
@@ -265,7 +267,6 @@ public class Http1xServerResponse implements HttpServerResponse {
         checkValid();
       }
       drainHandler = handler;
-      conn.getContext().runOnContext(v -> conn.handleInterestedOpsChanged());
       return this;
     }
   }
@@ -589,11 +590,14 @@ public class Http1xServerResponse implements HttpServerResponse {
     channelFuture.addListener(fut -> conn.close());
   }
 
-  void handleDrained() {
+  void handleWritabilityChanged(boolean writable) {
+    Handler<Void> handler;
     synchronized (conn) {
-      if (drainHandler != null) {
-        drainHandler.handle(null);
-      }
+      handler = !this.writable && writable ? drainHandler : null;
+      this.writable = writable;
+    }
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 

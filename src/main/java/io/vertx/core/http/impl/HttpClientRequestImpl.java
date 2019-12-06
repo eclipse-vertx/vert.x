@@ -239,18 +239,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public synchronized HttpClientRequest drainHandler(Handler<Void> handler) {
     if (handler != null) {
       checkEnded();
-      drainHandler = handler;
-      if (stream == null) {
-        return this;
-      }
-      stream.getContext().runOnContext(v -> {
-        if (!stream.isNotWritable()) {
-          handleDrained();
-        }
-      });
-    } else {
-      drainHandler = null;
     }
+    checkEnded();
+    drainHandler = handler;
     return this;
   }
 

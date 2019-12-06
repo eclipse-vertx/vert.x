@@ -241,7 +241,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     abstract void handleBegin(HttpClientResponseImpl resp);
     abstract void handleChunk(Buffer buff);
     abstract void handleEnd(LastHttpContent trailer);
-    abstract void handleDrained();
+    abstract void handleWritabilityChanged(boolean writable);
     abstract void handleException(Throwable cause);
     abstract void handleClosed();
 
@@ -263,10 +263,12 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     private final InboundBuffer<Object> queue;
     private final Promise<NetSocket> netSocketPromise;
     private boolean reset;
+    private boolean writable;
 
     StreamImpl(ContextInternal context, Http1xClientConnection conn, HttpClientRequestImpl request, Promise<NetSocket> netSocketPromise, int id) {
       super(context, id, request);
 
+      this.writable = !conn.isNotWritable();
       this.conn = conn;
       this.netSocketPromise = netSocketPromise;
       this.queue = new InboundBuffer<>(context, 5)
@@ -378,7 +380,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
     @Override
     public boolean isNotWritable() {
-      return conn.isNotWritable();
+      synchronized (conn) {
+        return !writable;
+      }
     }
 
     @Override
@@ -422,8 +426,15 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    void handleDrained() {
-      request.handleDrained();
+    void handleWritabilityChanged(boolean writable) {
+      boolean drain;
+      synchronized (conn) {
+        drain = !this.writable && writable;
+        this.writable = writable;
+      }
+      if (drain) {
+        request.handleDrained();
+      }
     }
 
     void handleContinue() {
@@ -775,15 +786,23 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   @Override
-  public synchronized void handleInterestedOpsChanged() {
-    if (!isNotWritable()) {
+  public  void handleInterestedOpsChanged() {
+    boolean writable = !isNotWritable();
+    ContextInternal context;
+    Handler<Boolean> handler;
+    synchronized (this) {
       Stream current = requests.peek();
       if (current != null) {
-        current.context.dispatch(null, v -> current.handleDrained());
+        context = current.context;
+        handler = current::handleWritabilityChanged;
       } else if (webSocket != null) {
-        webSocket.handleDrained();
+        context = webSocket.context;
+        handler = webSocket::handleWritabilityChanged;
+      } else {
+        return;
       }
     }
+    context.dispatch(writable, handler);
   }
 
   /**

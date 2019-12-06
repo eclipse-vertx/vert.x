@@ -2079,7 +2079,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testClientDrainHandler() {
     pausingServer(resumeFuture -> {

@@ -64,6 +64,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
   protected final Http1xConnectionBase conn;
+  private boolean writable;
   protected boolean closed;
   private Short closeStatusCode;
   private String closeReason;
@@ -79,6 +80,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
     this.pending = new InboundBuffer<>(context);
+    this.writable = !conn.isNotWritable();
 
     pending.drainHandler(v -> {
       conn.doResume();
@@ -526,11 +528,14 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  void handleDrained() {
-    if (drainHandler != null) {
-      Handler<Void> dh = drainHandler;
-      drainHandler = null;
-      dh.handle(null);
+  void handleWritabilityChanged(boolean writable) {
+    Handler<Void> handler;
+    synchronized (conn) {
+      handler = !this.writable && writable ? drainHandler : null;
+      this.writable = writable;
+    }
+    if (handler != null) {
+      handler.handle(null);
     }
   }
 
