@@ -854,15 +854,22 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
   @Override
   public void createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<HttpClientStream>> handler) {
-    StreamImpl stream;
-    synchronized (this) {
-      stream = new StreamImpl(context, this, req, netSocketPromise, seq++);
-      if (requests.isEmpty()) {
-        stream.promise.complete(stream);
+    EventLoop eventLoop = context.nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      StreamImpl stream;
+      synchronized (this) {
+        stream = new StreamImpl(context, this, req, netSocketPromise, seq++);
+        if (requests.isEmpty()) {
+          stream.promise.complete(stream);
+        }
+        requests.add(stream);
       }
-      requests.add(stream);
+      stream.promise.future().setHandler(handler);
+    } else {
+      eventLoop.execute(() -> {
+        createStream(context, req, netSocketPromise, handler);
+      });
     }
-    stream.promise.future().setHandler(handler);
   }
 
   private void recycle() {

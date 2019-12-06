@@ -31,6 +31,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -2078,6 +2079,7 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testClientDrainHandler() {
     pausingServer(resumeFuture -> {
