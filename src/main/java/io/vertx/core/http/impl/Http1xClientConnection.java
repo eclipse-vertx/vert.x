@@ -263,7 +263,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     private final InboundBuffer<Object> queue;
     private final Promise<NetSocket> netSocketPromise;
     private boolean reset;
-    private long bytesWritten;
 
     StreamImpl(ContextInternal context, Http1xClientConnection conn, HttpClientRequestImpl request, Promise<NetSocket> netSocketPromise, int id) {
       super(context, id, request);
