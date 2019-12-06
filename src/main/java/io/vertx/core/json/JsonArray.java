@@ -96,6 +96,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    *
    * @param pos the position in the array
    * @return the String, or null if a null value present
+   * @throws java.lang.ClassCastException if the value cannot be converted to String
    */
   public String getString(int pos) {
     Object val = list.get(pos);
@@ -114,8 +115,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       return ((Enum) val).name();
     }
 
-    // silently cast to String
-    return val.toString();
+    throw new ClassCastException("class " + val.getClass().getName() + " cannot be cast to class java.lang.String");
   }
 
   /**

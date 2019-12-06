@@ -193,11 +193,9 @@ public class JsonArrayTest {
     jsonArray.add(123);
     try {
       jsonArray.getString(1);
-      // OK, get string will not throw if type is not String
-      // instead the value is converted to String using the toString()
-      assertEquals("123", jsonArray.getString(1));
-    } catch (ClassCastException e) {
       fail();
+    } catch (ClassCastException e) {
+      // OK
     }
     jsonArray.addNull();
     assertNull(jsonArray.getString(2));

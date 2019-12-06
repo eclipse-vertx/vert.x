@@ -125,6 +125,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @param key the key to return the value for
    * @return the value or null if no value for that key
+   * @throws java.lang.ClassCastException if the value is not a String
    */
   public String getString(String key) {
     Objects.requireNonNull(key);
@@ -143,8 +144,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       return ((Enum) val).name();
     }
 
-    // silently cast to String
-    return val.toString();
+    throw new ClassCastException("class " + val.getClass().getName() + " cannot be cast to class java.lang.String");
   }
 
   /**
