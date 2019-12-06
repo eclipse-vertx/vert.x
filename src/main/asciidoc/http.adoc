@@ -351,6 +351,19 @@ browser can store them.
 Cookies are described by instances of {@link io.vertx.core.http.Cookie}. This allows you to retrieve the name,
 value, domain, path and other normal cookie properties.
 
+Same Site Cookies let servers require that a cookie shouldn't be sent with cross-site (where Site is defined by the
+registrable domain) requests, which provides some protection against cross-site request forgery attacks. This kind
+of cookies are enabled using the setter: {@link io.vertx.core.http.Cookie#setSameSite(CookieSameSite)}.
+
+Same site cookies can have one of 3 values:
+
+* None - The browser will send cookies with both cross-site requests and same-site requests.
+* Strict - he browser will only send cookies for same-site requests (requests originating from the site that set the
+  cookie). If the request originated from a different URL than the URL of the current location, none of the cookies
+  tagged with the Strict attribute will be included.
+* Lax - Same-site cookies are withheld on cross-site subrequests, such as calls to load images or frames, but will be
+  sent when a user navigates to the URL from an external site; for example, by following a link.
+
 Here's an example of querying and adding cookies:
 
 [source,$lang]
