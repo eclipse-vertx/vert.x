@@ -265,7 +265,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
                                                            boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(address, "address");
 
-    Context context = registration.context;
+    ContextInternal context = registration.context;
 
     HandlerHolder<T> holder = new HandlerHolder<>(registration, address, replyHandler, localOnly, context);
 
@@ -436,7 +436,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     // Each handler gets a fresh copy
     MessageImpl copied = msg.copyBeforeReceive();
 
-    holder.getContext().runOnContext((v) -> {
+    holder.getContext().nettyEventLoop().execute(() -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
       // before it was received
       try {

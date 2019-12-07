@@ -57,6 +57,8 @@ abstract class HandlerRegistration<T> {
 
   protected abstract void doUnregister();
 
+  protected abstract void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
+
   synchronized void register(String repliedAddress, boolean localOnly, Handler<AsyncResult<Void>> promise) {
     if (registered != null) {
       throw new IllegalStateException();
@@ -116,9 +118,7 @@ abstract class HandlerRegistration<T> {
     }
 
     void dispatch() {
-      context.emit(v -> {
-        next();
-      });
+      next();
     }
 
     @Override
@@ -149,29 +149,21 @@ abstract class HandlerRegistration<T> {
           }
         }
         Object m = metric;
-        try {
-          if (bus.metrics != null) {
-            bus.metrics.beginHandleMessage(m, local);
+        if (bus.metrics != null) {
+          bus.metrics.beginHandleMessage(m, local);
+        }
+        VertxTracer tracer = context.tracer();
+        if (tracer != null && !src) {
+          message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
+          HandlerRegistration.this.dispatch(message, context, handler);
+          if (message.replyAddress == null) {
+            tracer.sendResponse(context, null, message.trace, null, TagExtractor.empty());
           }
-          VertxTracer tracer = context.tracer();
-          if (tracer != null && !src) {
-            message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
-            handler.handle(message);
-            if (message.replyAddress == null) {
-              tracer.sendResponse(context, null, message.trace, null, TagExtractor.empty());
-            }
-          } else {
-            handler.handle(message);
-          }
-          if (bus.metrics != null) {
-            bus.metrics.endHandleMessage(m, null);
-          }
-        } catch (Exception e) {
-          log.error("Failed to handleMessage. address: " + message.address(), e);
-          if (bus.metrics != null) {
-            bus.metrics.endHandleMessage(m, e);
-          }
-          context.reportException(e);
+        } else {
+          HandlerRegistration.this.dispatch(message, context, handler);
+        }
+        if (bus.metrics != null) {
+          bus.metrics.endHandleMessage(m, null);
         }
       }
     }

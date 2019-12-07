@@ -160,6 +160,11 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     deliver(theHandler, message);
   }
 
+  @Override
+  protected void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler) {
+    context.dispatch(msg, handler);
+  }
+
   private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
@@ -174,7 +179,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private synchronized void checkNextTick() {
     // Check if there are more pending messages in the queue that can be processed next time around
     if (!pending.isEmpty() && demand > 0L) {
-      context.runOnContext(v -> {
+      context.nettyEventLoop().execute(() -> {
         Message<T> message;
         Handler<Message<T>> theHandler;
         synchronized (MessageConsumerImpl.this) {

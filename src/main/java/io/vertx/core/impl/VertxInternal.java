@@ -85,6 +85,8 @@ public interface VertxInternal extends Vertx {
    */
   ContextInternal createWorkerContext(Deployment deployment, WorkerPool pool, ClassLoader tccl);
 
+  ContextInternal createWorkerContext();
+
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name);
 

@@ -593,12 +593,14 @@ public class Http1xServerResponse implements HttpServerResponse {
   void handleWritabilityChanged(boolean writable) {
     Handler<Void> handler;
     synchronized (conn) {
-      handler = !this.writable && writable ? drainHandler : null;
+      boolean skip = this.writable && !writable;
       this.writable = writable;
+      handler = drainHandler;
+      if (handler == null || skip) {
+        return;
+      }
     }
-    if (handler != null) {
-      handler.handle(null);
-    }
+    context.emit(null, handler);
   }
 
   void handleException(Throwable t) {
@@ -608,10 +610,11 @@ public class Http1xServerResponse implements HttpServerResponse {
       Handler<Throwable> handler;
       synchronized (conn) {
         handler = exceptionHandler;
+        if (handler == null) {
+          return;
+        }
       }
-      if (handler != null) {
-        handler.handle(t);
-      }
+      context.emit(t, handler);
     }
   }
 
@@ -629,13 +632,13 @@ public class Http1xServerResponse implements HttpServerResponse {
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      exceptionHandler.handle(ConnectionBase.CLOSED_EXCEPTION);
+      context.emit(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (endHandler != null) {
-      endHandler.handle(null);
+      context.emit(null, endHandler);
     }
     if (closedHandler != null) {
-      closedHandler.handle(null);
+      context.emit(null, closedHandler);
     }
   }
 

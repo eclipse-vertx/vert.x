@@ -146,7 +146,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       this.body = null;
     }
     if (handler != null) {
-      handler.handle(failure);
+      context.emit(failure, handler);
     }
     if (upload instanceof NettyFileUpload) {
       ((NettyFileUpload)upload).handleException(failure);

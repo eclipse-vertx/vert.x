@@ -384,6 +384,12 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void handleFrame(WebSocketFrameInternal frame) {
+    // NOT GREAT BUT OK
+    context.emit(frame, this::doHandleFrame);
+  }
+
+
+  private void doHandleFrame(WebSocketFrameInternal frame) {
     synchronized (conn) {
       if (frame.type() != FrameType.CLOSE) {
         if (!pending.write(frame.binaryData())) {
@@ -531,20 +537,25 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   void handleWritabilityChanged(boolean writable) {
     Handler<Void> handler;
     synchronized (conn) {
-      handler = !this.writable && writable ? drainHandler : null;
+      boolean skip = this.writable && !writable;
       this.writable = writable;
+      handler = drainHandler;
+      if (handler == null || skip) {
+        return;
+      }
     }
-    if (handler != null) {
-      handler.handle(null);
-    }
+    context.emit(null, handler);
   }
 
   void handleException(Throwable t) {
+    Handler<Throwable> handler;
     synchronized (conn) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(t);
+      handler = this.exceptionHandler;
+      if (handler == null) {
+        return;
       }
     }
+    context.emit(t, handler);
   }
 
   void handleClosed() {
@@ -559,10 +570,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       textHandlerRegistration = null;
     }
     if (closeHandler != null) {
-      closeHandler.handle(null);
+      context.emit(null, closeHandler);
     }
     if (endHandler != null) {
-      endHandler.handle(null);
+      context.emit(null, endHandler);
     }
   }
 

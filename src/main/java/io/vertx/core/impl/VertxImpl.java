@@ -443,6 +443,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public ContextInternal createWorkerContext() {
+    return createWorkerContext(null, null, null);
+  }
+
+  @Override
   public DnsClient createDnsClient(int port, String host) {
     return createDnsClient(new DnsClientOptions().setHost(host).setPort(port));
   }

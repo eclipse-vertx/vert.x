@@ -13,6 +13,7 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -49,7 +50,12 @@ public class EventLoopContext extends ContextImpl {
 
   @Override
   public <T> void schedule(T argument, Handler<T> task) {
-    task.handle(argument);
+    EventLoop eventLoop = nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      task.handle(argument);
+    } else {
+      eventLoop.execute(() -> task.handle(argument));
+    }
   }
 
   @Override
@@ -58,24 +64,6 @@ public class EventLoopContext extends ContextImpl {
       checkEventLoopThread();
     }
     emit(argument, task);
-  }
-
-  @Override
-  public <T> void dispatch(T argument, Handler<T> task) {
-    dispatch(this, argument, task);
-  }
-
-  private static <T> void dispatch(AbstractContext ctx, T value, Handler<T> task) {
-    EventLoop eventLoop = ctx.nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      if (AbstractContext.context() == ctx) {
-        ctx.emit(value, task);
-      } else {
-        ctx.dispatchFromIO(value, task);
-      }
-    } else {
-      ctx.execute(value, task);
-    }
   }
 
   @Override
@@ -141,8 +129,8 @@ public class EventLoopContext extends ContextImpl {
     }
 
     @Override
-    public <T> void dispatch(T argument, Handler<T> task) {
-      EventLoopContext.dispatch(this, argument, task);
+    public <T> void schedule(T argument, Handler<T> task) {
+      delegate.schedule(argument, task);
     }
 
     @Override

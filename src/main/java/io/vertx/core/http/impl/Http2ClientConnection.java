@@ -116,7 +116,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public void createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
-      Http2Connection conn = handler.connection();
       try {
         StreamImpl stream = createStream(context, req, netSocketPromise);
         VertxTracer tracer = context.tracer();
@@ -218,7 +217,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     void onResponse(HttpClientResponseImpl response) {
-      context.dispatch(response, this::handleResponse);
+      context.schedule(response, this::handleResponse);
     }
 
     abstract void handleResponse(HttpClientResponseImpl response);

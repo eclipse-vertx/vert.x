@@ -95,6 +95,16 @@ abstract class AbstractContext implements ContextInternal {
     return !isEventLoopContext();
   }
 
+  @Override
+  public final <T> void dispatch(T argument, Handler<T> task) {
+    schedule(v -> emit(argument, task));
+  }
+
+  @Override
+  public void dispatch(Handler<Void> task) {
+    dispatch(null, task);
+  }
+
   // This is called to execute code where the origin is IO (from Netty probably).
   // In such a case we should already be on an event loop thread (as Netty manages the event loops)
   // but check this anyway, then execute directly
@@ -162,7 +172,7 @@ abstract class AbstractContext implements ContextInternal {
     }
   }
 
-  private void endNettyThreadAssociation(Thread th, ContextInternal prev) {
+  private static void endNettyThreadAssociation(Thread th, ContextInternal prev) {
     if (th instanceof FastThreadLocalThread) {
       Holder holder = holderLocal.get();
       holder.ctx = prev;

@@ -3157,7 +3157,9 @@ public class NetTest extends VertxTestBase {
             Thread.currentThread().interrupt();
           }
         });
-        server.listen(testAddress, ar -> startPromise.handle(ar.mapEmpty()));
+        server.listen(testAddress, ar -> {
+          startPromise.handle(ar.mapEmpty());
+        });
       }
     }, new DeploymentOptions().setWorker(true), onSuccess(v -> {
       client.connect(testAddress, onSuccess(so -> {

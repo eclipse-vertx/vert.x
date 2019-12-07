@@ -110,7 +110,7 @@ public interface ContextInternal extends Context, Executor {
   VertxInternal owner();
 
   /**
-   * @see #dispatch(Object, Handler)
+   * @see #dispatchFromIO(Object, Handler)
    */
   void dispatchFromIO(Handler<Void> handler);
 
@@ -137,6 +137,11 @@ public interface ContextInternal extends Context, Executor {
    * @param task the handler to execute with the {@code event} argument
    */
   <T> void dispatch(T argument, Handler<T> task);
+
+  /**
+   * @see #dispatch(Object, Handler)
+   */
+  void dispatch(Handler<Void> task);
 
   /**
    * @see #schedule(Object, Handler)

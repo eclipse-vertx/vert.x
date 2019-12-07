@@ -209,10 +209,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     Handler<Buffer> handler;
     synchronized (conn) {
       handler = dataHandler;
+      if (handler == null) {
+        return;
+      }
     }
-    if (handler != null) {
-      handler.handle(data);
-    }
+    request.context.emit(data, handler);
   }
 
   void handleEnd(MultiMap trailers) {
@@ -221,10 +222,11 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       this.trailers = trailers;
       handler = endHandler;
       endHandler = null;
+      if (handler == null) {
+        return;
+      }
     }
-    if (handler != null) {
-      handler.handle(null);
-    }
+    request.context.emit(handler);
   }
 
   void handleException(Throwable e) {

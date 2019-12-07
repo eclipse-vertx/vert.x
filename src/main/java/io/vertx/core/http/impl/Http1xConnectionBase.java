@@ -105,7 +105,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
 
   void handleWsFrame(WebSocketFrame msg) {
     WebSocketFrameInternal frame = decodeFrame(msg);
-    S w;
+    WebSocketImplBase<?> w;
     synchronized (this) {
       switch (frame.type()) {
         case PING:
@@ -128,7 +128,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
     }
     if (w != null) {
       reportBytesRead(frame.length());
-      w.context.dispatchFromIO(frame, ((WebSocketImplBase)w)::handleFrame);
+      w.context.schedule(frame, w::handleFrame);
     }
   }
 

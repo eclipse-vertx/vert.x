@@ -242,7 +242,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       }
       sock.registerEventBusHandler();
-      context.dispatchFromIO(sock, connectHandler::complete);
+      connectHandler.complete(sock);
     });
     handler.removeHandler(conn -> {
       socketMap.remove(ch);

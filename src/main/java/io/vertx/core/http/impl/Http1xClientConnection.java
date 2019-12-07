@@ -531,7 +531,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       synchronized (this) {
         stream = responses.getFirst();
       }
-      stream.context.dispatch(null, v -> stream.handleContinue());
+      stream.context.schedule(null, v -> stream.handleContinue());
     } else {
       Stream stream;
       HttpClientResponseImpl response;
@@ -579,7 +579,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
 
       //
-      stream.context.dispatch(response, stream::handleBegin);
+      stream.context.schedule(response, stream::handleBegin);
 
       Promise<NetSocket> promise = netSocketPromise;
       netSocketPromise = null;
@@ -639,7 +639,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       bytesRead += buff.length();
     }
     if (resp != null) {
-      resp.context.dispatch(buff, resp::handleChunk);
+      resp.context.schedule(buff, resp::handleChunk);
     }
   }
 
@@ -667,7 +667,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     if (metrics != null) {
       metrics.responseEnd(stream.metric, stream.response);
     }
-    stream.context.dispatch(trailer, stream::handleEnd);
+    stream.context.schedule(trailer, stream::handleEnd);
     this.doResume();
     reportBytesRead(bytesRead);
     if (check) {
@@ -802,7 +802,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         return;
       }
     }
-    context.dispatch(writable, handler);
+    context.schedule(writable, handler);
   }
 
   /**
@@ -841,7 +841,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       if (tracer != null) {
         tracer.receiveResponse(stream.context, null, stream.trace, ConnectionBase.CLOSED_EXCEPTION, TagExtractor.empty());
       }
-      stream.context.dispatch(null, v -> stream.handleClosed());
+      stream.context.schedule(null, v -> stream.handleClosed());
     }
   }
 

@@ -53,7 +53,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   static final Logger log = LoggerFactory.getLogger(HttpClientRequestImpl.class);
 
-  private final ContextInternal context;
   private final Promise<Void> endPromise;
   private final Future<Void> endFuture;
   private boolean chunked;
@@ -79,7 +78,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
                         SocketAddress server, String host, int port, String relativeURI) {
     super(client, context, ssl, method, server, host, port, relativeURI);
     this.chunked = false;
-    this.context = context;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
@@ -90,13 +88,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     super.handleException(t);
     Handler<Throwable> handler;
     synchronized (this) {
-      if (exceptionHandler != null && !endFuture.isComplete()) {
-        handler = exceptionHandler;
-      } else {
-        handler = log::error;
+      handler = exceptionHandler;
+      if (handler == null || endFuture.isComplete()) {
+        log.error(t);
+        return;
       }
     }
-    handler.handle(t);
+    context.emit(t, handler);
     endPromise.tryFail(t);
   }
 
@@ -336,15 +334,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   void handleDrained() {
     Handler<Void> handler;
     synchronized (this) {
-      if ((handler = drainHandler) == null || endFuture.isComplete()) {
+      handler =  drainHandler;
+      if (handler == null || endFuture.isComplete()) {
         return;
       }
     }
-    try {
-      handler.handle(null);
-    } catch (Throwable t) {
-      handleException(t);
-    }
+    context.emit(handler);
   }
 
   private void handleNextRequest(HttpClientRequest next, long timeoutMs) {
@@ -476,7 +471,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           if (others != null) {
             others.handle(ar);
           }
-          headersHandler.handle(ar.map(stream.version()));
+          if (ar.succeeded()) {
+            headersHandler.handle(Future.succeededFuture(stream.version()));
+          } else {
+            headersHandler.handle(Future.failedFuture(ar.cause()));
+          }
         };
       }
       stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, ended, priority, handler);

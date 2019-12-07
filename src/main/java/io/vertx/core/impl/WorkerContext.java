@@ -12,9 +12,11 @@
 package io.vertx.core.impl;
 
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -55,21 +57,6 @@ class WorkerContext extends ContextImpl {
     execute(argument, task);
   }
 
-  @Override
-  public <T> void dispatch(T argument, Handler<T> task) {
-    dispatch(this, argument, task);
-  }
-
-  private static <T> void dispatch(AbstractContext ctx, T value, Handler<T> task) {
-    if (AbstractContext.context() == ctx) {
-      ctx.emit(value, task);
-    } else if (ctx.nettyEventLoop().inEventLoop()) {
-      ctx.dispatchFromIO(value, task);
-    } else {
-      ctx.execute(value, task);
-    }
-  }
-
   private <T> void execute(ContextInternal ctx, TaskQueue queue, Runnable task) {
     PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
@@ -107,22 +94,32 @@ class WorkerContext extends ContextImpl {
     }, workerPool.executor());
   }
 
+  private <T> void schedule(TaskQueue queue, T argument, Handler<T> task) {
+    if (Context.isOnWorkerThread()) {
+      task.handle(argument);
+    } else {
+      PoolMetrics metrics = workerPool.metrics();
+      Object queueMetric = metrics != null ? metrics.submitted() : null;
+      queue.execute(() -> {
+        Object execMetric = null;
+        if (metrics != null) {
+          execMetric = metrics.begin(queueMetric);
+        }
+        try {
+          task.handle(argument);
+        } finally {
+          if (metrics != null) {
+            metrics.end(execMetric, true);
+          }
+        }
+      }, workerPool.executor());
+    }
+  }
+
+
   @Override
   public <T> void schedule(T argument, Handler<T> task) {
-    PoolMetrics metrics = workerPool.metrics();
-    Object metric = metrics != null ? metrics.submitted() : null;
-    orderedTasks.execute(() -> {
-      if (metrics != null) {
-        metrics.begin(metric);
-      }
-      try {
-        task.handle(argument);
-      } finally {
-        if (metrics != null) {
-          metrics.end(metric, true);
-        }
-      }
-    }, workerPool.executor());
+    schedule(orderedTasks, argument, task);
   }
 
   public ContextInternal duplicate(ContextInternal in) {
@@ -168,8 +165,8 @@ class WorkerContext extends ContextImpl {
     }
 
     @Override
-    public <T> void dispatch(T argument, Handler<T> task) {
-      delegate.dispatch(this, argument, task);
+    public <T> void schedule(T argument, Handler<T> task) {
+      delegate.schedule(orderedTasks, argument, task);
     }
 
     @Override

@@ -28,6 +28,7 @@ import io.vertx.core.net.SocketAddress;
 public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   protected final HttpClientImpl client;
+  protected final ContextInternal context;
   protected final io.vertx.core.http.HttpMethod method;
   protected final String uri;
   protected final String path;
@@ -43,6 +44,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   HttpClientRequestBase(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
+    this.context = context;
     this.uri = uri;
     this.method = method;
     this.server = server;

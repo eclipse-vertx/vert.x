@@ -474,14 +474,15 @@ public class Http1xServerRequest implements HttpServerRequest {
           handleException(e);
         }
       }
-      handler = dataHandler;
       if (body != null) {
         body.appendBuffer(data);
       }
+      handler = dataHandler;
+      if (handler == null) {
+        return;
+      }
     }
-    if (handler != null) {
-      handler.handle(data);
-    }
+    context.emit(data, handler);
   }
 
   void handleEnd() {
@@ -511,7 +512,7 @@ public class Http1xServerRequest implements HttpServerRequest {
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
-      handler.handle(null);
+      context.emit(null, handler);
     }
     if (body != null) {
       bodyPromise.tryComplete(body);
@@ -547,7 +548,6 @@ public class Http1xServerRequest implements HttpServerRequest {
     Http1xServerResponse resp = null;
     InterfaceHttpData upload = null;
     Promise<Buffer> bodyPromise;
-    Buffer body;
     synchronized (conn) {
       if (!isEnded()) {
         handler = exceptionHandler;
@@ -572,7 +572,7 @@ public class Http1xServerRequest implements HttpServerRequest {
       ((NettyFileUpload)upload).handleException(t);
     }
     if (handler != null) {
-      handler.handle(t);
+      context.emit(t, handler);
     }
     if (bodyPromise != null) {
       bodyPromise.tryFail(t);

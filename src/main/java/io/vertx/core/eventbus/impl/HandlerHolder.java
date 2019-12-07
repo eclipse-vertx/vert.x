@@ -12,13 +12,14 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.Context;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class HandlerHolder<T> {
 
-  public final Context context;
+  public final ContextInternal context;
   public final String address;
   public final HandlerRegistration<T> handler;
   public final boolean replyHandler;
@@ -29,7 +30,7 @@ public class HandlerHolder<T> {
                        String address,
                        boolean replyHandler,
                        boolean localOnly,
-                       Context context) {
+                       ContextInternal context) {
     this.context = context;
     this.handler = handler;
     this.address = address;
@@ -69,7 +70,7 @@ public class HandlerHolder<T> {
     return handler != null ? handler.hashCode() : 0;
   }
 
-  public Context getContext() {
+  public ContextInternal getContext() {
     return context;
   }
 

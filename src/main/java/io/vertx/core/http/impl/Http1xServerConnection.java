@@ -166,7 +166,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
       request = requestInProgress;
     }
-    request.context.dispatch(buffer, request::handleContent);
+    request.context.schedule(buffer, request::handleContent);
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
       onEnd();
@@ -182,7 +182,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       request = requestInProgress;
       requestInProgress = null;
     }
-    request.context.dispatch(request, Http1xServerRequest::handleEnd);
+    request.context.schedule(request, Http1xServerRequest::handleEnd);
   }
 
   void responseComplete() {
@@ -393,7 +393,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
     }
     boolean writable = !isNotWritable();
-    context.dispatch(writable, handler);
+    context.schedule(writable, handler);
   }
 
   void write100Continue() {
@@ -414,17 +414,17 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
     }
     if (requestInProgress != null) {
-      requestInProgress.context.emit(v -> {
+      requestInProgress.context.schedule(v -> {
         requestInProgress.handleException(CLOSED_EXCEPTION);
       });
     }
     if (responseInProgress != null && responseInProgress != requestInProgress) {
-      responseInProgress.context.emit(v -> {
+      responseInProgress.context.schedule(v -> {
         responseInProgress.handleException(CLOSED_EXCEPTION);
       });
     }
     if (ws != null) {
-      ws.context.emit(v -> ws.handleClosed());
+      ws.context.schedule(v -> ws.handleClosed());
     }
     super.handleClosed();
   }
@@ -450,7 +450,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       responseInProgress.handleException(t);
     }
     if (ws != null) {
-      ws.context.emit(v -> ws.handleException(t));
+      ws.context.schedule(v -> ws.handleException(t));
     }
   }
 

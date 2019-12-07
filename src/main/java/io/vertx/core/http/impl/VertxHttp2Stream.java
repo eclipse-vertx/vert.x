@@ -16,6 +16,7 @@ import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.util.AbstractConstant;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -27,6 +28,7 @@ import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.impl.AbstractContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -90,7 +92,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   void onClose() {
     conn.reportBytesWritten(bytesWritten);
-    context.dispatch(null, v -> this.handleClose());
+    context.schedule(v -> this.handleClose());
   }
 
   void onError(Throwable cause) {
@@ -200,12 +202,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
 
-  void writeData(ByteBuf chunk, boolean end) {
-    writeData(chunk, end, null);
-  }
-
   final void writeData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
-    EventLoop eventLoop = conn.getContext().nettyEventLoop();
+    ContextInternal ctx = conn.getContext();
+    EventLoop eventLoop = ctx.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       doWriteData(chunk, end, handler);
     } else {

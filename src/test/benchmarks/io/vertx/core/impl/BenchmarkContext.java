@@ -55,11 +55,6 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
-  public <T> void dispatch(T argument, Handler<T> task) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public boolean isEventLoopContext() {
     return false;
   }

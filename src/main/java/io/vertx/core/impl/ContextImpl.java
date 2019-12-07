@@ -271,11 +271,6 @@ abstract class ContextImpl extends AbstractContext {
     }
 
     @Override
-    public final <T> void schedule(T argument, Handler<T> task) {
-      delegate.schedule(argument, task);
-    }
-
-    @Override
     public final String deploymentID() {
       return delegate.deploymentID();
     }

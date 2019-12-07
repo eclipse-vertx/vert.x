@@ -21,7 +21,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 
-class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Message<T>> {
+class ReplyHandler<T> extends HandlerRegistration<T> {
 
   private final EventBusImpl eventBus;
   private final ContextInternal context;
@@ -66,7 +66,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Message<
 
   @Override
   protected void doReceive(Message<T> reply) {
-    dispatch(this, reply, context);
+    dispatch(null, reply, context);
   }
 
   @Override
@@ -78,7 +78,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Message<
   }
 
   @Override
-  public void handle(Message<T> reply) {
+  protected void dispatch(Message<T> reply, ContextInternal context, Handler<Message<T>> handler /* null */) {
     eventBus.vertx.cancelTimer(timeoutID);
     if (reply.body() instanceof ReplyException) {
       // This is kind of clunky - but hey-ho
