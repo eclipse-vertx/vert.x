@@ -576,6 +576,7 @@ public class MimeMapping {
     m.put("zirz", "application/vnd.zul");
     m.put("zaz", "application/vnd.zzazz.deck+xml");
     m.put("vxml", "application/voicexml+xml");
+    m.put("wasm", "application/wasm");
     m.put("wgt", "application/widget");
     m.put("hlp", "application/winhlp");
     m.put("wsdl", "application/wsdl+xml");
