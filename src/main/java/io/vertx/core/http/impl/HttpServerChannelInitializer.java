@@ -150,7 +150,7 @@ import java.util.function.Function;
   private void handleException(Channel ch, Throwable cause) {
     HandlerHolder<? extends Handler<Throwable>> holder = errorHandler.apply(ch.eventLoop());
     if (holder != null) {
-      holder.context.dispatchFromIO(cause, holder.handler);
+      holder.context.dispatch(cause, holder.handler);
     }
   }
 

@@ -110,24 +110,6 @@ public interface ContextInternal extends Context, Executor {
   VertxInternal owner();
 
   /**
-   * @see #dispatchFromIO(Object, Handler)
-   */
-  void dispatchFromIO(Handler<Void> handler);
-
-  /**
-   * Dispatch the {@code argument} to the {@code task} and switch on this context if necessary, this also associates the
-   * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
-   *
-   * The caller thread is assumed to be the event loop thread of this context.<p/>
-   *
-   * Any exception thrown from the {@literal handler} will be reported on this context.
-   *
-   * @param argument the event for the {@code handler}
-   * @param task the handler to execute with the {@code event} argument
-   */
-  <T> void dispatchFromIO(T argument, Handler<T> task);
-
-  /**
    * Dispatch the given {@code argument} to the {@code task} and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
    *

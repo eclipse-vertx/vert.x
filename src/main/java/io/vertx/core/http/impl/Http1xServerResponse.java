@@ -573,7 +573,7 @@ public class Http1xServerResponse implements HttpServerResponse {
           handler = bodyEndHandler;
         }
         if (handler != null) {
-          context.dispatchFromIO(v -> {
+          context.dispatch(v -> {
             handler.handle(null);
           });
         }

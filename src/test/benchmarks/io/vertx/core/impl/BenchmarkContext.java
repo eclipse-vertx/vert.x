@@ -30,7 +30,10 @@ public class BenchmarkContext extends ContextImpl {
 
   @Override
   <T> void execute(T argument, Handler<T> task) {
-    dispatchFromIO(argument, task);
+    if (THREAD_CHECKS) {
+      checkEventLoopThread();
+    }
+    emit(argument, task);
   }
 
   @Override
@@ -39,14 +42,6 @@ public class BenchmarkContext extends ContextImpl {
       checkEventLoopThread();
     }
     emit(task);
-  }
-
-  @Override
-  public <T> void dispatchFromIO(T argument, Handler<T> task) {
-    if (THREAD_CHECKS) {
-      checkEventLoopThread();
-    }
-    emit(argument, task);
   }
 
   @Override

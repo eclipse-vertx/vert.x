@@ -227,7 +227,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
                   } else {
                     Handler<Throwable> exceptionHandler = handler.handler.exceptionHandler;
                     if (exceptionHandler != null) {
-                      handler.context.dispatchFromIO(v -> {
+                      handler.context.dispatch(v -> {
                         exceptionHandler.handle(ar.cause());
                       });
                     } else {
@@ -445,7 +445,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
       }
       conn.registerEventBusHandler();
-      handler.context.dispatchFromIO(conn, handler.handler.connectionHandler::handle);
+      handler.context.dispatch(conn, handler.handler.connectionHandler::handle);
     });
     nh.removeHandler(conn -> socketMap.remove(ch));
     ch.pipeline().addLast("handler", nh);

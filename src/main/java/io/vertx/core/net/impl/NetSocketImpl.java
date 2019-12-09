@@ -326,7 +326,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     if (sslHandler == null) {
       chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
         if (handler != null) {
-          context.dispatchFromIO(ar.mapEmpty(), handler);
+          context.dispatch(ar.mapEmpty(), handler);
         }
       }));
       if (remoteAddress != null) {

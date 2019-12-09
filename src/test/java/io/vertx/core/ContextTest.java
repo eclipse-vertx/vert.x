@@ -182,50 +182,6 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testEventLoopExecuteFromIo() throws Exception {
-    ContextInternal eventLoopContext = (ContextInternal) vertx.getOrCreateContext();
-
-    // Check from other thread
-    try {
-      eventLoopContext.dispatchFromIO(v -> fail());
-      fail();
-    } catch (IllegalStateException expected) {
-    }
-
-    // Check from event loop thread
-    eventLoopContext.nettyEventLoop().execute(() -> {
-      // Should not be set yet
-      assertNull(Vertx.currentContext());
-      Thread vertxThread = Thread.currentThread();
-      AtomicBoolean nested = new AtomicBoolean(true);
-      eventLoopContext.dispatchFromIO(v -> {
-        assertTrue(nested.get());
-        assertSame(eventLoopContext, Vertx.currentContext());
-        assertSame(vertxThread, Thread.currentThread());
-      });
-      nested.set(false);
-      testComplete();
-    });
-    await();
-  }
-
-  @Test
-  public void testWorkerExecuteFromIo() {
-    ContextInternal workerContext = createWorkerContext();
-    workerContext.nettyEventLoop().execute(() -> {
-      assertNull(Vertx.currentContext());
-      workerContext.nettyEventLoop().execute(() -> {
-        workerContext.dispatchFromIO(v -> {
-          assertSame(workerContext, Vertx.currentContext());
-          assertTrue(Context.isOnWorkerThread());
-          testComplete();
-        });
-      });
-    });
-    await();
-  }
-
-  @Test
   public void testContextExceptionHandler() {
     RuntimeException failure = new RuntimeException();
     Context context = vertx.getOrCreateContext();
@@ -431,38 +387,6 @@ public class ContextTest extends VertxTestBase {
       }
     }
     await();
-  }
-
-  @Test
-  public void testExecuteFromIOEventLoopFromNonVertxThread() {
-    assertEquals("true", System.getProperty("vertx.threadChecks"));
-    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
-    AtomicBoolean called = new AtomicBoolean();
-    try {
-      ctx.dispatchFromIO(v -> {
-        called.set(true);
-      });
-      fail();
-    } catch (IllegalStateException ignore) {
-      //
-    }
-    assertFalse(called.get());
-  }
-
-  @Test
-  public void testExecuteFromIOWorkerFromNonVertxThread() {
-    assertEquals("true", System.getProperty("vertx.threadChecks"));
-    ContextInternal ctx = createWorkerContext();
-    AtomicBoolean called = new AtomicBoolean();
-    try {
-      ctx.dispatchFromIO(v -> {
-        called.set(true);
-      });
-      fail();
-    } catch (IllegalStateException ignore) {
-      //
-    }
-    assertFalse(called.get());
   }
 
   @Test

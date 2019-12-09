@@ -59,14 +59,6 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  public <T> void dispatchFromIO(T argument, Handler<T> task) {
-    if (THREAD_CHECKS) {
-      checkEventLoopThread();
-    }
-    emit(argument, task);
-  }
-
-  @Override
   public boolean isEventLoopContext() {
     return true;
   }
@@ -118,14 +110,6 @@ public class EventLoopContext extends ContextImpl {
     @Override
     public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
       return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
-    }
-
-    @Override
-    public <T> void dispatchFromIO(T argument, Handler<T> task) {
-      if (THREAD_CHECKS) {
-        checkEventLoopThread();
-      }
-      emit(argument, task);
     }
 
     @Override

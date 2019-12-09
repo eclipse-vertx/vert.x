@@ -99,7 +99,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
     Handler<HttpConnection> handler = client.connectionHandler();
     if (handler != null) {
       ContextInternal ctx = client.context();
-      ctx.dispatchFromIO(conn, handler);
+      ctx.dispatch(conn, handler);
     }
   }
 

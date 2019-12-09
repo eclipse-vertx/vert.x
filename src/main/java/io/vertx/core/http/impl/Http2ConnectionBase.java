@@ -253,7 +253,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
     if (handler != null) {
       // No need to run on a particular context it shall be done by the handler instead
-      context.dispatchFromIO(handler);
+      context.dispatch(handler);
     }
   }
 

@@ -47,16 +47,6 @@ class WorkerContext extends ContextImpl {
     return false;
   }
 
-  // In the case of a worker context, the IO will always be provided on an event loop thread, not a worker thread
-  // so we need to execute it on the worker thread
-  @Override
-  public <T> void dispatchFromIO(T argument, Handler<T> task) {
-    if (THREAD_CHECKS) {
-      checkEventLoopThread();
-    }
-    execute(argument, task);
-  }
-
   private <T> void execute(ContextInternal ctx, TaskQueue queue, Runnable task) {
     PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
@@ -157,11 +147,6 @@ class WorkerContext extends ContextImpl {
     @Override
     public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
       return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
-    }
-
-    @Override
-    public <T> void dispatchFromIO(T argument, Handler<T> task) {
-      execute(argument, task);
     }
 
     @Override

@@ -105,14 +105,6 @@ abstract class AbstractContext implements ContextInternal {
     dispatch(null, task);
   }
 
-  // This is called to execute code where the origin is IO (from Netty probably).
-  // In such a case we should already be on an event loop thread (as Netty manages the event loops)
-  // but check this anyway, then execute directly
-  @Override
-  public final void dispatchFromIO(Handler<Void> handler) {
-    dispatchFromIO(null, handler);
-  }
-
   @Override
   public final void schedule(Handler<Void> task) {
     schedule(null, task);

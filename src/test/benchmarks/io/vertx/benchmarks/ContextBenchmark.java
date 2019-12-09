@@ -57,14 +57,4 @@ public class ContextBenchmark extends BenchmarkBase {
     state.context.runOnContext(state.task);
   }
 
-  @Benchmark
-  public void executeFromIO(BaselineState state) {
-    state.context.dispatchFromIO(state.task);
-  }
-
-  @Benchmark
-  @Fork(jvmArgsAppend = { "-Dvertx.threadChecks=false", "-Dvertx.disableContextTimings=true", "-Dvertx.disableTCCL=true" })
-  public void executeFromIONoChecks(BaselineState state) {
-    state.context.dispatchFromIO(state.task);
-  }
 }
