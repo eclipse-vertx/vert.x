@@ -193,9 +193,9 @@ public class JsonArrayTest {
     jsonArray.add(123);
     try {
       jsonArray.getString(1);
-      fail();
+      // OK, non string types are casted to string using .toString()
     } catch (ClassCastException e) {
-      // OK
+      fail();
     }
     jsonArray.addNull();
     assertNull(jsonArray.getString(2));

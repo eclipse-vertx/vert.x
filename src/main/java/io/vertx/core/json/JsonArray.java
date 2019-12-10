@@ -95,8 +95,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * Get the String at position {@code pos} in the array,
    *
    * @param pos the position in the array
-   * @return the String, or null if a null value present
-   * @throws java.lang.ClassCastException if the value cannot be converted to String
+   * @return the String (or String representation), or null if a null value present
    */
   public String getString(int pos) {
     Object val = list.get(pos);
@@ -105,17 +104,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       return null;
     }
 
-    if (val instanceof CharSequence) {
-      return val.toString();
-    } else if (val instanceof Instant) {
+    if (val instanceof Instant) {
       return ISO_INSTANT.format((Instant) val);
     } else if (val instanceof byte[]) {
       return BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Enum) {
       return ((Enum) val).name();
+    } else {
+      return val.toString();
     }
-
-    throw new ClassCastException("class " + val.getClass().getName() + " cannot be cast to class java.lang.String");
   }
 
   /**

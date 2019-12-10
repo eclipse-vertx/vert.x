@@ -10,7 +10,6 @@
  */
 package io.vertx.core.json;
 
-import io.vertx.codegen.annotations.Fluent;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
@@ -124,8 +123,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * {@code byte[]} and {@code Enum} which can be converted to String.
    *
    * @param key the key to return the value for
-   * @return the value or null if no value for that key
-   * @throws java.lang.ClassCastException if the value is not a String
+   * @return the value string representation or null if no value for that key
    */
   public String getString(String key) {
     Objects.requireNonNull(key);
@@ -134,17 +132,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       return null;
     }
 
-    if (val instanceof CharSequence) {
-      return val.toString();
-    } else if (val instanceof Instant) {
+    if (val instanceof Instant) {
       return ISO_INSTANT.format((Instant) val);
     } else if (val instanceof byte[]) {
       return BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Enum) {
       return ((Enum) val).name();
+    } else {
+      return val.toString();
     }
-
-    throw new ClassCastException("class " + val.getClass().getName() + " cannot be cast to class java.lang.String");
   }
 
   /**
@@ -729,7 +725,6 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Remove all the entries in this JSON object
    */
-  @Fluent
   public JsonObject clear() {
     map.clear();
     return this;
