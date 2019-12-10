@@ -13,6 +13,7 @@ package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.shareddata.Shareable;
 import io.vertx.test.core.TestUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -1734,6 +1735,44 @@ public class JsonObjectTest {
     assertEquals(bytes, json.getBinary("bytes"));
     assertSame(bytes, json.getBinary("bytes"));
   }
+
+  @Test
+  public void testBigDecimal() {
+    BigDecimal bd1 =
+      new BigDecimal("124567890.0987654321");
+
+    // storing BigDecimal should not be an issue
+    JsonObject json = new JsonObject();
+    json.put("bd1", bd1);
+    assertEquals(bd1, json.getValue("bd1"));
+    assertSame(bd1, json.getValue("bd1"));
+
+    // copy() should allow it too.
+    JsonObject json2 = json.copy();
+    // same for encode
+    assertEquals("{\"bd1\":124567890.0987654321}", json.encode());
+  }
+
+  @Test
+  public void testShareable() {
+
+    Shareable myShareable = new Shareable() {
+      @Override
+      public Shareable copy() {
+        return this;
+      }
+    };
+
+    // storing Shareable should not be an issue
+    JsonObject json = new JsonObject();
+    json.put("0", myShareable);
+    assertEquals(myShareable, json.getValue("0"));
+    assertSame(myShareable, json.getValue("0"));
+
+    // copy() should allow it too.
+    JsonObject json2 = json.copy();
+  }
+
 }
 
 

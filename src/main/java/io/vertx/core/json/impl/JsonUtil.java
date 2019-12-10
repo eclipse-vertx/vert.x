@@ -12,6 +12,7 @@ package io.vertx.core.json.impl;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.Shareable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -82,7 +83,7 @@ public final class JsonUtil {
   public static Object checkAndCopy(Object val) {
     if (val == null) {
       // OK
-    } else if (val instanceof Number && !(val instanceof BigDecimal)) {
+    } else if (val instanceof Number) {
       // OK
     } else if (val instanceof Boolean) {
       // OK
@@ -91,11 +92,12 @@ public final class JsonUtil {
     } else if (val instanceof Character) {
       // OK
     } else if (val instanceof CharSequence) {
+      // CharSequences are not immutable, so we force toString() to become immutable
       val = val.toString();
-    } else if (val instanceof JsonObject) {
-      val = ((JsonObject) val).copy();
-    } else if (val instanceof JsonArray) {
-      val = ((JsonArray) val).copy();
+    } else if (val instanceof Shareable) {
+      // Shareable objects know how to copy themselves, this covers:
+      // JsonObject, JsonArray or any user defined type that can shared across the cluster
+      val = ((Shareable) val).copy();
     } else if (val instanceof Map) {
       val = (new JsonObject((Map) val)).copy();
     } else if (val instanceof List) {
