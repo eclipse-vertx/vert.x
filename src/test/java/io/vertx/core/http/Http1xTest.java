@@ -1983,63 +1983,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testClientContextWithKeepAlive() throws Exception {
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true).setPipelining(false).setMaxPoolSize(1));
-    testClientContext();
-  }
-
-  @Test
-  public void testClientContextWithPipelining() throws Exception {
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setKeepAlive(true).setPipelining(true).setMaxPoolSize(1));
-    testClientContext();
-  }
-
-  private void testClientContext() throws Exception {
-    server.requestHandler(req -> {
-      req.response().end();
-    });
-    startServer(testAddress);
-    Set<Context> contexts = Collections.synchronizedSet(new HashSet<>());
-    Set<HttpConnection> connections = Collections.synchronizedSet(new HashSet<>());
-    Handler<AsyncResult<HttpClientResponse>> checker = onSuccess(response -> {
-      Context current = Vertx.currentContext();
-      assertNotNull(current);
-      contexts.add(current);
-      connections.add(response.request().connection());
-    });
-    HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/2", checker)
-      .exceptionHandler(this::fail);
-    HttpClientRequest req2 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/3", checker).exceptionHandler(this::fail);
-    CompletableFuture<HttpClientRequest> fut = new CompletableFuture<>();
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v -> {
-      HttpClientRequest req3 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/4", onSuccess(resp -> {
-        // This should warn in the log (console) as we are called back on the connection context
-        // and not on the context doing the request
-        // checker.accept(req4);
-        assertEquals(2, contexts.stream().map(context -> ((ContextInternal)context).nettyEventLoop()).distinct().count());
-        assertEquals(1, connections.size());
-        assertSame(Vertx.currentContext(), ctx);
-        testComplete();
-      }));
-      req3.exceptionHandler(this::fail);
-      fut.complete(req3);
-    });
-    HttpClientRequest req3 = fut.get(10, TimeUnit.SECONDS);
-    req1.end();
-    req2.end();
-    req3.end();
-    await();
-  }
-
-  @Test
-  public void testConnectErrorContext() throws Exception {
-
-  }
-
-  @Test
   public void testRequestExceptionHandlerContext() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -3213,20 +3156,22 @@ public class Http1xTest extends HttpTest {
       awaitLatch(listenLatch);
       client.close();
       client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true).setKeepAlive(true));
-      HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", ar -> {
-        // We may or not receive the response
-      });
       client.connectionHandler(conn -> {
         conn.closeHandler(v -> {
           complete();
         });
       });
-      req1.end();
-      HttpClientRequest req2 = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(resp -> {
-      }));
-      req2.sendHead();
-      doReset.thenAccept(v -> {
-        assertTrue(req2.reset());
+      vertx.runOnContext(v1 -> {
+        HttpClientRequest req1 = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", ar -> {
+          // We may or not receive the response
+        });
+        req1.end();
+        HttpClientRequest req2 = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(resp -> {
+        }));
+        req2.sendHead();
+        doReset.thenAccept(v2 -> {
+          assertTrue(req2.reset());
+        });
       });
       await();
     } finally {
@@ -4347,7 +4292,7 @@ public class Http1xTest extends HttpTest {
   public void testPipelinedPostRequestStartedByResponseSent() throws Exception {
     String chunk1 = TestUtils.randomAlphaString(1024);
     String chunk2 = TestUtils.randomAlphaString(1024);
-    CountDownLatch latch = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(1);
     AtomicInteger count = new AtomicInteger();
     server.requestHandler(req -> {
       switch (count.getAndIncrement()) {
@@ -4361,7 +4306,7 @@ public class Http1xTest extends HttpTest {
           });
           break;
         case 1:
-          latch.countDown();
+          latch2.countDown();
           req.bodyHandler(body -> {
             assertEquals(chunk1 + chunk2, body.toString());
             req.response().end();
@@ -4372,13 +4317,17 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1).setKeepAlive(true));
+    CountDownLatch latch1 = new CountDownLatch(1);
     client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
-    }).end(TestUtils.randomAlphaString(1024));
+    }).end(TestUtils.randomAlphaString(1024), onSuccess(v -> {
+      latch1.countDown();
+    }));
+    awaitLatch(latch1);
     HttpClientRequest req = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> {
       testComplete();
     }).setChunked(true);
     req.write(chunk1);
-    awaitLatch(latch);
+    awaitLatch(latch2);
     req.end(chunk2);
     await();
   }
