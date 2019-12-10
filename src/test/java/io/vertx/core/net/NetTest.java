@@ -2402,38 +2402,6 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testNetSocketStreamCallbackIsAsync() {
-    this.server = vertx.createNetServer(new NetServerOptions());
-    AtomicInteger done = new AtomicInteger();
-    ReadStream<NetSocket> stream = server.connectStream();
-    stream.handler(req -> {});
-    ThreadLocal<Object> stack = new ThreadLocal<>();
-    stack.set(true);
-    stream.endHandler(v -> {
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      assertNull(stack.get());
-      if (done.incrementAndGet() == 2) {
-        testComplete();
-      }
-    });
-    server.listen(testAddress, ar -> {
-      assertTrue(Vertx.currentContext().isEventLoopContext());
-      assertNull(stack.get());
-      ThreadLocal<Object> stack2 = new ThreadLocal<>();
-      stack2.set(true);
-      server.close(v -> {
-        assertTrue(Vertx.currentContext().isEventLoopContext());
-        assertNull(stack2.get());
-        if (done.incrementAndGet() == 2) {
-          testComplete();
-        }
-      });
-      stack2.set(null);
-    });
-    await();
-  }
-
-  @Test
   public void testMultipleServerClose() {
     this.server = vertx.createNetServer();
     AtomicInteger times = new AtomicInteger();
