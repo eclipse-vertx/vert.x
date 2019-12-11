@@ -12,6 +12,7 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
+import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -111,9 +112,11 @@ public interface ContextInternal extends Context, Executor {
 
   /**
    * Dispatch the given {@code argument} to the {@code task} and switch on this context if necessary, this also associates the
-   * current thread with the current context so {@link Vertx#currentContext()} returns this context.<p/>
-   *
+   * current thread with the current context so {@link Vertx#currentContext()} returns this context.
+   * <br/>
    * Any exception thrown from the {@literal task} will be reported on this context.
+   * <br/>
+   * Calling this method is equivalent to {@code schedule(v -> emit(argument, task))}
    *
    * @param argument the {@code task} argument
    * @param task the handler to execute with the {@code event} argument
@@ -132,8 +135,7 @@ public interface ContextInternal extends Context, Executor {
 
   /**
    * Schedule a task to be executed on this context, the task will be executed according to the
-   * context concurrency model, on an event-loop context, the task is executed directly, on a worker
-   * context the task is executed on the worker thread pool.
+   * context concurrency model.
    *
    * @param argument the {@code task} argument
    * @param task the task
@@ -151,8 +153,9 @@ public interface ContextInternal extends Context, Executor {
   void emit(Handler<Void> handler);
 
   /**
-   * Emit an {@code event} to the {@code handler} on this context. The handler is executed directly by the caller thread
-   * which must be a {@link VertxThread}.
+   * Emit an {@code event} to the {@code handler} on this context.
+   * <p>
+   * The handler is executed directly by the caller thread which must be a {@link VertxThread} or a {@link FastThreadLocalThread}.
    * <p>
    * The handler execution is monitored by the blocked thread checker.
    * <p>
@@ -164,24 +167,28 @@ public interface ContextInternal extends Context, Executor {
   <E> void emit(E event, Handler<E> handler);
 
   /**
-   * Begin the dispatch of a task on this context.
+   * Begin the execution of a task on this context.
    * <p>
    * The task execution is monitored by the blocked thread checker.
    * <p>
    * This context is thread-local associated during the task execution.
+   * <p>
+   * You should not use this API directly, instead you should use {@link #emit(Object, Handler)}
    *
    * @return the previous context that shall be restored after or {@code null} if there is none
    * @throws IllegalStateException when the current thread of execution cannot execute this task
    */
-  ContextInternal beginEmission();
+  ContextInternal emitBegin();
 
   /**
-   * End the dispatch of a task on this context.
+   * End the execution of a task on this context, see {@link #emitBegin()}
+   * <p>
+   * You should not use this API directly, instead you should use {@link #emit(Object, Handler)}
    *
    * @param previous the previous context to restore or {@code null} if there is none
    * @throws IllegalStateException when the current thread of execution cannot execute this task
    */
-  void endEmission(ContextInternal previous);
+  void emitEnd(ContextInternal previous);
 
   /**
    * Report an exception to this context synchronously.
@@ -215,27 +222,24 @@ public interface ContextInternal extends Context, Executor {
   VertxTracer tracer();
 
   /**
-   * Returns a context which shares the whole behavior of this context but not the {@link #localContextData()} which
-   * remains private to the context:
+   * Returns a context sharing with this context
    * <ul>
-   *   <li>same concurrency</li>
-   *   <li>same exception handler</li>
-   *   <li>same context context</li>
-   *   <li>same deployment</li>
-   *   <li>same config</li>
-   *   <li>same classloader</li>
+   *   <li>the same concurrency</li>
+   *   <li>the same exception handler</li>
+   *   <li>the same context data</li>
+   *   <li>the same deployment</li>
+   *   <li>the same config</li>
+   *   <li>the same classloader</li>
    * </ul>
    * <p>
-   * The duplicated context will have its own private local context data.
+   * The duplicate context has its own
+   * <ul>
+   *   <li>local context data</li>
+   *   <li>worker task queue</li>
+   * </ul>
    *
-   * @return a context whose behavior will is equivalent to this context but with new private
+   * @return a duplicate of this context
    */
   ContextInternal duplicate();
-
-  /**
-   * Like {@link #duplicate()} but the duplicated context local data will adopt the local data of the specified
-   * {@code context} argument.
-   */
-  ContextInternal duplicate(ContextInternal context);
 
 }

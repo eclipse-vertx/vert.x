@@ -115,7 +115,7 @@ abstract class AbstractContext implements ContextInternal {
     emit(null, handler);
   }
 
-  public final ContextInternal beginEmission() {
+  public final ContextInternal emitBegin() {
     ContextInternal prev;
     Thread th = Thread.currentThread();
     if (th instanceof VertxThread) {
@@ -152,7 +152,7 @@ abstract class AbstractContext implements ContextInternal {
     }
   }
 
-  public final void endEmission(ContextInternal previous) {
+  public final void emitEnd(ContextInternal previous) {
     Thread th = Thread.currentThread();
     if (!DISABLE_TCCL) {
       th.setContextClassLoader(previous != null ? previous.classLoader() : null);
@@ -180,24 +180,24 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public final <T> void emit(T event, Handler<T> handler) {
-    ContextInternal prev = beginEmission();
+    ContextInternal prev = emitBegin();
     try {
       handler.handle(event);
     } catch (Throwable t) {
       reportException(t);
     } finally {
-      endEmission(prev);
+      emitEnd(prev);
     }
   }
 
   public final void emit(Runnable handler) {
-    ContextInternal prev = beginEmission();
+    ContextInternal prev = emitBegin();
     try {
       handler.run();
     } catch (Throwable t) {
       reportException(t);
     } finally {
-      endEmission(prev);
+      emitEnd(prev);
     }
   }
 
@@ -290,11 +290,6 @@ abstract class AbstractContext implements ContextInternal {
     return Future.factory.failedFuture(this, message);
   }
 
-  @Override
-  public final ContextInternal duplicate() {
-    return duplicate(null);
-  }
-
   @SuppressWarnings("unchecked")
   @Override
   public final <T> T get(String key) {
@@ -327,7 +322,7 @@ abstract class AbstractContext implements ContextInternal {
     return localContextData().remove(key) != null;
   }
 
-  static <T> void setResultHandler(ContextInternal ctx, Future<T> fut, Handler<AsyncResult<T>> resultHandler) {
+  private static <T> void setResultHandler(ContextInternal ctx, Future<T> fut, Handler<AsyncResult<T>> resultHandler) {
     if (resultHandler != null) {
       fut.setHandler(resultHandler);
     } else {

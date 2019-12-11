@@ -13,12 +13,9 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 /**
@@ -26,14 +23,12 @@ import io.vertx.core.spi.tracing.VertxTracer;
  */
 public class EventLoopContext extends ContextImpl {
 
-  private static final Logger log = LoggerFactory.getLogger(EventLoopContext.class);
-
   EventLoopContext(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                    ClassLoader tccl) {
     super(vertx, tracer, internalBlockingPool, workerPool, deployment, tccl);
   }
 
-  public EventLoopContext(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
+  EventLoopContext(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                           ClassLoader tccl) {
     super(vertx, tracer, eventLoop, internalBlockingPool, workerPool, deployment, tccl);
   }
@@ -48,6 +43,14 @@ public class EventLoopContext extends ContextImpl {
     nettyEventLoop().execute(() -> emit(task));
   }
 
+  /**
+   * {@inheritDoc}
+   *
+   * <ul>
+   *   <li>When the current thread is event-loop thread of this context the implementation will execute the {@code task} directly</li>
+   *   <li>Otherwise the task will be scheduled on the event-loop thread for execution</li>
+   * </ul>
+   */
   @Override
   public <T> void schedule(T argument, Handler<T> task) {
     EventLoop eventLoop = nettyEventLoop();
@@ -64,16 +67,16 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  public ContextInternal duplicate(ContextInternal in) {
-    return new Duplicated(this, in);
+  public ContextInternal duplicate() {
+    return new Duplicated(this);
   }
 
   static class Duplicated extends ContextImpl.Duplicated<EventLoopContext> {
 
     private TaskQueue orderedTasks;
 
-    Duplicated(EventLoopContext delegate, ContextInternal other) {
-      super(delegate, other);
+    Duplicated(EventLoopContext delegate) {
+      super(delegate);
     }
 
     @Override
@@ -123,8 +126,8 @@ public class EventLoopContext extends ContextImpl {
     }
 
     @Override
-    public ContextInternal duplicate(ContextInternal context) {
-      return new Duplicated(delegate, context);
+    public ContextInternal duplicate() {
+      return new Duplicated(delegate);
     }
   }
 }

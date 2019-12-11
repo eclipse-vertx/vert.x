@@ -75,13 +75,13 @@ public class HttpHandlers implements Handler<HttpServerConnection> {
     if (connectionHandler != null) {
       // We hand roll event-loop execution in case of a worker context
       ContextInternal ctx = conn.getContext();
-      ContextInternal prev = ctx.beginEmission();
+      ContextInternal prev = ctx.emitBegin();
       try {
         connectionHandler.handle(conn);
       } catch (Exception e) {
         ctx.reportException(e);
       } finally {
-        ctx.endEmission(prev);
+        ctx.emitEnd(prev);
       }
     }
   }

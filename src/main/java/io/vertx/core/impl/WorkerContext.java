@@ -16,7 +16,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -25,7 +24,7 @@ import java.util.Objects;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class WorkerContext extends ContextImpl {
+public class WorkerContext extends ContextImpl {
 
   WorkerContext(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                 ClassLoader tccl) {
@@ -107,21 +106,29 @@ class WorkerContext extends ContextImpl {
   }
 
 
+  /**
+   * {@inheritDoc}
+   *
+   * <ul>
+   *   <li>When the current thread is a worker thread of this context the implementation will execute the {@code task} directly</li>
+   *   <li>Otherwise the task will be scheduled on the worker thread for execution</li>
+   * </ul>
+   */
   @Override
   public <T> void schedule(T argument, Handler<T> task) {
     schedule(orderedTasks, argument, task);
   }
 
-  public ContextInternal duplicate(ContextInternal in) {
-    return new Duplicated(this, in);
+  public ContextInternal duplicate() {
+    return new Duplicated(this);
   }
 
   static class Duplicated extends ContextImpl.Duplicated<WorkerContext> {
 
     final TaskQueue orderedTasks = new TaskQueue();
 
-    Duplicated(WorkerContext delegate, ContextInternal other) {
-      super(delegate, other);
+    Duplicated(WorkerContext delegate) {
+      super(delegate);
     }
 
     @Override
@@ -160,8 +167,8 @@ class WorkerContext extends ContextImpl {
     }
 
     @Override
-    public ContextInternal duplicate(ContextInternal context) {
-      return new Duplicated(delegate, context);
+    public ContextInternal duplicate() {
+      return new Duplicated(delegate);
     }
   }
 }

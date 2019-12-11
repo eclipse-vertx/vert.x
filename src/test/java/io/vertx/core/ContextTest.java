@@ -21,7 +21,6 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -444,15 +443,6 @@ public class ContextTest extends VertxTestBase {
     checkDuplicate(ctx, duplicated);
   }
 
-  @Test
-  public void testDuplicateWith() throws Exception {
-    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
-    ContextInternal other = (ContextInternal) vertx.getOrCreateContext();
-    ContextInternal duplicated = ctx.duplicate(other);
-    checkDuplicate(ctx, duplicated);
-    checkDuplicateWith(other, duplicated);
-  }
-
   private void checkDuplicate(ContextInternal ctx, ContextInternal duplicated) throws Exception {
     assertSame(ctx.nettyEventLoop(), duplicated.nettyEventLoop());
     assertSame(ctx.getDeployment(), duplicated.getDeployment());
@@ -500,23 +490,6 @@ public class ContextTest extends VertxTestBase {
       });
     });
     awaitLatch(latch4);
-  }
-
-  @Test
-  public void testDuplicateWithTwice() throws Exception {
-    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
-    ContextInternal other = (ContextInternal) vertx.getOrCreateContext();
-    ContextInternal duplicated = ctx.duplicate().duplicate(other);
-    checkDuplicate(ctx, duplicated);
-    checkDuplicateWith(other, duplicated);
-  }
-
-  private void checkDuplicateWith(ContextInternal ctx, ContextInternal duplicated) {
-    Object val = new Object();
-    ctx.putLocal("key", val);
-    assertSame(val, duplicated.getLocal("key"));
-    duplicated.removeLocal("key");
-    assertNull(ctx.getLocal("key"));
   }
 
   @Test

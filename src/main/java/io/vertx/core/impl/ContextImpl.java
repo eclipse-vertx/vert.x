@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -81,12 +80,12 @@ abstract class ContextImpl extends AbstractContext {
   final WorkerPool workerPool;
   final TaskQueue orderedTasks;
 
-  protected ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
+  ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                         ClassLoader tccl) {
     this(vertx, tracer, getEventLoop(vertx), internalBlockingPool, workerPool, deployment, tccl);
   }
 
-  protected ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
+  ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                         ClassLoader tccl) {
     if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
@@ -257,12 +256,10 @@ abstract class ContextImpl extends AbstractContext {
   static abstract class Duplicated<C extends ContextImpl> extends AbstractContext {
 
     protected final C delegate;
-    private final ContextInternal other;
     private ConcurrentMap<Object, Object> localData;
 
-    public Duplicated(C delegate, ContextInternal other) {
+    Duplicated(C delegate) {
       this.delegate = delegate;
-      this.other = other;
     }
 
     @Override
@@ -338,15 +335,11 @@ abstract class ContextImpl extends AbstractContext {
 
     @Override
     public final ConcurrentMap<Object, Object> localContextData() {
-      if (other == null) {
-        synchronized (this) {
-          if (localData == null) {
-            localData = new ConcurrentHashMap<>();
-          }
-          return localData;
+      synchronized (this) {
+        if (localData == null) {
+          localData = new ConcurrentHashMap<>();
         }
-      } else {
-        return other.localContextData();
+        return localData;
       }
     }
   }

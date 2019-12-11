@@ -55,7 +55,7 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
-  public ContextInternal duplicate(ContextInternal in) {
+  public ContextInternal duplicate() {
     throw new UnsupportedOperationException();
   }
 }
