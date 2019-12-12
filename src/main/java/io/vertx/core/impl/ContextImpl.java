@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -30,10 +29,11 @@ import java.util.concurrent.RejectedExecutionException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 abstract class ContextImpl extends AbstractContext {
-  
+
   /**
    * Execute the {@code task} disabling the thread-local association for the duration
    * of the execution. {@link Vertx#currentContext()} will return {@code null},
+   *
    * @param task the task to execute
    * @throws IllegalStateException if the current thread is not a Vertx thread
    */
@@ -154,7 +154,7 @@ abstract class ContextImpl extends AbstractContext {
   }
 
   static <T> Future<T> executeBlocking(ContextInternal context, Handler<Promise<T>> blockingCodeHandler,
-      WorkerPool workerPool, TaskQueue queue) {
+                                       WorkerPool workerPool, TaskQueue queue) {
     PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     Promise<T> promise = context.promise();
