@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,6 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -197,7 +200,7 @@ public class FutureTest extends VertxTestBase {
 
   @Test
   public void testCreateFailedWithNullFailure() {
-    Future<String> future = Future.failedFuture((Throwable)null);
+    Future<String> future = Future.failedFuture((Throwable) null);
     Checker<String> checker = new Checker<>(future);
     NoStackTraceThrowable failure = (NoStackTraceThrowable) checker.assertFailed();
     assertNull(failure.getMessage());
@@ -206,7 +209,7 @@ public class FutureTest extends VertxTestBase {
   @Test
   public void testFailureFutureWithNullFailure() {
     Promise<String> promise = Promise.promise();
-    promise.fail((Throwable)null);
+    promise.fail((Throwable) null);
     Checker<String> checker = new Checker<>(promise.future());
     NoStackTraceThrowable failure = (NoStackTraceThrowable) checker.assertFailed();
     assertNull(failure.getMessage());
@@ -239,7 +242,7 @@ public class FutureTest extends VertxTestBase {
     p2.complete(3);
     checker.assertSucceeded(composite);
     assertEquals("something", composite.resultAt(0));
-    assertEquals(3, (int)composite.resultAt(1));
+    assertEquals(3, (int) composite.resultAt(1));
   }
 
   @Test
@@ -283,22 +286,22 @@ public class FutureTest extends VertxTestBase {
 
   private void testAllLargeList(int size) {
     List<Future> list = new ArrayList<>();
-    for (int i = 0;i < size;i++) {
+    for (int i = 0; i < size; i++) {
       list.add(Future.succeededFuture());
     }
     CompositeFuture composite = CompositeFuture.all(list);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     checker.assertSucceeded(composite);
-    for (int i = 0;i < size;i++) {
+    for (int i = 0; i < size; i++) {
       list.clear();
       Throwable cause = new Exception();
-      for (int j = 0;j < size;j++) {
+      for (int j = 0; j < size; j++) {
         list.add(i == j ? Future.failedFuture(cause) : Future.succeededFuture());
       }
       composite = CompositeFuture.all(list);
       checker = new Checker<>(composite);
       checker.assertFailed(cause);
-      for (int j = 0;j < size;j++) {
+      for (int j = 0; j < size; j++) {
         if (i == j) {
           assertTrue(composite.failed(j));
         } else {
@@ -397,21 +400,21 @@ public class FutureTest extends VertxTestBase {
 
   private void testAnyLargeList(int size) {
     List<Future> list = new ArrayList<>();
-    for (int i = 0;i < size;i++) {
+    for (int i = 0; i < size; i++) {
       list.add(Future.failedFuture(new Exception()));
     }
     CompositeFuture composite = CompositeFuture.any(list);
     Checker<CompositeFuture> checker = new Checker<>(composite);
     assertNotNull(checker.assertFailed());
-    for (int i = 0;i < size;i++) {
+    for (int i = 0; i < size; i++) {
       list.clear();
-      for (int j = 0;j < size;j++) {
+      for (int j = 0; j < size; j++) {
         list.add(i == j ? Future.succeededFuture() : Future.failedFuture(new RuntimeException()));
       }
       composite = CompositeFuture.any(list);
       checker = new Checker<>(composite);
       checker.assertSucceeded(composite);
-      for (int j = 0;j < size;j++) {
+      for (int j = 0; j < size; j++) {
         if (i == j) {
           assertTrue(composite.succeeded(j));
         } else {
@@ -552,7 +555,7 @@ public class FutureTest extends VertxTestBase {
       ref.set(string);
       return c;
     });
-    Checker<Integer>  checker = new Checker<>(f4);
+    Checker<Integer> checker = new Checker<>(f4);
     p3.complete("abcdef");
     checker.assertNotCompleted();
     assertEquals("abcdef", ref.get());
@@ -595,7 +598,9 @@ public class FutureTest extends VertxTestBase {
     RuntimeException cause = new RuntimeException();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
-    Future<Integer> f4 = f3.compose(string -> { throw cause; });
+    Future<Integer> f4 = f3.compose(string -> {
+      throw cause;
+    });
     Checker<Integer> checker = new Checker<>(f4);
     p3.complete("foo");
     checker.assertFailed(cause);
@@ -786,22 +791,58 @@ public class FutureTest extends VertxTestBase {
   public void testDefaultCompleter() {
     AsyncResult<Object> succeededAsyncResult = new AsyncResult<Object>() {
       Object result = new Object();
-      public Object result() { return result; }
-      public Throwable cause() { throw new UnsupportedOperationException(); }
-      public boolean succeeded() { return true; }
-      public boolean failed() { throw new UnsupportedOperationException(); }
-      public <U> AsyncResult<U> map(Function<Object, U> mapper) { throw new UnsupportedOperationException(); }
-      public <V> AsyncResult<V> map(V value) { throw new UnsupportedOperationException(); }
+
+      public Object result() {
+        return result;
+      }
+
+      public Throwable cause() {
+        throw new UnsupportedOperationException();
+      }
+
+      public boolean succeeded() {
+        return true;
+      }
+
+      public boolean failed() {
+        throw new UnsupportedOperationException();
+      }
+
+      public <U> AsyncResult<U> map(Function<Object, U> mapper) {
+        throw new UnsupportedOperationException();
+      }
+
+      public <V> AsyncResult<V> map(V value) {
+        throw new UnsupportedOperationException();
+      }
     };
 
     AsyncResult<Object> failedAsyncResult = new AsyncResult<Object>() {
       Throwable cause = new Throwable();
-      public Object result() { throw new UnsupportedOperationException(); }
-      public Throwable cause() { return cause; }
-      public boolean succeeded() { return false; }
-      public boolean failed() { throw new UnsupportedOperationException(); }
-      public <U> AsyncResult<U> map(Function<Object, U> mapper) { throw new UnsupportedOperationException(); }
-      public <V> AsyncResult<V> map(V value) { throw new UnsupportedOperationException(); }
+
+      public Object result() {
+        throw new UnsupportedOperationException();
+      }
+
+      public Throwable cause() {
+        return cause;
+      }
+
+      public boolean succeeded() {
+        return false;
+      }
+
+      public boolean failed() {
+        throw new UnsupportedOperationException();
+      }
+
+      public <U> AsyncResult<U> map(Function<Object, U> mapper) {
+        throw new UnsupportedOperationException();
+      }
+
+      public <V> AsyncResult<V> map(V value) {
+        throw new UnsupportedOperationException();
+      }
     };
 
     class DefaultCompleterTestFuture<T> implements Future<T> {
@@ -809,30 +850,43 @@ public class FutureTest extends VertxTestBase {
       boolean failed;
       T result;
       Throwable cause;
-      public boolean isComplete() { throw new UnsupportedOperationException(); }
-      public Future<T> onComplete(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
-      public Handler<AsyncResult<T>> getHandler() { throw new UnsupportedOperationException(); }
+
+      public boolean isComplete() {
+        throw new UnsupportedOperationException();
+      }
+
+      public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
+        throw new UnsupportedOperationException();
+      }
+
+      public Handler<AsyncResult<T>> getHandler() {
+        throw new UnsupportedOperationException();
+      }
 
       public void complete(T result) {
         if (!tryComplete(result)) {
           throw new IllegalStateException();
         }
       }
+
       public void complete() {
         if (!tryComplete()) {
           throw new IllegalStateException();
         }
       }
+
       public void fail(Throwable cause) {
         if (!tryFail(cause)) {
           throw new IllegalStateException();
         }
       }
+
       public void fail(String failureMessage) {
         if (!tryFail(failureMessage)) {
           throw new IllegalStateException();
         }
       }
+
       public boolean tryComplete(T result) {
         if (succeeded || failed) {
           return false;
@@ -841,7 +895,11 @@ public class FutureTest extends VertxTestBase {
         this.result = result;
         return true;
       }
-      public boolean tryComplete() { throw new UnsupportedOperationException(); }
+
+      public boolean tryComplete() {
+        throw new UnsupportedOperationException();
+      }
+
       public boolean tryFail(Throwable cause) {
         if (succeeded || failed) {
           return false;
@@ -850,11 +908,27 @@ public class FutureTest extends VertxTestBase {
         this.cause = cause;
         return true;
       }
-      public boolean tryFail(String failureMessage) { throw new UnsupportedOperationException(); }
-      public T result() { throw new UnsupportedOperationException(); }
-      public Throwable cause() { throw new UnsupportedOperationException(); }
-      public boolean succeeded() { throw new UnsupportedOperationException(); }
-      public boolean failed() { throw new UnsupportedOperationException(); }
+
+      public boolean tryFail(String failureMessage) {
+        throw new UnsupportedOperationException();
+      }
+
+      public T result() {
+        throw new UnsupportedOperationException();
+      }
+
+      public Throwable cause() {
+        throw new UnsupportedOperationException();
+      }
+
+      public boolean succeeded() {
+        throw new UnsupportedOperationException();
+      }
+
+      public boolean failed() {
+        throw new UnsupportedOperationException();
+      }
+
       public void handle(AsyncResult<T> asyncResult) {
         if (asyncResult.succeeded()) {
           complete(asyncResult.result());
@@ -954,9 +1028,9 @@ public class FutureTest extends VertxTestBase {
     AsyncResult<Integer> map1 = res.map(String::length);
     AsyncResult<Integer> map2 = res.map(17);
     p.complete("foobar");
-    assertEquals(6, (int)map1.result());
+    assertEquals(6, (int) map1.result());
     assertNull(map1.cause());
-    assertEquals(17, (int)map2.result());
+    assertEquals(17, (int) map2.result());
     assertNull(map2.cause());
   }
 
@@ -1216,17 +1290,21 @@ public class FutureTest extends VertxTestBase {
     Future<String> f = promise.future();
     Field handlerField = f.getClass().getDeclaredField("handler");
     handlerField.setAccessible(true);
-    f.setHandler(ar -> {});
+    f.setHandler(ar -> {
+    });
     promise.complete();
     assertNull(handlerField.get(f));
-    f.setHandler(ar -> {});
+    f.setHandler(ar -> {
+    });
     assertNull(handlerField.get(f));
     promise = Promise.promise();
     f = promise.future();
-    f.setHandler(ar -> {});
+    f.setHandler(ar -> {
+    });
     promise.fail("abc");
     assertNull(handlerField.get(f));
-    f.setHandler(ar -> {});
+    f.setHandler(ar -> {
+    });
     assertNull(handlerField.get(f));
   }
 
@@ -1255,7 +1333,7 @@ public class FutureTest extends VertxTestBase {
     ctx.runOnContext(v -> {
       latch.complete(Thread.currentThread());
     });
-    Thread elThread = latch.get(10, TimeUnit.SECONDS);
+    Thread elThread = latch.get(10, SECONDS);
 
     //
     CountDownLatch latch1 = new CountDownLatch(1);
@@ -1423,5 +1501,28 @@ public class FutureTest extends VertxTestBase {
     });
     promise.fail(failure);
     await();
+  }
+
+  @Test
+  public void testToCompletionStageTrampolining() {
+    waitFor(2);
+    Thread thread = Thread.currentThread();
+    Future<String> success = Future.succeededFuture("Yo");
+    success.toCompletionStage()
+      .thenAccept(s -> {
+        assertEquals("Yo", s);
+        assertSame(thread, Thread.currentThread());
+        complete();
+      });
+    Future<String> failed = Future.failedFuture(new RuntimeException("Woops"));
+    failed.toCompletionStage()
+      .whenComplete((s, err) -> {
+        assertNull(s);
+        assertTrue(err instanceof RuntimeException);
+        assertEquals("Woops", err.getMessage());
+        assertSame(thread, Thread.currentThread());
+        complete();
+      });
+    await(5, SECONDS);
   }
 }
