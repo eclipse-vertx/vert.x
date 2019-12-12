@@ -21,10 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1551,6 +1548,43 @@ public class FutureTest extends VertxTestBase {
     disableThreadChecks();
     new Thread(() -> willSucceed.complete("Yo")).start();
     new Thread(() -> willFail.fail(new RuntimeException("Woops"))).start();
+    await(5, SECONDS);
+  }
+
+  @Test
+  public void testFromCompletionStageTrampolining() {
+    waitFor(2);
+    disableThreadChecks();
+
+    AtomicReference<Thread> successSupplierThread = new AtomicReference<>();
+    CompletableFuture<String> willSucceed = new CompletableFuture<>();
+
+    AtomicReference<Thread> failureSupplierThread = new AtomicReference<>();
+    CompletableFuture<String> willFail = new CompletableFuture<>();
+
+    Future.from(willSucceed).onSuccess(str -> {
+      assertEquals("Ok", str);
+      assertSame(successSupplierThread.get(), Thread.currentThread());
+      complete();
+    });
+
+    Future.from(willFail).onFailure(err -> {
+      assertTrue(err instanceof RuntimeException);
+      assertEquals("Woops", err.getMessage());
+      assertSame(failureSupplierThread.get(), Thread.currentThread());
+      complete();
+    });
+
+    ForkJoinPool fjp = ForkJoinPool.commonPool();
+    fjp.execute(() -> {
+      successSupplierThread.set(Thread.currentThread());
+      willSucceed.complete("Ok");
+    });
+    fjp.execute(() -> {
+      failureSupplierThread.set(Thread.currentThread());
+      willFail.completeExceptionally(new RuntimeException("Woops"));
+    });
+
     await(5, SECONDS);
   }
 }
