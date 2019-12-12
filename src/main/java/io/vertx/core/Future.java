@@ -484,6 +484,13 @@ public interface Future<T> extends AsyncResult<T> {
     return (Future<T>) AsyncResult.super.otherwiseEmpty();
   }
 
+  /**
+   * Bridges this Vert.x future to a {@link CompletionStage} instance.
+   * <p>
+   * The {@link CompletionStage} handling methods will be called from the thread that resolves this future.
+   *
+   * @return a {@link CompletionStage} that completes when this future resolves
+   */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   default CompletionStage<T> toCompletionStage() {
     CompletableFuture<T> completableFuture = new CompletableFuture<>();
@@ -497,6 +504,15 @@ public interface Future<T> extends AsyncResult<T> {
     return completableFuture;
   }
 
+  /**
+   * Bridges a {@link CompletionStage} object to a Vert.x future instance.
+   * <p>
+   * The Vert.x future handling methods will be called from the thread that completes {@code completionStage}.
+   *
+   * @param completionStage a completion stage
+   * @param <T>             the result type
+   * @return a Vert.x future that resolves when {@code completionStage} resolves
+   */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static <T> Future<T> from(CompletionStage<T> completionStage) {
     Promise<T> promise = Promise.promise();
@@ -510,6 +526,16 @@ public interface Future<T> extends AsyncResult<T> {
     return promise.future();
   }
 
+  /**
+   * Bridges a {@link CompletionStage} object to a Vert.x future instance.
+   * <p>
+   * The Vert.x future handling methods will be called from a thread attached to {@code context}.
+   *
+   * @param completionStage a completion stage
+   * @param context         a Vert.x context to dispatch to
+   * @param <T>             the result type
+   * @return a Vert.x future that resolves when {@code completionStage} resolves
+   */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static <T> Future<T> from(CompletionStage<T> completionStage, Context context) {
     Promise<T> promise = ((ContextInternal) context).promise();
