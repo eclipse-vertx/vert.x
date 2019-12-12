@@ -1506,23 +1506,51 @@ public class FutureTest extends VertxTestBase {
   @Test
   public void testToCompletionStageTrampolining() {
     waitFor(2);
-    Thread thread = Thread.currentThread();
+    Thread mainThread = Thread.currentThread();
     Future<String> success = Future.succeededFuture("Yo");
     success.toCompletionStage()
-      .thenAccept(s -> {
-        assertEquals("Yo", s);
-        assertSame(thread, Thread.currentThread());
+      .thenAccept(str -> {
+        assertEquals("Yo", str);
+        assertSame(mainThread, Thread.currentThread());
         complete();
       });
     Future<String> failed = Future.failedFuture(new RuntimeException("Woops"));
     failed.toCompletionStage()
-      .whenComplete((s, err) -> {
-        assertNull(s);
+      .whenComplete((str, err) -> {
+        assertNull(str);
         assertTrue(err instanceof RuntimeException);
         assertEquals("Woops", err.getMessage());
-        assertSame(thread, Thread.currentThread());
+        assertSame(mainThread, Thread.currentThread());
         complete();
       });
+    await(5, SECONDS);
+  }
+
+  @Test
+  public void testToCompletionStageDelayedCompletion() {
+    waitFor(2);
+    Thread mainThread = Thread.currentThread();
+    Promise<String> willSucceed = Promise.promise();
+    Promise<String> willFail = Promise.promise();
+
+    willSucceed.future().toCompletionStage().whenComplete((str, err) -> {
+      assertEquals("Yo", str);
+      assertNull(err);
+      assertNotSame(mainThread, Thread.currentThread());
+      complete();
+    });
+
+    willFail.future().toCompletionStage().whenComplete((str, err) -> {
+      assertNull(str);
+      assertTrue(err instanceof RuntimeException);
+      assertEquals("Woops", err.getMessage());
+      assertNotSame(mainThread, Thread.currentThread());
+      complete();
+    });
+
+    disableThreadChecks();
+    new Thread(() -> willSucceed.complete("Yo")).start();
+    new Thread(() -> willFail.fail(new RuntimeException("Woops"))).start();
     await(5, SECONDS);
   }
 }
