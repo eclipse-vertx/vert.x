@@ -1587,4 +1587,45 @@ public class FutureTest extends VertxTestBase {
 
     await(5, SECONDS);
   }
+
+  @Test
+  public void testFromCompletionStageWithContext() {
+    waitFor(2);
+    Context context = vertx.getOrCreateContext();
+
+    AtomicReference<Thread> successSupplierThread = new AtomicReference<>();
+    CompletableFuture<String> willSucceed = new CompletableFuture<>();
+
+    AtomicReference<Thread> failureSupplierThread = new AtomicReference<>();
+    CompletableFuture<String> willFail = new CompletableFuture<>();
+
+    Future.from(willSucceed, context).onSuccess(str -> {
+      assertEquals("Ok", str);
+      assertNotSame(successSupplierThread.get(), Thread.currentThread());
+      assertEquals(context, vertx.getOrCreateContext());
+      assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
+      complete();
+    });
+
+    Future.from(willFail, context).onFailure(err -> {
+      assertTrue(err instanceof RuntimeException);
+      assertEquals("Woops", err.getMessage());
+      assertNotSame(failureSupplierThread.get(), Thread.currentThread());
+      assertEquals(context, vertx.getOrCreateContext());
+      assertTrue(Thread.currentThread().getName().startsWith("vert.x-eventloop-thread"));
+      complete();
+    });
+
+    ForkJoinPool fjp = ForkJoinPool.commonPool();
+    fjp.execute(() -> {
+      successSupplierThread.set(Thread.currentThread());
+      willSucceed.complete("Ok");
+    });
+    fjp.execute(() -> {
+      failureSupplierThread.set(Thread.currentThread());
+      willFail.completeExceptionally(new RuntimeException("Woops"));
+    });
+
+    await(5, SECONDS);
+  }
 }
