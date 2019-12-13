@@ -12,6 +12,7 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.json.jackson.JacksonCodec;
@@ -22,6 +23,8 @@ import org.junit.runners.Parameterized;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
@@ -393,6 +396,24 @@ public class JsonCodecTest {
     assertDecodeValue(Buffer.buffer("[0,1,2]"), Arrays.asList(0, 1, 2), LIST_TYPE_REF);
     assertDecodeValue(Buffer.buffer("true"), true, BOOLEAN_TYPE_REF);
     assertDecodeValue(Buffer.buffer("false"), false, BOOLEAN_TYPE_REF);
+  }
+
+  @Test
+  public void testEnumValue() {
+    // just a random enum
+    Buffer json = mapper.toBuffer(HttpMethod.CONNECT);
+    assertNotNull(json);
+    assertEquals("\"CONNECT\"", json.toString());
+  }
+
+  @Test
+  public void testBigNumberValues() {
+    Buffer json = mapper.toBuffer(new BigDecimal("124567890124567890.09876543210987654321"));
+    assertNotNull(json);
+    assertEquals("124567890124567890.09876543210987654321", json.toString());
+    Buffer json2 = mapper.toBuffer(new BigInteger("12456789009876543211245678900987654321"));
+    assertNotNull(json2);
+    assertEquals("12456789009876543211245678900987654321", json2.toString());
   }
 
   private <T> void assertDecodeValue(Buffer buffer, T expected, TypeReference<T> ref) {
