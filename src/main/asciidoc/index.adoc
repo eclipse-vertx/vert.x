@@ -361,6 +361,31 @@ run the given function, that returns a future. When this returned future complet
 In this second case, the {@link io.vertx.core.Handler} should complete the `next` future to report its success or
 failure.
 
+=== CompletionStage interoperability
+
+The Vert.x `Future` API offers compatibility _from_ and _to_ `CompletionStage` which is the JDK interface for composable
+asynchronous operations.
+
+We can go from a Vert.x `Future` to a `CompletionStage` using the {@link io.vertx.core.Future#toCompletionStage} method, as in:
+
+[source,$lang]
+----
+{@link examples.CompletionStageInteropExamples#toCS}
+----
+
+We can conversely go from a `CompletionStage` to Vert.x `Future` using {@link io.vertx.core.Future#from}.
+There are 2 variants:
+
+. the first variant takes just a `CompletionStage` and calls the `Future` methods from the thread that resolves the `CompletionStage` instance, and
+. the second variant takes an extra {@link io.vertx.core.Context} parameter to call the `Future` methods on a Vert.x context.
+
+Here is an example of going from a `CompletionStage` to a Vert.x `Future` and dispatching on a context:
+
+[source,$lang]
+----
+{@link examples.CompletionStageInteropExamples#fromCS}
+----
+
 == Verticles
 
 Vert.x comes with a simple, scalable, _actor-like_ deployment and concurrency model out of the box that
