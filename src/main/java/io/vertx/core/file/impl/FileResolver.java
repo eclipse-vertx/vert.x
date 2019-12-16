@@ -68,10 +68,6 @@ public class FileResolver {
     this(new FileSystemOptions());
   }
 
-  public FileResolver(boolean enableCaching) {
-    this(new FileSystemOptions().setFileCachingEnabled(enableCaching));
-  }
-
   public FileResolver(FileSystemOptions fileSystemOptions) {
     this.enableCaching = fileSystemOptions.isFileCachingEnabled();
     this.enableCpResolving = fileSystemOptions.isClassPathResolvingEnabled();

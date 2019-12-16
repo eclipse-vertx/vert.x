@@ -13,8 +13,6 @@
 package io.vertx.core.net.impl;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -25,6 +23,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Enumeration;
 
+import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
 
@@ -36,9 +35,7 @@ import io.vertx.core.net.PemKeyCertOptions;
  * Verifies behavior of {@link KeyStoreHelper}.
  *
  */
-public class KeyStoreHelperTest {
-
-  private static final VertxInternal vertx = (VertxInternal) VertxInternal.factory.vertx();
+public class KeyStoreHelperTest extends VertxTestBase {
 
   /**
    * Verifies that the key store helper can read a PKCS#8 encoded RSA private key
@@ -48,12 +45,10 @@ public class KeyStoreHelperTest {
    */
   @Test
   public void testKeyStoreHelperSupportsRSAPrivateKeys() throws Exception {
-
-    VertxInternal vertxInternal = (VertxInternal) VertxInternal.factory.vertx();
     PemKeyCertOptions options = new PemKeyCertOptions()
             .addKeyPath("target/test-classes/tls/server-key.pem")
             .addCertPath("target/test-classes/tls/server-cert.pem");
-    KeyStoreHelper helper = KeyStoreHelper.create(vertxInternal, options);
+    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, options);
     assertKeyType(helper.store(), RSAPrivateKey.class);
   }
 
@@ -70,7 +65,7 @@ public class KeyStoreHelperTest {
     PemKeyCertOptions options = new PemKeyCertOptions()
             .addKeyPath("target/test-classes/tls/server-key-ec.pem")
             .addCertPath("target/test-classes/tls/server-cert-ec.pem");
-    KeyStoreHelper helper = KeyStoreHelper.create(vertx, options);
+    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, options);
     assertKeyType(helper.store(), ECPrivateKey.class);
   }
 

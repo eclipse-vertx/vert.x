@@ -34,6 +34,19 @@ import java.util.concurrent.Executor;
 public interface ContextInternal extends Context, Executor {
 
   /**
+   * @return the current context
+   */
+  static ContextInternal current() {
+    Thread current = Thread.currentThread();
+    if (current instanceof VertxThread) {
+      return ((VertxThread) current).context();
+    } else if (current instanceof FastThreadLocalThread) {
+      return AbstractContext.holderLocal.get().ctx;
+    }
+    return null;
+  }
+
+  /**
    * Return the Netty EventLoop used by this Context. This can be used to integrate
    * a Netty Server with a Vert.x runtime, specially the Context part.
    *

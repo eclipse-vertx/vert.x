@@ -18,6 +18,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxFactory;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.core.net.impl.transport.Transport;
@@ -48,7 +49,7 @@ public class TransportTest extends VertxTestBase {
 
   @Override
   protected Vertx vertx(VertxOptions options) {
-    return Vertx.factory.vertx(options, transport);
+    return new VertxFactory(options).transport(transport).vertx();
   }
 
   @Test

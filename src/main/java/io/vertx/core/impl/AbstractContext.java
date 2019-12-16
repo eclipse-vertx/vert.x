@@ -38,16 +38,6 @@ abstract class AbstractContext implements ContextInternal {
   static final String THREAD_CHECKS_PROP_NAME = "vertx.threadChecks";
   static final boolean THREAD_CHECKS = Boolean.getBoolean(THREAD_CHECKS_PROP_NAME);
 
-  static Context context() {
-    Thread current = Thread.currentThread();
-    if (current instanceof VertxThread) {
-      return ((VertxThread) current).context();
-    } else if (current instanceof FastThreadLocalThread) {
-      return holderLocal.get().ctx;
-    }
-    return null;
-  }
-
   static class Holder implements BlockedThreadChecker.Task {
 
     BlockedThreadChecker checker;
@@ -72,7 +62,7 @@ abstract class AbstractContext implements ContextInternal {
     }
   }
 
-  private static FastThreadLocal<Holder> holderLocal = new FastThreadLocal<Holder>() {
+  final static FastThreadLocal<Holder> holderLocal = new FastThreadLocal<Holder>() {
     @Override
     protected Holder initialValue() {
       return new Holder();

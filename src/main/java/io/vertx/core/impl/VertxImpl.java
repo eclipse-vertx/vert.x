@@ -53,8 +53,6 @@ import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -90,17 +88,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
 
-  static VertxImpl vertx(VertxOptions options, Transport transport) {
-    VertxImpl vertx = new VertxImpl(options, transport);
-    vertx.init();
-    return vertx;
-  }
-
-  static void clusteredVertx(VertxOptions options, Transport transport, Handler<AsyncResult<Vertx>> resultHandler) {
-    VertxImpl vertx = new VertxImpl(options, transport);
-    vertx.joinCluster(options, resultHandler);
-  }
-
   private final FileSystem fileSystem = getFileSystem();
   private final SharedData sharedData;
   private final VertxMetrics metrics;
@@ -134,7 +121,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Transport transport;
   final VertxTracer tracer;
 
-  private VertxImpl(VertxOptions options, Transport transport) {
+  VertxImpl(VertxOptions options, ClusterManager clusterManager, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -149,8 +136,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
-
-    metrics = initialiseMetrics(options);
 
     int workerPoolSize = options.getWorkerPoolSize();
     ExecutorService workerExec = new ThreadPoolExecutor(workerPoolSize, workerPoolSize,
@@ -167,31 +152,27 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     maxWorkerExecTime = options.getMaxWorkerExecuteTime();
     maxWorkerExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
 
+    this.metrics = metrics;
     this.transport = transport;
-    this.fileResolver = new FileResolver(options.getFileSystemOptions());
+    this.fileResolver = fileResolver;
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
-    this.tracer = initializeTracer(options);
-    if (options.getEventBusOptions().isClustered()) {
-      this.clusterManager = getClusterManager(options);
-      this.eventBus = new ClusteredEventBus(this, options, clusterManager);
-    } else {
-      this.clusterManager = null;
-      this.eventBus = new EventBusImpl(this);
-    }
+    this.tracer = tracer;
+    this.clusterManager = clusterManager;
+    this.eventBus = clusterManager != null ? new ClusteredEventBus(this, options, clusterManager) : new EventBusImpl(this);
     this.sharedData = new SharedDataImpl(this, clusterManager);
     this.deploymentManager = new DeploymentManager(this);
     this.verticleManager = new VerticleManager(this, deploymentManager);
   }
 
-  private void init() {
+  void init() {
     eventBus.start(ar -> {});
     if (metrics != null) {
       metrics.vertxCreated(this);
     }
   }
 
-  private void joinCluster(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+  void joinCluster(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     clusterManager.setVertx(this);
     clusterManager.join(ar -> {
       if (ar.succeeded()) {
@@ -472,64 +453,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new DnsClientImpl(this, options);
   }
 
-  private VertxMetrics initialiseMetrics(VertxOptions options) {
-    if (options.getMetricsOptions() != null && options.getMetricsOptions().isEnabled()) {
-      VertxMetricsFactory factory = options.getMetricsOptions().getFactory();
-      if (factory == null) {
-        factory = ServiceHelper.loadFactoryOrNull(VertxMetricsFactory.class);
-        if (factory == null) {
-          log.warn("Metrics has been set to enabled but no VertxMetricsFactory found on classpath");
-        }
-      }
-      if (factory != null) {
-        VertxMetrics metrics = factory.metrics(options);
-        Objects.requireNonNull(metrics, "The metric instance created from " + factory + " cannot be null");
-        return metrics;
-      }
-    }
-    return null;
-  }
-
-  private VertxTracer initializeTracer(VertxOptions options) {
-    if (options.getTracingOptions() != null && options.getTracingOptions().isEnabled()) {
-      VertxTracerFactory factory = options.getTracingOptions().getFactory();
-      if (factory == null) {
-        factory = ServiceHelper.loadFactoryOrNull(VertxTracerFactory.class);
-        if (factory == null) {
-          log.warn("Metrics has been set to enabled but no TracerFactory found on classpath");
-        }
-      }
-      if (factory != null) {
-        VertxTracer tracer = factory.tracer(options.getTracingOptions());
-        Objects.requireNonNull(tracer, "The tracer instance created from " + factory + " cannot be null");
-        return tracer;
-      }
-    }
-    return null;
-  }
-
-  private ClusterManager getClusterManager(VertxOptions options) {
-    ClusterManager mgr = options.getClusterManager();
-    if (mgr == null) {
-      String clusterManagerClassName = System.getProperty("vertx.cluster.managerClass");
-      if (clusterManagerClassName != null) {
-        // We allow specify a sys prop for the cluster manager factory which overrides ServiceLoader
-        try {
-          Class<?> clazz = Class.forName(clusterManagerClassName);
-          mgr = (ClusterManager) clazz.newInstance();
-        } catch (Exception e) {
-          throw new IllegalStateException("Failed to instantiate " + clusterManagerClassName, e);
-        }
-      } else {
-        mgr = ServiceHelper.loadFactoryOrNull(ClusterManager.class);
-        if (mgr == null) {
-          throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
-        }
-      }
-    }
-    return mgr;
-  }
-
   private long scheduleTimeout(ContextInternal context, Handler<Long> handler, long delay, boolean periodic) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
@@ -542,7 +465,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public ContextInternal getContext() {
-    ContextInternal context = (ContextInternal) AbstractContext.context();
+    ContextInternal context = ContextInternal.current();
     if (context != null && context.owner() == this) {
       return context;
     }
