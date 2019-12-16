@@ -35,6 +35,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -270,7 +272,7 @@ public class JacksonCodec implements JsonCodec {
         generator.writeEndObject();
       } else if (json instanceof List) {
         generator.writeStartArray();
-        for (Object item : (List)json) {
+        for (Object item : (List<?>) json) {
           encodeJson(item, generator);
         }
         generator.writeEndArray();
@@ -287,15 +289,24 @@ public class JacksonCodec implements JsonCodec {
           generator.writeNumber((Float) json);
         } else if (json instanceof Double) {
           generator.writeNumber((Double) json);
+        } else if (json instanceof BigInteger) {
+          generator.writeNumber((BigInteger) json);
+        } else if (json instanceof BigDecimal) {
+          generator.writeNumber((BigDecimal) json);
         } else {
           throw new UnsupportedOperationException();
         }
       } else if (json instanceof Boolean) {
         generator.writeBoolean((Boolean)json);
       } else if (json instanceof Instant) {
+        // RFC-7493
         generator.writeString((ISO_INSTANT.format((Instant)json)));
       } else if (json instanceof byte[]) {
+        // RFC-7493
         generator.writeString(BASE64_ENCODER.encodeToString((byte[]) json));
+      } else if (json instanceof Enum) {
+        // vert.x extra (non standard but allowed conversion)
+        generator.writeString(((Enum<?>) json).name());
       } else if (json == null) {
         generator.writeNull();
       } else {
