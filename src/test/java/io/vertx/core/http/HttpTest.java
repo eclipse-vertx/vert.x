@@ -3508,12 +3508,12 @@ public abstract class HttpTest extends HttpTestBase {
   public void testOtherMethodRequest() {
     server.requestHandler(r -> {
       assertEquals(HttpMethod.OTHER, r.method());
-      assertEquals("COPY", r.rawMethod());
+      assertEquals("ZAP", r.rawMethod());
       r.response().end();
     }).listen(testAddress, onSuccess(s -> {
       client.request(HttpMethod.OTHER, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
         testComplete();
-      })).setRawMethod("COPY").end();
+      })).setRawMethod("ZAP").end();
     }));
     await();
   }

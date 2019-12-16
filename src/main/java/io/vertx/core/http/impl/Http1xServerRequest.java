@@ -209,11 +209,7 @@ public class Http1xServerRequest implements HttpServerRequest {
   public io.vertx.core.http.HttpMethod method() {
     if (method == null) {
       String sMethod = request.method().toString();
-      try {
-        method = io.vertx.core.http.HttpMethod.valueOf(sMethod);
-      } catch (IllegalArgumentException e) {
-        method = io.vertx.core.http.HttpMethod.OTHER;
-      }
+      method = io.vertx.core.http.HttpMethod.fromHTTPProtocol(sMethod);
     }
     return method;
   }

@@ -166,7 +166,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       Handler<HttpClientRequest> pushHandler = stream.pushHandler();
       if (pushHandler != null) {
         String rawMethod = headers.method().toString();
-        HttpMethod method = HttpUtils.toVertxMethod(rawMethod);
+        HttpMethod method = HttpMethod.fromHTTPProtocol(rawMethod);
         String uri = headers.path().toString();
         String authority = headers.authority() != null ? headers.authority().toString() : null;
         MultiMap headersMap = new Http2HeadersAdaptor(headers);

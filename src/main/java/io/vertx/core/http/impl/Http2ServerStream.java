@@ -62,7 +62,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     this.host = host;
     this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;
     this.rawMethod = headers.get(":method") != null ? headers.get(":method").toString() : null;
-    this.method = HttpUtils.toVertxMethod(rawMethod);
+    this.method = HttpMethod.fromHTTPProtocol(rawMethod);
     this.response = new Http2ServerResponseImpl(conn, this, false, contentEncoding, host);
   }
 

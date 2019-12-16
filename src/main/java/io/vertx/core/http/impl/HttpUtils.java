@@ -696,6 +696,32 @@ public final class HttpUtils {
       case PATCH: {
         return HttpMethod.PATCH;
       }
+      case PROPFIND:
+      case PROPPATCH:
+      case MKCOL:
+      case COPY:
+      case MOVE:
+      case LOCK:
+      case UNLOCK:
+      case MKCALENDAR:
+      case VERSION_CONTROL:
+      case REPORT:
+      case CHECKOUT:
+      case CHECKIN:
+      case UNCHECKOUT:
+      case MKWORKSPACE:
+      case UPDATE:
+      case LABEL:
+      case MERGE:
+      case BASELINE_CONTROL:
+      case MKACTIVITY:
+      case ORDERPATCH:
+      case ACL:
+      case SEARCH:
+        // use .toString() instead of .name() because methods can contain
+        // characters that would make then invalid identifiers in java
+        return HttpMethod.valueOf(method.toString());
+      case OTHER:
       default: {
         return HttpMethod.valueOf(rawMethod);
       }
@@ -712,14 +738,6 @@ public final class HttpUtils {
       }
       default:
         throw new IllegalArgumentException("Unsupported HTTP version: " + version);
-    }
-  }
-
-  static io.vertx.core.http.HttpMethod toVertxMethod(String method) {
-    try {
-      return io.vertx.core.http.HttpMethod.valueOf(method);
-    } catch (IllegalArgumentException e) {
-      return io.vertx.core.http.HttpMethod.OTHER;
     }
   }
 

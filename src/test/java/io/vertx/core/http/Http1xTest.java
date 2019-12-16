@@ -4668,4 +4668,32 @@ public class Http1xTest extends HttpTest {
     }
     await();
   }
+
+  @Test
+  public void testExtendedVerbs() {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      assertEquals(HttpMethod.CHECKIN, req.method());
+      resp.end();
+    }).listen(testAddress, onSuccess(server -> {
+      client.request(HttpMethod.CHECKIN, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(res -> {
+        testComplete();
+      })).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testExtendedVerbsWithNonIdentifierCharacters() {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      assertEquals(HttpMethod.BASELINE_CONTROL, req.method());
+      resp.end();
+    }).listen(testAddress, onSuccess(server -> {
+      client.request(HttpMethod.BASELINE_CONTROL, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(res -> {
+        testComplete();
+      })).end();
+    }));
+    await();
+  }
 }
