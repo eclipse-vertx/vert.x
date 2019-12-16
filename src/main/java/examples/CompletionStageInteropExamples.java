@@ -14,6 +14,7 @@ package examples;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -35,8 +36,16 @@ public class CompletionStageInteropExamples {
     });
   }
 
+  private Future<String> storeInDb(String key, String value) {
+    return Future.succeededFuture("Yo");
+  }
+
   public void fromCS(Vertx vertx, CompletionStage<String> completionStage) {
     Future.from(completionStage, vertx.getOrCreateContext())
+      .flatMap(str -> {
+        String key = UUID.randomUUID().toString();
+        return storeInDb(key, str);
+      })
       .onSuccess(str -> {
         System.out.println("We have a result: " + str);
       })
