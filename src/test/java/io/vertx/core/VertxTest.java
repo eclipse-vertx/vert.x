@@ -100,4 +100,15 @@ public class VertxTest extends AsyncTestBase {
     });
     await();
   }
+
+  @Test
+  public void testCloseFuture() throws Exception {
+    Vertx vertx = Vertx.vertx();
+    Future<Void> fut = vertx.close();
+    // Check that we can get a callback on the future as thread pools are closed by the operation
+    fut.onComplete(onSuccess(v -> {
+      testComplete();
+    }));
+    await();
+  }
 }

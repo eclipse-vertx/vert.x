@@ -478,7 +478,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public Future<Void> close() {
-    Promise<Void> promise = getOrCreateContext().promise();
+    // Create this promise purposely without a context because the close operation will close thread pools
+    Promise<Void> promise = Promise.promise();
     close(promise);
     return promise.future();
   }
