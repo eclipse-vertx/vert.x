@@ -25,7 +25,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.http.WebsocketRejectedException;
+import io.vertx.core.http.UpgradeRejectedException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -73,7 +73,7 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
           pipeline.remove(WebSocketHandshakeInboundHandler.this);
           ChannelHandler handler = pipeline.get(HttpContentDecompressor.class);
           if (handler != null) {
-            // remove decompressor as its not needed anymore once connection was upgraded to websockets
+            // remove decompressor as its not needed anymore once connection was upgraded to WebSocket
             ctx.pipeline().remove(handler);
           }
           Future<HeadersAdaptor> fut = handshakeComplete(response);
@@ -84,8 +84,10 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
   }
 
   private Future<HeadersAdaptor> handshakeComplete(FullHttpResponse response) {
-    if (response.status().code() != 101) {
-      return Future.failedFuture(new WebsocketRejectedException(response.status().code()));
+    int sc = response.status().code();
+    if (sc != 101) {
+      UpgradeRejectedException failure = new UpgradeRejectedException("WebSocket connection attempt returned HTTP status code " + sc, sc);
+      return Future.failedFuture(failure);
     } else {
       try {
         handshaker.finishHandshake(chctx.channel(), response);

@@ -506,7 +506,7 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testServerWebSocket() {
     server = vertx.createHttpServer();
-    server.websocketHandler(ws -> {
+    server.webSocketHandler(ws -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       WebSocketMetric metric = metrics.getMetric(ws);
       assertNotNull(metric);
@@ -562,7 +562,7 @@ public class MetricsTest extends VertxTestBase {
   @Test
   public void testWebSocket() {
     server = vertx.createHttpServer();
-    server.websocketHandler(ws -> {
+    server.webSocketHandler(ws -> {
       ws.write(Buffer.buffer("wibble"));
       ws.handler(buff -> ws.close());
     });

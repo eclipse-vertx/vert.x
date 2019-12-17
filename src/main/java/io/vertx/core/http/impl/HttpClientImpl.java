@@ -98,7 +98,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final VertxInternal vertx;
   private final HttpClientOptions options;
   private final ContextInternal context;
-  private final ConnectionManager websocketCM; // The queue manager for websockets
+  private final ConnectionManager webSocketCM; // The queue manager for WebSockets
   private final ConnectionManager httpCM; // The queue manager for requests
   private final Closeable closeHook;
   private final ProxyType proxyType;
@@ -145,12 +145,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
     long maxWeight = options.getMaxPoolSize() * options.getHttp2MaxPoolSize();
-    websocketCM = new ConnectionManager(this, metrics, HttpVersion.HTTP_1_1, maxWeight, options.getMaxWaitQueueSize());
+    webSocketCM = new ConnectionManager(this, metrics, HttpVersion.HTTP_1_1, maxWeight, options.getMaxWaitQueueSize());
 
     httpCM = new ConnectionManager(this, metrics, options.getProtocolVersion(), maxWeight, options.getMaxWaitQueueSize());
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
     httpCM.start();
-    websocketCM.start();
+    webSocketCM.start();
   }
 
   public ContextInternal context() {
@@ -164,14 +164,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public void webSocket(WebSocketConnectOptions connectOptions, Handler<AsyncResult<WebSocket>> handler) {
     SocketAddress addr = SocketAddress.inetSocketAddress(connectOptions.getPort(), connectOptions.getHost());
-    websocketCM.getConnection(
+    webSocketCM.getConnection(
       context,
       addr,
       connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(),
       addr, ar -> {
         if (ar.succeeded()) {
           Http1xClientConnection conn = (Http1xClientConnection) ar.result();
-          conn.toWebSocket(connectOptions.getURI(), connectOptions.getHeaders(), connectOptions.getVersion(), connectOptions.getSubProtocols(), HttpClientImpl.this.options.getMaxWebsocketFrameSize(), handler);
+          conn.toWebSocket(connectOptions.getURI(), connectOptions.getHeaders(), connectOptions.getVersion(), connectOptions.getSubProtocols(), HttpClientImpl.this.options.getMaxWebSocketFrameSize(), handler);
         } else {
           context.schedule(v -> handler.handle(Future.failedFuture(ar.cause())));
         }
@@ -678,7 +678,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     if (context.deploymentID() != null) {
       context.removeCloseHook(closeHook);
     }
-    websocketCM.close();
+    webSocketCM.close();
     httpCM.close();
     if (metrics != null) {
       metrics.close();

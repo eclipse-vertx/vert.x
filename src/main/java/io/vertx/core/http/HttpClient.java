@@ -1005,7 +1005,7 @@ public interface HttpClient extends Measured {
    * @param port  the port
    * @param host  the host
    * @param requestURI  the relative URI
-   * @param handler  handler that will be called with the websocket when connected
+   * @param handler  handler that will be called with the WebSocket when connected
    */
   void webSocket(int port, String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
@@ -1018,7 +1018,7 @@ public interface HttpClient extends Measured {
    * Connect a WebSocket to the host and relative request URI and default port
    * @param host  the host
    * @param requestURI  the relative URI
-   * @param handler  handler that will be called with the websocket when connected
+   * @param handler  handler that will be called with the WebSocket when connected
    */
   void webSocket(String host, String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
@@ -1030,7 +1030,7 @@ public interface HttpClient extends Measured {
   /**
    * Connect a WebSocket at the relative request URI using the default host and port
    * @param requestURI  the relative URI
-   * @param handler  handler that will be called with the websocket when connected
+   * @param handler  handler that will be called with the WebSocket when connected
    */
   void webSocket(String requestURI, Handler<AsyncResult<WebSocket>> handler);
 
@@ -1053,13 +1053,13 @@ public interface HttpClient extends Measured {
 
   /**
    * Connect a WebSocket with the specified absolute url, with the specified headers, using
-   * the specified version of WebSockets, and the specified websocket sub protocols.
+   * the specified version of WebSockets, and the specified WebSocket sub protocols.
    *
    * @param url            the absolute url
    * @param headers        the headers
-   * @param version        the websocket version
+   * @param version        the WebSocket version
    * @param subProtocols   the subprotocols to use
-   * @param handler handler that will be called if websocket connection fails
+   * @param handler handler that will be called if WebSocket connection fails
    */
   void webSocketAbs(String url, MultiMap headers, WebsocketVersion version, List<String> subProtocols, Handler<AsyncResult<WebSocket>> handler);
 

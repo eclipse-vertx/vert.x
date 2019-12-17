@@ -29,7 +29,7 @@ import javax.security.cert.X509Certificate;
 /**
  * Represents a server side WebSocket.
  * <p>
- * Instances of this class are passed into a {@link io.vertx.core.http.HttpServer#websocketHandler} or provided
+ * Instances of this class are passed into a {@link io.vertx.core.http.HttpServer#webSocketHandler} or provided
  * when a WebSocket handshake is manually {@link HttpServerRequest#upgrade}ed.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>

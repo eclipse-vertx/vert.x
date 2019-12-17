@@ -278,7 +278,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       return null;
     }
     webSocket = new ServerWebSocketImpl(vertx.getOrCreateContext(), this, handshaker.version() != WebSocketVersion.V00,
-      request, handshaker, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
+      request, handshaker, options.getMaxWebSocketFrameSize(), options.getMaxWebSocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
       webSocket.setMetric(metrics.connected(metric(), request.metric(), webSocket));
     }
@@ -313,11 +313,16 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       return null;
     }
 
+    String subp = null;
+    if (options.getWebSocketSubProtocols() != null) {
+      subp = String.join(",", options.getWebSocketSubProtocols());
+    }
+
     WebSocketServerHandshakerFactory factory =
       new WebSocketServerHandshakerFactory(wsURL,
-        options.getWebsocketSubProtocols(),
-        options.getPerMessageWebsocketCompressionSupported() || options.getPerFrameWebsocketCompressionSupported(),
-        options.getMaxWebsocketFrameSize(), options.isAcceptUnmaskedFrames());
+        subp,
+        options.getPerMessageWebSocketCompressionSupported() || options.getPerFrameWebSocketCompressionSupported(),
+        options.getMaxWebSocketFrameSize(), options.isAcceptUnmaskedFrames());
     WebSocketServerHandshaker shake = factory.newHandshaker(request.nettyRequest());
     if (shake == null) {
       // See WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);

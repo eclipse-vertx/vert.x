@@ -175,20 +175,20 @@ public class MetricsContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testHttpServerWebsocketEventLoop() throws Exception {
-    testHttpServerWebsocket(eventLoopContextFactory);
+  public void testHttpServerWebSocketEventLoop() throws Exception {
+    testHttpServerWebSocket(eventLoopContextFactory);
   }
 
   @Test
-  public void testHttpServerWebsocketWorker() throws Exception {
-    testHttpServerWebsocket(workerContextFactory);
+  public void testHttpServerWebSocketWorker() throws Exception {
+    testHttpServerWebSocket(workerContextFactory);
   }
 
-  private void testHttpServerWebsocket(Function<Vertx, Context> contextFactory) throws Exception {
+  private void testHttpServerWebSocket(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
-    AtomicBoolean websocketConnected = new AtomicBoolean();
-    AtomicBoolean websocketDisconnected = new AtomicBoolean();
+    AtomicBoolean webSocketConnected = new AtomicBoolean();
+    AtomicBoolean webSocketDisconnected = new AtomicBoolean();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
     AtomicBoolean socketDisconnectedCalled = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
@@ -200,14 +200,14 @@ public class MetricsContextTest extends VertxTestBase {
         return new DummyHttpServerMetrics() {
           @Override
           public Void connected(Void socketMetric, Void requestMetric, ServerWebSocket serverWebSocket) {
-            websocketConnected.set(true);
+            webSocketConnected.set(true);
             // FIXME
             // assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void serverWebSocketMetric) {
-            websocketDisconnected.set(true);
+            webSocketDisconnected.set(true);
             assertTrue(Context.isOnEventLoopThread());
           }
           @Override
@@ -242,7 +242,7 @@ public class MetricsContextTest extends VertxTestBase {
     Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     Context ctx = contextFactory.apply(vertx);
     ctx.runOnContext(v1 -> {
-      HttpServer server = vertx.createHttpServer().websocketHandler(ws -> {
+      HttpServer server = vertx.createHttpServer().webSocketHandler(ws -> {
         ws.handler(buf -> {
           ws.write(Buffer.buffer("bye"));
         });
@@ -259,8 +259,8 @@ public class MetricsContextTest extends VertxTestBase {
       ws.handler(buf -> {
         ws.closeHandler(v -> {
           vertx.close(v4 -> {
-            assertTrue(websocketConnected.get());
-            assertTrue(websocketDisconnected.get());
+            assertTrue(webSocketConnected.get());
+            assertTrue(webSocketDisconnected.get());
             assertTrue(bytesReadCalled.get());
             assertTrue(bytesWrittenCalled.get());
             assertTrue(socketConnectedCalled.get());
@@ -380,19 +380,19 @@ public class MetricsContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testHttpClientWebsocketEventLoop() throws Exception {
-    testHttpClientWebsocket(eventLoopContextFactory);
+  public void testHttpClientWebSocketEventLoop() throws Exception {
+    testHttpClientWebSocket(eventLoopContextFactory);
   }
 
   // FIXME!! This test intermittently fails
   @Test
-  public void testHttpClientWebsocketWorker() throws Exception {
-    testHttpClientWebsocket(workerContextFactory);
+  public void testHttpClientWebSocketWorker() throws Exception {
+    testHttpClientWebSocket(workerContextFactory);
   }
 
-  private void testHttpClientWebsocket(Function<Vertx, Context> contextFactory) throws Exception {
-    AtomicBoolean websocketConnected = new AtomicBoolean();
-    AtomicBoolean websocketDisconnected = new AtomicBoolean();
+  private void testHttpClientWebSocket(Function<Vertx, Context> contextFactory) throws Exception {
+    AtomicBoolean webSocketConnected = new AtomicBoolean();
+    AtomicBoolean webSocketDisconnected = new AtomicBoolean();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
     AtomicBoolean socketDisconnectedCalled = new AtomicBoolean();
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
@@ -404,13 +404,13 @@ public class MetricsContextTest extends VertxTestBase {
         return new DummyHttpClientMetrics() {
           @Override
           public Void connected(Void endpointMetric, Void socketMetric, WebSocket webSocket) {
-            websocketConnected.set(true);
+            webSocketConnected.set(true);
             assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void webSocketMetric) {
-            websocketDisconnected.set(true);
+            webSocketDisconnected.set(true);
           }
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -442,7 +442,7 @@ public class MetricsContextTest extends VertxTestBase {
     };
     Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     HttpServer server = vertx.createHttpServer();
-    server.websocketHandler(ws -> {
+    server.webSocketHandler(ws -> {
       ws.handler(buf -> {
         ws.write(Buffer.buffer("bye"));
       });
@@ -461,8 +461,8 @@ public class MetricsContextTest extends VertxTestBase {
             executeInVanillaThread(() -> {
               client.close();
               vertx.close(v3 -> {
-                assertTrue(websocketConnected.get());
-                assertTrue(websocketDisconnected.get());
+                assertTrue(webSocketConnected.get());
+                assertTrue(webSocketDisconnected.get());
                 assertTrue(socketConnectedCalled.get());
                 assertTrue(socketDisconnectedCalled.get());
                 assertTrue(bytesReadCalled.get());

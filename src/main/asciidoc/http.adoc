@@ -663,7 +663,7 @@ the pushed response can be written after.
 
 You can set an {@link io.vertx.core.http.HttpServer#exceptionHandler(io.vertx.core.Handler)} to receive any
 exceptions that happens before the connection is passed to the {@link io.vertx.core.http.HttpServer#requestHandler(io.vertx.core.Handler)}
-or to the {@link io.vertx.core.http.HttpServer#websocketHandler(io.vertx.core.Handler)}, e.g during the TLS handshake.
+or to the {@link io.vertx.core.http.HttpServer#webSocketHandler(io.vertx.core.Handler)}, e.g during the TLS handshake.
 
 === HTTP Compression
 
@@ -1604,7 +1604,7 @@ There are two ways of handling WebSockets on the server side.
 
 ===== WebSocket handler
 
-The first way involves providing a {@link io.vertx.core.http.HttpServer#websocketHandler(io.vertx.core.Handler)}
+The first way involves providing a {@link io.vertx.core.http.HttpServer#webSocketHandler(io.vertx.core.Handler)}
 on the server instance.
 
 When a WebSocket connection is made to the server, the handler will be called, passing in an instance of
@@ -1672,8 +1672,8 @@ If you wish to write a single WebSocket message to the WebSocket you can do this
 {@link examples.HTTPExamples#example55}
 ----
 
-If the WebSocket message is larger than the maximum websocket frame size as configured with
-{@link io.vertx.core.http.HttpClientOptions#setMaxWebsocketFrameSize(int)}
+If the WebSocket message is larger than the maximum WebSocket frame size as configured with
+{@link io.vertx.core.http.HttpClientOptions#setMaxWebSocketFrameSize(int)}
 then Vert.x will split it into multiple WebSocket frames before sending it on the wire.
 
 ==== Writing frames to WebSockets
@@ -1696,7 +1696,7 @@ Here's an example for binary frames:
 {@link examples.HTTPExamples#example56}
 ----
 
-In many cases you just want to send a websocket message that consists of a single final frame, so we provide a couple
+In many cases you just want to send a WebSocket message that consists of a single final frame, so we provide a couple
 of shortcut methods to do that with {@link io.vertx.core.http.WebSocket#writeFinalBinaryFrame(io.vertx.core.buffer.Buffer)}
 and {@link io.vertx.core.http.WebSocket#writeFinalTextFrame(String)}.
 

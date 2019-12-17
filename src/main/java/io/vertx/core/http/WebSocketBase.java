@@ -85,7 +85,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Returns the WebSocket sub protocol selected by the WebSocket handshake.
    * <p/>
-   * On the server, the value will be {@code null} when the handler receives the websocket callback as the
+   * On the server, the value will be {@code null} when the handler receives the WebSocket callback as the
    * handshake will not be completed yet.
    */
   String subProtocol();

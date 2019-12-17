@@ -706,9 +706,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
 
       ChannelPipeline p = chctx.channel().pipeline();
-      ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebsocketExtensionHandshakers(client.getOptions());
+      ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebSocketExtensionHandshakers(client.getOptions());
       if (!extensionHandshakers.isEmpty()) {
-        p.addBefore("handler", "websocketsExtensionsHandler", new WebSocketClientExtensionHandler(
+        p.addBefore("handler", "webSocketsExtensionsHandler", new WebSocketClientExtensionHandler(
           extensionHandshakers.toArray(new WebSocketClientExtensionHandshaker[extensionHandshakers.size()])));
       }
 
@@ -730,8 +730,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, ar -> {
         AsyncResult<WebSocket> wsRes = ar.map(v -> {
           WebSocketImpl w = new WebSocketImpl(Http1xClientConnection.this.getContext(), Http1xClientConnection.this, version != WebSocketVersion.V00,
-            options.getMaxWebsocketFrameSize(),
-            options.getMaxWebsocketMessageSize());
+            options.getMaxWebSocketFrameSize(),
+            options.getMaxWebSocketMessageSize());
           w.subProtocol(handshaker.actualSubprotocol());
           return w;
         });
@@ -769,17 +769,17 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
   }
 
-  ArrayList<WebSocketClientExtensionHandshaker> initializeWebsocketExtensionHandshakers (HttpClientOptions options) {
+  ArrayList<WebSocketClientExtensionHandshaker> initializeWebSocketExtensionHandshakers(HttpClientOptions options) {
     ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<WebSocketClientExtensionHandshaker>();
-    if (options.getTryWebsocketDeflateFrameCompression()) {
-      extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getWebsocketCompressionLevel(),
+    if (options.getTryWebSocketDeflateFrameCompression()) {
+      extensionHandshakers.add(new DeflateFrameClientExtensionHandshaker(options.getWebSocketCompressionLevel(),
         false));
     }
 
-    if (options.getTryUsePerMessageWebsocketCompression()) {
-      extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.getWebsocketCompressionLevel(),
+    if (options.getTryUsePerMessageWebSocketCompression()) {
+      extensionHandshakers.add(new PerMessageDeflateClientExtensionHandshaker(options.getWebSocketCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
-        options.getWebsocketCompressionAllowClientNoContext(), options.getWebsocketCompressionRequestServerNoContext()));
+        options.getWebSocketCompressionAllowClientNoContext(), options.getWebSocketCompressionRequestServerNoContext()));
     }
 
     return extensionHandshakers;

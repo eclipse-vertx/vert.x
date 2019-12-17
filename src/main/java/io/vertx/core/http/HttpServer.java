@@ -28,7 +28,7 @@ import io.vertx.core.streams.ReadStream;
  * You receive HTTP requests by providing a {@link #requestHandler}. As requests arrive on the server the handler
  * will be called with the requests.
  * <p>
- * You receive WebSockets by providing a {@link #websocketHandler}. As WebSocket connections arrive on the server, the
+ * You receive WebSockets by providing a {@link #webSocketHandler}. As WebSocket connections arrive on the server, the
  * WebSocket is passed to the handler.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -81,28 +81,28 @@ public interface HttpServer extends Measured {
   HttpServer exceptionHandler(Handler<Throwable> handler);
 
   /**
-   * Return the websocket stream for the server. If a websocket connect handshake is successful a
+   * Return the WebSocket stream for the server. If a WebSocket connect handshake is successful a
    * new {@link ServerWebSocket} instance will be created and passed to the stream {@link io.vertx.core.streams.ReadStream#handler(io.vertx.core.Handler)}.
    *
-   * @return the websocket stream
+   * @return the WebSocket stream
    */
   @CacheReturn
-  ReadStream<ServerWebSocket> websocketStream();
+  ReadStream<ServerWebSocket> webSocketStream();
 
   /**
-   * Set the websocket handler for the server to {@code wsHandler}. If a websocket connect handshake is successful a
+   * Set the WebSocket handler for the server to {@code wsHandler}. If a WebSocket connect handshake is successful a
    * new {@link ServerWebSocket} instance will be created and passed to the handler.
    *
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpServer websocketHandler(Handler<ServerWebSocket> handler);
+  HttpServer webSocketHandler(Handler<ServerWebSocket> handler);
 
   /**
-   * @return the websocketHandler
+   * @return the WebSocket handler
    */
   @GenIgnore
-  Handler<ServerWebSocket> websocketHandler();
+  Handler<ServerWebSocket> webSocketHandler();
 
   /**
    * Tell the server to start listening. The server will listen on the port and host specified in the

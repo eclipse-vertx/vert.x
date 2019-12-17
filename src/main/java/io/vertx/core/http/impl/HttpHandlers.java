@@ -61,13 +61,13 @@ public class HttpHandlers implements Handler<HttpServerConnection> {
     });
     Handler<HttpServerRequest> requestHandler = this.requestHandler;
     if (HttpServerImpl.DISABLE_WEBSOCKETS) {
-      // As a performance optimisation you can set a system property to disable websockets altogether which avoids
+      // As a performance optimisation you can set a system property to disable WebSockets altogether which avoids
       // some casting and a header check
     } else {
       if (conn instanceof Http1xServerConnection) {
         requestHandler =  new WebSocketRequestHandler(server.metrics, this);
         Http1xServerConnection c = (Http1xServerConnection) conn;
-        initializeWebsocketExtensions(c.channelHandlerContext().pipeline());
+        initializeWebSocketExtensions(c.channelHandlerContext().pipeline());
       }
     }
     conn.exceptionHandler(exceptionHandler);
@@ -86,20 +86,20 @@ public class HttpHandlers implements Handler<HttpServerConnection> {
     }
   }
 
-  private void initializeWebsocketExtensions(ChannelPipeline pipeline) {
+  private void initializeWebSocketExtensions(ChannelPipeline pipeline) {
     ArrayList<WebSocketServerExtensionHandshaker> extensionHandshakers = new ArrayList<>();
-    if (server.options.getPerFrameWebsocketCompressionSupported()) {
-      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(server.options.getWebsocketCompressionLevel()));
+    if (server.options.getPerFrameWebSocketCompressionSupported()) {
+      extensionHandshakers.add(new DeflateFrameServerExtensionHandshaker(server.options.getWebSocketCompressionLevel()));
     }
-    if (server.options.getPerMessageWebsocketCompressionSupported()) {
-      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(server.options.getWebsocketCompressionLevel(),
+    if (server.options.getPerMessageWebSocketCompressionSupported()) {
+      extensionHandshakers.add(new PerMessageDeflateServerExtensionHandshaker(server.options.getWebSocketCompressionLevel(),
         ZlibCodecFactory.isSupportingWindowSizeAndMemLevel(), PerMessageDeflateServerExtensionHandshaker.MAX_WINDOW_SIZE,
-        server.options.getWebsocketAllowServerNoContext(), server.options.getWebsocketPreferredClientNoContext()));
+        server.options.getWebSocketAllowServerNoContext(), server.options.getWebSocketPreferredClientNoContext()));
     }
     if (!extensionHandshakers.isEmpty()) {
       WebSocketServerExtensionHandler extensionHandler = new WebSocketServerExtensionHandler(
         extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[extensionHandshakers.size()]));
-      pipeline.addBefore("handler", "websocketExtensionHandler", extensionHandler);
+      pipeline.addBefore("handler", "webSocketExtensionHandler", extensionHandler);
     }
   }
 

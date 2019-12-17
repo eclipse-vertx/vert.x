@@ -340,10 +340,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setCompressionSupported(true));
     assertTrue(options.isCompressionSupported());
 
-    assertEquals(65536, options.getMaxWebsocketFrameSize());
+    assertEquals(65536, options.getMaxWebSocketFrameSize());
     rand = TestUtils.randomPositiveInt();
-    assertEquals(options, options.setMaxWebsocketFrameSize(rand));
-    assertEquals(rand, options.getMaxWebsocketFrameSize());
+    assertEquals(options, options.setMaxWebSocketFrameSize(rand));
+    assertEquals(rand, options.getMaxWebSocketFrameSize());
 
     assertEquals(80, options.getPort());
     assertEquals(options, options.setPort(1234));
@@ -356,12 +356,12 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setHost(randString));
     assertEquals(randString, options.getHost());
 
-    assertNull(options.getWebsocketSubProtocols());
-    assertEquals(options, options.setWebsocketSubProtocols("foo"));
-    assertEquals("foo", options.getWebsocketSubProtocols());
+    assertNull(options.getWebSocketSubProtocols());
+    assertEquals(options, options.setWebSocketSubProtocols(Collections.singletonList("foo")));
+    assertEquals(Collections.singletonList("foo"), options.getWebSocketSubProtocols());
 
     HttpServerOptions optionsCopy = new HttpServerOptions(options);
-    assertEquals(options.toJson(), optionsCopy.setWebsocketSubProtocols(new String(options.getWebsocketSubProtocols())).toJson());
+    assertEquals(options.toJson(), optionsCopy.setWebSocketSubProtocols(options.getWebSocketSubProtocols()).toJson());
 
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));
@@ -750,8 +750,8 @@ public class Http1xTest extends HttpTest {
     String host = TestUtils.randomAlphaString(100);
     int acceptBacklog = TestUtils.randomPortInt();
     boolean compressionSupported = rand.nextBoolean();
-    int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
-    String wsSubProtocol = TestUtils.randomAlphaString(10);
+    int maxWebSocketFrameSize = TestUtils.randomPositiveInt();
+    List<String> wsSubProtocols = Arrays.asList(TestUtils.randomAlphaString(10));
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
     int maxChunkSize = rand.nextInt(10000);
     Http2Settings initialSettings = randomHttp2Settings();
@@ -782,8 +782,8 @@ public class Http1xTest extends HttpTest {
     options.setHost(host);
     options.setAcceptBacklog(acceptBacklog);
     options.setCompressionSupported(compressionSupported);
-    options.setMaxWebsocketFrameSize(maxWebsocketFrameSize);
-    options.setWebsocketSubProtocols(wsSubProtocol);
+    options.setMaxWebSocketFrameSize(maxWebSocketFrameSize);
+    options.setWebSocketSubProtocols(wsSubProtocols);
     options.setHandle100ContinueAutomatically(is100ContinueHandledAutomatically);
     options.setMaxChunkSize(maxChunkSize);
     options.setUseAlpn(useAlpn);
@@ -817,8 +817,8 @@ public class Http1xTest extends HttpTest {
   public void testDefaultServerOptionsJson() {
     HttpServerOptions def = new HttpServerOptions();
     HttpServerOptions json = new HttpServerOptions(new JsonObject());
-    assertEquals(def.getMaxWebsocketFrameSize(), json.getMaxWebsocketFrameSize());
-    assertEquals(def.getWebsocketSubProtocols(), json.getWebsocketSubProtocols());
+    assertEquals(def.getMaxWebSocketFrameSize(), json.getMaxWebSocketFrameSize());
+    assertEquals(def.getWebSocketSubProtocols(), json.getWebSocketSubProtocols());
     assertEquals(def.isCompressionSupported(), json.isCompressionSupported());
     assertEquals(def.getCrlPaths(), json.getCrlPaths());
     assertEquals(def.getCrlValues(), json.getCrlValues());
@@ -871,8 +871,8 @@ public class Http1xTest extends HttpTest {
     String host = TestUtils.randomAlphaString(100);
     int acceptBacklog = TestUtils.randomPortInt();
     boolean compressionSupported = rand.nextBoolean();
-    int maxWebsocketFrameSize = TestUtils.randomPositiveInt();
-    String wsSubProtocol = TestUtils.randomAlphaString(10);
+    int maxWebSocketFrameSize = TestUtils.randomPositiveInt();
+    List<String> wsSubProtocols = Collections.singletonList(randomAlphaString(10));
     boolean is100ContinueHandledAutomatically = rand.nextBoolean();
     int maxChunkSize = rand.nextInt(10000);
     int maxInitialLineLength = rand.nextInt(10000);
@@ -906,8 +906,8 @@ public class Http1xTest extends HttpTest {
       .put("host", host)
       .put("acceptBacklog", acceptBacklog)
       .put("compressionSupported", compressionSupported)
-      .put("maxWebsocketFrameSize", maxWebsocketFrameSize)
-      .put("websocketSubProtocols", wsSubProtocol)
+      .put("maxWebSocketFrameSize", maxWebSocketFrameSize)
+      .put("webSocketSubProtocols", wsSubProtocols)
       .put("handle100ContinueAutomatically", is100ContinueHandledAutomatically)
       .put("maxChunkSize", maxChunkSize)
       .put("maxInitialLineLength", maxInitialLineLength)
@@ -953,8 +953,8 @@ public class Http1xTest extends HttpTest {
     assertEquals(host, options.getHost());
     assertEquals(acceptBacklog, options.getAcceptBacklog());
     assertEquals(compressionSupported, options.isCompressionSupported());
-    assertEquals(maxWebsocketFrameSize, options.getMaxWebsocketFrameSize());
-    assertEquals(wsSubProtocol, options.getWebsocketSubProtocols());
+    assertEquals(maxWebSocketFrameSize, options.getMaxWebSocketFrameSize());
+    assertEquals(wsSubProtocols, options.getWebSocketSubProtocols());
     assertEquals(is100ContinueHandledAutomatically, options.isHandle100ContinueAutomatically());
     assertEquals(maxChunkSize, options.getMaxChunkSize());
     assertEquals(maxInitialLineLength, options.getMaxInitialLineLength());
@@ -1589,10 +1589,10 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testServerWebsocketIdleTimeout() {
+  public void testServerWebSocketIdleTimeout() {
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST));
-    server.websocketHandler(ws -> {}).listen(ar -> {
+    server.webSocketHandler(ws -> {}).listen(ar -> {
       assertTrue(ar.succeeded());
       client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
         ws.closeHandler(v -> testComplete());
@@ -1603,10 +1603,10 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testClientWebsocketIdleTimeout() {
+  public void testClientWebSocketIdleTimeout() {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
-    server.websocketHandler(ws -> {}).listen(ar -> {
+    server.webSocketHandler(ws -> {}).listen(ar -> {
       client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
         ws.closeHandler(v -> testComplete());
       }));

@@ -77,7 +77,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
       case PING:
         return new PingWebSocketFrame(buf);
       default:
-        throw new IllegalStateException("Unsupported websocket msg " + frame);
+        throw new IllegalStateException("Unsupported WebSocket msg " + frame);
     }
   }
 
@@ -98,7 +98,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
     } else if (msg instanceof ContinuationWebSocketFrame) {
       frameType = FrameType.CONTINUATION;
     } else {
-      throw new IllegalStateException("Unsupported websocket msg " + msg);
+      throw new IllegalStateException("Unsupported WebSocket msg " + msg);
     }
     return new WebSocketFrameImpl(frameType, payload, isFinal);
   }

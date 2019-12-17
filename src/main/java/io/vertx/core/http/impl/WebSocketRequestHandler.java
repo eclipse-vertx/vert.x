@@ -51,7 +51,7 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
   }
 
   /**
-   * Handle the request when a websocket upgrade header is present.
+   * Handle the request when a WebSocket upgrade header is present.
    */
   private void handle(Http1xServerRequest req) {
     Buffer body = Buffer.buffer();

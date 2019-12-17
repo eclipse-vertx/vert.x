@@ -103,8 +103,8 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public HttpServer websocketHandler(Handler<ServerWebSocket> handler) {
-    websocketStream().handler(handler);
+  public HttpServer webSocketHandler(Handler<ServerWebSocket> handler) {
+    webSocketStream().handler(handler);
     return this;
   }
 
@@ -132,12 +132,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
-  public Handler<ServerWebSocket> websocketHandler() {
+  public Handler<ServerWebSocket> webSocketHandler() {
     return wsStream.handler();
   }
 
   @Override
-  public ReadStream<ServerWebSocket> websocketStream() {
+  public ReadStream<ServerWebSocket> webSocketStream() {
     return wsStream;
   }
 
@@ -216,7 +216,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   @Override
   public Future<HttpServer> listen(SocketAddress address) {
     if (requestStream.handler() == null && wsStream.handler() == null) {
-      throw new IllegalStateException("Set request or websocket handler first");
+      throw new IllegalStateException("Set request or WebSocket handler first");
     }
     if (listening) {
       throw new IllegalStateException("Already listening");
