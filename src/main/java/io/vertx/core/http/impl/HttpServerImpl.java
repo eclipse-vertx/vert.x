@@ -105,6 +105,12 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
+  public HttpServer webSocketHandler(Handler<ServerWebSocket> handler) {
+    webSocketStream().handler(handler);
+    return this;
+  }
+
+  @Override
   public HttpServer websocketHandler(Handler<ServerWebSocket> handler) {
     websocketStream().handler(handler);
     return this;
@@ -139,7 +145,17 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   }
 
   @Override
+  public Handler<ServerWebSocket> webSocketHandler() {
+    return wsStream.handler();
+  }
+
+  @Override
   public ReadStream<ServerWebSocket> websocketStream() {
+    return wsStream;
+  }
+
+  @Override
+  public ReadStream<ServerWebSocket> webSocketStream() {
     return wsStream;
   }
 

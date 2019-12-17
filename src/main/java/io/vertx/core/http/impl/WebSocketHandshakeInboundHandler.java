@@ -85,7 +85,10 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
 
   private Future<HeadersAdaptor> handshakeComplete(FullHttpResponse response) {
     if (response.status().code() != 101) {
-      return Future.failedFuture(new WebsocketRejectedException(response.status().code()));
+      // Use UpgradeRejectedException in v4 instead
+      @SuppressWarnings("deprecation")
+      WebsocketRejectedException failure = new WebsocketRejectedException(response.status().code());
+      return Future.failedFuture(failure);
     } else {
       try {
         handshaker.finishHandshake(chctx.channel(), response);

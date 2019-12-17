@@ -79,6 +79,16 @@ import java.time.format.DateTimeFormatter;
             obj.setMaxInitialLineLength(((Number)member.getValue()).intValue());
           }
           break;
+        case "maxWebSocketFrameSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxWebSocketFrameSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxWebSocketMessageSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxWebSocketMessageSize(((Number)member.getValue()).intValue());
+          }
+          break;
         case "maxWebsocketFrameSize":
           if (member.getValue() instanceof Number) {
             obj.setMaxWebsocketFrameSize(((Number)member.getValue()).intValue());
@@ -89,14 +99,49 @@ import java.time.format.DateTimeFormatter;
             obj.setMaxWebsocketMessageSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "perFrameWebSocketCompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setPerFrameWebSocketCompressionSupported((Boolean)member.getValue());
+          }
+          break;
         case "perFrameWebsocketCompressionSupported":
           if (member.getValue() instanceof Boolean) {
             obj.setPerFrameWebsocketCompressionSupported((Boolean)member.getValue());
           }
           break;
+        case "perMessageWebSocketCompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setPerMessageWebSocketCompressionSupported((Boolean)member.getValue());
+          }
+          break;
         case "perMessageWebsocketCompressionSupported":
           if (member.getValue() instanceof Boolean) {
             obj.setPerMessageWebsocketCompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketAllowServerNoContext":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWebSocketAllowServerNoContext((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketCompressionLevel":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketCompressionLevel(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "webSocketPreferredClientNoContext":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWebSocketPreferredClientNoContext((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketSubProtocols":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setWebSocketSubProtocols(list);
           }
           break;
         case "websocketAllowServerNoContext":
@@ -146,10 +191,22 @@ import java.time.format.DateTimeFormatter;
     json.put("maxChunkSize", obj.getMaxChunkSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
+    json.put("maxWebSocketFrameSize", obj.getMaxWebSocketFrameSize());
+    json.put("maxWebSocketMessageSize", obj.getMaxWebSocketMessageSize());
     json.put("maxWebsocketFrameSize", obj.getMaxWebsocketFrameSize());
     json.put("maxWebsocketMessageSize", obj.getMaxWebsocketMessageSize());
+    json.put("perFrameWebSocketCompressionSupported", obj.getPerFrameWebSocketCompressionSupported());
     json.put("perFrameWebsocketCompressionSupported", obj.getPerFrameWebsocketCompressionSupported());
+    json.put("perMessageWebSocketCompressionSupported", obj.getPerMessageWebSocketCompressionSupported());
     json.put("perMessageWebsocketCompressionSupported", obj.getPerMessageWebsocketCompressionSupported());
+    json.put("webSocketAllowServerNoContext", obj.getWebSocketAllowServerNoContext());
+    json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
+    json.put("webSocketPreferredClientNoContext", obj.getWebSocketPreferredClientNoContext());
+    if (obj.getWebSocketSubProtocols() != null) {
+      JsonArray array = new JsonArray();
+      obj.getWebSocketSubProtocols().forEach(item -> array.add(item));
+      json.put("webSocketSubProtocols", array);
+    }
     json.put("websocketAllowServerNoContext", obj.getWebsocketAllowServerNoContext());
     json.put("websocketCompressionLevel", obj.getWebsocketCompressionLevel());
     json.put("websocketPreferredClientNoContext", obj.getWebsocketPreferredClientNoContext());

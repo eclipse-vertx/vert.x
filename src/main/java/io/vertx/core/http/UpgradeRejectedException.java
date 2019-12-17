@@ -11,14 +11,24 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.VertxException;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- * @deprecated instead use {@code UpgradeRejectedException}
  */
-@Deprecated
-public class WebsocketRejectedException extends UpgradeRejectedException {
+public class UpgradeRejectedException extends VertxException {
 
-  public WebsocketRejectedException(int status) {
-    super("Websocket connection attempt returned HTTP status code " + status, status);
+  private final int status;
+
+  public UpgradeRejectedException(String message, int status) {
+    super(message);
+    this.status = status;
+  }
+
+  /**
+   * @return the status code of the response that rejected the upgrade
+   */
+  public int getStatus() {
+    return status;
   }
 }

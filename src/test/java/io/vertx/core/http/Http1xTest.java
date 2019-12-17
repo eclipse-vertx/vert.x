@@ -366,7 +366,7 @@ public class Http1xTest extends HttpTest {
     assertEquals("foo", options.getWebsocketSubProtocols());
 
     HttpServerOptions optionsCopy = new HttpServerOptions(options);
-    assertEquals(options, optionsCopy.setWebsocketSubProtocols(new String(options.getWebsocketSubProtocols())));
+    assertEquals(options, optionsCopy.setWebsocketSubProtocols(options.getWebsocketSubProtocols()));
 
     assertTrue(options.getEnabledCipherSuites().isEmpty());
     assertEquals(options, options.addEnabledCipherSuite("foo"));

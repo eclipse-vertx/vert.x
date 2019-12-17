@@ -37,7 +37,7 @@ public class HTTPExamples {
 
   public void example2(Vertx vertx) {
 
-    HttpServerOptions options = new HttpServerOptions().setMaxWebsocketFrameSize(1000000);
+    HttpServerOptions options = new HttpServerOptions().setMaxWebSocketFrameSize(1000000);
 
     HttpServer server = vertx.createHttpServer(options);
   }
@@ -670,16 +670,16 @@ public class HTTPExamples {
 
   public void example51(HttpServer server) {
 
-    server.websocketHandler(websocket -> {
+    server.webSocketHandler(webSocket -> {
       System.out.println("Connected!");
     });
   }
 
   public void example52(HttpServer server) {
 
-    server.websocketHandler(websocket -> {
-      if (websocket.path().equals("/myapi")) {
-        websocket.reject();
+    server.webSocketHandler(webSocket -> {
+      if (webSocket.path().equals("/myapi")) {
+        webSocket.reject();
       } else {
         // Do something
       }
@@ -687,10 +687,10 @@ public class HTTPExamples {
   }
 
   public void exampleAsynchronousHandshake(HttpServer server) {
-    server.websocketHandler(websocket -> {
+    server.webSocketHandler(webSocket -> {
       Promise<Integer> promise = Promise.promise();
-      websocket.setHandshake(promise.future());
-      authenticate(websocket.headers(), ar -> {
+      webSocket.setHandshake(promise.future());
+      authenticate(webSocket.headers(), ar -> {
         if (ar.succeeded()) {
           // Terminate the handshake with the status code 101 (Switching Protocol)
           // Reject the handshake with 401 (Unauthorized)
@@ -712,7 +712,7 @@ public class HTTPExamples {
     server.requestHandler(request -> {
       if (request.path().equals("/myapi")) {
 
-        ServerWebSocket websocket = request.upgrade();
+        ServerWebSocket webSocket = request.upgrade();
         // Do something
 
       } else {
@@ -731,47 +731,47 @@ public class HTTPExamples {
     });
   }
 
-  public void example55(WebSocket websocket) {
+  public void example55(WebSocket webSocket) {
     // Write a simple binary message
     Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
-    websocket.writeBinaryMessage(buffer);
+    webSocket.writeBinaryMessage(buffer);
 
     // Write a simple text message
     String message = "hello";
-    websocket.writeTextMessage(message);
+    webSocket.writeTextMessage(message);
   }
 
-  public void example56(WebSocket websocket, Buffer buffer1, Buffer buffer2, Buffer buffer3) {
+  public void example56(WebSocket webSocket, Buffer buffer1, Buffer buffer2, Buffer buffer3) {
 
     WebSocketFrame frame1 = WebSocketFrame.binaryFrame(buffer1, false);
-    websocket.writeFrame(frame1);
+    webSocket.writeFrame(frame1);
 
     WebSocketFrame frame2 = WebSocketFrame.continuationFrame(buffer2, false);
-    websocket.writeFrame(frame2);
+    webSocket.writeFrame(frame2);
 
     // Write the final frame
     WebSocketFrame frame3 = WebSocketFrame.continuationFrame(buffer2, true);
-    websocket.writeFrame(frame3);
+    webSocket.writeFrame(frame3);
 
   }
 
-  public void example56_1(WebSocket websocket) {
+  public void example56_1(WebSocket webSocket) {
 
-    // Send a websocket messages consisting of a single final text frame:
+    // Send a WebSocket messages consisting of a single final text frame:
 
-    websocket.writeFinalTextFrame("Geronimo!");
+    webSocket.writeFinalTextFrame("Geronimo!");
 
-    // Send a websocket messages consisting of a single final binary frame:
+    // Send a WebSocket messages consisting of a single final binary frame:
 
     Buffer buff = Buffer.buffer().appendInt(12).appendString("foo");
 
-    websocket.writeFinalBinaryFrame(buff);
+    webSocket.writeFinalBinaryFrame(buff);
 
   }
 
-  public void example57(WebSocket websocket) {
+  public void example57(WebSocket webSocket) {
 
-    websocket.frameHandler(frame -> {
+    webSocket.frameHandler(frame -> {
       System.out.println("Received a frame of size!");
     });
 

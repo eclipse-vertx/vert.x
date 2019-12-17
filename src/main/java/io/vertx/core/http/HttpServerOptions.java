@@ -132,9 +132,9 @@ public class HttpServerOptions extends NetServerOptions {
 
   private boolean compressionSupported;
   private int compressionLevel;
-  private int maxWebsocketFrameSize;
-  private int maxWebsocketMessageSize;
-  private String websocketSubProtocols;
+  private int maxWebSocketFrameSize;
+  private int maxWebSocketMessageSize;
+  private List<String> webSocketSubProtocols;
   private boolean handle100ContinueAutomatically;
   private int maxChunkSize;
   private int maxInitialLineLength;
@@ -145,11 +145,11 @@ public class HttpServerOptions extends NetServerOptions {
   private boolean decompressionSupported;
   private boolean acceptUnmaskedFrames;
   private int decoderInitialBufferSize;
-  private boolean perFrameWebsocketCompressionSupported;
-  private boolean perMessageWebsocketCompressionSupported;
-  private int websocketCompressionLevel;
-  private boolean websocketAllowServerNoContext;
-  private boolean websocketPreferredClientNoContext;
+  private boolean perFrameWebSocketCompressionSupported;
+  private boolean perMessageWebSocketCompressionSupported;
+  private int webSocketCompressionLevel;
+  private boolean webSocketAllowServerNoContext;
+  private boolean webSocketPreferredClientNoContext;
 
   /**
    * Default constructor
@@ -169,9 +169,9 @@ public class HttpServerOptions extends NetServerOptions {
     super(other);
     this.compressionSupported = other.isCompressionSupported();
     this.compressionLevel = other.getCompressionLevel();
-    this.maxWebsocketFrameSize = other.getMaxWebsocketFrameSize();
-    this.maxWebsocketMessageSize = other.getMaxWebsocketMessageSize();
-    this.websocketSubProtocols = other.getWebsocketSubProtocols();
+    this.maxWebSocketFrameSize = other.maxWebSocketFrameSize;
+    this.maxWebSocketMessageSize = other.maxWebSocketMessageSize;
+    this.webSocketSubProtocols = other.webSocketSubProtocols != null ? new ArrayList<>(other.webSocketSubProtocols) : null;
     this.handle100ContinueAutomatically = other.handle100ContinueAutomatically;
     this.maxChunkSize = other.getMaxChunkSize();
     this.maxInitialLineLength = other.getMaxInitialLineLength();
@@ -182,11 +182,11 @@ public class HttpServerOptions extends NetServerOptions {
     this.decompressionSupported = other.isDecompressionSupported();
     this.acceptUnmaskedFrames = other.isAcceptUnmaskedFrames();
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
-    this.perFrameWebsocketCompressionSupported = other.perFrameWebsocketCompressionSupported;
-    this.perMessageWebsocketCompressionSupported = other.perMessageWebsocketCompressionSupported;
-    this.websocketCompressionLevel = other.websocketCompressionLevel;
-    this.websocketPreferredClientNoContext = other.websocketPreferredClientNoContext;
-    this.websocketAllowServerNoContext = other.websocketAllowServerNoContext;
+    this.perFrameWebSocketCompressionSupported = other.perFrameWebSocketCompressionSupported;
+    this.perMessageWebSocketCompressionSupported = other.perMessageWebSocketCompressionSupported;
+    this.webSocketCompressionLevel = other.webSocketCompressionLevel;
+    this.webSocketPreferredClientNoContext = other.webSocketPreferredClientNoContext;
+    this.webSocketAllowServerNoContext = other.webSocketAllowServerNoContext;
   }
 
   /**
@@ -215,8 +215,8 @@ public class HttpServerOptions extends NetServerOptions {
   private void init() {
     compressionSupported = DEFAULT_COMPRESSION_SUPPORTED;
     compressionLevel = DEFAULT_COMPRESSION_LEVEL;
-    maxWebsocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
-    maxWebsocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
+    maxWebSocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
+    maxWebSocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
     handle100ContinueAutomatically = DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY;
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
@@ -227,11 +227,11 @@ public class HttpServerOptions extends NetServerOptions {
     decompressionSupported = DEFAULT_DECOMPRESSION_SUPPORTED;
     acceptUnmaskedFrames = DEFAULT_ACCEPT_UNMASKED_FRAMES;
     decoderInitialBufferSize = DEFAULT_DECODER_INITIAL_BUFFER_SIZE;
-    perFrameWebsocketCompressionSupported = DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED;
-    perMessageWebsocketCompressionSupported = DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED;
-    websocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
-    websocketPreferredClientNoContext = DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT;
-    websocketAllowServerNoContext = DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT;
+    perFrameWebSocketCompressionSupported = DEFAULT_PER_FRAME_WEBSOCKET_COMPRESSION_SUPPORTED;
+    perMessageWebSocketCompressionSupported = DEFAULT_PER_MESSAGE_WEBSOCKET_COMPRESSION_SUPPORTED;
+    webSocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
+    webSocketPreferredClientNoContext = DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT;
+    webSocketAllowServerNoContext = DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT;
   }
 
   @Override
@@ -536,38 +536,82 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   /**
-   * @return  the maximum WebSocket frame size
+   * @return the maximum WebSocket frame size
+   * @deprecated use instead {@link #getMaxWebSocketFrameSize()}
    */
+  @Deprecated
   public int getMaxWebsocketFrameSize() {
-    return maxWebsocketFrameSize;
+    return maxWebSocketFrameSize;
   }
 
   /**
    * Set the maximum WebSocket frames size
    *
-   * @param maxWebsocketFrameSize  the maximum frame size in bytes.
+   * @param maxWebSocketFrameSize  the maximum frame size in bytes.
+   * @return a reference to this, so the API can be used fluently
+   * @deprecated use instead {@link #setMaxWebSocketFrameSize(int)}
+   */
+  @Deprecated
+  public HttpServerOptions setMaxWebsocketFrameSize(int maxWebSocketFrameSize) {
+    this.maxWebSocketFrameSize = maxWebSocketFrameSize;
+    return this;
+  }
+
+  /**
+   * @return the maximum WebSocket frame size
+   */
+  public int getMaxWebSocketFrameSize() {
+    return maxWebSocketFrameSize;
+  }
+
+  /**
+   * Set the maximum WebSocket frames size
+   *
+   * @param maxWebSocketFrameSize  the maximum frame size in bytes.
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setMaxWebsocketFrameSize(int maxWebsocketFrameSize) {
-    this.maxWebsocketFrameSize = maxWebsocketFrameSize;
+  public HttpServerOptions setMaxWebSocketFrameSize(int maxWebSocketFrameSize) {
+    this.maxWebSocketFrameSize = maxWebSocketFrameSize;
+    return this;
+  }
+
+  /**
+   * @return  the maximum WebSocket message size
+   * @deprecated use instead {@link #getMaxWebSocketMessageSize()}
+   */
+  @Deprecated
+  public int getMaxWebsocketMessageSize() {
+    return maxWebSocketMessageSize;
+  }
+
+  /**
+   * Set the maximum WebSocket message size
+   *
+   * @param maxWebSocketMessageSize  the maximum message size in bytes.
+   * @return a reference to this, so the API can be used fluently
+   * @deprecated use instead {@link #setMaxWebSocketMessageSize(int)}
+   */
+  @Deprecated
+  public HttpServerOptions setMaxWebsocketMessageSize(int maxWebSocketMessageSize) {
+    this.maxWebSocketMessageSize = maxWebSocketMessageSize;
     return this;
   }
 
   /**
    * @return  the maximum WebSocket message size
    */
-  public int getMaxWebsocketMessageSize() {
-    return maxWebsocketMessageSize;
+  public int getMaxWebSocketMessageSize() {
+    return maxWebSocketMessageSize;
   }
 
   /**
    * Set the maximum WebSocket message size
    *
-   * @param maxWebsocketMessageSize  the maximum message size in bytes.
+   * @param maxWebSocketMessageSize  the maximum message size in bytes.
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setMaxWebsocketMessageSize(int maxWebsocketMessageSize) {
-    this.maxWebsocketMessageSize = maxWebsocketMessageSize;
+  public HttpServerOptions setMaxWebSocketMessageSize(int maxWebSocketMessageSize) {
+    this.maxWebSocketMessageSize = maxWebSocketMessageSize;
     return this;
   }
 
@@ -576,17 +620,52 @@ public class HttpServerOptions extends NetServerOptions {
    *
    * @param subProtocols  comma separated list of subprotocols
    * @return a reference to this, so the API can be used fluently
+   * @deprecated use {@link #setWebSocketSubProtocols(List)} or {@link #addWebSocketSubProtocol(String)} instead
    */
+  @Deprecated
   public HttpServerOptions setWebsocketSubProtocols(String subProtocols) {
-    websocketSubProtocols = subProtocols;
-    return this;
+    return setWebSocketSubProtocols(subProtocols == null ? null : new ArrayList<>(Arrays.asList(subProtocols.split("\\s*,\\s*"))));
   }
 
   /**
    * @return Get the WebSocket sub-protocols
+   * @deprecated use {@link #getWebSocketSubProtocols()} instead
    */
+  @Deprecated
   public String getWebsocketSubProtocols() {
-    return websocketSubProtocols;
+    return getWebSocketSubProtocols() != null ? String.join(",", getWebSocketSubProtocols()) : null;
+  }
+
+  /**
+   * Add a WebSocket sub-protocol to the list supported by the server.
+   *
+   * @param subProtocol the sub-protocol to add
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions addWebSocketSubProtocol(String subProtocol) {
+    Objects.requireNonNull(subProtocol, "Cannot add a null WebSocket sub-protocol");
+    if (webSocketSubProtocols == null) {
+      webSocketSubProtocols = new ArrayList<>();
+    }
+    webSocketSubProtocols.add(subProtocol);
+    return this;
+  }
+  /**
+   * Set the WebSocket list of sub-protocol supported by the server.
+   *
+   * @param subProtocols  comma separated list of sub-protocols
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebSocketSubProtocols(List<String> subProtocols) {
+    webSocketSubProtocols = subProtocols;
+    return this;
+  }
+
+  /**
+   * @return Get the WebSocket list of sub-protocol
+   */
+  public List<String> getWebSocketSubProtocols() {
+    return webSocketSubProtocols;
   }
 
   /**
@@ -767,97 +846,215 @@ public class HttpServerOptions extends NetServerOptions {
    *
    * @param supported {@code true} when the per-frame deflate compression extension is supported
    * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setPerFrameWebSocketCompressionSupported}
    */
-  public HttpServerOptions setPerFrameWebsocketCompressionSupported(boolean supported ) {
-	  this.perFrameWebsocketCompressionSupported = supported;
-	  return this;
+  @Deprecated
+  public HttpServerOptions setPerFrameWebsocketCompressionSupported(boolean supported) {
+    this.perFrameWebSocketCompressionSupported = supported;
+    return this;
   }
-  
-  /** 
+
+  /**
+   * Enable or disable support for the WebSocket per-frame deflate compression extension.
+   *
+   * @param supported {@code true} when the per-frame deflate compression extension is supported
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setPerFrameWebSocketCompressionSupported(boolean supported) {
+    this.perFrameWebSocketCompressionSupported = supported;
+    return this;
+  }
+
+  /**
+   * Get whether WebSocket the per-frame deflate compression extension is supported.
+   *
+   * @return {@code true} if the http server will accept the per-frame deflate compression extension
+   * @deprecated instead use {@link #getPerFrameWebSocketCompressionSupported}
+   */
+  @Deprecated
+  public boolean getPerFrameWebsocketCompressionSupported() {
+    return this.perFrameWebSocketCompressionSupported;
+  }
+
+  /**
    * Get whether WebSocket the per-frame deflate compression extension is supported.
    *
    * @return {@code true} if the http server will accept the per-frame deflate compression extension
    */
-  public boolean getPerFrameWebsocketCompressionSupported() {
-	  return this.perFrameWebsocketCompressionSupported;
+  public boolean getPerFrameWebSocketCompressionSupported() {
+    return this.perFrameWebSocketCompressionSupported;
   }
-  
+
   /**
    * Enable or disable support for WebSocket per-message deflate compression extension.
    *
-   * @param supported {@code true} when the per-message Websocket compression extension is supported
+   * @param supported {@code true} when the per-message WebSocket compression extension is supported
+   * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setPerMessageWebSocketCompressionSupported}
+   */
+  @Deprecated
+  public HttpServerOptions setPerMessageWebsocketCompressionSupported(boolean supported) {
+    this.perMessageWebSocketCompressionSupported = supported;
+    return this;
+  }
+
+  /**
+   * Enable or disable support for WebSocket per-message deflate compression extension.
+   *
+   * @param supported {@code true} when the per-message WebSocket compression extension is supported
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setPerMessageWebsocketCompressionSupported(boolean supported ) {
-	  this.perMessageWebsocketCompressionSupported = supported;
-	  return this;
+  public HttpServerOptions setPerMessageWebSocketCompressionSupported(boolean supported) {
+    this.perMessageWebSocketCompressionSupported = supported;
+    return this;
   }
-  
+
+  /**
+   * Get whether WebSocket per-message deflate compression extension is supported.
+   *
+   * @return {@code true} if the http server will accept the per-message deflate compression extension
+   * @deprecated instead use {@link #getPerMessageWebSocketCompressionSupported}
+   */
+  @Deprecated
+  public boolean getPerMessageWebsocketCompressionSupported() {
+    return this.perMessageWebSocketCompressionSupported;
+  }
+
   /**
    * Get whether WebSocket per-message deflate compression extension is supported.
    *
    * @return {@code true} if the http server will accept the per-message deflate compression extension
    */
-  public boolean getPerMessageWebsocketCompressionSupported() {
-	  return this.perMessageWebsocketCompressionSupported;
+  public boolean getPerMessageWebSocketCompressionSupported() {
+    return this.perMessageWebSocketCompressionSupported;
   }
-  
+
+  /**
+   * Set the WebSocket compression level.
+   *
+   * @param compressionLevel the compression level
+   * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setWebSocketCompressionLevel}
+   */
+  @Deprecated
+  public HttpServerOptions setWebsocketCompressionLevel(int compressionLevel) {
+    this.webSocketCompressionLevel = compressionLevel;
+    return this;
+  }
+
   /**
    * Set the WebSocket compression level.
    *
    * @param compressionLevel the compression level
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpServerOptions setWebsocketCompressionLevel(int compressionLevel) {
-	  this.websocketCompressionLevel = compressionLevel;
-	  return this;
+  public HttpServerOptions setWebSocketCompressionLevel(int compressionLevel) {
+    this.webSocketCompressionLevel = compressionLevel;
+    return this;
   }
-  
+
+  /**
+   * @return the current WebSocket deflate compression level
+   * @deprecated instead use {@link #getWebSocketCompressionLevel}
+   */
+  @Deprecated
+  public int getWebsocketCompressionLevel() {
+    return this.webSocketCompressionLevel;
+  }
+
   /**
    * @return the current WebSocket deflate compression level
    */
-  public int getWebsocketCompressionLevel() {
-	  return this.websocketCompressionLevel;
+  public int getWebSocketCompressionLevel() {
+    return this.webSocketCompressionLevel;
   }
-  
+
   /**
    * Set whether the WebSocket server will accept the {@code server_no_context_takeover} parameter of the per-message
    * deflate compression extension offered by the client.
    *
    * @param accept {@code true} to accept the {@literal server_no_context_takeover} parameter when the client offers it
-   * @return  a reference to this, so the API can be used fluently
+   * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setWebSocketAllowServerNoContext}
    */
+  @Deprecated
   public HttpServerOptions setWebsocketAllowServerNoContext(boolean accept) {
-	  this.websocketAllowServerNoContext = accept;
-	  return this;
+    this.webSocketAllowServerNoContext = accept;
+    return this;
   }
-  
+
+  /**
+   * Set whether the WebSocket server will accept the {@code server_no_context_takeover} parameter of the per-message
+   * deflate compression extension offered by the client.
+   *
+   * @param accept {@code true} to accept the {@literal server_no_context_takeover} parameter when the client offers it
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebSocketAllowServerNoContext(boolean accept) {
+    this.webSocketAllowServerNoContext = accept;
+    return this;
+  }
+
+  /**
+   * @return {@code true} when the WebSocket server will accept the {@code server_no_context_takeover} parameter for the per-message
+   * deflate compression extension offered by the client
+   * @deprecated instead use {@link #getWebSocketAllowServerNoContext}
+   */
+  @Deprecated
+  public boolean getWebsocketAllowServerNoContext() {
+    return this.webSocketAllowServerNoContext;
+  }
+
   /**
    * @return {@code true} when the WebSocket server will accept the {@code server_no_context_takeover} parameter for the per-message
    * deflate compression extension offered by the client
    */
-  public boolean getWebsocketAllowServerNoContext () {
-	  return this.websocketAllowServerNoContext;
+  public boolean getWebSocketAllowServerNoContext() {
+    return this.webSocketAllowServerNoContext;
   }
-  
+
   /**
    * Set whether the WebSocket server will accept the {@code client_no_context_takeover} parameter of the per-message
    * deflate compression extension offered by the client.
    *
    * @param accept {@code true} to accept the {@code client_no_context_takeover} parameter when the client offers it
-   * @return  a reference to this, so the API can be used fluently
+   * @return a reference to this, so the API can be used fluently
+   * @deprecated instead use {@link #setWebSocketPreferredClientNoContext}
    */
+  @Deprecated
   public HttpServerOptions setWebsocketPreferredClientNoContext(boolean accept) {
-	  this.websocketPreferredClientNoContext = accept;
-	  return this;
+    this.webSocketPreferredClientNoContext = accept;
+    return this;
+  }
+
+  /**
+   * Set whether the WebSocket server will accept the {@code client_no_context_takeover} parameter of the per-message
+   * deflate compression extension offered by the client.
+   *
+   * @param accept {@code true} to accept the {@code client_no_context_takeover} parameter when the client offers it
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebSocketPreferredClientNoContext(boolean accept) {
+    this.webSocketPreferredClientNoContext = accept;
+    return this;
+  }
+
+  /**
+   * @return {@code true} when the WebSocket server will accept the {@code client_no_context_takeover} parameter for the per-message
+   * deflate compression extension offered by the client
+   * @deprecated instead use {@link #getWebSocketPreferredClientNoContext}
+   */
+  @Deprecated
+  public boolean getWebsocketPreferredClientNoContext() {
+    return this.webSocketPreferredClientNoContext;
   }
 
   /**
    * @return {@code true} when the WebSocket server will accept the {@code client_no_context_takeover} parameter for the per-message
    * deflate compression extension offered by the client
    */
-  public boolean getWebsocketPreferredClientNoContext() {
-	  return this.websocketPreferredClientNoContext;
+  public boolean getWebSocketPreferredClientNoContext() {
+    return this.webSocketPreferredClientNoContext;
   }
   
   @Override
@@ -869,8 +1066,8 @@ public class HttpServerOptions extends NetServerOptions {
     HttpServerOptions that = (HttpServerOptions) o;
 
     if (compressionSupported != that.compressionSupported) return false;
-    if (maxWebsocketFrameSize != that.maxWebsocketFrameSize) return false;
-    if (maxWebsocketMessageSize != that.maxWebsocketMessageSize) return false;
+    if (maxWebSocketFrameSize != that.maxWebSocketFrameSize) return false;
+    if (maxWebSocketMessageSize != that.maxWebSocketMessageSize) return false;
     if (handle100ContinueAutomatically != that.handle100ContinueAutomatically) return false;
     if (maxChunkSize != that.maxChunkSize) return false;
     if (maxInitialLineLength != that.maxInitialLineLength) return false;
@@ -881,13 +1078,13 @@ public class HttpServerOptions extends NetServerOptions {
     if (decompressionSupported != that.decompressionSupported) return false;
     if (acceptUnmaskedFrames != that.acceptUnmaskedFrames) return false;
     if (decoderInitialBufferSize != that.decoderInitialBufferSize) return false;
-    if (perFrameWebsocketCompressionSupported != that.perFrameWebsocketCompressionSupported) return false;
-    if (perMessageWebsocketCompressionSupported != that.perMessageWebsocketCompressionSupported) return false;
-    if (websocketCompressionLevel != that.websocketCompressionLevel) return false;
-    if (websocketAllowServerNoContext != that.websocketAllowServerNoContext) return false;
-    if (websocketPreferredClientNoContext != that.websocketPreferredClientNoContext) return false;
+    if (perFrameWebSocketCompressionSupported != that.perFrameWebSocketCompressionSupported) return false;
+    if (perMessageWebSocketCompressionSupported != that.perMessageWebSocketCompressionSupported) return false;
+    if (webSocketCompressionLevel != that.webSocketCompressionLevel) return false;
+    if (webSocketAllowServerNoContext != that.webSocketAllowServerNoContext) return false;
+    if (webSocketPreferredClientNoContext != that.webSocketPreferredClientNoContext) return false;
 
-    return !(websocketSubProtocols != null ? !websocketSubProtocols.equals(that.websocketSubProtocols) : that.websocketSubProtocols != null);
+    return !(webSocketSubProtocols != null ? !webSocketSubProtocols.equals(that.webSocketSubProtocols) : that.webSocketSubProtocols != null);
 
   }
 
@@ -895,9 +1092,9 @@ public class HttpServerOptions extends NetServerOptions {
   public int hashCode() {
     int result = super.hashCode();
     result = 31 * result + (compressionSupported ? 1 : 0);
-    result = 31 * result + maxWebsocketFrameSize;
-    result = 31 * result + maxWebsocketMessageSize;
-    result = 31 * result + (websocketSubProtocols != null ? websocketSubProtocols.hashCode() : 0);
+    result = 31 * result + maxWebSocketFrameSize;
+    result = 31 * result + maxWebSocketMessageSize;
+    result = 31 * result + (webSocketSubProtocols != null ? webSocketSubProtocols.hashCode() : 0);
     result = 31 * result + (initialSettings != null ? initialSettings.hashCode() : 0);
     result = 31 * result + (handle100ContinueAutomatically ? 1 : 0);
     result = 31 * result + maxChunkSize;
@@ -908,11 +1105,11 @@ public class HttpServerOptions extends NetServerOptions {
     result = 31 * result + (decompressionSupported ? 1 : 0);
     result = 31 * result + (acceptUnmaskedFrames ? 1 : 0);
     result = 31 * result + decoderInitialBufferSize;
-    result = 31 * result + (perFrameWebsocketCompressionSupported ? 1 : 0);
-    result = 31 * result + (perMessageWebsocketCompressionSupported ? 1 : 0);
-    result = 31 * result + websocketCompressionLevel;
-    result = 31 * result + (websocketAllowServerNoContext ? 1 : 0);
-    result = 31 * result + (websocketPreferredClientNoContext ? 1 : 0);
+    result = 31 * result + (perFrameWebSocketCompressionSupported ? 1 : 0);
+    result = 31 * result + (perMessageWebSocketCompressionSupported ? 1 : 0);
+    result = 31 * result + webSocketCompressionLevel;
+    result = 31 * result + (webSocketAllowServerNoContext ? 1 : 0);
+    result = 31 * result + (webSocketPreferredClientNoContext ? 1 : 0);
     return result;
   }
 }
