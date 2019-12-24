@@ -22,7 +22,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.impl.VertxInternal;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -50,7 +49,6 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   private final String path;
   private final String query;
   private final WebSocketServerHandshaker handshaker;
-  private final MultiMap headers;
   private HttpServerRequestImpl request;
   private Integer status;
   private Future<Integer> handshakeFuture;
@@ -66,9 +64,10 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
     this.uri = request.uri();
     this.path = request.path();
     this.query = request.query();
-    this.headers = request.headers();
     this.request = request;
     this.handshaker = handshaker;
+
+    headers(request.headers());
   }
 
   @Override
@@ -84,11 +83,6 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   @Override
   public String query() {
     return query;
-  }
-
-  @Override
-  public MultiMap headers() {
-    return headers;
   }
 
   @Override

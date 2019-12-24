@@ -11,16 +11,13 @@
 
 package io.vertx.core.http;
 
-import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -118,12 +115,6 @@ public interface ServerWebSocket extends WebSocketBase {
    */
   @Nullable
   String query();
-
-  /**
-   * @return the headers in the WebSocket handshake
-   */
-  @CacheReturn
-  MultiMap headers();
 
   /**
    * Accept the WebSocket and terminate the WebSocket handshake.

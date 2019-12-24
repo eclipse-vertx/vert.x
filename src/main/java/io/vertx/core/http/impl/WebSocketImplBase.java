@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
@@ -61,6 +62,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Handler<Void> endHandler;
   protected final Http1xConnectionBase conn;
   protected boolean closed;
+  private MultiMap headers;
 
   WebSocketImplBase(Http1xConnectionBase conn,
                     boolean supportsContinuation,
@@ -193,6 +195,19 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   void subProtocol(String subProtocol) {
     synchronized (conn) {
       this.subProtocol = subProtocol;
+    }
+  }
+
+  @Override
+  public MultiMap headers() {
+    synchronized(conn) {
+      return headers;
+    }
+  }
+
+  void headers(MultiMap responseHeaders) {
+    synchronized(conn) {
+      this.headers = responseHeaders;
     }
   }
 

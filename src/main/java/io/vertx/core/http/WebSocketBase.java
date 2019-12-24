@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
@@ -95,9 +96,18 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   String subProtocol();
 
   /**
+   * Returns the HTTP headers when the WebSocket is first obtained in the handler.
+   * <p/>
+   * The headers will be {@code null} on subsequent interactions.
+   *
+   * @return the response headers
+   */
+  MultiMap headers();
+
+  /**
    * Write a WebSocket frame to the connection
    *
-   * @param frame  the frame to write
+   * @param frame the frame to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -112,7 +122,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Write a final WebSocket text frame to the connection
    *
-   * @param text  The text to write
+   * @param text The text to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -127,7 +137,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Write a final WebSocket binary frame to the connection
    *
-   * @param data  The data to write
+   * @param data The data to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -143,7 +153,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Writes a (potentially large) piece of binary data to the connection. This data might be written as multiple frames
    * if it exceeds the maximum WebSocket frame size.
    *
-   * @param data  the data to write
+   * @param data the data to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -159,7 +169,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * Writes a (potentially large) piece of text data to the connection. This data might be written as multiple frames
    * if it exceeds the maximum WebSocket frame size.
    *
-   * @param text  the data to write
+   * @param text the data to write
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -207,7 +217,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * <p/>
    * After this callback, no more messages are expected.
    *
-   * @param handler  the handler
+   * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -216,7 +226,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * Set a frame handler on the connection. This handler will be called when frames are read on the connection.
    *
-   * @param handler  the handler
+   * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -306,7 +316,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * No more messages can be sent.
    *
    * @param statusCode Status code
-   * @param reason reason of closure
+   * @param reason     reason of closure
    */
   void close(short statusCode, @Nullable String reason);
 
@@ -334,7 +344,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
 
   /**
    * @return SSLSession associated with the underlying socket. Returns null if connection is
-   *         not SSL.
+   * not SSL.
    * @see javax.net.ssl.SSLSession
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
@@ -346,7 +356,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
    * access that method.
    *
    * @return an ordered array of the peer certificates. Returns null if connection is
-   *         not SSL.
+   * not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
    * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
    * @see #sslSession()
