@@ -13,12 +13,7 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.FastThreadLocalThread;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentMap;
@@ -254,5 +249,9 @@ public interface ContextInternal extends Context, Executor {
    * @return a duplicate of this context
    */
   ContextInternal duplicate();
+
+  long setPeriodic(long delay, Handler<Long> handler);
+
+  long setTimer(long delay, Handler<Long> handler);
 
 }

@@ -12,13 +12,7 @@ package io.vertx.core.impl;
 
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.concurrent.FastThreadLocalThread;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Starter;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
 import java.util.List;
@@ -152,6 +146,16 @@ abstract class AbstractContext implements ContextInternal {
     } else {
       endNettyThreadAssociation(th, previous);
     }
+  }
+
+  @Override
+  public long setPeriodic(long delay, Handler<Long> handler) {
+    return owner().scheduleTimeout(this, handler, delay, true);
+  }
+
+  @Override
+  public long setTimer(long delay, Handler<Long> handler) {
+    return owner().scheduleTimeout(this, handler, delay, false);
   }
 
   private static void endNettyThreadAssociation(Thread th, ContextInternal prev) {

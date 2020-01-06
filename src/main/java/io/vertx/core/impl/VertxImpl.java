@@ -453,7 +453,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new DnsClientImpl(this, options);
   }
 
-  private long scheduleTimeout(ContextInternal context, Handler<Long> handler, long delay, boolean periodic) {
+  @Override
+  public long scheduleTimeout(ContextInternal context, Handler<Long> handler, long delay, boolean periodic) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
