@@ -29,7 +29,7 @@ import java.util.concurrent.RejectedExecutionException;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 abstract class ContextImpl extends AbstractContext {
-  
+
   /**
    * Execute the {@code task} disabling the thread-local association for the duration
    * of the execution. {@link Vertx#currentContext()} will return {@code null},

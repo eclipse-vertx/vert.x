@@ -17,6 +17,8 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.FutureFactory;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 /**
@@ -477,6 +479,71 @@ public interface Future<T> extends AsyncResult<T> {
    */
   default Future<T> otherwiseEmpty() {
     return (Future<T>) AsyncResult.super.otherwiseEmpty();
+  }
+
+  /**
+   * Bridges this Vert.x future to a {@link CompletionStage} instance.
+   * <p>
+   * The {@link CompletionStage} handling methods will be called from the thread that resolves this future.
+   *
+   * @return a {@link CompletionStage} that completes when this future resolves
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default CompletionStage<T> toCompletionStage() {
+    CompletableFuture<T> completableFuture = new CompletableFuture<>();
+    this.setHandler(ar -> {
+      if (ar.succeeded()) {
+        completableFuture.complete(ar.result());
+      } else {
+        completableFuture.completeExceptionally(ar.cause());
+      }
+    });
+    return completableFuture;
+  }
+
+  /**
+   * Bridges a {@link CompletionStage} object to a Vert.x future instance.
+   * <p>
+   * The Vert.x future handling methods will be called from the thread that completes {@code completionStage}.
+   *
+   * @param completionStage a completion stage
+   * @param <T>             the result type
+   * @return a Vert.x future that resolves when {@code completionStage} resolves
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage) {
+    Promise<T> promise = Promise.promise();
+    completionStage.whenComplete((value, err) -> {
+      if (err != null) {
+        promise.fail(err);
+      } else {
+        promise.complete(value);
+      }
+    });
+    return promise.future();
+  }
+
+  /**
+   * Bridges a {@link CompletionStage} object to a Vert.x future instance.
+   * <p>
+   * The Vert.x future handling methods will be called on the provided {@code context}.
+   *
+   * @param completionStage a completion stage
+   * @param context         a Vert.x context to dispatch to
+   * @param <T>             the result type
+   * @return a Vert.x future that resolves when {@code completionStage} resolves
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage, Context context) {
+    Promise<T> promise = ((ContextInternal) context).promise();
+    completionStage.whenComplete((value, err) -> {
+      if (err != null) {
+        promise.fail(err);
+      } else {
+        promise.complete(value);
+      }
+    });
+    return promise.future();
   }
 
   @GenIgnore
