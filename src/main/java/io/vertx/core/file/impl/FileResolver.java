@@ -325,7 +325,7 @@ public class FileResolver {
     String cacheDirName = fileCacheDir + "/file-cache-" + UUID.randomUUID().toString();
     cacheDir = new File(cacheDirName);
     if (!cacheDir.mkdirs()) {
-      throw new IllegalStateException("Failed to create cache dir");
+      throw new IllegalStateException("Failed to create cache dir: " + cacheDirName);
     }
     // Add shutdown hook to delete on exit
     synchronized (this) {
