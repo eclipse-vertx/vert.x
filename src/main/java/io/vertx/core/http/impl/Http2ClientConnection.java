@@ -17,7 +17,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
-import io.netty.handler.codec.http2.Http2Connection;
 import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -166,7 +165,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       Handler<HttpClientRequest> pushHandler = stream.pushHandler();
       if (pushHandler != null) {
         String rawMethod = headers.method().toString();
-        HttpMethod method = HttpUtils.toVertxMethod(rawMethod);
+        HttpMethod method = HttpMethod.valueOf(rawMethod);
         String uri = headers.path().toString();
         String authority = headers.authority() != null ? headers.authority().toString() : null;
         MultiMap headersMap = new Http2HeadersAdaptor(headers);
@@ -181,7 +180,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           host = authority.substring(0, pos);
           port = Integer.parseInt(authority.substring(pos + 1));
         }
-        HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(this, client, isSsl(), method, rawMethod, uri, host, port, headersMap);
+        HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(this, client, isSsl(), method, uri, host, port, headersMap);
         pushReq.getStream().init(promisedStream);
         if (metrics != null) {
           ((Stream)pushReq.getStream()).metric = metrics.responsePushed(queueMetric, metric(), localAddress(), remoteAddress(), pushReq);
@@ -455,9 +454,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
+    public void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
       Http2Headers h = new DefaultHttp2Headers();
-      h.method(method != HttpMethod.OTHER ? method.name() : rawMethod);
+      h.method(method.name());
       boolean e;
       if (method == HttpMethod.CONNECT) {
         if (hostHeader == null) {

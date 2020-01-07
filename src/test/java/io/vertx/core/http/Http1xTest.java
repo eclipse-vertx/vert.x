@@ -3826,7 +3826,7 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testPartialH2CAmbiguousRequest() throws Exception {
     server.requestHandler(req -> {
-      assertEquals("POST", req.rawMethod());
+      assertEquals(HttpMethod.POST, req.method());
       testComplete();
     });
     Buffer fullRequest = Buffer.buffer("POST /whatever HTTP/1.1\r\n\r\n");

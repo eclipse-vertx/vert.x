@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
@@ -57,7 +56,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private final Future<Void> endFuture;
   private boolean chunked;
   private String hostHeader;
-  private String rawMethod;
   private Handler<Void> continueHandler;
   private Handler<Void> drainHandler;
   private Handler<HttpClientRequest> pushHandler;
@@ -149,17 +147,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized boolean isChunked() {
     return chunked;
-  }
-
-  @Override
-  public synchronized String getRawMethod() {
-    return rawMethod;
-  }
-
-  @Override
-  public synchronized HttpClientRequest setRawMethod(String method) {
-    this.rawMethod = method;
-    return this;
   }
 
   @Override
@@ -403,11 +390,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private synchronized void connect(Handler<AsyncResult<HttpVersion>> headersHandler) {
     if (!connecting) {
-
-      if (method == HttpMethod.OTHER && rawMethod == null) {
-        throw new IllegalStateException("You must provide a rawMethod when using an HttpMethod.OTHER method");
-      }
-
       SocketAddress peerAddress;
       if (hostHeader != null) {
         int idx = hostHeader.lastIndexOf(':');
@@ -478,7 +460,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           }
         };
       }
-      stream.writeHead(method, rawMethod, uri, headers, hostHeader(), chunked, pending, ended, priority, handler);
+      stream.writeHead(method, uri, headers, hostHeader(), chunked, pending, ended, priority, handler);
       if (ended) {
         tryComplete();
       }

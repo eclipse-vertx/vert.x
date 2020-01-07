@@ -103,7 +103,6 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
      */
     @Override
     public void writeHead(HttpMethod method,
-                          String rawMethod,
                           String uri,
                           MultiMap headers,
                           String hostHeader,
@@ -171,7 +170,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, listener);
+      stream.writeHead(method, uri, headers, hostHeader, chunked, buf, end, priority, listener);
     }
 
     @Override

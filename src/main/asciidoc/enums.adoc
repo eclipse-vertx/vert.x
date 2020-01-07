@@ -87,30 +87,6 @@ ID 14, bad timestamp
 +++
 |===
 
-[[HttpMethod]]
-== HttpMethod
-
-++++
- Represents an HTTP method
-++++
-'''
-
-[cols=">25%,75%"]
-[frame="topbot"]
-|===
-^|Name | Description
-|[[OPTIONS]]`OPTIONS`|-
-|[[GET]]`GET`|-
-|[[HEAD]]`HEAD`|-
-|[[POST]]`POST`|-
-|[[PUT]]`PUT`|-
-|[[DELETE]]`DELETE`|-
-|[[TRACE]]`TRACE`|-
-|[[CONNECT]]`CONNECT`|-
-|[[PATCH]]`PATCH`|-
-|[[OTHER]]`OTHER`|-
-|===
-
 [[HttpVersion]]
 == HttpVersion
 
