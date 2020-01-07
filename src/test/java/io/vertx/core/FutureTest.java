@@ -1445,7 +1445,7 @@ public class FutureTest extends VertxTestBase {
         assertSame(mainThread, Thread.currentThread());
         complete();
       });
-    await(5, SECONDS);
+    await();
   }
 
   @Test
@@ -1473,7 +1473,7 @@ public class FutureTest extends VertxTestBase {
     disableThreadChecks();
     new Thread(() -> willSucceed.complete("Yo")).start();
     new Thread(() -> willFail.fail(new RuntimeException("Woops"))).start();
-    await(5, SECONDS);
+    await();
   }
 
   @Test
@@ -1510,7 +1510,7 @@ public class FutureTest extends VertxTestBase {
       willFail.completeExceptionally(new RuntimeException("Woops"));
     });
 
-    await(5, SECONDS);
+    await();
   }
 
   @Test
@@ -1551,6 +1551,6 @@ public class FutureTest extends VertxTestBase {
       willFail.completeExceptionally(new RuntimeException("Woops"));
     });
 
-    await(5, SECONDS);
+    await();
   }
 }
