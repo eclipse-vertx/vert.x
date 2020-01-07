@@ -41,7 +41,7 @@ public class CompletionStageInteropExamples {
   }
 
   public void fromCS(Vertx vertx, CompletionStage<String> completionStage) {
-    Future.from(completionStage, vertx.getOrCreateContext())
+    Future.fromCompletionStage(completionStage, vertx.getOrCreateContext())
       .flatMap(str -> {
         String key = UUID.randomUUID().toString();
         return storeInDb(key, str);

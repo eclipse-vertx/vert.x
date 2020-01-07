@@ -29,8 +29,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -1487,13 +1485,13 @@ public class FutureTest extends VertxTestBase {
     AtomicReference<Thread> failureSupplierThread = new AtomicReference<>();
     CompletableFuture<String> willFail = new CompletableFuture<>();
 
-    Future.from(willSucceed).onSuccess(str -> {
+    Future.fromCompletionStage(willSucceed).onSuccess(str -> {
       assertEquals("Ok", str);
       assertSame(successSupplierThread.get(), Thread.currentThread());
       complete();
     });
 
-    Future.from(willFail).onFailure(err -> {
+    Future.fromCompletionStage(willFail).onFailure(err -> {
       assertTrue(err instanceof RuntimeException);
       assertEquals("Woops", err.getMessage());
       assertSame(failureSupplierThread.get(), Thread.currentThread());
@@ -1524,7 +1522,7 @@ public class FutureTest extends VertxTestBase {
     AtomicReference<Thread> failureSupplierThread = new AtomicReference<>();
     CompletableFuture<String> willFail = new CompletableFuture<>();
 
-    Future.from(willSucceed, context).onSuccess(str -> {
+    Future.fromCompletionStage(willSucceed, context).onSuccess(str -> {
       assertEquals("Ok", str);
       assertNotSame(successSupplierThread.get(), Thread.currentThread());
       assertEquals(context, vertx.getOrCreateContext());
@@ -1532,7 +1530,7 @@ public class FutureTest extends VertxTestBase {
       complete();
     });
 
-    Future.from(willFail, context).onFailure(err -> {
+    Future.fromCompletionStage(willFail, context).onFailure(err -> {
       assertTrue(err instanceof RuntimeException);
       assertEquals("Woops", err.getMessage());
       assertNotSame(failureSupplierThread.get(), Thread.currentThread());

@@ -373,7 +373,7 @@ We can go from a Vert.x `Future` to a `CompletionStage` using the {@link io.vert
 {@link examples.CompletionStageInteropExamples#toCS}
 ----
 
-We can conversely go from a `CompletionStage` to Vert.x `Future` using {@link io.vertx.core.Future#from}.
+We can conversely go from a `CompletionStage` to Vert.x `Future` using {@link io.vertx.core.Future#fromCompletionStage}.
 There are 2 variants:
 
 . the first variant takes just a `CompletionStage` and calls the `Future` methods from the thread that resolves the `CompletionStage` instance, and

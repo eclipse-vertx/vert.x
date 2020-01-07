@@ -511,7 +511,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return a Vert.x future that resolves when {@code completionStage} resolves
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  static <T> Future<T> from(CompletionStage<T> completionStage) {
+  static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage) {
     Promise<T> promise = Promise.promise();
     completionStage.whenComplete((value, err) -> {
       if (err != null) {
@@ -534,7 +534,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return a Vert.x future that resolves when {@code completionStage} resolves
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  static <T> Future<T> from(CompletionStage<T> completionStage, Context context) {
+  static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage, Context context) {
     Promise<T> promise = ((ContextInternal) context).promise();
     completionStage.whenComplete((value, err) -> {
       if (err != null) {
