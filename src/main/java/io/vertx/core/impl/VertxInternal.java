@@ -67,8 +67,6 @@ public interface VertxInternal extends Vertx {
 
   Transport transport();
 
-  long scheduleTimeout(ContextInternal context, Handler<Long> handler, long delay, boolean periodic);
-
   /**
    * Get the current context
    * @return the context
