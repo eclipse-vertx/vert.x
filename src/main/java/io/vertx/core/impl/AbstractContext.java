@@ -150,12 +150,14 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public long setPeriodic(long delay, Handler<Long> handler) {
-    return owner().scheduleTimeout(this, handler, delay, true);
+    VertxImpl owner = (VertxImpl) owner();
+    return owner.scheduleTimeout(this, handler, delay, true);
   }
 
   @Override
   public long setTimer(long delay, Handler<Long> handler) {
-    return owner().scheduleTimeout(this, handler, delay, false);
+    VertxImpl owner = (VertxImpl) owner();
+    return owner.scheduleTimeout(this, handler, delay, false);
   }
 
   private static void endNettyThreadAssociation(Thread th, ContextInternal prev) {

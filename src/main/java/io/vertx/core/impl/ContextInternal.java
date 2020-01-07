@@ -250,8 +250,14 @@ public interface ContextInternal extends Context, Executor {
    */
   ContextInternal duplicate();
 
+  /**
+   * Like {@link Vertx#setPeriodic(long, Handler)}  except the periodic timer will fire on this comtext.
+   */
   long setPeriodic(long delay, Handler<Long> handler);
 
+  /**
+   * Like {@link Vertx#setTimer(long, Handler)} except the timer will fire on this comtext.
+   */
   long setTimer(long delay, Handler<Long> handler);
 
 }
