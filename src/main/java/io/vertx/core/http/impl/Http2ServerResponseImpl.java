@@ -25,11 +25,9 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
@@ -41,13 +39,11 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.streams.WriteStream;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.file.NoSuchFileException;
 import java.util.Map;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
@@ -651,7 +647,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public boolean closed() {
-    return conn.isClosed();
+    synchronized (conn) {
+      return closed;
+    }
   }
 
   @Override
@@ -689,11 +687,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public void reset(long code) {
-    /*
-    if (!handleEnded(true)) {
-      throw new IllegalStateException("Response has already been written");
-    }
-    */
     checkValid();
     stream.writeReset(code);
     ctx.flush();

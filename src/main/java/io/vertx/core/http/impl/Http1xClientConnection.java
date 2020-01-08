@@ -718,7 +718,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         } else {
           ws = (WebSocketImpl) wsRes.result();
           ws.registerHandler(vertx.eventBus());
-
         }
         getContext().executeFromIO(wsRes, res -> {
           if (res.succeeded()) {

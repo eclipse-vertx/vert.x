@@ -169,8 +169,9 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
-    conn.setRead();
-    context.executeFromIO(msg, messageHandler);
+    if (conn.setRead()) {
+      context.executeFromIO(msg, messageHandler);
+    }
   }
 
   @Override

@@ -15,6 +15,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -66,6 +67,7 @@ public abstract class ConnectionBase {
   // State accessed exclusively from the event loop thread
   private boolean read;
   private boolean needsFlush;
+  private boolean closed;
 
   protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
     this.vertx = vertx;
@@ -104,8 +106,9 @@ public abstract class ConnectionBase {
   /**
    * This method is exclusively called by {@code VertxHandler} to signal read on the event-loop thread.
    */
-  final void setRead() {
+  final boolean setRead() {
     read = true;
+    return !closed;
   }
 
   /**
@@ -122,6 +125,45 @@ public abstract class ConnectionBase {
     } else {
       chctx.write(msg, promise);
     }
+  }
+
+  /**
+   * This method is exclusively called on the event-loop thread
+   *
+   * @param promise the promise receiving the completion event
+   */
+  private void writeFlush(ChannelPromise promise) {
+    if (needsFlush) {
+      needsFlush = false;
+      chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
+    } else {
+      promise.setSuccess();
+    }
+  }
+
+  /**
+   * This method is exclusively called on the event-loop thread
+   *
+   * @param handler the handler receiving the completion event
+   */
+  private void writeClose(Handler<AsyncResult<Void>> handler) {
+    if (closed) {
+      if (handler != null) {
+        handler.handle(Future.succeededFuture());
+      }
+      return;
+    }
+    closed = true;
+    // make sure everything is flushed out on close
+    ChannelPromise promise = chctx
+      .newPromise()
+      .addListener((ChannelFutureListener) f -> {
+        ChannelFuture closeFut = chctx.channel().close();
+        if (handler != null) {
+          closeFut.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
+        }
+      });
+    writeFlush(promise);
   }
 
   /**
@@ -192,14 +234,9 @@ public abstract class ConnectionBase {
    */
   public final void flush(ChannelPromise promise) {
     if (chctx.executor().inEventLoop()) {
-      if (needsFlush) {
-        needsFlush = false;
-        chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
-      } else {
-        promise.setSuccess();
-      }
+      writeFlush(promise);
     } else {
-      chctx.executor().execute(() -> flush(promise));
+      chctx.executor().execute(() -> writeFlush(promise));
     }
   }
 
@@ -219,16 +256,12 @@ public abstract class ConnectionBase {
    * Close the connection and notifies the {@code handler}
    */
   public void close(Handler<AsyncResult<Void>> handler) {
-    // make sure everything is flushed out on close
-    ChannelPromise promise = chctx
-      .newPromise()
-      .addListener((ChannelFutureListener) f -> {
-      ChannelFuture closeFut = chctx.channel().close();
-      if (handler != null) {
-        closeFut.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
-      }
-    });
-    flush(promise);
+    EventExecutor exec = chctx.executor();
+    if (exec.inEventLoop()) {
+      writeClose(handler);
+    } else {
+      exec.execute(() -> writeClose(handler));
+    }
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {
@@ -307,6 +340,7 @@ public abstract class ConnectionBase {
   }
 
   protected void handleClosed() {
+    closed = true;
     Handler<Void> handler;
     synchronized (this) {
       NetworkMetrics metrics = metrics();

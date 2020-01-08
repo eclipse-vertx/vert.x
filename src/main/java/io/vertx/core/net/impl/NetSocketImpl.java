@@ -72,7 +72,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private InboundBuffer<Object> pending;
   private MessageConsumer registration;
   private Handler<Object> messageHandler;
-  private boolean closed;
 
   public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextInternal context,
                        SSLHelper helper, TCPMetrics metrics) {
@@ -121,9 +120,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public synchronized NetSocketInternal writeMessage(Object message) {
-    if (closed) {
-      throw new IllegalStateException("Socket is closed");
-    }
     writeToChannel(message);
     return this;
   }
@@ -346,10 +342,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   protected void handleClosed() {
     MessageConsumer consumer;
     synchronized (this) {
-      if (closed) {
-        return;
-      }
-      closed = true;
       consumer = registration;
       registration = null;
     }

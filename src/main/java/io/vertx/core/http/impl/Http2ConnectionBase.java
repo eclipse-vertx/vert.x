@@ -83,7 +83,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
-  private boolean closed;
   private boolean goneAway;
   private int windowSize;
   private long maxConcurrentStreams;
@@ -108,9 +107,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public void handleClosed() {
-    synchronized (this) {
-      closed = true;
-    }
     super.handleClosed();
   }
 
@@ -122,10 +118,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   protected void handleIdle() {
     super.handleIdle();
-  }
-
-  synchronized boolean isClosed() {
-    return closed;
   }
 
   synchronized void onConnectionError(Throwable cause) {
