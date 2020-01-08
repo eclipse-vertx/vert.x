@@ -2440,7 +2440,12 @@ public class NetTest extends VertxTestBase {
           assertTrue(Vertx.currentContext().isWorkerContext());
           assertTrue(Context.isOnWorkerThread());
           assertSame(context, Vertx.currentContext());
-          conn.handler(conn::write);
+          conn.handler(buff -> {
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            assertSame(context, Vertx.currentContext());
+            conn.write(buff);
+          });
           conn.closeHandler(v -> {
             assertTrue(Vertx.currentContext().isWorkerContext());
             assertTrue(Context.isOnWorkerThread());
