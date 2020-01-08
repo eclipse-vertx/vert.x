@@ -359,8 +359,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       consumer = registration;
       registration = null;
     }
-    // Should be done with dispatch....
-    pending.write(InboundBuffer.END_SENTINEL);
+    context.dispatch(InboundBuffer.END_SENTINEL, pending::write);
     super.handleClosed();
     if (consumer != null) {
       consumer.unregister();

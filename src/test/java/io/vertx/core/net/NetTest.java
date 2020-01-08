@@ -2427,7 +2427,8 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testInWorker() throws Exception {
+  public void testInWorker() {
+    waitFor(2);
     vertx.deployVerticle(new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -2441,7 +2442,16 @@ public class NetTest extends VertxTestBase {
           assertSame(context, Vertx.currentContext());
           conn.handler(conn::write);
           conn.closeHandler(v -> {
-            testComplete();
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            assertSame(context, Vertx.currentContext());
+            complete();
+          });
+          conn.endHandler(v -> {
+            assertTrue(Vertx.currentContext().isWorkerContext());
+            assertTrue(Context.isOnWorkerThread());
+            assertSame(context, Vertx.currentContext());
+            complete();
           });
         }).listen(testAddress, onSuccess(s -> {
           assertTrue(Vertx.currentContext().isWorkerContext());
