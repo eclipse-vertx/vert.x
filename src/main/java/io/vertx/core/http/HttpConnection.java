@@ -246,7 +246,7 @@ public interface HttpConnection {
   SocketAddress remoteAddress();
 
   /**
-   * @return the remote address for this connection
+   * @return the local address for this connection
    */
   @CacheReturn
   SocketAddress localAddress();
