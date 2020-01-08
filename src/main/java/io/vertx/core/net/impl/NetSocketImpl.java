@@ -17,7 +17,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandler;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.CharsetUtil;
@@ -74,7 +73,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Void> drainHandler;
   private MessageConsumer registration;
   private Handler<Object> messageHandler;
-  private boolean closed;
 
   public NetSocketImpl(VertxInternal vertx, ChannelHandlerContext channel, ContextInternal context,
                        SSLHelper helper, TCPMetrics metrics) {
@@ -123,9 +121,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public synchronized Future<Void> writeMessage(Object message) {
-    if (closed) {
-      throw new IllegalStateException("Socket is closed");
-    }
     Promise<Void> promise = context.promise();
     writeMessage(message, promise);
     return promise.future();
@@ -133,9 +128,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public NetSocketInternal writeMessage(Object message, Handler<AsyncResult<Void>> handler) {
-    if (closed) {
-      throw new IllegalStateException("Socket is closed");
-    }
     writeToChannel(message, handler == null ? null : context.promise(handler));
     return this;
   }
@@ -364,13 +356,10 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   protected void handleClosed() {
     MessageConsumer consumer;
     synchronized (this) {
-      if (closed) {
-        return;
-      }
-      closed = true;
       consumer = registration;
       registration = null;
     }
+    // Should be done with dispatch....
     pending.write(InboundBuffer.END_SENTINEL);
     super.handleClosed();
     if (consumer != null) {

@@ -59,6 +59,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private boolean chunked;
   private boolean headWritten;
   private boolean ended;
+  private boolean closed;
   private Map<String, ServerCookie> cookies;
   private HttpResponseStatus status = HttpResponseStatus.OK;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
@@ -106,6 +107,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     Handler<Void> endHandler;
     Handler<Void> closeHandler;
     synchronized (conn) {
+      closed = true;
       boolean failed = !ended;
       exceptionHandler = failed ? this.exceptionHandler : null;
       endHandler = failed ? this.endHandler : null;
@@ -619,8 +621,10 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public boolean closed() {
-    return conn.isClosed();
+  public synchronized boolean closed() {
+    synchronized (conn) {
+      return closed;
+    }
   }
 
   @Override

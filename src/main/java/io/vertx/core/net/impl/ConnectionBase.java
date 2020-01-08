@@ -15,6 +15,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
@@ -70,6 +71,7 @@ public abstract class ConnectionBase {
   // State accessed exclusively from the event loop thread
   private boolean read;
   private boolean needsFlush;
+  private boolean closed;
 
   protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
     this.vertx = vertx;
@@ -106,10 +108,13 @@ public abstract class ConnectionBase {
   }
 
   /**
-   * This method is exclusively called by {@code VertxHandler} to signal read on the event-loop thread.
+   * This method is exclusively called by {@code VertxHandler} to read a message on the event-loop thread.
    */
-  final void setRead() {
+  final void read(Object msg) {
     read = true;
+    if (!closed) {
+      handleMessage(msg);
+    }
   }
 
   /**
@@ -129,6 +134,40 @@ public abstract class ConnectionBase {
     } else {
       chctx.write(msg, promise);
     }
+  }
+
+  /**
+   * This method is exclusively called on the event-loop thread
+   *
+   * @param promise the promise receiving the completion event
+   */
+  private void writeFlush(ChannelPromise promise) {
+    if (needsFlush) {
+      needsFlush = false;
+      chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
+    } else {
+      promise.setSuccess();
+    }
+  }
+
+  /**
+   * This method is exclusively called on the event-loop thread
+   *
+   * @param promise the promise receiving the completion event
+   */
+  private void writeClose(PromiseInternal<Void> promise) {
+    if (closed) {
+      promise.complete();
+      return;
+    }
+    closed = true;
+    // Make sure everything is flushed out on close
+    ChannelPromise channelPromise = chctx
+      .newPromise()
+      .addListener((ChannelFutureListener) f -> {
+        chctx.channel().close().addListener(promise);
+      });
+    writeFlush(channelPromise);
   }
 
   protected void reportsBytesWritten(Object msg) {
@@ -187,15 +226,11 @@ public abstract class ConnectionBase {
    * @param promise the promise resolved when flush occurred
    */
   public final void flush(ChannelPromise promise) {
-    if (chctx.executor().inEventLoop()) {
-      if (needsFlush) {
-        needsFlush = false;
-        chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
-      } else {
-        promise.setSuccess();
-      }
+    EventExecutor exec = chctx.executor();
+    if (exec.inEventLoop()) {
+      writeFlush(promise);
     } else {
-      chctx.executor().execute(() -> flush(promise));
+      exec.execute(() -> writeFlush(promise));
     }
   }
 
@@ -209,13 +244,12 @@ public abstract class ConnectionBase {
    */
   public Future<Void> close() {
     PromiseInternal<Void> promise = context.promise();
-    // make sure everything is flushed out on close
-    ChannelPromise channelPromise = chctx
-      .newPromise()
-      .addListener((ChannelFutureListener) f -> {
-        chctx.channel().close().addListener(promise);
-      });
-    flush(channelPromise);
+    EventExecutor exec = chctx.executor();
+    if (exec.inEventLoop()) {
+      writeClose(promise);
+    } else {
+      exec.execute(() -> writeClose(promise));
+    }
     return promise.future();
   }
 
@@ -301,6 +335,7 @@ public abstract class ConnectionBase {
   }
 
   protected void handleClosed() {
+    closed = true;
     NetworkMetrics metrics = metrics();
     if (metrics instanceof TCPMetrics) {
       ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
@@ -465,6 +500,6 @@ public abstract class ConnectionBase {
     return address;
   }
 
-  public void handleMessage(Object msg) {
+  protected void handleMessage(Object msg) {
   }
 }

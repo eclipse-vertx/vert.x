@@ -153,8 +153,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
 
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) {
-    conn.setRead();
-    conn.handleMessage(msg);
+    conn.read(msg);
   }
 
   @Override
