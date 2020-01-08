@@ -3732,6 +3732,31 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testServerConnectionHandlerClose() throws Exception {
+    waitFor(2);
+    Context serverCtx = vertx.getOrCreateContext();
+    server.connectionHandler(conn -> {
+      conn.close();
+      conn.closeHandler(v -> {
+        complete();
+      });
+    });
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(testAddress, serverCtx, server);
+    client.connectionHandler(conn -> {
+      conn.closeHandler(v -> {
+        complete();
+      });
+    });
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+      fail();
+    }).end();
+    await();
+  }
+
+  @Test
   public void testClientConnectionClose() throws Exception {
     // Test client connection close + server close handler
     CountDownLatch latch = new CountDownLatch(1);
