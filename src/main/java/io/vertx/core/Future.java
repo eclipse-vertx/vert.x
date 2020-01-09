@@ -488,7 +488,7 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * @return a {@link CompletionStage} that completes when this future resolves
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   default CompletionStage<T> toCompletionStage() {
     CompletableFuture<T> completableFuture = new CompletableFuture<>();
     this.setHandler(ar -> {
@@ -510,7 +510,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param <T>             the result type
    * @return a Vert.x future that resolves when {@code completionStage} resolves
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage) {
     Promise<T> promise = Promise.promise();
     completionStage.whenComplete((value, err) -> {
@@ -533,7 +533,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param <T>             the result type
    * @return a Vert.x future that resolves when {@code completionStage} resolves
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore
   static <T> Future<T> fromCompletionStage(CompletionStage<T> completionStage, Context context) {
     Promise<T> promise = ((ContextInternal) context).promise();
     completionStage.whenComplete((value, err) -> {
