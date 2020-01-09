@@ -28,6 +28,7 @@ import static org.junit.Assert.*;
  *
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
+@SuppressWarnings("deprecation")
 public class Log4J2LogDelegateTest {
 
   private static StreamRecording recording;

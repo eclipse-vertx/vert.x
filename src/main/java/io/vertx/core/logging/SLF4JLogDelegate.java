@@ -25,6 +25,8 @@ import static org.slf4j.spi.LocationAwareLogger.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class SLF4JLogDelegate implements LogDelegate {
+
+  @SuppressWarnings("deprecation")
   private static final String FQCN = io.vertx.core.logging.Logger.class.getCanonicalName();
 
   private final Logger logger;

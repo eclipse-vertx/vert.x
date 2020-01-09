@@ -25,6 +25,8 @@ import org.apache.logging.log4j.spi.ExtendedLogger;
 public class Log4j2LogDelegate implements LogDelegate {
 
   final ExtendedLogger logger;
+
+  @SuppressWarnings("deprecation")
   final static String FQCN = Logger.class.getCanonicalName();
 
   Log4j2LogDelegate(final String name) {

@@ -12,8 +12,8 @@
 package io.vertx.test.core;
 
 import io.vertx.core.*;
-import io.vertx.core.logging.Logger;
-import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.tracing.VertxTracer;

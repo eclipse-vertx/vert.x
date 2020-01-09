@@ -20,6 +20,8 @@ import org.apache.log4j.Level;
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public class Log4jLogDelegate implements LogDelegate {
+
+  @SuppressWarnings("deprecation")
   private static final String FQCN = Logger.class.getCanonicalName();
 
   private final org.apache.log4j.Logger logger;
