@@ -540,6 +540,25 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testCompositeFutureMulti() {
+    Promise<String> p1 = Promise.promise();
+    Future<String> f1 = p1.future();
+    Promise<Integer> p2 = Promise.promise();
+    Future<Integer> f2 = p2.future();
+    CompositeFuture composite = CompositeFuture.all(f1, f2);
+    AtomicInteger count = new AtomicInteger();
+    composite.onComplete(ar -> {
+      count.compareAndSet(0, 1);
+    });
+    composite.onComplete(ar -> {
+      count.compareAndSet(1, 2);
+    });
+    p1.complete("foo");
+    p2.complete(4);
+    assertEquals(2, count.get());
+  }
+
+  @Test
   public void testComposeSuccessToSuccess() {
     AtomicReference<String> ref = new AtomicReference<>();
     Promise<Integer> p = Promise.promise();
