@@ -64,6 +64,50 @@ public class HttpMethodImpl implements HttpMethod {
         return CONNECT;
       case "PATCH":
         return PATCH;
+      case "PROPFIND":
+        return PROPFIND;
+      case "PROPPATCH":
+        return PROPPATCH;
+      case "MKCOL":
+        return MKCOL;
+      case "COPY":
+        return COPY;
+      case "MOVE":
+        return MOVE;
+      case "LOCK":
+        return LOCK;
+      case "UNLOCK":
+        return UNLOCK;
+      case "MKCALENDAR":
+        return MKCALENDAR;
+      case "VERSION-CONTROL":
+        return VERSION_CONTROL;
+      case "REPORT":
+        return REPORT;
+      case "CHECKOUT":
+        return CHECKOUT;
+      case "CHECKIN":
+        return CHECKIN;
+      case "UNCHECKOUT":
+        return UNCHECKOUT;
+      case "MKWORKSPACE":
+        return MKWORKSPACE;
+      case "UPDATE":
+        return UPDATE;
+      case "LABEL":
+        return LABEL;
+      case "MERGE":
+        return MERGE;
+      case "BASELINE-CONTROL":
+        return BASELINE_CONTROL;
+      case "MKACTIVITY":
+        return MKACTIVITY;
+      case "ORDERPATCH":
+        return ORDERPATCH;
+      case "ACL":
+        return ACL;
+      case "SEARCH":
+        return SEARCH;
       default:
         return new HttpMethodImpl(sMethod);
     }
