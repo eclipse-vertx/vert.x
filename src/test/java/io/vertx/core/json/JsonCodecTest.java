@@ -12,7 +12,7 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpMethod;
+import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.json.jackson.JacksonCodec;
@@ -401,9 +401,9 @@ public class JsonCodecTest {
   @Test
   public void testEnumValue() {
     // just a random enum
-    Buffer json = mapper.toBuffer(HttpMethod.CONNECT);
+    Buffer json = mapper.toBuffer(WebsocketVersion.V13);
     assertNotNull(json);
-    assertEquals("\"CONNECT\"", json.toString());
+    assertEquals("\"V13\"", json.toString());
   }
 
   @Test
