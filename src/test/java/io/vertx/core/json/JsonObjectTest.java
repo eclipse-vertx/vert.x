@@ -12,7 +12,6 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.test.core.TestUtils;
 import org.junit.Before;
@@ -22,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
@@ -330,12 +330,8 @@ public class JsonObjectTest {
     jsonObject.put("foo", "bar");
     assertEquals("bar", jsonObject.getString("foo"));
     jsonObject.put("bar", 123);
-    try {
-      jsonObject.getString("bar");
-      // Ok
-    } catch (ClassCastException e) {
-      fail();
-    }
+    // should not fail and be casted to string
+    assertEquals("123", jsonObject.getString("bar"));
 
     // Null and absent values
     jsonObject.putNull("foo");
@@ -357,12 +353,9 @@ public class JsonObjectTest {
     assertEquals("bar", jsonObject.getString("foo", "wibble"));
     assertEquals("bar", jsonObject.getString("foo", null));
     jsonObject.put("bar", 123);
-    try {
-      assertEquals("123", jsonObject.getString("bar", "wibble"));
-      // OK, non string types are casted to string using .toString()
-    } catch (ClassCastException e) {
-      fail();
-    }
+
+    // OK, non string types are casted to string using .toString()
+    assertEquals("123", jsonObject.getString("bar", "wibble"));
 
     // Null and absent values
     jsonObject.putNull("foo");
@@ -1756,9 +1749,12 @@ public class JsonObjectTest {
   @Test
   public void testShareable() {
 
+    final AtomicInteger cnt = new AtomicInteger(0);
+
     Shareable myShareable = new Shareable() {
       @Override
       public Shareable copy() {
+        cnt.incrementAndGet();
         return this;
       }
     };
@@ -1770,7 +1766,12 @@ public class JsonObjectTest {
     assertSame(myShareable, json.getValue("0"));
 
     // copy() should allow it too.
+    assertEquals(0, cnt.get());
     JsonObject json2 = json.copy();
+    assertEquals(1, cnt.get());
+    // verify the copy
+    assertEquals(myShareable, json2.getValue("0"));
+    assertSame(myShareable, json2.getValue("0"));
   }
 
 }
