@@ -34,6 +34,28 @@ public class HttpMethodTest {
     assertEquals("OPTIONS", HttpMethod.OPTIONS.name());
     assertEquals("PATCH", HttpMethod.PATCH.name());
     assertEquals("TRACE", HttpMethod.TRACE.name());
+    assertEquals("PROPFIND", HttpMethod.PROPFIND.name());
+    assertEquals("PROPPATCH", HttpMethod.PROPPATCH.name());
+    assertEquals("MKCOL", HttpMethod.MKCOL.name());
+    assertEquals("COPY", HttpMethod.COPY.name());
+    assertEquals("MOVE", HttpMethod.MOVE.name());
+    assertEquals("LOCK", HttpMethod.LOCK.name());
+    assertEquals("UNLOCK", HttpMethod.UNLOCK.name());
+    assertEquals("MKCALENDAR", HttpMethod.MKCALENDAR.name());
+    assertEquals("VERSION-CONTROL", HttpMethod.VERSION_CONTROL.name());
+    assertEquals("REPORT", HttpMethod.REPORT.name());
+    assertEquals("CHECKOUT", HttpMethod.CHECKOUT.name());
+    assertEquals("CHECKIN", HttpMethod.CHECKIN.name());
+    assertEquals("UNCHECKOUT", HttpMethod.UNCHECKOUT.name());
+    assertEquals("MKWORKSPACE", HttpMethod.MKWORKSPACE.name());
+    assertEquals("UPDATE", HttpMethod.UPDATE.name());
+    assertEquals("LABEL", HttpMethod.LABEL.name());
+    assertEquals("MERGE", HttpMethod.MERGE.name());
+    assertEquals("BASELINE-CONTROL", HttpMethod.BASELINE_CONTROL.name());
+    assertEquals("MKACTIVITY", HttpMethod.MKACTIVITY.name());
+    assertEquals("ORDERPATCH", HttpMethod.ORDERPATCH.name());
+    assertEquals("ACL", HttpMethod.ACL.name());
+    assertEquals("SEARCH", HttpMethod.SEARCH.name());
   }
 
   @Test
@@ -47,7 +69,29 @@ public class HttpMethodTest {
       HttpMethod.DELETE,
       HttpMethod.OPTIONS,
       HttpMethod.PATCH,
-      HttpMethod.TRACE
+      HttpMethod.TRACE,
+      HttpMethod.PROPFIND,
+      HttpMethod.PROPPATCH,
+      HttpMethod.MKCOL,
+      HttpMethod.COPY,
+      HttpMethod.MOVE,
+      HttpMethod.LOCK,
+      HttpMethod.UNLOCK,
+      HttpMethod.MKCALENDAR,
+      HttpMethod.VERSION_CONTROL,
+      HttpMethod.REPORT,
+      HttpMethod.CHECKOUT,
+      HttpMethod.CHECKIN,
+      HttpMethod.UNCHECKOUT,
+      HttpMethod.MKWORKSPACE,
+      HttpMethod.UPDATE,
+      HttpMethod.LABEL,
+      HttpMethod.MERGE,
+      HttpMethod.BASELINE_CONTROL,
+      HttpMethod.MKACTIVITY,
+      HttpMethod.ORDERPATCH,
+      HttpMethod.ACL,
+      HttpMethod.SEARCH
       )) {
       assertSame(HttpMethod.valueOf(method.name()), method);
       assertSame(method.name(), method.toString());
