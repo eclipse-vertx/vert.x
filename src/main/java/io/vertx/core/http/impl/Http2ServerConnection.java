@@ -132,11 +132,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
 
   private synchronized void doSendPush(int streamId, String host, HttpMethod method, MultiMap headers, String path, StreamPriority streamPriority, Promise<HttpServerResponse> promise) {
     Http2Headers headers_ = new DefaultHttp2Headers();
-    if (method == HttpMethod.OTHER) {
-      throw new IllegalArgumentException("Cannot push HttpMethod.OTHER");
-    } else {
-      headers_.method(method.name());
-    }
+    headers_.method(method.name());
     headers_.path(path);
     headers_.scheme(isSsl() ? "https" : "http");
     if (host != null) {

@@ -419,7 +419,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
         if (postRequestDecoder == null) {
           String contentType = headersMap.get(HttpHeaderNames.CONTENT_TYPE);
           if (contentType != null) {
-            io.netty.handler.codec.http.HttpMethod method = io.netty.handler.codec.http.HttpMethod.valueOf(rawMethod);
+            io.netty.handler.codec.http.HttpMethod method = HttpMethodImpl.toNetty(this.method);
             String lowerCaseContentType = contentType.toString().toLowerCase();
             boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED.toString());
             if ((lowerCaseContentType.startsWith(HttpHeaderValues.MULTIPART_FORM_DATA.toString()) || isURLEncoded) &&

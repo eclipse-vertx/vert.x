@@ -667,41 +667,6 @@ public final class HttpUtils {
     return null;
   }
 
-  static HttpMethod toNettyHttpMethod(io.vertx.core.http.HttpMethod method, String rawMethod) {
-    switch (method) {
-      case CONNECT: {
-        return HttpMethod.CONNECT;
-      }
-      case GET: {
-        return HttpMethod.GET;
-      }
-      case PUT: {
-        return HttpMethod.PUT;
-      }
-      case POST: {
-        return HttpMethod.POST;
-      }
-      case DELETE: {
-        return HttpMethod.DELETE;
-      }
-      case HEAD: {
-        return HttpMethod.HEAD;
-      }
-      case OPTIONS: {
-        return HttpMethod.OPTIONS;
-      }
-      case TRACE: {
-        return HttpMethod.TRACE;
-      }
-      case PATCH: {
-        return HttpMethod.PATCH;
-      }
-      default: {
-        return HttpMethod.valueOf(rawMethod);
-      }
-    }
-  }
-
   static HttpVersion toNettyHttpVersion(io.vertx.core.http.HttpVersion version) {
     switch (version) {
       case HTTP_1_0: {
@@ -716,11 +681,7 @@ public final class HttpUtils {
   }
 
   static io.vertx.core.http.HttpMethod toVertxMethod(String method) {
-    try {
-      return io.vertx.core.http.HttpMethod.valueOf(method);
-    } catch (IllegalArgumentException e) {
-      return io.vertx.core.http.HttpMethod.OTHER;
-    }
+    return io.vertx.core.http.HttpMethod.valueOf(method);
   }
 
   private static final AsciiString TIMEOUT_EQ = AsciiString.of("timeout=");

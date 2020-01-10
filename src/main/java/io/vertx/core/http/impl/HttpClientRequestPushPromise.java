@@ -27,7 +27,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   private final Http2ClientConnection conn;
   private final Http2ClientConnection.StreamImpl stream;
-  private final String rawMethod;
   private final MultiMap headers;
 
   public HttpClientRequestPushPromise(
@@ -35,7 +34,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     HttpClientImpl client,
     boolean ssl,
     HttpMethod method,
-    String rawMethod,
     String uri,
     String host,
     int port,
@@ -43,7 +41,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     super(client, conn.getContext(), ssl, method, SocketAddress.inetSocketAddress(port, host), host, port, uri);
     this.conn = conn;
     this.stream = new Http2ClientConnection.StreamImpl(conn, conn.getContext(), this, null);
-    this.rawMethod = rawMethod;
     this.headers = headers;
   }
 
@@ -80,16 +77,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   @Override
   public HttpMethod method() {
     return method;
-  }
-
-  @Override
-  public String getRawMethod() {
-    return rawMethod;
-  }
-
-  @Override
-  public HttpClientRequest setRawMethod(String method) {
-    throw new IllegalStateException();
   }
 
   @Override

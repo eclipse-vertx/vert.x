@@ -117,12 +117,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
   private HttpRequest createRequest(
     HttpMethod method,
-    String rawMethod,
     String uri,
     MultiMap headerMap,
     String hostHeader,
     boolean chunked) {
-    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpUtils.toNettyHttpMethod(method, rawMethod), uri, false);
+    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpMethodImpl.toNetty(method), uri, false);
     HttpHeaders headers = request.headers();
     if (headerMap != null) {
       for (Map.Entry<String, String> header : headerMap) {
@@ -313,8 +312,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    public void writeHead(HttpMethod method, String rawMethod, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
-      HttpRequest request = conn.createRequest(method, rawMethod, uri, headers, hostHeader, chunked);
+    public void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
+      HttpRequest request = conn.createRequest(method, uri, headers, hostHeader, chunked);
       if (end) {
         if (buf != null) {
           request = new AssembledFullHttpRequest(request, buf);

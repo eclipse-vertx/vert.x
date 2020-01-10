@@ -100,20 +100,6 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   HttpMethod method();
 
   /**
-   * @return the raw value of the method this request sends
-   */
-  String getRawMethod();
-
-  /**
-   * Set the value the method to send when the method {@link HttpMethod#OTHER} is used.
-   *
-   * @param method the raw method
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  HttpClientRequest setRawMethod(String method);
-
-  /**
    * @return the absolute URI corresponding to the the HTTP request
    */
   String absoluteURI();
