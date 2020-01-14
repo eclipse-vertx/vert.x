@@ -289,6 +289,8 @@ public class JacksonCodec implements JsonCodec {
           generator.writeNumber((Float) json);
         } else if (json instanceof Double) {
           generator.writeNumber((Double) json);
+        } else if (json instanceof Byte) {
+          generator.writeNumber((Byte) json);
         } else if (json instanceof BigInteger) {
           generator.writeNumber((BigInteger) json);
         } else if (json instanceof BigDecimal) {
