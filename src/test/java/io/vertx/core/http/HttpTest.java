@@ -4106,8 +4106,6 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest setChunked(boolean chunked) { throw new UnsupportedOperationException(); }
       public boolean isChunked() { return false; }
       public HttpMethod method() { return method; }
-      public String getRawMethod() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest setRawMethod(String method) { throw new UnsupportedOperationException(); }
       public String absoluteURI() { return baseURI; }
       public String uri() { throw new UnsupportedOperationException(); }
       public String path() { throw new UnsupportedOperationException(); }
