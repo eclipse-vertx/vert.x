@@ -74,15 +74,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     return false;
   }
 
-  @Override
-  public HttpMethod method() {
-    return method;
-  }
-
-  @Override
-  public String uri() {
-    return uri;
-  }
 
   @Override
   public String getHost() {
