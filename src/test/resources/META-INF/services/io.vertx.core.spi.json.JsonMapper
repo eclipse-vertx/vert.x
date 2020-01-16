@@ -1,8 +1,0 @@
-io.vertx.core.json.mappers.MyBooleanPojo$MyBooleanPojoJsonMapper
-io.vertx.core.json.mappers.MyDoublePojo$MyDoublePojoJsonMapper
-io.vertx.core.json.mappers.MyFloatPojo$MyFloatPojoJsonMapper
-io.vertx.core.json.mappers.MyIntegerPojo$MyIntegerPojoJsonMapper
-io.vertx.core.json.mappers.MyJsonArrayPojo$MyJsonArrayPojoJsonMapper
-io.vertx.core.json.mappers.MyJsonObjectPojo$MyJsonObjectPojoJsonMapper
-io.vertx.core.json.mappers.MyLongPojo$MyLongPojoJsonMapper
-io.vertx.core.json.mappers.MyShortPojo$MyShortPojoJsonMapper
