@@ -108,7 +108,7 @@ public class WebSocketConnectOptions extends RequestOptions {
   }
 
   @Override
-  public WebSocketConnectOptions setPort(int port) {
+  public WebSocketConnectOptions setPort(Integer port) {
     return (WebSocketConnectOptions) super.setPort(port);
   }
 

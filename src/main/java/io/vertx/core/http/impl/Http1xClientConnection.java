@@ -119,7 +119,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     HttpMethod method,
     String uri,
     MultiMap headerMap,
-    String hostHeader,
+    String authority,
     boolean chunked) {
     DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpMethodImpl.toNetty(method), uri, false);
     HttpHeaders headers = request.headers();
@@ -129,7 +129,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
     }
     if (!headers.contains(HOST)) {
-      request.headers().set(HOST, hostHeader);
+      request.headers().set(HOST, authority);
     } else {
       headers.remove(TRANSFER_ENCODING);
     }
@@ -312,8 +312,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    public void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
-      HttpRequest request = conn.createRequest(method, uri, headers, hostHeader, chunked);
+    public void writeHead(HttpMethod method, String uri, MultiMap headers, String authority, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
+      HttpRequest request = conn.createRequest(method, uri, headers, authority, chunked);
       if (end) {
         if (buf != null) {
           request = new AssembledFullHttpRequest(request, buf);

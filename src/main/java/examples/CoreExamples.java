@@ -430,8 +430,9 @@ public class CoreExamples {
     SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
 
     // Send request to the server
-    httpClient.request(HttpMethod.GET, addr, 8080, "localhost", "/", resp -> {
-      // Process response
-    }).end();
+    httpClient.request(HttpMethod.GET, addr, 8080, "localhost", "/")
+      .setHandler(resp -> {
+        // Process response
+      }).end();
   }
 }

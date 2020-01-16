@@ -47,7 +47,7 @@ public class NettyCompatTest extends VertxTestBase {
               .setSsl(true)
               .setSslEngineOptions(new OpenSSLEngineOptions())
               .setTrustStoreOptions(Trust.SERVER_JKS.get()));
-          client.getNow(8443, "localhost", "/somepath", onSuccess(resp -> {
+          client.get(8443, "localhost", "/somepath", onSuccess(resp -> {
             resp.bodyHandler(buff -> {
               assertEquals("OK", buff.toString());
               testComplete();

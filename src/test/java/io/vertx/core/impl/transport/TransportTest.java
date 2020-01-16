@@ -123,7 +123,7 @@ public class TransportTest extends VertxTestBase {
         });
       }).listen(8080, onSuccess(s -> {
         HttpClient client = vertx.createHttpClient();
-        client.getNow(8080, "localhost", "/", onSuccess(resp -> {
+        client.get(8080, "localhost", "/", onSuccess(resp -> {
           testComplete();
         }));
       }));

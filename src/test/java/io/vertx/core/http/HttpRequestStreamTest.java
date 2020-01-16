@@ -79,10 +79,10 @@ public class HttpRequestStreamTest extends VertxTestBase {
           paused.set(false);
           httpStream.resume();
           client = vertx.createHttpClient(new HttpClientOptions());
-          client.request(HttpMethod.GET, HttpTestBase.DEFAULT_HTTP_PORT, "localhost", path, onSuccess(resp -> {
+          client.get(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", path, onSuccess(resp -> {
             assertEquals(200, resp.statusCode());
             testComplete();
-          })).end();
+          }));
         });
       });
     });

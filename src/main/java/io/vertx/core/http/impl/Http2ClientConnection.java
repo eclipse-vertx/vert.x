@@ -454,22 +454,22 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
+    public void writeHead(HttpMethod method, String uri, MultiMap headers, String authority, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method.name());
       boolean e;
       if (method == HttpMethod.CONNECT) {
-        if (hostHeader == null) {
+        if (authority == null) {
           throw new IllegalArgumentException("Missing :authority / host header");
         }
-        h.authority(hostHeader);
+        h.authority(authority);
         // don't end stream for CONNECT
         e = false;
       } else {
         h.path(uri);
         h.scheme(conn.isSsl() ? "https" : "http");
-        if (hostHeader != null) {
-          h.authority(hostHeader);
+        if (authority != null) {
+          h.authority(authority);
         }
         e= end;
       }

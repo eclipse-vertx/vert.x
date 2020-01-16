@@ -83,7 +83,7 @@ public class HttpProxy extends TestProxyBase {
           return;
         }
       }
-      lastRequestHeaders = MultiMap.caseInsensitiveMultiMap().addAll(request.headers());
+      lastRequestHeaders = HttpHeaders.headers().addAll(request.headers());
       if (error != 0) {
         request.response().setStatusCode(error).end("proxy request failed");
       } else if (method == HttpMethod.CONNECT) {
@@ -131,7 +131,14 @@ public class HttpProxy extends TestProxyBase {
           uri = forceUri;
         }
         HttpClient client = vertx.createHttpClient();
-        HttpClientRequest clientRequest = client.getAbs(uri, ar -> {
+        RequestOptions opts = new RequestOptions();
+        opts.setAbsoluteURI(uri);
+        for (String name : request.headers().names()) {
+          if (!name.equals("Proxy-Authorization")) {
+            opts.addHeader(name, request.headers().get(name));
+          }
+        }
+        client.get(opts, ar -> {
           if (ar.succeeded()) {
             HttpClientResponse resp = ar.result();
             for (String name : resp.headers().names()) {
@@ -152,12 +159,6 @@ public class HttpProxy extends TestProxyBase {
             request.response().setStatusCode(status).end(e.toString() + " on client request");
           }
         });
-        for (String name : request.headers().names()) {
-          if (!name.equals("Proxy-Authorization")) {
-            clientRequest.putHeader(name, request.headers().getAll(name));
-          }
-        }
-        clientRequest.end();
       } else {
         request.response().setStatusCode(405).end("method not supported");
       }

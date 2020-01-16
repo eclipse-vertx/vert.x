@@ -166,11 +166,9 @@ public class MetricsContextTest extends VertxTestBase {
         });
       });
     });
-    client.put(8080, "localhost", "/", onSuccess(resp -> {
+    client.put(8080, "localhost", "/", Buffer.buffer("hello"), onSuccess(resp -> {
       complete();
-    })).exceptionHandler(err -> {
-      fail(err.getMessage());
-    }).setChunked(true).end(Buffer.buffer("hello"));
+    }));
     await();
   }
 
@@ -357,8 +355,7 @@ public class MetricsContextTest extends VertxTestBase {
       expectedContext.set(Vertx.currentContext());
       HttpClient client = vertx.createHttpClient();
       assertSame(expectedThread.get(), Thread.currentThread());
-      HttpClientRequest req = client.put(8080, "localhost", "/");
-      req.setHandler(resp -> {
+      client.put(8080, "localhost", "/", Buffer.buffer("hello"), resp -> {
         executeInVanillaThread(() -> {
           client.close();
           vertx.close(v2 -> {
@@ -373,8 +370,6 @@ public class MetricsContextTest extends VertxTestBase {
           });
         });
       });
-      req.setChunked(true).write("hello");
-      req.end();
     });
     await();
   }

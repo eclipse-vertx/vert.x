@@ -15,7 +15,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -87,7 +86,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
-    client.getNow(8080, "localhost", "/", onSuccess(resp -> {
+    client.get(8080, "localhost", "/", onSuccess(resp -> {
       testComplete();
     }));
     await();
@@ -129,10 +128,11 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
-    HttpClientRequest req = client.get(8080, "localhost", "/", onFailure(err -> {
-      complete();
-    }));
-    req.setChunked(true);
+    HttpClientRequest req = client.request(HttpMethod.GET, 8080, "localhost", "/")
+      .setHandler(onFailure(err -> {
+        complete();
+      }))
+      .setChunked(true);
     req.sendHead(v -> {
       req.connection().close();
     });
@@ -174,7 +174,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.getNow(8080, "localhost", "/", onSuccess(resp -> {
+      client.get(8080, "localhost", "/", onSuccess(resp -> {
         resp.endHandler(v2 -> {
           // Updates are done on the HTTP client context, so we need to run task on this context
           // to avoid data race
@@ -222,7 +222,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.getNow(8080, "localhost", "/", onFailure(err -> {
+      client.get(8080, "localhost", "/", onFailure(err -> {
         assertEquals(2, seq.get());
         assertEquals(2, seq.get());
         assertNull(tracerMap.get(key));

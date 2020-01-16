@@ -99,75 +99,77 @@ public class Http2CompressionTest extends Http2TestBase {
     public static boolean minCompressionTestPassed = false;
 
     public void testMinCompression() {
-        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST, "some-uri",
-          onSuccess(resp -> {
-                    resp.bodyHandler(responseBuffer -> {
-                        String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
-                        assertEquals(COMPRESS_TEST_STRING, responseBody);
-                        minCompressionTestPassed = true;
-                        terminateTestWhenAllPassed();
-                    });
-                })).end();
+      client.get(DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST, "some-uri",
+        onSuccess(resp -> {
+          resp.bodyHandler(responseBuffer -> {
+            String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
+            assertEquals(COMPRESS_TEST_STRING, responseBody);
+            minCompressionTestPassed = true;
+            terminateTestWhenAllPassed();
+          });
+        }));
     }
 
     public static boolean compressionWithoutTlsPassed = false;
 
     public void testCompressionWithHttp2Upgrade() {
-        clearTextClient.request(HttpMethod.GET, DEFAULT_HTTP_PORT + 2, DEFAULT_HTTP_HOST, "some-uri",
-                onSuccess(resp -> {
-                    resp.bodyHandler(responseBuffer -> {
-                        String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
-                        assertEquals(COMPRESS_TEST_STRING, responseBody);
-                        compressionWithoutTlsPassed = true;
-                        terminateTestWhenAllPassed();
-                    });
-                })).end();
+      clearTextClient.get(DEFAULT_HTTP_PORT + 2, DEFAULT_HTTP_HOST, "some-uri",
+        onSuccess(resp -> {
+          resp.bodyHandler(responseBuffer -> {
+            String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
+            assertEquals(COMPRESS_TEST_STRING, responseBody);
+            compressionWithoutTlsPassed = true;
+            terminateTestWhenAllPassed();
+          });
+        }));
     }
 
     public static boolean maxCompressionTestPassed = false;
 
     public void testMaxCompression() {
-        client.request(HttpMethod.GET, DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
-          onSuccess(resp -> {
-                    resp.bodyHandler(responseBuffer -> {
-                        String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
-                        assertEquals(COMPRESS_TEST_STRING, responseBody);
-                        maxCompressionTestPassed = true;
-                        terminateTestWhenAllPassed();
-                    });
-                })).end();
+      client.get(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
+        onSuccess(resp -> {
+          resp.bodyHandler(responseBuffer -> {
+            String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
+            assertEquals(COMPRESS_TEST_STRING, responseBody);
+            maxCompressionTestPassed = true;
+            terminateTestWhenAllPassed();
+          });
+        }));
     }
 
     public static Integer rawMaxCompressionResponseByteCount = null;
 
     public void testRawMaxCompression() {
-        clientraw.request(HttpMethod.GET, DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
-          onSuccess(resp -> {
-                    resp.bodyHandler(responseBuffer -> {
-                        String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
-                        Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
-                        //1606
-                        // assertEquals((Integer)1606,responseByteCount);
-                        // assertEquals(LARGE_HTML_STRING, responseBody);
-                        rawMaxCompressionResponseByteCount = responseByteCount;
-                        terminateTestWhenAllPassed();
-                    });
-                })).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
+      clientraw.get( DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
+        HttpHeaders.set(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP),
+        onSuccess(resp -> {
+          resp.bodyHandler(responseBuffer -> {
+            String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
+            Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
+            //1606
+            // assertEquals((Integer)1606,responseByteCount);
+            // assertEquals(LARGE_HTML_STRING, responseBody);
+            rawMaxCompressionResponseByteCount = responseByteCount;
+            terminateTestWhenAllPassed();
+          });
+        }));
     }
 
     public static Integer rawMinCompressionResponseByteCount = null;
 
     public void testRawMinCompression() {
-        clientraw.request(HttpMethod.GET, DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST, "some-uri",
-          onSuccess(resp -> {
-                    resp.bodyHandler(responseBuffer -> {
-                        String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
-                        Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
-                        // assertEquals((Integer)1642,responseByteCount);
-                        rawMinCompressionResponseByteCount = responseByteCount;
-                        terminateTestWhenAllPassed();
-                    });
-                })).putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP).end();
+      clientraw.get(DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST, "some-uri",
+        HttpHeaders.set(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP),
+        onSuccess(resp -> {
+          resp.bodyHandler(responseBuffer -> {
+            String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
+            Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
+            // assertEquals((Integer)1642,responseByteCount);
+            rawMinCompressionResponseByteCount = responseByteCount;
+            terminateTestWhenAllPassed();
+          });
+        }));
     }
 
     public void terminateTestWhenAllPassed() {

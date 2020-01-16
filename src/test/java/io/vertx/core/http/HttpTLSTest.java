@@ -681,7 +681,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testSNIWithHostHeader() throws Exception {
     X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
-        .requestProvider((client, handler) -> client.post(4043, "localhost", "/somepath", handler).setHost("host2.com:4043"))
+        .requestProvider(client -> client.request(HttpMethod.POST, 4043, "localhost", "/somepath").setAuthority("host2.com:4043"))
         .pass()
         .clientPeerCert();
     assertEquals("host2.com", TestUtils.cnOf(cert));
@@ -931,14 +931,14 @@ public abstract class HttpTLSTest extends HttpTestBase {
     private boolean followRedirects;
     private boolean serverSNI;
     private boolean clientForceSNI;
-    private BiFunction<HttpClient, Handler<AsyncResult<HttpClientResponse>>, HttpClientRequest> requestProvider = (client, handler) -> {
+    private Function<HttpClient, HttpClientRequest> requestProvider = client -> {
       String httpHost;
       if (connectHostname != null) {
         httpHost = connectHostname;
       } else {
         httpHost = DEFAULT_HTTP_HOST;
       }
-      return client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI, handler);
+      return client.request(HttpMethod.POST, 4043, httpHost, DEFAULT_TEST_URI);
     };
     X509Certificate clientPeerCert;
     String indicatedServerName;
@@ -1052,11 +1052,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
     }
 
     TLSTest requestOptions(RequestOptions requestOptions) {
-      this.requestProvider = (client, handler) -> client.request(HttpMethod.POST, requestOptions, handler);
+      this.requestProvider = client -> client.request(requestOptions);
       return this;
     }
 
-    TLSTest requestProvider(BiFunction<HttpClient, Handler<AsyncResult<HttpClientResponse>>, HttpClientRequest> requestProvider) {
+    TLSTest requestProvider(Function<HttpClient, HttpClientRequest> requestProvider) {
       this.requestProvider = requestProvider;
       return this;
     }
@@ -1192,7 +1192,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         } else {
           httpHost = DEFAULT_HTTP_HOST;
         }
-        HttpClientRequest req = requestProvider.apply(client, ar2 -> {
+        HttpClientRequest req = requestProvider.apply(client).setHandler(ar2 -> {
           if (ar2.succeeded()) {
             HttpClientResponse response = ar2.result();
             HttpConnection conn = response.request().connection();

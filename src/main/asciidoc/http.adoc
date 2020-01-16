@@ -766,7 +766,6 @@ See the chapter on <<logging_network_activity, logging network activity>> for a 
 
 The http client is very flexible and there are various ways you can make requests with it.
 
-
 Often you want to make many requests to the same host/port with an http client. To avoid you repeating the host/port
 every time you make a request you can configure the client with a default host/port:
 
@@ -785,13 +784,12 @@ simply specify the host/port when doing the request.
 
 Both methods of specifying host/port are supported for all the different ways of making requests with the client.
 
-==== Simple requests with no request body
+==== Simple requests
 
-Often, you'll want to make HTTP requests with no request body. This is usually the case with HTTP GET, OPTIONS and
-HEAD requests.
+Often, you'll want to make simple HTTP requests.
 
-The simplest way to do this with the Vert.x http client is using the methods suffixed with `Now`. For example
-{@link io.vertx.core.http.HttpClient#getNow}.
+The simplest way to do this with the Vert.x http client is using the typed methods. For example
+{@link io.vertx.core.http.HttpClient#get} or {@link io.vertx.core.http.HttpClient#post}.
 
 These methods create the http request and send it in a single method call and allow you to provide a handler that will be
 called with the http response when it comes back.
@@ -801,10 +799,18 @@ called with the http response when it comes back.
 {@link examples.HTTPExamples#example32}
 ----
 
+The {@link io.vertx.core.http.HttpClient#post} and {@link io.vertx.core.http.HttpClient#put} consume either a Vert.x
+buffer or a {@link io.vertx.core.streams.ReadStream} body.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example32_}
+----
+
 ==== Writing general requests
 
 At other times you don't know the request method you want to send until run-time. For that use case we provide
-general purpose request methods such as {@link io.vertx.core.http.HttpClient#request} which allow you to specify
+general purpose request methods such as {@link io.vertx.core.http.HttpClient#send} which allow you to specify
 the HTTP method at run-time:
 
 [source,$lang]
@@ -812,19 +818,38 @@ the HTTP method at run-time:
 {@link examples.HTTPExamples#example33}
 ----
 
+==== Writing request headers
+
+You can write headers to a request using the {@link io.vertx.core.http.HttpHeaders} as follows:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example33_}
+----
+
+The headers are an instance of {@link io.vertx.core.MultiMap} which provides operations for adding, setting and removing
+entries. Http headers allow more than one value for a specific key.
+
+You can also write headers using {@link io.vertx.core.http.HttpClientRequest#putHeader}
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example38}
+----
+
+If you wish to write headers to the request you must do so before any part of the request body is written.
+
 ==== Writing request bodies
 
-Sometimes you'll want to write requests which have a body, or perhaps you want to write headers to a request
-before sending it.
+Sometimes you'll want to have low level control on how you write requests bodies.
 
-To do this you can call one of the specific request methods such as {@link io.vertx.core.http.HttpClient#post} or
-one of the general purpose request methods such as {@link io.vertx.core.http.HttpClient#request}.
+To do this you can call the general purpose request methods {@link io.vertx.core.http.HttpClient#request}.
 
 These methods don't send the request immediately, but instead return an instance of {@link io.vertx.core.http.HttpClientRequest}
-which can be used to write to the request body or write headers.
+which can be used to write to the request body.
 
 Here are some examples of writing a POST request with a body:
-m
+
 [source,$lang]
 ----
 {@link examples.HTTPExamples#example34}
@@ -860,27 +885,6 @@ and set the `Content-Length` header before writing the request body.
 
 If you are using HTTP chunking a a `Content-Length` header is not required, so you do not have to calculate the size
 up-front.
-
-==== Writing request headers
-
-You can write headers to a request using the {@link io.vertx.core.http.HttpClientRequest#headers()} multi-map as follows:
-
-[source,$lang]
-----
-{@link examples.HTTPExamples#example37}
-----
-
-The headers are an instance of {@link io.vertx.core.MultiMap} which provides operations for adding, setting and removing
-entries. Http headers allow more than one value for a specific key.
-
-You can also write headers using {@link io.vertx.core.http.HttpClientRequest#putHeader}
-
-[source,$lang]
-----
-{@link examples.HTTPExamples#example38}
-----
-
-If you wish to write headers to the request you must do so before any part of the request body is written.
 
 ==== Ending HTTP requests
 
@@ -924,7 +928,8 @@ no need to set the `Content-Length` of the request up-front.
 
 ==== Request timeouts
 
-You can set a timeout for a specific http request using {@link io.vertx.core.http.HttpClientRequest#setTimeout(long)}.
+You can set a timeout for a specific http request using {@link io.vertx.core.http.RequestOptions#setTimeout(long)} or
+{@link io.vertx.core.http.HttpClientRequest#setTimeout(long)}.
 
 If the request does not return any data within the timeout period an exception will be passed to the exception handler
 (if provided) and the request will be closed.
@@ -948,17 +953,6 @@ This does not handle non _2xx_ response that need to be handled in the
 ----
 
 IMPORTANT: `XXXNow` methods cannot receive an exception handler.
-
-==== Specifying a handler on the client request
-
-Instead of providing a response handler in the call to create the client request object, alternatively, you can
-not provide a handler when the request is created and set it later on the request object itself, using
-{@link io.vertx.core.http.HttpClientRequest#setHandler(io.vertx.core.Handler)}, for example:
-
-[source,$lang]
-----
-{@link examples.HTTPExamples#example43}
-----
 
 ==== Using the request as a stream
 
@@ -1130,7 +1124,7 @@ The returned request must be unsent so the original request handlers can be sent
 
 Most of the original request settings will be propagated to the new request:
 
-* request headers, unless if you have set some headers (including {@link io.vertx.core.http.HttpClientRequest#setHost})
+* request headers, unless if you have set some headers (including {@link io.vertx.core.http.HttpClientRequest#setAuthority})
 * request body unless the returned request uses a `GET` method
 * response handler
 * request exception handler
@@ -1555,7 +1549,7 @@ Vert.x http servers and clients can be configured to use HTTPS in exactly the sa
 Please see <<ssl, configuring net servers to use SSL>> for more information.
 
 SSL can also be enabled/disabled per request with {@link io.vertx.core.http.RequestOptions} or when
-specifying a scheme with {@link io.vertx.core.http.HttpClient#requestAbs(io.vertx.core.http.HttpMethod,java.lang.String)}
+specifying a scheme with {@link io.vertx.core.http.RequestOptions#setAbsoluteURI(java.lang.String)}
 method.
 
 [source,$lang]
@@ -1571,7 +1565,7 @@ The {@link io.vertx.core.http.RequestOptions#setSsl(Boolean)} overrides the defa
 * setting the value to `true` will enable SSL/TLS  even if the client is configured to not use SSL/TLS, the actual
 client SSL/TLS (such as trust, key/certificate, ciphers, ALPN, ...) will be reused
 
-Likewise {@link io.vertx.core.http.HttpClient#requestAbs(io.vertx.core.http.HttpMethod,java.lang.String)} scheme
+Likewise {@link io.vertx.core.http.RequestOptions#setAbsoluteURI(java.lang.String)} scheme
 also overrides the default client setting.
 
 ==== Server Name Indication (SNI)
@@ -1757,15 +1751,15 @@ to resolve the DNS address locally.
 ==== Handling of other protocols
 
 The HTTP proxy implementation supports getting ftp:// urls if the proxy supports
-that, which isn't available in non-proxy getAbs requests.
+that.
+
+When the HTTP request URI contains contains the full URL then the client will not compute a full HTTP url and instead
+use the full URL specified in the request URI:
 
 [source,$lang]
 ----
 {@link examples.HTTPExamples#example60}
 ----
-
-Support for other protocols is not available since java.net.URL does not
-support them (gopher:// for example).
 
 === Automatic clean-up in verticles
 

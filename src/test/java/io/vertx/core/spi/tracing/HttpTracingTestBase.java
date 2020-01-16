@@ -18,7 +18,6 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -42,7 +41,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.getNow(8080, "localhost", "/1", onSuccess(resp -> {
+      client.get(8080, "localhost", "/1", onSuccess(resp -> {
         resp.endHandler(v2 -> {
           assertEquals(rootSpan, tracer.activeSpan());
           assertEquals(200, resp.statusCode());
@@ -60,9 +59,9 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       switch (req.path()) {
         case "/1": {
           vertx.setTimer(10, id1 -> {
-            client.getNow(8080, "localhost", "/2", resp1 -> {
+            client.get(8080, "localhost", "/2", resp1 -> {
               vertx.setTimer(10, id2 -> {
-                client.getNow(8080, "localhost", "/2", resp2 -> {
+                client.get(8080, "localhost", "/2", resp2 -> {
                   req.response().end();
                 });
               });
@@ -84,7 +83,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.getNow(8080, "localhost", "/1", onSuccess(resp -> {
+      client.get(8080, "localhost", "/1", onSuccess(resp -> {
         resp.endHandler(v2 -> {
           assertEquals(rootSpan, tracer.activeSpan());
           assertEquals(200, resp.statusCode());
@@ -103,7 +102,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
       switch (req.path()) {
         case "/1": {
           vertx.setTimer(10, id -> {
-            client.getNow(8080, "localhost", "/2", resp -> {
+            client.get(8080, "localhost", "/2", resp -> {
               req.response().end();
             });
           });
@@ -124,7 +123,7 @@ public abstract class HttpTracingTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       Span rootSpan = tracer.newTrace();
       tracer.activate(rootSpan);
-      client.getNow(8080, "localhost", "/1", onSuccess(resp -> {
+      client.get(8080, "localhost", "/1", onSuccess(resp -> {
         assertEquals(rootSpan, tracer.activeSpan());
         assertEquals(200, resp.statusCode());
       }));

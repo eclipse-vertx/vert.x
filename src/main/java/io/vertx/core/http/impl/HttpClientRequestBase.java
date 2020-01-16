@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientRequest;
@@ -31,13 +30,13 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final ContextInternal context;
   protected final io.vertx.core.http.HttpMethod method;
   protected final String uri;
-  protected final String path;
-  protected final String query;
   protected final String host;
   protected final int port;
   protected final SocketAddress server;
   protected final boolean ssl;
-  protected final Promise<HttpClientResponse> responsePromise;
+  private String path;
+  private String query;
+  private final Promise<HttpClientResponse> responsePromise;
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
@@ -50,13 +49,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.server = server;
     this.host = host;
     this.port = port;
-    this.path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
-    this.query = HttpUtils.parseQuery(uri);
     this.ssl = ssl;
     this.responsePromise = context.promise();
   }
 
-  protected String hostHeader() {
+  protected String authority() {
     if ((port == 80 && !ssl) || (port == 443 && ssl)) {
       return host;
     } else {
@@ -66,14 +63,21 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   @Override
   public String absoluteURI() {
-    return (ssl ? "https://" : "http://") + hostHeader() + uri;
+    return (ssl ? "https://" : "http://") + authority() + uri;
   }
 
   public String query() {
+    if (query == null) {
+      query = HttpUtils.parseQuery(uri);
+
+    }
     return query;
   }
 
   public String path() {
+    if (path == null) {
+      path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
+    }
     return path;
   }
 
@@ -99,6 +103,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   void handleException(Throwable t) {
+    fail(t);
+  }
+
+  void fail(Throwable t) {
     cancelTimeout();
     responsePromise.tryFail(t);
     HttpClientResponseImpl response = (HttpClientResponseImpl) responsePromise.future().result();
@@ -108,18 +116,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   void handleResponse(HttpClientResponse resp) {
-    long timeoutMS;
-    synchronized (this) {
-      timeoutMS = cancelTimeout();
-    }
-    try {
-      handleResponse(resp, timeoutMS);
-    } catch (Throwable t) {
-      handleException(t);
-    }
+    handleResponse(responsePromise, resp, cancelTimeout());
   }
 
-  abstract void handleResponse(HttpClientResponse resp, long timeoutMs);
+  abstract void handleResponse(Promise<HttpClientResponse> promise, HttpClientResponse resp, long timeoutMs);
 
   private synchronized long cancelTimeout() {
     long ret;

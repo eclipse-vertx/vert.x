@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.http.CaseInsensitiveHeaders;
+import io.vertx.core.http.HttpHeaders;
 
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return the multi-map
    */
   static MultiMap caseInsensitiveMultiMap() {
-    return new CaseInsensitiveHeaders();
+    return HttpHeaders.headers();
   }
 
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

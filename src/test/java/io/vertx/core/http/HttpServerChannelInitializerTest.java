@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http;
 
-import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.ChannelFuture;
@@ -52,7 +51,7 @@ public class HttpServerChannelInitializerTest extends VertxTestBase {
     HttpClient client = this.vertx.createHttpClient();
     client.get(HttpTest.DEFAULT_HTTP_PORT, HttpTest.DEFAULT_HTTP_HOST, "/", resp -> {
       testComplete();
-    }).exceptionHandler(this::fail).end();
+    });
     await();
   }
 

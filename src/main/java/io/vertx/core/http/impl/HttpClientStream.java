@@ -42,7 +42,7 @@ public interface HttpClientStream {
   HttpConnection connection();
   ContextInternal getContext();
 
-  void writeHead(HttpMethod method, String uri, MultiMap headers, String hostHeader, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> listener);
+  void writeHead(HttpMethod method, String uri, MultiMap headers, String authority, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> listener);
   void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener);
   void writeFrame(int type, int flags, ByteBuf payload);
 

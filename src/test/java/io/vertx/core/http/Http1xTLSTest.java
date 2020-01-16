@@ -75,28 +75,28 @@ public class Http1xTLSTest extends HttpTLSTest {
   // Client trusts all server certs
   public void testClearClientRequestAbsSetSSL() throws Exception {
     String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).requestProvider((c, handler) -> c.requestAbs(HttpMethod.POST, absoluteURI, handler)).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).requestProvider(c -> c.request(new RequestOptions().setMethod(HttpMethod.POST).setAbsoluteURI(absoluteURI))).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestAbsSetSSL() throws Exception {
     String absoluteURI = "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).requestProvider((c, handler) -> c.requestAbs(HttpMethod.POST, absoluteURI, handler)).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).requestProvider(c -> c.request(new RequestOptions().setMethod(HttpMethod.POST).setAbsoluteURI(absoluteURI))).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testClearClientRequestAbsSetClear() throws Exception {
     String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).serverSSL(false).requestProvider((c, handler) -> c.requestAbs(HttpMethod.POST, absoluteURI, handler)).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(false).serverSSL(false).requestProvider(c -> c.request(new RequestOptions().setMethod(HttpMethod.POST).setAbsoluteURI(absoluteURI))).pass();
   }
 
   @Test
   // Client trusts all server certs
   public void testSSLClientRequestAbsSetClear() throws Exception {
     String absoluteURI = "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI;
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).serverSSL(false).requestProvider((c, handler) -> c.requestAbs(HttpMethod.POST, absoluteURI, handler)).pass();
+    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE).clientSSL(true).serverSSL(false).requestProvider(c -> c.request(new RequestOptions().setMethod(HttpMethod.POST).setAbsoluteURI(absoluteURI))).pass();
   }
 
   // Redirect tests

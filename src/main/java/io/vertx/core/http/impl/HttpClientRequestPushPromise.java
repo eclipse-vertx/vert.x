@@ -16,6 +16,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.net.SocketAddress;
@@ -49,8 +50,8 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  void handleResponse(HttpClientResponse resp, long timeoutMs) {
-    responsePromise.complete(resp);
+  void handleResponse(Promise<HttpClientResponse> promise, HttpClientResponse resp, long timeoutMs) {
+    promise.complete(resp);
   }
 
   @Override
@@ -76,7 +77,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
 
   @Override
-  public String getHost() {
+  public String getAuthority() {
     return server.host();
   }
 
@@ -116,7 +117,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public HttpClientRequest setHost(String host) {
+  public HttpClientRequest setAuthority(String authority) {
     throw new IllegalStateException();
   }
 

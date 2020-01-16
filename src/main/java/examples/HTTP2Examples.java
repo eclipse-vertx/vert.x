@@ -160,9 +160,10 @@ public class HTTP2Examples {
 
   public void example13(HttpClient client) {
 
-    HttpClientRequest request = client.get("/index.html", response -> {
-      // Process index.html response
-    });
+    HttpClientRequest request = client.request(HttpMethod.GET, "/index.html")
+      .setHandler(response -> {
+        // Process index.html response
+      });
 
     // Set a push handler to be aware of any resource pushed by the server
     request.pushHandler(pushedRequest -> {

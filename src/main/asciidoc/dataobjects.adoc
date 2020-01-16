@@ -1828,7 +1828,7 @@ Set proxy username.
 == RequestOptions
 
 ++++
- Options describing how an link will make connect to make a request.
+ Options describing how an link will connect to make a request.
 ++++
 '''
 
@@ -1836,17 +1836,29 @@ Set proxy username.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[absoluteURI]]`@absoluteURI`|`String`|+++
+Parse an absolute URI to use, this will update the <code>ssl</code>, <code>host</code>,
+ <code>port</code> and <code>uri</code> fields.
++++
+|[[followRedirects]]`@followRedirects`|`Boolean`|+++
+Set whether to follow HTTP redirect
++++
 |[[headers]]`@headers`|`String`|+++
 Add a request header.
 +++
 |[[host]]`@host`|`String`|+++
 Set the host name to be used by the client request.
 +++
-|[[port]]`@port`|`Number (int)`|+++
+|[[port]]`@port`|`Number (Integer)`|+++
 Set the port to be used by the client request.
 +++
 |[[ssl]]`@ssl`|`Boolean`|+++
 Set whether SSL/TLS is enabled
++++
+|[[timeout]]`@timeout`|`Number (long)`|+++
+Sets the amount of time after which if the request does not return any data within the timeout period an
+ link will be passed to the exception handler and
+ the request will be closed.
 +++
 |[[uri]]`@uri`|`String`|+++
 Set the request relative URI
@@ -2115,13 +2127,20 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[absoluteURI]]`@absoluteURI`|`String`|+++
+Parse an absolute URI to use, this will update the <code>ssl</code>, <code>host</code>,
+ <code>port</code> and <code>uri</code> fields.
++++
+|[[followRedirects]]`@followRedirects`|`Boolean`|+++
+Set whether to follow HTTP redirect
++++
 |[[headers]]`@headers`|`String`|+++
 Add a request header.
 +++
 |[[host]]`@host`|`String`|+++
 Set the host name to be used by the client request.
 +++
-|[[port]]`@port`|`Number (int)`|+++
+|[[port]]`@port`|`Number (Integer)`|+++
 Set the port to be used by the client request.
 +++
 |[[ssl]]`@ssl`|`Boolean`|+++
@@ -2129,6 +2148,11 @@ Set whether SSL/TLS is enabled
 +++
 |[[subProtocols]]`@subProtocols`|`Array of String`|+++
 Set the WebSocket sub protocols to use.
++++
+|[[timeout]]`@timeout`|`Number (long)`|+++
+Sets the amount of time after which if the request does not return any data within the timeout period an
+ link will be passed to the exception handler and
+ the request will be closed.
 +++
 |[[uri]]`@uri`|`String`|+++
 Set the request relative URI

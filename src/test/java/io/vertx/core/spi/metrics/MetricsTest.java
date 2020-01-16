@@ -25,7 +25,6 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -621,7 +620,7 @@ public class MetricsTest extends VertxTestBase {
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
     CountDownLatch responsesLatch = new CountDownLatch(5);
     for (int i = 0;i < 5;i++) {
-      client.getNow(8080, "localhost", "/somepath", resp -> {
+      client.get(8080, "localhost", "/somepath", resp -> {
         responsesLatch.countDown();
       });
     }
@@ -630,7 +629,7 @@ public class MetricsTest extends VertxTestBase {
     assertEquals(0, (int)metrics.queueSize("localhost:8080"));
     assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
     for (int i = 0;i < 8;i++) {
-      client.getNow(8080, "localhost", "/somepath", resp -> {
+      client.get(8080, "localhost", "/somepath", resp -> {
       });
     }
     assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
@@ -670,7 +669,7 @@ public class MetricsTest extends VertxTestBase {
     client = vertx.createHttpClient();
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
     for (int i = 0;i < 5;i++) {
-      client.getNow(8080, "localhost", "/somepath", resp -> {
+      client.get(8080, "localhost", "/somepath", resp -> {
       });
     }
     assertWaitUntil(() -> requests.size() == 5);
@@ -697,17 +696,15 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitLatch(started);
     CountDownLatch closed = new CountDownLatch(1);
-    HttpClientRequest req = client.get(8080, "localhost", "/somepath");
-    req.setHandler(onSuccess(resp -> {
+    client.get(8080, "localhost", "/somepath", onSuccess(resp -> {
       resp.endHandler(v1 -> {
-        HttpConnection conn = req.connection();
+        HttpConnection conn = resp.request().connection();
         conn.closeHandler(v2 -> {
           closed.countDown();
         });
         conn.close();
       });
     }));
-    req.end();
     awaitLatch(closed);
     EndpointMetric val = endpointMetrics.get();
     assertWaitUntil(() -> val.connectionCount.get() == 0);

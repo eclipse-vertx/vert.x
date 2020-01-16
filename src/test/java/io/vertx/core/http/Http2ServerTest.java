@@ -46,7 +46,6 @@ import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -87,7 +86,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1051,7 +1049,7 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testPushPromiseHeaders() throws Exception {
     testPushPromise(GET("/").authority("whatever.com"), (resp, handler ) -> {
-      resp.push(HttpMethod.GET, "/wibble", MultiMap.caseInsensitiveMultiMap().
+      resp.push(HttpMethod.GET, "/wibble", HttpHeaders.
           set("foo", "foo_value").
           set("bar", Arrays.<CharSequence>asList("bar_value_1", "bar_value_2")), handler);
     }, headers -> {
@@ -2616,13 +2614,14 @@ public class Http2ServerTest extends Http2TestBase {
   }
 
   private void doRequest(HttpMethod method, Buffer expected, Handler<HttpConnection> connHandler, Promise<HttpClientResponse> fut) {
-    HttpClientRequest req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
-      assertEquals(HttpVersion.HTTP_2, resp.version());
-      // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
-      // assertEquals(1, serverConnectionCount.get());
-      // assertEquals(1, clientConnectionCount.get());
-      fut.tryComplete(resp);
-    }));
+    HttpClientRequest req = client.request(method, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+      .setHandler(onSuccess(resp -> {
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+        // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
+        // assertEquals(1, serverConnectionCount.get());
+        // assertEquals(1, clientConnectionCount.get());
+        fut.tryComplete(resp);
+      }));
     if (connHandler != null) {
       client.connectionHandler(connHandler);
     }
@@ -2652,7 +2651,7 @@ public class Http2ServerTest extends Http2TestBase {
     startServer();
     client.close();
     client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
-    HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
+    HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
     req.setHandler(onSuccess(resp -> {
       assertEquals(HttpVersion.HTTP_2, resp.version());
       complete();
@@ -2669,18 +2668,26 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextInvalidConnectionHeader() throws Exception {
-    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", handler)
-        .putHeader("Upgrade", "h2c")
-        .putHeader("Connection", "Upgrade")
-        .putHeader("HTTP2-Settings", ""));
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
+      new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")
+        .addHeader("Upgrade", "h2c")
+        .addHeader("Connection", "Upgrade")
+        .addHeader("HTTP2-Settings", ""), handler));
   }
 
   @Test
   public void testUpgradeToClearTextMalformedSettings() throws Exception {
-    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", handler)
-        .putHeader("Upgrade", "h2c")
-        .putHeader("Connection", "Upgrade,HTTP2-Settings")
-        .putHeader("HTTP2-Settings", "incorrect-settings"));
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
+      new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")
+        .addHeader("Upgrade", "h2c")
+        .addHeader("Connection", "Upgrade")
+        .addHeader("HTTP2-Settings", "incorrect-settings"), handler));
   }
 
   @Test
@@ -2688,28 +2695,40 @@ public class Http2ServerTest extends Http2TestBase {
     Buffer buffer = Buffer.buffer();
     buffer.appendUnsignedShort(5).appendUnsignedInt((0xFFFFFF + 1));
     String s = new String(Base64.getUrlEncoder().encode(buffer.getBytes()), StandardCharsets.UTF_8);
-    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", handler)
-        .putHeader("Upgrade", "h2c")
-        .putHeader("Connection", "Upgrade,HTTP2-Settings")
-        .putHeader("HTTP2-Settings", s));
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
+      new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")
+        .addHeader("Upgrade", "h2c")
+        .addHeader("Connection", "Upgrade")
+        .addHeader("HTTP2-Settings", s), handler));
   }
 
   @Test
   public void testUpgradeToClearTextMissingSettings() throws Exception {
-    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", handler)
-        .putHeader("Upgrade", "h2c")
-        .putHeader("Connection", "Upgrade,HTTP2-Settings"));
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
+      new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")
+        .addHeader("Upgrade", "h2c")
+        .addHeader("Connection", "Upgrade"), handler));
   }
 
   @Test
   public void testUpgradeToClearTextWorkerContext() throws Exception {
-    testUpgradeFailure(createWorker(), (client, handler) -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", handler)
-        .putHeader("Upgrade", "h2c")
-        .putHeader("Connection", "Upgrade,HTTP2-Settings")
-        .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings())));
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
+      new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath")
+        .addHeader("Upgrade", "h2c")
+        .addHeader("Connection", "Upgrade")
+        .addHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings())), handler));
   }
 
-  private void testUpgradeFailure(Context context, BiFunction<HttpClient, Handler<AsyncResult<HttpClientResponse>>, HttpClientRequest> doRequest) throws Exception {
+  private void testUpgradeFailure(Context context, BiConsumer<HttpClient, Handler<AsyncResult<HttpClientResponse>>> doRequest) throws Exception {
     server.close();
     server = vertx.createHttpServer(serverOptions.setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setUseAlpn(false).setSsl(false));
     server.requestHandler(req -> {
@@ -2718,11 +2737,11 @@ public class Http2ServerTest extends Http2TestBase {
     startServer(context);
     client.close();
     client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
-    doRequest.apply(client, onSuccess(resp -> {
+    doRequest.accept(client, onSuccess(resp -> {
       assertEquals(400, resp.statusCode());
       assertEquals(HttpVersion.HTTP_1_1, resp.version());
       testComplete();
-    })).exceptionHandler(this::fail).end();
+    }));
     await();
   }
 
@@ -2743,8 +2762,9 @@ public class Http2ServerTest extends Http2TestBase {
     startServer();
     client.close();
     client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
-    HttpClientRequest request = client.put(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-    }).putHeader("Upgrade", "h2c")
+    HttpClientRequest request = client.request(HttpMethod.PUT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+      .setHandler(resp -> {
+      }).putHeader("Upgrade", "h2c")
       .putHeader("Connection", "Upgrade,HTTP2-Settings")
       .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
       .setChunked(true);

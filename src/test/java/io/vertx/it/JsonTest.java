@@ -14,16 +14,9 @@ package io.vertx.it;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpTestBase;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.VertxTestBase;
-import io.vertx.test.tls.Cert;
-import io.vertx.test.tls.Trust;
 import org.junit.Test;
 
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
@@ -68,7 +61,7 @@ public class JsonTest extends VertxTestBase {
         req.response().end("hello");
       }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(s -> {
         HttpClient client = vertx.createHttpClient();
-        client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
+        client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
           resp.exceptionHandler(this::fail);
           resp.bodyHandler(body -> {
             assertEquals("hello", body.toString());

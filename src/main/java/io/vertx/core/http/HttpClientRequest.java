@@ -120,17 +120,15 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   String query();
 
   /**
-   * Set the request host.<p/>
-   *
    * For HTTP/2 it sets the {@literal :authority} pseudo header otherwise it sets the {@literal Host} header
    */
   @Fluent
-  HttpClientRequest setHost(String host);
+  HttpClientRequest setAuthority(String authority);
 
   /**
    * @return the request host. For HTTP/2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
    */
-  String getHost();
+  String getAuthority();
 
   /**
    * @return The HTTP headers
@@ -323,7 +321,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    *   <li>{@link HttpClientRequest#method()}</li>
    *   <li>{@link HttpClientRequest#uri()}</li>
    *   <li>{@link HttpClientRequest#headers()}</li>
-   *   <li>{@link HttpClientRequest#getHost()}</li>
+   *   <li>{@link HttpClientRequest#getAuthority()}</li>
    * </ul>
    *
    * In addition the handler should call the {@link HttpClientRequest#setHandler} method to set an handler to
