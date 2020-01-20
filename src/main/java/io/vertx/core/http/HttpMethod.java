@@ -280,6 +280,6 @@ public interface HttpMethod {
    * @return an un-modifiable list of known HTTP methods
    */
   static List<HttpMethod> values() {
-    return HttpMethodImpl.ALL;
+    return HttpMethods.ALL;
   }
 }

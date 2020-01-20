@@ -11,12 +11,16 @@
 package io.vertx.core.http;
 
 import io.vertx.core.http.impl.HttpMethodImpl;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
@@ -161,5 +165,12 @@ public class HttpMethodTest {
     assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.TRACE), HttpMethod.TRACE);
     assertEquals(HttpMethodImpl.toNetty(HttpMethod.valueOf("foo")).name(), "foo");
     assertEquals(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("foo")).name(), "foo");
+  }
+
+  @Test
+  public void testValues() {
+    List<HttpMethod> list = HttpMethod.values();
+    assertTrue(!list.isEmpty());
+    list.forEach(Assert::assertNotNull);
   }
 }

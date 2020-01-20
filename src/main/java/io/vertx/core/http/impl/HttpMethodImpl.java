@@ -19,40 +19,6 @@ import java.util.Objects;
 
 public class HttpMethodImpl implements HttpMethod {
 
-  public static final List<HttpMethod> ALL = Collections.unmodifiableList(Arrays.asList(
-    HttpMethod.OPTIONS,
-    HttpMethod.GET,
-    HttpMethod.HEAD,
-    HttpMethod.POST,
-    HttpMethod.PUT,
-    HttpMethod.DELETE,
-    HttpMethod.TRACE,
-    HttpMethod.CONNECT,
-    HttpMethod.PATCH,
-    HttpMethod.PROPFIND,
-    HttpMethod.PROPPATCH,
-    HttpMethod.MKCOL,
-    HttpMethod.COPY,
-    HttpMethod.MOVE,
-    HttpMethod.LOCK,
-    HttpMethod.UNLOCK,
-    HttpMethod.MKCALENDAR,
-    HttpMethod.VERSION_CONTROL,
-    HttpMethod.REPORT,
-    HttpMethod.CHECKIN,
-    HttpMethod.CHECKOUT,
-    HttpMethod.UNCHECKOUT,
-    HttpMethod.MKWORKSPACE,
-    HttpMethod.UPDATE,
-    HttpMethod.LABEL,
-    HttpMethod.MERGE,
-    HttpMethod.BASELINE_CONTROL,
-    HttpMethod.MKACTIVITY,
-    HttpMethod.ORDERPATCH,
-    HttpMethod.ACL,
-    HttpMethod.SEARCH
-  ));
-
   public static io.netty.handler.codec.http.HttpMethod toNetty(HttpMethod method) {
     if (method instanceof HttpMethodImpl) {
       return ((HttpMethodImpl) method).nettyMethod;
