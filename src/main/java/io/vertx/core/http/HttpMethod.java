@@ -14,6 +14,7 @@ package io.vertx.core.http;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.http.impl.HttpMethodImpl;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -180,6 +181,8 @@ public interface HttpMethod {
    */
   HttpMethod SEARCH = new HttpMethodImpl(io.netty.handler.codec.http.HttpMethod.valueOf("SEARCH"));
 
+
+
   /**
    * @return the method name
    */
@@ -271,5 +274,12 @@ public interface HttpMethod {
       default:
         return new HttpMethodImpl(io.netty.handler.codec.http.HttpMethod.valueOf(value));
     }
+  }
+
+  /**
+   * @return an un-modifiable list of known HTTP methods
+   */
+  static List<HttpMethod> values() {
+    return HttpMethodImpl.ALL;
   }
 }
