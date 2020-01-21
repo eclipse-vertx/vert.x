@@ -1963,22 +1963,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testTimeout() throws Exception {
-    server.requestHandler(req -> {
-      req.response().setChunked(true).write("foo");
-    });
-    startServer(testAddress);
-    client.request(testAddress, new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST))
-      .setHandler(onSuccess(resp -> {
-        System.out.println("GOT RESP");
-        resp.exceptionHandler(err -> {
-          System.out.println("ERR");
-        });
-      })).setTimeout(500).end();
-    await();
-  }
-
-  @Test
   public void testServerOptionsCopiedBeforeUse() {
     server.close();
     HttpServerOptions options = new HttpServerOptions().setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT);
