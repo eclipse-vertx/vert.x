@@ -529,8 +529,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     }
   }
 
-  void writabilityChanged() {
-    if (!ended && !writeQueueFull() && drainHandler != null) {
+  void handlerWritabilityChanged(boolean writable) {
+    if (!ended && writable && drainHandler != null) {
       drainHandler.handle(null);
     }
   }

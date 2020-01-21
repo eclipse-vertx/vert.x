@@ -91,11 +91,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     return metrics;
   }
 
-  @Override
-  void onStreamClosed(Http2Stream nettyStream) {
-    super.onStreamClosed(nettyStream);
-  }
-
   void upgradeStream(Object metric, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
@@ -270,10 +265,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void onEnd(MultiMap map) {
+    void onEnd(MultiMap trailers) {
       conn.metricsEnd(this);
       responseEnded = true;
-      super.onEnd(map);
+      super.onEnd(trailers);
     }
 
     @Override
@@ -413,8 +408,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void handleInterestedOpsChanged() {
-      if (request instanceof HttpClientRequestImpl && !isNotWritable()) {
+    void handleWritabilityChanged(boolean writable) {
+      if (request instanceof HttpClientRequestImpl && writable) {
         ((HttpClientRequestImpl) request).handleDrained();
       }
     }

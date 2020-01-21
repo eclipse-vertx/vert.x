@@ -102,9 +102,9 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
   }
 
   @Override
-  void handleInterestedOpsChanged() {
+  void handleWritabilityChanged(boolean writable) {
     if (response != null) {
-      response.writabilityChanged();
+      response.handlerWritabilityChanged(writable);
     }
   }
 

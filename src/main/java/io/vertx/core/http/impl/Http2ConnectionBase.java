@@ -152,31 +152,23 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   void onStreamError(int streamId, Throwable cause) {
     VertxHttp2Stream stream = stream(streamId);
     if (stream != null) {
-      onStreamError(stream, cause);
+      stream.onError(cause);
     }
-  }
-
-  void onStreamError(VertxHttp2Stream stream, Throwable cause) {
-    stream.context.emit(v -> stream.handleException(cause));
   }
 
   void onStreamWritabilityChanged(Http2Stream s) {
     VertxHttp2Stream stream = s.getProperty(streamKey);
     if (stream != null) {
-      stream.context.emit(v -> stream.onWritabilityChanged());
+      stream.onWritabilityChanged();
     }
   }
 
-  void onStreamClosed(Http2Stream stream) {
-    VertxHttp2Stream removed = stream.getProperty(streamKey);
-    if (removed != null) {
-      onStreamClosed(removed);
+  void onStreamClosed(Http2Stream s) {
+    VertxHttp2Stream stream = s.getProperty(streamKey);
+    if (stream != null) {
+      stream.onClose();
     }
     checkShutdownHandler();
-  }
-
-  protected void onStreamClosed(VertxHttp2Stream stream) {
-    stream.onClose();
   }
 
   boolean onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {

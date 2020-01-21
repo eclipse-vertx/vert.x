@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.CharsetUtil;
-import io.netty.util.concurrent.FutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -96,9 +95,9 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   }
 
   @Override
-  void handleInterestedOpsChanged() {
+  void handleWritabilityChanged(boolean writable) {
     Handler<Void> handler = drainHandler();
-    if (handler != null && !writeQueueFull()) {
+    if (handler != null && writable) {
       handler.handle(null);
     }
   }

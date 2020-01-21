@@ -116,8 +116,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
-  void handleInterestedOpsChanged() {
-    response.writabilityChanged();
+  void handleWritabilityChanged(boolean writable) {
+    response.handlerWritabilityChanged(writable);
   }
 
   @Override

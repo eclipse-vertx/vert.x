@@ -203,8 +203,8 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
 
     @Override
-    void handleInterestedOpsChanged() {
-      response.writabilityChanged();
+    void handleWritabilityChanged(boolean writable) {
+      response.handlerWritabilityChanged(writable);
     }
 
     @Override

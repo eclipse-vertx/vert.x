@@ -46,17 +46,16 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
-
   protected Http2Stream stream;
 
-  private final InboundBuffer<Object> pending;
-  private MultiMap trailers;
-  private boolean writable; // SHOULD BE CLEAR ABOUT VISIBILITY : currently it's modified by connection and read by stream
+  // Event loop
   private long bytesRead;
   private long bytesWritten;
 
   // Client context
   private StreamPriority priority;
+  private final InboundBuffer<Object> pending;
+  private boolean writable;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
@@ -65,12 +64,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.pending = new InboundBuffer<>(context, 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
 
-    pending.handler(buff -> {
-      if (buff == InboundBuffer.END_SENTINEL) {
+    pending.handler(item -> {
+      if (item instanceof MultiMap) {
         conn.reportBytesRead(bytesRead);
-        handleEnd(trailers);
+        handleEnd((MultiMap) item);
       } else {
-        Buffer data = (Buffer) buff;
+        Buffer data = (Buffer) item;
         int len = data.length();
         conn.getContext().dispatch(null, v -> conn.consumeCredits(this.stream, len));
         bytesRead += len;
@@ -78,13 +77,14 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       }
     });
     pending.exceptionHandler(context::reportException);
-
     pending.resume();
   }
 
   void init(Http2Stream stream) {
-    this.stream = stream;
-    this.writable = this.conn.handler.encoder().flowController().isWritable(stream);
+    synchronized (this) {
+      this.stream = stream;
+      this.writable = this.conn.handler.encoder().flowController().isWritable(stream);
+    }
     stream.setProperty(conn.streamKey, this);
   }
 
@@ -122,21 +122,22 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onWritabilityChanged() {
-    synchronized (conn) {
-      writable = !writable;
-    }
-    context.dispatch(null, v -> handleInterestedOpsChanged());
+    context.dispatch(null, v -> {
+      boolean w;
+      synchronized (VertxHttp2Stream.this) {
+        writable = !writable;
+        w = writable;
+      }
+      handleWritabilityChanged(w);
+    });
   }
 
   void onEnd() {
     onEnd(EMPTY);
   }
 
-  void onEnd(MultiMap map) {
-    synchronized (conn) {
-      trailers = map;
-    }
-    context.dispatch(InboundBuffer.END_SENTINEL, pending::write);
+  void onEnd(MultiMap trailers) {
+    context.dispatch(trailers, pending::write);
   }
 
   public int id() {
@@ -159,10 +160,8 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     pending.fetch(amount);
   }
 
-  public boolean isNotWritable() {
-    synchronized (conn) {
-      return !writable;
-    }
+  public synchronized boolean isNotWritable() {
+    return !writable;
   }
 
   public final void writeFrame(int type, int flags, ByteBuf payload) {
@@ -229,7 +228,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeReset(stream.id(), code);
   }
 
-  void handleInterestedOpsChanged() {
+  void handleWritabilityChanged(boolean writable) {
   }
 
   void handleData(Buffer buf) {
