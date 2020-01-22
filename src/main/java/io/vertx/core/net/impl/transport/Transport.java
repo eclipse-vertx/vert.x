@@ -120,7 +120,12 @@ public class Transport {
 
   public io.vertx.core.net.SocketAddress convert(SocketAddress address) {
     if (address instanceof InetSocketAddress) {
-      return new SocketAddressImpl((InetSocketAddress) address);
+      InetSocketAddress inetSocketAddress = (InetSocketAddress) address;
+      if (inetSocketAddress.isUnresolved()) {
+        return new SocketAddressImpl(inetSocketAddress.getPort(), inetSocketAddress.getHostName());
+      } else {
+        return new SocketAddressImpl(inetSocketAddress.getPort(), inetSocketAddress.getAddress().getHostAddress());
+      }
     } else {
       return null;
     }
