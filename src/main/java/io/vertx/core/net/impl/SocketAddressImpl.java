@@ -26,10 +26,6 @@ public class SocketAddressImpl implements SocketAddress{
   private final int port;
   private final String path;
 
-  public SocketAddressImpl(InetSocketAddress address) {
-    this(address.getPort(), address.getAddress().getHostAddress());
-  }
-
   public SocketAddressImpl(int port, String host) {
     Objects.requireNonNull(host, "no null host accepted");
     Arguments.require(!host.isEmpty(), "no empty host accepted");

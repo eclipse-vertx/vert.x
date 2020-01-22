@@ -26,6 +26,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.NetSocketInternal;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
@@ -52,6 +53,8 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.io.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -3715,5 +3718,13 @@ public class NetTest extends VertxTestBase {
 
   protected void startServer(Context context, NetServer server) throws Exception {
     startServer(testAddress, context, server);
+  }
+
+  @Test
+  public void testUnresolvedSocketAddress() {
+    InetSocketAddress a = InetSocketAddress.createUnresolved("localhost", 8080);
+    SocketAddress converted = ((VertxInternal) vertx).transport().convert(a);
+    assertEquals(8080, converted.port());
+    assertEquals("localhost", converted.host());
   }
 }

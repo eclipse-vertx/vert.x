@@ -300,8 +300,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
 
   @Override
   public SocketAddress localAddress() {
-    InetSocketAddress addr = channel.localAddress();
-    return new SocketAddressImpl(addr);
+    return context.owner().transport().convert(channel.localAddress());
   }
 
   @Override
