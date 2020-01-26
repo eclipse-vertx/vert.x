@@ -61,11 +61,13 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap setAll(MultiMap headers) {
+    Objects.requireNonNull(headers, "headers");
     return set0(headers);
   }
 
   @Override
   public MultiMap setAll(Map<String, String> headers) {
+    Objects.requireNonNull(headers, "headers");
     return set0(headers.entrySet());
   }
 
@@ -111,6 +113,9 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap add(final String name, final String strVal) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(strVal, "strVal");
+
     int h = hash(name);
     int i = index(h);
     add0(h, i, name, strVal);
@@ -119,6 +124,9 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap add(String name, Iterable<String> values) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(values, "values");
+
     int h = hash(name);
     int i = index(h);
     for (String vstr: values) {
@@ -129,6 +137,8 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap addAll(MultiMap headers) {
+    Objects.requireNonNull(headers, "headers");
+
     for (Map.Entry<String, String> entry: headers.entries()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -137,6 +147,8 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap addAll(Map<String, String> map) {
+    Objects.requireNonNull(map, "map");
+
     for (Map.Entry<String, String> entry: map.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }
@@ -157,6 +169,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
   @Override
   public MultiMap remove(final String name) {
     Objects.requireNonNull(name, "name");
+
     int h = hash(name);
     int i = index(h);
     remove0(h, i, name);
@@ -201,6 +214,9 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap set(final String name, final String strVal) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(strVal, "strVal");
+
     int h = hash(name);
     int i = index(h);
     remove0(h, i, name);
@@ -210,6 +226,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap set(final String name, final Iterable<String> values) {
+    Objects.requireNonNull(name, "name");
     Objects.requireNonNull(values, "values");
 
     int h = hash(name);
@@ -272,6 +289,8 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public void forEach(Consumer<? super Map.Entry<String, String>> action) {
+    Objects.requireNonNull(action, "action");
+
     MapEntry e = head.after;
     while (e != head) {
       action.accept(e);
@@ -299,6 +318,8 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public boolean contains(String name) {
+    Objects.requireNonNull(name, "name");
+
     return get(name) != null;
   }
 
@@ -322,26 +343,38 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public String get(CharSequence name) {
+    Objects.requireNonNull(name, "name");
+
     return get(name.toString());
   }
 
   @Override
   public List<String> getAll(CharSequence name) {
+    Objects.requireNonNull(name, "name");
+
     return getAll(name.toString());
   }
 
   @Override
   public boolean contains(CharSequence name) {
+    Objects.requireNonNull(name, "name");
+
     return contains(name.toString());
   }
 
   @Override
   public MultiMap add(CharSequence name, CharSequence value) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(value, "value");
+
     return add(name.toString(), value.toString());
   }
 
   @Override
   public MultiMap add(CharSequence name, Iterable<CharSequence> values) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(values, "values");
+
     String n = name.toString();
     for (CharSequence seq: values) {
       add(n, seq.toString());
@@ -351,11 +384,17 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap set(CharSequence name, CharSequence value) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(value, "value");
+
     return set(name.toString(), value.toString());
   }
 
   @Override
   public MultiMap set(CharSequence name, Iterable<CharSequence> values) {
+    Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(values, "values");
+
     remove(name);
     String n = name.toString();
     for (CharSequence seq: values) {
@@ -366,6 +405,8 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap remove(CharSequence name) {
+    Objects.requireNonNull(name, "name");
+
     return remove(name.toString());
   }
 
