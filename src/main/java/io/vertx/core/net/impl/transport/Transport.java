@@ -26,6 +26,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
@@ -106,12 +107,13 @@ public class Transport {
     return null;
   }
 
-  public SocketAddress convert(io.vertx.core.net.SocketAddress address, boolean resolved) {
-    if (address.path() != null) {
+  public SocketAddress convert(io.vertx.core.net.SocketAddress address) {
+    if (address.isDomainSocket()) {
       throw new IllegalArgumentException("Domain socket not supported by JDK transport");
     } else {
-      if (resolved) {
-        return new InetSocketAddress(address.host(), address.port());
+      InetAddress ip = ((SocketAddressImpl) address).ipAddress();
+      if (ip != null) {
+        return new InetSocketAddress(ip, address.port());
       } else {
         return InetSocketAddress.createUnresolved(address.host(), address.port());
       }
@@ -120,12 +122,7 @@ public class Transport {
 
   public io.vertx.core.net.SocketAddress convert(SocketAddress address) {
     if (address instanceof InetSocketAddress) {
-      InetSocketAddress inetSocketAddress = (InetSocketAddress) address;
-      if (inetSocketAddress.isUnresolved()) {
-        return new SocketAddressImpl(inetSocketAddress.getPort(), inetSocketAddress.getHostName());
-      } else {
-        return new SocketAddressImpl(inetSocketAddress.getPort(), inetSocketAddress.getAddress().getHostAddress());
-      }
+      return io.vertx.core.net.SocketAddress.inetSocketAddress((InetSocketAddress) address);
     } else {
       return null;
     }

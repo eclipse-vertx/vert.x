@@ -513,7 +513,7 @@ public class SSLHelper {
   public SSLEngine createEngine(VertxInternal vertx, SocketAddress socketAddress, String serverName) {
     SslContext context = getContext(vertx, null);
     SSLEngine engine;
-    if (socketAddress.path() != null) {
+    if (socketAddress.isDomainSocket()) {
       engine = context.newEngine(ByteBufAllocator.DEFAULT);
     } else {
       engine = context.newEngine(ByteBufAllocator.DEFAULT, socketAddress.host(), socketAddress.port());

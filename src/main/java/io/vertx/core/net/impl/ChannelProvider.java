@@ -78,7 +78,7 @@ public final class ChannelProvider {
 
   private void connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Promise<Channel> p) {
     try {
-      bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.path() != null));
+      bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
     } catch (Exception e) {
       p.setFailure(e);
       return;
@@ -133,7 +133,7 @@ public final class ChannelProvider {
         initSSL(peerAddress, serverName, ssl, ch, channelHandler);
       }
     });
-    ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress, false));
+    ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
     fut.addListener(res -> {
       if (res.isSuccess()) {
         connected(fut.channel(), ssl, channelHandler);
@@ -193,7 +193,7 @@ public final class ChannelProvider {
         }
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
-        java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress, false);
+        java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
 
         bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override

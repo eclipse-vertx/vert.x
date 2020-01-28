@@ -1006,7 +1006,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testTimedOutWaiterDoesntConnect() throws Exception {
-    Assume.assumeTrue("Domain socket don't pass this test", testAddress.path() == null);
+    Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
     long responseDelay = 300;
     int requests = 6;
     client.close();
@@ -2823,7 +2823,7 @@ public class Http1xTest extends HttpTest {
       Handler<NetSocket> connectHandler
   ) throws Exception {
     // Cannot reliably pass due to https://github.com/netty/netty/issues/9113
-    Assume.assumeTrue(testAddress.path() == null);
+    Assume.assumeTrue(testAddress.isInetSocket());
 
     client.close();
     server.close();

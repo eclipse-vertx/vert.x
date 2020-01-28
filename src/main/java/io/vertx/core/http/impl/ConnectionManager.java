@@ -119,7 +119,7 @@ class ConnectionManager {
         int maxPoolSize = Math.max(client.getOptions().getMaxPoolSize(), client.getOptions().getHttp2MaxPoolSize());
         String host;
         int port;
-        if (server.path() == null) {
+        if (server.isInetSocket()) {
           host = server.host();
           port = server.port();
         } else {

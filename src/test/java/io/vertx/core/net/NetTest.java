@@ -739,14 +739,6 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
-  public void testSocketAddress() throws Exception {
-    assertNullPointerException(() -> new SocketAddressImpl(0, null));
-    assertIllegalArgumentException(() -> new SocketAddressImpl(0, ""));
-    assertIllegalArgumentException(() -> new SocketAddressImpl(-1, "someHost"));
-    assertIllegalArgumentException(() -> new SocketAddressImpl(65536, "someHost"));
-  }
-
-  @Test
   public void testWriteHandlerSuccess() throws Exception {
     CompletableFuture<Void> close = new CompletableFuture<>();
     server.connectHandler(socket -> {
@@ -1737,7 +1729,7 @@ public class NetTest extends VertxTestBase {
   // To get this to reliably pass with a lot of connections.
   public void testSharedServersRoundRobin() throws Exception {
 
-    boolean domainSocket = testAddress.path() != null;
+    boolean domainSocket = testAddress.isDomainSocket();
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numConnections = numServers * (domainSocket ? 10 : 20);
 
@@ -1896,12 +1888,16 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(socket -> {
       SocketAddress addr = socket.remoteAddress();
       assertEquals("127.0.0.1", addr.host());
+      assertEquals(null, addr.hostName());
+      assertEquals("127.0.0.1", addr.hostAddress());
       socket.close();
     }).listen(1234, "localhost", ar -> {
       assertTrue(ar.succeeded());
       vertx.createNetClient(new NetClientOptions()).connect(1234, "localhost", onSuccess(socket -> {
         SocketAddress addr = socket.remoteAddress();
-        assertEquals("127.0.0.1", addr.host());
+        assertEquals("localhost", addr.host());
+        assertEquals("localhost", addr.hostName());
+        assertEquals("127.0.0.1", addr.hostAddress());
         assertEquals(addr.port(), 1234);
         socket.closeHandler(v -> testComplete());
       }));

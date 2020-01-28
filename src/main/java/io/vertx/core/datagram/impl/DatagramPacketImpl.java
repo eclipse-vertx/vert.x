@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 final class DatagramPacketImpl implements DatagramPacket {
+
   private final InetSocketAddress sender;
   private final Buffer buffer;
   private SocketAddress senderAddress;
@@ -35,7 +36,7 @@ final class DatagramPacketImpl implements DatagramPacket {
   @Override
   public SocketAddress sender() {
     if (senderAddress == null) {
-      senderAddress = new SocketAddressImpl(sender.getPort(), sender.getAddress().getHostAddress());
+      senderAddress = SocketAddress.inetSocketAddress(sender);
     }
     return senderAddress;
   }

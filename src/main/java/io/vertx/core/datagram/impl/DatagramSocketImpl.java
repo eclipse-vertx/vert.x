@@ -243,13 +243,13 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   @Override
   public DatagramSocket listen(int port, String address, Handler<AsyncResult<DatagramSocket>> handler) {
     Objects.requireNonNull(handler, "no null handler accepted");
-    listen(new SocketAddressImpl(port, address)).setHandler(handler);
+    listen(SocketAddress.inetSocketAddress(port, address)).setHandler(handler);
     return this;
   }
 
   @Override
   public Future<DatagramSocket> listen(int port, String address) {
-    return listen(new SocketAddressImpl(port, address));
+    return listen(SocketAddress.inetSocketAddress(port, address));
   }
 
   @Override
@@ -350,7 +350,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         if (metrics != null) {
           f2.addListener(fut -> {
             if (fut.isSuccess()) {
-              metrics.bytesWritten(null, new SocketAddressImpl(port, host), packet.length());
+              metrics.bytesWritten(null, SocketAddress.inetSocketAddress(port, host), packet.length());
             }
           });
         }

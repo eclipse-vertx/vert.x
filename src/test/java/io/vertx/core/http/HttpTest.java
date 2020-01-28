@@ -2593,7 +2593,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testRemoteAddress() {
     server.requestHandler(req -> {
-      if (testAddress.host() != null) {
+      if (testAddress.isInetSocket()) {
         assertEquals("127.0.0.1", req.remoteAddress().host());
       } else {
         // Returns null for domain sockets

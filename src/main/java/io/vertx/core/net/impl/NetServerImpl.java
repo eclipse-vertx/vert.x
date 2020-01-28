@@ -201,7 +201,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     Map<ServerID, NetServerImpl> sharedNetServers = vertx.sharedNetServers();
     synchronized (sharedNetServers) {
       this.actualPort = localAddress.port(); // Will be updated on bind for a wildcard port
-      String hostOrPath = localAddress.host() != null ? localAddress.host() : localAddress.path();
+      String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
       id = new ServerID(actualPort, hostOrPath);
       NetServerImpl shared = sharedNetServers.get(id);
       if (shared == null || actualPort == 0) { // Wildcard port will imply a new actual server each time
@@ -250,7 +250,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
           }
         });
 
-        applyConnectionOptions(localAddress.path() != null, bootstrap);
+        applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
 
         handlerManager.addHandler(new Handlers(this, handler, exceptionHandler), listenContext);
 
@@ -271,7 +271,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
               }
               VertxMetrics metrics = vertx.metricsSPI();
               if (metrics != null) {
-                this.metrics = metrics.createNetServerMetrics(options, new SocketAddressImpl(id.port, id.host));
+                this.metrics = metrics.createNetServerMetrics(options, SocketAddress.inetSocketAddress(id.port, id.host));
               }
             } else {
               synchronized (sharedNetServers) {
@@ -293,7 +293,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         actualServer = shared;
         this.actualPort = shared.actualPort();
         VertxMetrics metrics = vertx.metricsSPI();
-        this.metrics = metrics != null ? metrics.createNetServerMetrics(options, new SocketAddressImpl(id.port, id.host)) : null;
+        this.metrics = metrics != null ? metrics.createNetServerMetrics(options, SocketAddress.inetSocketAddress(id.port, id.host)) : null;
         actualServer.handlerManager.addHandler(new Handlers(this, handler, exceptionHandler), listenContext);
       }
 

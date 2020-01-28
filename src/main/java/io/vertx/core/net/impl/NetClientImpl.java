@@ -198,7 +198,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
 
-    applyConnectionOptions(remoteAddress.path() != null, bootstrap);
+    applyConnectionOptions(remoteAddress.isDomainSocket(), bootstrap);
 
     ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
 

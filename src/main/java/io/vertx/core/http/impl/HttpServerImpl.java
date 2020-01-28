@@ -223,7 +223,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     listenContext = vertx.getOrCreateContext();
     listening = true;
-    String host = address.host() != null ? address.host() : "localhost";
+    String host = address.isInetSocket() ? address.host() : "localhost";
     int port = address.port();
     List<HttpVersion> applicationProtocols = options.getAlpnVersions();
     sslHelper.setApplicationProtocols(applicationProtocols);
@@ -236,7 +236,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);
-        applyConnectionOptions(address.path() != null, bootstrap);
+        applyConnectionOptions(address.isDomainSocket(), bootstrap);
         sslHelper.validate(vertx);
         String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
         bootstrap.childHandler(childHandler(address, serverOrigin));
