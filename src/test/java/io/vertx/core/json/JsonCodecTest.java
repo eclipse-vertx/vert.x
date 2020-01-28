@@ -290,7 +290,7 @@ public class JsonCodecTest {
         "  line comment this time inside the JSON object itself\n" +
         "*/\n" +
         "}";
-    JsonObject json = new JsonObject(jsonWithComments);
+    JsonObject json = new JsonObject(mapper.fromString(jsonWithComments, Map.class));
     assertEquals("{\"foo\":\"bar\"}", mapper.toString(json));
   }
 
@@ -311,20 +311,20 @@ public class JsonCodecTest {
         "  line comment this time inside the JSON array itself\n" +
         "*/\n" +
         "]";
-    JsonArray json = new JsonArray(jsonWithComments);
+    JsonArray json = new JsonArray(mapper.fromString(jsonWithComments, List.class));
     assertEquals("[\"foo\",\"bar\"]", mapper.toString(json));
   }
 
   @Test
   public void testDecodeJsonObjectWithInvalidJson() {
-    for (String test : new String[] { "null", "3", "\"3", "qiwjdoiqwjdiqwjd" }) {
+    for (String test : new String[] { "3", "\"3", "qiwjdoiqwjdiqwjd", "{\"foo\":1},{\"bar\":2}", "{\"foo\":1} 1234" }) {
       try {
-        new JsonObject(test);
+        mapper.fromString(test, Map.class);
         fail();
       } catch (DecodeException ignore) {
       }
       try {
-        new JsonObject(Buffer.buffer(test));
+        mapper.fromBuffer(Buffer.buffer(test), Map.class);
         fail();
       } catch (DecodeException ignore) {
       }
@@ -333,14 +333,14 @@ public class JsonCodecTest {
 
   @Test
   public void testDecodeJsonArrayWithInvalidJson() {
-    for (String test : new String[] { "null", "3", "\"3", "qiwjdoiqwjdiqwjd" }) {
+    for (String test : new String[] { "3", "\"3", "qiwjdoiqwjdiqwjd", "[1],[2]", "[] 1234" }) {
       try {
-        new JsonArray(test);
+        mapper.fromString(test, List.class);
         fail();
       } catch (DecodeException ignore) {
       }
       try {
-        new JsonArray(Buffer.buffer(test));
+        mapper.fromBuffer(Buffer.buffer(test), List.class);
         fail();
       } catch (DecodeException ignore) {
       }

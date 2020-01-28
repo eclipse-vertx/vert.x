@@ -14,6 +14,7 @@ package io.vertx.core.json.jackson;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.JsonTokenId;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.netty.buffer.ByteBuf;
@@ -165,15 +166,21 @@ public class JacksonCodec implements JsonCodec {
   }
 
   public static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
+    Object res;
+    JsonToken remaining;
     try {
       parser.nextToken();
-      Object res = parseAny(parser);
-      return cast(res, type);
+      res = parseAny(parser);
+      remaining = parser.nextToken();
     } catch (IOException e) {
       throw new DecodeException(e.getMessage(), e);
     } finally {
       close(parser);
     }
+    if (remaining != null) {
+      throw new DecodeException("Unexpected trailing token");
+    }
+    return cast(res, type);
   }
 
   private static Object parseAny(JsonParser parser) throws IOException, DecodeException {
