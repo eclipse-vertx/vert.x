@@ -12,6 +12,7 @@
 package io.vertx.core.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBufInputStream;
@@ -91,12 +92,17 @@ public class JacksonCodec implements JsonCodec {
   @SuppressWarnings("deprecation")
   private static <T> T fromParser(JsonParser parser, Class<T> type) throws DecodeException {
     T value;
+    JsonToken remaining;
     try {
       value = Json.mapper.readValue(parser, type);
+      remaining = parser.nextToken();
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     } finally {
       close(parser);
+    }
+    if (remaining != null) {
+      throw new DecodeException("Unexpected trailing token");
     }
     if (type == Object.class) {
       value = (T) adapt(value);
@@ -107,12 +113,17 @@ public class JacksonCodec implements JsonCodec {
   @SuppressWarnings("deprecation")
   private static <T> T fromParser(JsonParser parser, TypeReference<T> type) throws DecodeException {
     T value;
+    JsonToken remaining;
     try {
       value = Json.mapper.readValue(parser, type);
+      remaining = parser.nextToken();
     } catch (Exception e) {
       throw new DecodeException("Failed to decode:" + e.getMessage(), e);
     } finally {
       close(parser);
+    }
+    if (remaining != null) {
+      throw new DecodeException("Unexpected trailing token");
     }
     if (type.getType() == Object.class) {
       value = (T) adapt(value);
