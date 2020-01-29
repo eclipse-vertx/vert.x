@@ -117,19 +117,33 @@ public abstract class HttpTest extends HttpTestBase {
   public void testListenDomainSocketAddress() throws Exception {
     Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
     Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
-    HttpServer httpserver = vx.createHttpServer(createBaseServerOptions()).requestHandler(req -> req.response().end());
-    File sockFile = TestUtils.tmpFile(".sock");
-    SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
-    httpserver.listen(sockAddress, onSuccess(server -> {
-      client.request(sockAddress, new RequestOptions()
-        .setHost(DEFAULT_HTTP_HOST).setPort(DEFAULT_HTTP_PORT).setURI(DEFAULT_TEST_URI))
-        .setHandler(onSuccess(resp -> {
-          resp.endHandler(v -> {
-            testComplete();
-          });
-      })).end();
-    }));
-
+    int len = 3;
+    waitFor(len * len);
+    List<SocketAddress> addresses = new ArrayList<>();
+    for (int i = 0;i < len;i++) {
+      File sockFile = TestUtils.tmpFile(".sock");
+      SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
+      HttpServer server = vertx
+        .createHttpServer(createBaseServerOptions())
+        .requestHandler(req -> req.response().end(sockAddress.path()));
+      startServer(sockAddress, server);
+      addresses.add(sockAddress);
+    }
+    for (int i = 0;i < len;i++) {
+      SocketAddress sockAddress = addresses.get(i);
+      for (int j = 0;j < len;j++) {
+        client.request(sockAddress, new RequestOptions()
+          .setHost(DEFAULT_HTTP_HOST)
+          .setPort(DEFAULT_HTTP_PORT)
+          .setURI(DEFAULT_TEST_URI))
+          .setHandler(onSuccess(resp -> {
+            resp.body(onSuccess(body -> {
+              assertEquals(sockAddress.path(), body.toString());
+              complete();
+            }));
+          })).end();
+      }
+    }
     try {
       await();
     } finally {

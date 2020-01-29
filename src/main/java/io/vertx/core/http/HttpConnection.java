@@ -240,13 +240,13 @@ public interface HttpConnection {
   HttpConnection exceptionHandler(Handler<Throwable> handler);
 
   /**
-   * @return the remote address for this connection
+   * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
    */
   @CacheReturn
   SocketAddress remoteAddress();
 
   /**
-   * @return the local address for this connection
+   * @return the local address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
    */
   @CacheReturn
   SocketAddress localAddress();

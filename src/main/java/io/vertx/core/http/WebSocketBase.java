@@ -349,13 +349,13 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler);
 
   /**
-   * @return the remote address for this socket
+   * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
    */
   @CacheReturn
   SocketAddress remoteAddress();
 
   /**
-   * @return the local address for this socket
+   * @return the local address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
    */
   @CacheReturn
   SocketAddress localAddress();

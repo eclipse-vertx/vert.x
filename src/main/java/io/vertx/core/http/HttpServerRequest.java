@@ -166,7 +166,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   }
 
   /**
-   * @return the remote (client side) address of the request
+   * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
    */
   @CacheReturn
   default SocketAddress remoteAddress() {
@@ -174,7 +174,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   }
 
   /**
-   * @return the local (server side) address of the server that handles the request
+   * @return the local address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
    */
   @CacheReturn
   default SocketAddress localAddress() {
