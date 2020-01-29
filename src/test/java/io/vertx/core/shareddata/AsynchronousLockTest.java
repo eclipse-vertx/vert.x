@@ -11,9 +11,7 @@
 
 package io.vertx.core.shareddata;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -227,5 +225,22 @@ public class AsynchronousLockTest extends VertxTestBase {
     }));
     await();
     assertEquals(2, count.get());
+  }
+
+  @Test
+  public void testNoWorkerStarvation() {
+    waitFor(5);
+    getVertx().deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        vertx.sharedData().getLock("foo", onSuccess(lock -> {
+          vertx.setTimer(10, l -> {
+            lock.release();
+            complete();
+          });
+        }));
+      }
+    }, new DeploymentOptions().setInstances(5).setWorkerPoolName("bar").setWorkerPoolSize(1));
+    await();
   }
 }
