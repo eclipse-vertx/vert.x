@@ -10,17 +10,16 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -111,6 +110,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap add(final String name, final String strVal) {
+    Objects.requireNonNull(strVal);
     int h = hash(name);
     int i = index(h);
     add0(h, i, name, strVal);
@@ -204,7 +204,9 @@ public final class CaseInsensitiveHeaders implements MultiMap {
     int h = hash(name);
     int i = index(h);
     remove0(h, i, name);
-    add0(h, i, name, strVal);
+    if (strVal != null) {
+      add0(h, i, name, strVal);
+    }
     return this;
   }
 
@@ -280,21 +282,23 @@ public final class CaseInsensitiveHeaders implements MultiMap {
   }
 
   @Override
-  public List<Map.Entry<String, String>> entries() {
-    List<Map.Entry<String, String>> all =
-            new LinkedList<>();
-
-    MapEntry e = head.after;
-    while (e != head) {
-      all.add(e);
-      e = e.after;
-    }
-    return all;
-  }
-
-  @Override
   public Iterator<Map.Entry<String, String>> iterator() {
-    return entries().iterator();
+    return new Iterator<Map.Entry<String, String>>() {
+      MapEntry curr = head;
+      @Override
+      public boolean hasNext() {
+        return curr.after != head;
+      }
+      @Override
+      public Map.Entry<String, String> next() {
+        MapEntry next = curr.after;
+        if (next == head){
+          throw new NoSuchElementException();
+        }
+        curr = next;
+        return next;
+      }
+    };
   }
 
   @Override
@@ -309,9 +313,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public Set<String> names() {
-
     Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
-
     MapEntry e = head.after;
     while (e != head) {
       names.add(e.getKey());
@@ -351,7 +353,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
   @Override
   public MultiMap set(CharSequence name, CharSequence value) {
-    return set(name.toString(), value.toString());
+    return set(name.toString(), value != null ? value.toString() : null);
   }
 
   @Override
@@ -422,7 +424,7 @@ public final class CaseInsensitiveHeaders implements MultiMap {
 
     @Override
     public String toString() {
-      return getKey() + ": " + getValue();
+      return getKey() + "=" + getValue();
     }
   }
 }

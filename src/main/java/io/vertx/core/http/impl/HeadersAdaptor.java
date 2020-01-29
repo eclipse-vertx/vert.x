@@ -89,7 +89,11 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap set(String name, String value) {
-    headers.set(name, value);
+    if (value != null) {
+      headers.set(name, value);
+    } else {
+      headers.remove(name);
+    }
     return this;
   }
 
@@ -177,7 +181,11 @@ public class HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap set(CharSequence name, CharSequence value) {
-    headers.set(name, value);
+    if (value != null) {
+      headers.set(name, value);
+    } else {
+      headers.remove(name);
+    }
     return this;
   }
 
@@ -191,5 +199,14 @@ public class HeadersAdaptor implements MultiMap {
   public MultiMap remove(CharSequence name) {
     headers.remove(name);
     return this;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    for (Map.Entry<String, String> entry: this) {
+      sb.append(entry).append('\n');
+    }
+    return sb.toString();
   }
 }

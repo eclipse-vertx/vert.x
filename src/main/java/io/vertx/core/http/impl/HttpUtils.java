@@ -670,12 +670,18 @@ public final class HttpUtils {
 
   public static void validateHeader(CharSequence name, CharSequence value) {
     validateHeaderName(name);
-    validateHeaderValue(value);
+    if (value != null) {
+      validateHeaderValue(value);
+    }
   }
 
   public static void validateHeader(CharSequence name, Iterable<? extends CharSequence> values) {
     validateHeaderName(name);
-    values.forEach(HEADER_VALUE_VALIDATOR);
+    values.forEach(value -> {
+      if (value != null) {
+        HEADER_VALUE_VALIDATOR.accept(value);
+      }
+    });
   }
 
   public static void validateHeaderValue(CharSequence seq) {
