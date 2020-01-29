@@ -234,15 +234,16 @@ public class RunCommandTest extends CommandTestBase {
     URL url = new URL("http://localhost:8080");
     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
     conn.connect();
-    InputStreamReader in = new InputStreamReader((InputStream) conn.getContent());
-    BufferedReader buff = new BufferedReader(in);
-    String line;
     StringBuilder builder = new StringBuilder();
-    do {
-      line = buff.readLine();
-      builder.append(line).append("\n");
-    } while (line != null);
-    buff.close();
+    try (BufferedReader buff = new BufferedReader(new InputStreamReader((InputStream) conn.getContent()))) {
+      while (true) {
+        String line = buff.readLine();
+        if (line == null) {
+          break;
+        }
+        builder.append(line).append("\n");
+      }
+    }
     return new JsonObject(builder.toString());
   }
 
