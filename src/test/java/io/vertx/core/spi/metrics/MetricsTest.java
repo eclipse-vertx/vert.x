@@ -719,20 +719,18 @@ public class MetricsTest extends VertxTestBase {
     try {
       s1.requestHandler(req -> {
       });
-      s1.listen(8080, ar1 -> {
-        assertTrue(ar1.succeeded());
+      s1.listen(8080, onSuccess(r1 -> {
         s2.requestHandler(req -> {
           req.response().end();
         });
-        s2.listen(8080, ar2 -> {
-          assertTrue(ar2.succeeded());
-          FakeHttpServerMetrics metrics1 = FakeMetricsBase.getMetrics(ar1.result());
+        s2.listen(8080, onSuccess(r2 -> {
+          FakeHttpServerMetrics metrics1 = FakeMetricsBase.getMetrics(r1);
           assertNotNull(metrics1);
-          FakeHttpServerMetrics metrics2 = FakeMetricsBase.getMetrics(ar2.result());
+          FakeHttpServerMetrics metrics2 = FakeMetricsBase.getMetrics(r2);
           assertNotNull(metrics2);
           testComplete();
-        });
-      });
+        }));
+      }));
       await();
     } finally {
       s1.close();
@@ -774,8 +772,7 @@ public class MetricsTest extends VertxTestBase {
         checker.accept(clientMetric.get().socket);
         complete();
       });
-    }).listen(8080, ar1 -> {
-      assertTrue(ar1.succeeded());
+    }).listen(8080, onSuccess(s -> {
       client = vertx.createHttpClient();
       HttpClientRequest request = client.request(HttpMethod.CONNECT, 8080, host, "/");
       FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
@@ -796,7 +793,7 @@ public class MetricsTest extends VertxTestBase {
         clientMetric.set(metrics.getMetric(request));
         assertNotNull(clientMetric.get());
       })).end();
-    });
+    }));
     await();
   }
 
