@@ -199,13 +199,13 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
 
   /**
-   * @return the remote address for this socket
+   * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
    */
   @CacheReturn
   SocketAddress remoteAddress();
 
   /**
-   * @return the local address for this socket
+   * @return the local address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
    */
   @CacheReturn
   SocketAddress localAddress();

@@ -1804,6 +1804,44 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testListenDomainSocketAddress() throws Exception {
+    Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
+    Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+    int len = 3;
+    waitFor(len * len);
+    List<SocketAddress> addresses = new ArrayList<>();
+    for (int i = 0;i < len;i++) {
+      File sockFile = TestUtils.tmpFile(".sock");
+      SocketAddress sockAddress = SocketAddress.domainSocketAddress(sockFile.getAbsolutePath());
+      NetServer server = vertx
+        .createNetServer()
+        .connectHandler(so -> {
+          so.end(Buffer.buffer(sockAddress.path()));
+        });
+      startServer(sockAddress, server);
+      addresses.add(sockAddress);
+    }
+    for (int i = 0;i < len;i++) {
+      for (int j = 0;j < len;j++) {
+        SocketAddress sockAddress = addresses.get(i);
+        client.connect(sockAddress, onSuccess(so -> {
+          Buffer received = Buffer.buffer();
+          so.handler(received::appendBuffer);
+          so.closeHandler(v -> {
+            assertEquals(received.toString(), sockAddress.path());
+            complete();
+          });
+        }));
+      }
+    }
+    try {
+      await();
+    } finally {
+      vx.close();
+    }
+  }
+
+  @Test
   // Need to:
   // sudo sysctl -w net.core.somaxconn=10000
   // sudo sysctl -w net.ipv4.tcp_max_syn_backlog=10000

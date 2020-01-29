@@ -228,6 +228,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     listenContext = vertx.getOrCreateContext();
     listening = true;
     String host = address.host() != null ? address.host() : "localhost";
+    String hostOrPath = address.host() != null ? address.host() : address.path();
     int port = address.port();
     List<HttpVersion> applicationProtocols = options.getAlpnVersions();
     if (listenContext.isWorkerContext()) {
@@ -237,7 +238,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     Map<ServerID, HttpServerImpl> sharedHttpServers = vertx.sharedHttpServers();
     synchronized (sharedHttpServers) {
       this.actualPort = port; // Will be updated on bind for a wildcard port
-      id = new ServerID(port, host);
+      id = new ServerID(port, hostOrPath);
       HttpServerImpl shared = sharedHttpServers.get(id);
       if (shared == null || port == 0) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
