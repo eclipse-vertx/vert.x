@@ -325,7 +325,7 @@ public class JsonParserImpl implements JsonParser {
     @Override
     public JsonToken nextToken() throws IOException {
       if (tokens.isEmpty()) {
-        return JsonToken.NOT_AVAILABLE;
+        return null;
       }
       text = null;
       _numTypesValid = NR_UNKNOWN;
