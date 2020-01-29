@@ -18,6 +18,7 @@ import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.netty.util.HashingStrategy;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.impl.HttpUtils;
 
 import java.util.AbstractMap;
@@ -26,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -63,6 +65,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public VertxHttpHeaders add(CharSequence name, CharSequence value) {
+    Objects.requireNonNull(value);
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
     add0(h, i, name, value);
@@ -253,36 +256,44 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public List<Map.Entry<String, String>> entries() {
-    List<Map.Entry<String, String>> all = new ArrayList<>(size());
-    VertxHttpHeaders.MapEntry e = head.after;
-    while (e != head) {
-      final MapEntry f = e;
-      all.add(new Map.Entry<String, String>() {
-        @Override
-        public String getKey() {
-          return f.key.toString();
-        }
-        @Override
-        public String getValue() {
-          return f.value.toString();
-        }
-        @Override
-        public String setValue(String value) {
-          return f.setValue(value).toString();
-        }
-        @Override
-        public String toString() {
-          return getKey() + ": " + getValue();
-        }
-      });
-      e = e.after;
-    }
-    return all;
+    return MultiMap.super.entries();
   }
 
   @Override
   public Iterator<Map.Entry<String, String>> iterator() {
-    return entries().iterator();
+    return new Iterator<Map.Entry<String, String>>() {
+      MapEntry curr = head;
+      @Override
+      public boolean hasNext() {
+        return curr.after != head;
+      }
+      @Override
+      public Map.Entry<String, String> next() {
+        MapEntry next = curr.after;
+        if (next == head){
+          throw new NoSuchElementException();
+        }
+        curr = next;
+        return new Map.Entry<String, String>() {
+          @Override
+          public String getKey() {
+            return next.key.toString();
+          }
+          @Override
+          public String getValue() {
+            return next.value.toString();
+          }
+          @Override
+          public String setValue(String value) {
+            return next.setValue(value).toString();
+          }
+          @Override
+          public String toString() {
+            return getKey() + "=" + getValue();
+          }
+        };
+      }
+    };
   }
 
   @Override
@@ -475,7 +486,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
     @Override
     public String toString() {
-      return getKey() + ": " + getValue();
+      return getKey() + "=" + getValue();
     }
   }
 
@@ -536,7 +547,6 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     int i = h & 0x0000000F;
     remove0(h, i, name);
     if (strVal != null) {
-      // test me
       add0(h, i, name, strVal);
     }
     return this;

@@ -16,11 +16,12 @@ import io.vertx.core.MultiMap;
 
 import java.util.AbstractList;
 import java.util.AbstractMap;
-import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -48,7 +49,6 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   private final Http2Headers headers;
-  private Set<String> names;
 
   public Http2HeadersAdaptor(Http2Headers headers) {
 
@@ -88,14 +88,6 @@ public class Http2HeadersAdaptor implements MultiMap {
   }
 
   @Override
-  public List<Map.Entry<String, String>> entries() {
-    return headers.names()
-        .stream()
-        .map(name -> new AbstractMap.SimpleEntry<>(name.toString(), headers.get(name).toString()))
-        .collect(Collectors.toList());
-  }
-
-  @Override
   public boolean contains(String name) {
     return headers.contains(toLowerCase(name));
   }
@@ -112,27 +104,9 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public Set<String> names() {
-    if (names == null) {
-      names = new AbstractSet<String>() {
-        @Override
-        public Iterator<String> iterator() {
-          Iterator<CharSequence> it = headers.names().iterator();
-          return new Iterator<String>() {
-            @Override
-            public boolean hasNext() {
-              return it.hasNext();
-            }
-            @Override
-            public String next() {
-              return it.next().toString();
-            }
-          };
-        }
-        @Override
-        public int size() {
-          return headers.size();
-        }
-      };
+    Set<String> names = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    for (Map.Entry<CharSequence, CharSequence> header : headers) {
+      names.add(header.getKey().toString());
     }
     return names;
   }
@@ -176,7 +150,12 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
-    headers.set(toLowerCase(name), value);
+    name = (String) toLowerCase(name);
+    if (value != null) {
+      headers.set(name, value);
+    } else {
+      headers.remove(name);
+    }
     return this;
   }
 
@@ -212,7 +191,37 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public Iterator<Map.Entry<String, String>> iterator() {
-    return entries().iterator();
+    Iterator<Map.Entry<CharSequence, CharSequence>> i = headers.iterator();
+    return new Iterator<Map.Entry<String, String>>() {
+      @Override
+      public boolean hasNext() {
+        return i.hasNext();
+      }
+      @Override
+      public Map.Entry<String, String> next() {
+        Map.Entry<CharSequence, CharSequence> next = i.next();
+        return new Map.Entry<String, String>() {
+          @Override
+          public String getKey() {
+            return next.getKey().toString();
+          }
+          @Override
+          public String getValue() {
+            return next.getValue().toString();
+          }
+          @Override
+          public String setValue(String value) {
+            String old = next.getValue().toString();
+            next.setValue(value);
+            return old;
+          }
+          @Override
+          public String toString() {
+            return next.toString();
+          }
+        };
+      }
+    };
   }
 
   @Override
@@ -273,7 +282,12 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
-    headers.set(toLowerCase(name), value);
+    name = toLowerCase(name);
+    if (value != null) {
+      headers.set(name, value);
+    } else {
+      headers.remove(name);
+    }
     return this;
   }
 
@@ -290,5 +304,14 @@ public class Http2HeadersAdaptor implements MultiMap {
   public MultiMap remove(CharSequence name) {
     headers.remove(toLowerCase(name));
     return this;
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    for (Map.Entry<CharSequence, CharSequence> header : headers) {
+      sb.append(header).append('\n');
+    }
+    return sb.toString();
   }
 }

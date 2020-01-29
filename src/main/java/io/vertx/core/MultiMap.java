@@ -18,6 +18,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpHeaders;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,7 +79,11 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    *         empty if no pairs are found
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  List<Map.Entry<String, String>> entries();
+  default List<Map.Entry<String, String>> entries() {
+    List<Map.Entry<String, String>> entries = new ArrayList<>();
+    forEach(entries::add);
+    return entries;
+  }
 
   /**
    * Checks to see if there is a value with the specified name
