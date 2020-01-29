@@ -193,9 +193,9 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   MultiMap addAll(Map<String, String> headers);
 
   /**
-   * Sets a value under the specified name.
+   * Sets a {@code value} under the specified {@code name}.
    * <p>
-   * If there is an existing header with the same name, it is removed.
+   * If there is an existing header with the same name, it is removed. Setting a {@code null} value removes the entry.
    *
    * @param name The name
    * @param value The value
