@@ -24,6 +24,7 @@ import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.http.impl.pool.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
@@ -466,7 +467,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
       if (headers != null && headers.size() > 0) {
         for (Map.Entry<String, String> header : headers) {
-          h.add(Http2HeadersAdaptor.toLowerCase(header.getKey()), header.getValue());
+          h.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
         }
       }
       if (conn.client.getOptions().isTryUseCompression() && h.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {

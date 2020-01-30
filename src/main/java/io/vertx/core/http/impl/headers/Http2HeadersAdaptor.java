@@ -8,15 +8,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http.impl.headers;
 
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.impl.HttpUtils;
 
 import java.util.AbstractList;
-import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,25 +27,6 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 public class Http2HeadersAdaptor implements MultiMap {
-
-  static CharSequence toLowerCase(CharSequence s) {
-    StringBuilder buffer = null;
-    int len = s.length();
-    for (int index = 0; index < len; index++) {
-      char c = s.charAt(index);
-      if (c >= 'A' && c <= 'Z') {
-        if (buffer == null) {
-          buffer = new StringBuilder(s);
-        }
-        buffer.setCharAt(index, (char)(c + ('a' - 'A')));
-      }
-    }
-    if (buffer != null) {
-      return buffer.toString();
-    } else {
-      return s;
-    }
-  }
 
   private final Http2Headers headers;
 
@@ -65,13 +45,13 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public String get(String name) {
-    CharSequence val = headers.get(toLowerCase(name));
+    CharSequence val = headers.get(HttpUtils.toLowerCase(name));
     return val != null ? val.toString() : null;
   }
 
   @Override
   public List<String> getAll(String name) {
-    List<CharSequence> all = headers.getAll(toLowerCase(name));
+    List<CharSequence> all = headers.getAll(HttpUtils.toLowerCase(name));
     if (all != null) {
       return new AbstractList<String>() {
         @Override
@@ -89,12 +69,12 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public boolean contains(String name) {
-    return headers.contains(toLowerCase(name));
+    return headers.contains(HttpUtils.toLowerCase(name));
   }
 
   @Override
   public boolean contains(String name, String value, boolean caseInsensitive) {
-    return headers.contains(toLowerCase(name), value, caseInsensitive);
+    return headers.contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
   }
 
   @Override
@@ -116,7 +96,7 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
-    headers.add(toLowerCase(name), value);
+    headers.add(HttpUtils.toLowerCase(name), value);
     return this;
   }
 
@@ -125,7 +105,7 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
-    headers.add(toLowerCase(name), values);
+    headers.add(HttpUtils.toLowerCase(name), values);
     return this;
   }
 
@@ -150,7 +130,7 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
-    name = (String) toLowerCase(name);
+    name = (String) HttpUtils.toLowerCase(name);
     if (value != null) {
       headers.set(name, value);
     } else {
@@ -164,7 +144,7 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
-    headers.set(toLowerCase(name), values);
+    headers.set(HttpUtils.toLowerCase(name), values);
     return this;
   }
 
@@ -179,7 +159,7 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap remove(String name) {
-    headers.remove(toLowerCase(name));
+    headers.remove(HttpUtils.toLowerCase(name));
     return this;
   }
 
@@ -239,24 +219,24 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public String get(CharSequence name) {
-    CharSequence val = headers.get(toLowerCase(name));
+    CharSequence val = headers.get(HttpUtils.toLowerCase(name));
     return val != null ? val.toString() : null;
   }
 
   @Override
   public List<String> getAll(CharSequence name) {
-    List<CharSequence> all = headers.getAll(toLowerCase(name));
+    List<CharSequence> all = headers.getAll(HttpUtils.toLowerCase(name));
     return all != null ? all.stream().map(CharSequence::toString).collect(Collectors.toList()) : null;
   }
 
   @Override
   public boolean contains(CharSequence name) {
-    return headers.contains(toLowerCase(name));
+    return headers.contains(HttpUtils.toLowerCase(name));
   }
 
   @Override
   public boolean contains(CharSequence name, CharSequence value, boolean caseInsensitive) {
-    return headers.contains(toLowerCase(name), value, caseInsensitive);
+    return headers.contains(HttpUtils.toLowerCase(name), value, caseInsensitive);
   }
 
   @Override
@@ -264,7 +244,7 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
-    headers.add(toLowerCase(name), value);
+    headers.add(HttpUtils.toLowerCase(name), value);
     return this;
   }
 
@@ -273,7 +253,7 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
-    headers.add(toLowerCase(name), values);
+    headers.add(HttpUtils.toLowerCase(name), values);
     return this;
   }
 
@@ -282,7 +262,7 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, value);
     }
-    name = toLowerCase(name);
+    name = HttpUtils.toLowerCase(name);
     if (value != null) {
       headers.set(name, value);
     } else {
@@ -296,13 +276,13 @@ public class Http2HeadersAdaptor implements MultiMap {
     if (!io.vertx.core.http.HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION) {
       HttpUtils.validateHeader(name, values);
     }
-    headers.set(toLowerCase(name), values);
+    headers.set(HttpUtils.toLowerCase(name), values);
     return this;
   }
 
   @Override
   public MultiMap remove(CharSequence name) {
-    headers.remove(toLowerCase(name));
+    headers.remove(HttpUtils.toLowerCase(name));
     return this;
   }
 

@@ -26,6 +26,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.UpgradeRejectedException;
+import io.vertx.core.http.impl.headers.HeadersAdaptor;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>

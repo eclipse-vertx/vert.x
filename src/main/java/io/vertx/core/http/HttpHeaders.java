@@ -17,6 +17,7 @@ import io.netty.util.AsciiString;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.impl.headers.CaseInsensitiveHeaders;
 
 /**
  * Contains a bunch of useful HTTP headers stuff:

@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http;
+package io.vertx.core.http.headers;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpHeaders;

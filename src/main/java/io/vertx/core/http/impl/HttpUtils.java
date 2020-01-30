@@ -642,6 +642,28 @@ public final class HttpUtils {
     return loc;
   }
 
+  /**
+   * @return convert the {@code sequence} to a lower case instance
+   */
+  public static CharSequence toLowerCase(CharSequence sequence) {
+    StringBuilder buffer = null;
+    int len = sequence.length();
+    for (int index = 0; index < len; index++) {
+      char c = sequence.charAt(index);
+      if (c >= 'A' && c <= 'Z') {
+        if (buffer == null) {
+          buffer = new StringBuilder(sequence);
+        }
+        buffer.setCharAt(index, (char)(c + ('a' - 'A')));
+      }
+    }
+    if (buffer != null) {
+      return buffer.toString();
+    } else {
+      return sequence;
+    }
+  }
+
   private static class CustomCompressor extends HttpContentCompressor {
     @Override
     public ZlibWrapper determineWrapper(String acceptEncoding) {
