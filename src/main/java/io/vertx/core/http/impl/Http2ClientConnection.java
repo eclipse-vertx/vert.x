@@ -385,10 +385,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void handleEnd(MultiMap trailers) {
-      // Should use a shared immutable object for CaseInsensitiveHeaders ?
-      if (trailers == null) {
-        trailers = new CaseInsensitiveHeaders();
-      }
       response.handleEnd(trailers);
     }
 

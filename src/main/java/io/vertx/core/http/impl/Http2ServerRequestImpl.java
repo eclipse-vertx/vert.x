@@ -27,7 +27,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
@@ -466,7 +465,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     synchronized (conn) {
       // Create it lazily
       if (attributes == null) {
-        attributes = new CaseInsensitiveHeaders();
+        attributes = MultiMap.caseInsensitiveMultiMap();
       }
       return attributes;
     }

@@ -589,7 +589,7 @@ public class Http1xServerRequest implements HttpServerRequest {
   private MultiMap attributes() {
     // Create it lazily
     if (attributes == null) {
-      attributes = new CaseInsensitiveHeaders();
+      attributes = MultiMap.caseInsensitiveMultiMap();
     }
     return attributes;
   }

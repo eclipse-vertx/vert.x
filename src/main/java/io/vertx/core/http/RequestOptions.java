@@ -352,7 +352,7 @@ public class RequestOptions {
 
   private void checkHeaders() {
     if (headers == null) {
-      headers = new CaseInsensitiveHeaders();
+      headers = MultiMap.caseInsensitiveMultiMap();
     }
   }
 
