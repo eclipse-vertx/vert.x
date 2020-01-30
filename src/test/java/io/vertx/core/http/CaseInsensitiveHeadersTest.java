@@ -27,7 +27,7 @@ public class CaseInsensitiveHeadersTest extends VertxHttpHeadersTest {
   }
 
   protected MultiMap newMultiMap() {
-    return new CaseInsensitiveHeaders();
+    return MultiMap.caseInsensitiveMultiMap();
   }
 
   @Test

@@ -14,7 +14,6 @@ package io.vertx.core.eventbus;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 
@@ -75,7 +74,7 @@ public class DeliveryOptions {
     this.codecName = json.getString("codecName", null);
     JsonObject hdrs = json.getJsonObject("headers", null);
     if (hdrs != null) {
-      headers = new CaseInsensitiveHeaders();
+      headers = MultiMap.caseInsensitiveMultiMap();
       for (Map.Entry<String, Object> entry: hdrs) {
         if (!(entry.getValue() instanceof String)) {
           throw new IllegalStateException("Invalid type for message header value " + entry.getValue().getClass());
@@ -194,7 +193,7 @@ public class DeliveryOptions {
 
   private void checkHeaders() {
     if (headers == null) {
-      headers = new CaseInsensitiveHeaders();
+      headers = MultiMap.caseInsensitiveMultiMap();
     }
   }
 

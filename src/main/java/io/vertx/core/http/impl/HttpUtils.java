@@ -23,7 +23,6 @@ import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
 
@@ -381,7 +380,7 @@ public final class HttpUtils {
   static MultiMap params(String uri) {
     QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
     Map<String, List<String>> prms = queryStringDecoder.parameters();
-    MultiMap params = new CaseInsensitiveHeaders();
+    MultiMap params = MultiMap.caseInsensitiveMultiMap();
     if (!prms.isEmpty()) {
       for (Map.Entry<String, List<String>> entry: prms.entrySet()) {
         params.add(entry.getKey(), entry.getValue());

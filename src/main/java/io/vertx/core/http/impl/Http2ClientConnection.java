@@ -249,7 +249,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       responseEnded = true;
       // Should use a shared immutable object for CaseInsensitiveHeaders ?
       if (trailers == null) {
-        trailers = new CaseInsensitiveHeaders();
+        trailers = MultiMap.caseInsensitiveMultiMap();
       }
       response.handleEnd(trailers);
     }

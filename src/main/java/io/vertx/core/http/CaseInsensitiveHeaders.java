@@ -27,7 +27,9 @@ import java.util.function.Consumer;
  * prior to making an HTTP request.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
+ * @deprecated instead use {@link MultiMap}
  */
+@Deprecated
 public final class CaseInsensitiveHeaders implements MultiMap {
   private static final int BUCKET_SIZE = 17;
 
@@ -104,6 +106,10 @@ public final class CaseInsensitiveHeaders implements MultiMap {
   private final MapEntry[] entries = new MapEntry[BUCKET_SIZE];
   private final MapEntry head = new MapEntry(-1, null, null);
 
+  /**
+   * @deprecated use {@link MultiMap#caseInsensitiveMultiMap()} instead
+   */
+  @Deprecated
   public CaseInsensitiveHeaders() {
     head.before = head.after = head;
   }

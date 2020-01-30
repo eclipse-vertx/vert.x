@@ -41,7 +41,9 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return the multi-map
    */
   static MultiMap caseInsensitiveMultiMap() {
-    return new CaseInsensitiveHeaders();
+    @SuppressWarnings("deprecation")
+    CaseInsensitiveHeaders map = new CaseInsensitiveHeaders();
+    return map;
   }
 
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

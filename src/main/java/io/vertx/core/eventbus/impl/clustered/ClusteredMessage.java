@@ -20,7 +20,6 @@ import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.CodecManager;
 import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.MessageImpl;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.impl.ServerID;
@@ -76,7 +75,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
         decodeHeaders();
       }
       if (headers == null) {
-        headers = new CaseInsensitiveHeaders();
+        headers = MultiMap.caseInsensitiveMultiMap();
       }
     }
     return headers;
@@ -207,7 +206,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
       headersPos += 4;
       int numHeaders = wireBuffer.getInt(headersPos);
       headersPos += 4;
-      headers = new CaseInsensitiveHeaders();
+      headers = MultiMap.caseInsensitiveMultiMap();
       for (int i = 0; i < numHeaders; i++) {
         int keyLength = wireBuffer.getInt(headersPos);
         headersPos += 4;

@@ -15,7 +15,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.*;
-import io.vertx.core.http.CaseInsensitiveHeaders;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 
@@ -63,7 +62,7 @@ public class MessageImpl<U, V> implements Message<V> {
     this.messageCodec = other.messageCodec;
     if (other.headers != null) {
       List<Map.Entry<String, String>> entries = other.headers.entries();
-      this.headers = new CaseInsensitiveHeaders();
+      this.headers = MultiMap.caseInsensitiveMultiMap();
       for (Map.Entry<String, String> entry: entries) {
         this.headers.add(entry.getKey(), entry.getValue());
       }
@@ -89,7 +88,7 @@ public class MessageImpl<U, V> implements Message<V> {
   public MultiMap headers() {
     // Lazily decode headers
     if (headers == null) {
-      headers = new CaseInsensitiveHeaders();
+      headers = MultiMap.caseInsensitiveMultiMap();
     }
     return headers;
   }
