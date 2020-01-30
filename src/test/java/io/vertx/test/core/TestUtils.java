@@ -16,6 +16,7 @@ import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.util.NetUtil;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.net.*;
@@ -248,6 +249,18 @@ public class TestUtils {
     return settings;
   }
 
+  public static MultiMap randomMultiMap(int num) {
+    MultiMap multiMap = MultiMap.caseInsensitiveMultiMap();
+    for (int i = 0; i < num; i++) {
+      String key;
+      do {
+        key = TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())).toLowerCase();
+      } while (multiMap.contains(key));
+      multiMap.set(key, TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())));
+    }
+    return multiMap;
+  }
+
   public static <E extends Enum<E>> Set<E> randomEnumSet(Class<E> enumType) {
     EnumSet<E> set = EnumSet.noneOf(enumType);
     for (E e : EnumSet.allOf(enumType)) {
@@ -446,5 +459,4 @@ public class TestUtils {
     }
     return factory;
   }
-
 }

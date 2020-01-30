@@ -12,7 +12,6 @@
 package io.vertx.core.http;
 
 import io.netty.handler.codec.compression.DecompressionException;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
@@ -21,7 +20,6 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
-import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
 import io.vertx.test.core.Repeat;
@@ -757,7 +755,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testParams(char delim) {
-    Map<String, String> params = genMap(10);
+    MultiMap params = TestUtils.randomMultiMap(10);
     String query = generateQueryString(params, delim);
     server.requestHandler(req -> {
       assertEquals(query, req.query());
@@ -858,7 +856,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testRequestHeaders(boolean individually) {
-    MultiMap expectedHeaders = getHeaders(10);
+    MultiMap expectedHeaders = randomMultiMap(10);
 
     server.requestHandler(req -> {
       MultiMap headers = req.headers();
@@ -898,7 +896,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testResponseHeaders(boolean individually) {
-    MultiMap headers = getHeaders(10);
+    MultiMap headers = randomMultiMap(10);
 
     server.requestHandler(req -> {
       if (individually) {
@@ -1584,7 +1582,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testResponseTrailers(boolean individually) {
-    MultiMap trailers = getHeaders(10);
+    MultiMap trailers = randomMultiMap(10);
 
     server.requestHandler(req -> {
       req.response().setChunked(true);
@@ -4856,37 +4854,16 @@ public abstract class HttpTest extends HttpTestBase {
     return file;
   }
 
-  protected static String generateQueryString(Map<String, String> params, char delim) {
+  protected static String generateQueryString(MultiMap params, char delim) {
     StringBuilder sb = new StringBuilder();
     int count = 0;
-    for (Map.Entry<String, String> param : params.entrySet()) {
+    for (Map.Entry<String, String> param : params.entries()) {
       sb.append(param.getKey()).append("=").append(param.getValue());
       if (++count != params.size()) {
         sb.append(delim);
       }
     }
     return sb.toString();
-  }
-
-  protected static Map<String, String> genMap(int num) {
-    Map<String, String> map = new HashMap<>();
-    for (int i = 0; i < num; i++) {
-      String key;
-      do {
-        key = TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())).toLowerCase();
-      } while (map.containsKey(key));
-      map.put(key, TestUtils.randomAlphaString(1 + (int) ((19) * Math.random())));
-    }
-    return map;
-  }
-
-  protected static MultiMap getHeaders(int num) {
-    Map<String, String> map = genMap(num);
-    MultiMap headers = new HeadersAdaptor(new DefaultHttpHeaders());
-    for (Map.Entry<String, String> entry : map.entrySet()) {
-      headers.add(entry.getKey(), entry.getValue());
-    }
-    return headers;
   }
 
   @Test
