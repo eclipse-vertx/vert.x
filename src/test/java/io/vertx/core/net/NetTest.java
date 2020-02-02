@@ -18,6 +18,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -3646,4 +3647,36 @@ public class NetTest extends VertxTestBase {
     assertEquals(8080, converted.port());
     assertEquals("localhost", converted.host());
   }
+
+  @Test
+  public void testNetSocketHandlerFailureReportedToContextExceptionHandler() throws Exception {
+    server.connectHandler(so -> {
+      Context ctx = Vertx.currentContext();
+      List<Throwable> reported = new ArrayList<>();
+      ctx.exceptionHandler(reported::add);
+      NullPointerException err1 = new NullPointerException();
+      so.handler(buff -> {
+        throw err1;
+      });
+      NullPointerException err2 = new NullPointerException();
+      so.endHandler(v ->{
+        throw err2;
+      });
+      NullPointerException err3 = new NullPointerException();
+      so.closeHandler(v1 -> {
+        ctx.runOnContext(v2 -> {
+          assertEquals(Arrays.asList(err1, err2, err3), reported);
+          testComplete();
+        });
+        throw err3;
+      });
+    });
+    startServer(testAddress);
+    client.connect(testAddress, onSuccess(so -> {
+      so.write("ping");
+      so.close();
+    }));
+    await();
+  }
+
 }
