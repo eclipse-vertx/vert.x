@@ -88,6 +88,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.messageHandler = NULL_MSG_HANDLER;
     pending = new InboundBuffer<>(context);
     pending.drainHandler(v -> doResume());
+    pending.exceptionHandler(context::reportException);
     pending.handler(obj -> {
       if (obj == InboundBuffer.END_SENTINEL) {
         Handler<Void> handler = endHandler();
