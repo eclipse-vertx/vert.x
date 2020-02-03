@@ -102,6 +102,7 @@ public class ClusteredEventBus extends EventBusImpl {
 
   @Override
   public void start(Handler<AsyncResult<Void>> resultHandler) {
+    deliveryStrategy.setVertx(vertx);
     server = vertx.createNetServer(getServerOptions());
     server.connectHandler(getServerHandler());
     server.listen(ar -> {
