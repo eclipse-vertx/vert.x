@@ -16,10 +16,7 @@ import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.ReplyFailure;
+import io.vertx.core.eventbus.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
@@ -506,6 +503,23 @@ public class MetricsTest extends VertxTestBase {
     awaitLatch(latch);
     assertEquals(Collections.singletonList(replyAddress.get()), metrics.getReplyFailureAddresses());
     assertEquals(Collections.singletonList(ReplyFailure.RECIPIENT_FAILURE), metrics.getReplyFailures());
+  }
+
+  @Test
+  public void testEventbusError() throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    EventBus eb = vertx.eventBus();
+    FakeEventBusMetrics ebMetrics = FakeMetricsBase.getMetrics(eb);
+    assertNotNull(ebMetrics);
+    eb.consumer("eb-error", msg -> {
+      throw new RuntimeException("Intentional failure for test");
+    });
+    eb.request("eb-error", "whatever", new DeliveryOptions().setSendTimeout(10), ar -> {
+      assertTrue(ar.failed());
+      latch.countDown();
+    });
+    awaitLatch(latch);
+    assertEquals(1, ebMetrics.getErrorCount());
   }
 
   @Test

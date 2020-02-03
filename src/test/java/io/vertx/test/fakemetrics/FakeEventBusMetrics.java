@@ -35,6 +35,7 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   private final Map<String, AtomicInteger> decoded = new ConcurrentHashMap<>();
   private final List<String> replyFailureAddresses = Collections.synchronizedList(new ArrayList<>());
   private final List<ReplyFailure> replyFailures = Collections.synchronizedList(new ArrayList<>());
+  private final AtomicInteger errorCounter = new AtomicInteger();
 
   public Map<String, AtomicInteger> getEncoded() {
     return encoded;
@@ -62,6 +63,10 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
 
   public List<ReplyFailure> getReplyFailures() {
     return replyFailures;
+  }
+
+  public int getErrorCount() {
+    return errorCounter.get();
   }
 
   public int getEncodedBytes(String address) {
@@ -108,6 +113,7 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
     handler.endCount.incrementAndGet();
     if (failure != null) {
       handler.failureCount.incrementAndGet();
+      errorCounter.incrementAndGet();
     }
   }
 
@@ -149,5 +155,4 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
   public boolean isEnabled() {
     return true;
   }
-
 }
