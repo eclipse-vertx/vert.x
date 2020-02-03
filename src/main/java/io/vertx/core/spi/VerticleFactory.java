@@ -11,9 +11,6 @@
 
 package io.vertx.core.spi;
 
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
@@ -54,29 +51,6 @@ public interface VerticleFactory {
    */
   default int order() {
     return 0;
-  }
-
-  /**
-   * Does the factory require resolution? See {@link #resolve(String, DeploymentOptions, ClassLoader, Future)} for more
-   * information.
-   * @return true if yes
-   */
-  default boolean requiresResolve() {
-    return false;
-  }
-
-  /**
-   * Some verticle factories can "resolve" the identifer to another identifier which is then used to look up the real
-   * verticle factory. An Example is the Vert.x service factory which takes an identifier of form `service:com.mycompany.clever-db-service"
-   * then looks for a JSON file which it loads to get the real identifier (main verticle).
-   *
-   * @param identifier  The identifier
-   * @param deploymentOptions  The deployment options - these can be changed inside the resolve method (e.g. to add an extra classpath)
-   * @param classLoader  The classloader
-   * @param resolution  A future which will receive the result of the resolution.
-   */
-  default void resolve(String identifier, DeploymentOptions deploymentOptions, ClassLoader classLoader, Promise<String> resolution) {
-    resolution.complete(identifier);
   }
 
   /**

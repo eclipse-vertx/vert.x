@@ -167,73 +167,20 @@ public class VerticleManager {
   }
 
 
-
   private Future<Deployment> doDeployVerticle(Iterator<VerticleFactory> iter,
-                                          Throwable prevErr,
-                                          String identifier,
-                                          DeploymentOptions options,
-                                          ContextInternal parentContext,
-                                          ContextInternal callingContext,
-                                          ClassLoader cl) {
+                                              Throwable prevErr,
+                                              String identifier,
+                                              DeploymentOptions options,
+                                              ContextInternal parentContext,
+                                              ContextInternal callingContext,
+                                              ClassLoader cl) {
     if (iter.hasNext()) {
       VerticleFactory verticleFactory = iter.next();
-      Promise<String> promise = callingContext.promise();
-      if (verticleFactory.requiresResolve()) {
-        try {
-          verticleFactory.resolve(identifier, options, cl, promise);
-        } catch (Exception e) {
-          try {
-            promise.fail(e);
-          } catch (Exception ignore) {
-            // Too late
-          }
-        }
-      } else {
-        promise.complete(identifier);
-      }
-      return promise
-        .future()
-        .compose(resolvedName -> {
-          if (!resolvedName.equals(identifier)) {
-            return deployVerticle(resolvedName, options);
-          } else {
-            Promise<Callable<Verticle>> p = Promise.promise();
-            try {
-              verticleFactory.createVerticle(identifier, cl, p);
-            } catch (Exception e) {
-              return Future.failedFuture(e);
-            }
-            Future<Deployment> fut = p.future().compose(callable -> deploymentManager.doDeploy(options, v -> identifier, parentContext, callingContext, cl, callable));
-            String group = options.getIsolationGroup();
-            if (group != null) {
-              fut.onComplete(ar -> {
-                if (ar.succeeded()) {
-                  Deployment result = ar.result();
-                  result.undeployHandler(v -> {
-                    synchronized (VerticleManager.this) {
-                      IsolatingClassLoader icl = classloaders.get(group);
-                      if (--icl.refCount == 0) {
-                        classloaders.remove(group);
-                        try {
-                          icl.close();
-                        } catch (IOException e) {
-                          // log.debug("Issue when closing isolation group loader", e);
-                        }
-                      }
-                    }
-                  });
-                } else {
-                  // ??? not tested
-                  throw new UnsupportedOperationException();
-                }
-              });
-            }
-            return fut;
-          }
-        }).recover(err -> {
-          // Try the next one
-          return doDeployVerticle(iter, err, identifier, options, parentContext, callingContext, cl);
-        });
+      return doDeployVerticle(verticleFactory, identifier, options, parentContext, callingContext, cl)
+      .recover(err -> {
+        // Try the next one
+        return doDeployVerticle(iter, err, identifier, options, parentContext, callingContext, cl);
+      });
     } else {
       if (prevErr != null) {
         // Report failure if there are no more factories to try otherwise try the next one
@@ -243,6 +190,46 @@ public class VerticleManager {
         throw new UnsupportedOperationException();
       }
     }
+  }
+
+  private Future<Deployment> doDeployVerticle(VerticleFactory verticleFactory,
+                                              String identifier,
+                                              DeploymentOptions options,
+                                              ContextInternal parentContext,
+                                              ContextInternal callingContext,
+                                              ClassLoader cl) {
+    Promise<Callable<Verticle>> p = callingContext.promise();
+    try {
+      verticleFactory.createVerticle(identifier, cl, p);
+    } catch (Exception e) {
+      return Future.failedFuture(e);
+    }
+    Future<Deployment> fut = p.future().compose(callable -> deploymentManager.doDeploy(options, v -> identifier, parentContext, callingContext, cl, callable));
+    String group = options.getIsolationGroup();
+    if (group != null) {
+      fut.onComplete(ar -> {
+        if (ar.succeeded()) {
+          Deployment result = ar.result();
+          result.undeployHandler(v -> {
+            synchronized (VerticleManager.this) {
+              IsolatingClassLoader icl = classloaders.get(group);
+              if (--icl.refCount == 0) {
+                classloaders.remove(group);
+                try {
+                  icl.close();
+                } catch (IOException e) {
+                  // log.debug("Issue when closing isolation group loader", e);
+                }
+              }
+            }
+          });
+        } else {
+          // ??? not tested
+          throw new UnsupportedOperationException();
+        }
+      });
+    }
+    return fut;
   }
 
   /**
