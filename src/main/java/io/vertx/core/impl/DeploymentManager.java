@@ -261,6 +261,7 @@ public class DeploymentManager {
     private final List<VerticleHolder> verticles = new CopyOnWriteArrayList<>();
     private final Set<Deployment> children = new ConcurrentHashSet<>();
     private final DeploymentOptions options;
+    private Handler<Void> undeployHandler;
     private int status = ST_DEPLOYED;
     private volatile boolean child;
 
@@ -280,8 +281,18 @@ public class DeploymentManager {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext).setHandler(childrenResult -> {
+          Handler<Void> handler;
           synchronized (DeploymentImpl.this) {
             status = ST_UNDEPLOYED;
+            handler = undeployHandler;
+            undeployHandler = null;
+          }
+          if (handler != null) {
+            try {
+              handler.handle(null);
+            } catch (Exception e) {
+              context.reportException(e);
+            }
           }
           if (childrenResult.failed()) {
             reportFailure(cause, callingContext, completionHandler);
@@ -364,7 +375,15 @@ public class DeploymentManager {
         }
         Promise<Void> resolvingPromise = undeployingContext.promise();
         CompositeFuture.all(undeployFutures).<Void>mapEmpty().setHandler(resolvingPromise);
-        return resolvingPromise.future();
+        Future<Void> fut = resolvingPromise.future();
+        Handler<Void> handler = undeployHandler;
+        if (handler != null) {
+          undeployHandler = null;
+          fut.onComplete(ar -> {
+            handler.handle(null);
+          });
+        }
+        return fut;
       }
     }
 
@@ -414,6 +433,17 @@ public class DeploymentManager {
         verts.add(holder.verticle);
       }
       return verts;
+    }
+
+    @Override
+    public void undeployHandler(Handler<Void> handler) {
+      synchronized (this) {
+        if (status != ST_UNDEPLOYED) {
+          undeployHandler = handler;
+          return;
+        }
+      }
+      handler.handle(null);
     }
 
     @Override

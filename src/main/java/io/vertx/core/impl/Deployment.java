@@ -54,5 +54,7 @@ public interface Deployment {
 
   Set<Verticle> getVerticles();
 
+  void undeployHandler(Handler<Void> handler);
+
   boolean isChild();
 }

@@ -206,24 +206,21 @@ public class VerticleManager {
             Future<Deployment> fut = p.future().compose(callable -> deploymentManager.doDeploy(options, v -> identifier, parentContext, callingContext, cl, callable));
             String group = options.getIsolationGroup();
             if (group != null) {
-              fut.setHandler(ar -> {
+              fut.onComplete(ar -> {
                 if (ar.succeeded()) {
                   Deployment result = ar.result();
-                  result.getContexts().forEach(ctx -> {
-                    ctx.addCloseHook(hook -> {
-                      synchronized (VerticleManager.this) {
-                        IsolatingClassLoader icl = classloaders.get(group);
-                        if (--icl.refCount == 0) {
-                          classloaders.remove(group);
-                          try {
-                            icl.close();
-                          } catch (IOException e) {
-                            // log.debug("Issue when closing isolation group loader", e);
-                          }
+                  result.undeployHandler(v -> {
+                    synchronized (VerticleManager.this) {
+                      IsolatingClassLoader icl = classloaders.get(group);
+                      if (--icl.refCount == 0) {
+                        classloaders.remove(group);
+                        try {
+                          icl.close();
+                        } catch (IOException e) {
+                          // log.debug("Issue when closing isolation group loader", e);
                         }
                       }
-                      hook.complete();
-                    });
+                    }
                   });
                 } else {
                   // ??? not tested
@@ -291,7 +288,7 @@ public class VerticleManager {
             options.getIsolatedClasses());
           classloaders.put(isolationGroup, icl);
         }
-        icl.refCount += options.getInstances();
+        icl.refCount++;
         cl = icl;
       }
     }
