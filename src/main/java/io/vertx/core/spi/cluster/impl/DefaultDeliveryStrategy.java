@@ -203,9 +203,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       if (message.isSend()) {
         return Collections.singletonList(accessibleNodes.get(index.incrementAndGet() % accessibleNodes.size()));
       }
-      return accessibleNodes.stream()
-        .distinct()
-        .collect(collectingAndThen(toCollection(ArrayList::new), Collections::unmodifiableList));
+      return accessibleNodes;
     }
 
     void startListening() {
