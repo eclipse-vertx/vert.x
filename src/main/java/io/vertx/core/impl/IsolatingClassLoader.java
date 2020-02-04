@@ -26,12 +26,10 @@ public class IsolatingClassLoader extends URLClassLoader {
 
   private volatile boolean closed;
   private List<String> isolatedClasses;
-  int refCount;
 
   public IsolatingClassLoader(URL[] urls, ClassLoader parent, List<String> isolatedClasses) {
     super(urls, parent);
     this.isolatedClasses = isolatedClasses;
-    this.refCount = 0;
   }
 
   @Override

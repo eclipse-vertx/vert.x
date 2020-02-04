@@ -357,22 +357,11 @@ Set the send timeout.
 |[[config]]`@config`|`Json object`|+++
 Set the JSON configuration that will be passed to the verticle(s) when it's deployed
 +++
-|[[extraClasspath]]`@extraClasspath`|`Array of String`|+++
-Set any extra classpath to be used when deploying the verticle.
- <p>
- Ignored if no isolation group is set.
-+++
 |[[ha]]`@ha`|`Boolean`|+++
 Set whether the verticle(s) will be deployed as HA.
 +++
 |[[instances]]`@instances`|`Number (int)`|+++
 Set the number of instances that should be deployed.
-+++
-|[[isolatedClasses]]`@isolatedClasses`|`Array of String`|+++
-Set the isolated class names.
-+++
-|[[isolationGroup]]`@isolationGroup`|`String`|+++
-Set the isolation group that will be used when deploying the verticle(s)
 +++
 |[[maxWorkerExecuteTime]]`@maxWorkerExecuteTime`|`Number (long)`|+++
 Sets the value of max worker execute time, in link.

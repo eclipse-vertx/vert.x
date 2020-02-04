@@ -61,15 +61,7 @@ public class DeploymentManager {
     if (options.getInstances() < 1) {
       throw new IllegalArgumentException("Can't specify < 1 instances to deploy");
     }
-    if (options.getExtraClasspath() != null) {
-      throw new IllegalArgumentException("Can't specify extraClasspath for already created verticle");
-    }
-    if (options.getIsolationGroup() != null) {
-      throw new IllegalArgumentException("Can't specify isolationGroup for already created verticle");
-    }
-    if (options.getIsolatedClasses() != null) {
-      throw new IllegalArgumentException("Can't specify isolatedClasses for already created verticle");
-    }
+    options.checkIsolationNotDefined();
     ContextInternal currentContext = vertx.getOrCreateContext();
     ClassLoader cl = getCurrentClassLoader();
     return doDeploy(options, v -> "java:" + v.getClass().getName(), currentContext, currentContext, cl, verticleSupplier)

@@ -262,13 +262,6 @@ public class CoreExamples {
     vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
   }
 
-  public void example14(Vertx vertx) {
-    DeploymentOptions options = new DeploymentOptions().setIsolationGroup("mygroup");
-    options.setIsolatedClasses(Arrays.asList("com.mycompany.myverticle.*",
-                       "com.mycompany.somepkg.SomeClass", "org.somelibrary.*"));
-    vertx.deployVerticle("com.mycompany.myverticle.VerticleClass", options);
-  }
-
   public void example15(Vertx vertx) {
     long timerID = vertx.setTimer(1000, id -> {
       System.out.println("And one second later this is printed");
