@@ -129,7 +129,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
     Promise<Void> res = result; // Alias reference because result can become null when the onComplete callback executes
     if (res != null) {
-      fut.onComplete(ar -> res.tryFail("blah"));
+      fut.onComplete(ar -> res.tryFail("Consumer unregistered before registration completed"));
       result = null;
     }
     return fut;
