@@ -54,41 +54,14 @@ public interface EventBusMetrics<H> extends Metrics {
   }
 
   /**
-   * Called when an handler begin to process a message.<p/>
+   * Called when an handler has been delivered a message.
    *
-   * The thread model depends on the actual context thats registered the handler.<p/>
-   *
-   * <h3>Event loop context</h3>
-   *
-   * This method is invoked with the handler event loop thread.
-   *
-   * <h3>Worker context</h3>
-   *
-   * This method is invoked with a worker thread.
+   * No specific thread and context can be expected when this method is called.
    *
    * @param handler the handler processing the message
    * @param local when the handled message is local
    */
-  default void beginHandleMessage(H handler, boolean local) {
-  }
-
-  /**
-   * Called when an handler finish to process a message.<p/>
-   *
-   * The thread model depends on the actual context thats registered the handler.<p/>
-   *
-   * <h3>Event loop context</h3>
-   *
-   * This method is invoked with the handler event loop thread.
-   *
-   * <h3>Worker context</h3>
-   *
-   * This method is invoked with a worker thread.
-   *
-   * @param handler the handler processing the message
-   * @param failure an optional failure thrown by handler
-   */
-  default void endHandleMessage(H handler, Throwable failure) {
+  default void messageDelivered(H handler, boolean local) {
   }
 
   /**

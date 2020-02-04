@@ -751,12 +751,10 @@ public class MetricsContextTest extends VertxTestBase {
   }
 
   private void testMessageHandler(BiConsumer<Vertx, Handler<Void>> runOnContext) {
-    AtomicReference<Thread> consumerThread = new AtomicReference<>();
-    AtomicReference<Context> consumerContext = new AtomicReference<>();
+    AtomicReference<Thread> deliveredThread = new AtomicReference<>();
     AtomicBoolean registeredCalled = new AtomicBoolean();
     AtomicBoolean unregisteredCalled = new AtomicBoolean();
-    AtomicBoolean beginHandleCalled = new AtomicBoolean();
-    AtomicBoolean endHandleCalled = new AtomicBoolean();
+    AtomicBoolean messageDelivered = new AtomicBoolean();
     VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
       public EventBusMetrics createEventBusMetrics() {
@@ -771,15 +769,9 @@ public class MetricsContextTest extends VertxTestBase {
             unregisteredCalled.set(true);
           }
           @Override
-          public void beginHandleMessage(Void handler, boolean local) {
-            consumerThread.set(Thread.currentThread());
-            consumerContext.set(Vertx.currentContext());
-            beginHandleCalled.set(true);
-          }
-          @Override
-          public void endHandleMessage(Void handler, Throwable failure) {
-            endHandleCalled.set(true);
-            assertSame(consumerThread.get(), Thread.currentThread());
+          public void messageDelivered(Void handler, boolean local) {
+            deliveredThread.set(Thread.currentThread());
+            messageDelivered.set(true);
           }
         };
       }
@@ -789,13 +781,13 @@ public class MetricsContextTest extends VertxTestBase {
     runOnContext.accept(vertx, v -> {
       MessageConsumer<Object> consumer = eb.consumer("the_address");
       consumer.handler(msg -> {
-        assertSame(consumerThread.get(), Thread.currentThread());
+        Thread consumerThread = Thread.currentThread();
         executeInVanillaThread(() -> {
           vertx.getOrCreateContext().runOnContext(v2 -> {
             consumer.unregister(onSuccess(v3 -> {
               assertTrue(registeredCalled.get());
-              assertTrue(beginHandleCalled.get());
-              assertTrue(endHandleCalled.get());
+              assertTrue(messageDelivered.get());
+              assertSame(deliveredThread.get(), consumerThread);
               assertWaitUntil(() -> unregisteredCalled.get());
               testComplete();
             }));

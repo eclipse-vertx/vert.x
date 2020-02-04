@@ -149,10 +149,10 @@ abstract class HandlerRegistration<T> {
           }
         }
         Object m = metric;
-        if (bus.metrics != null) {
-          bus.metrics.beginHandleMessage(m, local);
-        }
         VertxTracer tracer = context.tracer();
+        if (bus.metrics != null) {
+          bus.metrics.messageDelivered(m, local);
+        }
         if (tracer != null && !src) {
           message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
           HandlerRegistration.this.dispatch(message, context, handler);
@@ -161,9 +161,6 @@ abstract class HandlerRegistration<T> {
           }
         } else {
           HandlerRegistration.this.dispatch(message, context, handler);
-        }
-        if (bus.metrics != null) {
-          bus.metrics.endHandleMessage(m, null);
         }
       }
     }
