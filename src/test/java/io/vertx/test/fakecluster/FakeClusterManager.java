@@ -206,7 +206,8 @@ public class FakeClusterManager implements ClusterManager {
   @Override
   public void unregister(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler) {
     Future<Void> result;
-    if (registrations.get(registrationInfo.getAddress()).remove(registrationInfo)) {
+    List<RegistrationInfo> infos = registrations.get(registrationInfo.getAddress());
+    if (infos != null && infos.remove(registrationInfo)) {
       result = Future.succeededFuture();
     } else {
       result = Future.failedFuture("Registration not found");
