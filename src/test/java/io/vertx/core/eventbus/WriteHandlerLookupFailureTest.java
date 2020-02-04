@@ -11,7 +11,9 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.*;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.impl.DefaultDeliveryStrategy;
 import io.vertx.test.core.VertxTestBase;
@@ -33,8 +35,8 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
       .setPort(0)
       .setDeliveryStrategy(new DefaultDeliveryStrategy() {
         @Override
-        public void chooseNodes(Message<?> message, Handler<AsyncResult<List<NodeInfo>>> handler) {
-          handler.handle(Future.failedFuture(cause));
+        public Future<List<NodeInfo>> chooseNodes(Message<?> message) {
+          return Future.failedFuture(cause);
         }
       });
     vertices = new Vertx[1];

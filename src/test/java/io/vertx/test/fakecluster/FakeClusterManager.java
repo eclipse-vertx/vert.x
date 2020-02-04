@@ -14,6 +14,7 @@ package io.vertx.test.fakecluster;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
@@ -197,30 +198,29 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void register(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler) {
+  public Future<Void> register(RegistrationInfo registrationInfo) {
     registrations.computeIfAbsent(registrationInfo.getAddress(), k -> Collections.synchronizedList(new ArrayList<>()))
       .add(registrationInfo);
-    vertx.getOrCreateContext().runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+    return vertx.getOrCreateContext().succeededFuture();
   }
 
   @Override
-  public void unregister(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler) {
+  public Future<Void> unregister(RegistrationInfo registrationInfo) {
     Future<Void> result;
     List<RegistrationInfo> infos = registrations.get(registrationInfo.getAddress());
+    Promise<Void> promise = vertx.promise();
     if (infos != null && infos.remove(registrationInfo)) {
-      result = Future.succeededFuture();
+      promise.complete();
     } else {
-      result = Future.failedFuture("Registration not found");
+      promise.fail("Registration not found");
     }
-    vertx.getOrCreateContext().runOnContext(v -> completionHandler.handle(result));
+    return promise.future();
   }
 
   @Override
-  public void registrationListener(String address, Handler<AsyncResult<RegistrationStream>> resultHandler) {
+  public Future<RegistrationStream> registrationListener(String address) {
     FakeRegistrationStream stream = new FakeRegistrationStream(address);
-    vertx.getOrCreateContext().runOnContext(v -> {
-      resultHandler.handle(Future.succeededFuture(stream));
-    });
+    return vertx.getOrCreateContext().succeededFuture(stream);
   }
 
   public static void reset() {

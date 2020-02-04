@@ -86,17 +86,17 @@ public class ClusterManagerDelegate implements ClusterManager {
   }
 
   @Override
-  public void register(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler) {
-    clusterManager.register(registrationInfo, completionHandler);
+  public Future<Void> register(RegistrationInfo registrationInfo) {
+    return clusterManager.register(registrationInfo);
   }
 
   @Override
-  public void unregister(RegistrationInfo registrationInfo, Handler<AsyncResult<Void>> completionHandler) {
-    clusterManager.unregister(registrationInfo, completionHandler);
+  public Future<Void> unregister(RegistrationInfo registrationInfo) {
+    return clusterManager.unregister(registrationInfo);
   }
 
   @Override
-  public void registrationListener(String address, Handler<AsyncResult<RegistrationStream>> resultHandler) {
-    clusterManager.registrationListener(address, resultHandler);
+  public Future<RegistrationStream> registrationListener(String address) {
+    return clusterManager.registrationListener(address);
   }
 }

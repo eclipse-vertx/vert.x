@@ -164,7 +164,7 @@ public class ClusteredEventBus extends EventBusImpl {
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      clusterManager.register(registrationInfo, completionHandler);
+      clusterManager.register(registrationInfo).onComplete(completionHandler);
     } else {
       completionHandler.handle(Future.succeededFuture());
     }
@@ -184,11 +184,12 @@ public class ClusteredEventBus extends EventBusImpl {
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      clusterManager.unregister(registrationInfo, completionHandler != null ? completionHandler : ar -> {
-        if (ar.failed()) {
-          log.error("Failed to remove sub", ar.cause());
-        }
-      });
+      Future<Void> unregisterFuture = clusterManager.unregister(registrationInfo);
+      if (completionHandler != null) {
+        unregisterFuture.onComplete(completionHandler);
+      } else {
+        unregisterFuture.onFailure(t -> log.error("Failed to remove sub", t));
+      }
     } else {
       completionHandler.complete();
     }
@@ -200,24 +201,17 @@ public class ClusteredEventBus extends EventBusImpl {
       clusteredSendReply(((ClusteredMessage) sendContext.message).getRepliedTo(), sendContext);
     } else if (sendContext.options.isLocalOnly()) {
       super.sendOrPub(sendContext);
-    } else if (Vertx.currentContext() != sendContext.ctx) {
-      // Current event-loop might be null when sending from non vertx thread
-      sendContext.ctx.runOnContext(v -> {
-        deliveryStrategy.chooseNodes(sendContext.message, ar -> onNodesChosen(ar, sendContext));
+    } else {
+      sendContext.ctx.dispatch(v -> {
+        deliveryStrategy.chooseNodes(sendContext.message)
+          .onFailure(t -> {
+            if (log.isDebugEnabled()) {
+              log.error("Failed to send message", t);
+            }
+            sendContext.written(t);
+          })
+          .onSuccess(nodeList -> sendToNodes(nodeList, sendContext));
       });
-    } else {
-      deliveryStrategy.chooseNodes(sendContext.message, ar -> onNodesChosen(ar, sendContext));
-    }
-  }
-
-  private <T> void onNodesChosen(AsyncResult<List<NodeInfo>> ar, OutboundDeliveryContext<T> sendContext) {
-    if (ar.succeeded()) {
-      sendToNodes(ar.result(), sendContext);
-    } else {
-      if (log.isDebugEnabled()) {
-        log.error("Failed to send message", ar.cause());
-      }
-      sendContext.written(ar.cause());
     }
   }
 
@@ -284,11 +278,11 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToNodes(List<NodeInfo> remoteNodes, OutboundDeliveryContext<T> sendContext) {
-    if (!remoteNodes.isEmpty()) {
-      for (NodeInfo remoteNodeInfo : remoteNodes) {
-        if (!remoteNodeInfo.equals(nodeInfo)) {
-          sendRemote(sendContext, remoteNodeInfo, sendContext.message);
+  private <T> void sendToNodes(List<NodeInfo> nodeList, OutboundDeliveryContext<T> sendContext) {
+    if (!nodeList.isEmpty()) {
+      for (NodeInfo nodeInfo : nodeList) {
+        if (!nodeInfo.equals(this.nodeInfo)) {
+          sendRemote(sendContext, nodeInfo, sendContext.message);
         } else {
           super.sendOrPub(sendContext);
         }

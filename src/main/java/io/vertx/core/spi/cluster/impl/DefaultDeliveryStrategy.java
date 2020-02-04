@@ -11,9 +11,8 @@
 
 package io.vertx.core.spi.cluster.impl;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.ContextInternal;
@@ -53,43 +52,55 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
   }
 
   @Override
-  public void chooseNodes(Message<?> message, Handler<AsyncResult<List<NodeInfo>>> handler) {
+  public Future<List<NodeInfo>> chooseNodes(Message<?> message) {
     ContextInternal context = (ContextInternal) Vertx.currentContext();
     Objects.requireNonNull(context, "Method must be invoked on a Vert.x thread");
 
-    // It's not necessary to synchronize access to this queue because the method is invoked on a standard or worker context
-    @SuppressWarnings("unchecked")
-    Queue<Waiter> waiters = (Queue<Waiter>) context.contextData().computeIfAbsent(this, ctx -> new ArrayDeque<>());
+    String address = message.address();
 
-    NodeSelector selector = selectors.get(message.address());
+    Queue<Waiter> waiters = getWaiters(context, address);
+
+    NodeSelector selector = selectors.get(address);
     if (selector != null && waiters.isEmpty()) {
-      context.runOnContext(v -> {
-        handler.handle(Future.succeededFuture(selector.selectNode(message)));
-      });
-    } else {
-      waiters.add(new Waiter(context, message, handler));
-      if (waiters.size() == 1) {
-        dequeueWaiters(context, waiters);
-      }
+      return context.succeededFuture(selector.selectNode(message));
     }
+
+    Promise<List<NodeInfo>> promise = context.promise();
+
+    waiters.add(new Waiter(message, promise));
+    if (waiters.size() == 1) {
+      dequeueWaiters(context, address);
+    }
+    return promise.future();
   }
 
-  private void dequeueWaiters(ContextInternal context, Queue<Waiter> waiters) {
+  @SuppressWarnings("unchecked")
+  private Queue<Waiter> getWaiters(ContextInternal context, String address) {
+    Map<String, Queue<Waiter>> map = (Map<String, Queue<Waiter>>) context.contextData().computeIfAbsent(this, ctx -> new HashMap<>());
+    return map.computeIfAbsent(address, a -> new ArrayDeque<>());
+  }
+
+  private void dequeueWaiters(ContextInternal context, String address) {
     if (Vertx.currentContext() != context) {
       throw new IllegalStateException();
     }
+
+    Queue<Waiter> waiters = getWaiters(context, address);
+
     Waiter waiter;
     for (; ; ) {
+      // FIXME: give a chance to other tasks every 10 iterations
       Waiter peeked = waiters.peek();
       if (peeked == null) {
         throw new IllegalStateException();
       }
-      NodeSelector selector = selectors.get(peeked.message.address());
+      NodeSelector selector = selectors.get(address);
       if (selector != null) {
         Message<?> message = peeked.message;
-        peeked.handleOnContext(Future.succeededFuture(selector.selectNode(message)));
+        peeked.promise.complete(selector.selectNode(message));
         waiters.remove();
         if (waiters.isEmpty()) {
+          // TODO: clear waiters?
           return;
         }
       } else {
@@ -98,20 +109,20 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       }
     }
 
-    clusterManager.registrationListener(waiter.message.address(), ar -> {
-      if (ar.succeeded()) {
-        registrationListenerCreated(context, waiters, ar.result());
-      } else {
-        waiter.handleOnContext(Future.failedFuture(ar.cause()));
-        removeFirstAndDequeueWaiters(context, waiters);
-      }
-    });
+    clusterManager.registrationListener(address)
+      .onFailure(t -> {
+        waiter.promise.fail(t);
+        removeFirstAndDequeueWaiters(context, address);
+      })
+      .onSuccess(stream -> registrationListenerCreated(context, address, stream));
   }
 
-  private void registrationListenerCreated(ContextInternal context, Queue<Waiter> waiters, RegistrationStream registrationStream) {
+  private void registrationListenerCreated(ContextInternal context, String address, RegistrationStream registrationStream) {
     if (Vertx.currentContext() != context) {
       throw new IllegalStateException();
     }
+
+    Queue<Waiter> waiters = getWaiters(context, address);
 
     Waiter waiter = waiters.peek();
     if (waiter == null) {
@@ -119,48 +130,44 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
     }
 
     if (registrationStream.initialState().isEmpty()) {
-      waiter.handleOnContext(Future.succeededFuture(Collections.emptyList()));
-      removeFirstAndDequeueWaiters(context, waiters);
+      waiter.promise.complete(Collections.emptyList());
+      removeFirstAndDequeueWaiters(context, address);
       return;
     }
 
     NodeSelector candidate = new NodeSelector(selectors, registrationStream, nodeInfo);
-    NodeSelector previous = selectors.putIfAbsent(waiter.message.address(), candidate);
+    NodeSelector previous = selectors.putIfAbsent(address, candidate);
     NodeSelector current = previous != null ? previous : candidate;
 
-    waiter.handleOnContext(Future.succeededFuture(current.selectNode(waiter.message)));
-    removeFirstAndDequeueWaiters(context, waiters);
+    waiter.promise.complete(current.selectNode(waiter.message));
+    removeFirstAndDequeueWaiters(context, address);
 
     if (previous == null) {
       current.startListening();
     }
   }
 
-  private void removeFirstAndDequeueWaiters(ContextInternal context, Queue<Waiter> waiters) {
+  private void removeFirstAndDequeueWaiters(ContextInternal context, String address) {
     if (Vertx.currentContext() != context) {
       throw new IllegalStateException();
     }
+
+    Queue<Waiter> waiters = getWaiters(context, address);
     waiters.remove();
     if (!waiters.isEmpty()) {
       context.runOnContext(v -> {
-        dequeueWaiters(context, waiters);
+        dequeueWaiters(context, address);
       });
     }
   }
 
   private static class Waiter {
-    final ContextInternal context;
     final Message<?> message;
-    final Handler<AsyncResult<List<NodeInfo>>> handler;
+    final Promise<List<NodeInfo>> promise;
 
-    Waiter(ContextInternal context, Message<?> message, Handler<AsyncResult<List<NodeInfo>>> handler) {
-      this.context = context;
+    Waiter(Message<?> message, Promise<List<NodeInfo>> promise) {
       this.message = message;
-      this.handler = handler;
-    }
-
-    void handleOnContext(AsyncResult<List<NodeInfo>> asyncResult) {
-      context.runOnContext(v -> handler.handle(asyncResult));
+      this.promise = promise;
     }
   }
 

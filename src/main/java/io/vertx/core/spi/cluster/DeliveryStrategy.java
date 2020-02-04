@@ -11,8 +11,7 @@
 
 package io.vertx.core.spi.cluster;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
+import io.vertx.core.Future;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.VertxInternal;
 
@@ -48,6 +47,6 @@ public interface DeliveryStrategy {
    * <p>
    * The result must not be null and must hold distinct values.
    */
-  void chooseNodes(Message<?> message, Handler<AsyncResult<List<NodeInfo>>> handler);
+  Future<List<NodeInfo>> chooseNodes(Message<?> message);
 
 }
