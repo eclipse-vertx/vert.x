@@ -98,14 +98,14 @@ public class DeploymentOptions {
   public void fromJson(JsonObject json) {
     this.config = json.getJsonObject("config");
     this.worker = json.getBoolean("worker", DEFAULT_WORKER);
-    this.isolationGroup = json.getString("isolationGroup", null);
+    this.isolationGroup = json.getString("isolationGroup");
     this.ha = json.getBoolean("ha", DEFAULT_HA);
-    JsonArray arr = json.getJsonArray("extraClasspath", null);
+    JsonArray arr = json.getJsonArray("extraClasspath");
     if (arr != null) {
       this.extraClasspath = arr.getList();
     }
     this.instances = json.getInteger("instances", DEFAULT_INSTANCES);
-    JsonArray arrIsolated = json.getJsonArray("isolatedClasses", null);
+    JsonArray arrIsolated = json.getJsonArray("isolatedClasses");
     if (arrIsolated != null) {
       this.isolatedClasses = arrIsolated.getList();
     }
