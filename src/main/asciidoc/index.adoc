@@ -554,39 +554,6 @@ and multiple cores on your machine, so you want to deploy multiple instances to 
 
 include::override/verticle-configuration.adoc[]
 
-=== Verticle Isolation Groups
-
-By default, Vert.x has a _flat classpath_. I.e, when Vert.x deploys verticles it does so with the current classloader -
-it doesn't create a new one. In the majority of cases this is the simplest, clearest, and sanest thing to do.
-
-However, in some cases you may want to deploy a verticle so the classes of that verticle are isolated from others in
-your application.
-
-This might be the case, for example, if you want to deploy two different versions of a verticle with the same class name
-in the same Vert.x instance, or if you have two different verticles which use different versions of the same jar library.
-
-When using an isolation group you provide a list of the class names that you want isolated using
-{@link io.vertx.core.DeploymentOptions#setIsolatedClasses(java.util.List)}-  an entry can be a fully qualified
-classname such as `com.mycompany.myproject.engine.MyClass` or it can be a wildcard which will match any classes in a package and any
-sub-packages, e.g. `com.mycompany.myproject.*` would match any classes in the package `com.mycompany.myproject` or
-any sub-packages.
-
-Please note that _only_ the classes that match will be isolated - any other classes will be loaded by the current
-class loader.
-
-Extra classpath entries can also be provided with {@link io.vertx.core.DeploymentOptions#setExtraClasspath} so if
-you want to load classes or resources that aren't already present on the main classpath you can add this.
-
-WARNING: Use this feature with caution. Class-loaders can be a can of worms, and can make debugging difficult, amongst
-other things.
-
-Here's an example of using an isolation group to isolate a verticle deployment.
-
-[source,$lang]
-----
-{@link examples.CoreExamples#example14}
-----
-
 === High Availability
 
 Verticles can be deployed with High Availability (HA) enabled. In that context, when a verticle is deployed on

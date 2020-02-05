@@ -17,15 +17,8 @@ import io.vertx.core.ServiceHelper;
 import io.vertx.core.Verticle;
 import io.vertx.core.spi.VerticleFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -41,7 +34,7 @@ public class VerticleManager {
   
   private final VertxInternal vertx;
   private final DeploymentManager deploymentManager;
-  private final Map<String, IsolatingClassLoader> classloaders = new HashMap<>();
+  private final LoaderManager loaderManager = new LoaderManager();
   private final Map<String, List<VerticleFactory>> verticleFactories = new ConcurrentHashMap<>();
   private final List<VerticleFactory> defaultFactories = new ArrayList<>();
 
@@ -152,8 +145,23 @@ public class VerticleManager {
   public Future<Deployment> deployVerticle(String identifier,
                                        DeploymentOptions options) {
     ContextInternal callingContext = vertx.getOrCreateContext();
-    ClassLoader cl = getClassLoader(options);
-    return doDeployVerticle(identifier, options, callingContext, callingContext, cl);
+    ClassLoaderHolder holder = loaderManager.getClassLoader(options);
+    ClassLoader loader = holder != null ? holder.loader : getCurrentClassLoader();
+    Future<Deployment> deployment = doDeployVerticle(identifier, options, callingContext, callingContext, loader);
+    if (holder != null) {
+      deployment.onComplete(ar -> {
+        if (ar.succeeded()) {
+          Deployment result = ar.result();
+          result.undeployHandler(v -> {
+            loaderManager.release(holder);
+          });
+        } else {
+          // ??? not tested
+          throw new UnsupportedOperationException();
+        }
+      });
+    }
+    return deployment;
   }
 
   private Future<Deployment> doDeployVerticle(String identifier,
@@ -204,88 +212,14 @@ public class VerticleManager {
     } catch (Exception e) {
       return Future.failedFuture(e);
     }
-    Future<Deployment> fut = p.future().compose(callable -> deploymentManager.doDeploy(options, v -> identifier, parentContext, callingContext, cl, callable));
-    String group = options.getIsolationGroup();
-    if (group != null) {
-      fut.onComplete(ar -> {
-        if (ar.succeeded()) {
-          Deployment result = ar.result();
-          result.undeployHandler(v -> {
-            synchronized (VerticleManager.this) {
-              IsolatingClassLoader icl = classloaders.get(group);
-              if (--icl.refCount == 0) {
-                classloaders.remove(group);
-                try {
-                  icl.close();
-                } catch (IOException e) {
-                  // log.debug("Issue when closing isolation group loader", e);
-                }
-              }
-            }
-          });
-        } else {
-          // ??? not tested
-          throw new UnsupportedOperationException();
-        }
-      });
-    }
-    return fut;
+    return p.future()
+      .compose(callable -> deploymentManager.doDeploy(options, v -> identifier, parentContext, callingContext, cl, callable));
   }
 
-  /**
-   * <strong>IMPORTANT</strong> - Isolation groups are not supported on Java 9+ because the application classloader is not
-   * an URLClassLoader anymore. Thus we can't extract the list of jars to configure the IsolatedClassLoader.
-   *
-   */
-  private ClassLoader getClassLoader(DeploymentOptions options) {
-    String isolationGroup = options.getIsolationGroup();
-    ClassLoader cl;
-    if (isolationGroup == null) {
-      cl = getCurrentClassLoader();
-    } else {
-      // IMPORTANT - Isolation groups are not supported on Java 9+, because the system classloader is not an URLClassLoader
-      // anymore. Thus we can't extract the paths from the classpath and isolate the loading.
-      synchronized (this) {
-        IsolatingClassLoader icl = classloaders.get(isolationGroup);
-        if (icl == null) {
-          ClassLoader current = getCurrentClassLoader();
-          if (!(current instanceof URLClassLoader)) {
-            throw new IllegalStateException("Current classloader must be URLClassLoader");
-          }
-          List<URL> urls = new ArrayList<>();
-          // Add any extra URLs to the beginning of the classpath
-          List<String> extraClasspath = options.getExtraClasspath();
-          if (extraClasspath != null) {
-            for (String pathElement: extraClasspath) {
-              File file = new File(pathElement);
-              try {
-                URL url = file.toURI().toURL();
-                urls.add(url);
-              } catch (MalformedURLException e) {
-                throw new IllegalStateException(e);
-              }
-            }
-          }
-          // And add the URLs of the Vert.x classloader
-          URLClassLoader urlc = (URLClassLoader)current;
-          urls.addAll(Arrays.asList(urlc.getURLs()));
-
-          // Create an isolating cl with the urls
-          icl = new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), getCurrentClassLoader(),
-            options.getIsolatedClasses());
-          classloaders.put(isolationGroup, icl);
-        }
-        icl.refCount++;
-        cl = icl;
-      }
-    }
-    return cl;
-  }
-
-  private ClassLoader getCurrentClassLoader() {
+  static ClassLoader getCurrentClassLoader() {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl == null) {
-      cl = getClass().getClassLoader();
+      cl = VerticleManager.class.getClassLoader();
     }
     return cl;
   }
