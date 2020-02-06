@@ -52,7 +52,11 @@ public class FailedFuture<T> implements Future<T> {
 
   @Override
   public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-    handler.handle(this);
+    if (context != null) {
+      context.dispatch(this, handler);
+    } else {
+      handler.handle(this);
+    }
     return this;
   }
 

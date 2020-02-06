@@ -21,7 +21,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1566,6 +1569,40 @@ public class FutureTest extends VertxTestBase {
     fjp.execute(() -> {
       failureSupplierThread.set(Thread.currentThread());
       willFail.completeExceptionally(new RuntimeException("Woops"));
+    });
+
+    await();
+  }
+
+  @Test
+  public void testCompletedFuturesContext() {
+    waitFor(4);
+
+    Thread testThread = Thread.currentThread();
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+
+    Future.succeededFuture().onSuccess(v -> {
+      assertSame(testThread, Thread.currentThread());
+      assertNull(Vertx.currentContext());
+      complete();
+    });
+
+    context.succeededFuture().onSuccess(v -> {
+      assertNotSame(testThread, Thread.currentThread());
+      assertSame(context, Vertx.currentContext());
+      complete();
+    });
+
+    Future.failedFuture(new Exception()).onFailure(v -> {
+      assertSame(testThread, Thread.currentThread());
+      assertNull(Vertx.currentContext());
+      complete();
+    });
+
+    context.failedFuture(new Exception()).onFailure(v -> {
+      assertNotSame(testThread, Thread.currentThread());
+      assertSame(context, Vertx.currentContext());
+      complete();
     });
 
     await();
