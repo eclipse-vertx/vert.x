@@ -23,10 +23,6 @@ import io.vertx.core.spi.cluster.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toCollection;
 
 /**
  * Default {@link DeliveryStrategy}.
@@ -53,21 +49,23 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
 
   @Override
   public Future<List<NodeInfo>> chooseNodes(Message<?> message) {
+    return selector(message.address()).map(selector -> selector.selectNodes(message));
+  }
+
+  public Future<NodeSelector> selector(String address) {
     ContextInternal context = (ContextInternal) Vertx.currentContext();
     Objects.requireNonNull(context, "Method must be invoked on a Vert.x thread");
 
-    String address = message.address();
-
-    Queue<Waiter> waiters = getWaiters(context, address);
+    Queue<Promise<NodeSelector>> waiters = getWaiters(context, address);
 
     NodeSelector selector = selectors.get(address);
     if (selector != null && waiters.isEmpty()) {
-      return context.succeededFuture(selector.selectNode(message));
+      return context.succeededFuture(selector);
     }
 
-    Promise<List<NodeInfo>> promise = context.promise();
+    Promise<NodeSelector> promise = context.promise();
 
-    waiters.add(new Waiter(message, promise));
+    waiters.add(promise);
     if (waiters.size() == 1) {
       dequeueWaiters(context, address);
     }
@@ -75,8 +73,8 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
   }
 
   @SuppressWarnings("unchecked")
-  private Queue<Waiter> getWaiters(ContextInternal context, String address) {
-    Map<String, Queue<Waiter>> map = (Map<String, Queue<Waiter>>) context.contextData().computeIfAbsent(this, ctx -> new HashMap<>());
+  private Queue<Promise<NodeSelector>> getWaiters(ContextInternal context, String address) {
+    Map<String, Queue<Promise<NodeSelector>>> map = (Map<String, Queue<Promise<NodeSelector>>>) context.contextData().computeIfAbsent(this, ctx -> new HashMap<>());
     return map.computeIfAbsent(address, a -> new ArrayDeque<>());
   }
 
@@ -85,19 +83,18 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       throw new IllegalStateException();
     }
 
-    Queue<Waiter> waiters = getWaiters(context, address);
+    Queue<Promise<NodeSelector>> waiters = getWaiters(context, address);
 
-    Waiter waiter;
+    Promise<NodeSelector> waiter;
     for (; ; ) {
       // FIXME: give a chance to other tasks every 10 iterations
-      Waiter peeked = waiters.peek();
+      Promise<NodeSelector> peeked = waiters.peek();
       if (peeked == null) {
         throw new IllegalStateException();
       }
       NodeSelector selector = selectors.get(address);
       if (selector != null) {
-        Message<?> message = peeked.message;
-        peeked.promise.complete(selector.selectNode(message));
+        peeked.complete(selector);
         waiters.remove();
         if (waiters.isEmpty()) {
           // TODO: clear waiters?
@@ -111,7 +108,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
 
     clusterManager.registrationListener(address)
       .onFailure(t -> {
-        waiter.promise.fail(t);
+        waiter.fail(t);
         removeFirstAndDequeueWaiters(context, address);
       })
       .onSuccess(stream -> registrationListenerCreated(context, address, stream));
@@ -122,28 +119,28 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       throw new IllegalStateException();
     }
 
-    Queue<Waiter> waiters = getWaiters(context, address);
+    Queue<Promise<NodeSelector>> waiters = getWaiters(context, address);
 
-    Waiter waiter = waiters.peek();
+    Promise<NodeSelector> waiter = waiters.peek();
     if (waiter == null) {
       throw new IllegalStateException();
     }
 
     if (registrationStream.initialState().isEmpty()) {
-      waiter.promise.complete(Collections.emptyList());
+      waiter.complete(NodeSelector.EMPTY_SELECTOR);
       removeFirstAndDequeueWaiters(context, address);
       return;
     }
 
-    NodeSelector candidate = new NodeSelector(selectors, registrationStream, nodeInfo);
+    NodeSelector candidate = NodeSelector.create(nodeInfo, registrationStream.initialState());
     NodeSelector previous = selectors.putIfAbsent(address, candidate);
     NodeSelector current = previous != null ? previous : candidate;
 
-    waiter.promise.complete(current.selectNode(waiter.message));
+    waiter.complete(current);
     removeFirstAndDequeueWaiters(context, address);
 
     if (previous == null) {
-      current.startListening();
+      startListening(registrationStream);
     }
   }
 
@@ -152,88 +149,33 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       throw new IllegalStateException();
     }
 
-    Queue<Waiter> waiters = getWaiters(context, address);
+    Queue<Promise<NodeSelector>> waiters = getWaiters(context, address);
     waiters.remove();
     if (!waiters.isEmpty()) {
-      context.runOnContext(v -> {
-        dequeueWaiters(context, address);
-      });
+      context.runOnContext(v -> dequeueWaiters(context, address));
     }
   }
 
-  private static class Waiter {
-    final Message<?> message;
-    final Promise<List<NodeInfo>> promise;
+  private void startListening(RegistrationStream registrationStream) {
+    registrationStream
+      .exceptionHandler(t -> end(registrationStream))
+      .endHandler(v -> end(registrationStream))
+      .pause()
+      .handler(registrationInfos -> registrationsUpdated(registrationStream, registrationInfos))
+      .fetch(1);
+  }
 
-    Waiter(Message<?> message, Promise<List<NodeInfo>> promise) {
-      this.message = message;
-      this.promise = promise;
+  private void registrationsUpdated(RegistrationStream registrationStream, List<RegistrationInfo> registrationInfos) {
+    if (!registrationInfos.isEmpty()) {
+      selectors.put(registrationStream.address(), NodeSelector.create(nodeInfo, registrationInfos));
+      registrationStream.fetch(1);
+    } else {
+      end(registrationStream);
     }
   }
 
-  private static class NodeSelector {
-    final ConcurrentMap<String, NodeSelector> selectors;
-    final RegistrationStream registrationStream;
-    final NodeInfo nodeInfo;
-    final List<NodeInfo> accessibleNodes;
-    final AtomicInteger index = new AtomicInteger(0);
-
-    NodeSelector(ConcurrentMap<String, NodeSelector> selectors, RegistrationStream registrationStream, NodeInfo nodeInfo) {
-      this.selectors = selectors;
-      this.registrationStream = registrationStream;
-      this.nodeInfo = nodeInfo;
-      accessibleNodes = compute(registrationStream.initialState());
-    }
-
-    NodeSelector(ConcurrentMap<String, NodeSelector> selectors, RegistrationStream registrationStream, NodeInfo nodeInfo, List<NodeInfo> accessibleNodes) {
-      this.selectors = selectors;
-      this.registrationStream = registrationStream;
-      this.nodeInfo = nodeInfo;
-      this.accessibleNodes = accessibleNodes;
-    }
-
-    List<NodeInfo> compute(List<RegistrationInfo> registrationInfos) {
-      return registrationInfos.stream()
-        .filter(this::isNodeAccessible)
-        .map(RegistrationInfo::getNodeInfo)
-        .collect(collectingAndThen(toCollection(ArrayList::new), Collections::unmodifiableList));
-    }
-
-    boolean isNodeAccessible(RegistrationInfo registrationInfo) {
-      return !registrationInfo.isLocalOnly() || registrationInfo.getNodeInfo().equals(nodeInfo);
-    }
-
-    List<NodeInfo> selectNode(Message<?> message) {
-      if (accessibleNodes.isEmpty()) {
-        return Collections.emptyList();
-      }
-      if (message.isSend()) {
-        return Collections.singletonList(accessibleNodes.get(index.incrementAndGet() % accessibleNodes.size()));
-      }
-      return accessibleNodes;
-    }
-
-    void startListening() {
-      registrationStream.exceptionHandler(t -> end()).endHandler(v -> end())
-        .pause()
-        .handler(this::registrationsUpdated)
-        .fetch(1);
-    }
-
-    void registrationsUpdated(List<RegistrationInfo> registrationInfos) {
-      if (!registrationInfos.isEmpty()) {
-        NodeSelector newValue = new NodeSelector(selectors, registrationStream, nodeInfo, compute(registrationInfos));
-        if (selectors.replace(registrationStream.address(), this, newValue)) {
-          registrationStream.fetch(1);
-          return;
-        }
-      }
-      end();
-    }
-
-    void end() {
-      registrationStream.close();
-      selectors.remove(registrationStream.address());
-    }
+  private void end(RegistrationStream stream) {
+    stream.close();
+    selectors.remove(stream.address());
   }
 }
