@@ -78,6 +78,18 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
     return map.computeIfAbsent(address, a -> new ArrayDeque<>());
   }
 
+  @SuppressWarnings("unchecked")
+  private void removeWaiters(ContextInternal context, String address) {
+    context.contextData().compute(context, (k, v) -> {
+      Map<String, Queue<Promise<NodeSelector>>> map = (Map<String, Queue<Promise<NodeSelector>>>) v;
+      if (map == null) {
+        throw new IllegalStateException();
+      }
+      map.remove(address);
+      return !map.isEmpty() ? map : null;
+    });
+  }
+
   private void dequeueWaiters(ContextInternal context, String address) {
     if (Vertx.currentContext() != context) {
       throw new IllegalStateException();
@@ -97,7 +109,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
         peeked.complete(selector);
         waiters.remove();
         if (waiters.isEmpty()) {
-          // TODO: clear waiters?
+          removeWaiters(context, address);
           return;
         }
       } else {
