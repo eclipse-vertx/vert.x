@@ -1575,11 +1575,16 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testCompletedFuturesContext() {
+  public void testCompletedFuturesContext() throws Exception {
     waitFor(4);
 
     Thread testThread = Thread.currentThread();
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+
+
+    CompletableFuture<Thread> cf = new CompletableFuture<>();
+    context.runOnContext(v -> cf.complete(Thread.currentThread()));
+    Thread contextThread = cf.get();
 
     Future.succeededFuture().onSuccess(v -> {
       assertSame(testThread, Thread.currentThread());
@@ -1590,6 +1595,7 @@ public class FutureTest extends VertxTestBase {
     context.succeededFuture().onSuccess(v -> {
       assertNotSame(testThread, Thread.currentThread());
       assertSame(context, Vertx.currentContext());
+      assertSame(contextThread, Thread.currentThread());
       complete();
     });
 
@@ -1602,6 +1608,7 @@ public class FutureTest extends VertxTestBase {
     context.failedFuture(new Exception()).onFailure(v -> {
       assertNotSame(testThread, Thread.currentThread());
       assertSame(context, Vertx.currentContext());
+      assertSame(contextThread, Thread.currentThread());
       complete();
     });
 
