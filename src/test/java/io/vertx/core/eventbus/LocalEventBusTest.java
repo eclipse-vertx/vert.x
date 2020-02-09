@@ -860,6 +860,18 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testGenericDecoderSendAsymmetric() throws Exception {
+    eb.enableGenericCodec();
+    testSend(eb, eb, null, null);
+    eb.disableGenericCodec();
+  }
+
+  @Test
+  public void testDesabledGenericDecoderSend() throws Exception {
+    assertIllegalArgumentException(() -> testSend(eb, eb, null, null));
+  }
+
+  @Test
   public void testDefaultDecoderReplyAsymmetric() throws Exception {
     MessageCodec codec = new MyPOJOEncoder1();
     vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
@@ -883,6 +895,13 @@ public class LocalEventBusTest extends EventBusTestBase {
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
     testReply(pojo, pojo, null, null);
+  }
+
+  @Test
+  public void testGenericDecoderReplySymetric() throws Exception {
+    eb.enableGenericCodec();
+    testReply(eb, eb, null, null);
+    eb.disableGenericCodec();
   }
 
   @Test

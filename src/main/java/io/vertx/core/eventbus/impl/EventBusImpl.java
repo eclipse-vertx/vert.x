@@ -208,6 +208,18 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   @Override
+  public EventBus enableGenericCodec() {
+    codecManager.enableGenericCodec();
+    return this;
+  }
+
+  @Override
+  public EventBus disableGenericCodec() {
+    codecManager.disableGenericCodec();
+    return this;
+  }
+
+  @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
     checkStarted();
     unregisterAll();

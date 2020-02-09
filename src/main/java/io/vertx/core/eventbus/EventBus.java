@@ -257,6 +257,26 @@ public interface EventBus extends Measured {
   EventBus unregisterDefaultCodec(Class clazz);
 
   /**
+   * Enables the generic serialization of any non standard message.
+   * <p>
+   * The generic codec is useful to send an exact copies of POJOS through the event bus.
+   * <p>
+   * For a specific serialization use your own message codec.
+   *
+   */
+  @GenIgnore
+  <T> EventBus enableGenericCodec();
+
+  /**
+   * Disable the generic serialization.
+   * <p>
+   * You need to specify your own non standard message codec through  `registerDefaultCodec`
+   *
+   */
+  @GenIgnore
+  <T> EventBus disableGenericCodec();
+
+  /**
    * Start the event bus. This would not normally be called in user code
    *
    * @param completionHandler  handler will be called when event bus is started
