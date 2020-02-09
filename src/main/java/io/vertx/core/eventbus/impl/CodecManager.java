@@ -92,6 +92,9 @@ public class CodecManager {
       codec = BYTE_MESSAGE_CODEC;
     } else if (body instanceof ReplyException) {
       codec = defaultCodecMap.get(body.getClass());
+      if(codec == null) {
+        codec = defaultCodecMap.get(body.getClass().getSuperclass());
+      }
       if (codec == null) {
         codec = REPLY_EXCEPTION_MESSAGE_CODEC;
       }

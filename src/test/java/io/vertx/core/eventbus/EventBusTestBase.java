@@ -628,6 +628,12 @@ public abstract class EventBusTestBase extends VertxTestBase {
     }
   }
 
+  public static class MyExtendedPOJO extends MyPOJO {
+    public MyExtendedPOJO(String str) {
+      super(str);
+    }
+  }
+
   public static class MyReplyException extends ReplyException {
 
     public MyReplyException(int failureCode, String message) {

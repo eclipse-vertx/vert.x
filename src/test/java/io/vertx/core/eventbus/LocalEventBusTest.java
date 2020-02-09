@@ -778,6 +778,16 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
+  public void testExtendedDecoderSendAsymmetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertx.eventBus().registerCodec(codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyExtendedPOJO pojo = new MyExtendedPOJO(str);
+    MyPOJO recived = new MyPOJO(str);
+    testSend(pojo, recived, null, new DeliveryOptions().setCodecName(codec.name()));
+  }
+
+  @Test
   public void testDecoderReplyAsymmetric() throws Exception {
     MessageCodec codec = new MyPOJOEncoder1();
     vertx.eventBus().registerCodec(codec);
@@ -890,6 +900,17 @@ public class LocalEventBusTest extends EventBusTestBase {
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
     testReply(pojo, pojo, null, null);
+  }
+
+
+  @Test
+  public void testDefaultExtendedDecoderReplySymetric() throws Exception {
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertx.eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyExtendedPOJO pojo = new MyExtendedPOJO(str);
+    MyPOJO recived = new MyPOJO(str);
+    testReply(pojo, recived, null, null);
   }
 
   @Test
@@ -1560,4 +1581,3 @@ public class LocalEventBusTest extends EventBusTestBase {
     await();
   }
 }
-
