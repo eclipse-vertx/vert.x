@@ -7,6 +7,7 @@ import java.io.*;
 
 
 public class GenericMessageCodec<V, T> implements MessageCodec<V, T> {
+
   @Override
   public void encodeToWire(Buffer buffer, V v) {
     final ByteArrayOutputStream outputStream = new ByteArrayOutputStream(512);
@@ -16,16 +17,19 @@ public class GenericMessageCodec<V, T> implements MessageCodec<V, T> {
       throw new IllegalArgumentException("Error to encode message using a generic codec");
     }
     byte[] bytes = outputStream.toByteArray();
+    buffer.appendInt(bytes.length);
     buffer.appendBytes(bytes);
   }
 
   @Override
   public T decodeFromWire(int pos, Buffer buffer) {
-    byte[] bytes = buffer.getBytes();
+    int length = buffer.getInt(pos);
+    pos += 4;
+    byte[] bytes = buffer.getBytes(pos, pos + length);
     T object = null;
     ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
     try (ObjectInputStream in = new ObjectInputStream(inputStream)) {
-      object = (T) in.readObject();
+      object = (T)in.readObject();
     } catch (final ClassNotFoundException | IOException ex) {
       throw new IllegalArgumentException("Error to decode message using a generic codec");
     }
