@@ -2,6 +2,7 @@ package io.vertx.core.eventbus.impl.codecs;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
+import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 
 import java.io.*;
 
@@ -10,11 +11,11 @@ public class GenericMessageCodec<V, T> implements MessageCodec<V, T> {
 
   @Override
   public void encodeToWire(Buffer buffer, V v) {
-    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream(512);
+    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream(ClusteredMessage.ENCODE_TOWIRE_LENGTH);
     try (ObjectOutputStream object = new ObjectOutputStream(outputStream)) {
       object.writeObject(v);
     } catch (final IOException ex) {
-      throw new IllegalArgumentException("Error to encode message using a generic codec");
+      throw new IllegalArgumentException("Error to encode message using a generic codec. It must implement serializable interface.", ex);
     }
     byte[] bytes = outputStream.toByteArray();
     buffer.appendInt(bytes.length);

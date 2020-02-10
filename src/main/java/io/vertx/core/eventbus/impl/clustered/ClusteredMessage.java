@@ -42,6 +42,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   private int headersPos;
   private boolean fromWire;
   private boolean toWire;
+  public static int ENCODE_TOWIRE_LENGTH = 1024;
 
   public ClusteredMessage(EventBusImpl bus) {
     super(bus);
@@ -107,7 +108,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
   public Buffer encodeToWire() {
     toWire = true;
-    int length = 1024; // TODO make this configurable
+    int length = ENCODE_TOWIRE_LENGTH; // TODO make this configurable
     Buffer buffer = Buffer.buffer(length);
     buffer.appendInt(0);
     buffer.appendByte(WIRE_PROTOCOL_VERSION);

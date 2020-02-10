@@ -13,6 +13,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.eventbus.impl.codecs.GenericMessageCodec;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
@@ -25,7 +26,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -54,6 +54,31 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   @Test
+  public void testGenericDecoderSendAsymmetric() throws Exception {
+    startNodes(2);
+    vertices[0].eventBus().enableGenericCodec();
+    vertices[1].eventBus().enableGenericCodec();
+    String str = TestUtils.randomAlphaString(100);
+    MySerializablePOJO pojo = new MySerializablePOJO(str);
+    testSend(pojo, pojo, null, null);
+    vertices[0].eventBus().disableGenericCodec();
+    vertices[1].eventBus().disableGenericCodec();
+  }
+
+  @Test
+  public void testMyGenericDecoderSendAsymmetric() throws Exception {
+    startNodes(2);
+    MyGenericMessageCodec codec = new MyGenericMessageCodec();
+    vertices[0].eventBus().enableGenericCodec().registerDefaultCodec(GenericMessageCodec.class, codec);
+    vertices[1].eventBus().enableGenericCodec().registerDefaultCodec(GenericMessageCodec.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    MySerializablePOJO pojo = new MySerializablePOJO(str);
+    testSend(pojo, pojo, null, null);
+    vertices[0].eventBus().disableGenericCodec();
+    vertices[1].eventBus().disableGenericCodec();
+  }
+
+  @Test
   public void testDecoderReplyAsymmetric() throws Exception {
     startNodes(2);
     MessageCodec codec = new MyPOJOEncoder1();
@@ -61,6 +86,31 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     vertices[1].eventBus().registerCodec(codec);
     String str = TestUtils.randomAlphaString(100);
     testReply(new MyPOJO(str), str, null, new DeliveryOptions().setCodecName(codec.name()));
+  }
+
+  @Test
+  public void testGenericDecoderReplyAsymmetric() throws Exception {
+    startNodes(2);
+    vertices[0].eventBus().enableGenericCodec();
+    vertices[1].eventBus().enableGenericCodec();
+    String str = TestUtils.randomAlphaString(100);
+    MySerializablePOJO pojo = new MySerializablePOJO(str);
+    testReply(pojo, pojo, null, null);
+    vertices[0].eventBus().disableGenericCodec();
+    vertices[1].eventBus().disableGenericCodec();
+  }
+
+  @Test
+  public void testMyGenericDecoderReplyAsymmetric() throws Exception {
+    startNodes(2);
+    MyGenericMessageCodec codec = new MyGenericMessageCodec<StringBuilder, String>();
+    vertices[0].eventBus().enableGenericCodec().registerDefaultCodec(GenericMessageCodec.class, codec);
+    vertices[1].eventBus().enableGenericCodec().registerDefaultCodec(GenericMessageCodec.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    MySerializablePOJO pojo = new MySerializablePOJO(str);
+    testReply(pojo, pojo, null, null);
+    vertices[0].eventBus().disableGenericCodec();
+    vertices[1].eventBus().disableGenericCodec();
   }
 
   @Test
