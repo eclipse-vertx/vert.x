@@ -101,7 +101,7 @@ public class CodecManager {
     } else {
       codec = defaultCodecMap.get(body.getClass());
       if (codec == null && useGenericCodec.get()) {
-        codec = GENERIC_MESSAGE_CODEC;
+        codec = defaultCodecMap.getOrDefault(GenericMessageCodec.class, GENERIC_MESSAGE_CODEC);
       }
       if (codec == null) {
         throw new IllegalArgumentException("No message codec for type: " + body.getClass());

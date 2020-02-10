@@ -16,12 +16,14 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.impl.codecs.GenericMessageCodec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -705,6 +707,27 @@ public abstract class EventBusTestBase extends VertxTestBase {
     @Override
     public String name() {
       return getClass().getName();
+    }
+
+    @Override
+    public byte systemCodecID() {
+      return -1;
+    }
+  }
+
+  public static class MyGenericMessageCodec<V,T> extends GenericMessageCodec<V, T> {
+
+    @Override
+    public T transform(V v) {
+      if(v instanceof StringBuilder) {
+        v = (V)((StringBuilder) v).append(":");
+      }
+      return (T)v;
+    }
+
+    @Override
+    public String name() {
+      return "my-generic";
     }
 
     @Override
