@@ -202,16 +202,15 @@ public class ClusteredEventBus extends EventBusImpl {
     } else if (sendContext.options.isLocalOnly()) {
       super.sendOrPub(sendContext);
     } else {
-      sendContext.ctx.dispatch(v -> {
-        deliveryStrategy.chooseNodes(sendContext.message)
-          .onFailure(t -> {
-            if (log.isDebugEnabled()) {
-              log.error("Failed to send message", t);
-            }
-            sendContext.written(t);
-          })
-          .onSuccess(nodeList -> sendToNodes(nodeList, sendContext));
-      });
+      sendContext.ctx.succeededFuture(sendContext.message)
+        .flatMap(deliveryStrategy::chooseNodes)
+        .onFailure(t -> {
+          if (log.isDebugEnabled()) {
+            log.error("Failed to send message", t);
+          }
+          sendContext.written(t);
+        })
+        .onSuccess(nodeList -> sendToNodes(nodeList, sendContext));
     }
   }
 
