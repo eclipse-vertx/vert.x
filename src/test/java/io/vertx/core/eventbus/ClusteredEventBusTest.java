@@ -103,7 +103,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   @Test
   public void testMyGenericDecoderReplyAsymmetric() throws Exception {
     startNodes(2);
-    MyGenericMessageCodec codec = new MyGenericMessageCodec<StringBuilder, String>();
+    MyGenericMessageCodec codec = new MyGenericMessageCodec();
     vertices[0].eventBus().enableGenericCodec().registerDefaultCodec(GenericMessageCodec.class, codec);
     vertices[1].eventBus().enableGenericCodec().registerDefaultCodec(GenericMessageCodec.class, codec);
     String str = TestUtils.randomAlphaString(100);

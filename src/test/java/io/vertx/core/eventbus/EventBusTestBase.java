@@ -16,6 +16,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.eventbus.impl.codecs.GenericMessageCodec;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -741,7 +742,35 @@ public abstract class EventBusTestBase extends VertxTestBase {
     }
   }
 
-  public static class MyGenericMessageCodec<V,T> extends GenericMessageCodec<V, T> {
+  public static class MyGenericMessageCodec<V, T> implements MessageCodec<V, T> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, V v) {
+      final ByteArrayOutputStream outputStream = new ByteArrayOutputStream(ClusteredMessage.ENCODE_TOWIRE_LENGTH);
+      try (ObjectOutputStream object = new ObjectOutputStream(outputStream)) {
+        object.writeObject(v);
+      } catch (final IOException ex) {
+        throw new IllegalArgumentException("Error to encode message using a generic codec. It must implement serializable interface.", ex);
+      }
+      byte[] bytes = outputStream.toByteArray();
+      buffer.appendInt(bytes.length);
+      buffer.appendBytes(bytes);
+    }
+
+    @Override
+    public T decodeFromWire(int pos, Buffer buffer) {
+      int length = buffer.getInt(pos);
+      pos += 4;
+      byte[] bytes = buffer.getBytes(pos, pos + length);
+      T object = null;
+      ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+      try (ObjectInputStream in = new ObjectInputStream(inputStream)) {
+        object = (T) in.readObject();
+      } catch (final ClassNotFoundException | IOException ex) {
+        throw new IllegalArgumentException("Error to decode message using a generic codec");
+      }
+      return object;
+    }
 
     @Override
     public T transform(V v) {
