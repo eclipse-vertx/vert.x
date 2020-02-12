@@ -561,10 +561,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
       return "mypojoencoder1";
     }
 
-    @Override
-    public byte systemCodecID() {
-      return -1;
-    }
   }
 
   public static class MyPOJOEncoder2 implements MessageCodec<MyPOJO, MyPOJO> {
@@ -595,10 +591,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
       return "mypojoencoder2";
     }
 
-    @Override
-    public byte systemCodecID() {
-      return -1;
-    }
   }
 
 
@@ -679,10 +671,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
       return "myReplyException";
     }
 
-    @Override
-    public byte systemCodecID() {
-      return -1;
-    }
   }
 
   public static class StringLengthCodec implements MessageCodec<String, Integer> {
@@ -705,6 +693,29 @@ public abstract class EventBusTestBase extends VertxTestBase {
     @Override
     public String name() {
       return getClass().getName();
+    }
+
+  }
+
+  public static class DummyCodec implements MessageCodec<MyPOJO, MyPOJO> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, MyPOJO myPOJO) {
+    }
+
+    @Override
+    public MyPOJO decodeFromWire(int pos, Buffer buffer) {
+      return null;
+    }
+
+    @Override
+    public MyPOJO transform(MyPOJO myPOJO) {
+      return null;
+    }
+
+    @Override
+    public String name() {
+      return "dummy";
     }
 
     @Override

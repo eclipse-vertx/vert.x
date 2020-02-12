@@ -927,6 +927,16 @@ public class LocalEventBusTest extends EventBusTestBase {
     await();
   }
 
+  @Test
+  public void testCodecOverwritingSystemCodedId() throws Exception {
+    vertx.eventBus().registerCodec(new DummyCodec());
+  }
+
+  @Test
+  public void testDefaultCodecOverwritingSystemCodedId() throws Exception {
+    vertx.eventBus().registerDefaultCodec(MyPOJO.class, new DummyCodec());
+  }
+
 
   @Override
   protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) {
