@@ -34,6 +34,34 @@ public class JksOptionsConverter {
     }
   }
 
+  public static JksOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    JksOptions obj = new JksOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+  public static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, JksOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "password":
+          if (member.getValue() instanceof String) {
+            obj.setPassword((String)member.getValue());
+          }
+          break;
+        case "path":
+          if (member.getValue() instanceof String) {
+            obj.setPath((String)member.getValue());
+          }
+          break;
+        case "value":
+          if (member.getValue() instanceof io.vertx.core.buffer.Buffer) {
+            obj.setValue((io.vertx.core.buffer.Buffer)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
   public static void toJson(JksOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

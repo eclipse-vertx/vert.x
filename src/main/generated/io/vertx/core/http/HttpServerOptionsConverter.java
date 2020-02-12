@@ -129,6 +129,109 @@ public class HttpServerOptionsConverter {
     }
   }
 
+   static HttpServerOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    HttpServerOptions obj = new HttpServerOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, HttpServerOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "acceptUnmaskedFrames":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAcceptUnmaskedFrames((Boolean)member.getValue());
+          }
+          break;
+        case "compressionLevel":
+          if (member.getValue() instanceof Number) {
+            obj.setCompressionLevel(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "compressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setCompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "decoderInitialBufferSize":
+          if (member.getValue() instanceof Number) {
+            obj.setDecoderInitialBufferSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "decompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setDecompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "handle100ContinueAutomatically":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHandle100ContinueAutomatically((Boolean)member.getValue());
+          }
+          break;
+        case "http2ConnectionWindowSize":
+          if (member.getValue() instanceof Number) {
+            obj.setHttp2ConnectionWindowSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "initialSettings":
+          if (member.getValue() instanceof io.vertx.core.http.Http2Settings) {
+            obj.setInitialSettings((io.vertx.core.http.Http2Settings)member.getValue());
+          }
+          break;
+        case "maxChunkSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxChunkSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxHeaderSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxHeaderSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxInitialLineLength":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxInitialLineLength(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxWebSocketFrameSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxWebSocketFrameSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "maxWebSocketMessageSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxWebSocketMessageSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "perFrameWebSocketCompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setPerFrameWebSocketCompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "perMessageWebSocketCompressionSupported":
+          if (member.getValue() instanceof Boolean) {
+            obj.setPerMessageWebSocketCompressionSupported((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketAllowServerNoContext":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWebSocketAllowServerNoContext((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketCompressionLevel":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketCompressionLevel(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "webSocketPreferredClientNoContext":
+          if (member.getValue() instanceof Boolean) {
+            obj.setWebSocketPreferredClientNoContext((Boolean)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(HttpServerOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

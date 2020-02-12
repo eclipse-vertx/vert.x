@@ -34,6 +34,34 @@ public class PfxOptionsConverter {
     }
   }
 
+   static PfxOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    PfxOptions obj = new PfxOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, PfxOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "password":
+          if (member.getValue() instanceof String) {
+            obj.setPassword((String)member.getValue());
+          }
+          break;
+        case "path":
+          if (member.getValue() instanceof String) {
+            obj.setPath((String)member.getValue());
+          }
+          break;
+        case "value":
+          if (member.getValue() instanceof io.vertx.core.buffer.Buffer) {
+            obj.setValue((io.vertx.core.buffer.Buffer)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(PfxOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

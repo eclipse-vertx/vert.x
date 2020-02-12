@@ -88,23 +88,11 @@ public class DeploymentOptions {
   public DeploymentOptions(JsonObject json) {
     this();
     DeploymentOptionsConverter.fromJson(json, this);
-  }
-
-  /**
-   * Initialise the fields of this instance from the specified JSON
-   *
-   * @param json  the JSON
-   */
-  public void fromJson(JsonObject json) {
-    this.config = json.getJsonObject("config");
-    this.worker = json.getBoolean("worker", DEFAULT_WORKER);
     this.isolationGroup = json.getString("isolationGroup");
-    this.ha = json.getBoolean("ha", DEFAULT_HA);
     JsonArray arr = json.getJsonArray("extraClasspath");
     if (arr != null) {
       this.extraClasspath = arr.getList();
     }
-    this.instances = json.getInteger("instances", DEFAULT_INSTANCES);
     JsonArray arrIsolated = json.getJsonArray("isolatedClasses");
     if (arrIsolated != null) {
       this.isolatedClasses = arrIsolated.getList();
@@ -394,6 +382,15 @@ public class DeploymentOptions {
    */
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
+    if (extraClasspath != null) {
+      json.put("extraClasspath", new JsonArray(extraClasspath));
+    }
+    if (isolatedClasses != null) {
+      json.put("isolatedClasses", new JsonArray(isolatedClasses));
+    }
+    if (isolationGroup != null) {
+      json.put("isolationGroup", isolationGroup);
+    }
     DeploymentOptionsConverter.toJson(this, json);
     return json;
   }

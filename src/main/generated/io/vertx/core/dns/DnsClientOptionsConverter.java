@@ -44,6 +44,44 @@ public class DnsClientOptionsConverter {
     }
   }
 
+  public static DnsClientOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    DnsClientOptions obj = new DnsClientOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+  public static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, DnsClientOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "host":
+          if (member.getValue() instanceof String) {
+            obj.setHost((String)member.getValue());
+          }
+          break;
+        case "logActivity":
+          if (member.getValue() instanceof Boolean) {
+            obj.setLogActivity((Boolean)member.getValue());
+          }
+          break;
+        case "port":
+          if (member.getValue() instanceof Number) {
+            obj.setPort(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "queryTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setQueryTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "recursionDesired":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRecursionDesired((Boolean)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
   public static void toJson(DnsClientOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

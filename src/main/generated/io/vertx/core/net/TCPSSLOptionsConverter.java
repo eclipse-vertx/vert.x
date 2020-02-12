@@ -153,6 +153,123 @@ public class TCPSSLOptionsConverter {
     }
   }
 
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, TCPSSLOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "idleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setIdleTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "idleTimeoutUnit":
+          if (member.getValue() instanceof java.util.concurrent.TimeUnit) {
+            obj.setIdleTimeoutUnit((java.util.concurrent.TimeUnit)member.getValue());
+          }
+          break;
+        case "jdkSslEngineOptions":
+          if (member.getValue() instanceof io.vertx.core.net.JdkSSLEngineOptions) {
+            obj.setJdkSslEngineOptions((io.vertx.core.net.JdkSSLEngineOptions)member.getValue());
+          }
+          break;
+        case "keyStoreOptions":
+          if (member.getValue() instanceof io.vertx.core.net.JksOptions) {
+            obj.setKeyStoreOptions((io.vertx.core.net.JksOptions)member.getValue());
+          }
+          break;
+        case "openSslEngineOptions":
+          if (member.getValue() instanceof io.vertx.core.net.OpenSSLEngineOptions) {
+            obj.setOpenSslEngineOptions((io.vertx.core.net.OpenSSLEngineOptions)member.getValue());
+          }
+          break;
+        case "pemKeyCertOptions":
+          if (member.getValue() instanceof io.vertx.core.net.PemKeyCertOptions) {
+            obj.setPemKeyCertOptions((io.vertx.core.net.PemKeyCertOptions)member.getValue());
+          }
+          break;
+        case "pemTrustOptions":
+          if (member.getValue() instanceof io.vertx.core.net.PemTrustOptions) {
+            obj.setPemTrustOptions((io.vertx.core.net.PemTrustOptions)member.getValue());
+          }
+          break;
+        case "pfxKeyCertOptions":
+          if (member.getValue() instanceof io.vertx.core.net.PfxOptions) {
+            obj.setPfxKeyCertOptions((io.vertx.core.net.PfxOptions)member.getValue());
+          }
+          break;
+        case "pfxTrustOptions":
+          if (member.getValue() instanceof io.vertx.core.net.PfxOptions) {
+            obj.setPfxTrustOptions((io.vertx.core.net.PfxOptions)member.getValue());
+          }
+          break;
+        case "soLinger":
+          if (member.getValue() instanceof Number) {
+            obj.setSoLinger(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "ssl":
+          if (member.getValue() instanceof Boolean) {
+            obj.setSsl((Boolean)member.getValue());
+          }
+          break;
+        case "sslEngineOptions":
+          if (member.getValue() instanceof io.vertx.core.net.SSLEngineOptions) {
+            obj.setSslEngineOptions((io.vertx.core.net.SSLEngineOptions)member.getValue());
+          }
+          break;
+        case "sslHandshakeTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setSslHandshakeTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "sslHandshakeTimeoutUnit":
+          if (member.getValue() instanceof java.util.concurrent.TimeUnit) {
+            obj.setSslHandshakeTimeoutUnit((java.util.concurrent.TimeUnit)member.getValue());
+          }
+          break;
+        case "tcpCork":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpCork((Boolean)member.getValue());
+          }
+          break;
+        case "tcpFastOpen":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpFastOpen((Boolean)member.getValue());
+          }
+          break;
+        case "tcpKeepAlive":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpKeepAlive((Boolean)member.getValue());
+          }
+          break;
+        case "tcpNoDelay":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpNoDelay((Boolean)member.getValue());
+          }
+          break;
+        case "tcpQuickAck":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpQuickAck((Boolean)member.getValue());
+          }
+          break;
+        case "trustOptions":
+          if (member.getValue() instanceof io.vertx.core.net.TrustOptions) {
+            obj.setTrustOptions((io.vertx.core.net.TrustOptions)member.getValue());
+          }
+          break;
+        case "trustStoreOptions":
+          if (member.getValue() instanceof io.vertx.core.net.JksOptions) {
+            obj.setTrustStoreOptions((io.vertx.core.net.JksOptions)member.getValue());
+          }
+          break;
+        case "useAlpn":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseAlpn((Boolean)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(TCPSSLOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

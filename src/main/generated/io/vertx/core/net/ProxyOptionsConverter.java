@@ -44,6 +44,44 @@ public class ProxyOptionsConverter {
     }
   }
 
+   static ProxyOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    ProxyOptions obj = new ProxyOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, ProxyOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "host":
+          if (member.getValue() instanceof String) {
+            obj.setHost((String)member.getValue());
+          }
+          break;
+        case "password":
+          if (member.getValue() instanceof String) {
+            obj.setPassword((String)member.getValue());
+          }
+          break;
+        case "port":
+          if (member.getValue() instanceof Number) {
+            obj.setPort(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "type":
+          if (member.getValue() instanceof io.vertx.core.net.ProxyType) {
+            obj.setType((io.vertx.core.net.ProxyType)member.getValue());
+          }
+          break;
+        case "username":
+          if (member.getValue() instanceof String) {
+            obj.setUsername((String)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(ProxyOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

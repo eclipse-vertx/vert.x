@@ -39,6 +39,39 @@ public class CopyOptionsConverter {
     }
   }
 
+   static CopyOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    CopyOptions obj = new CopyOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, CopyOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "atomicMove":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAtomicMove((Boolean)member.getValue());
+          }
+          break;
+        case "copyAttributes":
+          if (member.getValue() instanceof Boolean) {
+            obj.setCopyAttributes((Boolean)member.getValue());
+          }
+          break;
+        case "nofollowLinks":
+          if (member.getValue() instanceof Boolean) {
+            obj.setNofollowLinks((Boolean)member.getValue());
+          }
+          break;
+        case "replaceExisting":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReplaceExisting((Boolean)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(CopyOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

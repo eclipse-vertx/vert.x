@@ -24,6 +24,24 @@ public class OpenSSLEngineOptionsConverter {
     }
   }
 
+   static OpenSSLEngineOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    OpenSSLEngineOptions obj = new OpenSSLEngineOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, OpenSSLEngineOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "sessionCacheEnabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setSessionCacheEnabled((Boolean)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(OpenSSLEngineOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

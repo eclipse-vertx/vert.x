@@ -86,6 +86,76 @@ public class OptionConverter {
     }
   }
 
+   static Option fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    Option obj = new Option();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, Option obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "argName":
+          if (member.getValue() instanceof String) {
+            obj.setArgName((String)member.getValue());
+          }
+          break;
+        case "defaultValue":
+          if (member.getValue() instanceof String) {
+            obj.setDefaultValue((String)member.getValue());
+          }
+          break;
+        case "description":
+          if (member.getValue() instanceof String) {
+            obj.setDescription((String)member.getValue());
+          }
+          break;
+        case "flag":
+          if (member.getValue() instanceof Boolean) {
+            obj.setFlag((Boolean)member.getValue());
+          }
+          break;
+        case "help":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHelp((Boolean)member.getValue());
+          }
+          break;
+        case "hidden":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHidden((Boolean)member.getValue());
+          }
+          break;
+        case "longName":
+          if (member.getValue() instanceof String) {
+            obj.setLongName((String)member.getValue());
+          }
+          break;
+        case "multiValued":
+          if (member.getValue() instanceof Boolean) {
+            obj.setMultiValued((Boolean)member.getValue());
+          }
+          break;
+        case "name":
+          break;
+        case "required":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRequired((Boolean)member.getValue());
+          }
+          break;
+        case "shortName":
+          if (member.getValue() instanceof String) {
+            obj.setShortName((String)member.getValue());
+          }
+          break;
+        case "singleValued":
+          if (member.getValue() instanceof Boolean) {
+            obj.setSingleValued((Boolean)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(Option obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

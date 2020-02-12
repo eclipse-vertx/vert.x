@@ -24,6 +24,29 @@ public class MetricsOptionsConverter {
     }
   }
 
+   static MetricsOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    MetricsOptions obj = new MetricsOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, MetricsOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "enabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setEnabled((Boolean)member.getValue());
+          }
+          break;
+        case "factory":
+          if (member.getValue() instanceof io.vertx.core.spi.VertxMetricsFactory) {
+            obj.setFactory((io.vertx.core.spi.VertxMetricsFactory)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(MetricsOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

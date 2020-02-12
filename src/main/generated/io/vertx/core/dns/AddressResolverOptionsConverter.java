@@ -94,6 +94,74 @@ public class AddressResolverOptionsConverter {
     }
   }
 
+   static AddressResolverOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    AddressResolverOptions obj = new AddressResolverOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, AddressResolverOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "cacheMaxTimeToLive":
+          if (member.getValue() instanceof Number) {
+            obj.setCacheMaxTimeToLive(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "cacheMinTimeToLive":
+          if (member.getValue() instanceof Number) {
+            obj.setCacheMinTimeToLive(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "cacheNegativeTimeToLive":
+          if (member.getValue() instanceof Number) {
+            obj.setCacheNegativeTimeToLive(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "hostsPath":
+          if (member.getValue() instanceof String) {
+            obj.setHostsPath((String)member.getValue());
+          }
+          break;
+        case "hostsValue":
+          if (member.getValue() instanceof io.vertx.core.buffer.Buffer) {
+            obj.setHostsValue((io.vertx.core.buffer.Buffer)member.getValue());
+          }
+          break;
+        case "maxQueries":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxQueries(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "ndots":
+          if (member.getValue() instanceof Number) {
+            obj.setNdots(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "optResourceEnabled":
+          if (member.getValue() instanceof Boolean) {
+            obj.setOptResourceEnabled((Boolean)member.getValue());
+          }
+          break;
+        case "queryTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setQueryTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "rdFlag":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRdFlag((Boolean)member.getValue());
+          }
+          break;
+        case "rotateServers":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRotateServers((Boolean)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(AddressResolverOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

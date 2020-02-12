@@ -34,6 +34,34 @@ public class GoAwayConverter {
     }
   }
 
+   static GoAway fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    GoAway obj = new GoAway();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, GoAway obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "debugData":
+          if (member.getValue() instanceof io.vertx.core.buffer.Buffer) {
+            obj.setDebugData((io.vertx.core.buffer.Buffer)member.getValue());
+          }
+          break;
+        case "errorCode":
+          if (member.getValue() instanceof Number) {
+            obj.setErrorCode(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "lastStreamId":
+          if (member.getValue() instanceof Number) {
+            obj.setLastStreamId(((Number)member.getValue()).intValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(GoAway obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

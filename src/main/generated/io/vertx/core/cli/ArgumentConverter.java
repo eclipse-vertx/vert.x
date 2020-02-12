@@ -54,6 +54,54 @@ public class ArgumentConverter {
     }
   }
 
+   static Argument fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    Argument obj = new Argument();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, Argument obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "argName":
+          if (member.getValue() instanceof String) {
+            obj.setArgName((String)member.getValue());
+          }
+          break;
+        case "defaultValue":
+          if (member.getValue() instanceof String) {
+            obj.setDefaultValue((String)member.getValue());
+          }
+          break;
+        case "description":
+          if (member.getValue() instanceof String) {
+            obj.setDescription((String)member.getValue());
+          }
+          break;
+        case "hidden":
+          if (member.getValue() instanceof Boolean) {
+            obj.setHidden((Boolean)member.getValue());
+          }
+          break;
+        case "index":
+          if (member.getValue() instanceof Number) {
+            obj.setIndex(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "multiValued":
+          if (member.getValue() instanceof Boolean) {
+            obj.setMultiValued((Boolean)member.getValue());
+          }
+          break;
+        case "required":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRequired((Boolean)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(Argument obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

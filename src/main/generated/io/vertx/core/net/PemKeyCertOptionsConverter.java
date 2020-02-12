@@ -79,6 +79,39 @@ public class PemKeyCertOptionsConverter {
     }
   }
 
+   static PemKeyCertOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    PemKeyCertOptions obj = new PemKeyCertOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, PemKeyCertOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "certPath":
+          if (member.getValue() instanceof String) {
+            obj.setCertPath((String)member.getValue());
+          }
+          break;
+        case "certValue":
+          if (member.getValue() instanceof io.vertx.core.buffer.Buffer) {
+            obj.setCertValue((io.vertx.core.buffer.Buffer)member.getValue());
+          }
+          break;
+        case "keyPath":
+          if (member.getValue() instanceof String) {
+            obj.setKeyPath((String)member.getValue());
+          }
+          break;
+        case "keyValue":
+          if (member.getValue() instanceof io.vertx.core.buffer.Buffer) {
+            obj.setKeyValue((io.vertx.core.buffer.Buffer)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(PemKeyCertOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

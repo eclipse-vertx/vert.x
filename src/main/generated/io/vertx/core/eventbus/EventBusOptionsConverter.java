@@ -248,6 +248,224 @@ public class EventBusOptionsConverter {
     }
   }
 
+   static EventBusOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
+    EventBusOptions obj = new EventBusOptions();
+    fromMap(map, obj);
+    return obj;
+  }
+
+   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, EventBusOptions obj) {
+    for (java.util.Map.Entry<String, Object> member : map) {
+      switch (member.getKey()) {
+        case "acceptBacklog":
+          if (member.getValue() instanceof Number) {
+            obj.setAcceptBacklog(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "clientAuth":
+          if (member.getValue() instanceof io.vertx.core.http.ClientAuth) {
+            obj.setClientAuth((io.vertx.core.http.ClientAuth)member.getValue());
+          }
+          break;
+        case "clusterPingInterval":
+          if (member.getValue() instanceof Number) {
+            obj.setClusterPingInterval(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "clusterPingReplyInterval":
+          if (member.getValue() instanceof Number) {
+            obj.setClusterPingReplyInterval(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "clusterPublicHost":
+          if (member.getValue() instanceof String) {
+            obj.setClusterPublicHost((String)member.getValue());
+          }
+          break;
+        case "clusterPublicPort":
+          if (member.getValue() instanceof Number) {
+            obj.setClusterPublicPort(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "clustered":
+          if (member.getValue() instanceof Boolean) {
+            obj.setClustered((Boolean)member.getValue());
+          }
+          break;
+        case "connectTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setConnectTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "host":
+          if (member.getValue() instanceof String) {
+            obj.setHost((String)member.getValue());
+          }
+          break;
+        case "idleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setIdleTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "idleTimeoutUnit":
+          if (member.getValue() instanceof java.util.concurrent.TimeUnit) {
+            obj.setIdleTimeoutUnit((java.util.concurrent.TimeUnit)member.getValue());
+          }
+          break;
+        case "jdkSslEngineOptions":
+          if (member.getValue() instanceof io.vertx.core.net.JdkSSLEngineOptions) {
+            obj.setJdkSslEngineOptions((io.vertx.core.net.JdkSSLEngineOptions)member.getValue());
+          }
+          break;
+        case "keyStoreOptions":
+          if (member.getValue() instanceof io.vertx.core.net.JksOptions) {
+            obj.setKeyStoreOptions((io.vertx.core.net.JksOptions)member.getValue());
+          }
+          break;
+        case "logActivity":
+          if (member.getValue() instanceof Boolean) {
+            obj.setLogActivity((Boolean)member.getValue());
+          }
+          break;
+        case "openSslEngineOptions":
+          if (member.getValue() instanceof io.vertx.core.net.OpenSSLEngineOptions) {
+            obj.setOpenSslEngineOptions((io.vertx.core.net.OpenSSLEngineOptions)member.getValue());
+          }
+          break;
+        case "pemKeyCertOptions":
+          if (member.getValue() instanceof io.vertx.core.net.PemKeyCertOptions) {
+            obj.setPemKeyCertOptions((io.vertx.core.net.PemKeyCertOptions)member.getValue());
+          }
+          break;
+        case "pemTrustOptions":
+          if (member.getValue() instanceof io.vertx.core.net.PemTrustOptions) {
+            obj.setPemTrustOptions((io.vertx.core.net.PemTrustOptions)member.getValue());
+          }
+          break;
+        case "pfxKeyCertOptions":
+          if (member.getValue() instanceof io.vertx.core.net.PfxOptions) {
+            obj.setPfxKeyCertOptions((io.vertx.core.net.PfxOptions)member.getValue());
+          }
+          break;
+        case "pfxTrustOptions":
+          if (member.getValue() instanceof io.vertx.core.net.PfxOptions) {
+            obj.setPfxTrustOptions((io.vertx.core.net.PfxOptions)member.getValue());
+          }
+          break;
+        case "port":
+          if (member.getValue() instanceof Number) {
+            obj.setPort(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "receiveBufferSize":
+          if (member.getValue() instanceof Number) {
+            obj.setReceiveBufferSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "reconnectAttempts":
+          if (member.getValue() instanceof Number) {
+            obj.setReconnectAttempts(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "reconnectInterval":
+          if (member.getValue() instanceof Number) {
+            obj.setReconnectInterval(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "reuseAddress":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReuseAddress((Boolean)member.getValue());
+          }
+          break;
+        case "reusePort":
+          if (member.getValue() instanceof Boolean) {
+            obj.setReusePort((Boolean)member.getValue());
+          }
+          break;
+        case "sendBufferSize":
+          if (member.getValue() instanceof Number) {
+            obj.setSendBufferSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "soLinger":
+          if (member.getValue() instanceof Number) {
+            obj.setSoLinger(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "ssl":
+          if (member.getValue() instanceof Boolean) {
+            obj.setSsl((Boolean)member.getValue());
+          }
+          break;
+        case "sslEngineOptions":
+          if (member.getValue() instanceof io.vertx.core.net.SSLEngineOptions) {
+            obj.setSslEngineOptions((io.vertx.core.net.SSLEngineOptions)member.getValue());
+          }
+          break;
+        case "sslHandshakeTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setSslHandshakeTimeout(((Number)member.getValue()).longValue());
+          }
+          break;
+        case "sslHandshakeTimeoutUnit":
+          if (member.getValue() instanceof java.util.concurrent.TimeUnit) {
+            obj.setSslHandshakeTimeoutUnit((java.util.concurrent.TimeUnit)member.getValue());
+          }
+          break;
+        case "tcpCork":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpCork((Boolean)member.getValue());
+          }
+          break;
+        case "tcpFastOpen":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpFastOpen((Boolean)member.getValue());
+          }
+          break;
+        case "tcpKeepAlive":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpKeepAlive((Boolean)member.getValue());
+          }
+          break;
+        case "tcpNoDelay":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpNoDelay((Boolean)member.getValue());
+          }
+          break;
+        case "tcpQuickAck":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTcpQuickAck((Boolean)member.getValue());
+          }
+          break;
+        case "trafficClass":
+          if (member.getValue() instanceof Number) {
+            obj.setTrafficClass(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "trustAll":
+          if (member.getValue() instanceof Boolean) {
+            obj.setTrustAll((Boolean)member.getValue());
+          }
+          break;
+        case "trustOptions":
+          if (member.getValue() instanceof io.vertx.core.net.TrustOptions) {
+            obj.setTrustOptions((io.vertx.core.net.TrustOptions)member.getValue());
+          }
+          break;
+        case "trustStoreOptions":
+          if (member.getValue() instanceof io.vertx.core.net.JksOptions) {
+            obj.setTrustStoreOptions((io.vertx.core.net.JksOptions)member.getValue());
+          }
+          break;
+        case "useAlpn":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseAlpn((Boolean)member.getValue());
+          }
+          break;
+      }
+    }
+  }
+
    static void toJson(EventBusOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }
