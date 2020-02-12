@@ -24,6 +24,7 @@ public class CaseInsensitiveHeadersTest extends VertxHttpHeadersTest {
     sameHash2 = "\u0080Y";
     sameBucket1 = "A";
     sameBucket2 = "R";
+    separator = ": ";
   }
 
   protected MultiMap newMultiMap() {

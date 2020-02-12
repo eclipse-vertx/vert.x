@@ -287,7 +287,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
           }
           @Override
           public String toString() {
-            return getKey() + "=" + getValue();
+            return getKey() + ": " + getValue();
           }
         };
       }

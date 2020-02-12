@@ -20,6 +20,10 @@ import io.vertx.core.http.impl.HeadersAdaptor;
  */
 public class HttpHeadersAdaptorTest extends HeadersTestBase {
 
+  public HttpHeadersAdaptorTest() {
+    separator = "=";
+  }
+
   @Override
   protected MultiMap newMultiMap() {
     return new HeadersAdaptor(new DefaultHttpHeaders());

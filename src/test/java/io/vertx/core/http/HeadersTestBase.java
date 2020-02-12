@@ -12,7 +12,6 @@
 package io.vertx.core.http;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpHeaders;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -31,6 +30,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class HeadersTestBase {
+
+  protected String separator = "";
 
   protected abstract MultiMap newMultiMap();
 
@@ -52,7 +53,7 @@ public abstract class HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("a=b\n", result.toString());
+    assertEquals("a" + separator + "b\n", result.toString());
   }
 
   @Test
@@ -61,7 +62,7 @@ public abstract class HeadersTestBase {
     HashMap<String, String> map = new HashMap<>();
     map.put("a", "b");
     map.put("c", "d");
-    assertEquals("a=b\nc=d\n", mmap.addAll(map).toString());
+    assertEquals("a"+ separator + "b\nc" + separator + "d\n", mmap.addAll(map).toString());
   }
 
   @Test
@@ -83,7 +84,7 @@ public abstract class HeadersTestBase {
     MultiMap mmap = newMultiMap();
     CharSequence name = "name";
     CharSequence value = "value";
-    assertEquals("name=value\n", mmap.add(name, value).toString());
+    assertEquals("name" + separator + "value\n", mmap.add(name, value).toString());
   }
 
   @Test
@@ -92,7 +93,7 @@ public abstract class HeadersTestBase {
     CharSequence name = "name";
     ArrayList<CharSequence> values = new ArrayList<>();
     values.add("somevalue");
-    assertEquals("name=somevalue\n", mmap.add(name, values).toString());
+    assertEquals("name" + separator + "somevalue\n", mmap.add(name, values).toString());
   }
 
   @Test
@@ -100,7 +101,7 @@ public abstract class HeadersTestBase {
     MultiMap mmap = newMultiMap();
     String name = "a";
     String strVal = "b";
-    assertEquals("a=b\n", mmap.add(name, strVal).toString());
+    assertEquals("a" + separator + "b\n", mmap.add(name, strVal).toString());
   }
 
   @Test
@@ -108,7 +109,7 @@ public abstract class HeadersTestBase {
     MultiMap mmap = newMultiMap();
     String name = "aaa";
     String strVal = "";
-    assertEquals("aaa=\n", mmap.add(name, strVal).toString());
+    assertEquals("aaa" + separator + "\n", mmap.add(name, strVal).toString());
   }
 
   @Test(expected = NullPointerException.class)
@@ -138,7 +139,7 @@ public abstract class HeadersTestBase {
     values.add("value2");
     MultiMap result = mmap.add(name, values);
     assertEquals(1, result.size());
-    assertEquals("name=value1\nname=value2\n", result.toString());
+    assertEquals("name" + separator + "value1\nname" + separator + "value2\n", result.toString());
   }
 
   @Test
@@ -149,7 +150,7 @@ public abstract class HeadersTestBase {
     mm.add("header2", "value2");
     MultiMap result = mmap.addAll(mm);
     assertEquals(2, result.size());
-    assertEquals("header1=value1\nheader2=value2\n", result.toString());
+    assertEquals("header1" + separator + "value1\nheader2" + separator + "value2\n", result.toString());
   }
 
   @Test
@@ -347,7 +348,7 @@ public abstract class HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("name=value\n", result.toString());
+    assertEquals("name" + separator + "value\n", result.toString());
   }
 
   @Test
@@ -356,7 +357,7 @@ public abstract class HeadersTestBase {
     CharSequence name = "name";
     ArrayList<CharSequence> values = new ArrayList<>();
     values.add("somevalue");
-    assertEquals("name=somevalue\n", mmap.set(name, values).toString());
+    assertEquals("name" + separator + "somevalue\n", mmap.set(name, values).toString());
   }
 
   @Test
@@ -368,7 +369,7 @@ public abstract class HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("aaa=bbb\n", result.toString());
+    assertEquals("aaa" + separator + "bbb\n", result.toString());
   }
 
   @Test
@@ -380,7 +381,7 @@ public abstract class HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("aaa=\n", result.toString());
+    assertEquals("aaa" + separator + "\n", result.toString());
   }
 
   @Test
@@ -449,7 +450,7 @@ public abstract class HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("name=value1\n", result.toString());
+    assertEquals("name" + separator + "value1\n", result.toString());
   }
 
   @Test
@@ -481,15 +482,15 @@ public abstract class HeadersTestBase {
     MultiMap mm = newMultiMap();
     assertEquals("", mm.toString());
     mm.add("header1", "Value1");
-    assertEquals("header1=Value1\n", sortByLine(mm.toString()));
+    assertEquals("header1" + separator + "Value1\n", sortByLine(mm.toString()));
     mm.add("header2", "Value2");
-    assertEquals("header1=Value1\nheader2=Value2\n", sortByLine(mm.toString()));
+    assertEquals("header1" + separator + "Value1\nheader2" + separator + "Value2\n", sortByLine(mm.toString()));
     mm.add("header1", "Value3");
-    assertEquals("header1=Value1\nheader1=Value3\nheader2=Value2\n", sortByLine(mm.toString()));
+    assertEquals("header1" + separator + "Value1\nheader1" + separator + "Value3\nheader2" + separator + "Value2\n", sortByLine(mm.toString()));
     mm.remove("header1");
-    assertEquals("header2=Value2\n", sortByLine(mm.toString()));
+    assertEquals("header2" + separator + "Value2\n", sortByLine(mm.toString()));
     mm.set("header2", "Value4");
-    assertEquals("header2=Value4\n", sortByLine(mm.toString()));
+    assertEquals("header2" + separator + "Value4\n", sortByLine(mm.toString()));
   }
 
   /*
@@ -511,7 +512,7 @@ public abstract class HeadersTestBase {
   public void testMapEntryToString() {
     MultiMap mmap = newMultiMap();
     mmap.add("header", "value");
-    assertEquals("header=value", mmap.iterator().next().toString());
+    assertEquals("header" + separator + "value", mmap.iterator().next().toString());
   }
 
   @Test(expected = NullPointerException.class)

@@ -39,6 +39,7 @@ public class Http2HeadersAdaptorsTest extends HeadersTestBase {
   public void setUp() {
     headers = new DefaultHttp2Headers();
     map = new Http2HeadersAdaptor(headers);
+    separator = "=";
   }
 
   @Override

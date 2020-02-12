@@ -43,6 +43,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     sameHash2 = "HOBOURN";
     sameBucket1 = "ZEITOUN";
     sameBucket2 = "AAKSUHX";
+    separator = ": ";
   }
 
   @Override
@@ -63,7 +64,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     String name = "";
     ArrayList<CharSequence> values = new ArrayList<>();
     values.add("somevalue");
-    assertEquals("=somevalue\n", mmap.add(name, values).toString());
+    assertEquals(": somevalue\n", mmap.add(name, values).toString());
   }
 
 
@@ -72,7 +73,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     MultiMap mmap = newMultiMap();
     String name = "";
     String strVal = "";
-    assertEquals("=\n", mmap.add(name, strVal).toString());
+    assertEquals(": \n", mmap.add(name, strVal).toString());
   }
 
   @Test
@@ -80,7 +81,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     MultiMap mmap = newMultiMap();
     String name = "";
     String strVal = "aaa";
-    assertEquals("=aaa\n", mmap.add(name, strVal).toString());
+    assertEquals(": aaa\n", mmap.add(name, strVal).toString());
   }
 
   @Test
@@ -92,7 +93,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("=\n", result.toString());
+    assertEquals(": \n", result.toString());
   }
 
   @Test
@@ -104,7 +105,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("=\n", result.toString());
+    assertEquals(": \n", result.toString());
   }
 
   @Test
@@ -116,7 +117,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(1, result.size());
-    assertEquals("=bbb\n", result.toString());
+    assertEquals(": bbb\n", result.toString());
   }
 
   @Test
@@ -129,7 +130,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     assertNotNull(result);
     assertFalse(result.isEmpty());
     assertEquals(2, result.size());
-    assertEquals("=\naaa=bbb\n", result.toString());
+    assertEquals(": \naaa: bbb\n", result.toString());
   }
 
   @Test
@@ -138,7 +139,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     String name = "";
     ArrayList<CharSequence> values = new ArrayList<>();
     values.add("somevalue");
-    assertEquals("=somevalue\n", mmap.set(name, values).toString());
+    assertEquals(": somevalue\n", mmap.set(name, values).toString());
   }
 
   @Test
