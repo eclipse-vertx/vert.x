@@ -59,59 +59,6 @@ public class DeploymentOptionsConverter {
     }
   }
 
-   static DeploymentOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
-    DeploymentOptions obj = new DeploymentOptions();
-    fromMap(map, obj);
-    return obj;
-  }
-
-   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, DeploymentOptions obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-        case "config":
-          if (member.getValue() instanceof io.vertx.core.json.JsonObject) {
-            obj.setConfig((io.vertx.core.json.JsonObject)member.getValue());
-          }
-          break;
-        case "ha":
-          if (member.getValue() instanceof Boolean) {
-            obj.setHa((Boolean)member.getValue());
-          }
-          break;
-        case "instances":
-          if (member.getValue() instanceof Number) {
-            obj.setInstances(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "maxWorkerExecuteTime":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxWorkerExecuteTime(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "maxWorkerExecuteTimeUnit":
-          if (member.getValue() instanceof java.util.concurrent.TimeUnit) {
-            obj.setMaxWorkerExecuteTimeUnit((java.util.concurrent.TimeUnit)member.getValue());
-          }
-          break;
-        case "worker":
-          if (member.getValue() instanceof Boolean) {
-            obj.setWorker((Boolean)member.getValue());
-          }
-          break;
-        case "workerPoolName":
-          if (member.getValue() instanceof String) {
-            obj.setWorkerPoolName((String)member.getValue());
-          }
-          break;
-        case "workerPoolSize":
-          if (member.getValue() instanceof Number) {
-            obj.setWorkerPoolSize(((Number)member.getValue()).intValue());
-          }
-          break;
-      }
-    }
-  }
-
    static void toJson(DeploymentOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

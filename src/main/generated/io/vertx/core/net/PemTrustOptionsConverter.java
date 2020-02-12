@@ -35,19 +35,6 @@ public class PemTrustOptionsConverter {
     }
   }
 
-   static PemTrustOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
-    PemTrustOptions obj = new PemTrustOptions();
-    fromMap(map, obj);
-    return obj;
-  }
-
-   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, PemTrustOptions obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-      }
-    }
-  }
-
    static void toJson(PemTrustOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

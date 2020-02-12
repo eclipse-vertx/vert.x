@@ -44,44 +44,6 @@ public class NetServerOptionsConverter {
     }
   }
 
-   static NetServerOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
-    NetServerOptions obj = new NetServerOptions();
-    fromMap(map, obj);
-    return obj;
-  }
-
-   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, NetServerOptions obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-        case "acceptBacklog":
-          if (member.getValue() instanceof Number) {
-            obj.setAcceptBacklog(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "clientAuth":
-          if (member.getValue() instanceof io.vertx.core.http.ClientAuth) {
-            obj.setClientAuth((io.vertx.core.http.ClientAuth)member.getValue());
-          }
-          break;
-        case "host":
-          if (member.getValue() instanceof String) {
-            obj.setHost((String)member.getValue());
-          }
-          break;
-        case "port":
-          if (member.getValue() instanceof Number) {
-            obj.setPort(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "sni":
-          if (member.getValue() instanceof Boolean) {
-            obj.setSni((Boolean)member.getValue());
-          }
-          break;
-      }
-    }
-  }
-
    static void toJson(NetServerOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

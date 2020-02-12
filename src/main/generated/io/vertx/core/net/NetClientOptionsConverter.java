@@ -34,34 +34,6 @@ public class NetClientOptionsConverter {
     }
   }
 
-   static NetClientOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
-    NetClientOptions obj = new NetClientOptions();
-    fromMap(map, obj);
-    return obj;
-  }
-
-   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, NetClientOptions obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-        case "hostnameVerificationAlgorithm":
-          if (member.getValue() instanceof String) {
-            obj.setHostnameVerificationAlgorithm((String)member.getValue());
-          }
-          break;
-        case "reconnectAttempts":
-          if (member.getValue() instanceof Number) {
-            obj.setReconnectAttempts(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "reconnectInterval":
-          if (member.getValue() instanceof Number) {
-            obj.setReconnectInterval(((Number)member.getValue()).longValue());
-          }
-          break;
-      }
-    }
-  }
-
    static void toJson(NetClientOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

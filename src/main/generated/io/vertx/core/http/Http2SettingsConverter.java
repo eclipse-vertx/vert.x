@@ -49,49 +49,6 @@ public class Http2SettingsConverter {
     }
   }
 
-   static Http2Settings fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
-    Http2Settings obj = new Http2Settings();
-    fromMap(map, obj);
-    return obj;
-  }
-
-   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, Http2Settings obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-        case "headerTableSize":
-          if (member.getValue() instanceof Number) {
-            obj.setHeaderTableSize(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "initialWindowSize":
-          if (member.getValue() instanceof Number) {
-            obj.setInitialWindowSize(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "maxConcurrentStreams":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxConcurrentStreams(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "maxFrameSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxFrameSize(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "maxHeaderListSize":
-          if (member.getValue() instanceof Number) {
-            obj.setMaxHeaderListSize(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "pushEnabled":
-          if (member.getValue() instanceof Boolean) {
-            obj.setPushEnabled((Boolean)member.getValue());
-          }
-          break;
-      }
-    }
-  }
-
    static void toJson(Http2Settings obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

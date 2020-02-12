@@ -34,24 +34,6 @@ public class WebSocketConnectOptionsConverter {
     }
   }
 
-  public static WebSocketConnectOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
-    WebSocketConnectOptions obj = new WebSocketConnectOptions();
-    fromMap(map, obj);
-    return obj;
-  }
-
-  public static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, WebSocketConnectOptions obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-        case "version":
-          if (member.getValue() instanceof io.vertx.core.http.WebsocketVersion) {
-            obj.setVersion((io.vertx.core.http.WebsocketVersion)member.getValue());
-          }
-          break;
-      }
-    }
-  }
-
   public static void toJson(WebSocketConnectOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

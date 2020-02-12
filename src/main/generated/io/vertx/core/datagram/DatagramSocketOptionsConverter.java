@@ -44,44 +44,6 @@ public class DatagramSocketOptionsConverter {
     }
   }
 
-   static DatagramSocketOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
-    DatagramSocketOptions obj = new DatagramSocketOptions();
-    fromMap(map, obj);
-    return obj;
-  }
-
-   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, DatagramSocketOptions obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-        case "broadcast":
-          if (member.getValue() instanceof Boolean) {
-            obj.setBroadcast((Boolean)member.getValue());
-          }
-          break;
-        case "ipV6":
-          if (member.getValue() instanceof Boolean) {
-            obj.setIpV6((Boolean)member.getValue());
-          }
-          break;
-        case "loopbackModeDisabled":
-          if (member.getValue() instanceof Boolean) {
-            obj.setLoopbackModeDisabled((Boolean)member.getValue());
-          }
-          break;
-        case "multicastNetworkInterface":
-          if (member.getValue() instanceof String) {
-            obj.setMulticastNetworkInterface((String)member.getValue());
-          }
-          break;
-        case "multicastTimeToLive":
-          if (member.getValue() instanceof Number) {
-            obj.setMulticastTimeToLive(((Number)member.getValue()).intValue());
-          }
-          break;
-      }
-    }
-  }
-
    static void toJson(DatagramSocketOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

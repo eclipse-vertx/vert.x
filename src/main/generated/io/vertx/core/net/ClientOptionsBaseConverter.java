@@ -44,38 +44,6 @@ public class ClientOptionsBaseConverter {
     }
   }
 
-   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, ClientOptionsBase obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-        case "connectTimeout":
-          if (member.getValue() instanceof Number) {
-            obj.setConnectTimeout(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "localAddress":
-          if (member.getValue() instanceof String) {
-            obj.setLocalAddress((String)member.getValue());
-          }
-          break;
-        case "metricsName":
-          if (member.getValue() instanceof String) {
-            obj.setMetricsName((String)member.getValue());
-          }
-          break;
-        case "proxyOptions":
-          if (member.getValue() instanceof io.vertx.core.net.ProxyOptions) {
-            obj.setProxyOptions((io.vertx.core.net.ProxyOptions)member.getValue());
-          }
-          break;
-        case "trustAll":
-          if (member.getValue() instanceof Boolean) {
-            obj.setTrustAll((Boolean)member.getValue());
-          }
-          break;
-      }
-    }
-  }
-
    static void toJson(ClientOptionsBase obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

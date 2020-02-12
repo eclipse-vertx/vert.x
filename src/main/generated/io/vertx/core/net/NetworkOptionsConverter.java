@@ -49,43 +49,6 @@ public class NetworkOptionsConverter {
     }
   }
 
-   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, NetworkOptions obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-        case "logActivity":
-          if (member.getValue() instanceof Boolean) {
-            obj.setLogActivity((Boolean)member.getValue());
-          }
-          break;
-        case "receiveBufferSize":
-          if (member.getValue() instanceof Number) {
-            obj.setReceiveBufferSize(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "reuseAddress":
-          if (member.getValue() instanceof Boolean) {
-            obj.setReuseAddress((Boolean)member.getValue());
-          }
-          break;
-        case "reusePort":
-          if (member.getValue() instanceof Boolean) {
-            obj.setReusePort((Boolean)member.getValue());
-          }
-          break;
-        case "sendBufferSize":
-          if (member.getValue() instanceof Number) {
-            obj.setSendBufferSize(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "trafficClass":
-          if (member.getValue() instanceof Number) {
-            obj.setTrafficClass(((Number)member.getValue()).intValue());
-          }
-          break;
-      }
-    }
-  }
-
    static void toJson(NetworkOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }

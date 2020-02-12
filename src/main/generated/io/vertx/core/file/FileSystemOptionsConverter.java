@@ -34,34 +34,6 @@ public class FileSystemOptionsConverter {
     }
   }
 
-   static FileSystemOptions fromMap(Iterable<java.util.Map.Entry<String, Object>> map) {
-    FileSystemOptions obj = new FileSystemOptions();
-    fromMap(map, obj);
-    return obj;
-  }
-
-   static void fromMap(Iterable<java.util.Map.Entry<String, Object>> map, FileSystemOptions obj) {
-    for (java.util.Map.Entry<String, Object> member : map) {
-      switch (member.getKey()) {
-        case "classPathResolvingEnabled":
-          if (member.getValue() instanceof Boolean) {
-            obj.setClassPathResolvingEnabled((Boolean)member.getValue());
-          }
-          break;
-        case "fileCacheDir":
-          if (member.getValue() instanceof String) {
-            obj.setFileCacheDir((String)member.getValue());
-          }
-          break;
-        case "fileCachingEnabled":
-          if (member.getValue() instanceof Boolean) {
-            obj.setFileCachingEnabled((Boolean)member.getValue());
-          }
-          break;
-      }
-    }
-  }
-
    static void toJson(FileSystemOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }
