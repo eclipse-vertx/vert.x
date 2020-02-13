@@ -652,7 +652,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       closed = this.closed;
     }
     if (closed) {
-      return getOrCreateContext().failedFuture("Vert.x closed");
+      // If we are closed use a context less future
+      return Future.failedFuture("Vert.x closed");
     } else {
       return deploymentManager.deployVerticle(verticleSupplier, options);
     }
