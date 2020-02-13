@@ -4234,35 +4234,32 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testHttpClientResponseThrowsExceptionInResponseHandler() throws Exception {
-    testHttpClientResponseThrowsExceptionInHandler(null, (resp, latch) -> {
-      latch.countDown();
-      throw new RuntimeException();
+    testHttpClientResponseThrowsExceptionInHandler(null, (resp, failure) -> {
+      throw failure;
     });
   }
 
   @Test
   public void testHttpClientResponseThrowsExceptionInChunkHandler() throws Exception {
-    testHttpClientResponseThrowsExceptionInHandler("blah", (resp, latch) -> {
+    testHttpClientResponseThrowsExceptionInHandler("blah", (resp, failure) -> {
       resp.handler(chunk -> {
-        latch.countDown();
-        throw new RuntimeException();
+        throw failure;
       });
     });
   }
 
   @Test
   public void testHttpClientResponseThrowsExceptionInEndHandler() throws Exception {
-    testHttpClientResponseThrowsExceptionInHandler(null, (resp, latch) -> {
+    testHttpClientResponseThrowsExceptionInHandler(null, (resp, failure) -> {
       resp.endHandler(v -> {
-        latch.countDown();
-        throw new RuntimeException();
+        throw failure;
       });
     });
   }
 
   private void testHttpClientResponseThrowsExceptionInHandler(
     String chunk,
-    BiConsumer<HttpClientResponse, CountDownLatch> handler) throws Exception {
+    BiConsumer<HttpClientResponse, RuntimeException> handler) throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       if (chunk != null) {
@@ -4273,15 +4270,22 @@ public class Http1xTest extends HttpTest {
     });
     startServer(testAddress);
     int num = 50;
-    CountDownLatch latch = new CountDownLatch(num);
+    waitFor(num);
+    RuntimeException failure = new RuntimeException();
     for (int i = 0;i < num;i++) {
       client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri")
         .setHandler(onSuccess(resp -> {
-          handler.accept(resp, latch);
+          ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+          ctx.exceptionHandler(err -> {
+            if (err == failure) {
+              complete();
+            }
+          });
+          handler.accept(resp, failure);
         }))
         .end();
     }
-    awaitLatch(latch);
+    await();
   }
 
   @Test
