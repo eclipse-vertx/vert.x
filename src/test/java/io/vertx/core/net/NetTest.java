@@ -904,23 +904,17 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testListenInvalidPort() {
     final int port = 9090;
-    HttpServer httpServer = vertx.createHttpServer();
-    server.close();
-    final Runnable netServerTest = () -> {
-      server = vertx.createNetServer(new NetServerOptions().setPort(port));
-      server.connectHandler((netSocket) -> {
-      }).listen(ar -> {
-        assertTrue(ar.failed());
-        assertFalse(ar.succeeded());
-        assertNotNull(ar.cause());
-        httpServer.close();
-        testComplete();
-      });
-    };
-    httpServer.requestHandler(ignore -> {}).listen(port)
-      .onSuccess(s -> netServerTest.run())
-      .onFailure(e -> netServerTest.run());
+    final HttpServer httpServer = vertx.createHttpServer()
+      .requestHandler(ignore -> {})
+      .listen(port, httpResult ->
+        vertx.createNetServer()
+          .connectHandler(ignore -> {})
+          .listen(port, onFailure(error -> {
+            assertNotNull(error);
+            testComplete();
+          })));
     await();
+    httpServer.close();
   }
 
   @Test
