@@ -21,11 +21,11 @@ jobs:
     - if: type != pull_request
       name: "OpenJDK 8 / native transport"
       jdk: openjdk8
-      script: mvn -q clean verify -B
+      script: mvn -q clean verify -B -PtestNativeTransport
     - if: type != pull_request
       name: "OpenJDK 8 / domain sockets"
       jdk: openjdk8
-      script: mvn -q clean verify -B
+      script: mvn -q clean verify -B -PtestDomainSockets
     - stage: deploy
       name: "Deploy to Sonatype's snapshots repository"
       jdk: openjdk8
