@@ -906,13 +906,13 @@ public class NetTest extends VertxTestBase {
     final int port = 9090;
     final HttpServer httpServer = vertx.createHttpServer()
       .requestHandler(ignore -> {})
-      .listen(port, httpResult ->
+      .listen(port, onSuccess(s ->
         vertx.createNetServer()
           .connectHandler(ignore -> {})
           .listen(port, onFailure(error -> {
             assertNotNull(error);
             testComplete();
-          })));
+          }))));
     await();
     httpServer.close();
   }
