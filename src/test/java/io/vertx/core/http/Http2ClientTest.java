@@ -1617,7 +1617,7 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   private void testIdleTimeout(HttpServerOptions serverOptions, HttpClientOptions clientOptions) throws Exception {
-    waitFor(4);
+    waitFor(3);
     server.close();
     server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {

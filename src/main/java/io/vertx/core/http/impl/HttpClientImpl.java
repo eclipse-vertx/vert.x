@@ -537,12 +537,12 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
   @Override
   public HttpClientRequest request(SocketAddress serverAddress, RequestOptions options) {
-    return createRequest(options.getMethod(), serverAddress, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), null);
+    return createRequest(options.getMethod(), serverAddress, getHost(options.getHost()), getPort(options.getPort()), options.isSsl(), options.getURI(), null);
   }
 
   @Override
   public HttpClientRequest request(RequestOptions options) {
-    return createRequest(options.getMethod(), null, options.getHost(), options.getPort(), options.isSsl(), options.getURI(), options.getHeaders());
+    return createRequest(options.getMethod(), null, getHost(options.getHost()), getPort(options.getPort()), options.isSsl(), options.getURI(), options.getHeaders());
   }
 
   @Override
