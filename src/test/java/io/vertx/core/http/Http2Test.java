@@ -12,14 +12,13 @@
 package io.vertx.core.http;
 
 import io.netty.channel.socket.DuplexChannel;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Context;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.test.core.AsyncTestBase;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
@@ -430,7 +429,7 @@ public class Http2Test extends HttpTest {
     }).end();
     await();
   }
-  
+
   @Test
   public void testStreamWeightAndDependency() throws Exception {
     int requestStreamDependency = 56;
@@ -695,4 +694,59 @@ public class Http2Test extends HttpTest {
     await();
   }
 
+  @Test
+  public void testClearTextUpgradeWithBody() throws Exception {
+    server.close();
+    server = vertx.createHttpServer().requestHandler(req -> {
+      req.bodyHandler(body -> req.response().end(body));
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
+    client.connectionHandler(conn -> {
+      conn.goAwayHandler(ga -> {
+        assertEquals(0, ga.getErrorCode());
+      });
+    });
+    Buffer payload = Buffer.buffer("some-data");
+    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, new RequestOptions()
+      .setSsl(false), response -> {
+      response.bodyHandler(body -> {
+        assertEquals(Buffer.buffer().appendBuffer(payload).appendBuffer(payload), body);
+        testComplete();
+      });
+    });
+    req.putHeader("Content-Length", "" + payload.length() * 2);
+    req.exceptionHandler(this::fail);
+    req.write(payload);
+    Thread.sleep(1000);
+    req.end(payload);
+    await();
+  }
+
+  @Test
+  public void testClearTextUpgradeWithBodyTooLongFrameResponse() throws Exception {
+    server.close();
+    Buffer buffer = TestUtils.randomBuffer(1024);
+    server = vertx.createHttpServer().requestHandler(req -> {
+      req.response().setChunked(true);
+      vertx.setPeriodic(1, id -> {
+        req.response().write(buffer);
+      });
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
+    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, new RequestOptions().setSsl(false), response -> {
+      fail();
+    });
+    req.setChunked(true);
+    req.exceptionHandler(err -> {
+      if (err instanceof TooLongFrameException) {
+        testComplete();
+      }
+    });
+    req.sendHead();
+    await();
+  }
 }

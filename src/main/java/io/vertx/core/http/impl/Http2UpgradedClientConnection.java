@@ -11,11 +11,14 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufHolder;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
+import io.netty.util.concurrent.EventExecutor;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -30,6 +33,8 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An HTTP/2 connection in clear text that upgraded from an HTTP/1 upgrade.
@@ -80,6 +85,8 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     private HttpClientRequestImpl request;
     private Http1xClientConnection conn;
     private HttpClientStream stream;
+    private long pendingSize = 0;
+    private List<Object> pending = new ArrayList<>();
 
     UpgradingStream(HttpClientStream stream, Http1xClientConnection conn) {
       this.conn = conn;
@@ -108,6 +115,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                           Handler<AsyncResult<Void>> handler) {
       ChannelPipeline pipeline = conn.channel().pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
+
       class UpgradeRequestHandler extends ChannelInboundHandlerAdapter {
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
@@ -125,13 +133,14 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
             pipeline.remove(this);
             HttpResponse resp = (HttpResponse) msg;
             if (resp.status() != HttpResponseStatus.SWITCHING_PROTOCOLS) {
-              // Insert the cloe headers to let the HTTP/1 stream close the connection
+              // Insert the close headers to let the HTTP/1 stream close the connection
               resp.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
             }
           }
           super.channelRead(ctx, msg);
         }
       }
+
       VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings()) {
         @Override
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
@@ -163,10 +172,84 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
           handler.clientUpgrade(ctx);
         }
       };
-      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536);
+      HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536) {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+          if (pending != null) {
+            // Buffer all messages received from the server until the HTTP request is fully sent.
+            //
+            // Explanation:
+            //
+            // It is necessary that the client only starts to process the response when the request
+            // has been fully sent because the current HTTP2 implementation will not be able to process
+            // the server preface until the client preface has been sent.
+            //
+            // Adding the VertxHttp2ConnectionHandler to the pipeline has two effects:
+            // - it is required to process the server preface
+            // - it will send the request preface to the server
+            //
+            // As we are adding this handler to the pipeline when we receive the 101 response from the server
+            // this might send the client preface before the initial HTTP request (doing the upgrade) is fully sent
+            // resulting in corrupting the protocol (the server might interpret it as an corrupted connection preface).
+            //
+            // Therefore we must buffer all pending messages until the request is fully sent.
+
+            int maxContent = maxContentLength();
+            boolean lower = pendingSize < maxContent;
+            if (msg instanceof ByteBufHolder) {
+              pendingSize += ((ByteBufHolder)msg).content().readableBytes();
+            } else if (msg instanceof ByteBuf) {
+              pendingSize += ((ByteBuf)msg).readableBytes();
+            }
+
+            if (pendingSize >= maxContent) {
+              if (lower) {
+                pending.clear();
+                ctx.fireExceptionCaught(new TooLongFrameException("Max content exceeded " + maxContentLength() + " bytes."));
+              }
+              return;
+            }
+            pending.add(msg);
+          } else {
+            super.channelRead(ctx, msg);
+          }
+        }
+      };
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, continueHandler, handler);
+      doWriteHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, continueHandler, handler);
+    }
+
+    private void doWriteHead(HttpMethod method,
+                             String rawMethod,
+                             String uri,
+                             MultiMap headers,
+                             String hostHeader,
+                             boolean chunked,
+                             ByteBuf buf,
+                             boolean end,
+                             StreamPriority priority,
+                             Handler<Void> continueHandler,
+                             Handler<AsyncResult<Void>> handler) {
+      EventExecutor exec = conn.channelHandlerContext().executor();
+      if (exec.inEventLoop()) {
+        stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, continueHandler, handler);
+        if (end) {
+          end();
+        }
+      } else {
+        exec.execute(() -> doWriteHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, continueHandler, handler));
+      }
+    }
+
+    private void end() {
+      // Deliver pending messages to the handler
+      List<Object> messages = pending;
+      pending = null;
+      ChannelHandlerContext context = conn.channelHandlerContext().pipeline().context("codec");
+      for (Object msg : messages) {
+        context.fireChannelRead(msg);
+      }
     }
 
     @Override
@@ -191,7 +274,15 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
 
     @Override
     public void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
-      stream.writeBuffer(buf, end, handler);
+      EventExecutor exec = conn.channelHandlerContext().executor();
+      if (exec.inEventLoop()) {
+        stream.writeBuffer(buf, end, handler);
+        if (end) {
+          end();
+        }
+      } else {
+        exec.execute(() -> writeBuffer(buf, end, handler));
+      }
     }
 
     @Override

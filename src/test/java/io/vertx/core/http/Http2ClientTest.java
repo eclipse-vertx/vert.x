@@ -1617,7 +1617,7 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   private void testIdleTimeout(HttpServerOptions serverOptions, HttpClientOptions clientOptions) throws Exception {
-    waitFor(4);
+    waitFor(3);
     server.close();
     server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
@@ -1632,11 +1632,6 @@ public class Http2ClientTest extends Http2TestBase {
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v1 -> {
       HttpClientRequest req = client.get("/somepath", resp -> {
-        resp.exceptionHandler(err -> {
-          assertSame(ctx, Vertx.currentContext());
-          assertOnIOContext(ctx);
-          complete();
-        });
       });
       req.exceptionHandler(err -> {
         complete();
@@ -1937,8 +1932,8 @@ public class Http2ClientTest extends Http2TestBase {
 
     await();
   }
-  
-  
+
+
   @Test
   public void testStreamPriority() throws Exception {
     StreamPriority requestStreamPriority = new StreamPriority().setDependency(123).setWeight((short)45).setExclusive(true);
@@ -2017,7 +2012,7 @@ public class Http2ClientTest extends Http2TestBase {
           }
           return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
-      
+
     });
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
@@ -2080,7 +2075,7 @@ public class Http2ClientTest extends Http2TestBase {
           }
           return super.onDataRead(ctx, streamId, data, padding, endOfStream);
       }
-      
+
     });
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
@@ -2106,5 +2101,5 @@ public class Http2ClientTest extends Http2TestBase {
     }
   }
 
-  
+
 }
