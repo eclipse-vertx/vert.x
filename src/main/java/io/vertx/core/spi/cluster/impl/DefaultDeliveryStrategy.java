@@ -98,8 +98,11 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
     Queue<Promise<NodeSelector>> waiters = getWaiters(context, address);
 
     Promise<NodeSelector> waiter;
-    for (; ; ) {
-      // FIXME: give a chance to other tasks every 10 iterations
+    for (int i = 0; ; i++) {
+      if (i == 10) {
+        // Give a chance to other tasks every 10 iterations
+        context.runOnContext(v -> dequeueWaiters(context, address));
+      }
       Promise<NodeSelector> peeked = waiters.peek();
       if (peeked == null) {
         throw new IllegalStateException();
