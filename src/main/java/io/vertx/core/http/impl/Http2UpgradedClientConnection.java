@@ -146,7 +146,6 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
         }
       }
 
-
       VertxHttp2ClientUpgradeCodec upgradeCodec = new VertxHttp2ClientUpgradeCodec(client.getOptions().getInitialSettings()) {
         @Override
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
@@ -222,17 +221,26 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       };
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      Runnable task = () -> {
+      doWriteHead(method, uri, headers, authority, chunked, buf, end, priority, listener);
+    }
+
+    private void doWriteHead(HttpMethod method,
+                             String uri,
+                             MultiMap headers,
+                             String authority,
+                             boolean chunked,
+                             ByteBuf buf,
+                             boolean end,
+                             StreamPriority priority,
+                             Handler<AsyncResult<Void>> listener) {
+      EventExecutor exec = conn.channelHandlerContext().executor();
+      if (exec.inEventLoop()) {
         stream.writeHead(method, uri, headers, authority, chunked, buf, end, priority, listener);
         if (end) {
           end();
         }
-      };
-      EventExecutor exec = conn.channelHandlerContext().executor();
-      if (exec.inEventLoop()) {
-        task.run();
       } else {
-        exec.execute(task);
+        exec.execute(() -> doWriteHead(method, uri, headers, authority, chunked, buf, end, priority, listener));
       }
     }
 
@@ -241,8 +249,8 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       List<Object> messages = pending;
       pending = null;
       ChannelHandlerContext context = conn.channelHandlerContext().pipeline().context("codec");
-      for (Object message : messages) {
-        context.fireChannelRead(message);
+      for (Object msg : messages) {
+        context.fireChannelRead(msg);
       }
     }
 

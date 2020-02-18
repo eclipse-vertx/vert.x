@@ -145,10 +145,6 @@ Set the idle timeout, default time unit is seconds. Zero means don't timeout.
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the idle timeout unit. If not specified, default is seconds.
 +++
-|[[jdkSslEngineOptions]]`@jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
-|[[keyStoreOptions]]`@keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the key/cert options in jks format, aka Java keystore.
-+++
 |[[localAddress]]`@localAddress`|`String`|+++
 Set the local interface to bind for network connections. When the local address is null,
  it will pick any local address, the default local address is null.
@@ -159,22 +155,6 @@ Set to true to enabled network activity logging: Netty's pipeline is configured 
 |[[metricsName]]`@metricsName`|`String`|+++
 Set the metrics name identifying the reported metrics, useful for grouping metrics
  with the same name.
-+++
-|[[openSslEngineOptions]]`@openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
-|[[pemKeyCertOptions]]`@pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|+++
-Set the key/cert store options in pem format.
-+++
-|[[pemTrustOptions]]`@pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|+++
-Set the trust options in pem format
-+++
-|[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the key/cert options in pfx format.
-+++
-|[[pfxTrustOptions]]`@pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the trust options in pfx format
-+++
-|[[proxyOptions]]`@proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|+++
-Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
 +++
 |[[receiveBufferSize]]`@receiveBufferSize`|`Number (int)`|+++
 Set the TCP receive buffer size
@@ -222,9 +202,6 @@ Set the value of traffic class
 +++
 |[[trustAll]]`@trustAll`|`Boolean`|+++
 Set whether all server certificates should be trusted
-+++
-|[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
@@ -478,25 +455,8 @@ Set the idle timeout, default time unit is seconds. Zero means don't timeout.
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the idle timeout unit. If not specified, default is seconds.
 +++
-|[[jdkSslEngineOptions]]`@jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
-|[[keyStoreOptions]]`@keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the key/cert options in jks format, aka Java keystore.
-+++
 |[[logActivity]]`@logActivity`|`Boolean`|+++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
-+++
-|[[openSslEngineOptions]]`@openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
-|[[pemKeyCertOptions]]`@pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|+++
-Set the key/cert store options in pem format.
-+++
-|[[pemTrustOptions]]`@pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|+++
-Set the trust options in pem format
-+++
-|[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the key/cert options in pfx format.
-+++
-|[[pfxTrustOptions]]`@pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the trust options in pfx format
 +++
 |[[port]]`@port`|`Number (int)`|+++
 Sets the port.
@@ -553,9 +513,6 @@ Set the value of traffic class
 +++
 |[[trustAll]]`@trustAll`|`Boolean`|+++
 Set whether all server certificates should be trusted.
-+++
-|[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
@@ -733,10 +690,6 @@ Set the idle timeout, default time unit is seconds. Zero means don't timeout.
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the idle timeout unit. If not specified, default is seconds.
 +++
-|[[initialSettings]]`@initialSettings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|+++
-Set the HTTP/2 connection settings immediately sent by to the server when the client connects.
-+++
-|[[jdkSslEngineOptions]]`@jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
 |[[keepAlive]]`@keepAlive`|`Boolean`|+++
 Set whether keep alive is enabled on the client
 +++
@@ -744,9 +697,6 @@ Set whether keep alive is enabled on the client
 Set the keep alive timeout for HTTP/1.x, in seconds.
  <p/>
  This value determines how long a connection remains unused in the pool before being evicted and closed.
-+++
-|[[keyStoreOptions]]`@keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the key/cert options in jks format, aka Java keystore.
 +++
 |[[localAddress]]`@localAddress`|`String`|+++
 Set the local interface to bind for network connections. When the local address is null,
@@ -784,19 +734,6 @@ Set the max WebSocket message size
 Set the metrics name identifying the reported metrics, useful for grouping metrics
  with the same name.
 +++
-|[[openSslEngineOptions]]`@openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
-|[[pemKeyCertOptions]]`@pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|+++
-Set the key/cert store options in pem format.
-+++
-|[[pemTrustOptions]]`@pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|+++
-Set the trust options in pem format
-+++
-|[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the key/cert options in pfx format.
-+++
-|[[pfxTrustOptions]]`@pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the trust options in pfx format
-+++
 |[[pipelining]]`@pipelining`|`Boolean`|+++
 Set whether pipe-lining is enabled on the client
 +++
@@ -809,9 +746,6 @@ Set the connection pool cleaner period in milli seconds, a non positive value di
 +++
 |[[protocolVersion]]`@protocolVersion`|`link:enums.html#HttpVersion[HttpVersion]`|+++
 Set the protocol version.
-+++
-|[[proxyOptions]]`@proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|+++
-Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
 +++
 |[[receiveBufferSize]]`@receiveBufferSize`|`Number (int)`|+++
 Set the TCP receive buffer size
@@ -867,9 +801,6 @@ Set the value of traffic class
 +++
 |[[trustAll]]`@trustAll`|`Boolean`|+++
 Set whether all server certificates should be trusted
-+++
-|[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the trust options in jks format, aka Java truststore
 +++
 |[[tryUseCompression]]`@tryUseCompression`|`Boolean`|+++
 Set whether compression is enabled
@@ -995,13 +926,6 @@ Set the idle timeout, default time unit is seconds. Zero means don't timeout.
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the idle timeout unit. If not specified, default is seconds.
 +++
-|[[initialSettings]]`@initialSettings`|`link:dataobjects.html#Http2Settings[Http2Settings]`|+++
-Set the HTTP/2 connection settings immediatly sent by the server when a client connects.
-+++
-|[[jdkSslEngineOptions]]`@jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
-|[[keyStoreOptions]]`@keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the key/cert options in jks format, aka Java keystore.
-+++
 |[[logActivity]]`@logActivity`|`Boolean`|+++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
 +++
@@ -1020,24 +944,11 @@ Set the maximum WebSocket frames size
 |[[maxWebSocketMessageSize]]`@maxWebSocketMessageSize`|`Number (int)`|+++
 Set the maximum WebSocket message size
 +++
-|[[openSslEngineOptions]]`@openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
-|[[pemKeyCertOptions]]`@pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|+++
-Set the key/cert store options in pem format.
-+++
-|[[pemTrustOptions]]`@pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|+++
-Set the trust options in pem format
-+++
 |[[perFrameWebSocketCompressionSupported]]`@perFrameWebSocketCompressionSupported`|`Boolean`|+++
 Enable or disable support for the WebSocket per-frame deflate compression extension.
 +++
 |[[perMessageWebSocketCompressionSupported]]`@perMessageWebSocketCompressionSupported`|`Boolean`|+++
 Enable or disable support for WebSocket per-message deflate compression extension.
-+++
-|[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the key/cert options in pfx format.
-+++
-|[[pfxTrustOptions]]`@pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the trust options in pfx format
 +++
 |[[port]]`@port`|`Number (int)`|+++
 Set the port
@@ -1088,9 +999,6 @@ Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
-+++
-|[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
@@ -1224,10 +1132,6 @@ Set the idle timeout, default time unit is seconds. Zero means don't timeout.
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the idle timeout unit. If not specified, default is seconds.
 +++
-|[[jdkSslEngineOptions]]`@jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
-|[[keyStoreOptions]]`@keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the key/cert options in jks format, aka Java keystore.
-+++
 |[[localAddress]]`@localAddress`|`String`|+++
 Set the local interface to bind for network connections. When the local address is null,
  it will pick any local address, the default local address is null.
@@ -1238,22 +1142,6 @@ Set to true to enabled network activity logging: Netty's pipeline is configured 
 |[[metricsName]]`@metricsName`|`String`|+++
 Set the metrics name identifying the reported metrics, useful for grouping metrics
  with the same name.
-+++
-|[[openSslEngineOptions]]`@openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
-|[[pemKeyCertOptions]]`@pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|+++
-Set the key/cert store options in pem format.
-+++
-|[[pemTrustOptions]]`@pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|+++
-Set the trust options in pem format
-+++
-|[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the key/cert options in pfx format.
-+++
-|[[pfxTrustOptions]]`@pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the trust options in pfx format
-+++
-|[[proxyOptions]]`@proxyOptions`|`link:dataobjects.html#ProxyOptions[ProxyOptions]`|+++
-Set proxy options for connections via CONNECT proxy (e.g. Squid) or a SOCKS proxy.
 +++
 |[[receiveBufferSize]]`@receiveBufferSize`|`Number (int)`|+++
 Set the TCP receive buffer size
@@ -1308,9 +1196,6 @@ Set the value of traffic class
 |[[trustAll]]`@trustAll`|`Boolean`|+++
 Set whether all server certificates should be trusted
 +++
-|[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the trust options in jks format, aka Java truststore
-+++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
@@ -1358,25 +1243,8 @@ Set the idle timeout, default time unit is seconds. Zero means don't timeout.
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the idle timeout unit. If not specified, default is seconds.
 +++
-|[[jdkSslEngineOptions]]`@jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
-|[[keyStoreOptions]]`@keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the key/cert options in jks format, aka Java keystore.
-+++
 |[[logActivity]]`@logActivity`|`Boolean`|+++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
-+++
-|[[openSslEngineOptions]]`@openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
-|[[pemKeyCertOptions]]`@pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|+++
-Set the key/cert store options in pem format.
-+++
-|[[pemTrustOptions]]`@pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|+++
-Set the trust options in pem format
-+++
-|[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the key/cert options in pfx format.
-+++
-|[[pfxTrustOptions]]`@pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the trust options in pfx format
 +++
 |[[port]]`@port`|`Number (int)`|+++
 Set the port
@@ -1427,9 +1295,6 @@ Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
-+++
-|[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the trust options in jks format, aka Java truststore
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
@@ -1910,25 +1775,8 @@ Set the idle timeout, default time unit is seconds. Zero means don't timeout.
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the idle timeout unit. If not specified, default is seconds.
 +++
-|[[jdkSslEngineOptions]]`@jdkSslEngineOptions`|`link:dataobjects.html#JdkSSLEngineOptions[JdkSSLEngineOptions]`|-
-|[[keyStoreOptions]]`@keyStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the key/cert options in jks format, aka Java keystore.
-+++
 |[[logActivity]]`@logActivity`|`Boolean`|+++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
-+++
-|[[openSslEngineOptions]]`@openSslEngineOptions`|`link:dataobjects.html#OpenSSLEngineOptions[OpenSSLEngineOptions]`|-
-|[[pemKeyCertOptions]]`@pemKeyCertOptions`|`link:dataobjects.html#PemKeyCertOptions[PemKeyCertOptions]`|+++
-Set the key/cert store options in pem format.
-+++
-|[[pemTrustOptions]]`@pemTrustOptions`|`link:dataobjects.html#PemTrustOptions[PemTrustOptions]`|+++
-Set the trust options in pem format
-+++
-|[[pfxKeyCertOptions]]`@pfxKeyCertOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the key/cert options in pfx format.
-+++
-|[[pfxTrustOptions]]`@pfxTrustOptions`|`link:dataobjects.html#PfxOptions[PfxOptions]`|+++
-Set the trust options in pfx format
 +++
 |[[receiveBufferSize]]`@receiveBufferSize`|`Number (int)`|+++
 Set the TCP receive buffer size
@@ -1974,9 +1822,6 @@ Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
 +++
-|[[trustStoreOptions]]`@trustStoreOptions`|`link:dataobjects.html#JksOptions[JksOptions]`|+++
-Set the trust options in jks format, aka Java truststore
-+++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
@@ -2012,9 +1857,6 @@ Set whether tracing will be enabled on the Vert.x instance.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[addressResolverOptions]]`@addressResolverOptions`|`link:dataobjects.html#AddressResolverOptions[AddressResolverOptions]`|+++
-Sets the address resolver configuration to configure resolving DNS servers, cache TTL, etc...
-+++
 |[[blockedThreadCheckInterval]]`@blockedThreadCheckInterval`|`Number (long)`|+++
 Sets the value of blocked thread check period, in link.
  <p>
@@ -2048,14 +1890,8 @@ See link for an explanation.
 |[[clustered]]`@clustered`|`Boolean`|+++
 Set whether or not the Vert.x instance will be clustered.
 +++
-|[[eventBusOptions]]`@eventBusOptions`|`link:dataobjects.html#EventBusOptions[EventBusOptions]`|+++
-Sets the event bus configuration to configure the host, port, ssl...
-+++
 |[[eventLoopPoolSize]]`@eventLoopPoolSize`|`Number (int)`|+++
 Set the number of event loop threads to be used by the Vert.x instance.
-+++
-|[[fileSystemOptions]]`@fileSystemOptions`|`link:dataobjects.html#FileSystemOptions[FileSystemOptions]`|+++
-Set the file system options
 +++
 |[[haEnabled]]`@haEnabled`|`Boolean`|+++
 Set whether HA will be enabled on the Vert.x instance.
@@ -2082,16 +1918,12 @@ Sets the value of max worker execute time, in link.
 |[[maxWorkerExecuteTimeUnit]]`@maxWorkerExecuteTimeUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the time unit of <code>maxWorkerExecuteTime</code>.
 +++
-|[[metricsOptions]]`@metricsOptions`|`link:dataobjects.html#MetricsOptions[MetricsOptions]`|+++
-Set the metrics options
-+++
 |[[preferNativeTransport]]`@preferNativeTransport`|`Boolean`|+++
 Set wether to prefer the native transport to the JDK transport.
 +++
 |[[quorumSize]]`@quorumSize`|`Number (int)`|+++
 Set the quorum size to be used when HA is enabled.
 +++
-|[[tracingOptions]]`@tracingOptions`|`link:dataobjects.html#TracingOptions[TracingOptions]`|-
 |[[warningExceptionTime]]`@warningExceptionTime`|`Number (long)`|+++
 Set the threshold value above this, the blocked warning contains a stack trace. in link.
  The default value of link is

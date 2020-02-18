@@ -1638,12 +1638,6 @@ public class Http2ClientTest extends Http2TestBase {
         });
       });
       HttpClientRequest req = client.request(HttpMethod.GET, "/somepath")
-        .setHandler(onSuccess(resp -> {
-          resp.exceptionHandler(err -> {
-            assertOnIOContext(ctx);
-            complete();
-          });
-        }))
         .exceptionHandler(err -> {
           complete();
         });
