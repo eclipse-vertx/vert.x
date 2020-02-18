@@ -15,6 +15,7 @@ import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.vertx.core.http.Cookie;
+import io.vertx.core.http.CookieSameSite;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,6 +64,8 @@ public class CookieImpl implements ServerCookie {
   private final io.netty.handler.codec.http.cookie.Cookie nettyCookie;
   private boolean changed;
   private boolean fromUserAgent;
+  // extension features
+  private CookieSameSite sameSite;
 
   public CookieImpl(String name, String value) {
     this.nettyCookie = new DefaultCookie(name, value);
@@ -137,8 +140,19 @@ public class CookieImpl implements ServerCookie {
   }
 
   @Override
+  public Cookie setSameSite(final CookieSameSite sameSite) {
+    this.sameSite = sameSite;
+    this.changed = true;
+    return this;
+  }
+
+  @Override
   public String encode() {
-    return ServerCookieEncoder.STRICT.encode(nettyCookie);
+    if (sameSite != null) {
+      return ServerCookieEncoder.STRICT.encode(nettyCookie) + "; SameSite=" + sameSite.toString();
+    } else {
+      return ServerCookieEncoder.STRICT.encode(nettyCookie);
+    }
   }
 
   public boolean isChanged() {

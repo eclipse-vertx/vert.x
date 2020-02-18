@@ -119,6 +119,15 @@ public interface Cookie {
   Cookie setHttpOnly(boolean httpOnly);
 
   /**
+   * Sets the same site of this cookie.
+   *
+   * @param policy The policy should be one of {@link CookieSameSite}.
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  Cookie setSameSite(CookieSameSite policy);
+
+  /**
    * Encode the cookie to a string. This is what is used in the Set-Cookie header
    *
    * @return  the encoded cookie
