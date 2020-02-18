@@ -33,13 +33,35 @@ import java.util.function.Consumer;
 public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
 
   @Test
-  public void testLocalHandlerNotReceive() throws Exception {
+  public void testLocalHandlerNotVisibleRemotely() throws Exception {
     startNodes(2);
     vertices[1].eventBus().localConsumer(ADDRESS1).handler(msg -> {
       fail("Should not receive message");
     });
     vertices[0].eventBus().send(ADDRESS1, "foo");
+    vertices[0].eventBus().publish(ADDRESS1, "foo");
     vertices[0].setTimer(1000, id -> testComplete());
+    await();
+  }
+
+  @Test
+  public void testLocalHandlerClusteredSend() throws Exception {
+    startNodes(2);
+    waitFor(2);
+    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> complete());
+    vertices[0].eventBus().localConsumer(ADDRESS1).handler(msg -> complete());
+    vertices[0].eventBus().send(ADDRESS1, "foo");
+    vertices[0].eventBus().send(ADDRESS1, "foo");
+    await();
+  }
+
+  @Test
+  public void testLocalHandlerClusteredPublish() throws Exception {
+    startNodes(2);
+    waitFor(2);
+    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> complete());
+    vertices[0].eventBus().localConsumer(ADDRESS1).handler(msg -> complete());
+    vertices[0].eventBus().publish(ADDRESS1, "foo");
     await();
   }
 
