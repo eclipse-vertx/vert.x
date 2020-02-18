@@ -244,41 +244,27 @@ public class FakeClusterManager implements ClusterManager {
 
     private final String address;
     private final List<RegistrationInfo> initialState;
-    private final ScheduledFuture<?> scheduledFuture;
 
-    private long demand = 0;
     private List<RegistrationInfo> lastState;
     private List<RegistrationInfo> newState;
     private Handler<List<RegistrationInfo>> handler;
+    private Handler<Void> endHandler;
+    private ScheduledFuture<?> scheduledFuture;
 
     FakeRegistrationStream(String address) {
       this.address = address;
-      List<RegistrationInfo> registrationInfos = registrations.get(address);
-      if (registrationInfos == null) {
-        initialState = Collections.emptyList();
-      } else {
-        synchronized (registrationInfos) {
-          initialState = Collections.unmodifiableList(new ArrayList<>(registrationInfos));
-        }
-      }
-      lastState = newState = initialState;
-      scheduledFuture = executorService.scheduleWithFixedDelay(this::checkUpdate, 5, 5, TimeUnit.MILLISECONDS);
+      initialState = getRegistrationInfos();
+      lastState = newState = null;
     }
 
-    private void checkUpdate() {
+    private List<RegistrationInfo> getRegistrationInfos() {
       List<RegistrationInfo> registrationInfos = registrations.get(address);
-      List<RegistrationInfo> ns;
-      if (registrationInfos == null) {
-        ns = Collections.emptyList();
-      } else {
-        synchronized (registrationInfos) {
-          ns = Collections.unmodifiableList(new ArrayList<>(registrationInfos));
-        }
+      if (registrationInfos == null || registrationInfos.isEmpty()) {
+        return Collections.emptyList();
       }
-      synchronized (this) {
-        newState = ns;
+      synchronized (registrationInfos) {
+        return Collections.unmodifiableList(new ArrayList<>(registrationInfos));
       }
-      emit();
     }
 
     @Override
@@ -298,52 +284,45 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public synchronized RegistrationStream handler(Handler<List<RegistrationInfo>> handler) {
-      synchronized (this) {
-        this.handler = handler;
-        if (handler == null) {
-          demand = 0;
-        }
-      }
-      if (handler != null) {
-        emit();
-      }
+      this.handler = handler;
       return this;
     }
 
     @Override
-    public synchronized RegistrationStream pause() {
-      demand = 0;
+    public synchronized RegistrationStream endHandler(Handler<Void> endHandler) {
+      this.endHandler = endHandler;
       return this;
     }
 
     @Override
-    public RegistrationStream resume() {
-      return fetch(Long.MAX_VALUE);
+    public synchronized void start() {
+      scheduledFuture = executorService.scheduleWithFixedDelay(this::checkUpdate, 5, 5, TimeUnit.MILLISECONDS);
     }
 
-    @Override
-    public RegistrationStream fetch(long amount) {
-      synchronized (this) {
-        try {
-          demand = Math.addExact(demand, amount);
-        } catch (ArithmeticException ignore) {
-          demand = Long.MAX_VALUE;
-        }
-      }
-      emit();
-      return this;
-    }
-
-    private void emit() {
+    private void checkUpdate() {
+      List<RegistrationInfo> ns = getRegistrationInfos();
       Runnable emission;
       synchronized (this) {
-        if (demand < 1 || handler == null || lastState.equals(newState)) {
+        newState = ns;
+        if (lastState != null && (lastState.isEmpty() || lastState.equals(newState))) {
           emission = null;
         } else {
           lastState = newState;
-          emission = () -> handler.handle(lastState);
-          if (demand != Long.MAX_VALUE) {
-            demand--;
+          if (lastState.isEmpty()) {
+            Handler<Void> e = endHandler;
+            emission = () -> {
+              if (e != null) {
+                e.handle(null);
+              }
+              stop();
+            };
+          } else {
+            Handler<List<RegistrationInfo>> h = handler;
+            emission = () -> {
+              if (h != null) {
+                h.handle(ns);
+              }
+            };
           }
         }
       }
@@ -353,14 +332,10 @@ public class FakeClusterManager implements ClusterManager {
     }
 
     @Override
-    public RegistrationStream endHandler(Handler<Void> endHandler) {
-      return this;
-    }
-
-    @Override
-    public void close() {
-      scheduledFuture.cancel(false);
-      handler(null);
+    public synchronized void stop() {
+      if (scheduledFuture != null) {
+        scheduledFuture.cancel(false);
+      }
     }
   }
 }

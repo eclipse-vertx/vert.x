@@ -18,6 +18,8 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.cluster.*;
 
 import java.util.*;
@@ -30,6 +32,8 @@ import java.util.concurrent.ConcurrentMap;
  * @author Thomas Segismont
  */
 public class DefaultDeliveryStrategy implements DeliveryStrategy {
+
+  private static final Logger logger = LoggerFactory.getLogger(DefaultDeliveryStrategy.class);
 
   private final ConcurrentMap<String, NodeSelector> selectors = new ConcurrentHashMap<>();
   private final TaskQueue taskQueue = new TaskQueue();
@@ -173,24 +177,20 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
 
   private void startListening(RegistrationStream registrationStream) {
     registrationStream
-      .exceptionHandler(t -> end(registrationStream))
-      .endHandler(v -> end(registrationStream))
-      .pause()
       .handler(registrationInfos -> registrationsUpdated(registrationStream, registrationInfos))
-      .fetch(1);
+      .exceptionHandler(t -> {
+        logger.debug("Exception while listening to registration changes", t);
+        removeSelector(registrationStream.address());
+      })
+      .endHandler(v -> removeSelector(registrationStream.address()))
+      .start();
   }
 
   private void registrationsUpdated(RegistrationStream registrationStream, List<RegistrationInfo> registrationInfos) {
-    if (!registrationInfos.isEmpty()) {
-      selectors.put(registrationStream.address(), NodeSelector.create(nodeInfo, registrationInfos));
-      registrationStream.fetch(1);
-    } else {
-      end(registrationStream);
-    }
+    selectors.put(registrationStream.address(), NodeSelector.create(nodeInfo, registrationInfos));
   }
 
-  private void end(RegistrationStream stream) {
-    stream.close();
-    selectors.remove(stream.address());
+  private void removeSelector(String address) {
+    selectors.remove(address);
   }
 }

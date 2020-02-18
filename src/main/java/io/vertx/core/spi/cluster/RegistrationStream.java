@@ -12,18 +12,20 @@
 package io.vertx.core.spi.cluster;
 
 import io.vertx.core.Handler;
-import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
 
 /**
- * A stream of  the state of {@link io.vertx.core.eventbus.EventBus} registrations for a given address.
+ * A stream of the state of {@link io.vertx.core.eventbus.EventBus} registrations for a given address.
  * <p>
- * Always invoke {@link #close()} eventually to avoid leaking resources.
+ * Invoke {@link #stop()} to stop listening before the end of the stream.
+ * Otherwise the implementation (specific to each cluster manager) could leak resources.
+ * <p>
+ * Beware that handlers for this stream can be invoked on any thread (specific to each cluster manager).
  *
  * @author Thomas Segismont
  */
-public interface RegistrationStream extends ReadStream<List<RegistrationInfo>> {
+public interface RegistrationStream {
 
   /**
    * Return the {@link io.vertx.core.eventbus.EventBus} address related to this stream.
@@ -33,33 +35,38 @@ public interface RegistrationStream extends ReadStream<List<RegistrationInfo>> {
   /**
    * Return the initial state of registrations for a given address.
    * <p>
-   * The result may no longer be available after a {@link #handler(Handler)} has been set.
+   * The result may no longer be available after {@link #start()} has been invoked.
    */
   List<RegistrationInfo> initialState();
 
-  @Override
-  RegistrationStream exceptionHandler(Handler<Throwable> handler);
-
-  @Override
+  /**
+   * Set the handler to be called when the list of registrations changes.
+   * <p>
+   * The handler is invoked only when the list is not empty.
+   */
   RegistrationStream handler(Handler<List<RegistrationInfo>> handler);
 
-  @Override
-  RegistrationStream pause();
+  /**
+   * Set the handler to be called when the stream is broken and should no longer be used.
+   * <p>
+   * It is not necessary to invoked {@link #stop()} afterwards.
+   */
+  RegistrationStream exceptionHandler(Handler<Throwable> handler);
 
-  @Override
-  RegistrationStream resume();
-
-  @Override
-  RegistrationStream fetch(long amount);
-
-  @Override
+  /**
+   * Set the handler to be called when there are no listeners anymore.
+   * <p>
+   * It is not necessary to invoked {@link #stop()} afterwards.
+   */
   RegistrationStream endHandler(Handler<Void> endHandler);
 
   /**
-   * Close the stream.
-   * <p>
-   * Note this has the same effect as calling {@link #handler(Handler)} with a {@code null} value.
-   * argument.
+   * Start listening.
    */
-  void close();
+  void start();
+
+  /**
+   * Stop listening.
+   */
+  void stop();
 }
