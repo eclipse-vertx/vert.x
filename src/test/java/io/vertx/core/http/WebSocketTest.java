@@ -41,6 +41,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.security.cert.X509Certificate;
@@ -2230,12 +2231,19 @@ public class WebSocketTest extends VertxTestBase {
     server.webSocketHandler(ws -> {
       ws.pongHandler(buff -> {
         assertEquals("ping", buff.toString());
-        testComplete();
+        ws.close();
       });
       ws.writePing(Buffer.buffer("ping"));
     }).listen(onSuccess(v -> {
       client = vertx.createHttpClient();
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {}));
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
+        ws.handler(buff -> {
+          fail("Should not receive a buffer");
+        });
+        ws.closeHandler(v2 -> {
+          testComplete();
+        });
+      }));
     }));
     await();
   }
@@ -2941,14 +2949,16 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testPausedDuringLastChunk() {
+  public void testPausedDuringClose() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .webSocketHandler(ws -> {
         AtomicBoolean paused = new AtomicBoolean(true);
         ws.pause();
-        ws.closeHandler(v -> {
+        ws.closeHandler(v1 -> {
           paused.set(false);
-          ws.resume();
+          vertx.runOnContext(v2 -> {
+            ws.resume();
+          });
         });
         ws.endHandler(v -> {
           assertFalse(paused.get());
@@ -2958,6 +2968,40 @@ public class WebSocketTest extends VertxTestBase {
       .listen(onSuccess(v -> {
         client = vertx.createHttpClient();
         client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
+          ws.close();
+        }));
+      }));
+    await();
+  }
+
+  @Test
+  public void testPausedBeforeClosed() {
+    waitFor(2);
+    Buffer expected = TestUtils.randomBuffer(128);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
+      .webSocketHandler(ws -> {
+        AtomicBoolean paused = new AtomicBoolean(true);
+        ws.pause();
+        ws.closeHandler(v1 -> {
+          paused.set(false);
+          vertx.runOnContext(v2 -> {
+            ws.resume();
+          });
+        });
+        ws.handler(buffer -> {
+          assertFalse(paused.get());
+          assertEquals(expected, buffer);
+          complete();
+        });
+        ws.endHandler(v -> {
+          assertFalse(paused.get());
+          complete();
+        });
+      })
+      .listen(onSuccess(v -> {
+        client = vertx.createHttpClient();
+        client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
+          ws.write(expected);
           ws.close();
         }));
       }));
