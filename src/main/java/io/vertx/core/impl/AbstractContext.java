@@ -218,9 +218,7 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public final List<String> processArgs() {
-    // As we are maintaining the launcher and starter class, choose the right one.
-    List<String> processArgument = VertxCommandLauncher.getProcessArguments();
-    return processArgument != null ? processArgument : Starter.PROCESS_ARGS;
+    return VertxCommandLauncher.getProcessArguments();
   }
 
   @Override

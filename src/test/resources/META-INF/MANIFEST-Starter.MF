@@ -1,2 +1,0 @@
-Main-Class: io.vertx.core.Starter
-Main-Verticle: java:io.vertx.test.verticles.TestVerticle
