@@ -24,7 +24,6 @@ import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.impl.InboundBuffer;
 
@@ -49,11 +48,12 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private final String binaryHandlerID;
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
-  private final InboundBuffer<Buffer> pending;
+  private final InboundBuffer<WebSocketFrameInternal> pending;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
   private String subProtocol;
   private Object metric;
+  private Handler<Buffer> handler;
   private Handler<WebSocketFrameInternal> frameHandler;
   private Handler<Buffer> pongHandler;
   private Handler<Void> drainHandler;
@@ -78,6 +78,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
     this.pending = new InboundBuffer<>(conn.getContext());
 
+    pending.handler(this::receiveFrame);
     pending.drainHandler(v -> {
       conn.doResume();
     });
@@ -351,31 +352,47 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void handleFrame(WebSocketFrameInternal frame) {
+    conn.reportBytesRead(frame.length());
+    if (frame.type() == FrameType.CLOSE) {
+      synchronized (conn) {
+        closeStatusCode = frame.closeStatusCode();
+        closeReason = frame.closeReason();
+      }
+    }
+    if (!pending.write(frame)) {
+      conn.doPause();
+    }
+  }
+
+  private void receiveFrame(WebSocketFrameInternal frame) {
+    Handler<WebSocketFrameInternal> frameHandler;
     synchronized (conn) {
-      if (frame.type() != FrameType.CLOSE) {
-        conn.reportBytesRead(frame.length());
-        if (!pending.write(frame.binaryData())) {
-          conn.doPause();
+      frameHandler = this.frameHandler;
+    }
+    if (frameHandler != null) {
+      frameHandler.handle(frame);
+    }
+    switch(frame.type()) {
+      case PONG:
+        Handler<Buffer> pongHandler = pongHandler();
+        if (pongHandler != null) {
+          pongHandler.handle(frame.binaryData());
         }
-      }
-      switch(frame.type()) {
-        case PONG:
-          if (pongHandler != null) {
-            pongHandler.handle(frame.binaryData());
-          }
-          break;
-        case CLOSE:
-          closeStatusCode = frame.closeStatusCode();
-          closeReason = frame.closeReason();
-          // Continue through
-        case TEXT:
-        case BINARY:
-        case CONTINUATION:
-          if (frameHandler != null) {
-            frameHandler.handle(frame);
-          }
-          break;
-      }
+        break;
+      case CLOSE:
+        Handler<Void> endHandler = endHandler();
+        if (endHandler != null) {
+          endHandler.handle(null);
+        }
+        break;
+      case TEXT:
+      case BINARY:
+      case CONTINUATION:
+        Handler<Buffer> handler = handler();
+        if (handler != null) {
+          handler.handle(frame.binaryData());
+        }
+        break;
     }
   }
 
@@ -496,6 +513,12 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
+  private Handler<Buffer> pongHandler() {
+    synchronized (conn) {
+      return pongHandler;
+    }
+  }
+
   void handleDrained() {
     if (drainHandler != null) {
       Handler<Void> dh = drainHandler;
@@ -514,10 +537,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   void handleClosed() {
     unregisterHandlers();
-    Handler<Void> endHandler;
     Handler<Void> closeHandler;
     synchronized (conn) {
-      endHandler = pending.isPaused() ? null : this.endHandler;
       closeHandler = this.closeHandler;
       closed = true;
       binaryHandlerRegistration = null;
@@ -525,9 +546,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
     if (closeHandler != null) {
       closeHandler.handle(null);
-    }
-    if (endHandler != null) {
-      endHandler.handle(null);
     }
   }
 
@@ -565,8 +583,14 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       if (handler != null) {
         checkClosed();
       }
-      pending.handler(handler);
+      this.handler = handler;
       return (S) this;
+    }
+  }
+
+  private Handler<Buffer> handler() {
+    synchronized (conn) {
+      return handler;
     }
   }
 
@@ -578,6 +602,12 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       }
       this.endHandler = handler;
       return (S) this;
+    }
+  }
+
+  private Handler<Void> endHandler() {
+    synchronized (conn) {
+      return endHandler;
     }
   }
 
@@ -612,34 +642,19 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public S pause() {
-    if (!isClosed()) {
-      pending.pause();
-    }
+    pending.pause();
     return (S) this;
   }
 
   @Override
   public S resume() {
-    synchronized (this) {
-      if (isClosed()) {
-        Handler<Void> handler = endHandler;
-        endHandler = null;
-        if (handler != null) {
-          ContextInternal ctx = conn.getContext();
-          ctx.runOnContext(v -> handler.handle(null));
-        }
-      } else {
-        pending.resume();
-      }
-    }
+    pending.resume();
     return (S) this;
   }
 
   @Override
   public S fetch(long amount) {
-    if (!isClosed()) {
-      pending.fetch(amount);
-    }
+    pending.fetch(amount);
     return (S) this;
   }
 
