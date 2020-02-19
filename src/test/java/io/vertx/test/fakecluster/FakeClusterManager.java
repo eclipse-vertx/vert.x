@@ -187,10 +187,10 @@ public class FakeClusterManager implements ClusterManager {
         registrationInfos.removeIf(registrationInfo -> registrationInfo.getNodeId().equals(nodeID));
       }
     });
-    nodeInfos.remove(nodeID);
     vertx.executeBlocking(fut -> {
       synchronized (this) {
         if (nodeID != null) {
+          nodeInfos.remove(nodeID);
           if (nodeListener != null) {
             nodeListener = null;
           }
