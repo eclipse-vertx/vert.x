@@ -16,7 +16,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -39,7 +38,6 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
   private static final Logger logger = LoggerFactory.getLogger(DefaultDeliveryStrategy.class);
 
   private final ConcurrentMap<String, NodeSelector> selectors = new ConcurrentHashMap<>();
-  private final TaskQueue taskQueue = new TaskQueue();
 
   private ClusterManager clusterManager;
   private String nodeId;
