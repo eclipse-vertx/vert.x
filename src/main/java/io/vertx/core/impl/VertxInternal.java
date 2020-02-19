@@ -116,8 +116,6 @@ public interface VertxInternal extends Vertx {
 
   void failDuringFailover(boolean fail);
 
-  String getNodeID();
-
   File resolveFile(String fileName);
 
   /**

@@ -674,11 +674,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public String getNodeID() {
-    return clusterManager.getNodeID();
-  }
-
-  @Override
   public Future<Void> undeploy(String deploymentID) {
     Promise<Void> promise = Promise.promise();
     undeploy(deploymentID, promise);

@@ -23,10 +23,7 @@ import io.vertx.core.shareddata.Lock;
 import io.vertx.core.shareddata.impl.AsynchronousCounter;
 import io.vertx.core.shareddata.impl.LocalAsyncLocks;
 import io.vertx.core.shareddata.impl.LocalAsyncMapImpl;
-import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.NodeListener;
-import io.vertx.core.spi.cluster.RegistrationInfo;
-import io.vertx.core.spi.cluster.RegistrationStream;
+import io.vertx.core.spi.cluster.*;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -38,6 +35,7 @@ public class FakeClusterManager implements ClusterManager {
   private static Map<String, FakeClusterManager> nodes = Collections.synchronizedMap(new LinkedHashMap<>());
 
   private static ConcurrentMap<String, List<RegistrationInfo>> registrations = new ConcurrentHashMap<>();
+  private static ConcurrentMap<String, NodeInfo> nodeInfos = new ConcurrentHashMap<>();
 
   private static ConcurrentMap<String, LocalAsyncMapImpl> asyncMaps = new ConcurrentHashMap<>();
   private static ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();
@@ -142,7 +140,7 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public String getNodeID() {
+  public String getNodeId() {
     return nodeID;
   }
 
@@ -161,6 +159,17 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
+  public Future<Void> setNodeInfo(NodeInfo nodeInfo) {
+    nodeInfos.put(nodeID, nodeInfo);
+    return vertx.getOrCreateContext().succeededFuture();
+  }
+
+  @Override
+  public Future<NodeInfo> getNodeInfo(String nodeId) {
+    return vertx.getOrCreateContext().succeededFuture(nodeInfos.get(nodeId));
+  }
+
+  @Override
   public void join(Handler<AsyncResult<Void>> resultHandler) {
     vertx.executeBlocking(fut -> {
       synchronized (this) {
@@ -175,9 +184,10 @@ public class FakeClusterManager implements ClusterManager {
   public void leave(Handler<AsyncResult<Void>> resultHandler) {
     registrations.forEach((address, registrationInfos) -> {
       synchronized (registrationInfos) {
-        registrationInfos.removeIf(registrationInfo -> registrationInfo.getNodeInfo().getNodeId().equals(nodeID));
+        registrationInfos.removeIf(registrationInfo -> registrationInfo.getNodeId().equals(nodeID));
       }
     });
+    nodeInfos.remove(nodeID);
     vertx.executeBlocking(fut -> {
       synchronized (this) {
         if (nodeID != null) {

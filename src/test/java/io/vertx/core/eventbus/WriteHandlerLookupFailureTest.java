@@ -14,7 +14,6 @@ package io.vertx.core.eventbus;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.impl.DefaultDeliveryStrategy;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -35,7 +34,7 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
       .setPort(0)
       .setDeliveryStrategy(new DefaultDeliveryStrategy() {
         @Override
-        public Future<List<NodeInfo>> chooseNodes(Message<?> message) {
+        public Future<List<String>> chooseNodes(Message<?> message) {
           return Future.failedFuture(cause);
         }
       });

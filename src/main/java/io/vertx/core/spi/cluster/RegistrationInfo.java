@@ -20,19 +20,19 @@ import java.util.Objects;
  */
 public final class RegistrationInfo {
 
-  private final NodeInfo nodeInfo;
+  private final String nodeId;
   private final long seq;
   private final boolean localOnly;
 
-  public RegistrationInfo(NodeInfo nodeInfo, long seq, boolean localOnly) {
-    Objects.requireNonNull(nodeInfo, "nodeInfo is null");
-    this.nodeInfo = nodeInfo;
+  public RegistrationInfo(String nodeId, long seq, boolean localOnly) {
+    Objects.requireNonNull(nodeId, "nodeId is null");
+    this.nodeId = nodeId;
     this.seq = seq;
     this.localOnly = localOnly;
   }
 
-  public NodeInfo getNodeInfo() {
-    return nodeInfo;
+  public String getNodeId() {
+    return nodeId;
   }
 
   public long getSeq() {
@@ -52,12 +52,12 @@ public final class RegistrationInfo {
 
     if (seq != that.seq) return false;
     if (localOnly != that.localOnly) return false;
-    return nodeInfo.equals(that.nodeInfo);
+    return nodeId.equals(that.nodeId);
   }
 
   @Override
   public int hashCode() {
-    int result = nodeInfo.hashCode();
+    int result = nodeId.hashCode();
     result = 31 * result + (int) (seq ^ (seq >>> 32));
     result = 31 * result + (localOnly ? 1 : 0);
     return result;
@@ -66,7 +66,7 @@ public final class RegistrationInfo {
   @Override
   public String toString() {
     return "RegistrationInfo{" +
-      "nodeInfo=" + nodeInfo +
+      "nodeId=" + nodeId +
       ", seq=" + seq +
       ", localOnly=" + localOnly +
       '}';

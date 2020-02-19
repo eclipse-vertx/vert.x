@@ -56,8 +56,8 @@ public class ClusterManagerDelegate implements ClusterManager {
   }
 
   @Override
-  public String getNodeID() {
-    return clusterManager.getNodeID();
+  public String getNodeId() {
+    return clusterManager.getNodeId();
   }
 
   @Override
@@ -68,6 +68,16 @@ public class ClusterManagerDelegate implements ClusterManager {
   @Override
   public void nodeListener(NodeListener listener) {
     clusterManager.nodeListener(listener);
+  }
+
+  @Override
+  public Future<Void> setNodeInfo(NodeInfo nodeInfo) {
+    return clusterManager.setNodeInfo(nodeInfo);
+  }
+
+  @Override
+  public Future<NodeInfo> getNodeInfo(String nodeId) {
+    return clusterManager.getNodeInfo(nodeId);
   }
 
   @Override

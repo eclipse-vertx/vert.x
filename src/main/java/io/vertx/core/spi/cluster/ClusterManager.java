@@ -62,7 +62,7 @@ public interface ClusterManager {
   /**
    * Return the unique node ID for this node
    */
-  String getNodeID();
+  String getNodeId();
 
   /**
    * Return a list of node IDs corresponding to the nodes in the cluster
@@ -76,6 +76,18 @@ public interface ClusterManager {
    * @param listener
    */
   void nodeListener(NodeListener listener);
+
+  /**
+   * Store the details about this clustered node.
+   */
+  Future<Void> setNodeInfo(NodeInfo nodeInfo);
+
+  /**
+   * Get details about a clustered Vert.x node.
+   *
+   * @param nodeId the clustered node id
+   */
+  Future<NodeInfo> getNodeInfo(String nodeId);
 
   /**
    * Join the cluster

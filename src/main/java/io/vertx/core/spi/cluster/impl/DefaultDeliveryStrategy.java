@@ -20,7 +20,10 @@ import io.vertx.core.impl.TaskQueue;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.spi.cluster.*;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.DeliveryStrategy;
+import io.vertx.core.spi.cluster.RegistrationInfo;
+import io.vertx.core.spi.cluster.RegistrationStream;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +42,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
   private final TaskQueue taskQueue = new TaskQueue();
 
   private ClusterManager clusterManager;
-  private NodeInfo nodeInfo;
+  private String nodeId;
 
   @Override
   public void setVertx(VertxInternal vertx) {
@@ -47,12 +50,12 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
   }
 
   @Override
-  public void setNodeInfo(NodeInfo nodeInfo) {
-    this.nodeInfo = nodeInfo;
+  public void eventBusStarted() {
+    nodeId = clusterManager.getNodeId();
   }
 
   @Override
-  public Future<List<NodeInfo>> chooseNodes(Message<?> message) {
+  public Future<List<String>> chooseNodes(Message<?> message) {
     return selector(message.address()).map(selector -> selector.selectNodes(message));
   }
 
@@ -151,7 +154,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       return;
     }
 
-    NodeSelector candidate = NodeSelector.create(nodeInfo, registrationStream.initialState());
+    NodeSelector candidate = NodeSelector.create(nodeId, registrationStream.initialState());
     NodeSelector previous = selectors.putIfAbsent(address, candidate);
     NodeSelector current = previous != null ? previous : candidate;
 
@@ -187,7 +190,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
   }
 
   private void registrationsUpdated(RegistrationStream registrationStream, List<RegistrationInfo> registrationInfos) {
-    selectors.put(registrationStream.address(), NodeSelector.create(nodeInfo, registrationInfos));
+    selectors.put(registrationStream.address(), NodeSelector.create(nodeId, registrationInfos));
   }
 
   private void removeSelector(String address) {

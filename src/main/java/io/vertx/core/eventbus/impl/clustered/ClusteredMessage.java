@@ -21,7 +21,6 @@ import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.MessageImpl;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.spi.cluster.NodeInfo;
 
 import java.util.List;
 import java.util.Map;
@@ -35,8 +34,8 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
   private static final byte WIRE_PROTOCOL_VERSION = 1;
 
-  private NodeInfo sender;
-  private NodeInfo repliedTo;
+  private String sender;
+  private String repliedTo;
   private Buffer wireBuffer;
   private int bodyPos;
   private int headersPos;
@@ -47,7 +46,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     super(bus);
   }
 
-  public ClusteredMessage(NodeInfo sender, String address, MultiMap headers, U sentBody,
+  public ClusteredMessage(String sender, String address, MultiMap headers, U sentBody,
                           MessageCodec<U, V> messageCodec, boolean send, EventBusImpl bus) {
     super(address, headers, sentBody, messageCodec, send, bus);
     this.sender = sender;
@@ -124,9 +123,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     } else {
       buffer.appendInt(0);
     }
-    writeString(buffer, sender.getNodeId());
-    buffer.appendInt(sender.getPort());
-    writeString(buffer, sender.getHost());
+    writeString(buffer, sender);
     encodeHeaders(buffer);
     writeBody(buffer);
     buffer.setInt(0, buffer.length() - 4);
@@ -176,20 +173,12 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     length = buffer.getInt(pos);
     pos += 4;
     bytes = buffer.getBytes(pos, pos + length);
-    String senderId = new String(bytes, CharsetUtil.UTF_8);
-    pos += length;
-    int senderPort = buffer.getInt(pos);
-    pos += 4;
-    length = buffer.getInt(pos);
-    pos += 4;
-    bytes = buffer.getBytes(pos, pos + length);
-    String senderHost = new String(bytes, CharsetUtil.UTF_8);
+    sender = new String(bytes, CharsetUtil.UTF_8);
     pos += length;
     headersPos = pos;
     int headersLength = buffer.getInt(pos);
     pos += headersLength;
     bodyPos = pos;
-    sender = new NodeInfo(senderId, senderHost, senderPort, null);
     wireBuffer = buffer;
     fromWire = true;
   }
@@ -250,11 +239,11 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     buff.appendBytes(strBytes);
   }
 
-  NodeInfo getSender() {
+  String getSender() {
     return sender;
   }
 
-  NodeInfo getRepliedTo() {
+  String getRepliedTo() {
     return repliedTo;
   }
 

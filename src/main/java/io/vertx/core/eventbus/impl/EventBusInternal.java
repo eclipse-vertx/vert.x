@@ -14,7 +14,6 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.spi.cluster.NodeInfo;
 
 public interface EventBusInternal extends EventBus {
 
@@ -24,13 +23,6 @@ public interface EventBusInternal extends EventBus {
    * @param completionHandler handler will be called when event bus is started
    */
   void start(Handler<AsyncResult<Void>> completionHandler);
-
-  /**
-   * Return this node's {@link NodeInfo} when the {@link EventBus} is clustered;
-   */
-  default NodeInfo getNodeInfo() {
-    return null;
-  }
 
   /**
    * Close the event bus and release any resources held.

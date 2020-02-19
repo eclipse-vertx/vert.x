@@ -40,13 +40,13 @@ public interface DeliveryStrategy {
   /**
    * Invoked after the {@link io.vertx.core.eventbus.EventBus} has started
    */
-  void setNodeInfo(NodeInfo nodeInfo);
+  void eventBusStarted();
 
   /**
    * Choose nodes the given {@code message} should be delivered to.
    * <p>
    * The result must not be null and must hold distinct values.
    */
-  Future<List<NodeInfo>> chooseNodes(Message<?> message);
+  Future<List<String>> chooseNodes(Message<?> message);
 
 }

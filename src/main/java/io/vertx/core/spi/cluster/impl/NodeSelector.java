@@ -12,17 +12,14 @@
 package io.vertx.core.spi.cluster.impl;
 
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author Thomas Segismont
@@ -31,34 +28,34 @@ class NodeSelector {
 
   static final NodeSelector EMPTY_SELECTOR = new NodeSelector(Collections.emptyList());
 
-  private final List<NodeInfo> accessible;
-  private final List<NodeInfo> distinct;
+  private final List<String> accessible;
+  private final List<String> distinct;
   private final AtomicInteger index = new AtomicInteger(0);
 
-  private NodeSelector(List<NodeInfo> accessible) {
+  private NodeSelector(List<String> accessible) {
     this.accessible = accessible;
     if (accessible.isEmpty()) {
       distinct = Collections.emptyList();
     } else {
       distinct = accessible.stream()
         .distinct()
-        .collect(collectingAndThen(toCollection(ArrayList::new), Collections::unmodifiableList));
+        .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
   }
 
-  public static NodeSelector create(NodeInfo nodeInfo, List<RegistrationInfo> registrationInfos) {
-    List<NodeInfo> nodeInfos = registrationInfos.stream()
-      .filter(registrationInfo -> isNodeAccessible(nodeInfo, registrationInfo))
-      .map(RegistrationInfo::getNodeInfo)
-      .collect(Collectors.toList());
-    return !nodeInfos.isEmpty() ? new NodeSelector(nodeInfos) : NodeSelector.EMPTY_SELECTOR;
+  public static NodeSelector create(String nodeId, List<RegistrationInfo> registrationInfos) {
+    List<String> nodeIds = registrationInfos.stream()
+      .filter(registrationInfo -> isNodeAccessible(nodeId, registrationInfo))
+      .map(RegistrationInfo::getNodeId)
+      .collect(toList());
+    return !nodeIds.isEmpty() ? new NodeSelector(nodeIds) : NodeSelector.EMPTY_SELECTOR;
   }
 
-  private static boolean isNodeAccessible(NodeInfo nodeInfo, RegistrationInfo registrationInfo) {
-    return !registrationInfo.isLocalOnly() || registrationInfo.getNodeInfo().equals(nodeInfo);
+  private static boolean isNodeAccessible(String nodeId, RegistrationInfo registrationInfo) {
+    return !registrationInfo.isLocalOnly() || registrationInfo.getNodeId().equals(nodeId);
   }
 
-  List<NodeInfo> selectNodes(Message<?> message) {
+  List<String> selectNodes(Message<?> message) {
     if (accessible.isEmpty()) {
       return Collections.emptyList();
     }

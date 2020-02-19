@@ -40,7 +40,7 @@ class ConnectionHolder {
 
   private final ClusteredEventBus eventBus;
   private final NetClient client;
-  private final NodeInfo nodeInfo;
+  private final String remoteNodeId;
   private final Vertx vertx;
   private final EventBusMetrics metrics;
 
@@ -50,9 +50,9 @@ class ConnectionHolder {
   private long timeoutID = -1;
   private long pingTimeoutID = -1;
 
-  ConnectionHolder(ClusteredEventBus eventBus, NodeInfo nodeInfo, EventBusOptions options) {
+  ConnectionHolder(ClusteredEventBus eventBus, String remoteNodeId, EventBusOptions options) {
     this.eventBus = eventBus;
-    this.nodeInfo = nodeInfo;
+    this.remoteNodeId = remoteNodeId;
     this.vertx = eventBus.vertx();
     this.metrics = eventBus.getMetrics();
     NetClientOptions clientOptions = new NetClientOptions(options.toJson());
@@ -61,24 +61,26 @@ class ConnectionHolder {
     client = new NetClientImpl(eventBus.vertx(), clientOptions, false);
   }
 
-  synchronized void connect() {
-    if (connected) {
-      throw new IllegalStateException("Already connected");
-    }
-    client.connect(nodeInfo.getPort(), nodeInfo.getHost(), res -> {
-      if (res.succeeded()) {
-        connected(res.result());
-      } else {
-        log.warn("Connecting to server " + nodeInfo + " failed", res.cause());
-        close(res.cause());
+  void connect() {
+    synchronized (this) {
+      if (connected) {
+        throw new IllegalStateException("Already connected");
       }
-    });
+    }
+    eventBus.vertx().getClusterManager().getNodeInfo(remoteNodeId)
+      .map(NodeInfo::getAddress)
+      .flatMap(address -> client.connect(address.getPort(), address.getHost()))
+      .onSuccess(this::connected)
+      .onFailure(t -> {
+        log.warn("Connecting to server " + remoteNodeId + " failed", t);
+        close(t);
+      });
   }
 
   // TODO optimise this (contention on monitor)
   synchronized void writeMessage(OutboundDeliveryContext<?> ctx) {
     if (connected) {
-      Buffer data = ((ClusteredMessage)ctx.message).encodeToWire();
+      Buffer data = ((ClusteredMessage) ctx.message).encodeToWire();
       if (metrics != null) {
         metrics.messageWritten(ctx.message.address(), data.length());
       }
@@ -86,7 +88,7 @@ class ConnectionHolder {
     } else {
       if (pending == null) {
         if (log.isDebugEnabled()) {
-          log.debug("Not connected to server " + nodeInfo + " - starting queuing");
+          log.debug("Not connected to server " + remoteNodeId + " - starting queuing");
         }
         pending = new ArrayDeque<>();
       }
@@ -119,9 +121,9 @@ class ConnectionHolder {
     }
     // The holder can be null or different if the target server is restarted with same nodeInfo
     // before the cleanup for the previous one has been processed
-    if (eventBus.connections().remove(nodeInfo, this)) {
+    if (eventBus.connections().remove(remoteNodeId, this)) {
       if (log.isDebugEnabled()) {
-        log.debug("Cluster connection closed for server " + nodeInfo);
+        log.debug("Cluster connection closed for server " + remoteNodeId);
       }
     }
   }
@@ -132,11 +134,11 @@ class ConnectionHolder {
       // If we don't get a pong back in time we close the connection
       timeoutID = vertx.setTimer(options.getClusterPingReplyInterval(), id2 -> {
         // Didn't get pong in time - consider connection dead
-        log.warn("No pong from server " + nodeInfo + " - will consider it dead");
+        log.warn("No pong from server " + remoteNodeId + " - will consider it dead");
         close();
       });
       ClusteredMessage pingMessage =
-        new ClusteredMessage<>(nodeInfo, PING_ADDRESS, null, null, new PingMessageCodec(), true, eventBus);
+        new ClusteredMessage<>(remoteNodeId, PING_ADDRESS, null, null, new PingMessageCodec(), true, eventBus);
       Buffer data = pingMessage.encodeToWire();
       socket.write(data);
     });
@@ -158,7 +160,7 @@ class ConnectionHolder {
     schedulePing();
     if (pending != null) {
       if (log.isDebugEnabled()) {
-        log.debug("Draining the queue for server " + nodeInfo);
+        log.debug("Draining the queue for server " + remoteNodeId);
       }
       for (OutboundDeliveryContext<?> ctx : pending) {
         Buffer data = ((ClusteredMessage<?, ?>)ctx.message).encodeToWire();

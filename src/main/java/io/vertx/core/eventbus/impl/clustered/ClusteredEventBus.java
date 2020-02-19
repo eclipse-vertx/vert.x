@@ -22,10 +22,7 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
-import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.DeliveryStrategy;
-import io.vertx.core.spi.cluster.NodeInfo;
-import io.vertx.core.spi.cluster.RegistrationInfo;
+import io.vertx.core.spi.cluster.*;
 
 import java.util.List;
 import java.util.Objects;
@@ -53,9 +50,10 @@ public class ClusteredEventBus extends EventBusImpl {
   private final DeliveryStrategy deliveryStrategy;
   private final AtomicLong handlerSequence = new AtomicLong(0);
 
-  private final ConcurrentMap<NodeInfo, ConnectionHolder> connections = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, ConnectionHolder> connections = new ConcurrentHashMap<>();
 
   private NodeInfo nodeInfo;
+  private String nodeId;
   private NetServer server;
 
   public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager, DeliveryStrategy deliveryStrategy) {
@@ -105,21 +103,20 @@ public class ClusteredEventBus extends EventBusImpl {
     deliveryStrategy.setVertx(vertx);
     server = vertx.createNetServer(getServerOptions());
     server.connectHandler(getServerHandler());
-    server.listen(ar -> {
-      if (ar.succeeded()) {
+    server.listen()
+      .<Void>mapEmpty()
+      .onSuccess(v -> {
         int serverPort = getClusterPublicPort(options, server.actualPort());
         String serverHost = getClusterPublicHost(options);
-        nodeInfo = new NodeInfo(clusterManager.getNodeID(), serverHost, serverPort, options.getNodeMetaData());
-        deliveryStrategy.setNodeInfo(nodeInfo);
+        nodeInfo = new NodeInfo(new NodeAddress(serverHost, serverPort), options.getNodeMetaData());
+        nodeId = clusterManager.getNodeId();
+      })
+      .flatMap(v -> clusterManager.setNodeInfo(nodeInfo))
+      .onSuccess(v -> {
         started = true;
-      }
-      resultHandler.handle(ar.mapEmpty());
-    });
-  }
-
-  @Override
-  public NodeInfo getNodeInfo() {
-    return nodeInfo;
+        deliveryStrategy.eventBusStarted();
+      })
+      .setHandler(resultHandler);
   }
 
   @Override
@@ -151,7 +148,7 @@ public class ClusteredEventBus extends EventBusImpl {
     Objects.requireNonNull(address, "no null address accepted");
     MessageCodec codec = codecManager.lookupCodec(body, codecName);
     @SuppressWarnings("unchecked")
-    ClusteredMessage msg = new ClusteredMessage(nodeInfo, address, headers, body, codec, send, this);
+    ClusteredMessage msg = new ClusteredMessage(nodeId, address, headers, body, codec, send, this);
     return msg;
   }
 
@@ -159,7 +156,7 @@ public class ClusteredEventBus extends EventBusImpl {
   protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Handler<AsyncResult<Void>> completionHandler) {
     if (!handlerHolder.isReplyHandler()) {
       RegistrationInfo registrationInfo = new RegistrationInfo(
-        nodeInfo,
+        nodeId,
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
@@ -178,7 +175,7 @@ public class ClusteredEventBus extends EventBusImpl {
   protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, Promise<Void> completionHandler) {
     if (!handlerHolder.isReplyHandler()) {
       RegistrationInfo registrationInfo = new RegistrationInfo(
-        nodeInfo,
+        nodeId,
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
@@ -275,11 +272,11 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToNodes(List<NodeInfo> nodeList, OutboundDeliveryContext<T> sendContext) {
-    if (!nodeList.isEmpty()) {
-      for (NodeInfo nodeInfo : nodeList) {
-        if (!nodeInfo.equals(this.nodeInfo)) {
-          sendRemote(sendContext, nodeInfo, sendContext.message);
+  private <T> void sendToNodes(List<String> nodeIds, OutboundDeliveryContext<T> sendContext) {
+    if (!nodeIds.isEmpty()) {
+      for (String nid : nodeIds) {
+        if (!nid.equals(nodeId)) {
+          sendRemote(sendContext, nid, sendContext.message);
         } else {
           super.sendOrPub(sendContext);
         }
@@ -289,27 +286,27 @@ public class ClusteredEventBus extends EventBusImpl {
     }
   }
 
-  private <T> void clusteredSendReply(NodeInfo replyDest, OutboundDeliveryContext<T> sendContext) {
+  private <T> void clusteredSendReply(String replyDest, OutboundDeliveryContext<T> sendContext) {
     MessageImpl message = sendContext.message;
-    if (!replyDest.equals(nodeInfo)) {
+    if (!replyDest.equals(nodeId)) {
       sendRemote(sendContext, replyDest, message);
     } else {
       super.sendOrPub(sendContext);
     }
   }
 
-  private void sendRemote(OutboundDeliveryContext<?> sendContext, NodeInfo remoteNodeInfo, MessageImpl message) {
+  private void sendRemote(OutboundDeliveryContext<?> sendContext, String remoteNodeId, MessageImpl message) {
     // We need to deal with the fact that connecting can take some time and is async, and we cannot
     // block to wait for it. So we add any sends to a pending list if not connected yet.
     // Once we connect we send them.
     // This can also be invoked concurrently from different threads, so it gets a little
     // tricky
-    ConnectionHolder holder = connections.get(remoteNodeInfo);
+    ConnectionHolder holder = connections.get(remoteNodeId);
     if (holder == null) {
       // When process is creating a lot of connections this can take some time
       // so increase the timeout
-      holder = new ConnectionHolder(this, remoteNodeInfo, options);
-      ConnectionHolder prevHolder = connections.putIfAbsent(remoteNodeInfo, holder);
+      holder = new ConnectionHolder(this, remoteNodeId, options);
+      ConnectionHolder prevHolder = connections.putIfAbsent(remoteNodeId, holder);
       if (prevHolder != null) {
         // Another one sneaked in
         holder = prevHolder;
@@ -320,7 +317,7 @@ public class ClusteredEventBus extends EventBusImpl {
     holder.writeMessage(sendContext);
   }
 
-  ConcurrentMap<NodeInfo, ConnectionHolder> connections() {
+  ConcurrentMap<String, ConnectionHolder> connections() {
     return connections;
   }
 
