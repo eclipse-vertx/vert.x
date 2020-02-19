@@ -198,16 +198,16 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public Future<Void> register(RegistrationInfo registrationInfo) {
-    registrations.computeIfAbsent(registrationInfo.getAddress(), k -> Collections.synchronizedList(new ArrayList<>()))
+  public Future<Void> register(String address, RegistrationInfo registrationInfo) {
+    registrations.computeIfAbsent(address, k -> Collections.synchronizedList(new ArrayList<>()))
       .add(registrationInfo);
     return vertx.getOrCreateContext().succeededFuture();
   }
 
   @Override
-  public Future<Void> unregister(RegistrationInfo registrationInfo) {
+  public Future<Void> unregister(String address, RegistrationInfo registrationInfo) {
     Future<Void> result;
-    List<RegistrationInfo> infos = registrations.get(registrationInfo.getAddress());
+    List<RegistrationInfo> infos = registrations.get(address);
     Promise<Void> promise = vertx.promise();
     if (infos != null && infos.remove(registrationInfo)) {
       promise.complete();

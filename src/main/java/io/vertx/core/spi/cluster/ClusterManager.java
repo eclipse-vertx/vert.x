@@ -97,17 +97,17 @@ public interface ClusterManager {
   /**
    * Share a new messaging handler registration with other nodes in the cluster.
    */
-  Future<Void> register(RegistrationInfo registrationInfo);
+  Future<Void> register(String address, RegistrationInfo registrationInfo);
 
   /**
    * Signal removal of a messaging handler registration to other nodes in the cluster.
    */
-  Future<Void> unregister(RegistrationInfo registrationInfo);
+  Future<Void> unregister(String address, RegistrationInfo registrationInfo);
 
   /**
    * Get a {@link RegistrationStream} for the given {@code address}.
    * <p>
-   * After {@link #register(RegistrationInfo)} or {@link #unregister(RegistrationInfo)} is invoked
+   * After {@link #register(String, RegistrationInfo)} or {@link #unregister(String, RegistrationInfo)} is invoked
    * on this node or any other node in the cluster, the stream will emit a new list of {@link RegistrationInfo}.
    * This list represents the new state of registrations for the given {@code address}.
    */

@@ -86,13 +86,13 @@ public class ClusterManagerDelegate implements ClusterManager {
   }
 
   @Override
-  public Future<Void> register(RegistrationInfo registrationInfo) {
-    return clusterManager.register(registrationInfo);
+  public Future<Void> register(String address, RegistrationInfo registrationInfo) {
+    return clusterManager.register(address, registrationInfo);
   }
 
   @Override
-  public Future<Void> unregister(RegistrationInfo registrationInfo) {
-    return clusterManager.unregister(registrationInfo);
+  public Future<Void> unregister(String address, RegistrationInfo registrationInfo) {
+    return clusterManager.unregister(address, registrationInfo);
   }
 
   @Override

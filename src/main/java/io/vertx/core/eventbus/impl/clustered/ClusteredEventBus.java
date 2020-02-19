@@ -160,11 +160,10 @@ public class ClusteredEventBus extends EventBusImpl {
     if (!handlerHolder.isReplyHandler()) {
       RegistrationInfo registrationInfo = new RegistrationInfo(
         nodeInfo,
-        handlerHolder.getHandler().address,
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      clusterManager.register(registrationInfo).onComplete(completionHandler);
+      clusterManager.register(handlerHolder.getHandler().address, registrationInfo).onComplete(completionHandler);
     } else {
       completionHandler.handle(Future.succeededFuture());
     }
@@ -180,11 +179,10 @@ public class ClusteredEventBus extends EventBusImpl {
     if (!handlerHolder.isReplyHandler()) {
       RegistrationInfo registrationInfo = new RegistrationInfo(
         nodeInfo,
-        handlerHolder.getHandler().address,
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      Future<Void> unregisterFuture = clusterManager.unregister(registrationInfo);
+      Future<Void> unregisterFuture = clusterManager.unregister(handlerHolder.getHandler().address, registrationInfo);
       if (completionHandler != null) {
         unregisterFuture.onComplete(completionHandler);
       } else {
