@@ -54,8 +54,8 @@ public class CreateVertxTest extends VertxTestBase {
   public void testCreateClusteredVertxAsyncDetectJoinFailure() {
     VertxOptions options = new VertxOptions().setClusterManager(new FakeClusterManager(){
       @Override
-      public void join(Handler<AsyncResult<Void>> resultHandler) {
-        resultHandler.handle(Future.failedFuture(new Exception("joinfailure")));
+      public Future<Void> join() {
+        return Future.failedFuture(new Exception("joinfailure"));
       }
     });
     clusteredVertx(options, ar -> {

@@ -169,68 +169,50 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   void init() {
-    eventBus.start(ar -> {});
+    eventBus.start();
     if (metrics != null) {
       metrics.vertxCreated(this);
     }
   }
 
-  void joinCluster(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+  void initClustered(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     clusterManager.setVertx(this);
-    clusterManager.join(ar1 -> {
-      if (ar1.succeeded()) {
-        createHaManager(options, resultHandler);
-      } else {
-        log.error("Failed to join cluster", ar1.cause());
-        close(ar2 -> resultHandler.handle(Future.failedFuture(ar1.cause())));
-      }
-    });
+    clusterManager.join()
+      .compose(v -> createHaManager(options))
+      .compose(v -> eventBus.start())
+      .compose(v -> initializeHaManager())
+      .onSuccess(v -> {
+        if (metrics != null) {
+          metrics.vertxCreated(this);
+        }
+      })
+      .<Vertx>map(this)
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          resultHandler.handle(ar);
+        } else {
+          log.error("Failed to initialize clustered Vert.x", ar.cause());
+          close().onComplete(ignore -> resultHandler.handle(ar));
+        }
+      });
   }
 
-  private void createHaManager(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    this.<Map<String, String>>executeBlocking(fut -> {
+  private Future<Void> createHaManager(VertxOptions options) {
+    return this.<Map<String, String>>executeBlocking(fut -> {
       fut.complete(clusterManager.getSyncMap(CLUSTER_MAP_NAME));
-    }, false, ar1 -> {
-      if (ar1.succeeded()) {
-        Map<String, String> clusterMap = ar1.result();
-        haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterMap, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
-        startEventBus(resultHandler);
-      } else {
-        log.error("Failed to start HAManager", ar1.cause());
-        close(ar2 -> resultHandler.handle(Future.failedFuture(ar1.cause())));
-      }
-    });
+    }, false).onSuccess(clusterMap -> {
+      haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterMap, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
+    }).mapEmpty();
   }
 
-  private void startEventBus(Handler<AsyncResult<Vertx>> resultHandler) {
-    eventBus.start(ar1 -> {
-      if (ar1.succeeded()) {
-        initializeHaManager(resultHandler);
-      } else {
-        log.error("Failed to start event bus", ar1.cause());
-        close(ar2 -> resultHandler.handle(Future.failedFuture(ar1.cause())));
-      }
-    });
-  }
-
-  private void initializeHaManager(Handler<AsyncResult<Vertx>> resultHandler) {
-    this.executeBlocking(fut -> {
+  private Future<Void> initializeHaManager() {
+    return this.executeBlocking(fut -> {
       // Init the manager (i.e register listener and check the quorum)
       // after the event bus has been fully started and updated its state
       // it will have also set the clustered changed view handler on the ha manager
       haManager.init();
       fut.complete();
-    }, false, ar1 -> {
-      if (ar1.succeeded()) {
-        if (metrics != null) {
-          metrics.vertxCreated(this);
-        }
-        resultHandler.handle(Future.succeededFuture(this));
-      } else {
-        log.error("Failed to initialize HAManager", ar1.cause());
-        close(ar2 -> resultHandler.handle(Future.failedFuture(ar1.cause())));
-      }
-    });
+    }, false);
   }
 
   /**

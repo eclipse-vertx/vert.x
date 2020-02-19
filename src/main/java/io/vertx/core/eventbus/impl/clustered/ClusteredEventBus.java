@@ -99,11 +99,11 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  public void start(Handler<AsyncResult<Void>> resultHandler) {
+  public Future<Void> start() {
     deliveryStrategy.setVertx(vertx);
     server = vertx.createNetServer(getServerOptions());
     server.connectHandler(getServerHandler());
-    server.listen()
+    return server.listen()
       .<Void>mapEmpty()
       .onSuccess(v -> {
         int serverPort = getClusterPublicPort(options, server.actualPort());
@@ -115,8 +115,7 @@ public class ClusteredEventBus extends EventBusImpl {
       .onSuccess(v -> {
         started = true;
         deliveryStrategy.eventBusStarted();
-      })
-      .setHandler(resultHandler);
+      });
   }
 
   @Override

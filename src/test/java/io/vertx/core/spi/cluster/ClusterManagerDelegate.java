@@ -81,8 +81,8 @@ public class ClusterManagerDelegate implements ClusterManager {
   }
 
   @Override
-  public void join(Handler<AsyncResult<Void>> resultHandler) {
-    clusterManager.join(resultHandler);
+  public Future<Void> join() {
+    return clusterManager.join();
   }
 
   @Override

@@ -92,7 +92,7 @@ public interface ClusterManager {
   /**
    * Join the cluster
    */
-  void join(Handler<AsyncResult<Void>> resultHandler);
+  Future<Void> join();
 
   /**
    * Leave the cluster

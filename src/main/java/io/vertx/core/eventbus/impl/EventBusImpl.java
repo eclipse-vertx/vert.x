@@ -84,12 +84,13 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return this;
   }
 
-  public synchronized void start(Handler<AsyncResult<Void>> completionHandler) {
+  @Override
+  public synchronized Future<Void> start() {
     if (started) {
       throw new IllegalStateException("Already started");
     }
     started = true;
-    completionHandler.handle(Future.succeededFuture());
+    return Future.succeededFuture();
   }
 
   @Override

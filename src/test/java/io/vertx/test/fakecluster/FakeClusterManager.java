@@ -170,14 +170,14 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void join(Handler<AsyncResult<Void>> resultHandler) {
-    vertx.executeBlocking(fut -> {
+  public Future<Void> join() {
+    return vertx.executeBlocking(fut -> {
       synchronized (this) {
         this.nodeID = UUID.randomUUID().toString();
         doJoin(nodeID, this);
       }
       fut.complete();
-    }, resultHandler);
+    });
   }
 
   @Override

@@ -83,7 +83,7 @@ public class VertxFactory {
 
   public void clusteredVertx(Handler<AsyncResult<Vertx>> handler) {
     VertxImpl vertx = new VertxImpl(options, createClusterManager(), createDeliveryStrategy(), createMetrics(), createTracer(), createTransport(), createFileResolver());
-    vertx.joinCluster(options, handler);
+    vertx.initClustered(options, handler);
   }
 
   private ClusterManager createClusterManager() {
