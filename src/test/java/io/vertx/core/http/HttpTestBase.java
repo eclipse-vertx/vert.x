@@ -14,20 +14,27 @@ package io.vertx.core.http;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.proxy.HttpProxy;
 import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
 import io.vertx.test.core.VertxTestBase;
 
+import java.io.File;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public class HttpTestBase extends VertxTestBase {
+
+  public static final Logger log = LoggerFactory.getLogger(HttpTestBase.class);
 
   public static final String DEFAULT_HTTP_HOST = "localhost";
   public static final int DEFAULT_HTTP_PORT = 8080;
@@ -134,5 +141,42 @@ public class HttpTestBase extends VertxTestBase {
       proxy = new SocksProxy(username);
     }
     proxy.start(vertx);
+  }
+
+  protected int getFileSizeExtected(int testTime) throws Exception {
+    int size = HttpServerOptions.DEFAULT_MAX_CHUNK_SIZE * 2;
+    File file = TestUtils.tmpFile(".dat", size);
+    server.close();
+    server = vertx
+      .createHttpServer()
+      .requestHandler(req -> req.response().sendFile(file.getAbsolutePath()));
+    startServer(testAddress);
+
+    CountDownLatch waitToAproxTime = new CountDownLatch(1);
+    long[] aproxTime = {0};
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      .setHandler(onSuccess(resp -> {
+        long now = System.currentTimeMillis();
+        resp.handler(ignore -> {
+          log.info("[testHttpServerWithIdleTimeoutSendChunkedFile] -> testLength: " + ignore.length());
+          resp.pause();
+          vertx.setTimer(1, id -> {
+            resp.resume();
+          });
+        });
+        resp.exceptionHandler(this::fail);
+        resp.endHandler(v ->  {
+          aproxTime[0] = System.currentTimeMillis() - now;
+          waitToAproxTime.countDown();
+        });
+      }))
+      .end();
+    waitToAproxTime.await();
+
+    int aproxFileSize = (int)((TimeUnit.SECONDS.toMillis(testTime) * HttpServerOptions.DEFAULT_MAX_CHUNK_SIZE) / aproxTime[0]);
+    int maxFileSize = 16 * 1024 * 1024;
+    int finalFileSize = maxFileSize < aproxFileSize ? maxFileSize : aproxFileSize;
+    log.info("[testHttpServerWithIdleTimeoutSendChunkedFile] -> aproxTime: " + aproxTime[0] + ", aproxFileSize: " + aproxFileSize + ", finalFileSize: " + finalFileSize);
+    return finalFileSize;
   }
 }
