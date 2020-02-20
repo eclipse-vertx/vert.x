@@ -15,15 +15,10 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.http.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.SocketAddress;
@@ -181,26 +176,6 @@ public class CoreExamples {
   public void example7_1(Vertx vertx) {
     DeploymentOptions options = new DeploymentOptions().setWorker(true);
     vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
-  }
-
-  public void multiThreadedWorkerVerticleAlternative(Vertx vertx) {
-    DeploymentOptions options = new DeploymentOptions()
-      .setWorker(true)
-      .setInstances(5) // matches the worker pool size below
-      .setWorkerPoolName("the-specific-pool")
-      .setWorkerPoolSize(5);
-    vertx.deployVerticle("com.mycompany.MyOrderProcessorVerticle", options);
-  }
-
-  public void multiThreadedWorkerVerticleAlternative2(Vertx vertx, String someresult) {
-    vertx.eventBus().consumer("foo", msg -> {
-      vertx.executeBlocking(promise -> {
-        // Invoke blocking code with received message data
-        promise.complete(someresult);
-      }, false, ar -> { // ordered == false
-        // Handle result, e.g. reply to the message
-      });
-    });
   }
 
   public void example8(Vertx vertx) {

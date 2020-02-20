@@ -12,13 +12,15 @@
 package io.vertx.core;
 
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.verticle.CompilingClassLoader;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.test.core.*;
-import io.vertx.test.verticles.sourceverticle.SourceVerticle;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.verticles.*;
+import io.vertx.test.verticles.sourceverticle.SourceVerticle;
 import org.junit.Test;
 
 import java.io.File;
@@ -90,7 +92,6 @@ public class DeploymentTest extends VertxTestBase {
     JsonObject config = new JsonObject().put("foo", "bar");
     Random rand = new Random();
     boolean worker = rand.nextBoolean();
-    boolean multiThreaded = rand.nextBoolean();
     String isolationGroup = TestUtils.randomAlphaString(100);
     boolean ha = rand.nextBoolean();
     List<String> cp = Arrays.asList("foo", "bar");
@@ -1515,10 +1516,6 @@ public class DeploymentTest extends VertxTestBase {
     });
     await();
   }
-
-  // TODO
-
-  // Multi-threaded workers
 
   private void testIsolationGroup(String group1, String group2, int count1, int count2, List<String> isolatedClasses,
                                   String verticleID) throws Exception {
