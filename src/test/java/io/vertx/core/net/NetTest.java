@@ -903,18 +903,21 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenInvalidPort() {
-    /* Port 80 is free to use by any application on Windows, so this test fails. */
-    Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
-    server.close();
-    server = vertx.createNetServer(new NetServerOptions().setPort(80));
-    server.connectHandler((netSocket) -> {
-    }).listen(ar -> {
-      assertTrue(ar.failed());
-      assertFalse(ar.succeeded());
-      assertNotNull(ar.cause());
-      testComplete();
-    });
-    await();
+    final int port = 9090;
+    final HttpServer httpServer = vertx.createHttpServer();
+    try {
+      httpServer.requestHandler(ignore -> {})
+        .listen(port, onSuccess(s ->
+          vertx.createNetServer()
+            .connectHandler(ignore -> {})
+            .listen(port, onFailure(error -> {
+              assertNotNull(error);
+              testComplete();
+            }))));
+      await();
+    } finally {
+      httpServer.close();
+    }
   }
 
   @Test
