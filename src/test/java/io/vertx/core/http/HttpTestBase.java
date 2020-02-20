@@ -158,7 +158,6 @@ public class HttpTestBase extends VertxTestBase {
       .setHandler(onSuccess(resp -> {
         long now = System.currentTimeMillis();
         resp.handler(ignore -> {
-          log.info("[testHttpServerWithIdleTimeoutSendChunkedFile] -> testLength: " + ignore.length());
           resp.pause();
           vertx.setTimer(1, id -> {
             resp.resume();

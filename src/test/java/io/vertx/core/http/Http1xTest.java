@@ -4773,7 +4773,6 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
-    // Does not pass reliably in CI (timeout)
     final int timeToWait = 120;
     Assume.assumeFalse(vertx.isNativeTransportEnabled());
     int expected = getFileSizeExtected(timeToWait);
@@ -4782,9 +4781,7 @@ public class Http1xTest extends HttpTest {
     server = vertx
       .createHttpServer(createBaseServerOptions().setIdleTimeout(400).setIdleTimeoutUnit(TimeUnit.MILLISECONDS))
       .requestHandler(
-        req -> {
-          req.response().sendFile(sent.getAbsolutePath());
-        });
+        req -> req.response().sendFile(sent.getAbsolutePath()));
     startServer(testAddress);
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
       .setHandler(onSuccess(resp -> {
