@@ -391,13 +391,11 @@ include::override/verticles.adoc[]
 
 === Verticle Types
 
-There are three different types of verticles:
+There are two different types of verticles:
 
 Standard Verticles:: These are the most common and useful type - they are always executed using an event loop thread.
 We'll discuss this more in the next section.
 Worker Verticles:: These run using a thread from the worker pool. An instance is never executed concurrently by more
-than one thread.
-Multi-threaded worker verticles:: These run using a thread from the worker pool. An instance can be executed concurrently by more
 than one thread.
 
 === Standard verticles
@@ -433,37 +431,6 @@ If you want to deploy a verticle as a worker verticle you do that with {@link io
 
 Worker verticle instances are never executed concurrently by Vert.x by more than one thread, but can executed by
 different threads at different times.
-
-==== Multi-threaded worker verticles
-
-A multi-threaded worker verticle is just like a normal worker verticle but it *can* be executed concurrently by
-different threads.
-
-CAUTION: Multi-threaded worker verticles are an advanced feature and most applications will have no need for them.
-
-Because of the concurrency in these verticles you have to be very careful to keep the verticle in a consistent state
-using standard Java techniques for multi-threaded programming.
-
-Multi-threaded worker verticles were designed and are intended for the sole use of consuming simultaneously `EventBus` messages in a blocking fashion.
-
-WARNING: Vert.x clients and servers (TCP, HTTP, ...etc) cannot be created in a multi-threaded worker verticle.
-Should you incidentally try, an exception will be thrown.
-
-Essentially, multi-threaded worker verticles simply avoid the user from deploying as much instances of a worker verticle as the number of threads in a worker pool.
-So you could for example provide a worker pool name/size in {@link io.vertx.core.DeploymentOptions} and set the number of instances accordingly:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#multiThreadedWorkerVerticleAlternative}
-----
-
-Alternatively, you could create a regular verticle and wrap you blocking code with multiple `executeBlocking` with the `ordered` flag set to `false`:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#multiThreadedWorkerVerticleAlternative2}
-----
-
 
 === Deploying verticles programmatically
 
