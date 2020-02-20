@@ -415,7 +415,7 @@ include::override/verticles.adoc[]
 
 === Verticle Types
 
-There are three different types of verticles:
+There are two different types of verticles:
 
 Standard Verticles:: These are the most common and useful type - they are always executed using an event loop thread.
 We'll discuss this more in the next section.
