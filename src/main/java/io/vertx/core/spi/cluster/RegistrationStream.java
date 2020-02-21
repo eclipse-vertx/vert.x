@@ -18,10 +18,14 @@ import java.util.List;
 /**
  * A stream of the state of {@link io.vertx.core.eventbus.EventBus} registrations for a given address.
  * <p>
- * Invoke {@link #stop()} to stop listening before the end of the stream.
- * Otherwise the implementation (specific to each cluster manager) could leak resources.
+ * Invoke {@link #stop()} to stop listening before the end of the stream, otherwise the implementation may leak resources.
  * <p>
- * Beware that handlers for this stream can be invoked on any thread (specific to each cluster manager).
+ * Threading notes:
+ * <ul>
+ *   <li>handlers can be invoked on any thread</li>
+ *   <li>handlers may block the callback thread</li>
+ *   <li>handkers must not be invoked concurrently</li>
+ * </ul>
  *
  * @author Thomas Segismont
  */
