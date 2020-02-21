@@ -24,7 +24,7 @@ import java.util.List;
  * <ul>
  *   <li>handlers can be invoked on any thread</li>
  *   <li>handlers may block the callback thread</li>
- *   <li>handkers must not be invoked concurrently</li>
+ *   <li>handlers must not be invoked concurrently</li>
  * </ul>
  *
  * @author Thomas Segismont
