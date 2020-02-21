@@ -160,7 +160,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
     removeFirstAndDequeueWaiters(context, address);
 
     if (previous == null) {
-      startListening(registrationStream);
+      startListening(address, registrationStream);
     }
   }
 
@@ -176,19 +176,19 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
     }
   }
 
-  private void startListening(RegistrationStream registrationStream) {
+  private void startListening(String address, RegistrationStream registrationStream) {
     registrationStream
-      .handler(registrationInfos -> registrationsUpdated(registrationStream, registrationInfos))
+      .handler(registrationInfos -> registrationsUpdated(address, registrationInfos))
       .exceptionHandler(t -> {
         logger.debug("Exception while listening to registration changes", t);
-        removeSelector(registrationStream.address());
+        removeSelector(address);
       })
-      .endHandler(v -> removeSelector(registrationStream.address()))
+      .endHandler(v -> removeSelector(address))
       .start();
   }
 
-  private void registrationsUpdated(RegistrationStream registrationStream, List<RegistrationInfo> registrationInfos) {
-    selectors.put(registrationStream.address(), NodeSelector.create(nodeId, registrationInfos));
+  private void registrationsUpdated(String address, List<RegistrationInfo> registrationInfos) {
+    selectors.put(address, NodeSelector.create(nodeId, registrationInfos));
   }
 
   private void removeSelector(String address) {

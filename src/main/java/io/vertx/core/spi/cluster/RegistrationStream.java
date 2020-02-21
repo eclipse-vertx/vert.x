@@ -28,11 +28,6 @@ import java.util.List;
 public interface RegistrationStream {
 
   /**
-   * Return the {@link io.vertx.core.eventbus.EventBus} address related to this stream.
-   */
-  String address();
-
-  /**
    * Return the initial state of registrations for a given address.
    * <p>
    * The result may no longer be available after {@link #start()} has been invoked.

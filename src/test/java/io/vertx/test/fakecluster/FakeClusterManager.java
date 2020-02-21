@@ -278,11 +278,6 @@ public class FakeClusterManager implements ClusterManager {
     }
 
     @Override
-    public String address() {
-      return address;
-    }
-
-    @Override
     public List<RegistrationInfo> initialState() {
       return initialState;
     }
