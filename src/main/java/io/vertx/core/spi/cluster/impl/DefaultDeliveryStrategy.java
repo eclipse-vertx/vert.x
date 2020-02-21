@@ -22,7 +22,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.DeliveryStrategy;
 import io.vertx.core.spi.cluster.RegistrationInfo;
-import io.vertx.core.spi.cluster.RegistrationStream;
+import io.vertx.core.spi.cluster.RegistrationListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -134,7 +134,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       .onSuccess(stream -> registrationListenerCreated(context, address, stream));
   }
 
-  private void registrationListenerCreated(ContextInternal context, String address, RegistrationStream registrationStream) {
+  private void registrationListenerCreated(ContextInternal context, String address, RegistrationListener listener) {
     if (Vertx.currentContext() != context) {
       throw new IllegalStateException();
     }
@@ -146,13 +146,13 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       throw new IllegalStateException();
     }
 
-    if (registrationStream.initialState().isEmpty()) {
+    if (listener.initialState().isEmpty()) {
       waiter.complete(NodeSelector.EMPTY_SELECTOR);
       removeFirstAndDequeueWaiters(context, address);
       return;
     }
 
-    NodeSelector candidate = NodeSelector.create(nodeId, registrationStream.initialState());
+    NodeSelector candidate = NodeSelector.create(nodeId, listener.initialState());
     NodeSelector previous = selectors.putIfAbsent(address, candidate);
     NodeSelector current = previous != null ? previous : candidate;
 
@@ -160,7 +160,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
     removeFirstAndDequeueWaiters(context, address);
 
     if (previous == null) {
-      startListening(address, registrationStream);
+      startListening(address, listener);
     }
   }
 
@@ -176,8 +176,8 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
     }
   }
 
-  private void startListening(String address, RegistrationStream registrationStream) {
-    registrationStream
+  private void startListening(String address, RegistrationListener listener) {
+    listener
       .handler(registrationInfos -> registrationsUpdated(address, registrationInfos))
       .exceptionHandler(t -> {
         logger.debug("Exception while listening to registration changes", t);

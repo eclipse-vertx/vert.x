@@ -117,11 +117,11 @@ public interface ClusterManager {
   Future<Void> unregister(String address, RegistrationInfo registrationInfo);
 
   /**
-   * Get a {@link RegistrationStream} for the given {@code address}.
+   * Get a {@link RegistrationListener} for the given {@code address}.
    * <p>
    * After {@link #register(String, RegistrationInfo)} or {@link #unregister(String, RegistrationInfo)} is invoked
-   * on this node or any other node in the cluster, the stream will emit a new list of {@link RegistrationInfo}.
+   * on this node or any other node in the cluster, the listener will emit a new list of {@link RegistrationInfo}.
    * This list represents the new state of registrations for the given {@code address}.
    */
-  Future<RegistrationStream> registrationListener(String address);
+  Future<RegistrationListener> registrationListener(String address);
 }

@@ -17,7 +17,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.RegistrationInfo;
-import io.vertx.core.spi.cluster.RegistrationStream;
+import io.vertx.core.spi.cluster.RegistrationListener;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Assert;
@@ -39,7 +39,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * @author Thomas Segismont
  */
-public class RegistrationStreamTest extends VertxTestBase {
+public class RegistrationListenerTest extends VertxTestBase {
 
   private Helper helper = new Helper();
 
@@ -69,7 +69,7 @@ public class RegistrationStreamTest extends VertxTestBase {
     ));
 
     setupFuture
-      .compose(v -> helper.getRegistrationStream(0, "foo"))
+      .compose(v -> helper.getRegistrationListener(0, "foo"))
       .compose(stream -> helper.verify(() -> {
         List<RegistrationInfo> initialState = stream.initialState();
         Assert.assertEquals(3, initialState.size());
@@ -80,7 +80,7 @@ public class RegistrationStreamTest extends VertxTestBase {
         Assert.assertEquals(1, node_1_regs.size());
         Assert.assertEquals(1, helper.filterClusterWide(node_1_regs).size());
       }))
-      .compose(v -> helper.getRegistrationStream(1, "bar"))
+      .compose(v -> helper.getRegistrationListener(1, "bar"))
       .compose(stream -> helper.verify(() -> {
         List<RegistrationInfo> initialState = stream.initialState();
         Assert.assertEquals(3, initialState.size());
@@ -102,14 +102,14 @@ public class RegistrationStreamTest extends VertxTestBase {
     startNodes(2);
 
     List<MessageConsumer<String>> consumers = Collections.synchronizedList(new ArrayList<>());
-    AtomicReference<RegistrationStream> stream = new AtomicReference<>();
+    AtomicReference<RegistrationListener> stream = new AtomicReference<>();
     List<RegistrationInfo> state = Collections.synchronizedList(new ArrayList<>());
 
     waitFor(2);
 
     helper.register(0, "foo")
       .onSuccess(consumers::add)
-      .compose(v -> helper.getRegistrationStream(1, "foo"))
+      .compose(v -> helper.getRegistrationListener(1, "foo"))
       .onSuccess(stream::set)
       .compose(v -> helper.verify(() -> Assert.assertEquals(1, stream.get().initialState().size())))
       .onSuccess(v -> {
@@ -143,10 +143,10 @@ public class RegistrationStreamTest extends VertxTestBase {
   public void testNoEventsAfterStop() {
     startNodes(2);
 
-    AtomicReference<RegistrationStream> stream = new AtomicReference<>();
+    AtomicReference<RegistrationListener> stream = new AtomicReference<>();
 
     helper.register(0, "foo")
-      .compose(v -> helper.getRegistrationStream(1, "foo"))
+      .compose(v -> helper.getRegistrationListener(1, "foo"))
       .onSuccess(stream::set)
       .compose(v -> helper.verify(() -> Assert.assertEquals(1, stream.get().initialState().size())))
       .onSuccess(v -> {
@@ -170,11 +170,11 @@ public class RegistrationStreamTest extends VertxTestBase {
   public void testRegistrationBeforeStart() {
     startNodes(2);
 
-    AtomicReference<RegistrationStream> stream = new AtomicReference<>();
+    AtomicReference<RegistrationListener> stream = new AtomicReference<>();
     List<RegistrationInfo> state = Collections.synchronizedList(new ArrayList<>());
 
     helper.register(0, "foo")
-      .compose(v -> helper.getRegistrationStream(1, "foo"))
+      .compose(v -> helper.getRegistrationListener(1, "foo"))
       .onSuccess(stream::set)
       .compose(v -> helper.verify(() -> Assert.assertEquals(1, stream.get().initialState().size())))
       .onSuccess(v -> {
@@ -203,13 +203,13 @@ public class RegistrationStreamTest extends VertxTestBase {
     startNodes(2);
 
     List<MessageConsumer<String>> consumers = Collections.synchronizedList(new ArrayList<>());
-    AtomicReference<RegistrationStream> stream = new AtomicReference<>();
+    AtomicReference<RegistrationListener> stream = new AtomicReference<>();
     AtomicInteger updates = new AtomicInteger();
     AtomicInteger last = new AtomicInteger();
 
     helper.register(0, "foo")
       .onSuccess(consumers::add)
-      .compose(v -> helper.getRegistrationStream(1, "foo"))
+      .compose(v -> helper.getRegistrationListener(1, "foo"))
       .onSuccess(stream::set)
       .onSuccess(v -> {
         stream.get()
@@ -251,7 +251,7 @@ public class RegistrationStreamTest extends VertxTestBase {
       return (VertxInternal) vertices[nodeIndex];
     }
 
-    Future<RegistrationStream> getRegistrationStream(int nodeIndex, String address) {
+    Future<RegistrationListener> getRegistrationListener(int nodeIndex, String address) {
       return getVertx(nodeIndex).getClusterManager().registrationListener(address);
     }
 

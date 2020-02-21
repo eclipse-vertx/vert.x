@@ -106,7 +106,7 @@ public class ClusterManagerDelegate implements ClusterManager {
   }
 
   @Override
-  public Future<RegistrationStream> registrationListener(String address) {
+  public Future<RegistrationListener> registrationListener(String address) {
     return clusterManager.registrationListener(address);
   }
 }

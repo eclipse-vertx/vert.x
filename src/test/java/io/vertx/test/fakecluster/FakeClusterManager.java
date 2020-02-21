@@ -228,8 +228,8 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public Future<RegistrationStream> registrationListener(String address) {
-    FakeRegistrationStream stream = new FakeRegistrationStream(address);
+  public Future<RegistrationListener> registrationListener(String address) {
+    FakeRegistrationListener stream = new FakeRegistrationListener(address);
     return vertx.getOrCreateContext().succeededFuture(stream);
   }
 
@@ -242,7 +242,7 @@ public class FakeClusterManager implements ClusterManager {
     syncMaps.clear();
   }
 
-  private static class FakeRegistrationStream implements RegistrationStream {
+  private static class FakeRegistrationListener implements RegistrationListener {
 
     static final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(
       Runtime.getRuntime().availableProcessors(),
@@ -261,7 +261,7 @@ public class FakeClusterManager implements ClusterManager {
     private Handler<Void> endHandler;
     private ScheduledFuture<?> scheduledFuture;
 
-    FakeRegistrationStream(String address) {
+    FakeRegistrationListener(String address) {
       this.address = address;
       initialState = getRegistrationInfos();
       lastState = newState = null;
@@ -283,18 +283,18 @@ public class FakeClusterManager implements ClusterManager {
     }
 
     @Override
-    public RegistrationStream exceptionHandler(Handler<Throwable> handler) {
+    public RegistrationListener exceptionHandler(Handler<Throwable> handler) {
       return this;
     }
 
     @Override
-    public synchronized RegistrationStream handler(Handler<List<RegistrationInfo>> handler) {
+    public synchronized RegistrationListener handler(Handler<List<RegistrationInfo>> handler) {
       this.handler = handler;
       return this;
     }
 
     @Override
-    public synchronized RegistrationStream endHandler(Handler<Void> endHandler) {
+    public synchronized RegistrationListener endHandler(Handler<Void> endHandler) {
       this.endHandler = endHandler;
       return this;
     }

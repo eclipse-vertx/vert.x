@@ -16,9 +16,9 @@ import io.vertx.core.Handler;
 import java.util.List;
 
 /**
- * A stream of the state of {@link io.vertx.core.eventbus.EventBus} registrations for a given address.
+ * A listener to the state of {@link io.vertx.core.eventbus.EventBus} registrations for a given address.
  * <p>
- * Invoke {@link #stop()} to stop listening before the end of the stream, otherwise the implementation may leak resources.
+ * Invoke {@link #stop()} to stop listening, otherwise the implementation may leak resources.
  * <p>
  * Threading notes:
  * <ul>
@@ -29,7 +29,7 @@ import java.util.List;
  *
  * @author Thomas Segismont
  */
-public interface RegistrationStream {
+public interface RegistrationListener {
 
   /**
    * Return the initial state of registrations for a given address.
@@ -43,21 +43,21 @@ public interface RegistrationStream {
    * <p>
    * The handler is invoked only when the list is not empty.
    */
-  RegistrationStream handler(Handler<List<RegistrationInfo>> handler);
+  RegistrationListener handler(Handler<List<RegistrationInfo>> handler);
 
   /**
-   * Set the handler to be called when the stream is broken and should no longer be used.
+   * Set the handler to be called when the listener is broken and should no longer be used.
    * <p>
    * It is not necessary to invoked {@link #stop()} afterwards.
    */
-  RegistrationStream exceptionHandler(Handler<Throwable> handler);
+  RegistrationListener exceptionHandler(Handler<Throwable> handler);
 
   /**
-   * Set the handler to be called when there are no listeners anymore.
+   * Set the handler to be called when there aren't any more registrations.
    * <p>
    * It is not necessary to invoked {@link #stop()} afterwards.
    */
-  RegistrationStream endHandler(Handler<Void> endHandler);
+  RegistrationListener endHandler(Handler<Void> endHandler);
 
   /**
    * Start listening.
