@@ -118,6 +118,16 @@ public class BufferImpl implements Buffer {
     return new JsonArray(this);
   }
 
+  @Override
+  public JsonObject mapToJsonObject() {
+    return new JsonObject(this);
+  }
+
+  @Override
+  public JsonArray mapToJsonArray() {
+    return new JsonArray(this);
+  }
+
   public byte getByte(int pos) {
     return buffer.getByte(pos);
   }

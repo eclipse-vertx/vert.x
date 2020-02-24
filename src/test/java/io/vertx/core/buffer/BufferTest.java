@@ -1058,6 +1058,23 @@ public class BufferTest {
   }
 
   @Test
+  public void testMapToJsonObject() throws Exception {
+    JsonObject obj = new JsonObject();
+    obj.put("wibble", "wibble_value");
+    obj.put("foo", 5);
+    obj.put("bar", true);
+    Buffer buff = Buffer.buffer(obj.encode());
+    assertEquals(obj, buff.mapToJsonObject());
+
+    buff = Buffer.buffer(TestUtils.randomAlphaString(10));
+    try {
+      buff.mapToJsonObject();
+      fail();
+    } catch (DecodeException ignore) {
+    }
+  }
+
+  @Test
   public void testToJsonArray() throws Exception {
     JsonArray arr = new JsonArray();
     arr.add("wibble");
@@ -1069,6 +1086,23 @@ public class BufferTest {
     buff = Buffer.buffer(TestUtils.randomAlphaString(10));
     try {
       buff.toJsonObject();
+      fail();
+    } catch (DecodeException ignore) {
+    }
+  }
+
+  @Test
+  public void testMapToJsonArray() throws Exception {
+    JsonArray arr = new JsonArray();
+    arr.add("wibble");
+    arr.add(5);
+    arr.add(true);
+    Buffer buff = Buffer.buffer(arr.encode());
+    assertEquals(arr, buff.mapToJsonArray());
+
+    buff = Buffer.buffer(TestUtils.randomAlphaString(10));
+    try {
+      buff.mapToJsonObject();
       fail();
     } catch (DecodeException ignore) {
     }

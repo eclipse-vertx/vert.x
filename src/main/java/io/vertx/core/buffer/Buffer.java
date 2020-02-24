@@ -133,20 +133,47 @@ public interface Buffer extends ClusterSerializable, Shareable {
 
   /**
    * Returns a Json object representation of the Buffer.
+   *
+   * @deprecated use {@link #mapToJsonObject()} instead.
    */
+  @Deprecated
   JsonObject toJsonObject();
 
   /**
    * Returns a Json array representation of the Buffer.
+   *
+   * @deprecated use {@link #mapToJsonArray()} instead.
    */
+  @Deprecated
   JsonArray toJsonArray();
 
   /**
    * Returns a Json representation of the Buffer.
    *
    * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the buffer contains an array, object, string, ...etc
+   *
+   * @deprecated use {@link #mapToJson()} instead
    */
   default Object toJson() {
+    return Json.CODEC.fromBuffer(this, Object.class);
+  }
+
+  /**
+   * Returns a Json object representation of the Buffer.
+   */
+  JsonObject mapToJsonObject();
+
+  /**
+   * Returns a Json array representation of the Buffer.
+   */
+  JsonArray mapToJsonArray();
+
+  /**
+   * Returns a Json representation of the Buffer.
+   *
+   * @return a JSON element which can be a {@link JsonArray}, {@link JsonObject}, {@link String}, ...etc if the buffer contains an array, object, string, ...etc
+   */
+  default Object mapToJson() {
     return Json.CODEC.fromBuffer(this, Object.class);
   }
 
