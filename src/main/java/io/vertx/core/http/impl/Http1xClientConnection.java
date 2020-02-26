@@ -572,32 +572,38 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   private void handleHttpMessage(HttpObject obj) {
+    StreamImpl stream;
+    synchronized (this) {
+      stream = responseInProgress;
+      if (stream == null) {
+        // Unsolicited HTTP message
+        return;
+      }
+    }
     if (obj instanceof HttpResponse) {
-      handleResponseBegin((HttpResponse) obj);
+      handleResponseBegin(stream, (HttpResponse) obj);
     } else if (obj instanceof HttpContent) {
       HttpContent chunk = (HttpContent) obj;
       if (chunk.content().isReadable()) {
         Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk.content(), chctx.alloc()));
-        handleResponseChunk(buff);
+        handleResponseChunk(stream, buff);
       }
       if (chunk instanceof LastHttpContent) {
-        handleResponseEnd((LastHttpContent) chunk);
+        handleResponseEnd(stream, (LastHttpContent) chunk);
       }
     }
   }
 
-  private void handleResponseBegin(HttpResponse resp) {
+  private void handleResponseBegin(StreamImpl stream, HttpResponse resp) {
     if (resp.status().code() == 100) {
       Handler<Void> handler;
       synchronized (this) {
-        StreamImpl stream = responseInProgress;
         handler = stream.continueHandler;
       }
       if (handler != null) {
         handler.handle(null);
       }
     } else {
-      StreamImpl stream;
       HttpClientResponseImpl response;
       HttpClientRequestImpl request;
       synchronized (this) {
@@ -609,22 +615,14 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
   }
 
-  private void handleResponseChunk(Buffer buff) {
-    StreamImpl resp;
-    synchronized (this) {
-      resp = responseInProgress;
-    }
-    if (resp != null) {
-      if (!resp.handleChunk(buff)) {
-        doPause();
-      }
+  private void handleResponseChunk(StreamImpl stream, Buffer buff) {
+    if (!stream.handleChunk(buff)) {
+      doPause();
     }
   }
 
-  private void handleResponseEnd(LastHttpContent trailer) {
-    StreamImpl stream;
+  private void handleResponseEnd(StreamImpl stream, LastHttpContent trailer) {
     synchronized (this) {
-      stream = responseInProgress;
       if (stream.response == null) {
         // 100-continue
         return;
