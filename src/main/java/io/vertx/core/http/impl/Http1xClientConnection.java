@@ -87,6 +87,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   private int seq = 1;
   private long bytesRead;
 
+
   Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
                          HttpVersion version,
                          HttpClientImpl client,
@@ -511,33 +512,34 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   private void handleHttpMessage(HttpObject obj) {
+    Stream stream;
+    synchronized (this) {
+      stream = responses.peekFirst();
+      if (stream == null) {
+        return;
+      }
+    }
     if (obj instanceof HttpResponse) {
-      handleResponseBegin((HttpResponse) obj);
+      handleResponseBegin(stream, (HttpResponse) obj);
     } else if (obj instanceof HttpContent) {
       HttpContent chunk = (HttpContent) obj;
       if (chunk.content().isReadable()) {
         Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk.content(), chctx.alloc()));
-        handleResponseChunk(buff);
+        handleResponseChunk(stream, buff);
       }
       if (chunk instanceof LastHttpContent) {
-        handleResponseEnd((LastHttpContent) chunk);
+        handleResponseEnd(stream, (LastHttpContent) chunk);
       }
     }
   }
 
-  private void handleResponseBegin(HttpResponse resp) {
+  private void handleResponseBegin(Stream stream, HttpResponse resp) {
     if (resp.status().code() == 100) {
-      Stream stream;
-      synchronized (this) {
-        stream = responses.getFirst();
-      }
       stream.context.schedule(null, v -> stream.handleContinue());
     } else {
-      Stream stream;
       HttpClientResponseImpl response;
       HttpClientRequestImpl request;
       synchronized (this) {
-        stream = responses.getFirst();
         request = stream.request;
 
         HttpVersion version;
@@ -632,23 +634,17 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
   }
 
-  private void handleResponseChunk(Buffer buff) {
-    Stream resp;
+  private void handleResponseChunk(Stream stream, Buffer buff) {
     synchronized (this) {
-      resp = responses.getFirst();
       bytesRead += buff.length();
     }
-    if (resp != null) {
-      resp.context.schedule(buff, resp::handleChunk);
-    }
+    stream.context.schedule(buff, stream::handleChunk);
   }
 
-  private void handleResponseEnd(LastHttpContent trailer) {
-    Stream stream;
+  private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
     boolean check;
     long bytesRead;
     synchronized (this) {
-      stream = responses.getFirst();
       if (stream.response == null) {
         // 100-continue
         return;

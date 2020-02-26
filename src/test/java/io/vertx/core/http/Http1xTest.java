@@ -4831,4 +4831,38 @@ public class Http1xTest extends HttpTest {
     }
     await();
   }
+
+  @Test
+  public void testUnsolicitedHttpResponse() throws Exception {
+    waitFor(2);
+    NetServer server = vertx.createNetServer().connectHandler(so -> {
+      AtomicBoolean sent = new AtomicBoolean();
+      so.handler(buff -> {
+        if (sent.compareAndSet(false, true)) {
+          so.write("" +
+            "HTTP/1.1 200 OK\r\n" +
+            "Content-Length: 0\r\n" +
+            "\r\n" +
+            "HTTP/1.1 200 OK\r\n" +
+            "\r\n");
+          so.close();
+        }
+      });
+    });
+    CountDownLatch latch = new CountDownLatch(1);
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, onSuccess(s -> latch.countDown()));
+    awaitLatch(latch);
+    client.connectionHandler(conn -> {
+      conn.exceptionHandler(this::fail);
+      conn.closeHandler(v -> {
+        complete();
+      });
+    });
+    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+      resp.body(onSuccess(v2 -> {
+        complete();
+      }));
+    }));
+    await();
+  }
 }
