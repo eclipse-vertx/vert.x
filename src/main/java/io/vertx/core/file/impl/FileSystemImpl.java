@@ -74,6 +74,7 @@ public class FileSystemImpl implements FileSystem {
     this.vertx = vertx;
   }
 
+  @Override
   public FileSystem copy(String from, String to, Handler<AsyncResult<Void>> handler) {
     return copy(from, to, DEFAULT_OPTIONS, handler);
   }
@@ -91,29 +92,33 @@ public class FileSystemImpl implements FileSystem {
 
   @Override
   public Future<Void> copy(String from, String to, CopyOptions options) {
-    return copyInternal(from, to, options).run();
+    return copyInternal(from, to, false, options).run();
   }
 
+  @Override
   public FileSystem copyBlocking(String from, String to) {
-    copyInternal(from, to, DEFAULT_OPTIONS).perform();
-    return this;
-  }
-
-  public FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler) {
-    copyRecursive(from, to, recursive).setHandler(handler);
+    copyInternal(from, to, false, DEFAULT_OPTIONS).perform();
     return this;
   }
 
   @Override
-  public Future<Void> copyRecursive(String from, String to, boolean recursive) {
-    return copyRecursiveInternal(from, to, recursive).run();
-  }
-
-  public FileSystem copyRecursiveBlocking(String from, String to, boolean recursive) {
-    copyRecursiveInternal(from, to, recursive).perform();
+  public FileSystem copyRecursive(String from, String to, Handler<AsyncResult<Void>> handler) {
+    copyRecursive(from, to).setHandler(handler);
     return this;
   }
 
+  @Override
+  public Future<Void> copyRecursive(String from, String to) {
+    return copyInternal(from, to, true, DEFAULT_OPTIONS).run();
+  }
+
+  @Override
+  public FileSystem copyRecursiveBlocking(String from, String to) {
+    copyInternal(from, to, true, DEFAULT_OPTIONS).perform();
+    return this;
+  }
+
+  @Override
   public FileSystem move(String from, String to, Handler<AsyncResult<Void>> handler) {
     return move(from, to, DEFAULT_OPTIONS, handler);
   }
@@ -134,11 +139,13 @@ public class FileSystemImpl implements FileSystem {
     return moveInternal(from, to, options).run();
   }
 
+  @Override
   public FileSystem moveBlocking(String from, String to) {
     moveInternal(from, to, DEFAULT_OPTIONS).perform();
     return this;
   }
 
+  @Override
   public FileSystem truncate(String path, long len, Handler<AsyncResult<Void>> handler) {
     truncate(path, len).setHandler(handler);
     return this;
@@ -149,11 +156,13 @@ public class FileSystemImpl implements FileSystem {
     return truncateInternal(path, len).run();
   }
 
+  @Override
   public FileSystem truncateBlocking(String path, long len) {
     truncateInternal(path, len).perform();
     return this;
   }
 
+  @Override
   public FileSystem chmod(String path, String perms, Handler<AsyncResult<Void>> handler) {
     chmod(path, perms).setHandler(handler);
     return this;
@@ -164,11 +173,13 @@ public class FileSystemImpl implements FileSystem {
     return chmodInternal(path, perms).run();
   }
 
+  @Override
   public FileSystem chmodBlocking(String path, String perms) {
     chmodInternal(path, perms).perform();
     return this;
   }
 
+  @Override
   public FileSystem chmodRecursive(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler) {
     chmodRecursive(path, perms, dirPerms).setHandler(handler);
     return this;
@@ -179,11 +190,13 @@ public class FileSystemImpl implements FileSystem {
     return chmodInternal(path, perms, dirPerms).run();
   }
 
+  @Override
   public FileSystem chmodRecursiveBlocking(String path, String perms, String dirPerms) {
     chmodInternal(path, perms, dirPerms).perform();
     return this;
   }
 
+  @Override
   public FileSystem chown(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
     chown(path, user, group).setHandler(handler);
     return this;
@@ -194,11 +207,13 @@ public class FileSystemImpl implements FileSystem {
     return chownInternal(path, user, group).run();
   }
 
+  @Override
   public FileSystem chownBlocking(String path, String user, String group) {
     chownInternal(path, user, group).perform();
     return this;
   }
 
+  @Override
   public FileSystem props(String path, Handler<AsyncResult<FileProps>> handler) {
     props(path).setHandler(handler);
     return this;
@@ -209,10 +224,12 @@ public class FileSystemImpl implements FileSystem {
     return propsInternal(path).run();
   }
 
+  @Override
   public FileProps propsBlocking(String path) {
     return propsInternal(path).perform();
   }
 
+  @Override
   public FileSystem lprops(String path, Handler<AsyncResult<FileProps>> handler) {
     lprops(path).setHandler(handler);
     return this;
@@ -223,10 +240,12 @@ public class FileSystemImpl implements FileSystem {
     return lpropsInternal(path).run();
   }
 
+  @Override
   public FileProps lpropsBlocking(String path) {
     return lpropsInternal(path).perform();
   }
 
+  @Override
   public FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler) {
     link(link, existing).setHandler(handler);
     return this;
@@ -237,11 +256,13 @@ public class FileSystemImpl implements FileSystem {
     return linkInternal(link, existing).run();
   }
 
+  @Override
   public FileSystem linkBlocking(String link, String existing) {
     linkInternal(link, existing).perform();
     return this;
   }
 
+  @Override
   public FileSystem symlink(String link, String existing, Handler<AsyncResult<Void>> handler) {
     symlink(link, existing).setHandler(handler);
     return this;
@@ -252,11 +273,13 @@ public class FileSystemImpl implements FileSystem {
     return symlinkInternal(link, existing).run();
   }
 
+  @Override
   public FileSystem symlinkBlocking(String link, String existing) {
     symlinkInternal(link, existing).perform();
     return this;
   }
 
+  @Override
   public FileSystem unlink(String link, Handler<AsyncResult<Void>> handler) {
     unlink(link).setHandler(handler);
     return this;
@@ -267,11 +290,13 @@ public class FileSystemImpl implements FileSystem {
     return unlinkInternal(link).run();
   }
 
+  @Override
   public FileSystem unlinkBlocking(String link) {
     unlinkInternal(link).perform();
     return this;
   }
 
+  @Override
   public FileSystem readSymlink(String link, Handler<AsyncResult<String>> handler) {
     readSymlink(link).setHandler(handler);
     return this;
@@ -282,10 +307,12 @@ public class FileSystemImpl implements FileSystem {
     return readSymlinkInternal(link).run();
   }
 
+  @Override
   public String readSymlinkBlocking(String link) {
     return readSymlinkInternal(link).perform();
   }
 
+  @Override
   public FileSystem delete(String path, Handler<AsyncResult<Void>> handler) {
     delete(path).setHandler(handler);
     return this;
@@ -296,26 +323,30 @@ public class FileSystemImpl implements FileSystem {
     return deleteInternal(path).run();
   }
 
+  @Override
   public FileSystem deleteBlocking(String path) {
     deleteInternal(path).perform();
     return this;
   }
 
-  public FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler) {
-    deleteRecursive(path, recursive).setHandler(handler);
+  @Override
+  public FileSystem deleteRecursive(String path, Handler<AsyncResult<Void>> handler) {
+    deleteRecursive(path).setHandler(handler);
     return this;
   }
 
   @Override
-  public Future<Void> deleteRecursive(String path, boolean recursive) {
-    return deleteInternal(path, recursive).run();
+  public Future<Void> deleteRecursive(String path) {
+    return deleteInternal(path, true).run();
   }
 
-  public FileSystem deleteRecursiveBlocking(String path, boolean recursive) {
-    deleteInternal(path, recursive).perform();
+  @Override
+  public FileSystem deleteRecursiveBlocking(String path) {
+    deleteInternal(path, true).perform();
     return this;
   }
 
+  @Override
   public FileSystem mkdir(String path, Handler<AsyncResult<Void>> handler) {
     mkdir(path).setHandler(handler);
     return this;
@@ -326,11 +357,13 @@ public class FileSystemImpl implements FileSystem {
     return mkdirInternal(path).run();
   }
 
+  @Override
   public FileSystem mkdirBlocking(String path) {
     mkdirInternal(path).perform();
     return this;
   }
 
+  @Override
   public FileSystem mkdirs(String path, Handler<AsyncResult<Void>> handler) {
     mkdirs(path).setHandler(handler);
     return this;
@@ -341,11 +374,13 @@ public class FileSystemImpl implements FileSystem {
     return mkdirInternal(path, true).run();
   }
 
+  @Override
   public FileSystem mkdirsBlocking(String path) {
     mkdirInternal(path, true).perform();
     return this;
   }
 
+  @Override
   public FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler) {
     mkdir(path, perms).setHandler(handler);
     return this;
@@ -356,11 +391,13 @@ public class FileSystemImpl implements FileSystem {
     return mkdirInternal(path, perms).run();
   }
 
+  @Override
   public FileSystem mkdirBlocking(String path, String perms) {
     mkdirInternal(path, perms).perform();
     return this;
   }
 
+  @Override
   public FileSystem mkdirs(String path, String perms, Handler<AsyncResult<Void>> handler) {
     mkdirs(path, perms).setHandler(handler);
     return this;
@@ -371,11 +408,13 @@ public class FileSystemImpl implements FileSystem {
     return mkdirInternal(path, perms, true).run();
   }
 
+  @Override
   public FileSystem mkdirsBlocking(String path, String perms) {
     mkdirInternal(path, perms, true).perform();
     return this;
   }
 
+  @Override
   public FileSystem readDir(String path, Handler<AsyncResult<List<String>>> handler) {
     readDir(path).setHandler(handler);
     return this;
@@ -386,10 +425,12 @@ public class FileSystemImpl implements FileSystem {
     return readDirInternal(path).run();
   }
 
+  @Override
   public List<String> readDirBlocking(String path) {
     return readDirInternal(path).perform();
   }
 
+  @Override
   public FileSystem readDir(String path, String filter, Handler<AsyncResult<List<String>>> handler) {
     readDir(path, filter).setHandler(handler);
     return this;
@@ -400,10 +441,12 @@ public class FileSystemImpl implements FileSystem {
     return readDirInternal(path, filter).run();
   }
 
+  @Override
   public List<String> readDirBlocking(String path, String filter) {
     return readDirInternal(path, filter).perform();
   }
 
+  @Override
   public FileSystem readFile(String path, Handler<AsyncResult<Buffer>> handler) {
     readFile(path).setHandler(handler);
     return this;
@@ -414,10 +457,12 @@ public class FileSystemImpl implements FileSystem {
     return readFileInternal(path).run();
   }
 
+  @Override
   public Buffer readFileBlocking(String path) {
     return readFileInternal(path).perform();
   }
 
+  @Override
   public FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler) {
     writeFile(path, data).setHandler(handler);
     return this;
@@ -428,11 +473,13 @@ public class FileSystemImpl implements FileSystem {
     return writeFileInternal(path, data).run();
   }
 
+  @Override
   public FileSystem writeFileBlocking(String path, Buffer data) {
     writeFileInternal(path, data).perform();
     return this;
   }
 
+  @Override
   public FileSystem open(String path, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler) {
     open(path, options).setHandler(handler);
     return this;
@@ -443,10 +490,12 @@ public class FileSystemImpl implements FileSystem {
     return openInternal(path, options).run();
   }
 
+  @Override
   public AsyncFile openBlocking(String path, OpenOptions options) {
     return openInternal(path, options).perform();
   }
 
+  @Override
   public FileSystem createFile(String path, Handler<AsyncResult<Void>> handler) {
     createFile(path).setHandler(handler);
     return this;
@@ -457,11 +506,13 @@ public class FileSystemImpl implements FileSystem {
     return createFileInternal(path).run();
   }
 
+  @Override
   public FileSystem createFileBlocking(String path) {
     createFileInternal(path).perform();
     return this;
   }
 
+  @Override
   public FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler) {
     createFile(path, perms).setHandler(handler);
     return this;
@@ -472,11 +523,13 @@ public class FileSystemImpl implements FileSystem {
     return createFileInternal(path, perms).run();
   }
 
+  @Override
   public FileSystem createFileBlocking(String path, String perms) {
     createFileInternal(path, perms).perform();
     return this;
   }
 
+  @Override
   public FileSystem exists(String path, Handler<AsyncResult<Boolean>> handler) {
     exists(path).setHandler(handler);
     return this;
@@ -487,10 +540,12 @@ public class FileSystemImpl implements FileSystem {
     return existsInternal(path).run();
   }
 
+  @Override
   public boolean existsBlocking(String path) {
     return existsInternal(path).perform();
   }
 
+  @Override
   public FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler) {
     fsProps(path).setHandler(handler);
     return this;
@@ -501,6 +556,7 @@ public class FileSystemImpl implements FileSystem {
     return fsPropsInternal(path).run();
   }
 
+  @Override
   public FileSystemProps fsPropsBlocking(String path) {
     return fsPropsInternal(path).perform();
   }
@@ -602,18 +658,16 @@ public class FileSystemImpl implements FileSystem {
     return createTempFileInternal(dir, prefix, suffix, perms).perform();
   }
 
-  private BlockingAction<Void> copyInternal(String from, String to, CopyOptions options) {
+  private BlockingAction<Void> copyInternal(String from, String to, boolean recursive, CopyOptions options) {
     Objects.requireNonNull(from);
     Objects.requireNonNull(to);
     Objects.requireNonNull(options);
-    Set<CopyOption> copyOptionSet = toCopyOptionSet(options);
-    CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[copyOptionSet.size()]);
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
           Path source = vertx.resolveFile(from).toPath();
           Path target = vertx.resolveFile(to).toPath();
-          Files.copy(source, target, copyOptions);
+          copy(source, target, recursive, options);
         } catch (IOException e) {
           throw new FileSystemException(e);
         }
@@ -622,46 +676,35 @@ public class FileSystemImpl implements FileSystem {
     };
   }
 
-  private BlockingAction<Void> copyRecursiveInternal(String from, String to, boolean recursive) {
-    Objects.requireNonNull(from);
-    Objects.requireNonNull(to);
-    return new BlockingAction<Void>() {
-      public Void perform() {
-        try {
-          Path source = vertx.resolveFile(from).toPath();
-          Path target = vertx.resolveFile(to).toPath();
-          if (recursive) {
-            Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
-              new SimpleFileVisitor<Path>() {
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                  throws IOException {
-                  Path targetDir = target.resolve(source.relativize(dir));
-                  try {
-                    Files.copy(dir, targetDir);
-                  } catch (FileAlreadyExistsException e) {
-                    if (!Files.isDirectory(targetDir)) {
-                      throw e;
-                    }
-                  }
-                  return FileVisitResult.CONTINUE;
-                }
 
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                  throws IOException {
-                  Files.copy(file, target.resolve(source.relativize(file)));
-                  return FileVisitResult.CONTINUE;
-                }
-              });
-          } else {
-            Files.copy(source, target);
+  private static void copy(Path source, Path target, boolean recursive, CopyOptions options) throws IOException {
+    Set<CopyOption> copyOptionSet = toCopyOptionSet(options);
+    CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[copyOptionSet.size()]);
+    if (recursive) {
+      Files.walkFileTree(source, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+        new SimpleFileVisitor<Path>() {
+          public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+            throws IOException {
+            Path targetDir = target.resolve(source.relativize(dir));
+            try {
+              Files.copy(dir, targetDir, copyOptions);
+            } catch (FileAlreadyExistsException e) {
+              if (!Files.isDirectory(targetDir)) {
+                throw e;
+              }
+            }
+            return FileVisitResult.CONTINUE;
           }
-        } catch (IOException e) {
-          throw new FileSystemException(e);
-        }
-        return null;
-      }
-    };
+
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+            throws IOException {
+            Files.copy(file, target.resolve(source.relativize(file)), copyOptions);
+            return FileVisitResult.CONTINUE;
+          }
+        });
+    } else {
+      Files.copy(source, target, copyOptions);
+    }
   }
 
   private BlockingAction<Void> moveInternal(String from, String to, CopyOptions options) {

@@ -77,10 +77,10 @@ public class FileSystemTest extends VertxTestBase {
     assertNullPointerException(() -> vertx.fileSystem().copy("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().copyBlocking(null, "ignored"));
     assertNullPointerException(() -> vertx.fileSystem().copyBlocking("ignored", null));
-    assertNullPointerException(() -> vertx.fileSystem().copyRecursive(null, "ignored", true, h -> {}));
-    assertNullPointerException(() -> vertx.fileSystem().copyRecursive("ignored", null, true, h -> {}));
-    assertNullPointerException(() -> vertx.fileSystem().copyRecursiveBlocking(null, "ignored", true));
-    assertNullPointerException(() -> vertx.fileSystem().copyRecursiveBlocking("ignored", null, true));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursive(null, "ignored", h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursive("ignored", null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursiveBlocking(null, "ignored"));
+    assertNullPointerException(() -> vertx.fileSystem().copyRecursiveBlocking("ignored", null));
     assertNullPointerException(() -> vertx.fileSystem().move(null, "ignored", h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().move("ignored", null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().moveBlocking(null, "ignored"));
@@ -115,8 +115,8 @@ public class FileSystemTest extends VertxTestBase {
     assertNullPointerException(() -> vertx.fileSystem().readSymlinkBlocking(null));
     assertNullPointerException(() -> vertx.fileSystem().delete(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().deleteBlocking(null));
-    assertNullPointerException(() -> vertx.fileSystem().deleteRecursive(null, true, h -> {}));
-    assertNullPointerException(() -> vertx.fileSystem().deleteRecursiveBlocking(null, true));
+    assertNullPointerException(() -> vertx.fileSystem().deleteRecursive(null, h -> {}));
+    assertNullPointerException(() -> vertx.fileSystem().deleteRecursiveBlocking(null));
     assertNullPointerException(() -> vertx.fileSystem().mkdir(null, h -> {}));
     assertNullPointerException(() -> vertx.fileSystem().mkdirBlocking(null));
     assertNullPointerException(() -> vertx.fileSystem().mkdir(null, "ignored", h -> {}));
@@ -279,7 +279,7 @@ public class FileSystemTest extends VertxTestBase {
   private void testCopy(String source, String target, boolean recursive,
                         boolean shouldPass, Handler<Void> afterOK) {
     if (recursive) {
-      vertx.fileSystem().copyRecursive(testDir + pathSep + source, testDir + pathSep + target, true, createHandler(shouldPass, afterOK));
+      vertx.fileSystem().copyRecursive(testDir + pathSep + source, testDir + pathSep + target, createHandler(shouldPass, afterOK));
     } else {
       vertx.fileSystem().copy(testDir + pathSep + source, testDir + pathSep + target, createHandler(shouldPass, afterOK));
     }
@@ -832,7 +832,7 @@ public class FileSystemTest extends VertxTestBase {
   private void testDelete(String fileName, boolean recursive, boolean shouldPass,
                           Handler<Void> afterOK) {
     if (recursive) {
-      vertx.fileSystem().deleteRecursive(testDir + pathSep + fileName, recursive, createHandler(shouldPass, afterOK));
+      vertx.fileSystem().deleteRecursive(testDir + pathSep + fileName, createHandler(shouldPass, afterOK));
     } else {
       vertx.fileSystem().delete(testDir + pathSep + fileName, createHandler(shouldPass, afterOK));
     }
