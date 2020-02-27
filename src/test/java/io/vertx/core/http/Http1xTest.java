@@ -4748,4 +4748,38 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
+  /**
+   * This test fills the outbound buffer and then trigger asynchronous de-queueing of
+   * pipelined requests, among others this check that the server connection will correctly
+   * handle back-pressure events (https://github.com/eclipse-vertx/vert.x/issues/3310).
+   */
+  @Test
+  public void testAsyncPipelinedRequestDequeuing() throws Exception {
+    int n = 100;
+    Buffer chunk = Buffer.buffer(TestUtils.randomAlphaString(8192));
+    waitFor(n);
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response()
+        .setChunked(true)
+        .setWriteQueueMaxSize(2048);
+      new Thread(() -> {
+        while (!resp.writeQueueFull()) {
+          resp.write(chunk);
+        }
+        resp.end();
+      }).start();
+    });
+    startServer();
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions()
+      .setMaxWaitQueueSize(n)
+      .setPipelining(true)
+      .setMaxPoolSize(1));
+    for (int i = 0;i < n;i++) {
+      client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        resp.endHandler(v -> complete());
+      });
+    }
+    await();
+  }
 }
