@@ -4772,7 +4772,7 @@ public class Http1xTest extends HttpTest {
     startServer();
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions()
-      .setMaxWaitQueueSize(n)
+      .setPipeliningLimit(n)
       .setPipelining(true)
       .setMaxPoolSize(1));
     for (int i = 0;i < n;i++) {
