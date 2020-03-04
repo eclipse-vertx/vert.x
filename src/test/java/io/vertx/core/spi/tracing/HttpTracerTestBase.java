@@ -178,7 +178,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         resp.endHandler(v2 -> {
           // Updates are done on the HTTP client context, so we need to run task on this context
           // to avoid data race
-          ((HttpClientImpl)client).context().runOnContext(v -> {
+          ctx.runOnContext(v -> {
             assertNull(tracerMap.get(key));
             testComplete();
           });

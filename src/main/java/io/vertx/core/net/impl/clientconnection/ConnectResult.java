@@ -8,8 +8,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl.pool;
+package io.vertx.core.net.impl.clientconnection;
 
+/**
+ * The result of a connect operation.
+ */
 public class ConnectResult<C> {
 
   private final C conn;
@@ -22,14 +25,23 @@ public class ConnectResult<C> {
     this.weight = weight;
   }
 
+  /**
+   * @return the connection
+   */
   public C connection() {
     return conn;
   }
 
+  /**
+   * @return the connection concurrency, i.e how many times a connection can be borrowed from a pool
+   */
   public long concurrency() {
     return concurrency;
   }
 
+  /**
+   * @return the connection weight, i.e how much the connection accounts when it is managed by a pool
+   */
   public long weight() {
     return weight;
   }

@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.pool;
+package io.vertx.core.net.impl.clientconnection;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;

@@ -19,6 +19,7 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
 
 /**
@@ -36,21 +37,21 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final boolean ssl;
   private String path;
   private String query;
-  private final Promise<HttpClientResponse> responsePromise;
+  private final PromiseInternal<HttpClientResponse> responsePromise;
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
 
-  HttpClientRequestBase(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
-    this.context = context;
+    this.responsePromise = responsePromise;
+    this.context = (ContextInternal) responsePromise.future().context();
     this.uri = uri;
     this.method = method;
     this.server = server;
     this.host = host;
     this.port = port;
     this.ssl = ssl;
-    this.responsePromise = context.promise();
   }
 
   protected String authority() {

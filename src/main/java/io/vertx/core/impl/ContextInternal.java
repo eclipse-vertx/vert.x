@@ -64,7 +64,8 @@ public interface ContextInternal extends Context, Executor {
   <T> PromiseInternal<T> promise();
 
   /**
-   * @return a {@link Promise} associated with this context
+   * @return a {@link Promise} associated with this context or the {@code handler}
+   *         if that handler is already an instance of {@code PromiseInternal}
    */
   <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler);
 

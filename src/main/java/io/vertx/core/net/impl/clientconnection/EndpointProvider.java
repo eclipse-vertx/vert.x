@@ -8,24 +8,24 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
+package io.vertx.core.net.impl.clientconnection;
 
-package io.vertx.core.http.impl.pool;
-
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
 /**
- * This class might seem useless, however we'll add support for pool acquisition timeout
- * so it will be used for keep tracking of the expired waiters.
+ * Provides endpoint to a {@link ConnectionManager}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-final class Waiter<C> {
+public interface EndpointProvider<K, C> {
 
-  public final Handler<AsyncResult<C>> handler;
+  /**
+   * Create an endpoint tracked by the {@link ConnectionManager}.
+   *
+   * @param dispose the callback to signal this endpoint should be destroyed
+   * @param ctx the creating context
+   * @return the created endpoint
+   */
+  Endpoint<C> create(K key, ContextInternal ctx, Runnable dispose);
 
-  Waiter(Handler<AsyncResult<C>> handler) {
-    this.handler = handler;
-  }
 }

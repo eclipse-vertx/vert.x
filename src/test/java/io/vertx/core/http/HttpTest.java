@@ -3627,18 +3627,22 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientGlobalConnectionHandler() throws Exception {
+    waitFor(2);
     server.requestHandler(req -> {
       req.response().end();
     });
     startServer(testAddress);
-    AtomicInteger status = new AtomicInteger();
-    Handler<HttpConnection> handler = conn -> status.getAndIncrement();
-    client.connectionHandler(handler);
-    client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-      .setHandler(resp -> {
-        assertEquals(1, status.getAndIncrement());
-        testComplete();
-      }).end();
+    Context ctx = vertx.getOrCreateContext();
+    client.connectionHandler(conn -> {
+      assertSame(ctx, Vertx.currentContext());
+      complete();
+    });
+    ctx.runOnContext(v -> {
+      client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+        .setHandler(resp -> {
+          complete();
+        }).end();
+    });
     await();
   }
 

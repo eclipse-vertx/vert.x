@@ -24,7 +24,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -72,9 +72,9 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean connecting;
   private Promise<NetSocket> netSocketPromise;
 
-  HttpClientRequestImpl(HttpClientImpl client, ContextInternal context, boolean ssl, HttpMethod method,
+  HttpClientRequestImpl(HttpClientImpl client, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method,
                         SocketAddress server, String host, int port, String requestURI) {
-    super(client, context, ssl, method, server, host, port, requestURI);
+    super(client, responsePromise, ssl, method, server, host, port, requestURI);
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();

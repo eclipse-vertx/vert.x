@@ -44,6 +44,10 @@ public interface VertxInternal extends Vertx {
    */
   <T> PromiseInternal<T> promise();
 
+  /**
+   * @return a promise associated with the context returned by {@link #getOrCreateContext()} or the {@code handler}
+   *         if that handler is already an instance of {@code PromiseInternal}
+   */
   <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler);
 
   long maxEventLoopExecTime();

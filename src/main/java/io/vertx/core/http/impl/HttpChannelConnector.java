@@ -25,9 +25,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.impl.pool.ConnectResult;
-import io.vertx.core.http.impl.pool.ConnectionListener;
-import io.vertx.core.http.impl.pool.ConnectionProvider;
+import io.vertx.core.net.impl.clientconnection.ConnectResult;
+import io.vertx.core.net.impl.clientconnection.ConnectionListener;
+import io.vertx.core.net.impl.clientconnection.ConnectionProvider;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
@@ -42,9 +42,10 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
+public class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
   private final HttpClientImpl client;
+  private final ContextInternal context;
   private final HttpClientOptions options;
   private final HttpClientMetrics metrics;
   private final SSLHelper sslHelper;
@@ -58,13 +59,15 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   private final SocketAddress server;
   private final Object endpointMetric;
 
-  HttpChannelConnector(HttpClientImpl client,
-                       Object endpointMetric,
-                       HttpVersion version,
-                       boolean ssl,
-                       SocketAddress peerAddress,
-                       SocketAddress server) {
+  public HttpChannelConnector(HttpClientImpl client,
+                              ContextInternal context,
+                              Object endpointMetric,
+                              HttpVersion version,
+                              boolean ssl,
+                              SocketAddress peerAddress,
+                              SocketAddress server) {
     this.client = client;
+    this.context = context;
     this.endpointMetric = endpointMetric;
     this.options = client.getOptions();
     this.metrics = client.metrics();
@@ -98,8 +101,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   public void init(HttpClientConnection conn) {
     Handler<HttpConnection> handler = client.connectionHandler();
     if (handler != null) {
-      ContextInternal ctx = client.context();
-      ctx.dispatch(conn, handler);
+      context.dispatch(conn, handler);
     }
   }
 

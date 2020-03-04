@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.pool;
+package io.vertx.core.net.impl.clientconnection;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -158,8 +158,6 @@ public class Pool<C> {
   private long weight;                                              // The actual pool weight (equivalent to connection count)
 
   private boolean checkInProgress;                                  // A flag to avoid running un-necessary checks
-  private boolean closed;
-  private final Handler<Void> poolClosed;
 
   public Pool(Context context,
               ConnectionProvider<C> connector,
@@ -167,7 +165,6 @@ public class Pool<C> {
               int queueMaxSize,
               long initialWeight,
               long maxWeight,
-              Handler<Void> poolClosed,
               Consumer<C> connectionAdded,
               Consumer<C> connectionRemoved,
               boolean fifo) {
@@ -178,7 +175,6 @@ public class Pool<C> {
     this.initialWeight = initialWeight;
     this.connector = connector;
     this.queueMaxSize = queueMaxSize;
-    this.poolClosed = poolClosed;
     this.available = new ArrayDeque<>();
     this.connectionAdded = connectionAdded;
     this.connectionRemoved = connectionRemoved;
@@ -201,16 +197,11 @@ public class Pool<C> {
    * Get a connection for a waiter asynchronously.
    *
    * @param handler the handler
-   * @return whether the pool can satisfy the request
    */
-  public synchronized boolean getConnection(Handler<AsyncResult<C>> handler) {
-    if (closed) {
-      return false;
-    }
+  public synchronized void getConnection(Handler<AsyncResult<C>> handler) {
     Waiter<C> waiter = new Waiter<>(handler);
     waitersQueue.add(waiter);
     checkProgress();
-    return true;
   }
 
   /**
@@ -226,7 +217,7 @@ public class Pool<C> {
    * Check whether the pool can make progress toward satisfying the waiters.
    */
   private void checkProgress() {
-    if (!checkInProgress && (canProgress() || canClose())) {
+    if (!checkInProgress && canProgress()) {
       checkInProgress = true;
       context.nettyEventLoop().execute(this::checkPendingTasks);
     }
@@ -251,7 +242,6 @@ public class Pool<C> {
         if (task == null) {
           // => Can't make more progress
           checkInProgress = false;
-          checkClose();
           break;
         }
       }
@@ -329,18 +319,6 @@ public class Pool<C> {
       }
     }
     return null;
-  }
-
-  private boolean canClose() {
-    return weight == 0 && waitersQueue.isEmpty();
-  }
-
-  private void checkClose() {
-    if (canClose()) {
-      // No waitersQueue and no connections - remove the ConnQueue
-      closed = true;
-      poolClosed.handle(null);
-    }
   }
 
   /**
@@ -518,8 +496,14 @@ public class Pool<C> {
       sb.append("Capacity:").append(capacity).append(File.separator);
       sb.append("Connecting:").append(connecting).append(File.separator);
       sb.append("CheckInProgress:").append(checkInProgress).append(File.separator);
-      sb.append("Closed:").append(closed).append(File.separator);
     }
     return sb.toString();
+  }
+
+  private static final class Waiter<C> {
+    private final Handler<AsyncResult<C>> handler;
+    Waiter(Handler<AsyncResult<C>> handler) {
+      this.handler = handler;
+    }
   }
 }

@@ -9,10 +9,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.http.impl.pool;
+package io.vertx.core.net.impl.clientconnection;
 
 /**
- * The listener definest the contract used by the {@link ConnectionProvider} to interact with the
+ * The listener defines the contract used by the {@link ConnectionProvider} to interact with the
  * connection pool. Its purpose is also to use a connection implementation without a pool.
  */
 public interface ConnectionListener<C> {

@@ -31,7 +31,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
-import io.vertx.core.http.impl.pool.ConnectionListener;
+import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -681,7 +681,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     WebsocketVersion vers,
     List<String> subProtocols,
     int maxWebSocketFrameSize,
-    Handler<AsyncResult<WebSocket>> wsHandler) {
+    Promise<WebSocket> promise) {
     try {
       URI wsuri = new URI(requestURI);
       if (!wsuri.isAbsolute()) {
@@ -746,7 +746,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           if (res.succeeded()) {
             webSocket.headers(ar.result());
           }
-          wsHandler.handle(res);
+          promise.handle(res);
           if (res.succeeded()) {
             webSocket.headers(null);
           }
@@ -757,7 +757,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         .handshake(chctx.channel())
         .addListener(f -> {
         if (!f.isSuccess()) {
-          wsHandler.handle(Future.failedFuture(f.cause()));
+          promise.fail(f.cause());
         }
       });
     } catch (Exception e) {
