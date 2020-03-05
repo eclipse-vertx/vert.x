@@ -482,14 +482,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private void closeClusterManager(Handler<AsyncResult<Void>> completionHandler) {
     if (clusterManager != null) {
-      clusterManager.leave(ar -> {
-        if (ar.failed()) {
-          log.error("Failed to leave cluster", ar.cause());
-        }
-        if (completionHandler != null) {
-          runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
-        }
-      });
+      clusterManager.leave()
+        .recover(t -> {
+          log.error("Failed to leave cluster", t);
+          return Future.succeededFuture();
+        })
+        .onComplete(ar -> {
+          if (completionHandler != null) {
+            runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+          }
+        });
     } else if (completionHandler != null) {
       runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
     }

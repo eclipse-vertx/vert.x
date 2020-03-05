@@ -211,12 +211,9 @@ public class HAManager {
     if (!stopped) {
       killed = true;
       CountDownLatch latch = new CountDownLatch(1);
-      clusterManager.leave(ar -> {
-        if (ar.failed()) {
-          log.error("Failed to leave cluster", ar.cause());
-        }
-        latch.countDown();
-      });
+      clusterManager.leave()
+        .onFailure(t -> log.error("Failed to leave cluster", t))
+        .onComplete(ar -> latch.countDown());
       vertx.cancelTimer(quorumTimerID);
 
       boolean interrupted = false;

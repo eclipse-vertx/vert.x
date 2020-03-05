@@ -11,7 +11,6 @@
 
 package io.vertx.test.fakecluster;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -186,13 +185,13 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void leave(Handler<AsyncResult<Void>> resultHandler) {
+  public Future<Void> leave() {
     registrations.forEach((address, registrationInfos) -> {
       synchronized (registrationInfos) {
         registrationInfos.removeIf(registrationInfo -> registrationInfo.getNodeId().equals(nodeID));
       }
     });
-    vertx.executeBlocking(fut -> {
+    return vertx.executeBlocking(fut -> {
       synchronized (this) {
         if (nodeID != null) {
           nodeInfos.remove(nodeID);
@@ -204,7 +203,7 @@ public class FakeClusterManager implements ClusterManager {
         }
       }
       fut.complete();
-    }, resultHandler);
+    });
   }
 
   @Override
