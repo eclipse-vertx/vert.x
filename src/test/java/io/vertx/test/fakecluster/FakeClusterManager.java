@@ -165,6 +165,11 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
+  public NodeInfo getNodeInfo() {
+    return nodeInfos.get(nodeID);
+  }
+
+  @Override
   public Future<NodeInfo> getNodeInfo(String nodeId) {
     return vertx.getOrCreateContext().succeededFuture(nodeInfos.get(nodeId));
   }

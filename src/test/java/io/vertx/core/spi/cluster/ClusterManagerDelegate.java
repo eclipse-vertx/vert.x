@@ -76,6 +76,11 @@ public class ClusterManagerDelegate implements ClusterManager {
   }
 
   @Override
+  public NodeInfo getNodeInfo() {
+    return clusterManager.getNodeInfo();
+  }
+
+  @Override
   public Future<NodeInfo> getNodeInfo(String nodeId) {
     return clusterManager.getNodeInfo(nodeId);
   }

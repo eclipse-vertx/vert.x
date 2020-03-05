@@ -83,6 +83,11 @@ public interface ClusterManager {
   Future<Void> setNodeInfo(NodeInfo nodeInfo);
 
   /**
+   * Get details about this clustered node.
+   */
+  NodeInfo getNodeInfo();
+
+  /**
    * Get details about a clustered Vert.x node.
    *
    * @param nodeId the clustered node id

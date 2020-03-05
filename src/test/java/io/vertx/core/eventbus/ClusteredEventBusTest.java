@@ -11,20 +11,29 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.DeliveryStrategy;
+import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
-import java.util.ArrayList;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.*;
 
 
 /**
@@ -446,5 +455,85 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         }));
       }));
     await();
+  }
+
+  @Test
+  public void testCustomDeliveryStrategy() throws Exception {
+    VertxOptions[] options = IntStream.range(0, 4)
+      .mapToObj(i -> {
+        VertxOptions vertxOptions = getOptions();
+        vertxOptions.getEventBusOptions()
+          .setNodeMetaData(new JsonObject().put("rack", i % 2 == 0 ? "foo" : "bar"))
+          .setDeliveryStrategy(new CustomDeliveryStrategy());
+        return vertxOptions;
+      })
+      .toArray(VertxOptions[]::new);
+
+    startNodes(options);
+
+    ConcurrentMap<Integer, Set<String>> received = new ConcurrentHashMap<>();
+    CountDownLatch latch = new CountDownLatch(8);
+    CompositeFuture cf = IntStream.range(0, 4)
+      .mapToObj(i -> vertices[i].eventBus().<String>consumer("test", msg -> {
+        received.merge(i, Collections.singleton(msg.body()), (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(toSet()));
+        latch.countDown();
+      }))
+      .map(consumer -> {
+        Promise<Void> promise = Promise.promise();
+        consumer.completionHandler(promise);
+        return promise.future();
+      })
+      .map(Future.class::cast)
+      .collect(collectingAndThen(toList(), CompositeFuture::all));
+
+    Map<Integer, Set<String>> expected = new HashMap<>();
+    cf.onComplete(onSuccess(v -> {
+      for (int i = 0; i < 4; i++) {
+        String s = String.valueOf((char) ('a' + i));
+        vertices[i].eventBus().publish("test", s);
+        expected.merge(i, Collections.singleton(s), (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(toSet()));
+        expected.merge((i + 2) % 4, Collections.singleton(s), (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(toSet()));
+      }
+    }));
+
+    awaitLatch(latch);
+
+    assertEquals(expected, received);
+  }
+
+  private static class CustomDeliveryStrategy implements DeliveryStrategy {
+    private VertxInternal vertx;
+    private ClusterManager clusterManager;
+    private String rack;
+
+    @Override
+    public void setVertx(VertxInternal vertx) {
+      this.vertx = vertx;
+    }
+
+    @Override
+    public void eventBusStarted() {
+      clusterManager = vertx.getClusterManager();
+      rack = clusterManager.getNodeInfo().getMetadata().getString("rack");
+    }
+
+    @Override
+    public Future<List<String>> chooseNodes(Message<?> message) {
+      List<String> nodes = clusterManager.getNodes();
+      CompositeFuture future = nodes.stream()
+        .map(clusterManager::getNodeInfo)
+        .map(Future.class::cast)
+        .collect(collectingAndThen(toList(), CompositeFuture::all));
+      return future.map(cf -> {
+        List<String> res = new ArrayList<>();
+        for (int i = 0; i < nodes.size(); i++) {
+          NodeInfo nodeInfo = cf.resultAt(i);
+          if (nodeInfo.getMetadata().getString("rack").equals(this.rack)) {
+            res.add(nodes.get(i));
+          }
+        }
+        return res;
+      });
+    }
   }
 }
