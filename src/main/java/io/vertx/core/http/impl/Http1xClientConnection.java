@@ -79,6 +79,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
   private Deque<Stream> requests = new ArrayDeque<>();
   private Deque<Stream> responses = new ArrayDeque<>();
+  private boolean closed;
 
   private Handler<Object> invalidMessageHandler = INVALID_MSG_HANDLER;
   private boolean close;
@@ -814,6 +815,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
   protected void handleClosed() {
     super.handleClosed();
+    closed = true;
     if (metrics != null) {
       metrics.endpointDisconnected(endpointMetric, metric());
     }
@@ -873,13 +875,21 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     if (eventLoop.inEventLoop()) {
       StreamImpl stream;
       synchronized (this) {
-        stream = new StreamImpl(context, this, req, netSocketPromise, seq++);
-        if (requests.isEmpty()) {
-          stream.promise.complete(stream);
+        if (closed) {
+          stream = null;
+        } else {
+          stream = new StreamImpl(context, this, req, netSocketPromise, seq++);
+          requests.add(stream);
+          if (requests.size() == 1) {
+            stream.promise.complete(stream);
+          }
         }
-        requests.add(stream);
       }
-      stream.promise.future().setHandler(handler);
+      if (stream != null) {
+        stream.promise.future().setHandler(handler);
+      } else {
+        handler.handle(Future.failedFuture(CLOSED_EXCEPTION));
+      }
     } else {
       eventLoop.execute(() -> {
         createStream(context, req, netSocketPromise, handler);
