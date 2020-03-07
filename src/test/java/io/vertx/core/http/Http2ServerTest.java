@@ -3139,6 +3139,7 @@ public class Http2ServerTest extends Http2TestBase {
     });
     startServer();
     TestClient client = new TestClient();
+    Context context = vertx.getOrCreateContext();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
       request.encoder.writeHeaders(request.context, id, GET("/"), requestStreamPriority.getDependency(), requestStreamPriority.getWeight(), requestStreamPriority.isExclusive(), 0, false, request.context.newPromise());
@@ -3152,7 +3153,7 @@ public class Http2ServerTest extends Http2TestBase {
         public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding,
               boolean endStream) throws Http2Exception {
           super.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endStream);
-          vertx.runOnContext(v -> {
+          context.runOnContext(v -> {
             assertEquals(id, streamId);
             assertEquals(responseStreamPriority.getDependency(), streamDependency);
             assertEquals(responseStreamPriority.getWeight(), weight);
@@ -3163,11 +3164,11 @@ public class Http2ServerTest extends Http2TestBase {
         int cnt;
         @Override
         public void onPriorityRead(ChannelHandlerContext ctx, int streamId, int streamDependency, short weight, boolean exclusive) throws Http2Exception {
-          vertx.runOnContext(v -> {
+          context.runOnContext(v -> {
             assertEquals(id, streamId);
             switch (cnt++) {
               case 0:
-                assertEquals(responseStreamPriority.getDependency(), streamDependency);
+                assertEquals(responseStreamPriority.getDependency(), streamDependency); // HERE
                 assertEquals(responseStreamPriority.getWeight(), weight);
                 assertEquals(responseStreamPriority.isExclusive(), exclusive);
                 complete();
@@ -3187,7 +3188,7 @@ public class Http2ServerTest extends Http2TestBase {
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
             if(endOfStream) {
-              vertx.runOnContext(v -> {
+              context.runOnContext(v -> {
                 complete();
               });
             }
