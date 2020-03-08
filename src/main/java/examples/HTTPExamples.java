@@ -439,11 +439,8 @@ public class HTTPExamples {
     HttpClient client = vertx.createHttpClient();
 
     HttpClientRequest request = client.request(HttpMethod.POST, "some-uri")
-      .setHandler(ar -> {
-        if (ar.succeeded()) {
-          HttpClientResponse response = ar.result();
-          System.out.println("Received response with status code " + response.statusCode());
-        }
+      .onSuccess(response -> {
+        System.out.println("Received response with status code " + response.statusCode());
       });
 
     // Now do stuff with the request
@@ -457,11 +454,8 @@ public class HTTPExamples {
     // Or fluently:
 
     client.request(HttpMethod.POST, "some-uri")
-      .setHandler(ar -> {
-        if (ar.succeeded()) {
-          HttpClientResponse response = ar.result();
-          System.out.println("Received response with status code " + response.statusCode());
-        }
+      .onSuccess(response -> {
+        System.out.println("Received response with status code " + response.statusCode());
       })
       .putHeader("content-length", "1000")
       .putHeader("content-type", "text/plain")
@@ -528,44 +522,51 @@ public class HTTPExamples {
   }
 
   public void example42(HttpClient client) {
-
-    HttpClientRequest request = client.request(HttpMethod.POST, "some-uri").setHandler(ar -> {
-      if (ar.succeeded()) {
-        HttpClientResponse response = ar.result();
-        System.out.println("Received response with status code " + response.statusCode());
-      }
-    });
-    request.exceptionHandler(e -> {
-      System.out.println("Received exception: " + e.getMessage());
-      e.printStackTrace();
-    });
+    client
+      .post("some-uri", Buffer.buffer("some-data"))
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          HttpClientResponse response = ar.result();
+          System.out.println("Received response with status code " + response.statusCode());
+        } else {
+          System.out.println("Received exception: " + ar.cause().getMessage());
+        }
+      });
   }
 
   public void statusCodeHandling(HttpClient client) {
-    HttpClientRequest request = client.request(HttpMethod.POST, "some-uri")
-      .setHandler(ar -> {
-        if (ar.succeeded()) {
-          HttpClientResponse response = ar.result();
-          if (response.statusCode() == 200) {
+    client.post("some-uri", Buffer.buffer("some-data"))
+      .onSuccess(response -> {
+        switch (response.statusCode()) {
+          case 200:
             System.out.println("Everything fine");
-            return;
-          }
-          if (response.statusCode() == 500) {
+            break;
+          case 500:
             System.out.println("Unexpected behavior on the server side");
-            return;
-          }
+            break;
         }
       });
+  }
+
+  public void useRequestAsStream(HttpClientRequest request) {
+
+    request.setChunked(true);
+    request.write("chunk-1");
+    request.write("chunk-2");
     request.end();
+  }
+
+  public void setRequestExceptionHandler(HttpClientRequest request) {
+
+    request.exceptionHandler(err -> {
+      System.out.println("Write failure " + err.getMessage());
+    });
   }
 
   public void example44(HttpClientRequest request, AsyncFile file) {
 
     request.setChunked(true);
-    Pump pump = Pump.pump(file, request);
-    file.endHandler(v -> request.end());
-    pump.start();
-
+    file.pipeTo(request);
   }
 
   public void example45(HttpClient client) {
@@ -695,11 +696,8 @@ public class HTTPExamples {
   public void example50(HttpClient client) {
 
     HttpClientRequest request = client.request(HttpMethod.PUT, "some-uri")
-      .setHandler(ar -> {
-        if (ar.succeeded()) {
-          HttpClientResponse response = ar.result();
-          System.out.println("Received response with status code " + response.statusCode());
-        }
+      .onSuccess(response -> {
+        System.out.println("Received response with status code " + response.statusCode());
       });
 
     request.putHeader("Expect", "100-Continue");
@@ -762,12 +760,9 @@ public class HTTPExamples {
   public void clientTunnel(HttpClient client) {
 
     HttpClientRequest request = client.request(HttpMethod.CONNECT, "some-uri")
-      .setHandler(ar -> {
-        if (ar.succeeded()) {
-          HttpClientResponse response = ar.result();
-          if (response.statusCode() != 200) {
-            // Connect failed for some reason
-          }
+      .onSuccess(response -> {
+        if (response.statusCode() != 200) {
+          // Connect failed for some reason
         }
       });
 

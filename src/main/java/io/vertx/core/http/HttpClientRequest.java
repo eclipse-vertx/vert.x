@@ -450,4 +450,17 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
     onComplete(handler);
     return this;
   }
+
+  @Override
+  HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler);
+
+  @Override
+  default HttpClientRequest onSuccess(Handler<HttpClientResponse> handler) {
+    return (HttpClientRequest) Future.super.onSuccess(handler);
+  }
+
+  @Override
+  default HttpClientRequest onFailure(Handler<Throwable> handler) {
+    return (HttpClientRequest) Future.super.onFailure(handler);
+  }
 }

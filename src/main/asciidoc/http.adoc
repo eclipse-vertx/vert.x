@@ -949,7 +949,10 @@ If the request does not return any data within the timeout period an exception w
 
 ==== Handling exceptions
 
-You can handle exceptions corresponding to a request by setting an exception handler on the
+You can handle exceptions corresponding to a request with the response future:
+
+
+setting an exception handler on the
 {@link io.vertx.core.http.HttpClientRequest} instance:
 
 [source,$lang]
@@ -969,10 +972,25 @@ IMPORTANT: `XXXNow` methods cannot receive an exception handler.
 
 ==== Using the request as a stream
 
-The {@link io.vertx.core.http.HttpClientRequest} instance is also a {@link io.vertx.core.streams.WriteStream} which means
-you can pump to it from any {@link io.vertx.core.streams.ReadStream} instance.
+The {@link io.vertx.core.http.HttpClientRequest} instance is also a {@link io.vertx.core.streams.WriteStream} instance.
 
-For, example, you could pump a file on disk to a http request body as follows:
+You can write to and end the stream manually.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#useRequestAsStream}
+----
+
+You can set an exception handler to handle stream write errors
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#setRequestExceptionHandler}
+----
+
+Finally you can pipe to it from any {@link io.vertx.core.streams.ReadStream} instance.
+
+For, example, you could pipe a file on disk to a http request body as follows:
 
 [source,$lang]
 ----
