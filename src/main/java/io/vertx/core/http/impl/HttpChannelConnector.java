@@ -108,7 +108,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
   @Override
   public void connect(ConnectionListener<HttpClientConnection> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<HttpClientConnection>>> handler) {
     Promise<ConnectResult<HttpClientConnection>> promise = Promise.promise();
-    promise.future().setHandler(handler);
+    promise.future().onComplete(handler);
     try {
       doConnect(listener, context, promise);
     } catch(Exception e) {

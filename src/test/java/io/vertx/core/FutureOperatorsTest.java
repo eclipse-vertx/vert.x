@@ -21,7 +21,7 @@ public class FutureOperatorsTest extends VertxTestBase {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
     Promise<String> promise = ctx.promise();
     Future<String> fut1 = promise.future();
-    fut1.setHandler(ar -> {
+    fut1.onComplete(ar -> {
       System.out.println(ar.succeeded());
       System.out.println(ar.failed());
       AsyncResult<String> mapped = ar.map("Mapped");
@@ -38,7 +38,7 @@ public class FutureOperatorsTest extends VertxTestBase {
     Promise<String> promise = ctx.promise();
     Future<String> fut1 = promise.future();
     Future<String> fut2 = fut1.map("Mapped");
-    fut2.setHandler(ar -> {
+    fut2.onComplete(ar -> {
       System.out.println("result");
     });
     promise.complete("Value");

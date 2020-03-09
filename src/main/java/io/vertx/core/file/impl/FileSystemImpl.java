@@ -85,7 +85,7 @@ public class FileSystemImpl implements FileSystem {
 
   @Override
   public FileSystem copy(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
-    copy(from, to, options).setHandler(handler);
+    copy(from, to, options).onComplete(handler);
     return this;
   }
 
@@ -100,7 +100,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem copyRecursive(String from, String to, boolean recursive, Handler<AsyncResult<Void>> handler) {
-    copyRecursive(from, to, recursive).setHandler(handler);
+    copyRecursive(from, to, recursive).onComplete(handler);
     return this;
   }
 
@@ -125,7 +125,7 @@ public class FileSystemImpl implements FileSystem {
 
   @Override
   public FileSystem move(String from, String to, CopyOptions options, Handler<AsyncResult<Void>> handler) {
-    move(from, to, options).setHandler(handler);
+    move(from, to, options).onComplete(handler);
     return this;
   }
 
@@ -140,7 +140,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem truncate(String path, long len, Handler<AsyncResult<Void>> handler) {
-    truncate(path, len).setHandler(handler);
+    truncate(path, len).onComplete(handler);
     return this;
   }
 
@@ -155,7 +155,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem chmod(String path, String perms, Handler<AsyncResult<Void>> handler) {
-    chmod(path, perms).setHandler(handler);
+    chmod(path, perms).onComplete(handler);
     return this;
   }
 
@@ -170,7 +170,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem chmodRecursive(String path, String perms, String dirPerms, Handler<AsyncResult<Void>> handler) {
-    chmodRecursive(path, perms, dirPerms).setHandler(handler);
+    chmodRecursive(path, perms, dirPerms).onComplete(handler);
     return this;
   }
 
@@ -185,7 +185,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem chown(String path, String user, String group, Handler<AsyncResult<Void>> handler) {
-    chown(path, user, group).setHandler(handler);
+    chown(path, user, group).onComplete(handler);
     return this;
   }
 
@@ -200,7 +200,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem props(String path, Handler<AsyncResult<FileProps>> handler) {
-    props(path).setHandler(handler);
+    props(path).onComplete(handler);
     return this;
   }
 
@@ -214,7 +214,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem lprops(String path, Handler<AsyncResult<FileProps>> handler) {
-    lprops(path).setHandler(handler);
+    lprops(path).onComplete(handler);
     return this;
   }
 
@@ -228,7 +228,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem link(String link, String existing, Handler<AsyncResult<Void>> handler) {
-    link(link, existing).setHandler(handler);
+    link(link, existing).onComplete(handler);
     return this;
   }
 
@@ -243,7 +243,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem symlink(String link, String existing, Handler<AsyncResult<Void>> handler) {
-    symlink(link, existing).setHandler(handler);
+    symlink(link, existing).onComplete(handler);
     return this;
   }
 
@@ -258,7 +258,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem unlink(String link, Handler<AsyncResult<Void>> handler) {
-    unlink(link).setHandler(handler);
+    unlink(link).onComplete(handler);
     return this;
   }
 
@@ -273,7 +273,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem readSymlink(String link, Handler<AsyncResult<String>> handler) {
-    readSymlink(link).setHandler(handler);
+    readSymlink(link).onComplete(handler);
     return this;
   }
 
@@ -287,7 +287,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem delete(String path, Handler<AsyncResult<Void>> handler) {
-    delete(path).setHandler(handler);
+    delete(path).onComplete(handler);
     return this;
   }
 
@@ -302,7 +302,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem deleteRecursive(String path, boolean recursive, Handler<AsyncResult<Void>> handler) {
-    deleteRecursive(path, recursive).setHandler(handler);
+    deleteRecursive(path, recursive).onComplete(handler);
     return this;
   }
 
@@ -317,7 +317,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem mkdir(String path, Handler<AsyncResult<Void>> handler) {
-    mkdir(path).setHandler(handler);
+    mkdir(path).onComplete(handler);
     return this;
   }
 
@@ -332,7 +332,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem mkdirs(String path, Handler<AsyncResult<Void>> handler) {
-    mkdirs(path).setHandler(handler);
+    mkdirs(path).onComplete(handler);
     return this;
   }
 
@@ -347,7 +347,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem mkdir(String path, String perms, Handler<AsyncResult<Void>> handler) {
-    mkdir(path, perms).setHandler(handler);
+    mkdir(path, perms).onComplete(handler);
     return this;
   }
 
@@ -362,7 +362,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem mkdirs(String path, String perms, Handler<AsyncResult<Void>> handler) {
-    mkdirs(path, perms).setHandler(handler);
+    mkdirs(path, perms).onComplete(handler);
     return this;
   }
 
@@ -377,7 +377,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem readDir(String path, Handler<AsyncResult<List<String>>> handler) {
-    readDir(path).setHandler(handler);
+    readDir(path).onComplete(handler);
     return this;
   }
 
@@ -391,7 +391,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem readDir(String path, String filter, Handler<AsyncResult<List<String>>> handler) {
-    readDir(path, filter).setHandler(handler);
+    readDir(path, filter).onComplete(handler);
     return this;
   }
 
@@ -405,7 +405,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem readFile(String path, Handler<AsyncResult<Buffer>> handler) {
-    readFile(path).setHandler(handler);
+    readFile(path).onComplete(handler);
     return this;
   }
 
@@ -419,7 +419,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem writeFile(String path, Buffer data, Handler<AsyncResult<Void>> handler) {
-    writeFile(path, data).setHandler(handler);
+    writeFile(path, data).onComplete(handler);
     return this;
   }
 
@@ -434,7 +434,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem open(String path, OpenOptions options, Handler<AsyncResult<AsyncFile>> handler) {
-    open(path, options).setHandler(handler);
+    open(path, options).onComplete(handler);
     return this;
   }
 
@@ -448,7 +448,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem createFile(String path, Handler<AsyncResult<Void>> handler) {
-    createFile(path).setHandler(handler);
+    createFile(path).onComplete(handler);
     return this;
   }
 
@@ -463,7 +463,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem createFile(String path, String perms, Handler<AsyncResult<Void>> handler) {
-    createFile(path, perms).setHandler(handler);
+    createFile(path, perms).onComplete(handler);
     return this;
   }
 
@@ -478,7 +478,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem exists(String path, Handler<AsyncResult<Boolean>> handler) {
-    exists(path).setHandler(handler);
+    exists(path).onComplete(handler);
     return this;
   }
 
@@ -492,7 +492,7 @@ public class FileSystemImpl implements FileSystem {
   }
 
   public FileSystem fsProps(String path, Handler<AsyncResult<FileSystemProps>> handler) {
-    fsProps(path).setHandler(handler);
+    fsProps(path).onComplete(handler);
     return this;
   }
 
@@ -507,7 +507,7 @@ public class FileSystemImpl implements FileSystem {
 
   @Override
   public FileSystem createTempDirectory(String prefix, Handler<AsyncResult<String>> handler) {
-    createTempDirectory(prefix).setHandler(handler);
+    createTempDirectory(prefix).onComplete(handler);
     return this;
   }
 
@@ -523,7 +523,7 @@ public class FileSystemImpl implements FileSystem {
 
   @Override
   public FileSystem createTempDirectory(String prefix, String perms, Handler<AsyncResult<String>> handler) {
-    createTempDirectory(prefix, perms).setHandler(handler);
+    createTempDirectory(prefix, perms).onComplete(handler);
     return this;
   }
 
@@ -539,7 +539,7 @@ public class FileSystemImpl implements FileSystem {
 
   @Override
   public FileSystem createTempDirectory(String dir, String prefix, String perms, Handler<AsyncResult<String>> handler) {
-    createTempDirectory(dir, prefix, perms).setHandler(handler);
+    createTempDirectory(dir, prefix, perms).onComplete(handler);
     return this;
   }
 
@@ -555,7 +555,7 @@ public class FileSystemImpl implements FileSystem {
 
   @Override
   public FileSystem createTempFile(String prefix, String suffix, Handler<AsyncResult<String>> handler) {
-    createTempFile(prefix, suffix).setHandler(handler);
+    createTempFile(prefix, suffix).onComplete(handler);
     return this;
   }
 
@@ -571,7 +571,7 @@ public class FileSystemImpl implements FileSystem {
 
   @Override
   public FileSystem createTempFile(String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler) {
-    createTempFile(prefix, suffix, perms).setHandler(handler);
+    createTempFile(prefix, suffix, perms).onComplete(handler);
     return this;
   }
 
@@ -588,7 +588,7 @@ public class FileSystemImpl implements FileSystem {
 
   @Override
   public FileSystem createTempFile(String dir, String prefix, String suffix, String perms, Handler<AsyncResult<String>> handler) {
-    createTempFile(dir, prefix, suffix, perms).setHandler(handler);
+    createTempFile(dir, prefix, suffix, perms).onComplete(handler);
     return this;
   }
 

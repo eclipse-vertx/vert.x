@@ -345,7 +345,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       return (PromiseInternal<T>) handler;
     } else {
       PromiseInternal<T> promise = promise();
-      promise.future().setHandler(handler);
+      promise.future().onComplete(handler);
       return promise;
     }
   }
@@ -511,7 +511,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     closed = true;
 
     closeHooks.run(ar -> {
-      deploymentManager.undeployAll().setHandler(ar1 -> {
+      deploymentManager.undeployAll().onComplete(ar1 -> {
         HAManager haManager = haManager();
         Promise<Void> haPromise = Promise.promise();
         if (haManager != null) {
@@ -522,7 +522,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         } else {
           haPromise.complete();
         }
-        haPromise.future().setHandler(ar2 -> {
+        haPromise.future().onComplete(ar2 -> {
           addressResolver.close(ar3 -> {
             eventBus.close(ar4 -> {
               closeClusterManager(ar5 -> {
@@ -587,7 +587,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public void deployVerticle(String name, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     Future<String> fut = deployVerticle(name, options);
     if (completionHandler != null) {
-      fut.setHandler(completionHandler);
+      fut.onComplete(completionHandler);
     }
   }
 
@@ -600,7 +600,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public void deployVerticle(Verticle verticle, Handler<AsyncResult<String>> completionHandler) {
     Future<String> fut = deployVerticle(verticle);
     if (completionHandler != null) {
-      fut.setHandler(completionHandler);
+      fut.onComplete(completionHandler);
     }
   }
 
@@ -616,7 +616,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public void deployVerticle(Verticle verticle, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     Future<String> fut = deployVerticle(verticle, options);
     if (completionHandler != null) {
-      fut.setHandler(completionHandler);
+      fut.onComplete(completionHandler);
     }
   }
 
@@ -629,7 +629,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public void deployVerticle(Class<? extends Verticle> verticleClass, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     Future<String> fut = deployVerticle(verticleClass, options);
     if (completionHandler != null) {
-      fut.setHandler(completionHandler);
+      fut.onComplete(completionHandler);
     }
   }
 
@@ -642,7 +642,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public void deployVerticle(Supplier<Verticle> verticleSupplier, DeploymentOptions options, Handler<AsyncResult<String>> completionHandler) {
     Future<String> fut = deployVerticle(verticleSupplier, options);
     if (completionHandler != null) {
-      fut.setHandler(completionHandler);
+      fut.onComplete(completionHandler);
     }
   }
 
@@ -683,7 +683,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       haFuture.complete();
     }
-    haFuture.future().compose(v -> deploymentManager.undeployVerticle(deploymentID)).setHandler(completionHandler);
+    haFuture.future().compose(v -> deploymentManager.undeployVerticle(deploymentID)).onComplete(completionHandler);
   }
 
   @Override

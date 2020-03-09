@@ -590,7 +590,7 @@ public class DatagramTest extends VertxTestBase {
         });
         peer2.listen(1234, "127.0.0.1")
           .<Void>mapEmpty()
-          .setHandler(startPromise);
+          .onComplete(startPromise);
       }
     }, new DeploymentOptions().setWorker(true), onSuccess(id -> {
       peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());

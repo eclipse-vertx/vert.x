@@ -330,7 +330,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void handleNextRequest(HttpClientRequest next, Handler<AsyncResult<HttpClientResponse>> handler, long timeoutMs) {
-    next.setHandler(handler);
+    next.onComplete(handler);
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
     next.pushHandler(pushHandler);
@@ -341,7 +341,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (headers != null) {
       next.headers().addAll(headers);
     }
-    endFuture.setHandler(ar -> {
+    endFuture.onComplete(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {
           next.setTimeout(timeoutMs);
@@ -371,7 +371,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
       Future<HttpClientRequest> next = client.redirectHandler().apply(resp);
       if (next != null) {
-        next.setHandler(ar -> {
+        next.onComplete(ar -> {
           if (ar.succeeded()) {
             handleNextRequest(ar.result(), promise.future().getHandler(), timeoutMs);
           } else {

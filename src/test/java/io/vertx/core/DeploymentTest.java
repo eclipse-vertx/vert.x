@@ -1223,7 +1223,7 @@ public class DeploymentTest extends VertxTestBase {
       public void stop(Promise<Void> stopPromise) {
         vertx.deployVerticle(ChildVerticle.class.getName())
           .<Void>mapEmpty()
-          .setHandler(stopPromise);
+          .onComplete(stopPromise);
       }
     }
 

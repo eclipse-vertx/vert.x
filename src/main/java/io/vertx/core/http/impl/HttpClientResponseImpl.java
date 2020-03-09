@@ -249,7 +249,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     BodyHandler handler = new BodyHandler();
     handler(handler);
     endHandler(handler::handleEnd);
-    handler.promise.future().setHandler(ar -> {
+    handler.promise.future().onComplete(ar -> {
       if (ar.succeeded()) {
         bodyHandler.handle(ar.result());
       }

@@ -143,7 +143,7 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
     Objects.requireNonNull(handler, "handler");
-    read(buffer, offset, position, length).setHandler(handler);
+    read(buffer, offset, position, length).onComplete(handler);
     return this;
   }
 
@@ -391,7 +391,7 @@ public class AsyncFileImpl implements AsyncFile {
     int readSize = (int) Math.min((long)readBufferSize, readLength);
     bb.limit(readSize);
     Promise<Buffer> promise = context.promise();
-    promise.future().setHandler(ar -> {
+    promise.future().onComplete(ar -> {
       if (ar.succeeded()) {
         Buffer buffer = ar.result();
         readPos += buffer.length();

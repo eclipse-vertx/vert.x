@@ -212,7 +212,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public void write(Buffer data, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = write(data);
     if (handler != null) {
-      fut.setHandler(handler);
+      fut.onComplete(handler);
     }
   }
 
@@ -226,7 +226,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public void write(String str, String enc, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = write(str, enc);
     if (handler != null) {
-      fut.setHandler(handler);
+      fut.onComplete(handler);
     }
   }
 
@@ -239,7 +239,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public void write(String str, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = write(str);
     if (handler != null) {
-      fut.setHandler(handler);
+      fut.onComplete(handler);
     }
   }
 
@@ -252,7 +252,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public void end(Buffer buffer, Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = end(buffer);
     if (handler != null) {
-      fut.setHandler(handler);
+      fut.onComplete(handler);
     }
   }
 
@@ -265,7 +265,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   public void end(Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = end();
     if (handler != null) {
-      fut.setHandler(handler);
+      fut.onComplete(handler);
     }
   }
 

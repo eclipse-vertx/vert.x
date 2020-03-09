@@ -1192,7 +1192,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         } else {
           httpHost = DEFAULT_HTTP_HOST;
         }
-        HttpClientRequest req = requestProvider.apply(client).setHandler(ar2 -> {
+        HttpClientRequest req = requestProvider.apply(client).onComplete(ar2 -> {
           if (ar2.succeeded()) {
             HttpClientResponse response = ar2.result();
             HttpConnection conn = response.request().connection();

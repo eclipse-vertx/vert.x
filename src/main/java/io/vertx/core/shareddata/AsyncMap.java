@@ -43,7 +43,7 @@ public interface AsyncMap<K, V> {
    * @param resultHandler - this will be called some time later with the async result.
    */
   default void get(K k, Handler<AsyncResult<@Nullable V>> resultHandler) {
-    get(k).setHandler(resultHandler);
+    get(k).onComplete(resultHandler);
   }
 
   /**
@@ -59,7 +59,7 @@ public interface AsyncMap<K, V> {
    * @param completionHandler - this will be called some time later to signify the value has been put
    */
   default void put(K k, V v, Handler<AsyncResult<Void>> completionHandler) {
-    put(k, v).setHandler(completionHandler);
+    put(k, v).onComplete(completionHandler);
   }
 
   /**
@@ -77,7 +77,7 @@ public interface AsyncMap<K, V> {
    * @param completionHandler  the handler
    */
   default void put(K k, V v, long ttl, Handler<AsyncResult<Void>> completionHandler) {
-    put(k, v, ttl).setHandler(completionHandler);
+    put(k, v, ttl).onComplete(completionHandler);
   }
 
   /**
@@ -94,7 +94,7 @@ public interface AsyncMap<K, V> {
    * @param completionHandler  the handler
    */
   default void putIfAbsent(K k, V v, Handler<AsyncResult<@Nullable V>> completionHandler) {
-    putIfAbsent(k, v).setHandler(completionHandler);
+    putIfAbsent(k, v).onComplete(completionHandler);
   }
 
   /**
@@ -112,7 +112,7 @@ public interface AsyncMap<K, V> {
    * @param completionHandler  the handler
    */
   default void putIfAbsent(K k, V v, long ttl, Handler<AsyncResult<@Nullable V>> completionHandler) {
-    putIfAbsent(k, v, ttl).setHandler(completionHandler);
+    putIfAbsent(k, v, ttl).onComplete(completionHandler);
   }
 
   /**
@@ -127,7 +127,7 @@ public interface AsyncMap<K, V> {
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
   default void remove(K k, Handler<AsyncResult<@Nullable V>> resultHandler) {
-    remove(k).setHandler(resultHandler);
+    remove(k).onComplete(resultHandler);
   }
 
   /**
@@ -143,7 +143,7 @@ public interface AsyncMap<K, V> {
    * @param resultHandler - this will be called some time later to signify the value has been removed
    */
   default void removeIfPresent(K k, V v, Handler<AsyncResult<Boolean>> resultHandler) {
-    removeIfPresent(k, v).setHandler(resultHandler);
+    removeIfPresent(k, v).onComplete(resultHandler);
   }
 
   /**
@@ -159,7 +159,7 @@ public interface AsyncMap<K, V> {
    * @param resultHandler  the result handler will be passed the previous value
    */
   default void replace(K k, V v, Handler<AsyncResult<@Nullable V>> resultHandler) {
-    replace(k, v).setHandler(resultHandler);
+    replace(k, v).onComplete(resultHandler);
   }
 
   /**
@@ -176,7 +176,7 @@ public interface AsyncMap<K, V> {
    * @param resultHandler the result handler
    */
   default void replaceIfPresent(K k, V oldValue, V newValue, Handler<AsyncResult<Boolean>> resultHandler) {
-    replaceIfPresent(k, oldValue, newValue).setHandler(resultHandler);
+    replaceIfPresent(k, oldValue, newValue).onComplete(resultHandler);
   }
 
   /**
@@ -190,7 +190,7 @@ public interface AsyncMap<K, V> {
    * @param resultHandler  called on completion
    */
   default void clear(Handler<AsyncResult<Void>> resultHandler) {
-    clear().setHandler(resultHandler);
+    clear().onComplete(resultHandler);
   }
 
   /**
@@ -204,7 +204,7 @@ public interface AsyncMap<K, V> {
    * @param resultHandler  handler which will receive the number of entries
    */
   default void size(Handler<AsyncResult<Integer>> resultHandler) {
-    size().setHandler(resultHandler);
+    size().onComplete(resultHandler);
   }
 
   /**
@@ -223,7 +223,7 @@ public interface AsyncMap<K, V> {
    */
   @GenIgnore
   default void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
-    keys().setHandler(resultHandler);
+    keys().onComplete(resultHandler);
   }
 
   /**
@@ -243,7 +243,7 @@ public interface AsyncMap<K, V> {
    */
   @GenIgnore
   default void values(Handler<AsyncResult<List<V>>> resultHandler) {
-    values().setHandler(resultHandler);
+    values().onComplete(resultHandler);
   }
 
   /**
@@ -263,7 +263,7 @@ public interface AsyncMap<K, V> {
    */
   @GenIgnore
   default void entries(Handler<AsyncResult<Map<K, V>>> resultHandler) {
-    entries().setHandler(resultHandler);
+    entries().onComplete(resultHandler);
   }
 
   /**

@@ -94,7 +94,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
     Promise<Void> promise = null;
     if (handler != null) {
       promise = ((VertxInternal)vertx).getOrCreateContext().promise();
-      promise.future().setHandler(handler);
+      promise.future().onComplete(handler);
     }
     write(data, promise);
   }
@@ -165,7 +165,7 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
   public void close(Handler<AsyncResult<Void>> handler) {
     Future<Void> fut = close();
     if (handler != null) {
-      fut.setHandler(handler);
+      fut.onComplete(handler);
     }
   }
 

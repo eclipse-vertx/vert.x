@@ -411,7 +411,7 @@ public class ContextTest extends VertxTestBase {
     });
     assertWaitUntil(() -> caught.get() == failure);
   }
-  
+
   @Test
   public void testReportExceptionToContext() {
     ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
@@ -590,7 +590,7 @@ public class ContextTest extends VertxTestBase {
     Promise<String> promise = context.promise();
     context.runOnContext(v -> {
       Thread th = Thread.currentThread();
-      promise.future().setHandler(ar -> {
+      promise.future().onComplete(ar -> {
         assertSame(th, Thread.currentThread());
         testComplete();
       });
@@ -616,7 +616,7 @@ public class ContextTest extends VertxTestBase {
       List<Throwable> exceptions = new ArrayList<>();
       context.exceptionHandler(exceptions::add);
       RuntimeException failure = new RuntimeException();
-      promise.future().setHandler(ar -> {
+      promise.future().onComplete(ar -> {
         context.runOnContext(v2 -> {
           assertEquals(1, exceptions.size());
           assertSame(failure, exceptions.get(0));
@@ -645,7 +645,7 @@ public class ContextTest extends VertxTestBase {
     Promise<String> promise = context.promise();
     context.runOnContext(v1 -> {
       Thread th = Thread.currentThread();
-      promise.future().setHandler(ar -> {
+      promise.future().onComplete(ar -> {
         assertSame(th, Thread.currentThread());
         testComplete();
       });
@@ -671,7 +671,7 @@ public class ContextTest extends VertxTestBase {
     Promise<String> promise = context.promise();
     context.runOnContext(v -> {
       Thread th = Thread.currentThread();
-      promise.future().setHandler(ar -> {
+      promise.future().onComplete(ar -> {
         assertSame(th, Thread.currentThread());
         testComplete();
       });
@@ -697,7 +697,7 @@ public class ContextTest extends VertxTestBase {
     Promise<String> promise = context.promise();
     context.runOnContext(v -> {
       Thread th = Thread.currentThread();
-      promise.future().setHandler(ar -> {
+      promise.future().onComplete(ar -> {
         assertSame(th, Thread.currentThread());
         testComplete();
       });
@@ -719,7 +719,7 @@ public class ContextTest extends VertxTestBase {
   private void testEventLoopContextPromiseListenerCompletion(Consumer<io.netty.util.concurrent.Promise<String>> action) {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     PromiseInternal<String> promise = context.promise();
-    promise.future().setHandler(ar -> {
+    promise.future().onComplete(ar -> {
       assertSame(context, Vertx.currentContext());
       testComplete();
     });
@@ -734,7 +734,7 @@ public class ContextTest extends VertxTestBase {
     Promise<String> promise = context.promise();
     Future<String> future = promise.future().compose(res -> Future.succeededFuture("value-2"));
     promise.complete("value-1");
-    future.setHandler(ar -> {
+    future.onComplete(ar -> {
       assertSame(context, vertx.getOrCreateContext());
       testComplete();
     });
@@ -746,7 +746,7 @@ public class ContextTest extends VertxTestBase {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     Promise<String> promise = context.promise();
     Future<String> future = promise.future().compose(res -> Future.succeededFuture("value-2"));
-    future.setHandler(ar -> {
+    future.onComplete(ar -> {
       assertSame(context, vertx.getOrCreateContext());
       testComplete();
     });
@@ -762,7 +762,7 @@ public class ContextTest extends VertxTestBase {
     Promise<String> anotherPromise = anotherContext.promise();
     Future<String> future = promise.future().compose(res -> anotherPromise.future());
     promise.complete("value-1");
-    future.setHandler(ar -> {
+    future.onComplete(ar -> {
       assertSame(context, vertx.getOrCreateContext());
       testComplete();
     });

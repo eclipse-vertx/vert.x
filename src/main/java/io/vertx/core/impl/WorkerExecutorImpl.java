@@ -65,7 +65,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
   public synchronized <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
     Future<T> fut = executeBlocking(blockingCodeHandler, ordered);
     if (asyncResultHandler != null) {
-      fut.setHandler(asyncResultHandler);
+      fut.onComplete(asyncResultHandler);
     }
   }
 

@@ -94,7 +94,7 @@ abstract class HandlerRegistration<T> {
   public void unregister(Handler<AsyncResult<Void>> completionHandler) {
     Future<Void> fut = unregister();
     if (completionHandler != null) {
-      fut.setHandler(completionHandler);
+      fut.onComplete(completionHandler);
     }
   }
 

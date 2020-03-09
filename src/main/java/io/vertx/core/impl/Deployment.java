@@ -31,13 +31,13 @@ public interface Deployment {
   void removeChild(Deployment deployment);
 
   default void undeploy(Handler<AsyncResult<Void>> completionHandler) {
-    undeploy().setHandler(completionHandler);
+    undeploy().onComplete(completionHandler);
   }
 
   Future<Void> undeploy();
 
   default void doUndeploy(ContextInternal undeployingContext, Handler<AsyncResult<Void>> completionHandler) {
-    doUndeploy(undeployingContext).setHandler(completionHandler);
+    doUndeploy(undeployingContext).onComplete(completionHandler);
   }
 
   Future<Void> doUndeploy(ContextInternal undeployingContext);

@@ -259,7 +259,7 @@ abstract class AbstractContext implements ContextInternal {
       return (PromiseInternal<T>) handler;
     } else {
       PromiseInternal<T> promise = promise();
-      promise.future().setHandler(handler);
+      promise.future().onComplete(handler);
       return promise;
     }
   }
@@ -318,13 +318,9 @@ abstract class AbstractContext implements ContextInternal {
 
   private static <T> void setResultHandler(ContextInternal ctx, Future<T> fut, Handler<AsyncResult<T>> resultHandler) {
     if (resultHandler != null) {
-      fut.setHandler(resultHandler);
+      fut.onComplete(resultHandler);
     } else {
-      fut.setHandler(ar -> {
-        if (ar.failed()) {
-          ctx.reportException(ar.cause());
-        }
-      });
+      fut.onFailure(ctx::reportException);
     }
   }
 }

@@ -80,7 +80,7 @@ public class PipeImpl<T> implements Pipe<T> {
     });
     ws.exceptionHandler(err -> result.tryFail(new WriteException(err)));
     src.resume();
-    result.future().setHandler(ar -> {
+    result.future().onComplete(ar -> {
       try {
         src.handler(null);
       } catch (Exception ignore) {

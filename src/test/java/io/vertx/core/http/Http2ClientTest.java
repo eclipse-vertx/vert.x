@@ -82,7 +82,7 @@ public class Http2ClientTest extends Http2TestBase {
     AtomicInteger count = new AtomicInteger();
     Promise<Void> end = Promise.promise();
     server.requestHandler(req -> {
-      end.future().setHandler(v -> {
+      end.future().onComplete(v -> {
         req.response().end();
       });
     }).connectionHandler(conn -> {
@@ -311,7 +311,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(resp -> {
+      .onComplete(resp -> {
         testComplete();
       })
       .setAuthority("localhost:4444")
@@ -434,7 +434,7 @@ public class Http2ClientTest extends Http2TestBase {
     ctx.runOnContext(v -> {
       client = vertx.createHttpClient(createBaseClientOptions());
       HttpClientRequest req = client.request(HttpMethod.POST, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-        .setHandler(resp -> {
+        .onComplete(resp -> {
           testComplete();
         })
         .setChunked(true)
@@ -513,7 +513,7 @@ public class Http2ClientTest extends Http2TestBase {
         assertEquals(expected.toString().length(), received.toString().length());
         testComplete();
       });
-      whenFull.future().setHandler(v -> {
+      whenFull.future().onComplete(v -> {
         resp.resume();
       });
     }));
@@ -627,7 +627,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.request(HttpMethod.POST, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onFailure(resp -> {
+      .onComplete(onFailure(resp -> {
       }))
       .exceptionHandler(err -> {
         Context ctx = Vertx.currentContext();
@@ -648,7 +648,7 @@ public class Http2ClientTest extends Http2TestBase {
     String chunk = TestUtils.randomAlphaString(1024);
     Promise<Void> doReset = Promise.promise();
     server.requestHandler(req -> {
-      doReset.future().setHandler(onSuccess(v -> {
+      doReset.future().onComplete(onSuccess(v -> {
         req.response().reset(8);
       }));
       req.response().setChunked(true).write(Buffer.buffer(chunk));
@@ -667,7 +667,7 @@ public class Http2ClientTest extends Http2TestBase {
     ctx.runOnContext(v -> {
       client = vertx.createHttpClient(createBaseClientOptions());
       client.request(HttpMethod.POST, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-        .setHandler(onSuccess(resp -> {
+        .onComplete(onSuccess(resp -> {
           resp.exceptionHandler(resetHandler);
           resp.handler(buff -> {
             doReset.complete();
@@ -707,12 +707,12 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onFailure(err -> {
+      .onComplete(onFailure(err -> {
         complete();
       }))
       .setChunked(true);
     req.write(Buffer.buffer("hello"));
-    bufReceived.future().setHandler(ar -> {
+    bufReceived.future().onComplete(ar -> {
       req.reset(10);
     });
     await();
@@ -759,7 +759,7 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     AtomicReference<Context> ctx = new AtomicReference<>();
     client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
         Context current = Vertx.currentContext();
         if (ctx.get() == null) {
           ctx.set(current);
@@ -782,7 +782,7 @@ public class Http2ClientTest extends Http2TestBase {
         assertEquals("/wibble?a=b", pushedReq.uri());
         assertEquals("/wibble", pushedReq.path());
         assertEquals("a=b", pushedReq.query());
-        pushedReq.setHandler(onSuccess(resp -> {
+        pushedReq.onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           Buffer content = Buffer.buffer();
           resp.handler(content::appendBuffer);
@@ -812,10 +812,10 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onFailure(resp -> {
+      .onComplete(onFailure(resp -> {
       }))
       .pushHandler(pushedReq -> {
-        pushedReq.setHandler(onSuccess(pushedResp -> {
+        pushedReq.onComplete(onSuccess(pushedResp -> {
           pushedResp.handler(buff -> {
             pushedReq.reset(Http2Error.CANCEL.code());
           });
@@ -837,7 +837,7 @@ public class Http2ClientTest extends Http2TestBase {
     client.close();
     client = vertx.createHttpClient(clientOptions.setInitialSettings(new io.vertx.core.http.Http2Settings().setMaxConcurrentStreams(0L)));
     client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onFailure(resp -> {
+      .onComplete(onFailure(resp -> {
       }))
       .pushHandler(pushedReq -> pushedReq.reset(Http2Error.CANCEL.code()))
       .end();
@@ -936,7 +936,7 @@ public class Http2ClientTest extends Http2TestBase {
       }
     });
     client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         complete();
       }))
@@ -991,7 +991,7 @@ public class Http2ClientTest extends Http2TestBase {
       conn.goAwayHandler(ga -> {
         if (gaCount.getAndIncrement() == 0) {
           client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-            .setHandler(resp2 -> {
+            .onComplete(resp2 -> {
               assertEquals(2, connections.size());
               testComplete();
             })
@@ -1163,7 +1163,7 @@ public class Http2ClientTest extends Http2TestBase {
           });
         });
         client.request(HttpMethod.PUT, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-          .setHandler(onSuccess(resp -> {
+          .onComplete(onSuccess(resp -> {
             resp.exceptionHandler(err -> {
               assertOnIOContext(ctx);
               if (err instanceof Http2Exception) {
@@ -1211,7 +1211,7 @@ public class Http2ClientTest extends Http2TestBase {
           });
         });
         client.request(HttpMethod.PUT, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-          .setHandler(onSuccess(resp -> {
+          .onComplete(onSuccess(resp -> {
             resp.exceptionHandler(err -> {
               assertOnIOContext(ctx);
               if (err instanceof Http2Exception) {
@@ -1315,7 +1315,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
         assertEquals(3, status.getAndIncrement());
         resp.bodyHandler(body -> {
           assertEquals(4, status.getAndIncrement());
@@ -1377,7 +1377,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     client.request(HttpMethod.CONNECT, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         complete();
       }))
@@ -1439,7 +1439,7 @@ public class Http2ClientTest extends Http2TestBase {
 
     startServer();
     client.request(HttpMethod.CONNECT, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         complete();
       }))
@@ -1477,7 +1477,7 @@ public class Http2ClientTest extends Http2TestBase {
     });
     startServer();
     HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
         assertEquals(1, status.getAndIncrement());
         resp.endHandler(v -> {
           assertEquals(2, status.getAndIncrement());
@@ -1507,7 +1507,7 @@ public class Http2ClientTest extends Http2TestBase {
     startServer();
     AtomicInteger status = new AtomicInteger();
     HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
         Context ctx = Vertx.currentContext();
         assertEquals(0, status.getAndIncrement());
         resp.customFrameHandler(frame -> {
@@ -1667,7 +1667,7 @@ public class Http2ClientTest extends Http2TestBase {
       });
     });
     client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
         resp.exceptionHandler(err -> {
           fail();
         });
@@ -1700,12 +1700,12 @@ public class Http2ClientTest extends Http2TestBase {
       .setDefaultPort(8080)
       .setDefaultHost("localhost"));
     client.request(HttpMethod.GET, "/somepath")
-      .setHandler(onSuccess(resp1 -> {
+      .onComplete(onSuccess(resp1 -> {
         resp1.exceptionHandler(this::fail);
         resp1.endHandler(v1 -> {
           vertx.setTimer(10, id1 -> {
             client.request(HttpMethod.GET, "/somepath")
-              .setHandler(onSuccess(resp2 -> {
+              .onComplete(onSuccess(resp2 -> {
                 resp2.exceptionHandler(this::fail);
                 resp2.endHandler(v2 -> {
                   testComplete();
@@ -1958,7 +1958,7 @@ public class Http2ClientTest extends Http2TestBase {
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-        .setHandler(onSuccess(resp -> {
+        .onComplete(onSuccess(resp -> {
           assertEquals(responseStreamPriority, resp.request().getStreamPriority());
           Context ctx = vertx.getOrCreateContext();
           assertOnIOContext(ctx);
@@ -2021,7 +2021,7 @@ public class Http2ClientTest extends Http2TestBase {
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-        .setHandler(onSuccess(resp -> {
+        .onComplete(onSuccess(resp -> {
           assertEquals(responseStreamPriority, resp.request().getStreamPriority());
           Context ctx = vertx.getOrCreateContext();
           assertOnIOContext(ctx);
@@ -2084,7 +2084,7 @@ public class Http2ClientTest extends Http2TestBase {
     ChannelFuture s = bootstrap.bind(DEFAULT_HTTPS_HOST, DEFAULT_HTTPS_PORT).sync();
     try {
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath")
-        .setHandler(onSuccess(resp -> {
+        .onComplete(onSuccess(resp -> {
           resp.endHandler(v -> {
             complete();
           });

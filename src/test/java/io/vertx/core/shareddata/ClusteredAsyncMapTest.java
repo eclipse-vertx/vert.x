@@ -60,7 +60,7 @@ public class ClusteredAsyncMapTest extends AsyncMapTest {
           mapNode2.get("Hodor", fut);
         }));
       });
-    }).setHandler(asyncCompFuture -> {
+    }).onComplete(asyncCompFuture -> {
       assertTrue(asyncCompFuture.succeeded());
       String valueMapNode1 = asyncCompFuture.result().resultAt(0);
       String valueMapNode2 = asyncCompFuture.result().resultAt(1);

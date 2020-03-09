@@ -232,7 +232,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * Same as {@link #body()} but with an {@code handler} called when the operation completes
    */
   default HttpServerRequest body(Handler<AsyncResult<Buffer>> handler) {
-    body().setHandler(handler);
+    body().onComplete(handler);
     return this;
   }
 

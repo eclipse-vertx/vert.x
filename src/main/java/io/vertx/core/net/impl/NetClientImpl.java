@@ -177,7 +177,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
     ContextInternal ctx = vertx.getOrCreateContext();
     Promise<NetSocket> promise = ctx.promise();
-    promise.future().setHandler(connectHandler);
+    promise.future().onComplete(connectHandler);
     doConnect(remoteAddress, serverName, promise, ctx);
     return this;
   }

@@ -161,7 +161,7 @@ public class HTTP2Examples {
   public void example13(HttpClient client) {
 
     HttpClientRequest request = client.request(HttpMethod.GET, "/index.html")
-      .setHandler(response -> {
+      .onComplete(response -> {
         // Process index.html response
       });
 
@@ -172,7 +172,7 @@ public class HTTP2Examples {
       System.out.println("Server pushed " + pushedRequest.path());
 
       // Set an handler for the response
-      pushedRequest.setHandler(pushedResponse -> {
+      pushedRequest.onComplete(pushedResponse -> {
         System.out.println("The response for the pushed request");
       });
     });

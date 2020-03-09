@@ -28,7 +28,7 @@ public class SharedServersConcurrencyTest extends VertxTestBase {
     deployVerticle(vertx, new MonitorVerticle())
       .compose(__ -> deployVerticle(vertx, new RestVerticle()))
       .compose(__ -> deployVerticle(vertx, new ApiVerticle()))
-      .setHandler(onSuccess(__ -> testComplete()));
+      .onComplete(onSuccess(__ -> testComplete()));
     await();
   }
 

@@ -748,7 +748,7 @@ public class MetricsTest extends VertxTestBase {
           complete();
         });
       }));
-      request.setHandler(onSuccess(resp -> {
+      request.onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         clientMetric.set(metrics.getMetric(request));
         assertNotNull(clientMetric.get());

@@ -179,12 +179,6 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   @Override
-  default CompositeFuture setHandler(Handler<AsyncResult<CompositeFuture>> handler) {
-    Future.super.setHandler(handler);
-    return this;
-  }
-
-  @Override
   CompositeFuture onComplete(Handler<AsyncResult<CompositeFuture>> handler);
 
   @Override

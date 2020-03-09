@@ -129,7 +129,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     }));
     awaitLatch(latch);
     HttpClientRequest req = client.request(HttpMethod.GET, 8080, "localhost", "/")
-      .setHandler(onFailure(err -> {
+      .onComplete(onFailure(err -> {
         complete();
       }))
       .setChunked(true);

@@ -87,13 +87,13 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
     client = vertx.createHttpClient(createBaseClientOptions());
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-      .setHandler(resp -> {
+      .onComplete(resp -> {
       })
       .pushHandler(pushedReq -> {
         HttpClientMetric metric = metrics.getMetric(pushedReq);
         assertNotNull(metric);
         assertSame(pushedReq, metric.request);
-        pushedReq.setHandler(onSuccess(resp -> {
+        pushedReq.onComplete(onSuccess(resp -> {
           resp.endHandler(v -> {
             assertNull(metrics.getMetric(pushedReq));
             complete();

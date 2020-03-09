@@ -150,7 +150,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   public HttpServer listen(Handler<AsyncResult<HttpServer>> listenHandler) {
     Future<HttpServer> fut = listen();
     if (listenHandler != null) {
-      fut.setHandler(listenHandler);
+      fut.onComplete(listenHandler);
     }
     return this;
   }
@@ -164,7 +164,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   public HttpServer listen(int port, String host, Handler<AsyncResult<HttpServer>> listenHandler) {
     Future<HttpServer> fut = listen(port, host);
     if (listenHandler != null) {
-      fut.setHandler(listenHandler);
+      fut.onComplete(listenHandler);
     }
     return this;
   }
@@ -178,7 +178,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   public HttpServer listen(int port, Handler<AsyncResult<HttpServer>> listenHandler) {
     Future<HttpServer> fut = listen(port);
     if (listenHandler != null) {
-      fut.setHandler(listenHandler);
+      fut.onComplete(listenHandler);
     }
     return this;
   }
@@ -300,7 +300,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         }
       };
     }
-    listen(address).setHandler(listenHandler);
+    listen(address).onComplete(listenHandler);
     return this;
   }
 
@@ -313,7 +313,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       .<Future<Void>>map(handlers -> Future.future(handlers.server::close))
       .collect(Collectors.toList());
     CompositeFuture fut = CompositeFuture.all(futures);
-    fut.setHandler(ar -> handler.handle(ar.mapEmpty()));
+    fut.onComplete(ar -> handler.handle(ar.mapEmpty()));
   }
 
   @Override
@@ -330,7 +330,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     PromiseInternal<Void> promise = context.promise();
     close(promise);
     if (done != null) {
-      promise.future().setHandler(done);
+      promise.future().onComplete(done);
     }
   }
 
@@ -340,7 +340,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       wsStream.endHandler(null);
       Handler<Void> requestEndHandler = requestStream.endHandler();
       requestStream.endHandler(null);
-      completion.future().setHandler(ar -> {
+      completion.future().onComplete(ar -> {
         if (wsEndHandler != null) {
           wsEndHandler.handle(null);
         }

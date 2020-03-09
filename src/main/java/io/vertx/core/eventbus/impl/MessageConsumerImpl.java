@@ -101,7 +101,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   public synchronized void completionHandler(Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(handler);
     if (result != null) {
-      result.future().setHandler(handler);
+      result.future().onComplete(handler);
     } else {
       completionHandler = handler;
     }
@@ -211,7 +211,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
         if (result == null) {
           Promise<Void> p = context.promise();
           if (completionHandler != null) {
-            p.future().setHandler(completionHandler);
+            p.future().onComplete(completionHandler);
           }
           result = p;
           register(null, localOnly, ar -> {

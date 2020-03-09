@@ -83,7 +83,7 @@ public class AddressResolver {
     io.netty.util.concurrent.Future<InetSocketAddress> fut = resolveHostname(context.nettyEventLoop(), hostname);
     PromiseInternal<InetSocketAddress> promise = context.promise();
     fut.addListener(promise);
-    promise.future().map(InetSocketAddress::getAddress).setHandler(resultHandler);
+    promise.future().map(InetSocketAddress::getAddress).onComplete(resultHandler);
   }
 
   public io.netty.util.concurrent.Future<InetSocketAddress> resolveHostname(EventLoop eventLoop, String hostname) {

@@ -199,7 +199,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   @Override
   public void setHandshake(Future<Integer> future, Handler<AsyncResult<Integer>> handler) {
     Future<Integer> fut = setHandshake(future);
-    fut.setHandler(handler);
+    fut.onComplete(handler);
   }
 
   @Override
@@ -216,8 +216,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       }
       handshakePromise = p1;
     }
-    future.setHandler(p1);
-    p1.future().setHandler(ar -> {
+    future.onComplete(p1);
+    p1.future().onComplete(ar -> {
       if (ar.succeeded()) {
         handleHandshake(ar.result());
       } else {

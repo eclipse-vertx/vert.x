@@ -236,7 +236,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     }).listen(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions())
         .request(HttpMethod.GET, 8080, "localhost", "/")
-        .setHandler(onSuccess(resp -> {
+        .onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {
             assertTrue(buff.toString().startsWith("<html><body>blah</body></html>"));
             testComplete();

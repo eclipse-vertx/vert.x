@@ -94,7 +94,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient lookup4(String name, Handler<AsyncResult<String>> handler) {
-    lookup4(name).setHandler(handler);
+    lookup4(name).onComplete(handler);
     return this;
   }
 
@@ -105,7 +105,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient lookup6(String name, Handler<AsyncResult<String>> handler) {
-    lookup6(name).setHandler(handler);
+    lookup6(name).onComplete(handler);
     return this;
   }
 
@@ -116,7 +116,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient lookup(String name, Handler<AsyncResult<String>> handler) {
-    lookup(name).setHandler(handler);
+    lookup(name).onComplete(handler);
     return this;
   }
 
@@ -127,7 +127,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient resolveA(String name, Handler<AsyncResult<List<String>>> handler) {
-    resolveA(name).setHandler(handler);
+    resolveA(name).onComplete(handler);
     return this;
   }
 
@@ -138,7 +138,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient resolveCNAME(String name, Handler<AsyncResult<List<String> >> handler) {
-    resolveCNAME(name).setHandler(handler);
+    resolveCNAME(name).onComplete(handler);
     return this;
   }
 
@@ -149,7 +149,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient resolveMX(String name, Handler<AsyncResult<List<MxRecord>>> handler) {
-    resolveMX(name).setHandler(handler);
+    resolveMX(name).onComplete(handler);
     return this;
   }
 
@@ -171,7 +171,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient resolveTXT(String name, Handler<AsyncResult<List<String>>> handler) {
-    resolveTXT(name).setHandler(handler);
+    resolveTXT(name).onComplete(handler);
     return this;
   }
 
@@ -182,13 +182,13 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient resolvePTR(String name, Handler<AsyncResult<String>> handler) {
-    resolvePTR(name).setHandler(handler);
+    resolvePTR(name).onComplete(handler);
     return this;
   }
 
   @Override
   public DnsClient resolveAAAA(String name, Handler<AsyncResult<List<String>>> handler) {
-    resolveAAAA(name).setHandler(handler);
+    resolveAAAA(name).onComplete(handler);
     return this;
   }
 
@@ -204,7 +204,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient resolveNS(String name, Handler<AsyncResult<List<String>>> handler) {
-    resolveNS(name).setHandler(handler);
+    resolveNS(name).onComplete(handler);
     return this;
   }
 
@@ -215,7 +215,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient resolveSRV(String name, Handler<AsyncResult<List<SrvRecord>>> handler) {
-    resolveSRV(name).setHandler(handler);
+    resolveSRV(name).onComplete(handler);
     return this;
   }
 
@@ -255,7 +255,7 @@ public final class DnsClientImpl implements DnsClient {
 
   @Override
   public DnsClient reverseLookup(String address, Handler<AsyncResult<String>> handler) {
-    reverseLookup(address).setHandler(handler);
+    reverseLookup(address).onComplete(handler);
     return this;
   }
 

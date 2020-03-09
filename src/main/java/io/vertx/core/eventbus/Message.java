@@ -120,7 +120,7 @@ public interface Message<T> {
    * @param replyHandler  reply handler will be called when any reply from the recipient is received
    */
   default <R> void replyAndRequest(@Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<R>>> replyHandler) {
-    this.<R>replyAndRequest(message, options).setHandler(replyHandler);
+    this.<R>replyAndRequest(message, options).onComplete(replyHandler);
   }
 
   /**

@@ -55,7 +55,7 @@ public class SharedDataImpl implements SharedData {
   @Override
   public <K, V> void getClusterWideMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    this.<K, V>getClusterWideMap(name).setHandler(resultHandler);
+    this.<K, V>getClusterWideMap(name).onComplete(resultHandler);
   }
 
   @Override
@@ -70,7 +70,7 @@ public class SharedDataImpl implements SharedData {
   @Override
   public <K, V> void getAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    this.<K, V>getAsyncMap(name).setHandler(resultHandler);
+    this.<K, V>getAsyncMap(name).onComplete(resultHandler);
   }
 
   @Override
@@ -96,7 +96,7 @@ public class SharedDataImpl implements SharedData {
   @Override
   public void getLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    getLockWithTimeout(name, timeout).setHandler(resultHandler);
+    getLockWithTimeout(name, timeout).onComplete(resultHandler);
   }
 
   @Override
@@ -123,7 +123,7 @@ public class SharedDataImpl implements SharedData {
   @Override
   public void getLocalLockWithTimeout(String name, long timeout, Handler<AsyncResult<Lock>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    getLocalLockWithTimeout(name, timeout).setHandler(resultHandler);
+    getLocalLockWithTimeout(name, timeout).onComplete(resultHandler);
   }
 
   @Override
@@ -146,7 +146,7 @@ public class SharedDataImpl implements SharedData {
   @Override
   public void getCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    getCounter(name).setHandler(resultHandler);
+    getCounter(name).onComplete(resultHandler);
   }
 
   /**
@@ -162,7 +162,7 @@ public class SharedDataImpl implements SharedData {
   @Override
   public <K, V> void getLocalAsyncMap(String name, Handler<AsyncResult<AsyncMap<K, V>>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    this.<K, V>getLocalAsyncMap(name).setHandler(resultHandler);
+    this.<K, V>getLocalAsyncMap(name).onComplete(resultHandler);
   }
 
   @SuppressWarnings("unchecked")
@@ -176,7 +176,7 @@ public class SharedDataImpl implements SharedData {
   @Override
   public void getLocalCounter(String name, Handler<AsyncResult<Counter>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    getLocalCounter(name).setHandler(resultHandler);
+    getLocalCounter(name).onComplete(resultHandler);
   }
 
   @Override

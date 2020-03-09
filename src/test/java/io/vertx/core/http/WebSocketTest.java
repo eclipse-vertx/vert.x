@@ -1418,7 +1418,7 @@ public class WebSocketTest extends VertxTestBase {
     server.listen(onSuccess(ar -> {
       client = vertx.createHttpClient();
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, path)
-        .setHandler(onSuccess(resp -> {
+        .onComplete(onSuccess(resp -> {
           assertEquals(413, resp.statusCode());
           resp.request().connection().closeHandler(v -> {
             testComplete();
@@ -1940,7 +1940,7 @@ public class WebSocketTest extends VertxTestBase {
     server.listen(onSuccess(s -> {
       client = vertx.createHttpClient();
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
-        .setHandler(onSuccess(resp -> {
+        .onComplete(onSuccess(resp -> {
           testComplete();
         }))
         .end();
@@ -2019,7 +2019,7 @@ public class WebSocketTest extends VertxTestBase {
 
   private void handshake(HttpClient client, Handler<NetSocket> handler) {
     client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
           assertEquals(101, resp.statusCode());
         })
       )
@@ -3080,7 +3080,7 @@ public class WebSocketTest extends VertxTestBase {
         client = vertx.createHttpClient();
         client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
           ws.pause();
-          resume.future().setHandler(onSuccess(v2 -> {
+          resume.future().onComplete(onSuccess(v2 -> {
             ws.resume();
           }));
         }));
@@ -3094,7 +3094,7 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer()
       .webSocketHandler(ws -> {
         ws.pause();
-        resume.future().setHandler(onSuccess(v2 -> {
+        resume.future().onComplete(onSuccess(v2 -> {
           ws.resume();
         }));
       }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {

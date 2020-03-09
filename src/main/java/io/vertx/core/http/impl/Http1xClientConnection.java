@@ -886,7 +886,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         }
       }
       if (stream != null) {
-        stream.promise.future().setHandler(handler);
+        stream.promise.future().onComplete(handler);
       } else {
         handler.handle(Future.failedFuture(CLOSED_EXCEPTION));
       }

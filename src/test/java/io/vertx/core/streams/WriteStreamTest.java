@@ -43,12 +43,12 @@ public class WriteStreamTest extends AsyncTestBase {
     @Override
     public void write(Object data, Handler<AsyncResult<Void>> handler) {
       writeCount.incrementAndGet();
-      writeFut.future().setHandler(handler);
+      writeFut.future().onComplete(handler);
     }
     @Override
     public void end(Handler<AsyncResult<Void>> handler) {
       endCount.incrementAndGet();
-      endFut.future().setHandler(handler);
+      endFut.future().onComplete(handler);
     }
   }
 

@@ -147,7 +147,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
-    close(statusCode, reason).setHandler(handler);
+    close(statusCode, reason).onComplete(handler);
   }
 
   @Override

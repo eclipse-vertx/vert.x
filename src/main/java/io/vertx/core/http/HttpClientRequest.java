@@ -351,7 +351,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   default HttpClientRequest netSocket(Handler<AsyncResult<NetSocket>> handler) {
     Future<NetSocket> fut = netSocket();
     if (handler != null) {
-      fut.setHandler(handler);
+      fut.onComplete(handler);
     }
     return this;
   }
@@ -444,12 +444,6 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * @return the priority of the associated HTTP/2 stream for HTTP/2 otherwise {@code null}
    */
   StreamPriority getStreamPriority();
-
-  @Override
-  default HttpClientRequest setHandler(Handler<AsyncResult<HttpClientResponse>> handler) {
-    onComplete(handler);
-    return this;
-  }
 
   @Override
   HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler);

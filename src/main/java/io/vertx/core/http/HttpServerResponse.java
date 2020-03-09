@@ -487,7 +487,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   default HttpServerResponse push(HttpMethod method, String host, String path, MultiMap headers, Handler<AsyncResult<HttpServerResponse>> handler) {
     Future<HttpServerResponse> fut = push(method, host, path, headers);
     if (handler != null) {
-      fut.setHandler(handler);
+      fut.onComplete(handler);
     }
     return this;
   }

@@ -1397,7 +1397,7 @@ public class FileSystemTest extends VertxTestBase {
           buff.appendBuffer(chunk);
           inProgress.incrementAndGet();
           Future<Void> fut = strategy.handle(rs);
-          fut.setHandler(v -> {
+          fut.onComplete(v -> {
             inProgress.decrementAndGet();
             checkEnd.run();
           });

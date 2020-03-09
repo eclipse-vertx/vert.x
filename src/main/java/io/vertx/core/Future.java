@@ -104,14 +104,6 @@ public interface Future<T> extends AsyncResult<T> {
   boolean isComplete();
 
   /**
-   * Like {@link #onComplete(Handler)}.
-   */
-  @Fluent
-  default Future<T> setHandler(Handler<AsyncResult<T>> handler) {
-    return onComplete(handler);
-  }
-
-  /**
    * Add a handler to be notified of the result.
    * <br/>
    * @param handler the handler that will be called with the result
@@ -251,7 +243,7 @@ public interface Future<T> extends AsyncResult<T> {
     } else {
       ret = Promise.promise();
     }
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         Future<U> apply;
         try {
@@ -260,7 +252,7 @@ public interface Future<T> extends AsyncResult<T> {
           ret.fail(e);
           return;
         }
-        apply.setHandler(ret);
+        apply.onComplete(ret);
       } else {
         Future<U> apply;
         try {
@@ -269,7 +261,7 @@ public interface Future<T> extends AsyncResult<T> {
           ret.fail(e);
           return;
         }
-        apply.setHandler(ret);
+        apply.onComplete(ret);
       }
     });
     return ret.future();
@@ -300,7 +292,7 @@ public interface Future<T> extends AsyncResult<T> {
     } else {
       ret = Promise.promise();
     }
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         U mapped;
         try {
@@ -335,7 +327,7 @@ public interface Future<T> extends AsyncResult<T> {
     } else {
       ret = Promise.promise();
     }
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         ret.complete(value);
       } else {
@@ -379,7 +371,7 @@ public interface Future<T> extends AsyncResult<T> {
     } else {
       ret = Promise.promise();
     }
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         ret.complete(result());
       } else {
@@ -390,7 +382,7 @@ public interface Future<T> extends AsyncResult<T> {
           ret.fail(e);
           return;
         }
-        mapped.setHandler(ret);
+        mapped.onComplete(ret);
       }
     });
     return ret.future();
@@ -421,7 +413,7 @@ public interface Future<T> extends AsyncResult<T> {
     } else {
       ret = Promise.promise();
     }
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         ret.complete(result());
       } else {
@@ -456,7 +448,7 @@ public interface Future<T> extends AsyncResult<T> {
     } else {
       ret = Promise.promise();
     }
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         ret.complete(result());
       } else {
@@ -491,7 +483,7 @@ public interface Future<T> extends AsyncResult<T> {
   @GenIgnore
   default CompletionStage<T> toCompletionStage() {
     CompletableFuture<T> completableFuture = new CompletableFuture<>();
-    this.setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         completableFuture.complete(ar.result());
       } else {

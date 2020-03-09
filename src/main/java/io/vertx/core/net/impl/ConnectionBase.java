@@ -257,7 +257,7 @@ public abstract class ConnectionBase {
    * Close the connection and notifies the {@code handler}
    */
   public final void close(Handler<AsyncResult<Void>> handler) {
-    close().setHandler(handler);
+    close().onComplete(handler);
   }
 
   public synchronized ConnectionBase closeHandler(Handler<Void> handler) {

@@ -101,7 +101,7 @@ public class DeploymentManager {
       for (String deploymentID : deploymentIDs) {
         Promise<Void> promise = Promise.promise();
         completionList.add(promise.future());
-        undeployVerticle(deploymentID).setHandler(ar -> {
+        undeployVerticle(deploymentID).onComplete(ar -> {
           if (ar.failed()) {
             // Log but carry on regardless
             log.error("Undeploy failed", ar.cause());
@@ -110,7 +110,7 @@ public class DeploymentManager {
         });
       }
       Promise<Void> promise = vertx.getOrCreateContext().promise();
-      CompositeFuture.join(completionList).<Void>mapEmpty().setHandler(promise);
+      CompositeFuture.join(completionList).<Void>mapEmpty().onComplete(promise);
       return promise.future();
     } else {
       return vertx.getOrCreateContext().succeededFuture();
@@ -199,7 +199,7 @@ public class DeploymentManager {
           Promise<Void> startPromise = context.promise();
           Future<Void> startFuture = startPromise.future();
           verticle.start(startPromise);
-          startFuture.setHandler(ar -> {
+          startFuture.onComplete(ar -> {
             if (ar.succeeded()) {
               if (parent != null) {
                 if (parent.addChild(deployment)) {
@@ -272,7 +272,7 @@ public class DeploymentManager {
     private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextImpl context, Throwable cause) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
-        doUndeployChildren(callingContext).setHandler(childrenResult -> {
+        doUndeployChildren(callingContext).onComplete(childrenResult -> {
           Handler<Void> handler;
           synchronized (DeploymentImpl.this) {
             status = ST_UNDEPLOYED;
@@ -338,7 +338,7 @@ public class DeploymentManager {
           context.runOnContext(v -> {
             Promise<Void> stopPromise = Promise.promise();
             Future<Void> stopFuture = stopPromise.future();
-            stopFuture.setHandler(ar -> {
+            stopFuture.onComplete(ar -> {
               deployments.remove(deploymentID);
               VertxMetrics metrics = vertx.metricsSPI();
               if (metrics != null) {
@@ -366,7 +366,7 @@ public class DeploymentManager {
           });
         }
         Promise<Void> resolvingPromise = undeployingContext.promise();
-        CompositeFuture.all(undeployFutures).<Void>mapEmpty().setHandler(resolvingPromise);
+        CompositeFuture.all(undeployFutures).<Void>mapEmpty().onComplete(resolvingPromise);
         Future<Void> fut = resolvingPromise.future();
         Handler<Void> handler = undeployHandler;
         if (handler != null) {

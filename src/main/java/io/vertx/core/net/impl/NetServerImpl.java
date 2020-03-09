@@ -320,7 +320,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         }
       };
     }
-    listen(localAddress).setHandler(listenHandler);
+    listen(localAddress).onComplete(listenHandler);
     return this;
   }
 
@@ -348,7 +348,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
       .<Future<Void>>map(handlers -> Future.future(handlers.server::close))
       .collect(Collectors.toList());
     CompositeFuture fut = CompositeFuture.all(futures);
-    fut.setHandler(ar -> handler.handle(ar.mapEmpty()));
+    fut.onComplete(ar -> handler.handle(ar.mapEmpty()));
   }
 
   @Override
@@ -356,7 +356,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     ContextInternal context = vertx.getOrCreateContext();
     Promise<Void> promise = context.promise();
     close(promise);
-    promise.future().setHandler(completionHandler);
+    promise.future().onComplete(completionHandler);
   }
 
   @Override
@@ -367,7 +367,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     Handler<Void> handler = endHandler;
     if (endHandler != null) {
       endHandler = null;
-      completion.future().setHandler(ar -> handler.handle(null));
+      completion.future().onComplete(ar -> handler.handle(null));
     }
     if (!listening) {
       completion.complete();

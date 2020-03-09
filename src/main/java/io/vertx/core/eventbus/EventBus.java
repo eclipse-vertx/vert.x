@@ -93,7 +93,7 @@ public interface EventBus extends Measured {
   @Fluent
   default <T> EventBus request(String address, @Nullable Object message, DeliveryOptions options, Handler<AsyncResult<Message<T>>> replyHandler) {
     Future<Message<T>> reply = request(address, message, options);
-    reply.setHandler(replyHandler);
+    reply.onComplete(replyHandler);
     return this;
   }
 

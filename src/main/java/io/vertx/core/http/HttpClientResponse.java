@@ -128,7 +128,7 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   @Fluent
   default HttpClientResponse body(Handler<AsyncResult<Buffer>> handler) {
     Future<Buffer> fut = body();
-    fut.setHandler(handler);
+    fut.onComplete(handler);
     return this;
   }
 

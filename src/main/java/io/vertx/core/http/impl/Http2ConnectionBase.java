@@ -431,7 +431,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   @Override
   public HttpConnection updateSettings(io.vertx.core.http.Http2Settings settings, @Nullable Handler<AsyncResult<Void>> completionHandler) {
-    updateSettings(settings).setHandler(completionHandler);
+    updateSettings(settings).onComplete(completionHandler);
     return this;
   }
 
@@ -486,7 +486,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   public HttpConnection ping(Buffer data, Handler<AsyncResult<Buffer>> pongHandler) {
     Future<Buffer> fut = ping(data);
     if (pongHandler != null) {
-      fut.setHandler(pongHandler);
+      fut.onComplete(pongHandler);
     }
     return this;
   }

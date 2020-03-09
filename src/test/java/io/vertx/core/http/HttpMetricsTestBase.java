@@ -89,7 +89,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     ctx.runOnContext(v -> {
       assertEquals(Collections.emptySet(), metrics.endpoints());
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-        .setHandler(onSuccess(resp -> {
+        .onComplete(onSuccess(resp -> {
           assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
           clientMetric.set(metrics.getMetric(resp.request()));
           assertNotNull(clientMetric.get());
@@ -171,7 +171,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     CountDownLatch responseEndLatch = new CountDownLatch(1);
     HttpClientRequest req = client.request(HttpMethod.POST, 8080, "localhost", "/somepath")
-      .setHandler(onSuccess(resp -> {
+      .onComplete(onSuccess(resp -> {
         responseBeginLatch.countDown();
         resp.endHandler(v -> {
           responseEndLatch.countDown();

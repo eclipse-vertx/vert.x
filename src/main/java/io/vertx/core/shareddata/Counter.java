@@ -35,7 +35,7 @@ public interface Counter {
    */
   default void get(Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    get().setHandler(resultHandler);
+    get().onComplete(resultHandler);
   }
 
   /**
@@ -50,7 +50,7 @@ public interface Counter {
    */
   default void incrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    incrementAndGet().setHandler(resultHandler);
+    incrementAndGet().onComplete(resultHandler);
   }
 
   /**
@@ -65,7 +65,7 @@ public interface Counter {
    */
   default void getAndIncrement(Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    getAndIncrement().setHandler(resultHandler);
+    getAndIncrement().onComplete(resultHandler);
   }
 
   /**
@@ -80,7 +80,7 @@ public interface Counter {
    */
   default void decrementAndGet(Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    decrementAndGet().setHandler(resultHandler);
+    decrementAndGet().onComplete(resultHandler);
   }
 
   /**
@@ -96,7 +96,7 @@ public interface Counter {
    */
   default void addAndGet(long value, Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    addAndGet(value).setHandler(resultHandler);
+    addAndGet(value).onComplete(resultHandler);
   }
 
   /**
@@ -112,7 +112,7 @@ public interface Counter {
    */
   default void getAndAdd(long value, Handler<AsyncResult<Long>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    getAndAdd(value).setHandler(resultHandler);
+    getAndAdd(value).onComplete(resultHandler);
   }
 
   /**
@@ -130,7 +130,7 @@ public interface Counter {
    */
   default void compareAndSet(long expected, long value, Handler<AsyncResult<Boolean>> resultHandler) {
     Objects.requireNonNull(resultHandler, "resultHandler");
-    compareAndSet(expected, value).setHandler(resultHandler);
+    compareAndSet(expected, value).onComplete(resultHandler);
   }
 
   /**
