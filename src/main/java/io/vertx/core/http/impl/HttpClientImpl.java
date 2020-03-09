@@ -1132,7 +1132,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
     void subscribe(Handler<WebSocket> completionHandler, Handler<Throwable> failureHandler) {
       Future<WebSocket> fut = Future.future();
-      fut.setHandler(ar -> {
+      fut.onComplete(ar -> {
         if (ar.succeeded()) {
           completionHandler.handle(ar.result());
         } else {

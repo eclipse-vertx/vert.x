@@ -365,7 +365,7 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
       .<Future<Void>>map(handlers -> Future.future(handlers.server::close))
       .collect(Collectors.toList());
     CompositeFuture fut = CompositeFuture.all(futures);
-    fut.setHandler(ar -> handler.handle(ar.mapEmpty()));
+    fut.onComplete(ar -> handler.handle(ar.mapEmpty()));
   }
 
   @Override

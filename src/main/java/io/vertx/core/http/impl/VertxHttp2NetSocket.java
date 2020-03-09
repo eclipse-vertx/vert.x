@@ -271,7 +271,7 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
       long contentLength = Math.min(length, file.length() - offset);
 
       Promise<Long> result = Promise.promise();
-      result.future().setHandler(ar -> {
+      result.future().onComplete(ar -> {
         if (resultHandler != null) {
           resultCtx.runOnContext(v -> {
             resultHandler.handle(Future.succeededFuture());

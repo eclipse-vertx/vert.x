@@ -246,7 +246,7 @@ public final class DnsClientImpl implements DnsClient {
 
     public Query(String name, DnsRecordType[] types, Handler<AsyncResult<List<T>>> handler) {
       Promise<List<T>> promise = Promise.promise();
-      promise.future().setHandler(handler);
+      promise.future().onComplete(handler);
       this.msg = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt()).setRecursionDesired(options.isRecursionDesired());
       for (DnsRecordType type: types) {
         msg.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));

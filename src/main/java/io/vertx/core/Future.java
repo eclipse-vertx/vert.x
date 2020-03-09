@@ -115,9 +115,14 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
 
   /**
    * Like {@link #onComplete(Handler)}.
+   *
+   * @deprecated use {@link #onComplete} instead
    */
+  @Deprecated
   @Fluent
-  Future<T> setHandler(Handler<AsyncResult<T>> handler);
+  default Future<T> setHandler(Handler<AsyncResult<T>> handler) {
+    return onComplete(handler);
+  }
 
   /**
    * Add a handler to be notified of the result.
@@ -126,9 +131,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    * @return a reference to this, so it can be used fluently
    */
   @Fluent
-  default Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-    return setHandler(handler);
-  }
+  Future<T> onComplete(Handler<AsyncResult<T>> handler);
 
   /**
    * Add a handler to be notified of the succeeded result.
@@ -292,7 +295,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
   @GenIgnore
   @Deprecated
   default <U> Future<U> compose(Handler<T> handler, Future<U> next) {
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         try {
           handler.handle(ar.result());
@@ -353,7 +356,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
       throw new NullPointerException();
     }
     Promise<U> ret = Promise.promise();
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         Future<U> apply;
         try {
@@ -362,7 +365,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
           ret.fail(e);
           return;
         }
-        apply.setHandler(ret);
+        apply.onComplete(ret);
       } else {
         Future<U> apply;
         try {
@@ -371,7 +374,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
           ret.fail(e);
           return;
         }
-        apply.setHandler(ret);
+        apply.onComplete(ret);
       }
     });
     return ret.future();
@@ -395,7 +398,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
       throw new NullPointerException();
     }
     Promise<U> ret = Promise.promise();
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         U mapped;
         try {
@@ -424,7 +427,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    */
   default <V> Future<V> map(V value) {
     Promise<V> ret = Promise.promise();
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         ret.complete(value);
       } else {
@@ -481,7 +484,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
       throw new NullPointerException();
     }
     Promise<T> ret = Promise.promise();
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         ret.complete(result());
       } else {
@@ -492,7 +495,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
           ret.fail(e);
           return;
         }
-        mapped.setHandler(ret);
+        mapped.onComplete(ret);
       }
     });
     return ret.future();
@@ -516,7 +519,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
       throw new NullPointerException();
     }
     Promise<T> ret = Promise.promise();
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         ret.complete(result());
       } else {
@@ -545,7 +548,7 @@ public interface Future<T> extends AsyncResult<T>, Handler<AsyncResult<T>> {
    */
   default Future<T> otherwise(T value) {
     Promise<T> ret = Promise.promise();
-    setHandler(ar -> {
+    onComplete(ar -> {
       if (ar.succeeded()) {
         ret.complete(result());
       } else {

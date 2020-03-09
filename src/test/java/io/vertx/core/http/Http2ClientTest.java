@@ -107,7 +107,7 @@ public class Http2ClientTest extends Http2TestBase {
     AtomicInteger count = new AtomicInteger();
     Promise<Void> end = Promise.promise();
     server.requestHandler(req -> {
-      end.future().setHandler(v -> {
+      end.future().onComplete(v -> {
         req.response().end();
       });
     }).connectionHandler(conn -> {
@@ -533,7 +533,7 @@ public class Http2ClientTest extends Http2TestBase {
         assertEquals(expected.toString().length(), received.toString().length());
         testComplete();
       });
-      whenFull.future().setHandler(v -> {
+      whenFull.future().onComplete(v -> {
         resp.resume();
       });
     });
@@ -673,7 +673,7 @@ public class Http2ClientTest extends Http2TestBase {
     String chunk = TestUtils.randomAlphaString(1024);
     Promise<Void> doReset = Promise.promise();
     server.requestHandler(req -> {
-      doReset.future().setHandler(onSuccess(v -> {
+      doReset.future().onComplete(onSuccess(v -> {
         req.response().reset(8);
       }));
       req.response().setChunked(true).write(Buffer.buffer(chunk));
@@ -728,7 +728,7 @@ public class Http2ClientTest extends Http2TestBase {
       .exceptionHandler(err -> complete())
       .setChunked(true);
     req.write(Buffer.buffer("hello"));
-    bufReceived.future().setHandler(ar -> {
+    bufReceived.future().onComplete(ar -> {
       req.reset(10);
     });
     await();

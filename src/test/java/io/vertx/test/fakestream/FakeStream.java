@@ -104,7 +104,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
       }
       ended = true;
       Promise<Void> promise = Promise.promise();
-      promise.future().setHandler(ar -> {
+      promise.future().onComplete(ar -> {
         if (h != null) {
           h.handle(ar);
         }
@@ -153,7 +153,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
         demand--;
       }
       if (elt instanceof Promise) {
-        end.setHandler((Promise) elt);
+        end.onComplete((Promise) elt);
       } else {
         Handler<T> handler = itemHandler;
         if (handler != null) {

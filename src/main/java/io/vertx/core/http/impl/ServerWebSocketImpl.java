@@ -212,8 +212,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       }
       handshakePromise = promise;
     }
-    future.setHandler(promise);
-    promise.future().setHandler(ar -> {
+    future.onComplete(promise);
+    promise.future().onComplete(ar -> {
       if (ar.succeeded()) {
         handleHandshake(ar.result());
       } else {

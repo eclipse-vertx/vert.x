@@ -180,7 +180,7 @@ public class DeploymentManager {
       } else {
         promise.complete(identifier);
       }
-      promise.future().setHandler(ar -> {
+      promise.future().onComplete(ar -> {
         Throwable err;
         if (ar.succeeded()) {
           String resolvedName = ar.result();
@@ -554,7 +554,7 @@ public class DeploymentManager {
           Promise<Void> startPromise = Promise.promise();
           Future<Void> startFuture = startPromise.future();
           verticle.start(startPromise);
-          startFuture.setHandler(ar -> {
+          startFuture.onComplete(ar -> {
             if (ar.succeeded()) {
               if (parent != null) {
                 if (parent.addChild(deployment)) {
@@ -694,7 +694,7 @@ public class DeploymentManager {
             Promise<Void> stopPromise = Promise.promise();
             Future<Void> stopFuture = stopPromise.future();
             AtomicBoolean failureReported = new AtomicBoolean();
-            stopFuture.setHandler(ar -> {
+            stopFuture.onComplete(ar -> {
               deployments.remove(deploymentID);
               VertxMetrics metrics = vertx.metricsSPI();
               if (metrics != null) {

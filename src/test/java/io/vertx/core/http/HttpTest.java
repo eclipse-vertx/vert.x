@@ -2174,7 +2174,7 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().setChunked(true);
       req.pause();
       Context ctx = vertx.getOrCreateContext();
-      resumeFuture.future().setHandler(v1 -> {
+      resumeFuture.future().onComplete(v1 -> {
         ctx.runOnContext(v2 -> {
           req.resume();
         });
@@ -2192,7 +2192,7 @@ public abstract class HttpTest extends HttpTestBase {
     drainingServer(resumeFuture -> {
       client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
         resp.pause();
-        resumeFuture.setHandler(ar -> resp.resume());
+        resumeFuture.onComplete(ar -> resp.resume());
       }).end();
     });
 

@@ -3015,7 +3015,7 @@ public class WebSocketTest extends VertxTestBase {
       }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
         client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
           ws.pause();
-          resume.future().setHandler(onSuccess(v2 -> {
+          resume.future().onComplete(onSuccess(v2 -> {
             ws.resume();
           }));
         }));
@@ -3029,7 +3029,7 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer()
       .websocketHandler(ws -> {
         ws.pause();
-        resume.future().setHandler(onSuccess(v2 -> {
+        resume.future().onComplete(onSuccess(v2 -> {
           ws.resume();
         }));
       }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {

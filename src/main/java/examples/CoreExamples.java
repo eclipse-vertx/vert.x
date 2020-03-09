@@ -120,7 +120,7 @@ public class CoreExamples {
 
     Future<NetServer> netServerFuture = Future.future(promise -> netServer.listen(promise));
 
-    CompositeFuture.all(httpServerFuture, netServerFuture).setHandler(ar -> {
+    CompositeFuture.all(httpServerFuture, netServerFuture).onComplete(ar -> {
       if (ar.succeeded()) {
         // All servers started
       } else {
@@ -134,7 +134,7 @@ public class CoreExamples {
   }
 
   public void exampleFutureAny1(Future<String> future1, Future<String> future2) {
-    CompositeFuture.any(future1, future2).setHandler(ar -> {
+    CompositeFuture.any(future1, future2).onComplete(ar -> {
       if (ar.succeeded()) {
         // At least one is succeeded
       } else {
@@ -148,7 +148,7 @@ public class CoreExamples {
   }
 
   public void exampleFutureJoin1(Future future1, Future future2, Future future3) {
-    CompositeFuture.join(future1, future2, future3).setHandler(ar -> {
+    CompositeFuture.join(future1, future2, future3).onComplete(ar -> {
       if (ar.succeeded()) {
         // All succeeded
       } else {

@@ -67,10 +67,8 @@ class FutureImpl<T> implements Promise<T>, Future<T> {
     return failed || succeeded;
   }
 
-  /**
-   * Set a handler for the result. It will get called when it's complete
-   */
-  public Future<T> setHandler(Handler<AsyncResult<T>> handler) {
+  @Override
+  public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
     Objects.requireNonNull(handler, "No null handler accepted");
     synchronized (this) {
       if (!isComplete()) {

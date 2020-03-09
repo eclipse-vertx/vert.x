@@ -686,7 +686,7 @@ public abstract class AsyncMapTest extends VertxTestBase {
       }));
       futures.add(future.future());
     });
-    CompositeFuture.all(futures).setHandler(onSuccess(cf -> {
+    CompositeFuture.all(futures).onComplete(onSuccess(cf -> {
       Vertx v = getVertx();
       v.sharedData().<JsonObject, Buffer>getAsyncMap("foo", onSuccess(asyncMap -> {
         test.accept(v, asyncMap);

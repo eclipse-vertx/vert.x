@@ -37,7 +37,7 @@ class SucceededFuture<T> implements Future<T>, Promise<T> {
   }
 
   @Override
-  public Future<T> setHandler(Handler<AsyncResult<T>> handler) {
+  public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
     handler.handle(this);
     return this;
   }

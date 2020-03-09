@@ -555,7 +555,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         } else {
           haPromise.complete();
         }
-        haPromise.future().setHandler(ar2 -> {
+        haPromise.future().onComplete(ar2 -> {
           addressResolver.close(ar3 -> {
             eventBus.close(ar4 -> {
               closeClusterManager(ar5 -> {
@@ -711,7 +711,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       Promise<Void> deploymentFuture = Promise.promise();
       deploymentManager.undeployVerticle(deploymentID, deploymentFuture);
       return deploymentFuture.future();
-    }).setHandler(completionHandler);
+    }).onComplete(completionHandler);
   }
 
   @Override

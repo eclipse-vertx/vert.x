@@ -80,7 +80,7 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
         checkpoint.decrementAndGet();
         return lockNode2;
       });
-    }).setHandler(asyncLock -> {
+    }).onComplete(asyncLock -> {
       assertTrue(asyncLock.succeeded());
       assertEquals(0, checkpoint.get());
       asyncLock.result().release();

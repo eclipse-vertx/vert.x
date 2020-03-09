@@ -569,7 +569,7 @@ public class ConnectionPoolTest extends VertxTestBase {
         int i = ThreadLocalRandom.current().nextInt(100);
         Promise<ConnectResult<FakeConnection>> promise = Promise.promise();
         Future<ConnectResult<FakeConnection>> future = promise.future();
-        future.setHandler(handler);
+        future.onComplete(handler);
         FakeConnection conn = new FakeConnection(context, listener, promise);
         if (i < 10) {
           conn.fail(new Exception("Could not connect"));
@@ -959,7 +959,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     @Override
     public void connect(ConnectionListener<FakeConnection> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<FakeConnection>>> handler) {
       Promise<ConnectResult<FakeConnection>> promise = Promise.promise();
-      promise.future().setHandler(handler);
+      promise.future().onComplete(handler);
       pendingRequests.add(new FakeConnection(context, listener, promise));
     }
   }

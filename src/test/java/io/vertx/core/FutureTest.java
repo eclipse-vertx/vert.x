@@ -124,13 +124,13 @@ public class FutureTest extends VertxTestBase {
   public void testSetNullHandler() throws Exception {
     Promise<String> promise = Promise.promise();
     try {
-      promise.future().setHandler(null);
+      promise.future().onComplete(null);
       fail();
     } catch (NullPointerException ignore) {
     }
     promise.complete();
     try {
-      promise.future().setHandler(null);
+      promise.future().onComplete(null);
       fail();
     } catch (NullPointerException ignore) {
     }
@@ -140,7 +140,7 @@ public class FutureTest extends VertxTestBase {
   public void testCallSetHandlerBeforeCompletion() {
     AtomicBoolean called = new AtomicBoolean();
     Promise<Object> promise = Promise.promise();
-    promise.future().setHandler(result -> {
+    promise.future().onComplete(result -> {
       assertTrue(result.succeeded());
       assertFalse(result.failed());
       assertEquals(null, result.result());
@@ -153,7 +153,7 @@ public class FutureTest extends VertxTestBase {
     called.set(false);
     Object foo = new Object();
     promise = Promise.promise();
-    promise.future().setHandler(result -> {
+    promise.future().onComplete(result -> {
       called.set(true);
       assertTrue(result.succeeded());
       assertFalse(result.failed());
@@ -166,7 +166,7 @@ public class FutureTest extends VertxTestBase {
     called.set(false);
     Exception cause = new Exception();
     promise = Promise.promise();
-    promise.future().setHandler(result -> {
+    promise.future().onComplete(result -> {
       called.set(true);
       assertFalse(result.succeeded());
       assertTrue(result.failed());
@@ -182,7 +182,7 @@ public class FutureTest extends VertxTestBase {
   public void testCallSetHandlerAfterCompletion() {
     AtomicBoolean called = new AtomicBoolean();
     Future<Object> future = Future.succeededFuture();
-    future.setHandler(result -> {
+    future.onComplete(result -> {
       assertTrue(result.succeeded());
       assertFalse(result.failed());
       assertEquals(null, result.result());
@@ -193,7 +193,7 @@ public class FutureTest extends VertxTestBase {
     called.set(false);
     Object foo = new Object();
     future = Future.succeededFuture(foo);
-    future.setHandler(result -> {
+    future.onComplete(result -> {
       assertTrue(result.succeeded());
       assertFalse(result.failed());
       assertEquals(foo, result.result());
@@ -204,7 +204,7 @@ public class FutureTest extends VertxTestBase {
     called.set(false);
     Exception cause = new Exception();
     future = Future.failedFuture(cause);
-    future.setHandler(result -> {
+    future.onComplete(result -> {
       assertFalse(result.succeeded());
       assertTrue(result.failed());
       assertEquals(null, result.result());
@@ -946,8 +946,7 @@ public class FutureTest extends VertxTestBase {
       T result;
       Throwable cause;
       public boolean isComplete() { throw new UnsupportedOperationException(); }
-      public Future<T> setHandler(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
-
+      public Future<T> onComplete(Handler<AsyncResult<T>> handler) { throw new UnsupportedOperationException(); }
       public void complete(T result) {
         if (!tryComplete(result)) {
           throw new IllegalStateException();
@@ -1017,7 +1016,7 @@ public class FutureTest extends VertxTestBase {
     private final AtomicInteger count = new AtomicInteger();
 
     Checker(Future<T> future) {
-      future.setHandler(ar -> {
+      future.onComplete(ar -> {
         count.incrementAndGet();
         result.set(ar);
       });
@@ -1351,17 +1350,17 @@ public class FutureTest extends VertxTestBase {
     Future<String> f = promise.future();
     Field handlerField = f.getClass().getDeclaredField("handler");
     handlerField.setAccessible(true);
-    f.setHandler(ar -> {});
+    f.onComplete(ar -> {});
     promise.complete();
     assertNull(handlerField.get(f));
-    f.setHandler(ar -> {});
+    f.onComplete(ar -> {});
     assertNull(handlerField.get(f));
     promise = Promise.promise();
     f = promise.future();
-    f.setHandler(ar -> {});
+    f.onComplete(ar -> {});
     promise.fail("abc");
     assertNull(handlerField.get(f));
-    f.setHandler(ar -> {});
+    f.onComplete(ar -> {});
     assertNull(handlerField.get(f));
   }
 
@@ -1404,10 +1403,10 @@ public class FutureTest extends VertxTestBase {
     waitFor(2);
     Promise<String> promise = Promise.promise();
     Future<String> fut = promise.future();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
     promise.complete();
@@ -1420,10 +1419,10 @@ public class FutureTest extends VertxTestBase {
     Promise<String> promise = Promise.promise();
     promise.complete();
     Future<String> fut = promise.future();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
     await();
@@ -1434,11 +1433,11 @@ public class FutureTest extends VertxTestBase {
     waitFor(2);
     Promise<String> promise = Promise.promise();
     Future<String> fut = promise.future();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
     promise.complete();
-    fut.setHandler(ar -> {
+    fut.onComplete(ar -> {
       complete();
     });
     await();

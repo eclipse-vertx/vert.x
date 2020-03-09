@@ -49,7 +49,7 @@ public class FaultToleranceVerticle extends AbstractVerticle {
     Promise<Void> registrationFuture = Promise.promise();
     registrationFutures.add(registrationFuture.future());
     vertx.eventBus().consumer("ping", this::ping).completionHandler(registrationFuture);
-    CompositeFuture.all(registrationFutures).setHandler(ar -> {
+    CompositeFuture.all(registrationFutures).onComplete(ar -> {
       if (ar.succeeded()) {
         vertx.eventBus().send("control", "start");
       }

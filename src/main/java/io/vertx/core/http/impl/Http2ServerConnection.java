@@ -218,7 +218,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
                 Handler<AsyncResult<HttpServerResponse>> completionHandler) {
       super(Http2ServerConnection.this, stream, contentEncoding, method, uri, writable);
       Promise<HttpServerResponse> promise = Promise.promise();
-      promise.future().setHandler(completionHandler);
+      promise.future().onComplete(completionHandler);
       this.completionHandler = promise;
     }
 

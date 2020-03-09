@@ -253,7 +253,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
     StreamImpl(Http1xClientConnection conn, int id, Handler<AsyncResult<HttpClientStream>> handler) {
       Promise<HttpClientStream> promise = Promise.promise();
-      promise.future().setHandler(handler);
+      promise.future().onComplete(handler);
 
       this.conn = conn;
       this.fut = promise;

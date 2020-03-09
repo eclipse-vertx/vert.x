@@ -55,7 +55,7 @@ public class ClusteredSharedCounterTest extends SharedCounterTest {
       }), Future.<Long>future(fut -> {
         counterNode2.addAndGet(2, fut);
       }));
-    }).setHandler(asyncCompFuture -> {
+    }).onComplete(asyncCompFuture -> {
       assertTrue(asyncCompFuture.succeeded());
       long valueCounterNode1 = asyncCompFuture.result().resultAt(0);
       long valueCounterNode2 = asyncCompFuture.result().resultAt(1);

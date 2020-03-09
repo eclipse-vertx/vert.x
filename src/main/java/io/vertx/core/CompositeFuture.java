@@ -178,13 +178,14 @@ public interface CompositeFuture extends Future<CompositeFuture> {
     return CompositeFutureImpl.join(futures.toArray(new Future[futures.size()]));
   }
 
+  @Deprecated
   @Override
-  CompositeFuture setHandler(Handler<AsyncResult<CompositeFuture>> handler);
+  default CompositeFuture setHandler(Handler<AsyncResult<CompositeFuture>> handler) {
+    return (CompositeFuture) Future.super.setHandler(handler);
+  }
 
   @Override
-  default CompositeFuture onComplete(Handler<AsyncResult<CompositeFuture>> handler) {
-    return setHandler(handler);
-  }
+  CompositeFuture onComplete(Handler<AsyncResult<CompositeFuture>> handler);
 
   @Override
   default CompositeFuture onSuccess(Handler<CompositeFuture> handler) {

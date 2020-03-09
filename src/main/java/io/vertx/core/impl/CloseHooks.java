@@ -88,7 +88,7 @@ class CloseHooks {
         AtomicBoolean failed = new AtomicBoolean();
         for (Closeable hook : copy) {
           Promise<Void> promise = Promise.promise();
-          promise.future().setHandler(ar -> {
+          promise.future().onComplete(ar -> {
             if (ar.failed()) {
               if (failed.compareAndSet(false, true)) {
                 // Only report one failure
