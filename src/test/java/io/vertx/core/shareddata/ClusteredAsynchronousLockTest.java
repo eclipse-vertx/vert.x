@@ -109,7 +109,7 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
   public void testLockReleasedForKilledNode() throws Exception {
     testLockReleased(latch -> {
       VertxInternal vi = (VertxInternal) vertices[0];
-      vi.getClusterManager().leave().setHandler(onSuccess(v -> {
+      vi.getClusterManager().leave().onComplete(onSuccess(v -> {
         latch.countDown();
       }));
     });

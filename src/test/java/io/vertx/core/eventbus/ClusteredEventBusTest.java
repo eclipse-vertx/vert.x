@@ -245,7 +245,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testSubsRemovedForKilledNode() throws Exception {
     testSubsRemoved(latch -> {
       VertxInternal vi = (VertxInternal)vertices[1];
-      vi.getClusterManager().leave().setHandler(onSuccess(v -> {
+      vi.getClusterManager().leave().onComplete(onSuccess(v -> {
         latch.countDown();
       }));
     });
