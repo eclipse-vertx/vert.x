@@ -140,6 +140,35 @@ public class RegistrationListenerTest extends VertxTestBase {
   }
 
   @Test
+  public void testNoEventIfNoRegistrationUpdatesAfterStart() throws Exception {
+    startNodes(2);
+
+    AtomicBoolean registered = new AtomicBoolean();
+
+    helper.register(0, "foo")
+      .compose(v -> helper.getRegistrationListener(1, "foo"))
+      .onSuccess(stream -> {
+        stream
+          .exceptionHandler(this::fail)
+          .handler(event -> {
+            if (registered.get()) {
+              testComplete();
+            } else {
+              fail("Did not expect update event yet");
+            }
+          })
+          .start();
+      });
+
+    vertx.setTimer(2000, l -> {
+      registered.set(true);
+      helper.register(0, "foo");
+    });
+
+    await();
+  }
+
+  @Test
   public void testNoEventsAfterStop() {
     startNodes(2);
 

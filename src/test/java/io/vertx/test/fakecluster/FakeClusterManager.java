@@ -257,18 +257,15 @@ public class FakeClusterManager implements ClusterManager {
       });
 
     private final String address;
-    private final List<RegistrationInfo> initialState;
 
-    private List<RegistrationInfo> lastState;
-    private List<RegistrationInfo> newState;
+    private List<RegistrationInfo> initial, last;
     private Handler<List<RegistrationInfo>> handler;
     private Handler<Void> endHandler;
     private ScheduledFuture<?> scheduledFuture;
 
     FakeRegistrationListener(String address) {
       this.address = address;
-      initialState = getRegistrationInfos();
-      lastState = newState = null;
+      initial = getRegistrationInfos();
     }
 
     private List<RegistrationInfo> getRegistrationInfos() {
@@ -283,7 +280,7 @@ public class FakeClusterManager implements ClusterManager {
 
     @Override
     public List<RegistrationInfo> initialState() {
-      return initialState;
+      return initial;
     }
 
     @Override
@@ -309,35 +306,52 @@ public class FakeClusterManager implements ClusterManager {
     }
 
     private void checkUpdate() {
-      List<RegistrationInfo> ns = getRegistrationInfos();
+      List<RegistrationInfo> infos = getRegistrationInfos();
       Runnable emission;
       synchronized (this) {
-        newState = ns;
-        if (lastState != null && (lastState.isEmpty() || lastState.equals(newState))) {
+        if (initial != null) {
+          if (infos.isEmpty()) {
+            emission = terminalEvent();
+          } else if (!initial.equals(infos)) {
+            emission = itemEvent(infos);
+          } else {
+            emission = null;
+          }
+          last = infos;
+          initial = null;
+        } else if (last.isEmpty() || last.equals(infos)) {
           emission = null;
         } else {
-          lastState = newState;
-          if (lastState.isEmpty()) {
-            Handler<Void> e = endHandler;
-            emission = () -> {
-              if (e != null) {
-                e.handle(null);
-              }
-              stop();
-            };
+          last = infos;
+          if (last.isEmpty()) {
+            emission = terminalEvent();
           } else {
-            Handler<List<RegistrationInfo>> h = handler;
-            emission = () -> {
-              if (h != null) {
-                h.handle(ns);
-              }
-            };
+            emission = itemEvent(infos);
           }
         }
       }
       if (emission != null) {
         emission.run();
       }
+    }
+
+    private synchronized Runnable itemEvent(List<RegistrationInfo> infos) {
+      Handler<List<RegistrationInfo>> h = handler;
+      return () -> {
+        if (h != null) {
+          h.handle(infos);
+        }
+      };
+    }
+
+    private synchronized Runnable terminalEvent() {
+      Handler<Void> e = endHandler;
+      return () -> {
+        if (e != null) {
+          e.handle(null);
+        }
+        stop();
+      };
     }
 
     @Override
