@@ -112,4 +112,8 @@ public class ClusterManagerDelegate implements ClusterManager {
   public Future<RegistrationListener> registrationListener(String address) {
     return clusterManager.registrationListener(address);
   }
+
+  public ClusterManager unwrap() {
+    return clusterManager;
+  }
 }
