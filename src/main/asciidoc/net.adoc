@@ -125,10 +125,9 @@ exceptions that happens before the connection is passed to the {@link io.vertx.c
 === Event bus write handler
 
 Every socket automatically registers a handler on the event bus, and when any buffers are received in this handler,
-it writes them to itself.
+it writes them to itself. Those are local subscriptions not routed on the cluster.
 
-This enables you to write data to a socket which is potentially in a completely different verticle or even in a
-different Vert.x instance by sending the buffer to the address of that handler.
+This enables you to write data to a socket which is potentially in a completely different verticle by sending the buffer to the address of that handler.
 
 The address of the handler is given by {@link io.vertx.core.net.NetSocket#writeHandlerID()}
 
