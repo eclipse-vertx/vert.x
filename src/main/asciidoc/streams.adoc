@@ -161,29 +161,3 @@ returns `true` if the write queue is considered full.
 Will be called if an exception occurs on the `WriteStream`.
 - {@link io.vertx.core.streams.WriteStream#drainHandler}:
 The handler will be called if the `WriteStream` is considered no longer full.
-
-=== Pump
-
-The pump exposes a subset of the pipe API and only transfers the items between streams, it does not handle
-the completion or failure of the transfer operation.
-
-[source,$lang]
-----
-{@link examples.StreamsExamples#pump(io.vertx.core.Vertx)}
-----
-
-IMPORTANT: Before Vert.x 3.7 the {@link io.vertx.core.streams.Pump} was the advocated API for transferring a read stream to
-a write stream. Since 3.7 the pipe API supersedes the pump API.
-
-Instances of Pump have the following methods:
-
-- {@link io.vertx.core.streams.Pump#start}:
-Start the pump.
-- {@link io.vertx.core.streams.Pump#stop}:
-Stops the pump. When the pump starts it is in stopped mode.
-- {@link io.vertx.core.streams.Pump#setWriteQueueMaxSize}:
-This has the same meaning as {@link io.vertx.core.streams.WriteStream#setWriteQueueMaxSize} on the `WriteStream`.
-
-A pump can be started and stopped multiple times.
-
-When a pump is first created it is _not_ started. You need to call the `start()` method to start it.

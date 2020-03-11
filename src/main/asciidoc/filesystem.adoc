@@ -46,7 +46,7 @@ You open an {@link io.vertx.core.file.AsyncFile AsyncFile} as follows:
 {@link examples.FileSystemExamples#example3}
 ----
 
-`AsyncFile` implements `ReadStream` and `WriteStream` so you can _pump_
+`AsyncFile` implements `ReadStream` and `WriteStream` so you can _pipe_
 files to and from other stream objects such as net sockets, http requests and responses, and WebSockets.
 
 They also allow you to read and write directly to them.
@@ -116,15 +116,15 @@ This method can also be called with an handler which will be called when the flu
 ==== Using AsyncFile as ReadStream and WriteStream
 
 `AsyncFile` implements `ReadStream` and `WriteStream`. You can then
-use them with a _pump_ to pump data to and from other read and write streams. For example, this would
+use them with a _pipe_ to pipe data to and from other read and write streams. For example, this would
 copy the content to another `AsyncFile`:
 
 [source,$lang]
 ----
-{@link examples.FileSystemExamples#asyncFilePump}
+{@link examples.FileSystemExamples#asyncFilePipe}
 ----
 
-You can also use the _pump_ to write file content into HTTP responses, or more generally in any
+You can also use the _pipe_ to write file content into HTTP responses, or more generally in any
 `WriteStream`.
 
 [[classpath]]

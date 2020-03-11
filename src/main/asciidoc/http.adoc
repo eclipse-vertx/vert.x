@@ -267,12 +267,12 @@ for you. The body handler is called once when all the body has been received:
 {@link examples.HTTPExamples#example11}
 ----
 
-==== Pumping requests
+==== Streaming requests
 
-The request object is a {@link io.vertx.core.streams.ReadStream} so you can pump the request body to any
+The request object is a {@link io.vertx.core.streams.ReadStream} so you can pipe the request body to any
 {@link io.vertx.core.streams.WriteStream} instance.
 
-See the chapter on <<streams, streams and pumps>> for a detailed explanation.
+See the chapter on <<streams, streams>> for a detailed explanation.
 
 ==== Handling HTML forms
 
@@ -320,8 +320,8 @@ exhaustion, instead, the upload data is received in chunks:
 {@link examples.HTTPExamples#example14}
 ----
 
-The upload object is a {@link io.vertx.core.streams.ReadStream} so you can pump the request body to any
-{@link io.vertx.core.streams.WriteStream} instance. See the chapter on <<streams, streams and pumps>> for a
+The upload object is a {@link io.vertx.core.streams.ReadStream} so you can pipe the request body to any
+{@link io.vertx.core.streams.WriteStream} instance. See the chapter on <<streams, streams>> for a
 detailed explanation.
 
 If you just want to upload the file to disk somewhere you can use {@link io.vertx.core.http.HttpServerFileUpload#streamToFileSystem}:
@@ -542,7 +542,7 @@ Or use {@link io.vertx.core.http.HttpServerResponse#putTrailer}.
 ==== Serving files directly from disk or the classpath
 
 If you were writing a web server, one way to serve a file from disk would be to open it as an {@link io.vertx.core.file.AsyncFile}
-and pump it to the HTTP response.
+and pipe it to the HTTP response.
 
 Or you could load it it one go using {@link io.vertx.core.file.FileSystem#readFile} and write it straight to the response.
 
@@ -588,14 +588,14 @@ case you can just do:
 {@link examples.HTTPExamples#example26c}
 ----
 
-==== Pumping responses
+==== Piping responses
 
-The server response is a {@link io.vertx.core.streams.WriteStream} instance so you can pump to it from any
+The server response is a {@link io.vertx.core.streams.WriteStream} instance so you can pipe to it from any
 {@link io.vertx.core.streams.ReadStream}, e.g. {@link io.vertx.core.file.AsyncFile}, {@link io.vertx.core.net.NetSocket},
 {@link io.vertx.core.http.WebSocket} or {@link io.vertx.core.http.HttpServerRequest}.
 
 Here's an example which echoes the request body back in the response for any PUT methods.
-It uses a pump for the body, so it will work even if the HTTP request body is much larger than can fit in memory
+It uses a pipe for the body, so it will work even if the HTTP request body is much larger than can fit in memory
 at any one time:
 
 [source,$lang]
@@ -1054,7 +1054,7 @@ and {@link io.vertx.core.http.HttpClientResponse#statusMessage}.
 ==== Using the response as a stream
 
 The {@link io.vertx.core.http.HttpClientResponse} instance is also a {@link io.vertx.core.streams.ReadStream} which means
-you can pump it to any {@link io.vertx.core.streams.WriteStream} instance.
+you can pipe it to any {@link io.vertx.core.streams.WriteStream} instance.
 
 ==== Response headers and trailers
 
@@ -1737,10 +1737,10 @@ for example:
 
 Use {@link io.vertx.core.http.WebSocket#close()} to close the WebSocket connection when you have finished with it.
 
-==== Streaming WebSockets
+==== Piping WebSockets
 
 The {@link io.vertx.core.http.WebSocket} instance is also a {@link io.vertx.core.streams.ReadStream} and a
-{@link io.vertx.core.streams.WriteStream} so it can be used with pumps.
+{@link io.vertx.core.streams.WriteStream} so it can be used with pipes.
 
 When using a WebSocket as a write stream or a read stream it can only be used with WebSockets connections that are
 used with binary frames that are no split over multiple frames.

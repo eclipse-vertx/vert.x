@@ -154,10 +154,10 @@ classpath resolution or disabling it.
 === Streaming sockets
 
 Instances of {@link io.vertx.core.net.NetSocket} are also {@link io.vertx.core.streams.ReadStream} and
-{@link io.vertx.core.streams.WriteStream} instances so they can be used to pump data to or from other
+{@link io.vertx.core.streams.WriteStream} instances so they can be used to pipe data to or from other
 read and write streams.
 
-See the chapter on <<streams, streams and pumps>> for more information.
+See the chapter on <<streams, streams >> for more information.
 
 === Upgrading connections to SSL/TLS
 
