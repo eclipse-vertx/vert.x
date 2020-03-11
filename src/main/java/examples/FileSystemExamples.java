@@ -16,7 +16,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.streams.Pump;
 
 /**
  * Created by tim on 09/01/15.
@@ -135,16 +134,16 @@ public class FileSystemExamples {
     });
   }
 
-  public void asyncFilePump(Vertx vertx) {
+  public void asyncFilePipe(Vertx vertx) {
     final AsyncFile output = vertx.fileSystem().openBlocking("target/classes/plagiary.txt", new OpenOptions());
 
     vertx.fileSystem().open("target/classes/les_miserables.txt", new OpenOptions(), result -> {
       if (result.succeeded()) {
         AsyncFile file = result.result();
-        Pump.pump(file, output).start();
-        file.endHandler((r) -> {
-          System.out.println("Copy done");
-        });
+        file.pipeTo(output)
+          .onComplete(v -> {
+            System.out.println("Copy done");
+          });
       } else {
         System.err.println("Cannot open file " + result.cause());
       }

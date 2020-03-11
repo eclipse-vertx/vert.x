@@ -164,13 +164,4 @@ public class StreamsExamples {
         dst.end(Buffer.buffer("done"));
     });
   }
-
-  public void pump(Vertx vertx) {
-    NetServer server = vertx.createNetServer(
-      new NetServerOptions().setPort(1234).setHost("localhost")
-    );
-    server.connectHandler(sock -> {
-      Pump.pump(sock, sock).start();
-    }).listen();
-  }
 }
