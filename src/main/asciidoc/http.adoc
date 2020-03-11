@@ -1734,6 +1734,17 @@ The {@link io.vertx.core.http.WebSocket} instance is also a {@link io.vertx.core
 When using a WebSocket as a write stream or a read stream it can only be used with WebSockets connections that are
 used with binary frames that are no split over multiple frames.
 
+==== Event bus handlers
+
+Every WebSocket automatically registers two handler on the event bus, and when any data are received in this handler,
+it writes them to itself. Those are local subscriptions not routed on the cluster.
+
+This enables you to write data to a WebSocket which is potentially in a completely different verticle sending data
+to the address of that handler.
+
+The addresses of the handlers are given by {@link io.vertx.core.http.WebSocket#binaryHandlerID()} and
+{@link io.vertx.core.http.WebSocket#textHandlerID()}.
+
 === Using a proxy for HTTP/HTTPS connections
 
 The http client supports accessing http/https URLs via a HTTP proxy (e.g. Squid) or _SOCKS4a_ or _SOCKS5_ proxy.
