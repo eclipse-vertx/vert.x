@@ -85,7 +85,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
 
   @SuppressWarnings("unchecked")
   private void removeWaiters(ContextInternal context, String address) {
-    context.contextData().compute(context, (k, v) -> {
+    context.contextData().compute(this, (k, v) -> {
       Map<String, Queue<Promise<NodeSelector>>> map = (Map<String, Queue<Promise<NodeSelector>>>) v;
       if (map == null) {
         throw new IllegalStateException();
