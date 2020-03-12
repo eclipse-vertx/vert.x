@@ -292,8 +292,7 @@ public class HTTPExamples {
       HttpServerResponse response = request.response();
       if (request.method() == HttpMethod.PUT) {
         response.setChunked(true);
-        Pump.pump(request, response).start();
-        request.endHandler(v -> response.end());
+        request.pipeTo(response);
       } else {
         response.setStatusCode(400).end();
       }
