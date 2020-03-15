@@ -68,7 +68,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private int followRedirects;
   private VertxHttpHeaders headers;
   private StreamPriority priority;
-  public HttpClientStream stream;
+  private HttpClientStream stream;
   private boolean connecting;
   private Promise<NetSocket> netSocketPromise;
 
