@@ -22,6 +22,7 @@ public class HandlerMetric {
   public final String repliedAddress;
   public final AtomicInteger scheduleCount = new AtomicInteger();
   public final AtomicInteger localScheduleCount = new AtomicInteger();
+  public final AtomicInteger discardCount = new AtomicInteger();
   public final AtomicInteger beginCount = new AtomicInteger();
   public final AtomicInteger endCount = new AtomicInteger();
   public final AtomicInteger failureCount = new AtomicInteger();
@@ -34,7 +35,8 @@ public class HandlerMetric {
 
   @Override
   public String toString() {
-    return "HandlerRegistration[address=" + address + ",repliedAddress=" + repliedAddress + ",beginCount=" + beginCount.get() +
-        ",endCount=" + endCount.get() + ",failureCount=" + failureCount + ",localCount=" + localBeginCount.get() + "]";
+    return "HandlerRegistration[address=" + address + ",repliedAddress=" + repliedAddress + ",discardCount="  + discardCount +
+            ",beginCount=" + beginCount.get() + ",endCount=" + endCount.get() +
+            ",failureCount=" + failureCount + ",localCount=" + localBeginCount.get() + "]";
   }
 }

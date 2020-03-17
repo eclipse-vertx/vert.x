@@ -231,6 +231,69 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
+  public void testDiscardOnOverflow1() {
+    startNodes(2);
+    Vertx from = vertices[0], to = vertices[1];
+    FakeEventBusMetrics fromMetrics = FakeMetricsBase.getMetrics(from.eventBus());
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
+    MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
+    int num = 10;
+    consumer.setMaxBufferedMessages(num);
+    consumer.pause();
+    consumer.completionHandler(onSuccess(v -> {
+      for (int i = 0;i < num;i++) {
+        from.eventBus().send(ADDRESS1, "" + i);
+      }
+      from.eventBus().send(ADDRESS1, "last");
+    }));
+    consumer.handler(msg -> fail());
+    waitUntil(() -> toMetrics.getRegistrations().size() == 1);
+    HandlerMetric metric = toMetrics.getRegistrations().get(0);
+    waitUntil(() -> metric.scheduleCount.get() == num + 1);
+    waitUntil(() -> metric.discardCount.get() == 1);
+  }
+
+  @Test
+  public void testDiscardOnOverflow2() {
+    startNodes(2);
+    Vertx from = vertices[0], to = vertices[1];
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
+    MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
+    int num = 10;
+    consumer.setMaxBufferedMessages(num);
+    consumer.pause();
+    consumer.completionHandler(onSuccess(v -> {
+      for (int i = 0;i < num;i++) {
+        from.eventBus().send(ADDRESS1, "" + i);
+      }
+    }));
+    consumer.handler(msg -> fail());
+    waitUntil(() -> toMetrics.getRegistrations().size() == 1);
+    HandlerMetric metric = toMetrics.getRegistrations().get(0);
+    waitUntil(() -> metric.scheduleCount.get() == num);
+    consumer.setMaxBufferedMessages(num - 1);
+    waitUntil(() -> metric.discardCount.get() == 1);
+  }
+
+  @Test
+  public void testDiscardMessageOnUnregistration() {
+    startNodes(2);
+    Vertx from = vertices[0], to = vertices[1];
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
+    MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
+    consumer.pause();
+    consumer.completionHandler(onSuccess(v -> {
+      from.eventBus().send(ADDRESS1, "last");
+    }));
+    consumer.handler(msg -> fail());
+    waitUntil(() -> toMetrics.getRegistrations().size() == 1);
+    HandlerMetric metric = toMetrics.getRegistrations().get(0);
+    waitUntil(() -> metric.scheduleCount.get() == 1);
+    consumer.unregister();
+    waitUntil(() -> metric.discardCount.get() == 1);
+  }
+
+  @Test
   public void testHandlerRegistration() throws Exception {
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertx.eventBus());
     MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1, msg -> {
@@ -254,7 +317,6 @@ public class MetricsTest extends VertxTestBase {
     });
     await();
   }
-
 
   @Test
   public void testClusterUnregistration() {

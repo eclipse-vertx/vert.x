@@ -104,6 +104,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       }
     }
     for (Message<T> msg : discarded) {
+      if (metrics != null) {
+        metrics.discardMessage(metric, msg);
+      }
       discardHandler.handle(msg);
     }
     return this;
@@ -175,6 +178,14 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           }
         });
       }
+      if (metrics != null) {
+        Message<T> msg;
+        while ((msg = pending.poll()) != null) {
+          metrics.discardMessage(metric, msg);
+        }
+      } else {
+        pending.clear();
+      }
       pending.clear();
       discardHandler = null;
       eventBus.removeRegistration(registered, doneHandler);
@@ -227,6 +238,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
         } else {
+          if (metrics != null) {
+            metrics.discardMessage(metric, message);
+          }
           if (discardHandler != null) {
             discardHandler.handle(message);
           } else {
