@@ -55,8 +55,6 @@ abstract class HandlerRegistration<T> {
 
   protected abstract void doReceive(Message<T> msg);
 
-  protected abstract void doUnregister();
-
   protected abstract void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
 
   synchronized void register(String repliedAddress, boolean localOnly, Handler<AsyncResult<Void>> promise) {
@@ -87,7 +85,6 @@ abstract class HandlerRegistration<T> {
         promise.complete();
       }
     }
-    doUnregister();
     return promise.future();
   }
 
@@ -101,6 +98,12 @@ abstract class HandlerRegistration<T> {
   void dispatch(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
     deliveryCtx.dispatch();
+  }
+
+  void discard(Message<T> msg) {
+    if (bus.metrics != null) {
+      bus.metrics.discardMessage(metric, msg);
+    }
   }
 
   private class InboundDeliveryContext implements DeliveryContext<T> {

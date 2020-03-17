@@ -339,16 +339,16 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     startNodes(1);
     MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1);
     AtomicInteger completionCount = new AtomicInteger();
-    consumer.completionHandler(ar -> {
+    consumer.completionHandler(onSuccess(v -> {
       int val = completionCount.getAndIncrement();
       assertEquals(0, val);
-      assertTrue(ar.failed());
-      vertx.setTimer(10, id -> {
-        testComplete();
-      });
-    });
+    }));
     consumer.handler(msg -> {});
-    consumer.unregister();
+    consumer.unregister(onSuccess(v -> {
+      int val = completionCount.getAndIncrement();
+      assertEquals(1, val);
+      testComplete();
+    }));
     await();
   }
 

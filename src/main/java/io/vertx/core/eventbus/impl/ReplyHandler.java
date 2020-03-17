@@ -69,10 +69,6 @@ class ReplyHandler<T> extends HandlerRegistration<T> {
     dispatch(null, reply, context);
   }
 
-  @Override
-  protected void doUnregister() {
-  }
-
   void register() {
     register(repliedAddress, true, ar -> {});
   }

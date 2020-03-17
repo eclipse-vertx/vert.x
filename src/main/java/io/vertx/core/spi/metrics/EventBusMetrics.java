@@ -11,6 +11,7 @@
 
 package io.vertx.core.spi.metrics;
 
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyFailure;
 
 /**
@@ -51,6 +52,15 @@ public interface EventBusMetrics<H> extends Metrics {
    * @param local when the scheduled message is local
    */
   default void scheduleMessage(H handler, boolean local) {
+  }
+
+  /**
+   * Discard a message.
+   *
+   * @param handler the handler processing the message
+   * @param msg the discarded message
+   */
+  default void discardMessage(H handler, Message<?> msg) {
   }
 
   /**

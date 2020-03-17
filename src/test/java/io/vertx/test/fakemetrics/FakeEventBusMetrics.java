@@ -11,6 +11,7 @@
 
 package io.vertx.test.fakemetrics;
 
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
@@ -94,6 +95,11 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
     if (local) {
       handler.localScheduleCount.incrementAndGet();
     }
+  }
+
+  @Override
+  public void discardMessage(HandlerMetric handler, Message<?> msg) {
+    handler.discardCount.incrementAndGet();
   }
 
   @Override

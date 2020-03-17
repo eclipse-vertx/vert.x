@@ -69,20 +69,20 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       if (overflow <= 0) {
         return this;
       }
-      discardHandler = this.discardHandler;
-      if (discardHandler == null) {
-        while (pending.size() > maxBufferedMessages) {
-          pending.poll();
-        }
+      if (pending.isEmpty()) {
         return this;
       }
+      discardHandler = this.discardHandler;
       discarded = new ArrayList<>(overflow);
       while (pending.size() > maxBufferedMessages) {
         discarded.add(pending.poll());
       }
     }
     for (Message<T> msg : discarded) {
-      discardHandler.handle(msg);
+      if (discardHandler != null) {
+        discardHandler.handle(msg);
+      }
+      discard(msg);
     }
     return this;
   }
@@ -107,27 +107,32 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     }
   }
 
-  protected synchronized void doUnregister() {
+  @Override
+  public synchronized Future<Void> unregister() {
     handler = null;
     if (endHandler != null) {
       endHandler.handle(null);
     }
-    if (pending.size() > 0 && discardHandler != null) {
+    if (pending.size() > 0) {
       Queue<Message<T>> discarded = pending;
       Handler<Message<T>> handler = discardHandler;
       pending = new ArrayDeque<>();
-      context.runOnContext(v -> {
-        Message<T> msg;
-        while ((msg = discarded.poll()) != null) {
-          handler.handle(msg);
+      for (Message<T> msg : discarded) {
+        discard(msg);
+        if (handler != null) {
+          context.dispatch(msg, handler);
         }
-      });
+      }
     }
     discardHandler = null;
-    if (result != null) {
-      result.tryFail("blah");
-      result = null;
+    Future<Void> fut = super.unregister();
+    Promise<Void> res = result;
+    if (res != null) {
+      fut.onComplete(ar -> {
+        res.tryFail("blah");
+      });
     }
+    return fut;
   }
 
   protected void doReceive(Message<T> message) {
@@ -139,6 +144,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
         } else {
+          discard(message);
           if (discardHandler != null) {
             discardHandler.handle(message);
           } else {
