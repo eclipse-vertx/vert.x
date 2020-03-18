@@ -102,7 +102,7 @@ abstract class HandlerRegistration<T> {
 
   void discard(Message<T> msg) {
     if (bus.metrics != null) {
-      bus.metrics.discardMessage(metric, msg);
+      bus.metrics.discardMessage(metric, isLocal(msg), msg);
     }
   }
 
@@ -143,18 +143,10 @@ abstract class HandlerRegistration<T> {
           log.error("Failure in interceptor", t);
         }
       } else {
-        boolean local = true;
-        if (message instanceof ClusteredMessage) {
-          // A bit hacky
-          ClusteredMessage cmsg = (ClusteredMessage)message;
-          if (cmsg.isFromWire()) {
-            local = false;
-          }
-        }
         Object m = metric;
         VertxTracer tracer = context.tracer();
         if (bus.metrics != null) {
-          bus.metrics.messageDelivered(m, local);
+          bus.metrics.messageDelivered(m, isLocal(message));
         }
         if (tracer != null && !src) {
           message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
@@ -178,4 +170,16 @@ abstract class HandlerRegistration<T> {
       return message.receivedBody;
     }
   }
+
+  private boolean isLocal(Message<?> message) {
+    if (message instanceof ClusteredMessage) {
+      // A bit hacky
+      ClusteredMessage cmsg = (ClusteredMessage)message;
+      if (cmsg.isFromWire()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
 }

@@ -56,11 +56,11 @@ public interface EventBusMetrics<H> extends Metrics {
 
   /**
    * Discard a message.
-   *
    * @param handler the handler processing the message
+   * @param local when the scheduled message is local
    * @param msg the discarded message
    */
-  default void discardMessage(H handler, Message<?> msg) {
+  default void discardMessage(H handler, boolean local, Message<?> msg) {
   }
 
   /**
