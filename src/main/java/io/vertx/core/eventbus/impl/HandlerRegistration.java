@@ -11,7 +11,6 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
@@ -105,7 +104,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     }
     for (Message<T> msg : discarded) {
       if (metrics != null) {
-        metrics.discardMessage(metric, msg);
+        metrics.discardMessage(metric, isLocal(msg), msg);
       }
       discardHandler.handle(msg);
     }
@@ -181,7 +180,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       if (metrics != null) {
         Message<T> msg;
         while ((msg = pending.poll()) != null) {
-          metrics.discardMessage(metric, msg);
+          metrics.discardMessage(metric, isLocal(msg), msg);
         }
       } else {
         pending.clear();
@@ -239,7 +238,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
           pending.add(message);
         } else {
           if (metrics != null) {
-            metrics.discardMessage(metric, message);
+            metrics.discardMessage(metric, isLocal(message), message);
           }
           if (discardHandler != null) {
             discardHandler.handle(message);
@@ -266,21 +265,13 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
   private void deliver(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    boolean local = true;
-    if (message instanceof ClusteredMessage) {
-      // A bit hacky
-      ClusteredMessage cmsg = (ClusteredMessage)message;
-      if (cmsg.isFromWire()) {
-        local = false;
-      }
-    }
     String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
     if (creditsAddress != null) {
       eventBus.send(creditsAddress, 1);
     }
     try {
       if (metrics != null) {
-        metrics.beginHandleMessage(metric, local);
+        metrics.beginHandleMessage(metric, isLocal(message));
       }
       theHandler.handle(message);
       if (metrics != null) {
@@ -401,4 +392,15 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     return metric;
   }
 
+  private boolean isLocal(Message<?> message) {
+    boolean local = true;
+    if (message instanceof ClusteredMessage) {
+      // A bit hacky
+      ClusteredMessage cmsg = (ClusteredMessage)message;
+      if (cmsg.isFromWire()) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
