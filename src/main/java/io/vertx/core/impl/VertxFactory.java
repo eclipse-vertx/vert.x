@@ -43,7 +43,6 @@ public class VertxFactory {
   public VertxFactory(VertxOptions options) {
     this.options = options;
     this.clusterManager = options.getClusterManager();
-    this.deliveryStrategy = options.getEventBusOptions().getDeliveryStrategy();
   }
 
   public VertxFactory() {

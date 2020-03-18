@@ -65,7 +65,6 @@ public class EventBusOptions extends TCPSSLOptions {
   private long clusterPingInterval = DEFAULT_CLUSTER_PING_INTERVAL;
   private long clusterPingReplyInterval = DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
   private JsonObject nodeMetaData;
-  private DeliveryStrategy deliveryStrategy;
 
   // Attributes used to configure the server of the event bus when the event bus is clustered.
 
@@ -153,7 +152,6 @@ public class EventBusOptions extends TCPSSLOptions {
     this.clusterPingInterval = other.clusterPingInterval;
     this.clusterPingReplyInterval = other.clusterPingReplyInterval;
     this.nodeMetaData = other.nodeMetaData == null ? null : other.nodeMetaData.copy();
-    this.deliveryStrategy = other.deliveryStrategy;
 
     this.port = other.port;
     this.host = other.host;
@@ -672,35 +670,6 @@ public class EventBusOptions extends TCPSSLOptions {
    */
   public EventBusOptions setNodeMetaData(JsonObject nodeMetaData) {
     this.nodeMetaData = nodeMetaData;
-    return this;
-  }
-
-  /**
-   * Get the {@link DeliveryStrategy} to be used when clustering.
-   * <p>
-   * If the {@link DeliveryStrategy} has been programmatically set here, then that will be used when clustering.
-   * <p>
-   * Otherwise Vert.x attempts to locate a {@link DeliveryStrategy} on the classpath.
-   *
-   * @return the {@link DeliveryStrategy}.
-   */
-  public DeliveryStrategy getDeliveryStrategy() {
-    return deliveryStrategy;
-  }
-
-  /**
-   * Programmatically set the {@link DeliveryStrategy} to be used when clustering.
-   * <p>
-   * Only valid if clustered = true.
-   * <p>
-   * Normally Vert.x will look on the classpath for a {@link DeliveryStrategy}, but if you want to set one
-   * programmatically you can use this method.
-   *
-   * @param deliveryStrategy the {@link DeliveryStrategy}
-   * @return a reference to this, so the API can be used fluently
-   */
-  public EventBusOptions setDeliveryStrategy(DeliveryStrategy deliveryStrategy) {
-    this.deliveryStrategy = deliveryStrategy;
     return this;
   }
 }

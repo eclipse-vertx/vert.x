@@ -14,6 +14,8 @@ package io.vertx.core.eventbus;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.VertxFactory;
+import io.vertx.core.spi.cluster.DeliveryStrategy;
 import io.vertx.core.spi.cluster.impl.DefaultDeliveryStrategy;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -31,15 +33,15 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
     VertxOptions options = new VertxOptions();
     options.getEventBusOptions()
       .setHost("localhost")
-      .setPort(0)
-      .setDeliveryStrategy(new DefaultDeliveryStrategy() {
-        @Override
-        public Future<List<String>> chooseNodes(Message<?> message) {
-          return Future.failedFuture(cause);
-        }
-      });
+      .setPort(0);
     vertices = new Vertx[1];
-    clusteredVertx(options, onSuccess(node -> {
+    DeliveryStrategy strategy = new DefaultDeliveryStrategy() {
+      @Override
+      public Future<List<String>> chooseNodes(Message<?> message) {
+        return Future.failedFuture(cause);
+      }
+    };
+    new VertxFactory(options).deliveryStrategy(strategy).clusteredVertx(onSuccess(node -> {
       vertices[0] = node;
     }));
     assertWaitUntil(() -> vertices[0] != null);

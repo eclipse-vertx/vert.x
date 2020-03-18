@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
+import io.vertx.core.impl.VertxFactory;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -459,17 +460,26 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
 
   @Test
   public void testCustomDeliveryStrategy() throws Exception {
-    VertxOptions[] options = IntStream.range(0, 4)
+    CompositeFuture startFuture = IntStream.range(0, 4)
       .mapToObj(i -> {
         VertxOptions vertxOptions = getOptions();
         vertxOptions.getEventBusOptions()
-          .setNodeMetaData(new JsonObject().put("rack", i % 2 == 0 ? "foo" : "bar"))
-          .setDeliveryStrategy(new CustomDeliveryStrategy());
+          .setNodeMetaData(new JsonObject().put("rack", i % 2 == 0 ? "foo" : "bar"));
         return vertxOptions;
       })
-      .toArray(VertxOptions[]::new);
+      .map(options -> {
+        VertxFactory factory = new VertxFactory(options).deliveryStrategy(new CustomDeliveryStrategy());
+        Promise<Vertx> promise = Promise.promise();
+        factory.clusteredVertx(promise);
+        return promise.future();
+      })
+      .map(Future.class::cast)
+      .collect(collectingAndThen(toList(), CompositeFuture::all));
 
-    startNodes(options);
+    CountDownLatch startLatch = new CountDownLatch(1);
+    startFuture.onComplete(onSuccess(cf -> startLatch.countDown()));
+    awaitLatch(startLatch);
+    vertices = startFuture.<Vertx>list().toArray(new Vertx[0]);
 
     ConcurrentMap<Integer, Set<String>> received = new ConcurrentHashMap<>();
     CountDownLatch latch = new CountDownLatch(8);
