@@ -35,9 +35,9 @@ public class AddressResolverOptions {
   public static final List<String> DEFAULT_SERVERS = null;
 
   /**
-   * The default value for {@link #setOptResourceEnabled} = true
+   * The default value for {@link #setOptResourceEnabled} = false
    */
-  public static final boolean DEFAULT_OPT_RESOURCE_ENABLED = true;
+  public static final boolean DEFAULT_OPT_RESOURCE_ENABLED = false;
 
   /**
    * The default value for the negative cache min TTL = 0
