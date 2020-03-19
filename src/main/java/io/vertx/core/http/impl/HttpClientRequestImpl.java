@@ -447,6 +447,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
       connecting = true;
+      startTimeout();
       client.getConnectionForRequest(connectCtx, peerAddress, ssl, server, ar1 -> {
         if (ar1.succeeded()) {
           HttpClientStream stream = ar1.result();
@@ -511,6 +512,15 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (headersHandler != null) {
       headersHandler.handle(stream.version());
     }
+  }
+
+  @Override
+  public synchronized HttpClientRequest setTimeout(long timeoutMs) {
+    super.setTimeout(timeoutMs);
+    if (connecting || stream != null) {
+      startTimeout();
+    }
+    return this;
   }
 
   @Override

@@ -11,8 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Promise;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
@@ -112,10 +110,21 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   @Override
   public synchronized HttpClientRequest setTimeout(long timeoutMs) {
-    cancelTimeout();
+    if (timeoutMs <= 0) {
+      throw new IllegalArgumentException("Timeout must be a positive value");
+    }
     currentTimeoutMs = timeoutMs;
-    currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
     return this;
+  }
+
+  protected final void startTimeout() {
+    cancelTimeout();
+    synchronized (this) {
+      long timeoutMs = currentTimeoutMs;
+      if (timeoutMs > 0) {
+        currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
+      }
+    }
   }
 
   public void handleException(Throwable t) {
