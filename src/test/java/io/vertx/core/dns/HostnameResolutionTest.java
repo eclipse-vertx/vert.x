@@ -74,7 +74,6 @@ public class HostnameResolutionTest extends VertxTestBase {
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
     options.getAddressResolverOptions().addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
-    options.getAddressResolverOptions().setOptResourceEnabled(false);
     return options;
   }
 
