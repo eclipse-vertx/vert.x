@@ -2354,6 +2354,27 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testLazyTimeout() throws Exception {
+    server.requestHandler(req -> {
+      // We might have a request
+    });
+    startServer(testAddress);
+    HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI);
+    req.onSuccess(resp -> fail("Response should not be handled"));
+    // If timeout would be fire immediately then
+    // the timeout shall occur before connecting
+    req.setTimeout(1);
+    Thread.sleep(5);
+    req.exceptionHandler(err -> {
+      if (err instanceof TimeoutException) {
+        testComplete();
+      }
+    });
+    req.sendHead();
+    await();
+  }
+
+  @Test
   public void testConnectInvalidPort() {
     waitFor(2);
     client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).onComplete(onFailure(err -> complete()))
