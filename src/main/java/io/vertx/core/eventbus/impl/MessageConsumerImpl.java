@@ -138,9 +138,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   protected void doReceive(Message<T> message) {
     Handler<Message<T>> theHandler;
     synchronized (this) {
-      if (!isRegistered()) {
-        return;
-      } else if (demand == 0L) {
+      if (demand == 0L) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
         } else {

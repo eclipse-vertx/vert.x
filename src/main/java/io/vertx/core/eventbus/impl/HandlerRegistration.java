@@ -47,6 +47,9 @@ abstract class HandlerRegistration<T> {
   }
 
   final void receive(MessageImpl<?, T> msg) {
+    if (!isRegistered()) {
+      return;
+    }
     if (bus.metrics != null) {
       bus.metrics.scheduleMessage(metric, msg.isLocal());
     }
