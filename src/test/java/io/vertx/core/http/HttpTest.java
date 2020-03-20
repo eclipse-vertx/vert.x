@@ -2354,7 +2354,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testLazyTimeout() throws Exception {
+  public void testHttpClientRequestDelayedTimeout() throws Exception {
     server.requestHandler(req -> {
       // We might have a request
     });
@@ -2365,11 +2365,14 @@ public abstract class HttpTest extends HttpTestBase {
     // the timeout shall occur before connecting
     req.setTimeout(1);
     Thread.sleep(5);
+    // Set handler after calling setTimeout
+    AtomicBoolean failed = new AtomicBoolean();
     req.exceptionHandler(err -> {
-      if (err instanceof TimeoutException) {
+      if (failed.compareAndSet(false, true)) {
         testComplete();
       }
     });
+    // This will trigger setTimeout
     req.sendHead();
     await();
   }

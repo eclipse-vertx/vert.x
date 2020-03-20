@@ -226,7 +226,16 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   private void doWriteReset(long code) {
-    conn.handler.writeReset(stream.id(), code);
+    int streamId;
+    synchronized (this) {
+      streamId = stream != null ? stream.id() : -1;
+    }
+    if (streamId != -1) {
+      conn.handler.writeReset(streamId, code);
+    } else {
+      // Reset happening before stream allocation
+      handleReset(code);
+    }
   }
 
   void handleWritabilityChanged(boolean writable) {
