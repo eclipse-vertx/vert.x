@@ -91,12 +91,6 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
         return this;
       }
       discardHandler = this.discardHandler;
-      if (discardHandler == null) {
-        while (pending.size() > maxBufferedMessages) {
-          pending.poll();
-        }
-        return this;
-      }
       discarded = new ArrayList<>(overflow);
       while (pending.size() > maxBufferedMessages) {
         discarded.add(pending.poll());
@@ -106,7 +100,9 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       if (metrics != null) {
         metrics.discardMessage(metric, isLocal(msg), msg);
       }
-      discardHandler.handle(msg);
+      if (discardHandler != null) {
+        discardHandler.handle(msg);
+      }
     }
     return this;
   }
@@ -233,7 +229,11 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     synchronized (this) {
       if (registered == null) {
         return;
-      } else if (demand == 0L) {
+      }
+      if (metrics != null) {
+        metrics.scheduleMessage(metric, isLocal(message));
+      }
+      if (demand == 0L) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
         } else {

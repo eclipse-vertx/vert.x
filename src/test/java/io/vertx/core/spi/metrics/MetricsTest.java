@@ -24,6 +24,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -240,17 +241,15 @@ public class MetricsTest extends VertxTestBase {
     int num = 10;
     consumer.setMaxBufferedMessages(num);
     consumer.pause();
-    consumer.completionHandler(onSuccess(v -> {
-      for (int i = 0;i < num;i++) {
-        from.eventBus().send(ADDRESS1, "" + i);
-      }
-      from.eventBus().send(ADDRESS1, "last");
-    }));
     consumer.handler(msg -> fail());
-    waitUntil(() -> toMetrics.getRegistrations().size() == 1);
+    assertWaitUntil(() -> toMetrics.getRegistrations().size() == 1);
     HandlerMetric metric = toMetrics.getRegistrations().get(0);
-    waitUntil(() -> metric.scheduleCount.get() == num + 1);
-    waitUntil(() -> metric.discardCount.get() == 1);
+    for (int i = 0;i < num;i++) {
+      from.eventBus().send(ADDRESS1, "" + i);
+    }
+    from.eventBus().send(ADDRESS1, "last");
+    assertWaitUntil(() -> metric.scheduleCount.get() == num + 1);
+    assertWaitUntil(() -> metric.discardCount.get() == 1);
   }
 
   @Test
@@ -262,17 +261,15 @@ public class MetricsTest extends VertxTestBase {
     int num = 10;
     consumer.setMaxBufferedMessages(num);
     consumer.pause();
-    consumer.completionHandler(onSuccess(v -> {
-      for (int i = 0;i < num;i++) {
-        from.eventBus().send(ADDRESS1, "" + i);
-      }
-    }));
     consumer.handler(msg -> fail());
-    waitUntil(() -> toMetrics.getRegistrations().size() == 1);
+    assertWaitUntil(() -> toMetrics.getRegistrations().size() == 1);
     HandlerMetric metric = toMetrics.getRegistrations().get(0);
-    waitUntil(() -> metric.scheduleCount.get() == num);
+    for (int i = 0;i < num;i++) {
+      from.eventBus().send(ADDRESS1, "" + i);
+    }
+    assertWaitUntil(() -> metric.scheduleCount.get() == num);
     consumer.setMaxBufferedMessages(num - 1);
-    waitUntil(() -> metric.discardCount.get() == 1);
+    assertWaitUntil(() -> metric.discardCount.get() == 1);
   }
 
   @Test
@@ -282,15 +279,13 @@ public class MetricsTest extends VertxTestBase {
     FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
     consumer.pause();
-    consumer.completionHandler(onSuccess(v -> {
-      from.eventBus().send(ADDRESS1, "last");
-    }));
     consumer.handler(msg -> fail());
-    waitUntil(() -> toMetrics.getRegistrations().size() == 1);
+    assertWaitUntil(() -> toMetrics.getRegistrations().size() == 1);
     HandlerMetric metric = toMetrics.getRegistrations().get(0);
-    waitUntil(() -> metric.scheduleCount.get() == 1);
+    from.eventBus().send(ADDRESS1, "last");
+    assertWaitUntil(() -> metric.scheduleCount.get() == 1);
     consumer.unregister();
-    waitUntil(() -> metric.discardCount.get() == 1);
+    assertWaitUntil(() -> metric.discardCount.get() == 1);
   }
 
   @Test
@@ -358,7 +353,6 @@ public class MetricsTest extends VertxTestBase {
   private void testHandlerProcessMessage(Vertx from, Vertx to, int expectedLocalCount) {
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(to.eventBus());
     CountDownLatch latch1 = new CountDownLatch(1);
-    CountDownLatch latch2 = new CountDownLatch(1);
     to.runOnContext(v -> {
       to.eventBus().consumer(ADDRESS1, msg -> {
         HandlerMetric registration = assertRegistration(metrics);
@@ -374,11 +368,6 @@ public class MetricsTest extends VertxTestBase {
       }).completionHandler(onSuccess(v2 -> {
         to.runOnContext(v3 -> {
           latch1.countDown();
-          try {
-            awaitLatch(latch2);
-          } catch (InterruptedException e) {
-            fail(e);
-          }
         });
       }));
     });
@@ -401,8 +390,6 @@ public class MetricsTest extends VertxTestBase {
       testComplete();
     });
     assertWaitUntil(() -> registration.scheduleCount.get() == 1);
-    assertEquals(0, registration.beginCount.get());
-    latch2.countDown();
     await();
   }
 
