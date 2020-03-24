@@ -10,6 +10,7 @@
  */
 package io.vertx.core.json.impl;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
@@ -72,6 +73,8 @@ public final class JsonUtil {
       val = ISO_INSTANT.format((Instant) val);
     } else if (val instanceof byte[]) {
       val = BASE64_ENCODER.encodeToString((byte[]) val);
+    } else if (val instanceof Buffer) {
+      val = BASE64_ENCODER.encodeToString(((Buffer) val).getBytes());
     } else if (val instanceof Enum) {
       val = ((Enum) val).name();
     }
@@ -102,6 +105,8 @@ public final class JsonUtil {
       val = (new JsonObject((Map) val)).copy();
     } else if (val instanceof List) {
       val = (new JsonArray((List) val)).copy();
+    } else if (val instanceof Buffer) {
+      val = ((Buffer) val).copy();
     } else if (val instanceof byte[]) {
       // OK
     } else if (val instanceof Instant) {

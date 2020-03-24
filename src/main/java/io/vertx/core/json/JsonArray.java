@@ -108,6 +108,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       return ISO_INSTANT.format((Instant) val);
     } else if (val instanceof byte[]) {
       return BASE64_ENCODER.encodeToString((byte[]) val);
+    } else if (val instanceof Buffer) {
+      return BASE64_ENCODER.encodeToString(((Buffer) val).getBytes());
     } else if (val instanceof Enum) {
       return ((Enum) val).name();
     } else {
@@ -249,10 +251,45 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     if (val instanceof byte[]) {
       return (byte[]) val;
     }
+    // unwrap if value is already a Buffer
+    if (val instanceof Buffer) {
+      return ((Buffer) val).getBytes();
+    }
     // assume that the value is in String format as per RFC
     String encoded = (String) val;
     // parse to proper type
     return BASE64_DECODER.decode(encoded);
+  }
+
+  /**
+   * Get the Buffer at position {@code pos} in the array.
+   *
+   * JSON itself has no notion of a binary, so this method assumes there is a String value and
+   * it contains a Base64 encoded binary, which it decodes if found and returns.
+   *
+   * @param pos the position in the array
+   * @return the byte[], or null if a null value present
+   * @throws java.lang.ClassCastException       if the value cannot be converted to String
+   * @throws java.lang.IllegalArgumentException if the String value is not a legal Base64 encoded value
+   */
+  public Buffer getBuffer(int pos) {
+    Object val = list.get(pos);
+    // no-op
+    if (val == null) {
+      return null;
+    }
+    // no-op if value is already an Buffer
+    if (val instanceof Buffer) {
+      return (Buffer) val;
+    }
+    // wrap if value is already a byte[]
+    if (val instanceof byte[]) {
+      return Buffer.buffer((byte[]) val);
+    }
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return Buffer.buffer(BASE64_DECODER.decode(encoded));
   }
 
   /**
@@ -290,6 +327,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    *   <li>{@code List} will be wrapped to {@code JsonArray}</li>
    *   <li>{@code Instant} will be converted to {@code String}</li>
    *   <li>{@code byte[]} will be converted to {@code String}</li>
+   *   <li>{@code Buffer} will be converted to {@code String}</li>
    *   <li>{@code Enum} will be converted to {@code String}</li>
    * </ul>
    *

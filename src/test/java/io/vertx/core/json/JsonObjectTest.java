@@ -475,6 +475,46 @@ public class JsonObjectTest {
   }
 
   @Test
+  public void testGetBuffer() {
+    Buffer bytes = TestUtils.randomBuffer(100);
+    jsonObject.put("foo", bytes);
+    assertEquals(bytes, jsonObject.getBuffer("foo"));
+    assertEquals(BASE64_ENCODER.encodeToString(bytes.getBytes()), jsonObject.getValue("foo"));
+
+    // Can also get as string:
+    String val = jsonObject.getString("foo");
+    assertNotNull(val);
+    byte[] retrieved = BASE64_DECODER.decode(val);
+    assertTrue(TestUtils.byteArraysEqual(bytes.getBytes(), retrieved));
+
+    jsonObject.put("foo", 123);
+    try {
+      jsonObject.getBuffer("foo");
+      fail();
+    } catch (ClassCastException e) {
+      // Ok
+    }
+
+    jsonObject.putNull("foo");
+    assertNull(jsonObject.getBuffer("foo"));
+    assertNull(jsonObject.getValue("foo"));
+    assertNull(jsonObject.getBuffer("absent"));
+    assertNull(jsonObject.getValue("absent"));
+    try {
+      jsonObject.getBuffer(null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getBuffer(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
   public void testGetInstant() {
     Instant now = Instant.now();
     jsonObject.put("foo", now);

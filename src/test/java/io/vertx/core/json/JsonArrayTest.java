@@ -262,6 +262,36 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testGetBuffer() {
+    Buffer bytes = TestUtils.randomBuffer(10);
+    jsonArray.add(bytes);
+    assertEquals(bytes, jsonArray.getBuffer(0));
+    assertEquals(BASE64_ENCODER.encodeToString(bytes.getBytes()), jsonArray.getValue(0));
+    assertEquals(bytes, Buffer.buffer(BASE64_DECODER.decode(jsonArray.getString(0))));
+    try {
+      jsonArray.getBuffer(-1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getBuffer(1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add(123);
+    try {
+      jsonArray.getBuffer(1);
+      fail();
+    } catch (ClassCastException e) {
+      // OK
+    }
+    jsonArray.addNull();
+    assertNull(jsonArray.getBuffer(2));
+  }
+
+  @Test
   public void testGetInstant() {
     Instant now = Instant.now();
     jsonArray.add(now);
