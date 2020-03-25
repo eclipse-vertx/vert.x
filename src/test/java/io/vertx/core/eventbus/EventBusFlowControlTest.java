@@ -13,17 +13,12 @@ package io.vertx.core.eventbus;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageConsumer;
-import io.vertx.core.eventbus.MessageProducer;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.LinkedList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -100,7 +95,8 @@ public class EventBusFlowControlTest extends VertxTestBase {
   @Test
   public void testDrainHandlerCalledWhenQueueAlreadyDrained() throws Exception {
     MessageConsumer<String> consumer = eb.consumer("some-address");
-    consumer.handler(msg -> {});
+    consumer.handler(msg -> {
+    });
     MessageProducer<String> prod = eb.sender("some-address");
     prod.setWriteQueueMaxSize(1);
     prod.write("msg");
@@ -194,6 +190,24 @@ public class EventBusFlowControlTest extends VertxTestBase {
       assertEquals(expected.removeFirst(), sequence.poll());
     }
     assertNotNull(handlerContext.get());
+  }
+
+  @Test
+  public void testMessageConsumerUnregisterThenRegisterAgain() {
+    String address = "some-address";
+    MessageConsumer<String> consumer = eb.consumer(address);
+    consumer.bodyStream().handler(m1 -> {
+      assertEquals("m1", m1);
+      consumer.unregister();
+      consumer.handler(m2 -> {
+        assertEquals("m2", m2);
+        consumer.unregister();
+        testComplete();
+      });
+      eb.send(address, "m2");
+    });
+    eb.send(address, "m1");
+    await();
   }
 
   @Override
