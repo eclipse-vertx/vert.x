@@ -126,11 +126,11 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     }
     discardHandler = null;
     Future<Void> fut = super.unregister();
-    Promise<Void> res = result;
+
+    Promise<Void> res = result; // Alias reference because result can become null when the onComplete callback executes
     if (res != null) {
-      fut.onComplete(ar -> {
-        res.tryFail("blah");
-      });
+      fut.onComplete(ar -> res.tryFail("blah"));
+      result = null;
     }
     return fut;
   }
