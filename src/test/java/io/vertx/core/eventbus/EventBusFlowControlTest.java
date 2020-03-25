@@ -13,6 +13,7 @@ package io.vertx.core.eventbus;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -196,10 +197,11 @@ public class EventBusFlowControlTest extends VertxTestBase {
   public void testMessageConsumerUnregisterThenRegisterAgain() {
     String address = "some-address";
     MessageConsumer<String> consumer = eb.consumer(address);
-    consumer.bodyStream().handler(m1 -> {
+    ReadStream<String> bodyStream = consumer.bodyStream();
+    bodyStream.handler(m1 -> {
       assertEquals("m1", m1);
       consumer.unregister();
-      consumer.handler(m2 -> {
+      bodyStream.handler(m2 -> {
         assertEquals("m2", m2);
         consumer.unregister();
         testComplete();
