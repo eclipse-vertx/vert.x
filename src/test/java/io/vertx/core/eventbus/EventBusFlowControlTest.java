@@ -201,13 +201,17 @@ public class EventBusFlowControlTest extends VertxTestBase {
     bodyStream.handler(m1 -> {
       assertEquals("m1", m1);
       consumer.unregister();
+      assertFalse("Consumer is not registered", consumer.isRegistered());
       bodyStream.handler(m2 -> {
         assertEquals("m2", m2);
         consumer.unregister();
+        assertFalse("Consumer is not registered", consumer.isRegistered());
         testComplete();
       });
+      assertTrue("Consumer is registered", consumer.isRegistered());
       eb.send(address, "m2");
     });
+    assertTrue("Consumer is registered", consumer.isRegistered());
     eb.send(address, "m1");
     await();
   }
