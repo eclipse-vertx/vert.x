@@ -126,14 +126,15 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     EventBusTracer ebTracer = new EventBusTracer();
     tracer = ebTracer;
     CountDownLatch latch = new CountDownLatch(1);
-    vertx2.runOnContext(v -> {
+    vertx2.runOnContext(v1 -> {
       Context ctx = vertx2.getOrCreateContext();
       vertx2.eventBus().consumer("the_address", msg -> {
         assertNotSame(Vertx.currentContext(), ctx);
         assertSameEventLoop(ctx, Vertx.currentContext());
         assertEquals("msg", msg.body());
-      });
-      latch.countDown();
+      }).completionHandler(onSuccess(v2 -> {
+        latch.countDown();
+      }));
     });
     awaitLatch(latch);
     vertx1.runOnContext(v -> {
@@ -167,7 +168,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     EventBusTracer ebTracer = new EventBusTracer();
     tracer = ebTracer;
     CountDownLatch latch = new CountDownLatch(1);
-    vertx2.runOnContext(v -> {
+    vertx2.runOnContext(v1 -> {
       Context ctx = vertx2.getOrCreateContext();
       vertx2.eventBus().consumer("the_address", msg -> {
         assertNotSame(ctx, vertx2.getOrCreateContext());
@@ -176,8 +177,9 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
         ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) vertx.getOrCreateContext()).localContextData();
         tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
         msg.reply("msg_2");
-      });
-      latch.countDown();
+      }).completionHandler(onSuccess(v2 -> {
+        latch.countDown();
+      }));
     });
     awaitLatch(latch);
     vertx1.runOnContext(v -> {
@@ -195,15 +197,19 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testEventBusRequestReplyFailure() {
+  public void testEventBusRequestReplyFailure() throws Exception {
     EventBusTracer ebTracer = new EventBusTracer();
     tracer = ebTracer;
+    CountDownLatch latch = new CountDownLatch(1);
     vertx1.eventBus().consumer("the_address", msg -> {
       assertEquals("msg", msg.body());
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) vertx.getOrCreateContext()).localContextData();
       tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
       msg.fail(10, "it failed");
-    });
+    }).completionHandler(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
     Context ctx = vertx2.getOrCreateContext();
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
@@ -232,12 +238,16 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testEventBusRequestTimeout() {
+  public void testEventBusRequestTimeout() throws Exception {
     EventBusTracer ebTracer = new EventBusTracer();
     tracer = ebTracer;
+    CountDownLatch latch = new CountDownLatch(1);
     vertx1.eventBus().consumer("the_address", msg -> {
       // Let timeout
-    });
+    }).completionHandler(onSuccess(v -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
     Context ctx = vertx2.getOrCreateContext();
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
@@ -255,7 +265,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     EventBusTracer ebTracer = new EventBusTracer();
     tracer = ebTracer;
     CountDownLatch latch = new CountDownLatch(1);
-    vertx2.runOnContext(v -> {
+    vertx2.runOnContext(v1 -> {
       Context ctx = vertx2.getOrCreateContext();
       vertx2.eventBus().consumer("the_address", msg -> {
         Context consumerCtx = vertx2.getOrCreateContext();
@@ -268,8 +278,9 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
           assertSame(consumerCtx, vertx2.getOrCreateContext());
           assertSameEventLoop(consumerCtx, vertx2.getOrCreateContext());
         });
-      });
-      latch.countDown();
+      }).completionHandler(onSuccess(v2 -> {
+        latch.countDown();
+      }));
     });
     awaitLatch(latch);
     vertx1.runOnContext(v -> {
