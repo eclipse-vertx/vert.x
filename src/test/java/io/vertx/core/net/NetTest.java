@@ -3630,7 +3630,7 @@ public class NetTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       client.connect(testAddress, onFailure(err -> {
         assertTrue(err instanceof SSLHandshakeException);
-        assertEquals("handshake timed out", err.getCause().getMessage());
+        assertEquals("handshake timed out after 200ms", err.getCause().getMessage());
         testComplete();
       }));
     });
@@ -3696,7 +3696,7 @@ public class NetTest extends VertxTestBase {
         });
         socket.exceptionHandler(err -> {
           assertTrue(err instanceof SSLException);
-          assertEquals("handshake timed out", err.getMessage());
+          assertEquals("handshake timed out after 200ms", err.getMessage());
           testComplete();
         });
       });
