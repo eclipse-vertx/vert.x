@@ -174,12 +174,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   void joinCluster(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     clusterManager.setVertx(this);
-    clusterManager.join(ar -> {
-      if (ar.succeeded()) {
+    clusterManager.join(ar1 -> {
+      if (ar1.succeeded()) {
         createHaManager(options, resultHandler);
       } else {
-        log.error("Failed to join cluster", ar.cause());
-        resultHandler.handle(Future.failedFuture(ar.cause()));
+        log.error("Failed to join cluster", ar1.cause());
+        close(ar2 -> resultHandler.handle(Future.failedFuture(ar1.cause())));
       }
     });
   }
@@ -187,25 +187,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private void createHaManager(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     this.<Map<String, String>>executeBlocking(fut -> {
       fut.complete(clusterManager.getSyncMap(CLUSTER_MAP_NAME));
-    }, false, ar -> {
-      if (ar.succeeded()) {
-        Map<String, String> clusterMap = ar.result();
+    }, false, ar1 -> {
+      if (ar1.succeeded()) {
+        Map<String, String> clusterMap = ar1.result();
         haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterMap, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
         startEventBus(resultHandler);
       } else {
-        log.error("Failed to start HAManager", ar.cause());
-        resultHandler.handle(Future.failedFuture(ar.cause()));
+        log.error("Failed to start HAManager", ar1.cause());
+        close(ar2 -> resultHandler.handle(Future.failedFuture(ar1.cause())));
       }
     });
   }
 
   private void startEventBus(Handler<AsyncResult<Vertx>> resultHandler) {
-    eventBus.start(ar -> {
-      if (ar.succeeded()) {
+    eventBus.start(ar1 -> {
+      if (ar1.succeeded()) {
         initializeHaManager(resultHandler);
       } else {
-        log.error("Failed to start event bus", ar.cause());
-        resultHandler.handle(Future.failedFuture(ar.cause()));
+        log.error("Failed to start event bus", ar1.cause());
+        close(ar2 -> resultHandler.handle(Future.failedFuture(ar1.cause())));
       }
     });
   }
@@ -217,15 +217,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       // it will have also set the clustered changed view handler on the ha manager
       haManager.init();
       fut.complete();
-    }, false, ar -> {
-      if (ar.succeeded()) {
+    }, false, ar1 -> {
+      if (ar1.succeeded()) {
         if (metrics != null) {
           metrics.vertxCreated(this);
         }
         resultHandler.handle(Future.succeededFuture(this));
       } else {
-        log.error("Failed to initialize HAManager", ar.cause());
-        resultHandler.handle(Future.failedFuture(ar.cause()));
+        log.error("Failed to initialize HAManager", ar1.cause());
+        close(ar2 -> resultHandler.handle(Future.failedFuture(ar1.cause())));
       }
     });
   }

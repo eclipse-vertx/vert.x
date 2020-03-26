@@ -209,13 +209,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
-    checkStarted();
-    unregisterAll();
-    if (metrics != null) {
-      metrics.close();
+    if (started) {
+      unregisterAll();
+      if (metrics != null) {
+        metrics.close();
+      }
     }
     if (completionHandler != null) {
-      vertx.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+      completionHandler.handle(Future.succeededFuture());
     }
   }
 

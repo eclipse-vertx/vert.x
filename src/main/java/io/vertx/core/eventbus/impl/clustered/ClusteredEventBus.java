@@ -170,7 +170,6 @@ public class ClusteredEventBus extends EventBusImpl {
         }
       }
     });
-
   }
 
   @Override
