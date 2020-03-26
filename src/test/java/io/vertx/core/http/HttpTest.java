@@ -816,6 +816,39 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testMissingContentTypeMultipartRequest() throws Exception {
+    testInvalidMultipartRequest(null, HttpMethod.POST);
+  }
+
+  @Test
+  public void testInvalidContentTypeMultipartRequest() throws Exception {
+    testInvalidMultipartRequest("application/json", HttpMethod.POST);
+  }
+
+  @Test
+  public void testInvalidMethodMultipartRequest() throws Exception {
+    testInvalidMultipartRequest("multipart/form-data", HttpMethod.GET);
+  }
+
+  private void testInvalidMultipartRequest(String contentType, HttpMethod method) throws Exception {
+    server.requestHandler(req -> {
+      try {
+        req.setExpectMultipart(true);
+        fail();
+      } catch (IllegalStateException ignore) {
+        req.response().end();
+      }
+    });
+    startServer(testAddress);
+    HttpClientRequest request = client.request(method, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", resp -> testComplete());
+    if (contentType != null) {
+      request.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+    }
+    request.end("param=hello");
+    await();
+  }
+
+  @Test
   public void testDefaultRequestHeaders() {
     server.requestHandler(req -> {
       if (req.version() == HttpVersion.HTTP_1_1) {

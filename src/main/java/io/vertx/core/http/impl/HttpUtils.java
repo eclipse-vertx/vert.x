@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED;
+import static io.netty.handler.codec.http.HttpHeaderValues.MULTIPART_FORM_DATA;
 import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static io.vertx.core.http.Http2Settings.*;
@@ -772,5 +774,15 @@ public final class HttpUtils {
           }
       }
     }
+  }
+
+  public static boolean isValidMultipartContentType(String contentType) {
+    return MULTIPART_FORM_DATA.regionMatches(true, 0, contentType, 0, MULTIPART_FORM_DATA.length())
+      || APPLICATION_X_WWW_FORM_URLENCODED.regionMatches(true, 0, contentType, 0, APPLICATION_X_WWW_FORM_URLENCODED.length());
+  }
+
+  public static boolean isValidMultipartMethod(HttpMethod method) {
+    return method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
+      || method.equals(HttpMethod.DELETE);
   }
 }
