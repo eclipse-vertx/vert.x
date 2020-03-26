@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
@@ -418,23 +417,21 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       if (expect) {
         if (postRequestDecoder == null) {
           String contentType = headersMap.get(HttpHeaderNames.CONTENT_TYPE);
-          if (contentType != null) {
-            io.netty.handler.codec.http.HttpMethod method = HttpMethodImpl.toNetty(this.method);
-            String lowerCaseContentType = contentType.toString().toLowerCase();
-            boolean isURLEncoded = lowerCaseContentType.startsWith(HttpHeaderValues.APPLICATION_X_WWW_FORM_URLENCODED.toString());
-            if ((lowerCaseContentType.startsWith(HttpHeaderValues.MULTIPART_FORM_DATA.toString()) || isURLEncoded) &&
-                (method == io.netty.handler.codec.http.HttpMethod.POST ||
-                    method == io.netty.handler.codec.http.HttpMethod.PUT ||
-                    method == io.netty.handler.codec.http.HttpMethod.PATCH ||
-                    method == io.netty.handler.codec.http.HttpMethod.DELETE)) {
-              HttpRequest req = new DefaultHttpRequest(
-                  io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
-                  method,
-                  uri);
-              req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
-              postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(context, this, () -> uploadHandler), req);
-            }
+          if (contentType == null) {
+            throw new IllegalStateException("Request must have a content-type header to decode a multipart request");
           }
+          if (!HttpUtils.isValidMultipartContentType(contentType)) {
+            throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
+          }
+          if (!HttpUtils.isValidMultipartMethod(HttpMethodImpl.toNetty(method))) {
+            throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
+          }
+          HttpRequest req = new DefaultHttpRequest(
+            io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
+            HttpMethodImpl.toNetty(method),
+            uri);
+          req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
+          postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(context, this, () -> uploadHandler), req);
         }
       } else {
         postRequestDecoder = null;
