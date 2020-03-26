@@ -17,7 +17,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
@@ -205,13 +204,18 @@ public class EventBusImpl implements EventBus, MetricsProvider {
 
   @Override
   public void close(Handler<AsyncResult<Void>> completionHandler) {
-    checkStarted();
-    unregisterAll();
-    if (metrics != null) {
-      metrics.close();
-    }
-    if (completionHandler != null) {
-      vertx.runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+    if (started) {
+      unregisterAll();
+      if (metrics != null) {
+        metrics.close();
+      }
+      if (completionHandler != null) {
+        completionHandler.handle(Future.succeededFuture());
+      }
+    } else {
+      if (completionHandler != null) {
+        completionHandler.handle(Future.succeededFuture());
+      }
     }
   }
 
