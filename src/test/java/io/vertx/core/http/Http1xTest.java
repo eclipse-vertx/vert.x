@@ -2524,8 +2524,8 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testServerMaxInitialLineLengthOption() {
-    // 5017 = 5000 for longParam and 17 for the rest in the following line - "GET /?t=longParam HTTP/1.1"
-    testServerMaxInitialLineLength(5017);
+    // 5017 = 5000 for longParam and 18=17+1 for the rest in the following line - "GET /?t=longParam HTTP/1.1"
+    testServerMaxInitialLineLength(5018);
   }
 
   private void testServerMaxInitialLineLength(int maxInitialLength) {
