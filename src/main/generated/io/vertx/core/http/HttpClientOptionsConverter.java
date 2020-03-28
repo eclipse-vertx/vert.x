@@ -150,6 +150,11 @@ public class HttpClientOptionsConverter {
             obj.setSendUnmaskedFrames((Boolean)member.getValue());
           }
           break;
+        case "socketActiveTTL":
+          if (member.getValue() instanceof Number) {
+            obj.setSocketActiveTTL(((Number)member.getValue()).intValue());
+          }
+          break;
         case "tryUseCompression":
           if (member.getValue() instanceof Boolean) {
             obj.setTryUseCompression((Boolean)member.getValue());
@@ -232,6 +237,7 @@ public class HttpClientOptionsConverter {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
+    json.put("socketActiveTTL", obj.getSocketActiveTTL());
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("tryUsePerMessageWebSocketCompression", obj.getTryUsePerMessageWebSocketCompression());
     json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());

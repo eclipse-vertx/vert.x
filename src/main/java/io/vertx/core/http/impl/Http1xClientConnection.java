@@ -88,6 +88,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   private long expirationTimestamp;
   private int seq = 1;
   private long bytesRead;
+  private long initialTimestamp = System.currentTimeMillis();
 
 
   Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,

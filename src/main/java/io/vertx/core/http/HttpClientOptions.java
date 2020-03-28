@@ -77,6 +77,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 60;
 
   /**
+   *  Default socket active time to live, even if it's in use. If not set i.e. -1, the behaviour keeps the same (the socket will be released only when free)
+   */
+  public static final int DEFAULT_SOCKET_ACTIVE_TTL = -1;
+
+  /**
    * Default value of whether the client will attempt to use compression = {@code false}
    */
   public static final boolean DEFAULT_TRY_USE_COMPRESSION = false;
@@ -196,6 +201,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxPoolSize;
   private boolean keepAlive;
   private int keepAliveTimeout;
+  private int socketActiveTTL;
   private int pipeliningLimit;
   private boolean pipelining;
   private int http2MaxPoolSize;
@@ -248,6 +254,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxPoolSize = other.getMaxPoolSize();
     this.keepAlive = other.isKeepAlive();
     this.keepAliveTimeout = other.getKeepAliveTimeout();
+    this.socketActiveTTL = other.getSocketActiveTTL();
     this.pipelining = other.isPipelining();
     this.pipeliningLimit = other.getPipeliningLimit();
     this.http2MaxPoolSize = other.getHttp2MaxPoolSize();
@@ -306,6 +313,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     keepAlive = DEFAULT_KEEP_ALIVE;
     keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
+    socketActiveTTL = DEFAULT_SOCKET_ACTIVE_TTL;
     pipelining = DEFAULT_PIPELINING;
     pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
@@ -681,6 +689,29 @@ public class HttpClientOptions extends ClientOptionsBase {
       throw new IllegalArgumentException("keepAliveTimeout must be >= 0");
     }
     this.keepAliveTimeout = keepAliveTimeout;
+    return this;
+  }
+
+  /**
+   * @return the socket active ttl value in seconds for HTTP/1.x connections
+   */
+  public int getSocketActiveTTL() {
+    return socketActiveTTL;
+  }
+
+  /**
+   * Set the socket active ttl for HTTP/1.x, in seconds.
+   * <p/>
+   * This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
+   *
+   * @param socketActiveTTL the socket active ttl, in seconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setSocketActiveTTL(int socketActiveTTL) {
+    if (socketActiveTTL < 0) {
+      throw new IllegalArgumentException("socketActiveTTL must be >= 0");
+    }
+    this.socketActiveTTL = socketActiveTTL;
     return this;
   }
 

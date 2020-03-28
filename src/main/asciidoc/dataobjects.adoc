@@ -771,6 +771,11 @@ Set <code>true</code> when the client wants to skip frame masking.
 |[[soLinger]]`@soLinger`|`Number (int)`|+++
 Set whether SO_linger keep alive is enabled
 +++
+|[[socketActiveTTL]]`@socketActiveTTL`|`Number (int)`|+++
+Set the socket active ttl for HTTP/1.x, in seconds.
+ <p/>
+ This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
++++
 |[[ssl]]`@ssl`|`Boolean`|+++
 Set whether SSL/TLS is enabled
 +++
