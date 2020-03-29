@@ -15,6 +15,11 @@ public class HttpClientOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, HttpClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "activeConnectionTTL":
+          if (member.getValue() instanceof Number) {
+            obj.setActiveConnectionTTL(((Number)member.getValue()).intValue());
+          }
+          break;
         case "alpnVersions":
           if (member.getValue() instanceof JsonArray) {
             java.util.ArrayList<io.vertx.core.http.HttpVersion> list =  new java.util.ArrayList<>();
@@ -73,6 +78,11 @@ public class HttpClientOptionsConverter {
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
             obj.setInitialSettings(new io.vertx.core.http.Http2Settings((io.vertx.core.json.JsonObject)member.getValue()));
+          }
+          break;
+        case "isActiveConnectionTTL":
+          if (member.getValue() instanceof Boolean) {
+            obj.setIsActiveConnectionTTL((Boolean)member.getValue());
           }
           break;
         case "keepAlive":
@@ -150,11 +160,6 @@ public class HttpClientOptionsConverter {
             obj.setSendUnmaskedFrames((Boolean)member.getValue());
           }
           break;
-        case "socketActiveTTL":
-          if (member.getValue() instanceof Number) {
-            obj.setSocketActiveTTL(((Number)member.getValue()).intValue());
-          }
-          break;
         case "tryUseCompression":
           if (member.getValue() instanceof Boolean) {
             obj.setTryUseCompression((Boolean)member.getValue());
@@ -201,6 +206,7 @@ public class HttpClientOptionsConverter {
   }
 
    static void toJson(HttpClientOptions obj, java.util.Map<String, Object> json) {
+    json.put("activeConnectionTTL", obj.getActiveConnectionTTL());
     if (obj.getAlpnVersions() != null) {
       JsonArray array = new JsonArray();
       obj.getAlpnVersions().forEach(item -> array.add(item.name()));
@@ -237,7 +243,6 @@ public class HttpClientOptionsConverter {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
-    json.put("socketActiveTTL", obj.getSocketActiveTTL());
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("tryUsePerMessageWebSocketCompression", obj.getTryUsePerMessageWebSocketCompression());
     json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());

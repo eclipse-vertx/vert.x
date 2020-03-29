@@ -457,6 +457,8 @@ public class Http1xTest extends HttpTest {
     boolean sendUnmaskedFrame = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
+    boolean isActiveConnectionTTL = rand.nextBoolean();
+    int activeConnectionTTL = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -477,6 +479,8 @@ public class Http1xTest extends HttpTest {
     options.setVerifyHost(verifyHost);
     options.setMaxPoolSize(maxPoolSize);
     options.setKeepAlive(keepAlive);
+    options.setIsActiveConnectionTTL(isActiveConnectionTTL);
+    options.setActiveConnectionTTL(activeConnectionTTL);
     options.setPipelining(pipelining);
     options.setPipeliningLimit(pipeliningLimit);
     options.setHttp2MaxPoolSize(http2MaxPoolSize);

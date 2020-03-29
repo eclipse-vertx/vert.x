@@ -77,9 +77,14 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 60;
 
   /**
-   *  Default socket active time to live, even if it's in use. If not set i.e. -1, the behaviour keeps the same (the socket will be released only when free)
+   *  Default active connection time to live option disabled.
    */
-  public static final int DEFAULT_SOCKET_ACTIVE_TTL = -1;
+  public static final boolean DEFAULT_IS_ACTIVE_CONNECTION_TTL = false;
+
+  /**
+   *  Default active connection time to live. Connection will drop in 100 sec even if it is in use.
+   */
+  public static final int DEFAULT_ACTIVE_CONNECTION_TTL = 100;
 
   /**
    * Default value of whether the client will attempt to use compression = {@code false}
@@ -201,7 +206,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxPoolSize;
   private boolean keepAlive;
   private int keepAliveTimeout;
-  private int socketActiveTTL;
+  private boolean isActiveConnectionTTL;
+  private int activeConnectionTTL;
   private int pipeliningLimit;
   private boolean pipelining;
   private int http2MaxPoolSize;
@@ -254,7 +260,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxPoolSize = other.getMaxPoolSize();
     this.keepAlive = other.isKeepAlive();
     this.keepAliveTimeout = other.getKeepAliveTimeout();
-    this.socketActiveTTL = other.getSocketActiveTTL();
+    this.isActiveConnectionTTL = other.isActiveConnectionTTL();
+    this.activeConnectionTTL = other.getActiveConnectionTTL();
     this.pipelining = other.isPipelining();
     this.pipeliningLimit = other.getPipeliningLimit();
     this.http2MaxPoolSize = other.getHttp2MaxPoolSize();
@@ -313,7 +320,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     keepAlive = DEFAULT_KEEP_ALIVE;
     keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
-    socketActiveTTL = DEFAULT_SOCKET_ACTIVE_TTL;
+    isActiveConnectionTTL = DEFAULT_IS_ACTIVE_CONNECTION_TTL;
+    activeConnectionTTL = DEFAULT_ACTIVE_CONNECTION_TTL;
     pipelining = DEFAULT_PIPELINING;
     pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
@@ -693,25 +701,45 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return the socket active ttl value in seconds for HTTP/1.x connections
+   * Is active connection ttl enabled on the client?
+   *
+   * @return {@code true} if enabled
    */
-  public int getSocketActiveTTL() {
-    return socketActiveTTL;
+  public boolean isActiveConnectionTTL() {
+    return isActiveConnectionTTL;
   }
 
   /**
-   * Set the socket active ttl for HTTP/1.x, in seconds.
+   * Set whether active connection ttl is enabled on the client
+   *
+   * @param isActiveConnectionTTL {@code true} if enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setIsActiveConnectionTTL(boolean isActiveConnectionTTL) {
+    this.isActiveConnectionTTL = isActiveConnectionTTL;
+    return this;
+  }
+
+  /**
+   * @return the active connection ttl value in seconds for HTTP/1.x connections
+   */
+  public int getActiveConnectionTTL() {
+    return activeConnectionTTL;
+  }
+
+  /**
+   * Set the active connection ttl for HTTP/1.x, in seconds.
    * <p/>
    * This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
    *
-   * @param socketActiveTTL the socket active ttl, in seconds
+   * @param activeConnectionTTL the active connection ttl, in seconds
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setSocketActiveTTL(int socketActiveTTL) {
-    if (socketActiveTTL < 0) {
-      throw new IllegalArgumentException("socketActiveTTL must be >= 0");
+  public HttpClientOptions setActiveConnectionTTL(int activeConnectionTTL) {
+    if (activeConnectionTTL < 0) {
+      throw new IllegalArgumentException("activeConnectionTTL must be >= 0");
     }
-    this.socketActiveTTL = socketActiveTTL;
+    this.activeConnectionTTL = activeConnectionTTL;
     return this;
   }
 
