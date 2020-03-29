@@ -60,11 +60,6 @@ public class VertxOptionsConverter {
             obj.setClusterPublicPort(((Number)member.getValue()).intValue());
           }
           break;
-        case "clustered":
-          if (member.getValue() instanceof Boolean) {
-            obj.setClustered((Boolean)member.getValue());
-          }
-          break;
         case "eventBusOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setEventBusOptions(new io.vertx.core.eventbus.EventBusOptions((JsonObject)member.getValue()));
@@ -176,7 +171,6 @@ public class VertxOptionsConverter {
       json.put("clusterPublicHost", obj.getClusterPublicHost());
     }
     json.put("clusterPublicPort", obj.getClusterPublicPort());
-    json.put("clustered", obj.isClustered());
     if (obj.getEventBusOptions() != null) {
       json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }
