@@ -688,7 +688,6 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(p);
     return new BlockingAction<Void>() {
       public Void perform() {
-        RandomAccessFile raf = null;
         try {
           String path = vertx.resolveFile(p).getAbsolutePath();
           if (len < 0) {
@@ -697,11 +696,8 @@ public class FileSystemImpl implements FileSystem {
           if (!Files.exists(Paths.get(path))) {
             throw new FileSystemException("Cannot truncate file " + path + ". Does not exist");
           }
-          try {
-            raf = new RandomAccessFile(path, "rw");
+          try (RandomAccessFile raf = new RandomAccessFile(path, "rw")) {
             raf.setLength(len);
-          } finally {
-            if (raf != null) raf.close();
           }
         } catch (IOException e) {
           throw new FileSystemException(e);

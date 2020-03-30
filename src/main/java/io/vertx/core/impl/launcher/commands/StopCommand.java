@@ -140,17 +140,16 @@ public class StopCommand extends DefaultCommand {
   private String pid() {
     try {
       final Process process = new ProcessBuilder(Arrays.asList("sh", "-c", "ps ax | grep \"" + id + "\"")).start();
-      BufferedReader reader =
-          new BufferedReader(new InputStreamReader(process.getInputStream()));
-      String line;
-      while ((line = reader.readLine()) != null) {
-        final Matcher matcher = PS.matcher(line);
-        if (matcher.find()) {
-          return matcher.group(1);
+      try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+        String line;
+        while ((line = reader.readLine()) != null) {
+          final Matcher matcher = PS.matcher(line);
+          if (matcher.find()) {
+            return matcher.group(1);
+          }
         }
+        process.waitFor();
       }
-      process.waitFor();
-      reader.close();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       e.printStackTrace(out);
