@@ -602,8 +602,7 @@ public class UsageMessageFormatter {
    * @param text            The text to be rendered.
    */
   public Appendable renderWrappedTextBlock(StringBuilder sb, int width, int nextLineTabStop, String text) {
-    try {
-      BufferedReader in = new BufferedReader(new StringReader(text));
+    try (BufferedReader in = new BufferedReader(new StringReader(text))) {
       String line;
       boolean firstLine = true;
       while ((line = in.readLine()) != null) {

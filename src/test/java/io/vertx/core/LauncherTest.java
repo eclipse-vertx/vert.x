@@ -53,10 +53,9 @@ public class LauncherTest extends VertxTestBase {
     if (resource == null) {
       throw new IllegalStateException("Cannot find the vertx-version.txt");
     } else {
-      BufferedReader in = new BufferedReader(
-        new InputStreamReader(resource.openStream()));
-      expectedVersion = in.readLine();
-      in.close();
+      try (BufferedReader in = new BufferedReader(new InputStreamReader(resource.openStream()))) {
+        expectedVersion = in.readLine();
+      }
     }
 
     Launcher.resetProcessArguments();
