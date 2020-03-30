@@ -157,9 +157,9 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setKeepAlive(false));
     assertFalse(options.isKeepAlive());
 
-    assertFalse(options.isActiveConnectionTTL());
-    assertEquals(options, options.setIsActiveConnectionTTL(true));
     assertTrue(options.isActiveConnectionTTL());
+    assertEquals(options, options.setIsActiveConnectionTTL(false));
+    assertFalse(options.isActiveConnectionTTL());
 
     assertFalse(options.isPipelining());
     assertEquals(options, options.setPipelining(true));
