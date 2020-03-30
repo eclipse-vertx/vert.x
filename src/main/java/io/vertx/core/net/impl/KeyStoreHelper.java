@@ -280,17 +280,8 @@ public class KeyStoreHelper {
 
   private static KeyStore loadJKSOrPKCS12(String type, String password, Supplier<Buffer> value) throws Exception {
     KeyStore ks = KeyStore.getInstance(type);
-    InputStream in = null;
-    try {
-      in = new ByteArrayInputStream(value.get().getBytes());
-      ks.load(in, password != null ? password.toCharArray(): null);
-    } finally {
-      if (in != null) {
-        try {
-          in.close();
-        } catch (IOException ignore) {
-        }
-      }
+    try (InputStream in = new ByteArrayInputStream(value.get().getBytes())) {
+      ks.load(in, password != null ? password.toCharArray() : null);
     }
     return ks;
   }

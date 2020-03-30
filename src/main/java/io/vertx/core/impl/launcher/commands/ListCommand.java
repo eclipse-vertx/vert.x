@@ -91,20 +91,19 @@ public class ListCommand extends DefaultCommand {
   private void dumpFoundVertxApplications(List<String> cmd) throws IOException, InterruptedException {
     boolean none = true;
     final Process process = new ProcessBuilder(cmd).start();
-    BufferedReader reader =
-        new BufferedReader(new InputStreamReader(process.getInputStream()));
-    String line;
-    while ((line = reader.readLine()) != null) {
-      final Matcher matcher = PS.matcher(line);
-      if (matcher.find()) {
-        String id = matcher.group(1);
-        String details = extractApplicationDetails(line);
-        out.println(id + "\t" + details);
-        none = false;
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+      String line;
+      while ((line = reader.readLine()) != null) {
+        final Matcher matcher = PS.matcher(line);
+        if (matcher.find()) {
+          String id = matcher.group(1);
+          String details = extractApplicationDetails(line);
+          out.println(id + "\t" + details);
+          none = false;
+        }
       }
+      process.waitFor();
     }
-    process.waitFor();
-    reader.close();
     if (none) {
       out.println("No vert.x application found.");
     }
