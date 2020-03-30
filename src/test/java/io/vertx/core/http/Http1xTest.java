@@ -104,6 +104,11 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setTcpKeepAlive(!tcpKeepAlive));
     assertEquals(!tcpKeepAlive, options.isTcpKeepAlive());
 
+    boolean activeConnectionTTL = false;
+    assertEquals(activeConnectionTTL, options.isActiveConnectionTTL());
+    assertEquals(options, options.setIsActiveConnectionTTL(!activeConnectionTTL));
+    assertEquals(!activeConnectionTTL, options.isActiveConnectionTTL());
+
     int soLinger = -1;
     assertEquals(soLinger, options.getSoLinger());
     rand = TestUtils.randomPositiveInt();
@@ -151,6 +156,10 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.isKeepAlive());
     assertEquals(options, options.setKeepAlive(false));
     assertFalse(options.isKeepAlive());
+
+    assertFalse(options.isActiveConnectionTTL());
+    assertEquals(options, options.setIsActiveConnectionTTL(true));
+    assertTrue(options.isActiveConnectionTTL());
 
     assertFalse(options.isPipelining());
     assertEquals(options, options.setPipelining(true));
