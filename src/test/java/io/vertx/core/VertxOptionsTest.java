@@ -61,9 +61,6 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
-    assertFalse(options.getEventBusOptions().isClustered());
-    options.getEventBusOptions().setClustered(true);
-    assertTrue(options.getEventBusOptions().isClustered());
     assertEquals(0, options.getEventBusOptions().getPort());
     options.getEventBusOptions().setPort(1234);
     assertEquals(1234, options.getEventBusOptions().getPort());
@@ -290,7 +287,6 @@ public class VertxOptionsTest extends VertxTestBase {
     VertxOptions json = new VertxOptions(new JsonObject());
     assertEquals(def.getEventLoopPoolSize(), json.getEventLoopPoolSize());
     assertEquals(def.getWorkerPoolSize(), json.getWorkerPoolSize());
-    assertEquals(def.getEventBusOptions().isClustered(), json.getEventBusOptions().isClustered());
     assertEquals(def.getEventBusOptions().getHost(), json.getEventBusOptions().getHost());
     assertEquals(def.getEventBusOptions().getClusterPublicHost(), json.getEventBusOptions().getClusterPublicHost());
     assertEquals(def.getEventBusOptions().getClusterPublicPort(), json.getEventBusOptions().getClusterPublicPort());

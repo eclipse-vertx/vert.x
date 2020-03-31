@@ -45,11 +45,6 @@ public class EventBusOptionsConverter {
             obj.setClusterPublicPort(((Number)member.getValue()).intValue());
           }
           break;
-        case "clustered":
-          if (member.getValue() instanceof Boolean) {
-            obj.setClustered((Boolean)member.getValue());
-          }
-          break;
         case "connectTimeout":
           if (member.getValue() instanceof Number) {
             obj.setConnectTimeout(((Number)member.getValue()).intValue());
@@ -263,7 +258,6 @@ public class EventBusOptionsConverter {
       json.put("clusterPublicHost", obj.getClusterPublicHost());
     }
     json.put("clusterPublicPort", obj.getClusterPublicPort());
-    json.put("clustered", obj.isClustered());
     json.put("connectTimeout", obj.getConnectTimeout());
     if (obj.getCrlPaths() != null) {
       JsonArray array = new JsonArray();

@@ -425,9 +425,6 @@ Set the public facing hostname to be used for clustering.
 |[[clusterPublicPort]]`@clusterPublicPort`|`Number (int)`|+++
 See link for an explanation.
 +++
-|[[clustered]]`@clustered`|`Boolean`|+++
-Sets whether or not the event bus is clustered.
-+++
 |[[connectTimeout]]`@connectTimeout`|`Number (int)`|+++
 Sets the connect timeout
 +++
@@ -1886,9 +1883,6 @@ Set the public facing hostname to be used for clustering.
 +++
 |[[clusterPublicPort]]`@clusterPublicPort`|`Number (int)`|+++
 See link for an explanation.
-+++
-|[[clustered]]`@clustered`|`Boolean`|+++
-Set whether or not the Vert.x instance will be clustered.
 +++
 |[[eventLoopPoolSize]]`@eventLoopPoolSize`|`Number (int)`|+++
 Set the number of event loop threads to be used by the Vert.x instance.

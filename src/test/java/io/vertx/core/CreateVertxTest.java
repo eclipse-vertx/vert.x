@@ -35,21 +35,8 @@ public class CreateVertxTest extends VertxTestBase {
   }
 
   @Test
-  public void testFailCreateClusteredVertxSynchronously() {
-    VertxOptions options = new VertxOptions();
-    options.getEventBusOptions().setClustered(true);
-    try {
-      Vertx.vertx(options);
-      fail("Should throw exception");
-    } catch (IllegalArgumentException e) {
-      // OK
-    }
-  }
-
-  @Test
   public void testCreateClusteredVertxAsync() {
     VertxOptions options = new VertxOptions();
-    options.getEventBusOptions().setClustered(true);
     clusteredVertx(options, ar -> {
       assertTrue(ar.succeeded());
       assertNotNull(ar.result());
@@ -62,27 +49,6 @@ public class CreateVertxTest extends VertxTestBase {
     });
     await();
   }
-
-  /*
-  If the user doesn't explicitly set clustered to true, it should still create a clustered Vert.x
-   */
-  @Test
-  public void testCreateClusteredVertxAsyncDontSetClustered() {
-    VertxOptions options = new VertxOptions();
-    clusteredVertx(options, ar -> {
-      assertTrue(ar.succeeded());
-      assertNotNull(ar.result());
-      assertTrue(options.getEventBusOptions().isClustered());
-      assertTrue(ar.result().isClustered());
-      Vertx v = ar.result();
-      v.close(ar2 -> {
-        assertTrue(ar2.succeeded());
-        testComplete();
-      });
-    });
-    await();
-  }
-
 
   @Test
   public void testCreateClusteredVertxAsyncDetectJoinFailure() {

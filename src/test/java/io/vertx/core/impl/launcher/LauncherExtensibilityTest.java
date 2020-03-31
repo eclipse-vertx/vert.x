@@ -107,57 +107,6 @@ public class LauncherExtensibilityTest extends CommandTestBase {
   }
 
   @Test
-  public void testThatCustomLauncherCanCustomizeTheClusteredOption() throws InterruptedException {
-
-    AtomicBoolean asv = new AtomicBoolean();
-    AtomicBoolean bsv = new AtomicBoolean();
-
-    Launcher myLauncher = new Launcher() {
-      @Override
-      protected String getMainVerticle() {
-        return HttpTestVerticle.class.getName();
-      }
-
-      @Override
-      public void afterStartingVertx(Vertx vertx) {
-        LauncherExtensibilityTest.this.vertx = vertx;
-      }
-
-      @Override
-      public void beforeStartingVertx(VertxOptions options) {
-        options.getEventBusOptions().setClustered(true);
-      }
-
-      @Override
-      public void afterStoppingVertx() {
-        asv.set(true);
-      }
-
-      @Override
-      public void beforeStoppingVertx(Vertx vertx) {
-        bsv.set(vertx != null);
-      }
-    };
-
-    myLauncher.dispatch(new String[0]);
-    assertWaitUntil(() -> {
-      try {
-        return RunCommandTest.getHttpCode() == 200;
-      } catch (IOException e) {
-        return false;
-      }
-    });
-
-    assertThat(this.vertx.isClustered()).isTrue();
-
-    BareCommand.getTerminationRunnable(vertx, LoggerFactory.getLogger("foo"), () -> asv.set(true)).run();
-
-    assertThat(bsv.get()).isTrue();
-    assertThat(asv.get()).isTrue();
-    vertx = null;
-  }
-
-  @Test
   public void testThatCustomLauncherCanUpdateConfigurationWhenNoneArePassed() throws IOException {
     long time = System.nanoTime();
     Launcher myLauncher = new Launcher() {

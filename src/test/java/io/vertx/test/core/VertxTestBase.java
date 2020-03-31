@@ -160,7 +160,7 @@ public class VertxTestBase extends AsyncTestBase {
     for (int i = 0; i < numNodes; i++) {
       int index = i;
       options[i].setClusterManager(getClusterManager())
-        .getEventBusOptions().setHost("localhost").setPort(0).setClustered(true);
+        .getEventBusOptions().setHost("localhost").setPort(0);
       clusteredVertx(options[i], ar -> {
           try {
             if (ar.failed()) {

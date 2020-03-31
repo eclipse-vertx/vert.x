@@ -36,7 +36,6 @@ import java.nio.file.Files;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import static junit.framework.TestCase.fail;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -67,17 +66,6 @@ public class VertxFactoryTest {
     Vertx vertx = fut.get(10, TimeUnit.SECONDS);
     assertNotNull(vertx);
     assertNotNull(((VertxInternal)vertx).getClusterManager());
-  }
-
-  @Test
-  public void testCreateClusteredSync() {
-    VertxFactory factory = new VertxFactory(new VertxOptions().setClustered(true));
-    try {
-      factory.vertx();
-      fail();
-    } catch (IllegalArgumentException ignore) {
-      // Expected
-    }
   }
 
   @Test
@@ -136,7 +124,7 @@ public class VertxFactoryTest {
     FakeClusterManager clusterManager = new FakeClusterManager();
     CompletableFuture<Vertx> res = new CompletableFuture<>();
     runWithServiceFromMetaInf(ClusterManager.class, FakeClusterManager.class.getName(), () -> {
-      VertxFactory factory = new VertxFactory(new VertxOptions().setClustered(true));
+      VertxFactory factory = new VertxFactory(new VertxOptions());
       factory.clusterManager(clusterManager);
       factory.clusteredVertx(ar -> {
         if (ar.succeeded()) {

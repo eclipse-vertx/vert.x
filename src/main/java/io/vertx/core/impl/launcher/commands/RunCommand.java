@@ -226,7 +226,7 @@ public class RunCommand extends BareCommand {
    */
   @Override
   public boolean isClustered() {
-    return cluster || ha || (options != null && options.getEventBusOptions().isClustered());
+    return cluster || ha;
   }
 
   @Override

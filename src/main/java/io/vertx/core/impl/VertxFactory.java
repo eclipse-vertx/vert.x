@@ -70,17 +70,12 @@ public class VertxFactory {
   }
 
   public Vertx vertx() {
-    if (options.getEventBusOptions().isClustered()) {
-      throw new IllegalArgumentException("Please use Vertx.clusteredVertx() to create a clustered Vert.x instance");
-    }
     VertxImpl vertx = new VertxImpl(options, null, createMetrics(), createTracer(), createTransport(), createFileResolver());
     vertx.init();
     return vertx;
   }
 
   public void clusteredVertx(Handler<AsyncResult<Vertx>> handler) {
-    // We don't require the user to set clustered to true if they use this method
-    options.getEventBusOptions().setClustered(true);
     VertxImpl vertx = new VertxImpl(options, createClusterManager(), createMetrics(), createTracer(), createTransport(), createFileResolver());
     vertx.joinCluster(options, handler);
   }
