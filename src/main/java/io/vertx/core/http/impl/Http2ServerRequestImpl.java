@@ -423,12 +423,12 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
           if (!HttpUtils.isValidMultipartContentType(contentType)) {
             throw new IllegalStateException("Request must have a valid content-type header to decode a multipart request");
           }
-          if (!HttpUtils.isValidMultipartMethod(HttpMethodImpl.toNetty(method))) {
+          if (!HttpUtils.isValidMultipartMethod(method.toNetty())) {
             throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
           }
           HttpRequest req = new DefaultHttpRequest(
             io.netty.handler.codec.http.HttpVersion.HTTP_1_1,
-            HttpMethodImpl.toNetty(method),
+            method.toNetty(),
             uri);
           req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
           postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(context, this, () -> uploadHandler), req);

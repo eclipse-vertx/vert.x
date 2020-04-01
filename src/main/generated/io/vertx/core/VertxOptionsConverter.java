@@ -17,7 +17,7 @@ public class VertxOptionsConverter {
       switch (member.getKey()) {
         case "addressResolverOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setAddressResolverOptions(new io.vertx.core.dns.AddressResolverOptions((JsonObject)member.getValue()));
+            obj.setAddressResolverOptions(new io.vertx.core.dns.AddressResolverOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
         case "blockedThreadCheckInterval":
@@ -67,7 +67,7 @@ public class VertxOptionsConverter {
           break;
         case "eventBusOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setEventBusOptions(new io.vertx.core.eventbus.EventBusOptions((JsonObject)member.getValue()));
+            obj.setEventBusOptions(new io.vertx.core.eventbus.EventBusOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
         case "eventLoopPoolSize":
@@ -77,7 +77,7 @@ public class VertxOptionsConverter {
           break;
         case "fileSystemOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setFileSystemOptions(new io.vertx.core.file.FileSystemOptions((JsonObject)member.getValue()));
+            obj.setFileSystemOptions(new io.vertx.core.file.FileSystemOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
         case "haEnabled":
@@ -117,7 +117,7 @@ public class VertxOptionsConverter {
           break;
         case "metricsOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((JsonObject)member.getValue()));
+            obj.setMetricsOptions(new io.vertx.core.metrics.MetricsOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
         case "preferNativeTransport":
@@ -132,7 +132,7 @@ public class VertxOptionsConverter {
           break;
         case "tracingOptions":
           if (member.getValue() instanceof JsonObject) {
-            obj.setTracingOptions(new io.vertx.core.tracing.TracingOptions((JsonObject)member.getValue()));
+            obj.setTracingOptions(new io.vertx.core.tracing.TracingOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
         case "warningExceptionTime":

@@ -124,7 +124,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     MultiMap headerMap,
     String authority,
     boolean chunked) {
-    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), HttpMethodImpl.toNetty(method), uri, false);
+    DefaultHttpRequest request = new DefaultHttpRequest(HttpUtils.toNettyHttpVersion(version), method.toNetty(), uri, false);
     HttpHeaders headers = request.headers();
     if (headerMap != null) {
       for (Map.Entry<String, String> header : headerMap) {

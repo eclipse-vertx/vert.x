@@ -205,7 +205,7 @@ public class Http1xServerRequest implements HttpServerRequest {
   @Override
   public io.vertx.core.http.HttpMethod method() {
     if (method == null) {
-      method = io.vertx.core.http.impl.HttpMethodImpl.fromNetty(request.method());
+      method = io.vertx.core.http.HttpMethod.fromNetty(request.method());
     }
     return method;
   }

@@ -62,7 +62,7 @@ public class HttpServerOptionsConverter {
           break;
         case "initialSettings":
           if (member.getValue() instanceof JsonObject) {
-            obj.setInitialSettings(new io.vertx.core.http.Http2Settings((JsonObject)member.getValue()));
+            obj.setInitialSettings(new io.vertx.core.http.Http2Settings((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
         case "maxChunkSize":

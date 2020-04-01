@@ -833,6 +833,20 @@ Set whether the <code>server_no_context_takeover</code> parameter of the WebSock
 +++
 |===
 
+[[HttpMethod]]
+== HttpMethod
+
+++++
+ Represents an HTTP method.
+++++
+'''
+
+[cols=">25%,25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|===
+
 [[HttpServerOptions]]
 == HttpServerOptions
 

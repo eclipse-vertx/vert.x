@@ -38,6 +38,11 @@ public class RequestOptionsConverter {
             obj.setHost((String)member.getValue());
           }
           break;
+        case "method":
+          if (member.getValue() instanceof String) {
+            obj.setMethod(new io.vertx.core.http.HttpMethod((java.lang.String)member.getValue()));
+          }
+          break;
         case "port":
           if (member.getValue() instanceof Number) {
             obj.setPort(((Number)member.getValue()).intValue());
@@ -72,6 +77,9 @@ public class RequestOptionsConverter {
     }
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
+    }
+    if (obj.getMethod() != null) {
+      json.put("method", obj.getMethod().toJson());
     }
     if (obj.getPort() != null) {
       json.put("port", obj.getPort());

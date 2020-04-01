@@ -10,7 +10,6 @@
  */
 package io.vertx.core.http;
 
-import io.vertx.core.http.impl.HttpMethodImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -20,7 +19,6 @@ import java.util.List;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
@@ -142,29 +140,29 @@ public class HttpMethodTest {
 
   @Test
   public void testNettyInterop() {
-    assertSame(HttpMethodImpl.toNetty(HttpMethod.GET), io.netty.handler.codec.http.HttpMethod.GET);
-    assertSame(HttpMethodImpl.toNetty(HttpMethod.POST), io.netty.handler.codec.http.HttpMethod.POST);
-    assertSame(HttpMethodImpl.toNetty(HttpMethod.PUT), io.netty.handler.codec.http.HttpMethod.PUT);
-    assertSame(HttpMethodImpl.toNetty(HttpMethod.HEAD), io.netty.handler.codec.http.HttpMethod.HEAD);
-    assertSame(HttpMethodImpl.toNetty(HttpMethod.CONNECT), io.netty.handler.codec.http.HttpMethod.CONNECT);
-    assertSame(HttpMethodImpl.toNetty(HttpMethod.DELETE), io.netty.handler.codec.http.HttpMethod.DELETE);
-    assertSame(HttpMethodImpl.toNetty(HttpMethod.OPTIONS), io.netty.handler.codec.http.HttpMethod.OPTIONS);
-    assertSame(HttpMethodImpl.toNetty(HttpMethod.PATCH), io.netty.handler.codec.http.HttpMethod.PATCH);
-    assertSame(HttpMethodImpl.toNetty(HttpMethod.TRACE), io.netty.handler.codec.http.HttpMethod.TRACE);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.GET), HttpMethod.GET);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("GET")), HttpMethod.GET);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.POST), HttpMethod.POST);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("POST")), HttpMethod.POST);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.PUT), HttpMethod.PUT);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("PUT")), HttpMethod.PUT);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.HEAD), HttpMethod.HEAD);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.CONNECT), HttpMethod.CONNECT);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.DELETE), HttpMethod.DELETE);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.OPTIONS), HttpMethod.OPTIONS);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.PATCH), HttpMethod.PATCH);
-    assertSame(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.TRACE), HttpMethod.TRACE);
-    assertEquals(HttpMethodImpl.toNetty(HttpMethod.valueOf("foo")).name(), "foo");
-    assertEquals(HttpMethodImpl.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("foo")).name(), "foo");
+    assertSame(HttpMethod.GET.toNetty(), io.netty.handler.codec.http.HttpMethod.GET);
+    assertSame(HttpMethod.POST.toNetty(), io.netty.handler.codec.http.HttpMethod.POST);
+    assertSame(HttpMethod.PUT.toNetty(), io.netty.handler.codec.http.HttpMethod.PUT);
+    assertSame(HttpMethod.HEAD.toNetty(), io.netty.handler.codec.http.HttpMethod.HEAD);
+    assertSame(HttpMethod.CONNECT.toNetty(), io.netty.handler.codec.http.HttpMethod.CONNECT);
+    assertSame(HttpMethod.DELETE.toNetty(), io.netty.handler.codec.http.HttpMethod.DELETE);
+    assertSame(HttpMethod.OPTIONS.toNetty(), io.netty.handler.codec.http.HttpMethod.OPTIONS);
+    assertSame(HttpMethod.PATCH.toNetty(), io.netty.handler.codec.http.HttpMethod.PATCH);
+    assertSame(HttpMethod.TRACE.toNetty(), io.netty.handler.codec.http.HttpMethod.TRACE);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.GET), HttpMethod.GET);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("GET")), HttpMethod.GET);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.POST), HttpMethod.POST);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("POST")), HttpMethod.POST);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.PUT), HttpMethod.PUT);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("PUT")), HttpMethod.PUT);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.HEAD), HttpMethod.HEAD);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.CONNECT), HttpMethod.CONNECT);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.DELETE), HttpMethod.DELETE);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.OPTIONS), HttpMethod.OPTIONS);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.PATCH), HttpMethod.PATCH);
+    assertSame(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.TRACE), HttpMethod.TRACE);
+    assertEquals(HttpMethod.valueOf("foo").toNetty().name(), "foo");
+    assertEquals(HttpMethod.fromNetty(io.netty.handler.codec.http.HttpMethod.valueOf("foo")).name(), "foo");
   }
 
   @Test
