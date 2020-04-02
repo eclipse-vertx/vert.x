@@ -135,22 +135,24 @@ class EpollTransport extends Transport {
   public void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
     if (!domainSocket) {
       bootstrap.option(EpollChannelOption.SO_REUSEPORT, options.isReusePort());
+      if (options.isTcpFastOpen()) {
+        bootstrap.option(EpollChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
+      }
+      bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
+      bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }
-    if (options.isTcpFastOpen()) {
-      bootstrap.option(EpollChannelOption.TCP_FASTOPEN, options.isTcpFastOpen() ? pendingFastOpenRequestsThreshold : 0);
-    }
-    bootstrap.childOption(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
-    bootstrap.childOption(EpollChannelOption.TCP_CORK, options.isTcpCork());
     super.configure(options, domainSocket, bootstrap);
   }
 
   @Override
   public void configure(ClientOptionsBase options, boolean domainSocket, Bootstrap bootstrap) {
-    if (options.isTcpFastOpen()) {
-      bootstrap.option(EpollChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
+    if (!domainSocket) {
+      if (options.isTcpFastOpen()) {
+        bootstrap.option(EpollChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
+      }
+      bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
+      bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }
-    bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
-    bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
     super.configure(options, domainSocket, bootstrap);
   }
 }
