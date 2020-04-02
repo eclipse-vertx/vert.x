@@ -100,7 +100,7 @@ public abstract class AbstractVerticle implements Verticle {
    * and call the startFuture some time later when start up is complete.
    * @param startFuture  a future which should be called when verticle start-up is complete.
    * @throws Exception
-   * @deprecated Use {@link #start(Promise)}
+   * @deprecated Override {@link AbstractVerticle#start(Promise)} instead.
    */
   @Override
   @Deprecated
@@ -116,7 +116,7 @@ public abstract class AbstractVerticle implements Verticle {
    * and call the stopFuture some time later when clean-up is complete.
    * @param stopFuture  a future which should be called when verticle clean-up is complete.
    * @throws Exception
-   * @deprecated Use {@link #stop(Promise)}
+   * @deprecated Override {@link AbstractVerticle#stop(Promise)} instead.
    */
   @Override
   @Deprecated
