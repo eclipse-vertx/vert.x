@@ -20,6 +20,7 @@ import io.vertx.core.spi.FutureFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Represents the result of an action that may, or may not, have occurred yet.
@@ -204,7 +205,24 @@ public interface Future<T> extends AsyncResult<T> {
   default <U> Future<U> compose(Function<T, Future<U>> mapper) {
     return compose(mapper, Future::failedFuture);
   }
-
+  
+  /**
+   * Compose this future with a {@code supplier} function.<p>
+   * 
+   * Similar to {@link #compose(Function)} except the {@code supplier} does not require
+   * the result value from the completed value of the previous operation.
+   *
+   * @param supplier the supplier function
+   * @return the composed future
+   */
+  @GenIgnore
+  default <U> Future<U> compose(Supplier<Future<U>> supplier) {
+    Function<T,Future<U>> f = junk -> {
+      return supplier.get();
+    };
+    return compose(f, Future::failedFuture);
+  }
+  
   /**
    * @return the context associated with this future or {@code null} when
    */
