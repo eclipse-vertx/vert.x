@@ -80,6 +80,7 @@ public class JsonCodecTest {
     jsonObject.put("mybyte", 255);
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonObject.put("mybinary", bytes);
+    jsonObject.put("mybuffer", Buffer.buffer(bytes));
     Instant now = Instant.now();
     jsonObject.put("myinstant", now);
     jsonObject.putNull("mynull");
@@ -87,7 +88,7 @@ public class JsonCodecTest {
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
     String expected = "{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybyte\":255,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
+      "myboolean\":true,\"mybyte\":255,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
     String json = mapper.toString(jsonObject);
     assertEquals(expected, json);
   }
@@ -104,11 +105,12 @@ public class JsonCodecTest {
     jsonArray.add((byte)124);
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonArray.add(bytes);
+    jsonArray.add(Buffer.buffer(bytes));
     jsonArray.addNull();
     jsonArray.add(new JsonObject().put("foo", "bar"));
     jsonArray.add(new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
-    String expected = "[\"foo\",123,1234,1.23,2.34,true,124,\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
+    String expected = "[\"foo\",123,1234,1.23,2.34,true,124,\"" + strBytes + "\",\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
     String json = mapper.toString(jsonArray);
     assertEquals(expected, json);
   }
@@ -125,6 +127,7 @@ public class JsonCodecTest {
     jsonObject.put("myboolean", true);
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonObject.put("mybinary", bytes);
+    jsonObject.put("mybuffer", Buffer.buffer(bytes));
     Instant now = Instant.now();
     jsonObject.put("myinstant", now);
     jsonObject.putNull("mynull");
@@ -133,7 +136,7 @@ public class JsonCodecTest {
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
 
     Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
+      "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
 
     Buffer json = mapper.toBuffer(jsonObject);
     assertArrayEquals(expected.getBytes(), json.getBytes());
@@ -150,11 +153,12 @@ public class JsonCodecTest {
     jsonArray.add(true);
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonArray.add(bytes);
+    jsonArray.add(Buffer.buffer(bytes));
     jsonArray.addNull();
     jsonArray.add(new JsonObject().put("foo", "bar"));
     jsonArray.add(new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
-    Buffer expected = Buffer.buffer("[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]", "UTF-8");
+    Buffer expected = Buffer.buffer("[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]", "UTF-8");
     Buffer json = mapper.toBuffer(jsonArray);
     assertArrayEquals(expected.getBytes(), json.getBytes());
   }
@@ -171,6 +175,7 @@ public class JsonCodecTest {
     jsonObject.put("myboolean", true);
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonObject.put("mybinary", bytes);
+    jsonObject.put("mybuffer", Buffer.buffer(bytes));
     Instant now = Instant.now();
     jsonObject.put("myinstant", now);
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
@@ -185,6 +190,7 @@ public class JsonCodecTest {
       "  \"mydouble\" : 2.34," + Utils.LINE_SEPARATOR +
       "  \"myboolean\" : true," + Utils.LINE_SEPARATOR +
       "  \"mybinary\" : \"" + strBytes + "\"," + Utils.LINE_SEPARATOR +
+      "  \"mybuffer\" : \"" + strBytes + "\"," + Utils.LINE_SEPARATOR +
       "  \"myinstant\" : \"" + strInstant + "\"," + Utils.LINE_SEPARATOR +
       "  \"myobj\" : {" + Utils.LINE_SEPARATOR +
       "    \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
@@ -206,11 +212,12 @@ public class JsonCodecTest {
     jsonArray.add(true);
     byte[] bytes = TestUtils.randomByteArray(10);
     jsonArray.add(bytes);
+    jsonArray.add(Buffer.buffer(bytes));
     jsonArray.addNull();
     jsonArray.add(new JsonObject().put("foo", "bar"));
     jsonArray.add(new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
-    String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", null, {" + Utils.LINE_SEPARATOR +
+    String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", \"" + strBytes + "\", null, {" + Utils.LINE_SEPARATOR +
       "  \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
       "}, [ \"foo\", 123 ] ]";
     String json = mapper.toString(jsonArray, true);
@@ -224,7 +231,7 @@ public class JsonCodecTest {
     Instant now = Instant.now();
     String strInstant = ISO_INSTANT.format(now);
     String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
-      "myboolean\":true,\"mybyte\":124,\"mybinary\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
+      "myboolean\":true,\"mybyte\":124,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + strInstant + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
     JsonObject obj = new JsonObject(mapper.fromString(json, Map.class));
     assertEquals(json, mapper.toString(obj));
     assertEquals("foo", obj.getString("mystr"));
@@ -235,7 +242,9 @@ public class JsonCodecTest {
     assertTrue(obj.getBoolean("myboolean"));
     assertEquals(124, obj.getValue("mybyte"));
     assertArrayEquals(bytes, obj.getBinary("mybinary"));
+    assertEquals(Buffer.buffer(bytes), obj.getBuffer("mybuffer"));
     assertEquals(BASE64_ENCODER.encodeToString(bytes), obj.getValue("mybinary"));
+    assertEquals(BASE64_ENCODER.encodeToString(bytes), obj.getValue("mybuffer"));
     assertEquals(now, obj.getInstant("myinstant"));
     assertEquals(now.toString(), obj.getValue("myinstant"));
     assertTrue(obj.containsKey("mynull"));
@@ -252,7 +261,7 @@ public class JsonCodecTest {
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
     Instant now = Instant.now();
     String strInstant = ISO_INSTANT.format(now);
-    String json = "[\"foo\",123,1234,1.23,2.34,true,124,\"" + strBytes + "\",\"" + strInstant + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
+    String json = "[\"foo\",123,1234,1.23,2.34,true,124,\"" + strBytes + "\",\"" + strBytes + "\",\"" + strInstant + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
     JsonArray arr = new JsonArray(mapper.fromString(json, List.class));
     assertEquals("foo", arr.getString(0));
     assertEquals(Integer.valueOf(123), arr.getInteger(1));
@@ -263,12 +272,14 @@ public class JsonCodecTest {
     assertEquals(124, arr.getValue(6));
     assertArrayEquals(bytes, arr.getBinary(7));
     assertEquals(BASE64_ENCODER.encodeToString(bytes), arr.getValue(7));
-    assertEquals(now, arr.getInstant(8));
-    assertEquals(now.toString(), arr.getValue(8));
-    assertTrue(arr.hasNull(9));
-    JsonObject obj = arr.getJsonObject(10);
+    assertEquals(Buffer.buffer(bytes), arr.getBuffer(8));
+    assertEquals(BASE64_ENCODER.encodeToString(bytes), arr.getValue(8));
+    assertEquals(now, arr.getInstant(9));
+    assertEquals(now.toString(), arr.getValue(9));
+    assertTrue(arr.hasNull(10));
+    JsonObject obj = arr.getJsonObject(11);
     assertEquals("bar", obj.getString("foo"));
-    JsonArray arr2 = arr.getJsonArray(11);
+    JsonArray arr2 = arr.getJsonArray(12);
     assertEquals("foo", arr2.getString(0));
     assertEquals(Integer.valueOf(123), arr2.getInteger(1));
   }
