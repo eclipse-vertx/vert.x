@@ -15,6 +15,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
@@ -54,6 +55,8 @@ public abstract class ConnectionBase {
    * trace to not be misleading.
    */
   public static final VertxException CLOSED_EXCEPTION = new VertxException("Connection was closed", true);
+  public static final AttributeKey<java.net.SocketAddress> REMOTE_ADDRESS_OVERRIDE = AttributeKey.valueOf("RemoteAddressOverride");
+  public static final AttributeKey<java.net.SocketAddress> LOCAL_ADDRESS_OVERRIDE = AttributeKey.valueOf("LocalAddressOverride");
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
@@ -479,7 +482,10 @@ public abstract class ConnectionBase {
   public SocketAddress remoteAddress() {
     SocketAddress address = remoteAddress;
     if (address == null) {
-      java.net.SocketAddress addr = chctx.channel().remoteAddress();
+      java.net.SocketAddress addr = chctx.channel().hasAttr(REMOTE_ADDRESS_OVERRIDE) ?
+        chctx.channel().attr(REMOTE_ADDRESS_OVERRIDE).getAndSet(null) :
+        chctx.channel().remoteAddress();
+
       if (addr != null) {
         address = vertx.transport().convert(addr);
         remoteAddress = address;
@@ -491,7 +497,10 @@ public abstract class ConnectionBase {
   public SocketAddress localAddress() {
     SocketAddress address = localAddress;
     if (address == null) {
-      java.net.SocketAddress addr = chctx.channel().localAddress();
+      java.net.SocketAddress addr = chctx.channel().hasAttr(LOCAL_ADDRESS_OVERRIDE) ?
+        chctx.channel().attr(LOCAL_ADDRESS_OVERRIDE).getAndSet(null) :
+        chctx.channel().localAddress();
+
       if (addr != null) {
         address = vertx.transport().convert(addr);
         localAddress = address;

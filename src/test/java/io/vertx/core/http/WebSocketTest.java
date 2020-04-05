@@ -39,6 +39,7 @@ import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Ignore;
@@ -3203,5 +3204,37 @@ public class WebSocketTest extends VertxTestBase {
         client.close();
       }));
     await();
+  }
+
+  @Test
+  public void testHAProxy() throws Exception {
+    waitFor(2);
+
+    Buffer version1ProtocolHeader = HAProxy.createVersion1ProtocolHeader("192.168.0.1", 56324, "192.168.0.11", 443);
+    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, version1ProtocolHeader);
+    proxy.start(vertx);
+
+    server = vertx.createHttpServer(new HttpServerOptions().setUseProxyProtocol(true))
+      .webSocketHandler(ws -> {
+        assertEquals(ws.remoteAddress().hostAddress(), "192.168.0.1");
+        assertEquals(ws.localAddress().hostAddress(), "192.168.0.11");
+        assertEquals(ws.remoteAddress().port(), 56324);
+        assertEquals(ws.localAddress().port(), 443);
+        ws.handler(buff -> {
+          complete();
+        });
+      }).listen(DEFAULT_HTTP_PORT,DEFAULT_HTTP_HOST, onSuccess(v1 -> {
+        client = vertx.createHttpClient();
+        client.webSocket(proxy.getPort(), proxy.getHost(), "/someuri", onSuccess(ws -> {
+          ws.write(Buffer.buffer("foo"), onSuccess(v -> {
+            complete();
+          }));
+        }));
+      }));
+    try {
+      await();
+    }finally {
+      proxy.stop();
+    }
   }
 }

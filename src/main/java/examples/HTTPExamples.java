@@ -918,6 +918,21 @@ public class HTTPExamples {
 
   }
 
+  public void example61(Vertx vertx) {
+
+    HttpServerOptions options = new HttpServerOptions()
+      .setUseProxyProtocol(true);
+
+    HttpServer server = vertx.createHttpServer(options);
+    server.requestHandler(request -> {
+      // Print the actual client address provided by the HA proxy protocol instead of the proxy address
+      System.out.println(request.remoteAddress());
+
+      // Print the address of the proxy
+      System.out.println(request.localAddress());
+    });
+  }
+
   public void serversharing(Vertx vertx) {
     vertx.createHttpServer().requestHandler(request -> {
       request.response().end("Hello from server " + this);

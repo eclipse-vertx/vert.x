@@ -17,6 +17,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
+import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SniHandler;
@@ -25,6 +26,8 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
@@ -34,6 +37,7 @@ import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.SslHandshakeCompletionHandler;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
@@ -77,9 +81,44 @@ import java.util.function.Function;
 
   @Override
   protected void initChannel(Channel ch) {
+    if (HAProxyMessageCompletionHandler.canUseProxyProtocol(options.isUseProxyProtocol())) {
+      IdleStateHandler idle;
+      io.netty.util.concurrent.Promise<Channel> p = ch.eventLoop().newPromise();
+      ch.pipeline().addLast(new HAProxyMessageDecoder());
+      if (options.getIdleTimeout() > 0) {
+        ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+      } else {
+        idle = null;
+      }
+      ch.pipeline().addLast(new HAProxyMessageCompletionHandler(p));
+      p.addListener((GenericFutureListener<Future<Channel>>) future -> {
+        if (future.isSuccess()) {
+          if (idle != null) {
+            ch.pipeline().remove(idle);
+          }
+          configurePipeline(future.getNow());
+        } else {
+          //No need to close the channel.HAProxyMessageDecoder already did
+          handleException(ch, future.cause());
+        }
+      });
+    } else {
+      configurePipeline(ch);
+    }
+  }
+
+
+  private void configurePipeline(Channel ch) {
     ChannelPipeline pipeline = ch.pipeline();
     if (sslHelper.isSSL()) {
-      ch.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
+      if (options.isSni()) {
+        SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
+        pipeline.addLast(sniHandler);
+      } else {
+        SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
+        pipeline.addLast("ssl", handler);
+      }
+      pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(ar -> {
         if (ar.succeeded()) {
           if (options.isUseAlpn()) {
             SslHandler sslHandler = pipeline.get(SslHandler.class);
@@ -96,13 +135,6 @@ import java.util.function.Function;
           handleException(ch, ar.cause());
         }
       }));
-      if (options.isSni()) {
-        SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
-        pipeline.addFirst(sniHandler);
-      } else {
-        SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
-        pipeline.addFirst("ssl", handler);
-      }
     } else {
       if (disableH2C) {
         handleHttp1(ch);
