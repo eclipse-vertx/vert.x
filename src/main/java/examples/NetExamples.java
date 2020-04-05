@@ -598,6 +598,18 @@ public class NetExamples {
       .listen(8080);
   }
 
+  public void example51(Vertx vertx) {
+    NetServerOptions options = new NetServerOptions().setUseProxyProtocol(true);
+    NetServer server = vertx.createNetServer(options);
+    server.connectHandler(so -> {
+      // Print the actual client address provided by the HA proxy protocol instead of the proxy address
+      System.out.println(so.remoteAddress());
+
+      // Print the address of the proxy
+      System.out.println(so.localAddress());
+    });
+  }
+
   public void configureSNIServer(Vertx vertx) {
     JksOptions keyCertOptions = new JksOptions().setPath("keystore.jks").setPassword("wibble");
 

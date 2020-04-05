@@ -1803,6 +1803,29 @@ use the full URL specified in the request URI:
 {@link examples.HTTPExamples#example60}
 ----
 
+=== Using HA PROXY protocol
+
+https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt[HA PROXY protocol] provides a convenient way to safely transport connection
+information such as a client's address across multiple layers of NAT or TCP
+proxies.
+
+HA PROXY protocol can be enabled by setting the option {@link io.vertx.core.http.HttpServerOptions#setUseProxyProtocol(boolean)}
+and adding the following dependency in your classpath:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.netty</groupId>
+  <artifactId>netty-codec-haproxy</artifactId>
+  <!--<version>Should align with netty version that Vert.x uses</version>-->
+</dependency>
+----
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#example61}
+----
+
 === Automatic clean-up in verticles
 
 If you're creating http servers and clients from inside verticles, those servers and clients will be automatically closed

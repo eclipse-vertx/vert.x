@@ -40,6 +40,11 @@ public class NetServerOptionsConverter {
             obj.setSni((Boolean)member.getValue());
           }
           break;
+        case "useProxyProtocol":
+          if (member.getValue() instanceof Boolean) {
+            obj.setUseProxyProtocol((Boolean)member.getValue());
+          }
+          break;
       }
     }
   }
@@ -58,5 +63,6 @@ public class NetServerOptionsConverter {
     }
     json.put("port", obj.getPort());
     json.put("sni", obj.isSni());
+    json.put("useProxyProtocol", obj.isUseProxyProtocol());
   }
 }

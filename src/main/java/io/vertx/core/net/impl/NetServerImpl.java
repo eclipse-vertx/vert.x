@@ -18,6 +18,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -211,47 +212,8 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
         bootstrap.group(availableWorkers);
         sslHelper.validate(vertx);
 
-        bootstrap.childHandler(new ChannelInitializer<Channel>() {
-          @Override
-          protected void initChannel(Channel ch) {
-            if (!accept()) {
-              ch.close();
-              return;
-            }
-            HandlerHolder<Handlers> handler = handlerManager.chooseHandler(ch.eventLoop());
-            if (handler != null) {
-              if (sslHelper.isSSL()) {
-                ch.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(ar -> {
-                  if (ar.succeeded()) {
-                    connected(handler, ch);
-                  } else {
-                    Handler<Throwable> exceptionHandler = handler.handler.exceptionHandler;
-                    if (exceptionHandler != null) {
-                      handler.context.dispatch(v -> {
-                        exceptionHandler.handle(ar.cause());
-                      });
-                    } else {
-                      log.error("Client from origin " + ch.remoteAddress() + " failed to connect over ssl: " + ar.cause());
-                    }
-                  }
-                }));
-                if (options.isSni()) {
-                  SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
-                  ch.pipeline().addFirst("ssl", sniHandler);
-                } else {
-                  SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
-                  sslHandler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
-                  ch.pipeline().addFirst("ssl", sslHandler);
-                }
-              } else {
-                connected(handler, ch);
-              }
-            }
-          }
-        });
-
+        bootstrap.childHandler(new NetServerChannelInitializer());
         applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
-
         handlerManager.addHandler(new Handlers(this, handler, exceptionHandler), listenContext);
 
         try {
@@ -475,6 +437,72 @@ public class NetServerImpl implements Closeable, MetricsProvider, NetServer {
     // which could make the JVM run out of file handles.
     close();
     super.finalize();
+  }
+
+  private class NetServerChannelInitializer extends ChannelInitializer<Channel> {
+    @Override
+    protected void initChannel(Channel ch) {
+      if (!accept()) {
+        ch.close();
+        return;
+      }
+      HandlerHolder<Handlers> handler = handlerManager.chooseHandler(ch.eventLoop());
+      if (handler != null) {
+        if (HAProxyMessageCompletionHandler.canUseProxyProtocol(options.isUseProxyProtocol())) {
+          IdleStateHandler idle;
+          io.netty.util.concurrent.Promise<Channel> p = ch.eventLoop().newPromise();
+          ch.pipeline().addLast(new HAProxyMessageDecoder());
+          if (options.getIdleTimeout() > 0) {
+            ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+          } else {
+            idle = null;
+          }
+          ch.pipeline().addLast(new HAProxyMessageCompletionHandler(p));
+          p.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
+            if (future.isSuccess()) {
+              if (idle != null) {
+                ch.pipeline().remove(idle);
+              }
+              configurePipeline(future.getNow(), handler);
+            } else {
+              //No need to close the channel.HAProxyMessageDecoder already did
+              handleException(handler, future.cause());
+            }
+          });
+        } else {
+          configurePipeline(ch, handler);
+        }
+      }
+    }
+
+    private void configurePipeline(Channel ch, HandlerHolder<Handlers> handler) {
+      if (sslHelper.isSSL()) {
+        if (options.isSni()) {
+          SniHandler sniHandler = new SniHandler(sslHelper.serverNameMapper(vertx));
+          ch.pipeline().addLast("ssl", sniHandler);
+        } else {
+          SslHandler sslHandler = new SslHandler(sslHelper.createEngine(vertx));
+          sslHandler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
+          ch.pipeline().addLast("ssl", sslHandler);
+        }
+        ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(ar -> {
+          if (ar.succeeded()) {
+            connected(handler, ch);
+          } else {
+            handleException(handler, ar.cause());
+          }
+        }));
+      } else {
+        connected(handler, ch);
+      }
+    }
+
+    private void handleException(HandlerHolder<Handlers> handler, Throwable cause) {
+      Handler<Throwable> exceptionHandler = handler.handler.exceptionHandler;
+      if (exceptionHandler != null) {
+        handler.context.dispatch(v -> exceptionHandler.handle(cause));
+      }
+    }
   }
 
   /*

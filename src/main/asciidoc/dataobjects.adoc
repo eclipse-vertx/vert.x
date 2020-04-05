@@ -1017,6 +1017,9 @@ Set the value of traffic class
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
 +++
+|[[useProxyProtocol]]`@useProxyProtocol`|`Boolean`|+++
+Set whether the server uses the HA Proxy protocol
++++
 |[[webSocketAllowServerNoContext]]`@webSocketAllowServerNoContext`|`Boolean`|+++
 Set whether the WebSocket server will accept the <code>server_no_context_takeover</code> parameter of the per-message
  deflate compression extension offered by the client.
@@ -1312,6 +1315,9 @@ Set the value of traffic class
 +++
 |[[useAlpn]]`@useAlpn`|`Boolean`|+++
 Set the ALPN usage.
++++
+|[[useProxyProtocol]]`@useProxyProtocol`|`Boolean`|+++
+Set whether the server uses the HA Proxy protocol
 +++
 |===
 

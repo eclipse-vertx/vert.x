@@ -54,11 +54,17 @@ public class NetServerOptions extends TCPSSLOptions {
    */
   public static final boolean DEFAULT_SNI = false;
 
+  /**
+   * Default value of whether the server supports HA Proxy protocol = false
+   */
+  public static final boolean DEFAULT_USE_PROXY_PROTOCOL = false;
+
   private int port;
   private String host;
   private int acceptBacklog;
   private ClientAuth clientAuth;
   private boolean sni;
+  private boolean useProxyProtocol;
 
   /**
    * Default constructor
@@ -80,6 +86,7 @@ public class NetServerOptions extends TCPSSLOptions {
     this.acceptBacklog = other.getAcceptBacklog();
     this.clientAuth = other.getClientAuth();
     this.sni = other.isSni();
+    this.useProxyProtocol = other.isUseProxyProtocol();
   }
 
   /**
@@ -390,11 +397,28 @@ public class NetServerOptions extends TCPSSLOptions {
     return this;
   }
 
+  /**
+   * @return whether the server uses the HA Proxy protocol
+   */
+  public boolean isUseProxyProtocol() { return useProxyProtocol; }
+
+
+  /**
+   * Set whether the server uses the HA Proxy protocol
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetServerOptions setUseProxyProtocol(boolean useProxyProtocol) {
+    this.useProxyProtocol = useProxyProtocol;
+    return this;
+  }
+
   private void init() {
     this.port = DEFAULT_PORT;
     this.host = DEFAULT_HOST;
     this.acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
     this.clientAuth = DEFAULT_CLIENT_AUTH;
     this.sni = DEFAULT_SNI;
+    this.useProxyProtocol = DEFAULT_USE_PROXY_PROTOCOL;
   }
 }

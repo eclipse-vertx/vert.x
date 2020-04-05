@@ -189,13 +189,15 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket sendFile(String filename, long offset, long length, Handler<AsyncResult<Void>> resultHandler);
 
   /**
-   * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
+   * @return the remote address for this connection, possibly {@code null} (e.g a server bound on a domain socket).
+   * If {@code useProxyProtocol} is set to {@code true}, the address returned will be of the actual connecting client.
    */
   @CacheReturn
   SocketAddress remoteAddress();
 
   /**
    * @return the local address for this connection, possibly {@code null} (e.g a server bound on a domain socket)
+   * If {@code useProxyProtocol} is set to {@code true}, the address returned will be of the proxy.
    */
   @CacheReturn
   SocketAddress localAddress();

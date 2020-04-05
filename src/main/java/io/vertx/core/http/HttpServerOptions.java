@@ -729,6 +729,10 @@ public class HttpServerOptions extends NetServerOptions {
     return (HttpServerOptions) super.setSni(sni);
   }
 
+  public HttpServerOptions setUseProxyProtocol(boolean useProxyProtocol) {
+    return (HttpServerOptions) super.setUseProxyProtocol(useProxyProtocol);
+  }
+
   /**
    * @return {@code true} if the server supports decompression
    */

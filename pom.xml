@@ -111,6 +111,11 @@
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>
+      <artifactId>netty-codec-haproxy</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
       <artifactId>netty-transport-native-epoll</artifactId>
       <optional>true</optional>
     </dependency>
@@ -537,6 +542,25 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>no-haproxy-codec</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/HAProxyTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+              </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>io.netty:netty-codec-haproxy</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
