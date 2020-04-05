@@ -175,11 +175,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   @Override
-  public Handler<AsyncResult<HttpClientResponse>> getHandler() {
-    return responsePromise.future().getHandler();
-  }
-
-  @Override
   public HttpClientResponse result() {
     return responsePromise.future().result();
   }

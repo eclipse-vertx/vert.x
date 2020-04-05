@@ -133,11 +133,6 @@ public class CompositeFutureImpl implements CompositeFuture {
   }
 
   @Override
-  public synchronized Handler<AsyncResult<CompositeFuture>> getHandler() {
-    return promise.future().getHandler();
-  }
-
-  @Override
   public Throwable cause(int index) {
     return future(index).cause();
   }

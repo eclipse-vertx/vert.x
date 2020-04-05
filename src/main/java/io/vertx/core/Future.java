@@ -143,11 +143,6 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
-   * @return the handler for the result
-   */
-  Handler<AsyncResult<T>> getHandler();
-
-  /**
    * The result of the operation. This will be null if the operation failed.
    *
    * @return the result or null if the operation failed.

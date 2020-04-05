@@ -61,11 +61,6 @@ public class FailedFuture<T> implements Future<T> {
   }
 
   @Override
-  public Handler<AsyncResult<T>> getHandler() {
-    return null;
-  }
-
-  @Override
   public T result() {
     return null;
   }

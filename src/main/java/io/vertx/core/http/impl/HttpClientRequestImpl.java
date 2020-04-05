@@ -373,7 +373,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       if (next != null) {
         next.onComplete(ar -> {
           if (ar.succeeded()) {
-            handleNextRequest(ar.result(), promise.future().getHandler(), timeoutMs);
+            handleNextRequest(ar.result(), promise, timeoutMs);
           } else {
             fail(ar.cause());
           }

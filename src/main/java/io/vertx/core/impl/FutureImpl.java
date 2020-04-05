@@ -129,11 +129,6 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
   }
 
   @Override
-  public synchronized Handler<AsyncResult<T>> getHandler() {
-    return handler;
-  }
-
-  @Override
   public boolean tryComplete(T result) {
     Handler<AsyncResult<T>> h;
     synchronized (this) {

@@ -4357,7 +4357,6 @@ public abstract class HttpTest extends HttpTestBase {
       public StreamPriority getStreamPriority() { return null; }
       public HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public boolean isComplete() { throw new UnsupportedOperationException(); }
-      public Handler<AsyncResult<HttpClientResponse>> getHandler() { throw new UnsupportedOperationException(); }
       public boolean tryComplete(HttpClientResponse result) { throw new UnsupportedOperationException(); }
       public boolean tryFail(Throwable cause) { throw new UnsupportedOperationException(); }
       public HttpClientResponse result() { throw new UnsupportedOperationException(); }
