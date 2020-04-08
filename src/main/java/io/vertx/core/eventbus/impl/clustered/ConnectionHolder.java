@@ -24,7 +24,7 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetClientImpl;
-import io.vertx.core.spi.cluster.NodeInfo;
+import io.vertx.core.spi.cluster.NodeAddress;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
 import java.util.ArrayDeque;
@@ -70,12 +70,17 @@ class ConnectionHolder {
     }
     eventBus.vertx().getClusterManager().getNodeInfo(remoteNodeId)
       .flatMap(nodeInfo -> nodeInfo != null ? Future.succeededFuture(nodeInfo) : Future.failedFuture("Not a member of the cluster"))
-      .map(NodeInfo::getAddress)
-      .flatMap(address -> client.connect(address.getPort(), address.getHost()))
-      .onSuccess(this::connected)
-      .onFailure(t -> {
-        log.warn("Connecting to server " + remoteNodeId + " failed", t);
-        close(t);
+      .flatMap(info -> {
+        NodeAddress address = info.getAddress();
+        return client.connect(address.getPort(), address.getHost());
+      })
+      .onComplete(ar -> {
+        if (ar.succeeded()) {
+          connected(ar.result());
+        } else {
+          log.warn("Connecting to server " + remoteNodeId + " failed", ar.cause());
+          close(ar.cause());
+        }
       });
   }
 
