@@ -11,7 +11,6 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
@@ -69,7 +68,6 @@ class ConnectionHolder {
       }
     }
     eventBus.vertx().getClusterManager().getNodeInfo(remoteNodeId)
-      .flatMap(nodeInfo -> nodeInfo != null ? Future.succeededFuture(nodeInfo) : Future.failedFuture("Not a member of the cluster"))
       .flatMap(info -> {
         NodeAddress address = info.getAddress();
         return client.connect(address.getPort(), address.getHost());

@@ -170,7 +170,9 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public Future<NodeInfo> getNodeInfo(String nodeId) {
-    return vertx.getOrCreateContext().succeededFuture(nodeInfos.get(nodeId));
+    NodeInfo result = nodeInfos.get(nodeId);
+    ContextInternal ctx = vertx.getOrCreateContext();
+    return result != null ? ctx.succeededFuture(result) : ctx.failedFuture("Not a member of the cluster");
   }
 
   @Override
