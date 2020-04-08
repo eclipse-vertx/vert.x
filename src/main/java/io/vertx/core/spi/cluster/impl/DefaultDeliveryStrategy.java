@@ -126,12 +126,14 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       }
     }
 
-    clusterManager.registrationListener(address)
-      .onFailure(t -> {
-        waiter.fail(t);
+    clusterManager.registrationListener(address).onComplete(ar -> {
+      if (ar.succeeded()) {
+        registrationListenerCreated(context, address, ar.result());
+      } else {
+        waiter.fail(ar.cause());
         removeFirstAndDequeueWaiters(context, address);
-      })
-      .onSuccess(stream -> registrationListenerCreated(context, address, stream));
+      }
+    });
   }
 
   private void registrationListenerCreated(ContextInternal context, String address, RegistrationListener listener) {
