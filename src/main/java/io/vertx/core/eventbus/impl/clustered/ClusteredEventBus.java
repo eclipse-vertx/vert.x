@@ -198,13 +198,16 @@ public class ClusteredEventBus extends EventBusImpl {
     } else {
       sendContext.ctx.succeededFuture(sendContext.message)
         .flatMap(deliveryStrategy::chooseNodes)
-        .onFailure(t -> {
-          if (log.isDebugEnabled()) {
-            log.error("Failed to send message", t);
+        .onComplete(ar -> {
+          if (ar.succeeded()) {
+            sendToNodes(ar.result(), sendContext);
+          } else {
+            if (log.isDebugEnabled()) {
+              log.error("Failed to send message", ar.cause());
+            }
+            sendContext.written(ar.cause());
           }
-          sendContext.written(t);
-        })
-        .onSuccess(nodeList -> sendToNodes(nodeList, sendContext));
+        });
     }
   }
 
