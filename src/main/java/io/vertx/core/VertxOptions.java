@@ -50,14 +50,6 @@ public class VertxOptions {
   public static final int DEFAULT_INTERNAL_BLOCKING_POOL_SIZE = 20;
 
   /**
-   * The default value of whether Vert.x is clustered = false.
-   *
-   * @deprecated as of 3.7, use {@link EventBusOptions#DEFAULT_CLUSTERED} instead
-   */
-  @Deprecated
-  public static final boolean DEFAULT_CLUSTERED = false;
-
-  /**
    * The default hostname to use when clustering = "localhost"
    *
    * @deprecated as of 3.7, use {@link EventBusOptions#DEFAULT_CLUSTER_HOST} instead
@@ -278,32 +270,6 @@ public class VertxOptions {
       throw new IllegalArgumentException("workerPoolSize must be > 0");
     }
     this.workerPoolSize = workerPoolSize;
-    return this;
-  }
-
-  /**
-   * Is the Vert.x instance clustered?
-   *
-   * @return true if clustered, false if not
-   *
-   * @deprecated as of 3.7, use {@link #getEventBusOptions()} and then {@link EventBusOptions#isClustered()} instead
-   */
-  @Deprecated
-  public boolean isClustered() {
-    return eventBusOptions.isClustered();
-  }
-
-  /**
-   * Set whether or not the Vert.x instance will be clustered.
-   *
-   * @param clustered if true, the Vert.x instance will be clustered, otherwise not
-   * @return a reference to this, so the API can be used fluently
-   *
-   * @deprecated as of 3.7, use {@link #getEventBusOptions()} and then {@link EventBusOptions#setClustered(boolean)} instead
-   */
-  @Deprecated
-  public VertxOptions setClustered(boolean clustered) {
-    eventBusOptions.setClustered(clustered);
     return this;
   }
 

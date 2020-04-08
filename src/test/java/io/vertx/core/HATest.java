@@ -384,7 +384,7 @@ public class HATest extends VertxTestBase {
       .setHAEnabled(ha)
       .setClusterManager(getClusterManager());
     options.getEventBusOptions()
-      .setClustered(true).setHost("localhost");
+      .setHost("localhost");
     if (ha) {
       options.setQuorumSize(quorumSize);
       if (haGroup != null) {

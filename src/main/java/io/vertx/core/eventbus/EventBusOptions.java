@@ -31,11 +31,6 @@ import java.util.concurrent.TimeUnit;
 public class EventBusOptions extends TCPSSLOptions {
 
   /**
-   * The default value of whether Vert.x is clustered = false.
-   */
-  public static final boolean DEFAULT_CLUSTERED = VertxOptions.DEFAULT_CLUSTERED;
-
-  /**
    * The default hostname to use when clustering = "localhost"
    */
   public static final String DEFAULT_CLUSTER_HOST = VertxOptions.DEFAULT_CLUSTER_HOST;
@@ -65,7 +60,6 @@ public class EventBusOptions extends TCPSSLOptions {
    */
   public static final long DEFAULT_CLUSTER_PING_REPLY_INTERVAL = VertxOptions.DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
 
-  private boolean clustered = DEFAULT_CLUSTERED;
   private String clusterPublicHost = DEFAULT_CLUSTER_PUBLIC_HOST;
   private int clusterPublicPort = DEFAULT_CLUSTER_PUBLIC_PORT;
   private long clusterPingInterval = DEFAULT_CLUSTER_PING_INTERVAL;
@@ -132,8 +126,6 @@ public class EventBusOptions extends TCPSSLOptions {
   public EventBusOptions() {
     super();
 
-    clustered = DEFAULT_CLUSTERED;
-
     port = DEFAULT_PORT;
     host = DEFAULT_HOST;
     acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
@@ -154,7 +146,6 @@ public class EventBusOptions extends TCPSSLOptions {
   public EventBusOptions(EventBusOptions other) {
     super(other);
 
-    this.clustered = other.clustered;
     this.clusterPublicHost = other.clusterPublicHost;
     this.clusterPublicPort = other.clusterPublicPort;
     this.clusterPingInterval = other.clusterPingInterval;
@@ -511,24 +502,6 @@ public class EventBusOptions extends TCPSSLOptions {
   @Override
   public EventBusOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
     return (EventBusOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
-  }
-
-  /**
-   * @return whether or not the event bus is clustered
-   */
-  public boolean isClustered() {
-    return clustered;
-  }
-
-  /**
-   * Sets whether or not the event bus is clustered.
-   *
-   * @param clustered {@code true} to start the event bus as a clustered event bus.
-   * @return a reference to this, so the API can be used fluently
-   */
-  public EventBusOptions setClustered(boolean clustered) {
-    this.clustered = clustered;
-    return this;
   }
 
   /**

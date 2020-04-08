@@ -62,7 +62,7 @@ public class MetricsContextTest extends VertxTestBase {
     };
     VertxOptions options = new VertxOptions()
       .setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory))
-      .setEventBusOptions(new EventBusOptions().setClustered(true));
+      .setEventBusOptions(new EventBusOptions());
     clusteredVertx(options, onSuccess(vertx -> {
       assertSame(testThread, metricsThread.get());
       assertNull(metricsContext.get());

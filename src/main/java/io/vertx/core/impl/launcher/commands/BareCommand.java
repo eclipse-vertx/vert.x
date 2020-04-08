@@ -238,8 +238,8 @@ public class BareCommand extends ClasspathHandler {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
 
-      eventBusOptions.setClustered(true)
-        .setHost(clusterHost).setPort(clusterPort)
+      eventBusOptions.setHost(clusterHost)
+        .setPort(clusterPort)
         .setClusterPublicHost(clusterPublicHost);
       if (clusterPublicPort != -1) {
         eventBusOptions.setClusterPublicPort(clusterPublicPort);

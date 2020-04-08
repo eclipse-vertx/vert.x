@@ -69,7 +69,7 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
       }
     };
     VertxOptions options = new VertxOptions().setClusterManager(cm);
-    options.getEventBusOptions().setHost("localhost").setPort(0).setClustered(true);
+    options.getEventBusOptions().setHost("localhost").setPort(0);
     vertices = new Vertx[1];
     clusteredVertx(options, onSuccess(node -> {
       vertices[0] = node;
