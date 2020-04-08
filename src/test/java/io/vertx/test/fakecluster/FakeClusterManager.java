@@ -220,7 +220,6 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public Future<Void> unregister(String address, RegistrationInfo registrationInfo) {
-    Future<Void> result;
     List<RegistrationInfo> infos = registrations.get(address);
     Promise<Void> promise = vertx.promise();
     if (infos != null && infos.remove(registrationInfo)) {
