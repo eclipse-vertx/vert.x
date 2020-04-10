@@ -115,6 +115,7 @@ public class HttpServerWorker implements Handler<Channel> {
         pipeline.addLast(sniHandler);
       } else {
         SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
+        handler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
         pipeline.addLast("ssl", handler);
       }
       pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(ar -> {

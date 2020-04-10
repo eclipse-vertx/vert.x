@@ -15,6 +15,7 @@ import io.netty.channel.socket.DuplexChannel;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Context;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
@@ -23,6 +24,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -807,6 +809,28 @@ public class Http2Test extends HttpTest {
       }
     });
     req.sendHead();
+    await();
+  }
+
+  @Test
+  public void testSslHandshakeTimeout() throws Exception {
+    waitFor(2);
+    HttpServerOptions opts = createBaseServerOptions()
+      .setSslHandshakeTimeout(1234)
+      .setSslHandshakeTimeoutUnit(TimeUnit.MILLISECONDS);
+    server.close();
+    server = vertx.createHttpServer(opts)
+      .requestHandler(req -> fail("Should not be called"))
+      .exceptionHandler(err -> {
+        if (err instanceof SSLHandshakeException) {
+          assertEquals("handshake timed out after 1234ms", err.getMessage());
+          complete();
+        }
+      });
+    startServer();
+    vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST)
+      .onFailure(this::fail)
+      .onSuccess(so -> so.closeHandler(u -> complete()));
     await();
   }
 }
