@@ -13,6 +13,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SniHandler;
@@ -290,13 +291,15 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
           sslHandler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
           ch.pipeline().addLast("ssl", sslHandler);
         }
-        ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(ar -> {
-          if (ar.succeeded()) {
+        ChannelPromise p = ch.newPromise();
+        ch.pipeline().addLast("handshaker", new SslHandshakeCompletionHandler(p));
+        p.addListener(future -> {
+          if (future.isSuccess()) {
             connected(ch);
           } else {
-            handleException(ar.cause());
+            handleException(future.cause());
           }
-        }));
+        });
       } else {
         connected(ch);
       }
