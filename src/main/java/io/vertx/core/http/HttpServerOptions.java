@@ -725,12 +725,24 @@ public class HttpServerOptions extends NetServerOptions {
     return (HttpServerOptions) super.setLogActivity(logEnabled);
   }
 
+  @Override
   public HttpServerOptions setSni(boolean sni) {
     return (HttpServerOptions) super.setSni(sni);
   }
 
+  @Override
   public HttpServerOptions setUseProxyProtocol(boolean useProxyProtocol) {
     return (HttpServerOptions) super.setUseProxyProtocol(useProxyProtocol);
+  }
+
+  @Override
+  public HttpServerOptions setProxyProtocolTimeout(long proxyProtocolTimeout) {
+    return (HttpServerOptions) super.setProxyProtocolTimeout(proxyProtocolTimeout);
+  }
+
+  @Override
+  public HttpServerOptions setProxyProtocolTimeoutUnit(TimeUnit proxyProtocolTimeoutUnit) {
+    return (HttpServerOptions) super.setProxyProtocolTimeoutUnit(proxyProtocolTimeoutUnit);
   }
 
   /**

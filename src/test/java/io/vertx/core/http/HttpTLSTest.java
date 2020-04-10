@@ -1547,8 +1547,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testHAProxy() throws Exception {
-    Buffer version1ProtocolHeader = HAProxy.createVersion1ProtocolHeader("192.168.0.1", 56324, "192.168.0.11", 443);
-    HAProxy proxy = new HAProxy("localhost", 4043, version1ProtocolHeader);
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
+    HAProxy proxy = new HAProxy("localhost", 4043, header);
     proxy.start(vertx);
     try {
       testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)

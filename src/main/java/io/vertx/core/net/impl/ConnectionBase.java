@@ -55,8 +55,8 @@ public abstract class ConnectionBase {
    * trace to not be misleading.
    */
   public static final VertxException CLOSED_EXCEPTION = new VertxException("Connection was closed", true);
-  public static final AttributeKey<java.net.SocketAddress> REMOTE_ADDRESS_OVERRIDE = AttributeKey.valueOf("RemoteAddressOverride");
-  public static final AttributeKey<java.net.SocketAddress> LOCAL_ADDRESS_OVERRIDE = AttributeKey.valueOf("LocalAddressOverride");
+  public static final AttributeKey<SocketAddress> REMOTE_ADDRESS_OVERRIDE = AttributeKey.valueOf("RemoteAddressOverride");
+  public static final AttributeKey<SocketAddress> LOCAL_ADDRESS_OVERRIDE = AttributeKey.valueOf("LocalAddressOverride");
   private static final Logger log = LoggerFactory.getLogger(ConnectionBase.class);
   private static final int MAX_REGION_SIZE = 1024 * 1024;
 
@@ -482,14 +482,17 @@ public abstract class ConnectionBase {
   public SocketAddress remoteAddress() {
     SocketAddress address = remoteAddress;
     if (address == null) {
-      java.net.SocketAddress addr = chctx.channel().hasAttr(REMOTE_ADDRESS_OVERRIDE) ?
-        chctx.channel().attr(REMOTE_ADDRESS_OVERRIDE).getAndSet(null) :
-        chctx.channel().remoteAddress();
-
-      if (addr != null) {
-        address = vertx.transport().convert(addr);
-        remoteAddress = address;
+      if (chctx.channel().hasAttr(REMOTE_ADDRESS_OVERRIDE)) {
+        address = chctx.channel().attr(REMOTE_ADDRESS_OVERRIDE).getAndSet(null);
+      } else {
+        java.net.SocketAddress addr = chctx.channel().remoteAddress();
+        if (addr != null) {
+          address = vertx.transport().convert(addr);
+        }
       }
+
+      if (address != null)
+        remoteAddress = address;
     }
     return address;
   }
@@ -497,14 +500,17 @@ public abstract class ConnectionBase {
   public SocketAddress localAddress() {
     SocketAddress address = localAddress;
     if (address == null) {
-      java.net.SocketAddress addr = chctx.channel().hasAttr(LOCAL_ADDRESS_OVERRIDE) ?
-        chctx.channel().attr(LOCAL_ADDRESS_OVERRIDE).getAndSet(null) :
-        chctx.channel().localAddress();
-
-      if (addr != null) {
-        address = vertx.transport().convert(addr);
-        localAddress = address;
+      if (chctx.channel().hasAttr(LOCAL_ADDRESS_OVERRIDE)) {
+        address = chctx.channel().attr(LOCAL_ADDRESS_OVERRIDE).getAndSet(null);
+      } else {
+        java.net.SocketAddress addr = chctx.channel().localAddress();
+        if (addr != null) {
+          address = vertx.transport().convert(addr);
+        }
       }
+
+      if (address != null)
+        localAddress = address;
     }
     return address;
   }

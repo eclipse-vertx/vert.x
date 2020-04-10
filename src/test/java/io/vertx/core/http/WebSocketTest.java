@@ -31,6 +31,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.FrameType;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
@@ -42,7 +43,6 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.security.cert.X509Certificate;
@@ -3210,16 +3210,16 @@ public class WebSocketTest extends VertxTestBase {
   public void testHAProxy() throws Exception {
     waitFor(2);
 
-    Buffer version1ProtocolHeader = HAProxy.createVersion1ProtocolHeader("192.168.0.1", 56324, "192.168.0.11", 443);
-    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, version1ProtocolHeader);
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
+    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, header);
     proxy.start(vertx);
 
     server = vertx.createHttpServer(new HttpServerOptions().setUseProxyProtocol(true))
       .webSocketHandler(ws -> {
-        assertEquals(ws.remoteAddress().hostAddress(), "192.168.0.1");
-        assertEquals(ws.localAddress().hostAddress(), "192.168.0.11");
-        assertEquals(ws.remoteAddress().port(), 56324);
-        assertEquals(ws.localAddress().port(), 443);
+        assertEquals(remote,ws.remoteAddress());
+        assertEquals(local, ws.localAddress());
         ws.handler(buff -> {
           complete();
         });
