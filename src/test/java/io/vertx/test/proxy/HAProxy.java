@@ -17,8 +17,7 @@ public class HAProxy {
   private static final Logger log = LoggerFactory.getLogger(HAProxy.class);
   private static final String HOST = "localhost";
   private static final int PORT = 11080;
-  private final String remoteHost;
-  private final int remotePort;
+  private final SocketAddress remoteAddress;
   private final Buffer header;
   private NetServer server;
 
@@ -26,10 +25,13 @@ public class HAProxy {
   private SocketAddress connectionRemoteAddress;
   private SocketAddress connectionLocalAddress;
 
-  public HAProxy(String remoteHost, int remotePort, Buffer header) {
-    this.remoteHost = remoteHost;
-    this.remotePort = remotePort;
+  public HAProxy(SocketAddress remoteAddress, Buffer header) {
+    this.remoteAddress = remoteAddress;
     this.header = header;
+  }
+
+  public HAProxy(String host, int port, Buffer header) {
+    this(SocketAddress.inetSocketAddress(port, host), header);
   }
 
   public HAProxy start(Vertx vertx) throws Exception {
@@ -39,7 +41,7 @@ public class HAProxy {
     server.connectHandler(socket -> {
       socket.pause();
       NetClient netClient = vertx.createNetClient(new NetClientOptions());
-      netClient.connect(remotePort, remoteHost, result -> {
+      netClient.connect(remoteAddress, result -> {
         if (result.succeeded()) {
           log.debug("connected, writing header");
           NetSocket clientSocket = result.result();

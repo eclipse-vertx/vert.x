@@ -5919,7 +5919,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHAProxyProtocolIdleTimeout() throws Exception {
-    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, Buffer.buffer());
+    HAProxy proxy = new HAProxy(testAddress, Buffer.buffer());
     proxy.start(vertx);
 
     server.close();
@@ -5927,8 +5927,8 @@ public abstract class HttpTest extends HttpTestBase {
       setProxyProtocolTimeout(2).
       setUseProxyProtocol(true));
     server.requestHandler(req -> fail("Should not be called"));
-    startServer();
-    vertx.createNetClient().connect(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, res -> {
+    startServer(testAddress);
+    vertx.createNetClient().connect(proxy.getPort(), proxy.getHost(), res -> {
       res.result().closeHandler(event -> testComplete());
     });
     try {
@@ -5945,7 +5945,7 @@ public abstract class HttpTest extends HttpTestBase {
     SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
     Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
 
-    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, header);
+    HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
@@ -5957,7 +5957,7 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
       complete();
     });
-    startServer();
+    startServer(testAddress);
     client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
       .onFailure(this::fail)
       .onSuccess(event -> complete())
@@ -6026,33 +6026,32 @@ public abstract class HttpTest extends HttpTestBase {
     /*
      * In case remote / local is null then we will use the connected remote / local address from the proxy. This is needed
      * in order to test unknown protocol since we will use the actual connected addresses and ports.
+     * This is only valid when testAddress is an InetSocketAddress. If testAddress is a DomainSocketAddress then
+     * remoteAddress and localAddress are null
      *
      * Have in mind that proxies connectionRemoteAddress is the server request local address and proxies connectionLocalAddress is the
      * server request remote address.
-     *
-     * Also in order to avoid localhost as a host we set the servers host to TestUtils.loopbackAddress() which should be (127.0.0.1)
      * */
     waitFor(2);
-    HAProxy proxy = new HAProxy(TestUtils.loopbackAddress(), DEFAULT_HTTP_PORT, header);
+    HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions()
-      .setHost(TestUtils.loopbackAddress())
       .setUseProxyProtocol(true))
       .requestHandler(req -> {
-        assertEquals(remote == null ?
+        assertAddresses(remote == null && testAddress.isInetSocket() ?
             proxy.getConnectionLocalAddress() :
             remote,
           req.remoteAddress());
-        assertEquals(local == null ?
+        assertAddresses(local == null && testAddress.isInetSocket() ?
             proxy.getConnectionRemoteAddress() :
             local,
           req.localAddress());
         req.response().end();
         complete();
       });
-    startServer();
+    startServer(testAddress);
 
     client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
       .onFailure(this::fail)
@@ -6092,7 +6091,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testHAProxyProtocolRejected(Buffer header) throws Exception {
     waitFor(2);
-    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, header);
+    HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
     server.close();
 
@@ -6104,7 +6103,7 @@ public abstract class HttpTest extends HttpTestBase {
       })
       .requestHandler(req -> fail());
 
-    startServer();
+    startServer(testAddress);
     client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
       .onFailure(ex -> complete())
       .onSuccess(event -> fail())
@@ -6133,7 +6132,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testHAProxyProtocolIllegal(Buffer header) throws Exception {
     waitFor(2);
-    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, header);
+    HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
     server.close();
 
@@ -6145,12 +6144,21 @@ public abstract class HttpTest extends HttpTestBase {
       })
       .requestHandler(req -> fail());
 
-    startServer();
+    startServer(testAddress);
     client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
       .onFailure(ex -> complete())
       .onSuccess(event -> fail())
       .end();
     await();
     proxy.stop();
+  }
+
+  private void assertAddresses(SocketAddress address1, SocketAddress address2) {
+    if (address1 == null || address2 == null)
+      assertEquals(address1, address2);
+    else {
+      assertEquals(address1.hostAddress(), address2.hostAddress());
+      assertEquals(address1.port(), address2.port());
+    }
   }
 }

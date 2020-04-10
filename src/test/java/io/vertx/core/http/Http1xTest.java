@@ -2823,9 +2823,6 @@ public class Http1xTest extends HttpTest {
       Handler<HttpClientRequest> clientRequest,
       Handler<NetSocket> connectHandler
   ) throws Exception {
-    // Cannot reliably pass due to https://github.com/netty/netty/issues/9113
-    Assume.assumeTrue(testAddress.isInetSocket());
-
     client.close();
     server.close();
 
