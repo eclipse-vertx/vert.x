@@ -11,10 +11,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
@@ -118,8 +115,10 @@ public class HttpServerWorker implements Handler<Channel> {
         handler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
         pipeline.addLast("ssl", handler);
       }
-      pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(ar -> {
-        if (ar.succeeded()) {
+      ChannelPromise p = ch.newPromise();
+      pipeline.addLast("handshaker", new SslHandshakeCompletionHandler(p));
+      p.addListener(future -> {
+        if (future.isSuccess()) {
           if (options.isUseAlpn()) {
             SslHandler sslHandler = pipeline.get(SslHandler.class);
             String protocol = sslHandler.applicationProtocol();
@@ -132,9 +131,9 @@ public class HttpServerWorker implements Handler<Channel> {
             handleHttp1(ch);
           }
         } else {
-          handleException(ar.cause());
+          handleException(future.cause());
         }
-      }));
+      });
     } else {
       if (disableH2C) {
         handleHttp1(ch);

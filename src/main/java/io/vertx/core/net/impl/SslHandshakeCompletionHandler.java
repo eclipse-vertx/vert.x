@@ -17,6 +17,7 @@ import io.netty.handler.ssl.SniCompletionEvent;
 import io.netty.handler.ssl.SslHandshakeCompletionEvent;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
+import io.netty.util.concurrent.Promise;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -29,10 +30,10 @@ import io.vertx.core.Handler;
 public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter {
 
   static AttributeKey<String> SERVER_NAME_ATTR = AttributeKey.valueOf("sniServerName");
-  private final Handler<AsyncResult<Channel>> handler;
+  private final Promise<Void> promise;
 
-  public SslHandshakeCompletionHandler(Handler<AsyncResult<Channel>> handler) {
-    this.handler = handler;
+  public SslHandshakeCompletionHandler(Promise<Void> promise) {
+    this.promise = promise;
   }
 
   @Override
@@ -46,9 +47,9 @@ public class SslHandshakeCompletionHandler extends ChannelInboundHandlerAdapter 
       SslHandshakeCompletionEvent completion = (SslHandshakeCompletionEvent) evt;
       if (completion.isSuccess()) {
         ctx.pipeline().remove(this);
-        handler.handle(Future.succeededFuture(ctx.channel()));
+        promise.setSuccess(null);
       } else {
-        handler.handle(Future.failedFuture(completion.cause()));
+        promise.tryFailure(completion.cause());
       }
     } else {
       ctx.fireUserEventTriggered(evt);
