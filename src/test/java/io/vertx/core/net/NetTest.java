@@ -3703,7 +3703,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testHAProxyProtocolIdleTimeout() throws Exception {
-    HAProxy proxy = new HAProxy(testAddress.host(), testAddress.port(), Buffer.buffer());
+    HAProxy proxy = new HAProxy(testAddress, Buffer.buffer());
     proxy.start(vertx);
 
     server.close();
@@ -3731,7 +3731,7 @@ public class NetTest extends VertxTestBase {
     SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
     SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
     Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
-    HAProxy proxy = new HAProxy(testAddress.host(), testAddress.port(), header);
+    HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
@@ -3760,20 +3760,18 @@ public class NetTest extends VertxTestBase {
     SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
     SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
     Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
-    HAProxy proxy = new HAProxy(testAddress.host(), testAddress.port(), header);
+    HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
     NetServerOptions options = new NetServerOptions()
-      .setPort(testAddress.port())
-      .setHost(testAddress.host())
       .setSsl(true)
       .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get())
       .setUseProxyProtocol(true);
     server = vertx.createNetServer(options)
       .connectHandler(event -> {
-        assertEquals(remote, event.remoteAddress());
-        assertEquals(local, event.localAddress());
+        assertAddresses(remote, event.remoteAddress());
+        assertAddresses(local, event.localAddress());
         complete();
       });
 
@@ -3854,26 +3852,25 @@ public class NetTest extends VertxTestBase {
     /*
      * In case remote / local is null then we will use the connected remote / local address from the proxy. This is needed
      * in order to test unknown protocol since we will use the actual connected addresses and ports.
+     * This is only valid when testAddress is an InetSocketAddress. If testAddress is a DomainSocketAddress then
+     * remoteAddress and localAddress are null
      *
      * Have in mind that proxies connectionRemoteAddress is the server request local address and proxies connectionLocalAddress is the
      * server request remote address.
-     *
-     * Also in order to avoid localhost as a host we set the servers host to TestUtils.loopbackAddress() which should be (127.0.0.1)
      * */
     waitFor(2);
-    HAProxy proxy = new HAProxy(TestUtils.loopbackAddress(), testAddress.port(), header);
+    HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
     server = vertx.createNetServer(new NetServerOptions()
-      .setHost(TestUtils.loopbackAddress())
       .setUseProxyProtocol(true))
       .connectHandler(so -> {
-        assertEquals(remote == null ?
+        assertAddresses(remote == null && testAddress.isInetSocket() ?
             proxy.getConnectionLocalAddress() :
             remote,
           so.remoteAddress());
-        assertEquals(local == null ?
+        assertAddresses(local == null && testAddress.isInetSocket() ?
             proxy.getConnectionRemoteAddress() :
             local,
           so.localAddress());
@@ -3919,7 +3916,7 @@ public class NetTest extends VertxTestBase {
 
   private void testHAProxyProtocolRejected(Buffer header) throws Exception {
     waitFor(2);
-    HAProxy proxy = new HAProxy(testAddress.host(), testAddress.port(), header);
+    HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
@@ -3962,7 +3959,7 @@ public class NetTest extends VertxTestBase {
 
   private void testHAProxyProtocolIllegal(Buffer header) throws Exception {
     waitFor(2);
-    HAProxy proxy = new HAProxy(testAddress.host(), testAddress.port(), header);
+    HAProxy proxy = new HAProxy(testAddress, header);
     proxy.start(vertx);
 
     server.close();
@@ -3982,6 +3979,15 @@ public class NetTest extends VertxTestBase {
       await();
     } finally {
       proxy.stop();
+    }
+  }
+
+  private void assertAddresses(SocketAddress address1, SocketAddress address2) {
+    if (address1 == null || address2 == null)
+      assertEquals(address1, address2);
+    else {
+      assertEquals(address1.hostAddress(), address2.hostAddress());
+      assertEquals(address1.port(), address2.port());
     }
   }
 }
