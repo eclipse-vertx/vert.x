@@ -964,6 +964,12 @@ Enable or disable support for WebSocket per-message deflate compression extensio
 |[[port]]`@port`|`Number (int)`|+++
 Set the port
 +++
+|[[proxyProtocolTimeout]]`@proxyProtocolTimeout`|`Number (long)`|+++
+Set the Proxy protocol timeout, default time unit is seconds.
++++
+|[[proxyProtocolTimeoutUnit]]`@proxyProtocolTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
+Set the Proxy protocol timeout unit. If not specified, default is seconds.
++++
 |[[receiveBufferSize]]`@receiveBufferSize`|`Number (int)`|+++
 Set the TCP receive buffer size
 +++
@@ -1262,6 +1268,12 @@ Set to true to enabled network activity logging: Netty's pipeline is configured 
 +++
 |[[port]]`@port`|`Number (int)`|+++
 Set the port
++++
+|[[proxyProtocolTimeout]]`@proxyProtocolTimeout`|`Number (long)`|+++
+Set the Proxy protocol timeout, default time unit is seconds.
++++
+|[[proxyProtocolTimeoutUnit]]`@proxyProtocolTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
+Set the Proxy protocol timeout unit. If not specified, default is seconds.
 +++
 |[[receiveBufferSize]]`@receiveBufferSize`|`Number (int)`|+++
 Set the TCP receive buffer size

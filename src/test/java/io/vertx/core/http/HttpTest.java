@@ -21,6 +21,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.net.*;
+import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.Pump;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
@@ -5917,95 +5918,13 @@ public abstract class HttpTest extends HttpTestBase {
 
 
   @Test
-  public void testProxyProtocolIllegalHeader() throws Exception {
-    waitFor(2);
-    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, Buffer.buffer());
-    proxy.start(vertx);
-    server.close();
-
-    server = vertx.createHttpServer(createBaseServerOptions()
-      .setUseProxyProtocol(true))
-      .exceptionHandler(ex -> {
-        if(ex instanceof io.netty.handler.codec.haproxy.HAProxyProtocolException)
-          complete();
-      });
-    server.requestHandler(req -> fail("Should not be called"));
-
-    startServer();
-    client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
-      .onFailure(ex -> complete())
-      .onSuccess(event -> fail())
-      .end();
-    await();
-    proxy.stop();
-  }
-
-  @Test
-  public void testHAProxyProtocolVersion1() throws Exception {
-    waitFor(2);
-    Buffer version1ProtocolHeader = HAProxy.createVersion1ProtocolHeader("192.168.0.1", 56324, "192.168.0.11", 443);
-    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, version1ProtocolHeader);
-    proxy.start(vertx);
-
-    server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setUseProxyProtocol(true));
-    server.requestHandler(req -> {
-      assertEquals(req.remoteAddress().hostAddress(), "192.168.0.1");
-      assertEquals(req.localAddress().hostAddress(), "192.168.0.11");
-      assertEquals(req.remoteAddress().port(), 56324);
-      assertEquals(req.localAddress().port(), 443);
-      req.response().end();
-      complete();
-    });
-    startServer();
-    client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
-      .onFailure(this::fail)
-      .onSuccess(event -> complete())
-      .end();
-    try {
-      await();
-    } finally {
-      proxy.stop();
-    }
-  }
-
-  @Test
-  public void testHaProxyProtocolVersion2() throws Exception {
-    waitFor(2);
-    Buffer version2ProtocolHeader = HAProxy.createVersion2ProtocolHeader("192.168.0.1", 56324, "192.168.0.11", 443);
-    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, version2ProtocolHeader);
-    proxy.start(vertx);
-
-    server.close();
-    server = vertx.createHttpServer(createBaseServerOptions().setUseProxyProtocol(true));
-    server.requestHandler(req -> {
-      assertEquals(req.remoteAddress().hostAddress(), "192.168.0.1");
-      assertEquals(req.localAddress().hostAddress(), "192.168.0.11");
-      assertEquals(req.remoteAddress().port(), 56324);
-      assertEquals(req.localAddress().port(), 443);
-      req.response().end();
-      complete();
-    });
-    startServer();
-    client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
-      .onFailure(this::fail)
-      .onSuccess(event -> complete())
-      .end();
-    try {
-      await();
-    } finally {
-      proxy.stop();
-    }
-  }
-
-  @Test
   public void testHAProxyProtocolIdleTimeout() throws Exception {
     HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, Buffer.buffer());
     proxy.start(vertx);
 
     server.close();
     server = vertx.createHttpServer(createBaseServerOptions().
-      setIdleTimeout(2).
+      setProxyProtocolTimeout(2).
       setUseProxyProtocol(true));
     server.requestHandler(req -> fail("Should not be called"));
     startServer();
@@ -6017,5 +5936,221 @@ public abstract class HttpTest extends HttpTestBase {
     } finally {
       proxy.stop();
     }
+  }
+
+  @Test
+  public void testHAProxyProtocolIdleTimeoutNotHappened() throws Exception {
+    waitFor(2);
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
+
+    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, header);
+    proxy.start(vertx);
+
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().
+      setProxyProtocolTimeout(100).
+      setProxyProtocolTimeoutUnit(TimeUnit.MILLISECONDS).
+      setUseProxyProtocol(true));
+    server.requestHandler(req -> {
+      req.response().end();
+      complete();
+    });
+    startServer();
+    client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
+      .onFailure(this::fail)
+      .onSuccess(event -> complete())
+      .end();
+    try {
+      await();
+    } finally {
+      proxy.stop();
+    }
+  }
+
+  @Test
+  public void testHAProxyProtocolVersion1TCP4() throws Exception {
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
+    testHAProxyProtocolAccepted(header, remote, local);
+  }
+
+  @Test
+  public void testHAProxyProtocolVersion1TCP6() throws Exception {
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "2001:db8:85a3:0:0:8a2e:370:7334");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
+    Buffer header = HAProxy.createVersion1TCP6ProtocolHeader(remote, local);
+    testHAProxyProtocolAccepted(header, remote, local);
+  }
+
+  @Test
+  public void testHAProxyProtocolVersion1Unknown() throws Exception {
+    Buffer header = HAProxy.createVersion1UnknownProtocolHeader();
+    testHAProxyProtocolAccepted(header, null, null);
+  }
+
+  @Test
+  public void testHAProxyProtocolVersion2TCP4() throws Exception {
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    Buffer header = HAProxy.createVersion2TCP4ProtocolHeader(remote, local);
+    testHAProxyProtocolAccepted(header, remote, local);
+  }
+
+  @Test
+  public void testHAProxyProtocolVersion2TCP6() throws Exception {
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "2001:db8:85a3:0:0:8a2e:370:7334");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
+    Buffer header = HAProxy.createVersion2TCP6ProtocolHeader(remote, local);
+    testHAProxyProtocolAccepted(header, remote, local);
+  }
+
+  @Test
+  public void testHAProxyProtocolVersion2UnixSocket() throws Exception {
+    SocketAddress remote = SocketAddress.domainSocketAddress("/tmp/remoteSocket");
+    SocketAddress local = SocketAddress.domainSocketAddress("/tmp/localSocket");
+    Buffer header = HAProxy.createVersion2UnixStreamProtocolHeader(remote, local);
+    testHAProxyProtocolAccepted(header, remote, local);
+  }
+
+  @Test
+  public void testHAProxyProtocolVersion2Unknown() throws Exception {
+    Buffer header = HAProxy.createVersion2UnknownProtocolHeader();
+    testHAProxyProtocolAccepted(header, null, null);
+  }
+
+
+  private void testHAProxyProtocolAccepted(Buffer header, SocketAddress remote, SocketAddress local) throws Exception {
+    /*
+     * In case remote / local is null then we will use the connected remote / local address from the proxy. This is needed
+     * in order to test unknown protocol since we will use the actual connected addresses and ports.
+     *
+     * Have in mind that proxies connectionRemoteAddress is the server request local address and proxies connectionLocalAddress is the
+     * server request remote address.
+     *
+     * Also in order to avoid localhost as a host we set the servers host to TestUtils.loopbackAddress() which should be (127.0.0.1)
+     * */
+    waitFor(2);
+    HAProxy proxy = new HAProxy(TestUtils.loopbackAddress(), DEFAULT_HTTP_PORT, header);
+    proxy.start(vertx);
+
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions()
+      .setHost(TestUtils.loopbackAddress())
+      .setUseProxyProtocol(true))
+      .requestHandler(req -> {
+        assertEquals(remote == null ?
+            proxy.getConnectionLocalAddress() :
+            remote,
+          req.remoteAddress());
+        assertEquals(local == null ?
+            proxy.getConnectionRemoteAddress() :
+            local,
+          req.localAddress());
+        req.response().end();
+        complete();
+      });
+    startServer();
+
+    client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
+      .onFailure(this::fail)
+      .onSuccess(event -> complete())
+      .end();
+    try {
+      await();
+    } finally {
+      proxy.stop();
+    }
+  }
+
+
+  @Test
+  public void testHAProxyProtocolVersion2UDP4() throws Exception {
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "192.168.0.11");
+    Buffer header = HAProxy.createVersion2UDP4ProtocolHeader(remote, local);
+    testHAProxyProtocolRejected(header);
+  }
+
+  @Test
+  public void testHAProxyProtocolVersion2UDP6() throws Exception {
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "2001:db8:85a3:0:0:8a2e:370:7334");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
+    Buffer header = HAProxy.createVersion2UDP6ProtocolHeader(remote, local);
+    testHAProxyProtocolRejected(header);
+  }
+
+  @Test
+  public void testHAProxyProtocolVersion2UnixDataGram() throws Exception {
+    SocketAddress remote = SocketAddress.domainSocketAddress("/tmp/remoteSocket");
+    SocketAddress local = SocketAddress.domainSocketAddress("/tmp/localSocket");
+    Buffer header = HAProxy.createVersion2UnixDatagramProtocolHeader(remote, local);
+    testHAProxyProtocolRejected(header);
+  }
+
+  private void testHAProxyProtocolRejected(Buffer header) throws Exception {
+    waitFor(2);
+    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, header);
+    proxy.start(vertx);
+    server.close();
+
+    server = vertx.createHttpServer(createBaseServerOptions()
+      .setUseProxyProtocol(true))
+      .exceptionHandler(ex -> {
+        if (ex.equals(HAProxyMessageCompletionHandler.UNSUPPORTED_PROTOCOL_EXCEPTION))
+          complete();
+      })
+      .requestHandler(req -> fail());
+
+    startServer();
+    client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
+      .onFailure(ex -> complete())
+      .onSuccess(event -> fail())
+      .end();
+
+    try {
+      await();
+    } finally {
+      proxy.stop();
+    }
+  }
+
+  @Test
+  public void testHAProxyProtocolEmptyHeader() throws Exception {
+    testHAProxyProtocolIllegal(Buffer.buffer());
+  }
+
+  @Test
+  public void testHAProxyProtocolIllegalHeader() throws Exception {
+    //IPv4 remote IPv6 Local
+    SocketAddress remote = SocketAddress.inetSocketAddress(56324, "192.168.0.1");
+    SocketAddress local = SocketAddress.inetSocketAddress(443, "2001:db8:85a3:0:0:8a2e:370:7333");
+    Buffer header = HAProxy.createVersion1TCP4ProtocolHeader(remote, local);
+    testHAProxyProtocolIllegal(header);
+  }
+
+  private void testHAProxyProtocolIllegal(Buffer header) throws Exception {
+    waitFor(2);
+    HAProxy proxy = new HAProxy(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT, header);
+    proxy.start(vertx);
+    server.close();
+
+    server = vertx.createHttpServer(createBaseServerOptions()
+      .setUseProxyProtocol(true))
+      .exceptionHandler(ex -> {
+        if (ex instanceof io.netty.handler.codec.haproxy.HAProxyProtocolException)
+          complete();
+      })
+      .requestHandler(req -> fail());
+
+    startServer();
+    client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
+      .onFailure(ex -> complete())
+      .onSuccess(event -> fail())
+      .end();
+    await();
+    proxy.stop();
   }
 }

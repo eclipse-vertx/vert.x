@@ -85,8 +85,8 @@ import java.util.function.Function;
       IdleStateHandler idle;
       io.netty.util.concurrent.Promise<Channel> p = ch.eventLoop().newPromise();
       ch.pipeline().addLast(new HAProxyMessageDecoder());
-      if (options.getIdleTimeout() > 0) {
-        ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+      if (options.getProxyProtocolTimeout() > 0) {
+        ch.pipeline().addLast("idle", idle = new IdleStateHandler(0, 0, options.getProxyProtocolTimeout(), options.getProxyProtocolTimeoutUnit()));
       } else {
         idle = null;
       }
