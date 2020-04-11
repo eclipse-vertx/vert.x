@@ -46,6 +46,8 @@ import static io.vertx.core.http.impl.HttpUtils.SC_BAD_GATEWAY;
 public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> implements ServerWebSocket {
 
   private final Http1xServerConnection conn;
+  private final String scheme;
+  private final String host;
   private final String uri;
   private final String path;
   private final String query;
@@ -63,6 +65,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
                       int maxWebSocketMessageSize) {
     super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.conn = conn;
+    this.scheme = request.scheme();
+    this.host = request.host();
     this.uri = request.uri();
     this.path = request.path();
     this.query = request.query();
@@ -70,6 +74,16 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
     this.handshaker = handshaker;
 
     headers(request.headers());
+  }
+
+  @Override
+  public String scheme() {
+    return scheme;
+  }
+
+  @Override
+  public String host() {
+    return host;
   }
 
   @Override

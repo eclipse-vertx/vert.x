@@ -80,6 +80,18 @@ public interface ServerWebSocket extends WebSocketBase {
   @Override
   ServerWebSocket frameHandler(Handler<WebSocketFrame> handler);
 
+  /**
+   * @return the WebSocket handshake scheme
+   */
+  @Nullable
+  String scheme();
+
+  /**
+   * @return the WebSocket handshake host
+   */
+  @Nullable
+  String host();
+
   /*
    * @return the WebSocket handshake URI. This is a relative URI.
    */
