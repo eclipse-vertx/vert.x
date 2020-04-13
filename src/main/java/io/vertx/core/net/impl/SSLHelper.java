@@ -18,11 +18,11 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClientOptions;
-import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.KeyCertOptions;
 import io.vertx.core.net.NetClientOptions;
@@ -130,81 +130,44 @@ public class SSLHelper {
   private Map<Certificate, SslContext> sslContextMap = new ConcurrentHashMap<>();
   private boolean openSslSessionCacheEnabled = true;
 
-  public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
+  private SSLHelper(TCPSSLOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
     SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
     this.ssl = options.isSsl();
     this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
     this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
     this.keyCertOptions = keyCertOptions;
     this.trustOptions = trustOptions;
-    this.trustAll = options.isTrustAll();
     this.crlPaths = new ArrayList<>(options.getCrlPaths());
     this.crlValues = new ArrayList<>(options.getCrlValues());
     this.enabledCipherSuites = options.getEnabledCipherSuites();
     this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
-    this.client = true;
     this.useAlpn = options.isUseAlpn();
     this.enabledProtocols = options.getEnabledSecureTransportProtocols();
+    this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
+  }
+
+  private SSLHelper(ClientOptionsBase options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
+    this((TCPSSLOptions) options, keyCertOptions, trustOptions);
+    this.client = true;
+    this.trustAll = options.isTrustAll();
+  }
+
+  public SSLHelper(HttpClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
+    this((ClientOptionsBase) options, keyCertOptions, trustOptions);
     if (options.isVerifyHost()) {
       this.endpointIdentificationAlgorithm = "HTTPS";
     }
-    this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
-  }
-
-  public SSLHelper(HttpServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
-    SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
-    this.ssl = options.isSsl();
-    this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
-    this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
-    this.keyCertOptions = keyCertOptions;
-    this.trustOptions = trustOptions;
-    this.clientAuth = options.getClientAuth();
-    this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
-    this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
-    this.enabledCipherSuites = options.getEnabledCipherSuites();
-    this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
-    this.client = false;
-    this.useAlpn = options.isUseAlpn();
-    this.enabledProtocols = options.getEnabledSecureTransportProtocols();
-    this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
-    this.sni = options.isSni();
   }
 
   public SSLHelper(NetClientOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
-    SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
-    this.ssl = options.isSsl();
-    this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
-    this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
-    this.keyCertOptions = keyCertOptions;
-    this.trustOptions = trustOptions;
-    this.trustAll = options.isTrustAll();
-    this.crlPaths = new ArrayList<>(options.getCrlPaths());
-    this.crlValues = new ArrayList<>(options.getCrlValues());
-    this.enabledCipherSuites = options.getEnabledCipherSuites();
-    this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
-    this.client = true;
-    this.useAlpn = false;
-    this.enabledProtocols = options.getEnabledSecureTransportProtocols();
+    this((ClientOptionsBase) options, keyCertOptions, trustOptions);
     this.endpointIdentificationAlgorithm = options.getHostnameVerificationAlgorithm();
-    this.openSslSessionCacheEnabled = (sslEngineOptions instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) sslEngineOptions).isSessionCacheEnabled();
   }
 
   public SSLHelper(NetServerOptions options, KeyCertOptions keyCertOptions, TrustOptions trustOptions) {
-    SSLEngineOptions sslEngineOptions = resolveEngineOptions(options);
-    this.ssl = options.isSsl();
-    this.sslHandshakeTimeout = options.getSslHandshakeTimeout();
-    this.sslHandshakeTimeoutUnit = options.getSslHandshakeTimeoutUnit();
-    this.keyCertOptions = keyCertOptions;
-    this.trustOptions = trustOptions;
+    this((TCPSSLOptions) options, keyCertOptions, trustOptions);
     this.clientAuth = options.getClientAuth();
-    this.crlPaths = options.getCrlPaths() != null ? new ArrayList<>(options.getCrlPaths()) : null;
-    this.crlValues = options.getCrlValues() != null ? new ArrayList<>(options.getCrlValues()) : null;
-    this.enabledCipherSuites = options.getEnabledCipherSuites();
-    this.openSsl = sslEngineOptions instanceof OpenSSLEngineOptions;
     this.client = false;
-    this.useAlpn = false;
-    this.enabledProtocols = options.getEnabledSecureTransportProtocols();
-    this.openSslSessionCacheEnabled = (options.getSslEngineOptions() instanceof OpenSSLEngineOptions) && ((OpenSSLEngineOptions) options.getSslEngineOptions()).isSessionCacheEnabled();
     this.sni = options.isSni();
   }
 
