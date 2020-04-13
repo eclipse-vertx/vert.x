@@ -49,6 +49,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
@@ -383,6 +384,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   public Map<ServerID, NetServerImpl> sharedNetServers() {
     return sharedNetServers;
+  }
+
+  @Override
+  public <S extends TCPServerBase> Map<ServerID, S> sharedTCPServers(Class<S> type) {
+    if (type == NetServerImpl.class) {
+      return (Map<ServerID, S>) sharedNetServers;
+    } else if (type == HttpServerImpl.class) {
+      return (Map<ServerID, S>) sharedHttpServers;
+    } else {
+      throw new IllegalStateException();
+    }
   }
 
   @Override

@@ -15,7 +15,6 @@ package io.vertx.core.http;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
-import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.util.ReferenceCounted;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -1660,7 +1659,7 @@ public class WebSocketTest extends VertxTestBase {
       assertTrue(listenAR.succeeded());
       stream.pause();
       paused.set(true);
-      connectUntilWebSocketHandshakeException(client, 0, res -> {
+      connectUntilWebSocketReject(client, 0, res -> {
         if (!res.succeeded()) {
           fail(new AssertionError("Was expecting error to be WebSocketHandshakeException", res.cause()));
         }
@@ -1680,21 +1679,21 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  private void connectUntilWebSocketHandshakeException(HttpClient client, int count, Handler<AsyncResult<Void>> doneHandler) {
+  private void connectUntilWebSocketReject(HttpClient client, int count, Handler<AsyncResult<Void>> doneHandler) {
     vertx.runOnContext(v -> {
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", ar -> {
         if (ar.succeeded()) {
           if (count < 100) {
-            connectUntilWebSocketHandshakeException(client, count + 1, doneHandler);
+            connectUntilWebSocketReject(client, count + 1, doneHandler);
           } else {
             doneHandler.handle(Future.failedFuture(new AssertionError()));
           }
         } else {
           Throwable err = ar.cause();
-          if (err instanceof WebSocketHandshakeException || err instanceof IOException) {
+          if (err instanceof UpgradeRejectedException || err instanceof IOException) {
             doneHandler.handle(Future.succeededFuture());
           } else if (count < 100) {
-            connectUntilWebSocketHandshakeException(client, count + 1, doneHandler);
+            connectUntilWebSocketReject(client, count + 1, doneHandler);
           } else {
             doneHandler.handle(Future.failedFuture(err));
           }

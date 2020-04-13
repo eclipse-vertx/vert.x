@@ -3365,13 +3365,10 @@ public class NetTest extends VertxTestBase {
         .setPemKeyCertOptions(new PemKeyCertOptions().setKeyPath("invalid")))
       .connectHandler(c -> {
     });
-    try {
-      server.listen(10000, r -> fail());
-    } catch (Exception ignore) {
-      // Expected
-    }
-    server.close(onSuccess(v -> {
-      testComplete();
+    server.listen(10000, onFailure(err -> {
+      server.close(onSuccess(v -> {
+        testComplete();
+      }));
     }));
     await();
   }

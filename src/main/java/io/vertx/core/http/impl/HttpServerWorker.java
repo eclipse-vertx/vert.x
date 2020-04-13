@@ -14,9 +14,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoop;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
@@ -33,7 +31,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.cgbystrom.FlashPolicyHandler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.HandlerHolder;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.SslHandshakeCompletionHandler;
 import io.vertx.core.net.impl.VertxHandler;
@@ -41,46 +38,49 @@ import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
-import java.util.function.Function;
 
 /**
  * A channel initializer that will takes care of configuring a blank channel for HTTP
  * to Vert.x {@link io.vertx.core.http.HttpServerRequest}.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- */public class HttpServerChannelInitializer extends ChannelInitializer<Channel> {
+ */
+public class HttpServerWorker implements Handler<Channel> {
 
+  final ContextInternal context;
   private final VertxInternal vertx;
+  private final HttpServerImpl server;
   private final SSLHelper sslHelper;
   private final HttpServerOptions options;
   private final String serverOrigin;
-  private final HttpServerMetrics metrics;
   private final boolean logEnabled;
   private final boolean disableH2C;
-  private final Function<EventLoop, HandlerHolder<? extends Handler<HttpServerConnection>>> connectionHandler;
-  private final Function<EventLoop, HandlerHolder<? extends Handler<Throwable>>> errorHandler;
+  final Handler<HttpServerConnection> connectionHandler;
+  private final Handler<Throwable> exceptionHandler;
 
-  public HttpServerChannelInitializer(VertxInternal vertx,
-                                      SSLHelper sslHelper,
-                                      HttpServerOptions options,
-                                      String serverOrigin,
-                                      HttpServerMetrics metrics,
-                                      boolean disableH2C,
-                                      Function<EventLoop, HandlerHolder<? extends Handler<HttpServerConnection>>> connectionHandler,
-                                      Function<EventLoop, HandlerHolder<? extends Handler<Throwable>>> errorHandler) {
+  public HttpServerWorker(ContextInternal context,
+                          HttpServerImpl server,
+                          VertxInternal vertx,
+                          SSLHelper sslHelper,
+                          HttpServerOptions options,
+                          String serverOrigin,
+                          boolean disableH2C,
+                          Handler<HttpServerConnection> connectionHandler,
+                          Handler<Throwable> exceptionHandler) {
+    this.context = context;
+    this.server = server;
     this.vertx = vertx;
     this.sslHelper = sslHelper;
     this.options = options;
     this.serverOrigin = serverOrigin;
-    this.metrics = metrics;
     this.logEnabled = options.getLogActivity();
     this.disableH2C = disableH2C;
     this.connectionHandler = connectionHandler;
-    this.errorHandler = errorHandler;
+    this.exceptionHandler = exceptionHandler;
   }
 
   @Override
-  protected void initChannel(Channel ch) {
+  public void handle(Channel ch) {
     if (HAProxyMessageCompletionHandler.canUseProxyProtocol(options.isUseProxyProtocol())) {
       IdleStateHandler idle;
       io.netty.util.concurrent.Promise<Channel> p = ch.eventLoop().newPromise();
@@ -99,14 +99,13 @@ import java.util.function.Function;
           configurePipeline(future.getNow());
         } else {
           //No need to close the channel.HAProxyMessageDecoder already did
-          handleException(ch, future.cause());
+          handleException(future.cause());
         }
       });
     } else {
       configurePipeline(ch);
     }
   }
-
 
   private void configurePipeline(Channel ch) {
     ChannelPipeline pipeline = ch.pipeline();
@@ -132,7 +131,7 @@ import java.util.function.Function;
             handleHttp1(ch);
           }
         } else {
-          handleException(ch, ar.cause());
+          handleException(ar.cause());
         }
       }));
     } else {
@@ -172,27 +171,19 @@ import java.util.function.Function;
           @Override
           public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             super.exceptionCaught(ctx, cause);
-            handleException(ch, cause);
+            handleException(cause);
           }
         });
       }
     }
   }
 
-  private void handleException(Channel ch, Throwable cause) {
-    HandlerHolder<? extends Handler<Throwable>> holder = errorHandler.apply(ch.eventLoop());
-    if (holder != null) {
-      holder.context.dispatch(cause, holder.handler);
-    }
+  private void handleException(Throwable cause) {
+    context.dispatch(cause, exceptionHandler);
   }
 
   private void handleHttp1(Channel ch) {
-    HandlerHolder<? extends Handler<HttpServerConnection>> holder = connectionHandler.apply(ch.eventLoop());
-    if (holder == null) {
-      sendServiceUnavailable(ch);
-      return;
-    }
-    configureHttp1OrH2C(ch.pipeline(), holder);
+    configureHttp1OrH2C(ch.pipeline());
   }
 
   private void sendServiceUnavailable(Channel ch) {
@@ -204,23 +195,24 @@ import java.util.function.Function;
   }
 
   private void handleHttp2(Channel ch) {
-    HandlerHolder<? extends Handler<HttpServerConnection>> holder = connectionHandler.apply(ch.eventLoop());
-    if (holder == null) {
-      ch.close();
-      return;
-    }
-    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = buildHttp2ConnectionHandler(holder.context, holder.handler);
+    VertxHttp2ConnectionHandler<Http2ServerConnection> handler = buildHttp2ConnectionHandler(context, connectionHandler);
     ch.pipeline().addLast("handler", handler);
     configureHttp2(ch.pipeline());
   }
 
   void configureHttp2(ChannelPipeline pipeline) {
+    if (!server.requestAccept()) {
+      // That should send an HTTP/2 go away
+      pipeline.channel().close();
+      return;
+    }
     if (options.getIdleTimeout() > 0) {
       pipeline.addBefore("handler", "idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
     }
   }
 
   VertxHttp2ConnectionHandler<Http2ServerConnection> buildHttp2ConnectionHandler(ContextInternal ctx, Handler<HttpServerConnection> handler_) {
+    HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
       .server(true)
       .useCompression(options.isCompressionSupported())
@@ -242,7 +234,7 @@ import java.util.function.Function;
     return handler;
   }
 
-  private void configureHttp1OrH2C(ChannelPipeline pipeline, HandlerHolder<? extends Handler<HttpServerConnection>> holder) {
+  private void configureHttp1OrH2C(ChannelPipeline pipeline) {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler());
     }
@@ -265,19 +257,24 @@ import java.util.function.Function;
       pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
     }
     if (disableH2C) {
-      configureHttp1(pipeline, holder);
+      configureHttp1(pipeline);
     } else {
-      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, holder, options.isCompressionSupported(), options.isDecompressionSupported()));
+      pipeline.addLast("h2c", new Http1xUpgradeToH2CHandler(this, options.isCompressionSupported(), options.isDecompressionSupported()));
     }
   }
 
-  void configureHttp1(ChannelPipeline pipeline, HandlerHolder<? extends Handler<HttpServerConnection>> holder) {
+  void configureHttp1(ChannelPipeline pipeline) {
+    if (!server.requestAccept()) {
+      sendServiceUnavailable(pipeline.channel());
+      return;
+    }
+    HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
-      Http1xServerConnection conn = new Http1xServerConnection(holder.context.owner(),
+      Http1xServerConnection conn = new Http1xServerConnection(context.owner(),
         sslHelper,
         options,
         chctx,
-        holder.context,
+        context,
         serverOrigin,
         metrics);
       return conn;
@@ -287,6 +284,6 @@ import java.util.function.Function;
     if (metrics != null) {
       conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
     }
-    holder.handler.handle(conn);
+    connectionHandler.handle(conn);
   }
 }

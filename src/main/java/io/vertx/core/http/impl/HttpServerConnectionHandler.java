@@ -22,17 +22,16 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 /**
- * HTTP server handlers.
+ * HTTP server connection handler.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpHandlers implements Handler<HttpServerConnection> {
+public class HttpServerConnectionHandler implements Handler<HttpServerConnection> {
 
   final HttpServerImpl server;
   final Handler<HttpServerRequest> requestHandler;
@@ -40,7 +39,7 @@ public class HttpHandlers implements Handler<HttpServerConnection> {
   final Handler<HttpConnection> connectionHandler;
   final Handler<Throwable> exceptionHandler;
 
-  public HttpHandlers(
+  public HttpServerConnectionHandler(
     HttpServerImpl server,
     Handler<HttpServerRequest> requestHandler,
     Handler<ServerWebSocket> wsHandler,
@@ -55,17 +54,13 @@ public class HttpHandlers implements Handler<HttpServerConnection> {
 
   @Override
   public void handle(HttpServerConnection conn) {
-    server.connectionMap.put(conn.channel(), (ConnectionBase) conn);
-    conn.channel().closeFuture().addListener(fut -> {
-      server.connectionMap.remove(conn.channel());
-    });
     Handler<HttpServerRequest> requestHandler = this.requestHandler;
     if (HttpServerImpl.DISABLE_WEBSOCKETS) {
       // As a performance optimisation you can set a system property to disable WebSockets altogether which avoids
       // some casting and a header check
     } else {
       if (conn instanceof Http1xServerConnection) {
-        requestHandler =  new WebSocketRequestHandler(server.metrics, this);
+        requestHandler =  new WebSocketRequestHandler(this);
         Http1xServerConnection c = (Http1xServerConnection) conn;
         initializeWebSocketExtensions(c.channelHandlerContext().pipeline());
       }
@@ -101,38 +96,5 @@ public class HttpHandlers implements Handler<HttpServerConnection> {
         extensionHandshakers.toArray(new WebSocketServerExtensionHandshaker[extensionHandshakers.size()]));
       pipeline.addBefore("handler", "webSocketExtensionHandler", extensionHandler);
     }
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    HttpHandlers that = (HttpHandlers) o;
-
-    if (!Objects.equals(requestHandler, that.requestHandler)) return false;
-    if (!Objects.equals(wsHandler, that.wsHandler)) return false;
-    if (!Objects.equals(connectionHandler, that.connectionHandler)) return false;
-    if (!Objects.equals(exceptionHandler, that.exceptionHandler)) return false;
-
-    return true;
-  }
-
-  @Override
-  public int hashCode() {
-    int result = 0;
-    if (requestHandler != null) {
-      result = 31 * result + requestHandler.hashCode();
-    }
-    if (wsHandler != null) {
-      result = 31 * result + wsHandler.hashCode();
-    }
-    if (connectionHandler != null) {
-      result = 31 * result + connectionHandler.hashCode();
-    }
-    if (exceptionHandler != null) {
-      result = 31 * result + exceptionHandler.hashCode();
-    }
-    return result;
   }
 }

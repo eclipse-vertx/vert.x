@@ -30,11 +30,9 @@ import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
  */
 public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
 
-  private final HttpServerMetrics metrics;
-  private final HttpHandlers handlers;
+  private final HttpServerConnectionHandler handlers;
 
-  WebSocketRequestHandler(HttpServerMetrics metrics, HttpHandlers handlers) {
-    this.metrics = metrics;
+  public WebSocketRequestHandler(HttpServerConnectionHandler handlers) {
     this.handlers = handlers;
   }
 
@@ -43,8 +41,14 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
     if (req.headers()
       .contains(UPGRADE, WEBSOCKET, true)
       || handlers.requestHandler == null) {
-      // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
-      handle((Http1xServerRequest) req);
+      if (handlers.server.wsAccept()) {
+        // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
+        handle((Http1xServerRequest) req);
+      } else {
+        req.response()
+          .setStatusCode(HttpUtils.SC_BAD_GATEWAY)
+          .end();
+      }
     } else {
       handlers.requestHandler.handle(req);
     }

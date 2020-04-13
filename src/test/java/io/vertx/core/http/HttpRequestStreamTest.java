@@ -68,10 +68,12 @@ public class HttpRequestStreamTest extends VertxTestBase {
       assertTrue(listenAR.succeeded());
       paused.set(true);
       httpStream.pause();
+
       netClient = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
       netClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", socketAR -> {
         assertTrue(socketAR.succeeded());
         NetSocket socket = socketAR.result();
+        socket.write("GET / HTTP/1.1\r\n\r\n");
         Buffer buffer = Buffer.buffer();
         socket.handler(buffer::appendBuffer);
         socket.closeHandler(v -> {

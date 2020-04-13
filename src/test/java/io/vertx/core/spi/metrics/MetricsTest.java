@@ -35,7 +35,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.core.Is.is;
 
@@ -737,27 +739,40 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testMulti() {
-    HttpServer s1 = vertx.createHttpServer();
-    HttpServer s2 = vertx.createHttpServer();
+    int size = 2;
+    waitFor(size);
+    client = vertx.createHttpClient();
+    List<HttpServer> servers = new ArrayList<>();
+    List<HttpServerRequest> requests = Collections.synchronizedList(new ArrayList<>());
+    BiConsumer<HttpServer, HttpServerRequest> check = (server, request) -> {
+      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      HttpServerMetric metric = metrics.getMetric(request);
+      assertNotNull(metric);
+      requests.add(request);
+      if (requests.size() == size) {
+        requests.forEach(req -> req.response().end());
+      }
+    };
+    for (int i = 0;i < size;i++) {
+      HttpServer server = vertx.createHttpServer();
+      server.requestHandler(req -> check.accept(server, req));
+      servers.add(server);
+    }
     try {
-      s1.requestHandler(req -> {
+      List<Future> collect = servers.stream().map(server -> server.listen(8080)).collect(Collectors.toList());
+      CompositeFuture
+        .all(collect)
+        .onSuccess(v -> {
+          assertEquals("Was expecting a single metric", 1, servers.stream().map(FakeMetricsBase::getMetrics).distinct().count());
+          for (int i = 0;i < 2;i++) {
+            client.get(8080, "localhost", "/", onSuccess(resp -> {
+              complete();
+            }));
+          }
       });
-      s1.listen(8080, onSuccess(r1 -> {
-        s2.requestHandler(req -> {
-          req.response().end();
-        });
-        s2.listen(8080, onSuccess(r2 -> {
-          FakeHttpServerMetrics metrics1 = FakeMetricsBase.getMetrics(r1);
-          assertNotNull(metrics1);
-          FakeHttpServerMetrics metrics2 = FakeMetricsBase.getMetrics(r2);
-          assertNotNull(metrics2);
-          testComplete();
-        }));
-      }));
       await();
     } finally {
-      s1.close();
-      s2.close();
+      servers.forEach(HttpServer::close);
     }
   }
 

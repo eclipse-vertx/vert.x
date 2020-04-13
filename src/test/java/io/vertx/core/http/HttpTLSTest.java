@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 /**
@@ -1399,29 +1400,27 @@ public abstract class HttpTLSTest extends HttpTestBase {
     HttpServer server = vertx.createHttpServer(serverOptions);
     server.requestHandler(req -> {
     });
-    try {
-      server.listen();
-      fail("Was expecting a failure");
-    } catch (VertxException e) {
-      Throwable cause = e.getCause();
-      if(expectedSuffix == null) {
-        boolean ok = expectedPossiblePrefixes.isEmpty();
-        for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
-          ok |= expectedPossiblePrefix.equals(cause.getMessage());
-        }
-        if (!ok) {
-          fail("Was expecting <" + cause.getMessage() + ">  to be equals to one of " + expectedPossiblePrefixes);
-        }
-      } else {
-        boolean ok = expectedPossiblePrefixes.isEmpty();
-        for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
-          ok |= cause.getMessage().startsWith(expectedPossiblePrefix);
-        }
-        if (!ok) {
-          fail("Was expecting e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
-        }
-        assertTrue(cause.getMessage().endsWith(expectedSuffix));
+    AtomicReference<Throwable> failure = new AtomicReference<>();
+    server.listen(onFailure(failure::set));
+    assertWaitUntil(() -> failure.get() != null);
+    Throwable cause = failure.get().getCause();
+    if(expectedSuffix == null) {
+      boolean ok = expectedPossiblePrefixes.isEmpty();
+      for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
+        ok |= expectedPossiblePrefix.equals(cause.getMessage());
       }
+      if (!ok) {
+        fail("Was expecting <" + cause.getMessage() + ">  to be equals to one of " + expectedPossiblePrefixes);
+      }
+    } else {
+      boolean ok = expectedPossiblePrefixes.isEmpty();
+      for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
+        ok |= cause.getMessage().startsWith(expectedPossiblePrefix);
+      }
+      if (!ok) {
+        fail("Was expecting e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
+      }
+      assertTrue(cause.getMessage().endsWith(expectedSuffix));
     }
   }
 
