@@ -56,6 +56,11 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
     return this;
   }
 
+  @Override
+  protected VertxHttp2ConnectionHandlerBuilder<C> gracefulShutdownTimeoutMillis(long gracefulShutdownTimeoutMillis) {
+    return super.gracefulShutdownTimeoutMillis(gracefulShutdownTimeoutMillis);
+  }
+
   /**
    * This method allows to set the compression level to be used in the http/2 connection encoder
    * (for data sent to client) when compression support is turned on (@see useCompression) and

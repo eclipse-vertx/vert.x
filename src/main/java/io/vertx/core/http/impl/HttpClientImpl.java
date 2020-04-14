@@ -11,6 +11,10 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -105,6 +109,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
 
   private final VertxInternal vertx;
+  private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   private final HttpClientOptions options;
   private final ContextInternal context;
   private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
@@ -185,7 +190,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         port = 0;
       }
       Object metric = metrics != null ? metrics.createEndpoint(host, port, maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(this, ctx, metric, options.getProtocolVersion(), key.ssl, key.peerAddr, key.serverAddr);
+      HttpChannelConnector connector = new HttpChannelConnector(this, channelGroup, ctx, metric, options.getProtocolVersion(), key.ssl, key.peerAddr, key.serverAddr);
       return new ClientHttpStreamEndpoint(metrics, metric, options.getMaxWaitQueueSize(), maxSize, host, port, ctx, connector, dispose);
     });
   }
@@ -203,7 +208,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
         port = 0;
       }
       Object metric = metrics != null ? metrics.createEndpoint(host, port, maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(this, ctx, metric, HttpVersion.HTTP_1_1, key.ssl, key.peerAddr, key.serverAddr);
+      HttpChannelConnector connector = new HttpChannelConnector(this, channelGroup, ctx, metric, HttpVersion.HTTP_1_1, key.ssl, key.peerAddr, key.serverAddr);
       return new WebSocketEndpoint(metrics, port, host, metric, maxPoolSize, connector, dispose);
     });
   }
@@ -1184,7 +1189,20 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   }
 
   @Override
-  public void close() {
+  public void close(Handler<AsyncResult<Void>> handler) {
+    ContextInternal closingCtx = vertx.getOrCreateContext();
+    close(closingCtx.promise(handler));
+  }
+
+  @Override
+  public Future<Void> close() {
+    ContextInternal closingCtx = vertx.getOrCreateContext();
+    Promise<Void> promise = closingCtx.promise();
+    close(promise);
+    return promise.future();
+  }
+
+  private void close(PromiseInternal<Void> promise) {
     synchronized (this) {
       checkClosed();
       closed = true;
@@ -1198,9 +1216,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     }
     webSocketCM.close();
     httpCM.close();
-    if (metrics != null) {
-      metrics.close();
-    }
+    ChannelGroupFuture fut = channelGroup.close();
+    fut.addListener(promise);
+    promise.future().onComplete(ar -> {
+      if (metrics != null) {
+        metrics.close();
+      }
+    });
   }
 
   @Override

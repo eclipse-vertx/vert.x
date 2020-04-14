@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -45,6 +46,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 public class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
 
   private final HttpClientImpl client;
+  private final ChannelGroup channelGroup;
   private final ContextInternal context;
   private final HttpClientOptions options;
   private final HttpClientMetrics metrics;
@@ -60,6 +62,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
   private final Object endpointMetric;
 
   public HttpChannelConnector(HttpClientImpl client,
+                              ChannelGroup channelGroup,
                               ContextInternal context,
                               Object endpointMetric,
                               HttpVersion version,
@@ -67,6 +70,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
                               SocketAddress peerAddress,
                               SocketAddress server) {
     this.client = client;
+    this.channelGroup = channelGroup;
     this.context = context;
     this.endpointMetric = endpointMetric;
     this.options = client.getOptions();
@@ -141,6 +145,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
     fut.addListener((GenericFutureListener<Future<Channel>>) res -> {
       if (res.isSuccess()) {
         Channel ch = res.getNow();
+        channelGroup.add(ch);
         if (ssl) {
           String protocol = channelProvider.applicationProtocol();
           if (useAlpn) {

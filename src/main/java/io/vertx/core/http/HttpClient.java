@@ -1380,5 +1380,11 @@ public interface HttpClient extends Measured {
    * Close the client. Closing will close down any pooled connections.
    * Clients should always be closed after use.
    */
-  void close();
+  void close(Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #close(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> close();
+
 }

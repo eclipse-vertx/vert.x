@@ -14,16 +14,21 @@ package io.vertx.core.net.impl;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GenericFutureListener;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -38,9 +43,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -59,7 +62,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
   private final VertxInternal vertx;
   private final NetClientOptions options;
   protected final SSLHelper sslHelper;
-  private final Map<Channel, NetSocketImpl> socketMap = new ConcurrentHashMap<>();
+  private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
   private final Closeable closeHook;
   private final ContextInternal creatingContext;
   private final TCPMetrics metrics;
@@ -137,19 +140,35 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     return connect(SocketAddress.inetSocketAddress(port, host), serverName, connectHandler);
   }
 
-  public void close() {
-    if (!closed) {
-      for (NetSocketImpl sock : socketMap.values()) {
-        sock.close();
-      }
-      if (creatingContext != null) {
-        creatingContext.removeCloseHook(closeHook);
-      }
-      closed = true;
+  @Override
+  public void close(Handler<AsyncResult<Void>> handler) {
+    close(vertx.getOrCreateContext().promise(handler));
+  }
+
+  @Override
+  public Future<Void> close() {
+    PromiseInternal<Void> promise = vertx.getOrCreateContext().promise();
+    close(promise);
+    return promise.future();
+  }
+
+  private void close(PromiseInternal<Void> promise) {
+    boolean closed;
+    synchronized (this) {
+      closed = this.closed;
+      this.closed = true;
+    }
+    if (closed) {
+      promise.complete();
+      return;
+    }
+    ChannelGroupFuture fut = channelGroup.close();
+    fut.addListener(promise);
+    promise.future().onComplete(ar -> {
       if (metrics != null) {
         metrics.close();
       }
-    }
+    });
   }
 
   @Override
@@ -232,20 +251,15 @@ public class NetClientImpl implements MetricsProvider, NetClient {
   }
 
   private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress) {
-
+    channelGroup.add(ch);
     initChannel(ch.pipeline());
-
     VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(vertx, ctx, remoteAddress, context, sslHelper, metrics));
     handler.addHandler(sock -> {
-      socketMap.put(ch, sock);
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       }
       sock.registerEventBusHandler();
       connectHandler.complete(sock);
-    });
-    handler.removeHandler(conn -> {
-      socketMap.remove(ch);
     });
     ch.pipeline().addLast("handler", handler);
   }

@@ -70,6 +70,7 @@ public abstract class ConnectionBase {
   private Object metric;
   private SocketAddress remoteAddress;
   private SocketAddress localAddress;
+  private Promise<Void> closePromise;
 
   // State accessed exclusively from the event loop thread
   private boolean read;
@@ -81,6 +82,17 @@ public abstract class ConnectionBase {
     this.chctx = chctx;
     this.context = context;
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
+    this.closePromise = context.promise();
+
+    // Add close handler callback
+    closePromise.future().onComplete(this::checkCloseHandler);
+  }
+
+  /**
+   * @return a promise that will be completed when the connection becomes closed
+   */
+  public Future<Void> closeFuture() {
+    return closePromise.future();
   }
 
   /**
@@ -343,15 +355,17 @@ public abstract class ConnectionBase {
     if (metrics instanceof TCPMetrics) {
       ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
     }
-    context.dispatch(null, v -> {
-      Handler<Void> handler;
-      synchronized (ConnectionBase.this) {
-        handler = closeHandler;
-      }
-      if (handler != null) {
-        handler.handle(null);
-      }
-    });
+    closePromise.complete();
+  }
+
+  private void checkCloseHandler(AsyncResult<Void> ar) {
+    Handler<Void> handler;
+    synchronized (ConnectionBase.this) {
+      handler = closeHandler;
+    }
+    if (handler != null) {
+      handler.handle(null);
+    }
   }
 
   /**

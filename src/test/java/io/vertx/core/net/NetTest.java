@@ -1022,6 +1022,40 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testClientClose() throws Exception {
+    int num = 3;
+    List<NetServer> servers = new ArrayList<>();
+    try {
+      for (int i = 0;i < num;i++) {
+        NetServer server = vertx.createNetServer();
+        server.connectHandler(so -> {
+
+        });
+        startServer(SocketAddress.inetSocketAddress(1234 + i, "localhost"), server);
+        servers.add(server);
+      }
+      NetClient client = vertx.createNetClient();
+      AtomicInteger inflight = new AtomicInteger();
+      for (int i = 0;i < num;i++) {
+        client.connect(1234 + i, "localhost", onSuccess(so -> {
+          inflight.incrementAndGet();
+          so.closeHandler(v -> {
+            inflight.decrementAndGet();
+          });
+        }));
+      }
+      waitUntil(() -> inflight.get() == 3);
+      client.close(onSuccess(v -> {
+        assertEquals(0, inflight.get());
+        testComplete();
+      }));
+    } finally {
+      servers.forEach(NetServer::close);
+    }
+    await();
+  }
+
+  @Test
   public void testClientDrainHandler() {
     pausingServer((s) -> {
       client.connect(testAddress, onSuccess(sock -> {

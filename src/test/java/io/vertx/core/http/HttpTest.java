@@ -6130,6 +6130,40 @@ public abstract class HttpTest extends HttpTestBase {
     testHAProxyProtocolIllegal(header);
   }
 
+  @Test
+  public void testClientClose() throws Exception {
+    int num = 3;
+    List<HttpServer> servers = new ArrayList<>();
+    try {
+      for (int i = 0;i < num;i++) {
+        HttpServer server = vertx.createHttpServer(createBaseServerOptions());
+        server.requestHandler(req -> {
+        });
+        startServer(SocketAddress.inetSocketAddress(DEFAULT_HTTP_PORT + i, DEFAULT_HTTP_HOST), server);
+        servers.add(server);
+      }
+      HttpClient client = vertx.createHttpClient(createBaseClientOptions());
+      AtomicInteger inflight = new AtomicInteger();
+      client.connectionHandler(conn -> {
+        inflight.incrementAndGet();
+        conn.closeHandler(v -> {
+          inflight.decrementAndGet();
+        });
+      });
+      for (int i = 0;i < num;i++) {
+        client.get(DEFAULT_HTTP_PORT + i, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI);
+      }
+      waitUntil(() -> inflight.get() == num);
+      client.close(onSuccess(v -> {
+        assertEquals(0, inflight.get());
+        testComplete();
+      }));
+    } finally {
+      servers.forEach(HttpServer::close);
+    }
+    await();
+  }
+
   private void testHAProxyProtocolIllegal(Buffer header) throws Exception {
     waitFor(2);
     HAProxy proxy = new HAProxy(testAddress, header);
