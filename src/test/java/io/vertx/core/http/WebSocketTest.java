@@ -1704,19 +1704,17 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testClosingServerClosesWebSocketStreamEndHandler() {
+    waitFor(2);
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     ReadStream<ServerWebSocket> stream = server.webSocketStream();
-    AtomicBoolean closed = new AtomicBoolean();
-    stream.endHandler(v -> closed.set(true));
+    stream.endHandler(v -> complete());
     stream.handler(ws -> {
     });
     server.listen(ar -> {
       assertTrue(ar.succeeded());
-      assertFalse(closed.get());
       server.close(v -> {
         assertTrue(ar.succeeded());
-        assertTrue(closed.get());
-        testComplete();
+        complete();
       });
     });
     await();

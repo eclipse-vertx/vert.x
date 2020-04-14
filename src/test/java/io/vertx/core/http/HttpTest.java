@@ -6132,6 +6132,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientClose() throws Exception {
+    AtomicInteger inflight = new AtomicInteger();
     int num = 3;
     List<HttpServer> servers = new ArrayList<>();
     try {
@@ -6143,7 +6144,6 @@ public abstract class HttpTest extends HttpTestBase {
         servers.add(server);
       }
       HttpClient client = vertx.createHttpClient(createBaseClientOptions());
-      AtomicInteger inflight = new AtomicInteger();
       client.connectionHandler(conn -> {
         inflight.incrementAndGet();
         conn.closeHandler(v -> {
@@ -6153,15 +6153,16 @@ public abstract class HttpTest extends HttpTestBase {
       for (int i = 0;i < num;i++) {
         client.get(DEFAULT_HTTP_PORT + i, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI);
       }
-      waitUntil(() -> inflight.get() == num);
+      assertWaitUntil(() -> inflight.get() == num);
+      CountDownLatch latch = new CountDownLatch(1);
       client.close(onSuccess(v -> {
-        assertEquals(0, inflight.get());
-        testComplete();
+        latch.countDown();
       }));
+      awaitLatch(latch);
+      assertWaitUntil(() -> inflight.get() == 0);
     } finally {
       servers.forEach(HttpServer::close);
     }
-    await();
   }
 
   private void testHAProxyProtocolIllegal(Buffer header) throws Exception {
