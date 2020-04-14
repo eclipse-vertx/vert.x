@@ -1044,15 +1044,14 @@ public class NetTest extends VertxTestBase {
           });
         }));
       }
-      waitUntil(() -> inflight.get() == 3);
-      client.close(onSuccess(v -> {
-        assertEquals(0, inflight.get());
-        testComplete();
-      }));
+      assertWaitUntil(() -> inflight.get() == 3);
+      CountDownLatch latch = new CountDownLatch(1);
+      client.close(onSuccess(v -> latch.countDown()));
+      awaitLatch(latch);
+      assertWaitUntil(() -> inflight.get() == 0);
     } finally {
       servers.forEach(NetServer::close);
     }
-    await();
   }
 
   @Test
