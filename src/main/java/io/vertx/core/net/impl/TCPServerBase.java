@@ -103,7 +103,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       if (shared == null || actualPort == 0) { // Wildcard port will imply a new actual server each time
         servers = new HashSet<>();
         servers.add(this);
-        channelBalancer = new ServerChannelLoadBalancer();
+        channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
         channelBalancer.addWorker(eventLoop, worker);
 
         ServerBootstrap bootstrap = new ServerBootstrap();

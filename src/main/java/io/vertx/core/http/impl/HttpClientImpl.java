@@ -109,7 +109,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
 
 
   private final VertxInternal vertx;
-  private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+  private final ChannelGroup channelGroup;
   private final HttpClientOptions options;
   private final ContextInternal context;
   private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
@@ -129,6 +129,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     this.vertx = vertx;
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
+    this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
       switch (options.getProtocolVersion()) {

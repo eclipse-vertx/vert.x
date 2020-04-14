@@ -62,7 +62,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
   private final VertxInternal vertx;
   private final NetClientOptions options;
   protected final SSLHelper sslHelper;
-  private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+  private final ChannelGroup channelGroup;
   private final Closeable closeHook;
   private final ContextInternal creatingContext;
   private final TCPMetrics metrics;
@@ -74,6 +74,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, boolean useCreatingContext) {
     this.vertx = vertx;
+    this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.closeHook = completionHandler -> {

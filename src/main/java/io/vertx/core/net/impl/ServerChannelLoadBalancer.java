@@ -15,7 +15,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoop;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.util.concurrent.GlobalEventExecutor;
+import io.netty.util.concurrent.EventExecutor;
 import io.vertx.core.Handler;
 
 import java.util.List;
@@ -32,14 +32,15 @@ class ServerChannelLoadBalancer extends ChannelInitializer<Channel> {
 
   private final VertxEventLoopGroup workers;
   private final ConcurrentMap<EventLoop, WorkerList> workerMap = new ConcurrentHashMap<>();
-  private final ChannelGroup channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+  private final ChannelGroup channelGroup;
 
   // We maintain a separate hasHandlers variable so we can implement hasHandlers() efficiently
   // As it is called for every HTTP message received
   private volatile boolean hasHandlers;
 
-  ServerChannelLoadBalancer() {
+  ServerChannelLoadBalancer(EventExecutor executor) {
     this.workers = new VertxEventLoopGroup();
+    this.channelGroup = new DefaultChannelGroup(executor);
   }
 
   public VertxEventLoopGroup workers() {
