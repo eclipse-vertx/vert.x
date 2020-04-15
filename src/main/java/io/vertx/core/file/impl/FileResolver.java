@@ -11,6 +11,7 @@
 
 package io.vertx.core.file.impl;
 
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.file.FileSystemOptions;
 
@@ -27,6 +28,7 @@ import java.util.Enumeration;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -48,6 +50,36 @@ import static io.vertx.core.net.impl.URIDecoder.*;
  * @author <a href="https://github.com/rworsnop/">Rob Worsnop</a>
  */
 public class FileResolver {
+
+  /**
+   * Predicate for checking validity of cache path.
+   */
+  private static final IntPredicate CACHE_PATH_CHECKER;
+
+  static {
+    if (PlatformDependent.isWindows()) {
+      CACHE_PATH_CHECKER = c -> {
+        if (c < 33) {
+          return false;
+        } else {
+          switch (c) {
+            case 34:
+            case 42:
+            case 58:
+            case 60:
+            case 62:
+            case 63:
+            case 124:
+              return false;
+            default:
+              return true;
+          }
+        }
+      };
+    } else {
+      CACHE_PATH_CHECKER = c -> c != '\u0000';
+    }
+  }
 
   public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
@@ -130,19 +162,43 @@ public class FileResolver {
         //been read works.
         String parentFileName = file.getParent();
         if (parentFileName != null) {
-          URL directoryContents = cl.getResource(parentFileName);
+          URL directoryContents = getValidClassLoaderResource(cl, parentFileName);
           if (directoryContents != null) {
             unpackUrlResource(directoryContents, parentFileName, cl, true);
           }
         }
 
-        URL url = cl.getResource(fileName);
+        URL url = getValidClassLoaderResource(cl, fileName);
         if (url != null) {
           return unpackUrlResource(url, fileName, cl, false);
         }
       }
     }
     return file;
+  }
+
+  private static boolean isValidCachePath(String fileName) {
+    int len = fileName.length();
+    for (int i = 0;i < len;i++) {
+      char c = fileName.charAt(i);
+      if (!CACHE_PATH_CHECKER.test(c)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Get a class loader resource that can unpack to a valid cache path.
+   *
+   * Some valid entries are avoided purposely when we cannot create the corresponding file in the file cache.
+   */
+  private static URL getValidClassLoaderResource(ClassLoader cl, String fileName) {
+    URL resource = cl.getResource(fileName);
+    if (resource != null && !isValidCachePath(fileName)) {
+      return null;
+    }
+    return resource;
   }
 
   private File unpackUrlResource(URL url, String fileName, ClassLoader cl, boolean isDir) {
@@ -184,7 +240,7 @@ public class FileResolver {
       String[] listing = resource.list();
       for (String file: listing) {
         String subResource = fileName + "/" + file;
-        URL url2 = cl.getResource(subResource);
+        URL url2 = getValidClassLoaderResource(cl, subResource);
         unpackFromFileURL(url2, subResource, cl);
       }
     }
@@ -270,7 +326,7 @@ public class FileResolver {
    */
   private boolean isBundleUrlDirectory(URL url) {
     return url.toExternalForm().endsWith("/") ||
-      getClassLoader().getResource(url.getPath().substring(1) + "/") != null;
+      getValidClassLoaderResource(getClassLoader(), url.getPath().substring(1) + "/") != null;
   }
 
   /**
