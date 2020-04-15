@@ -11,14 +11,10 @@
 
 package io.vertx.core.file;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
 
-import org.junit.Test;
-
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -70,39 +66,6 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
       } finally {
         thread.setContextClassLoader(prev);
       }
-    }
-  }
-
-  @Ignore
-  @Test
-  public void testResolveAbsoluteFile() throws Exception {
-    File target = new File("target");
-    File folder = Files.createTempDirectory(target.toPath(), "testResolveAbsoluteFile").toFile();
-    File f = new File(folder, "child.txt");
-    Files.write(f.toPath(), "the_child".getBytes());
-    File notFound = new File(folder, "not_found");
-    Thread thread = Thread.currentThread();
-    ClassLoader prev = thread.getContextClassLoader();
-    ClassLoader next = new URLClassLoader(new URL[0], prev) {
-      @Override
-      public URL getResource(String name) {
-        File f = new File(name);
-        if (f.exists()) {
-          try {
-            return f.toURI().toURL();
-          } catch (MalformedURLException e) {
-            fail(e);
-          }
-        }
-        return super.getResource(name);
-      }
-    };
-    thread.setContextClassLoader(next);
-    try {
-      File file = resolver.resolveFile(notFound.getAbsolutePath());
-      assertFalse(file.exists());
-    } finally {
-      thread.setContextClassLoader(prev);
     }
   }
 }
