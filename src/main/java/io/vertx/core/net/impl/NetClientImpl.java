@@ -74,7 +74,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, boolean useCreatingContext) {
     this.vertx = vertx;
-    this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
+    this.channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.closeHook = completionHandler -> {
@@ -277,7 +277,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     // Make sure this gets cleaned up if there are no more references to it
     // so as not to leave connections and resources dangling until the system is shutdown
     // which could make the JVM run out of file handles.
-    close();
+    close((PromiseInternal<Void>) Promise.<Void>promise());
     super.finalize();
   }
 }

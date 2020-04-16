@@ -129,7 +129,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     this.vertx = vertx;
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
-    this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
+    this.channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
       switch (options.getProtocolVersion()) {
@@ -1349,7 +1349,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     // Make sure this gets cleaned up if there are no more references to it
     // so as not to leave connections and resources dangling until the system is shutdown
     // which could make the JVM run out of file handles.
-    close();
+    close((PromiseInternal<Void>) Promise.<Void>promise());
     super.finalize();
   }
 }
