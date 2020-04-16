@@ -4266,7 +4266,9 @@ public abstract class HttpTest extends HttpTestBase {
       complete();
     });
     startServer(server2);
+    Context ctx = vertx.getOrCreateContext();
     client.redirectHandler(resp -> {
+      assertEquals(ctx, Vertx.currentContext());
       Promise<HttpClientRequest> fut = Promise.promise();
       vertx.setTimer(25, id -> {
         HttpClientRequest req = client.request(new RequestOptions().setAbsoluteURI(scheme + "://localhost:" + port + "/custom"));
@@ -4276,15 +4278,17 @@ public abstract class HttpTest extends HttpTestBase {
       });
       return fut.future();
     });
-    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-      .onComplete(onSuccess(resp -> {
-        assertEquals(scheme + "://localhost:" + port + "/custom", resp.request().absoluteURI());
-        complete();
-      }))
-      .setFollowRedirects(true)
-      .putHeader("foo", "foo_value")
-      .setAuthority("localhost:" + options.getPort())
-      .end();
+    ctx.runOnContext(v -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+        .onComplete(onSuccess(resp -> {
+          assertEquals(scheme + "://localhost:" + port + "/custom", resp.request().absoluteURI());
+          complete();
+        }))
+        .setFollowRedirects(true)
+        .putHeader("foo", "foo_value")
+        .setAuthority("localhost:" + options.getPort())
+        .end();
+    });
     await();
   }
 
