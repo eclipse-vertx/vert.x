@@ -74,17 +74,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * The default keep alive timeout for HTTP/1.1 connection can send = 60 seconds
    */
-  public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 60;
+  public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = -1;
 
   /**
-   *  Default active connection time to live option disabled.
+   *  Default keep alive time to live. -1 represents that it is disabled. Connection will never drop if active.
    */
-  public static final boolean DEFAULT_IS_ACTIVE_CONNECTION_TTL = false;
-
-  /**
-   *  Default active connection time to live. Connection will drop in 100 sec even if it is in use.
-   */
-  public static final int DEFAULT_ACTIVE_CONNECTION_TTL = 100;
+  public static final int DEFAULT_KEEP_ALIVE_TTL = -1;
 
   /**
    * Default value of whether the client will attempt to use compression = {@code false}
@@ -206,8 +201,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int maxPoolSize;
   private boolean keepAlive;
   private int keepAliveTimeout;
-  private boolean isActiveConnectionTTL;
-  private int activeConnectionTTL;
+  private int keepAliveTTL;
   private int pipeliningLimit;
   private boolean pipelining;
   private int http2MaxPoolSize;
@@ -260,8 +254,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.maxPoolSize = other.getMaxPoolSize();
     this.keepAlive = other.isKeepAlive();
     this.keepAliveTimeout = other.getKeepAliveTimeout();
-    this.isActiveConnectionTTL = other.isActiveConnectionTTL();
-    this.activeConnectionTTL = other.getActiveConnectionTTL();
+    this.keepAliveTTL = other.getKeepAliveTTL();
     this.pipelining = other.isPipelining();
     this.pipeliningLimit = other.getPipeliningLimit();
     this.http2MaxPoolSize = other.getHttp2MaxPoolSize();
@@ -320,8 +313,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     maxPoolSize = DEFAULT_MAX_POOL_SIZE;
     keepAlive = DEFAULT_KEEP_ALIVE;
     keepAliveTimeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
-    isActiveConnectionTTL = DEFAULT_IS_ACTIVE_CONNECTION_TTL;
-    activeConnectionTTL = DEFAULT_ACTIVE_CONNECTION_TTL;
+    keepAliveTTL = DEFAULT_KEEP_ALIVE_TTL;
     pipelining = DEFAULT_PIPELINING;
     pipeliningLimit = DEFAULT_PIPELINING_LIMIT;
     http2MultiplexingLimit = DEFAULT_HTTP2_MULTIPLEXING_LIMIT;
@@ -705,26 +697,15 @@ public class HttpClientOptions extends ClientOptionsBase {
    *
    * @return {@code true} if enabled
    */
-  public boolean isActiveConnectionTTL() {
-    return isActiveConnectionTTL;
-  }
-
-  /**
-   * Set whether active connection ttl is enabled on the client
-   *
-   * @param isActiveConnectionTTL {@code true} if enabled
-   * @return a reference to this, so the API can be used fluently
-   */
-  public HttpClientOptions setIsActiveConnectionTTL(boolean isActiveConnectionTTL) {
-    this.isActiveConnectionTTL = isActiveConnectionTTL;
-    return this;
+  public boolean isKeepAliveTTLEnabled() {
+    return keepAliveTTL != -1;
   }
 
   /**
    * @return the active connection ttl value in seconds for HTTP/1.x connections
    */
-  public int getActiveConnectionTTL() {
-    return activeConnectionTTL;
+  public int getKeepAliveTTL() {
+    return keepAliveTTL;
   }
 
   /**
@@ -732,14 +713,11 @@ public class HttpClientOptions extends ClientOptionsBase {
    * <p/>
    * This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
    *
-   * @param activeConnectionTTL the active connection ttl, in seconds
+   * @param keepAliveTTL the active connection ttl, in seconds. -1 is default ie this option is disabled and will never drop active connections.
    * @return a reference to this, so the API can be used fluently
    */
-  public HttpClientOptions setActiveConnectionTTL(int activeConnectionTTL) {
-    if (activeConnectionTTL < 0) {
-      throw new IllegalArgumentException("activeConnectionTTL must be >= 0");
-    }
-    this.activeConnectionTTL = activeConnectionTTL;
+  public HttpClientOptions setKeepAliveTTL(int keepAliveTTL) {
+    this.keepAliveTTL = keepAliveTTL;
     return this;
   }
 

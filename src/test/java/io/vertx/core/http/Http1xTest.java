@@ -104,10 +104,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setTcpKeepAlive(!tcpKeepAlive));
     assertEquals(!tcpKeepAlive, options.isTcpKeepAlive());
 
-    boolean activeConnectionTTL = false;
-    assertEquals(activeConnectionTTL, options.isActiveConnectionTTL());
-    assertEquals(options, options.setIsActiveConnectionTTL(!activeConnectionTTL));
-    assertEquals(!activeConnectionTTL, options.isActiveConnectionTTL());
+    boolean isKeepAliveTTLEnabled = false;
+    assertEquals(isKeepAliveTTLEnabled, options.isKeepAliveTTLEnabled());
+    assertEquals(options, options.setKeepAliveTTL(10));
+    assertEquals(!isKeepAliveTTLEnabled, options.isKeepAliveTTLEnabled());
 
     int soLinger = -1;
     assertEquals(soLinger, options.getSoLinger());
@@ -156,10 +156,6 @@ public class Http1xTest extends HttpTest {
     assertTrue(options.isKeepAlive());
     assertEquals(options, options.setKeepAlive(false));
     assertFalse(options.isKeepAlive());
-
-    assertTrue(options.isActiveConnectionTTL());
-    assertEquals(options, options.setIsActiveConnectionTTL(false));
-    assertFalse(options.isActiveConnectionTTL());
 
     assertFalse(options.isPipelining());
     assertEquals(options, options.setPipelining(true));
@@ -466,8 +462,7 @@ public class Http1xTest extends HttpTest {
     boolean sendUnmaskedFrame = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
-    boolean isActiveConnectionTTL = rand.nextBoolean();
-    int activeConnectionTTL = TestUtils.randomPositiveInt();
+    int keepAliveTTL = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
     options.setReceiveBufferSize(receiverBufferSize);
@@ -488,8 +483,7 @@ public class Http1xTest extends HttpTest {
     options.setVerifyHost(verifyHost);
     options.setMaxPoolSize(maxPoolSize);
     options.setKeepAlive(keepAlive);
-    options.setIsActiveConnectionTTL(isActiveConnectionTTL);
-    options.setActiveConnectionTTL(activeConnectionTTL);
+    options.setKeepAliveTTL(keepAliveTTL);
     options.setPipelining(pipelining);
     options.setPipeliningLimit(pipeliningLimit);
     options.setHttp2MaxPoolSize(http2MaxPoolSize);

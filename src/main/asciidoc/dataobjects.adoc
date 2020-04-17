@@ -614,11 +614,6 @@ Set the  HTTP/2 setting
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[activeConnectionTTL]]`@activeConnectionTTL`|`Number (int)`|+++
-Set the active connection ttl for HTTP/1.x, in seconds.
- <p/>
- This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
-+++
 |[[alpnVersions]]`@alpnVersions`|`Array of link:enums.html#HttpVersion[HttpVersion]`|+++
 Set the list of protocol versions to provide to the server during the Application-Layer Protocol Negotiation.
  When the list is empty, the client provides a best effort list according to link:
@@ -692,11 +687,16 @@ Set the idle timeout, default time unit is seconds. Zero means don't timeout.
 |[[idleTimeoutUnit]]`@idleTimeoutUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the idle timeout unit. If not specified, default is seconds.
 +++
-|[[isActiveConnectionTTL]]`@isActiveConnectionTTL`|`Boolean`|+++
-Set whether active connection ttl is enabled on the client
-+++
 |[[keepAlive]]`@keepAlive`|`Boolean`|+++
 Set whether keep alive is enabled on the client
++++
+|[[keepAliveTTL]]`@keepAliveTTL`|`Number (int)`|+++
+Set the active connection ttl for HTTP/1.x, in seconds.
+ <p/>
+ This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
++++
+|[[keepAliveTTLEnabled]]`@keepAliveTTLEnabled`|`Boolean`|+++
+Is active connection ttl enabled on the client?
 +++
 |[[keepAliveTimeout]]`@keepAliveTimeout`|`Number (int)`|+++
 Set the keep alive timeout for HTTP/1.x, in seconds.
