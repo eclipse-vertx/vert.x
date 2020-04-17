@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
@@ -697,6 +698,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    *
    * @return {@code true} if enabled
    */
+  @GenIgnore
   public boolean isKeepAliveTTLEnabled() {
     return keepAliveTTL != -1;
   }
