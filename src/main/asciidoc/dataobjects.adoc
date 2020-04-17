@@ -695,9 +695,6 @@ Set the active connection ttl for HTTP/1.x, in seconds.
  <p/>
  This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
 +++
-|[[keepAliveTTLEnabled]]`@keepAliveTTLEnabled`|`Boolean`|+++
-Is active connection ttl enabled on the client?
-+++
 |[[keepAliveTimeout]]`@keepAliveTimeout`|`Number (int)`|+++
 Set the keep alive timeout for HTTP/1.x, in seconds.
  <p/>
