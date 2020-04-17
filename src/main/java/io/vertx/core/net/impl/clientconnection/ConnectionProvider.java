@@ -39,6 +39,16 @@ public interface ConnectionProvider<C> {
   void init(C conn);
 
   /**
+   * Check the connection validity
+   *
+   * @param conn the connection
+   * @return {@code true} when connection is still valid
+   */
+  default boolean isValid(C conn) {
+    return true;
+  }
+
+  /**
    * Close a connection.
    *
    * @param conn the connection

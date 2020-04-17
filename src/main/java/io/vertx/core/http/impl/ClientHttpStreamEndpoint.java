@@ -16,14 +16,10 @@ import io.vertx.core.net.impl.clientconnection.Pool;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
-import java.util.function.LongSupplier;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 class ClientHttpStreamEndpoint extends ClientHttpEndpointBase {
-
-  private static final LongSupplier CLOCK = System::currentTimeMillis;
 
   private final Pool<HttpClientConnection> pool;
 
@@ -39,7 +35,7 @@ class ClientHttpStreamEndpoint extends ClientHttpEndpointBase {
     super(metrics, port, host, metric, dispose);
     this.pool = new Pool<>(
       ctx,
-      connector, CLOCK,
+      connector,
       queueMaxSize,
       connector.weight(),
       maxSize,

@@ -60,7 +60,7 @@ class WebSocketEndpoint extends ClientHttpEndpointBase {
       }
 
       @Override
-      public void onRecycle(long expirationTimestamp) {
+      public void onRecycle() {
       }
 
       @Override

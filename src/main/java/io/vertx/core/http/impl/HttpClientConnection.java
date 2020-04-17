@@ -36,6 +36,8 @@ public interface HttpClientConnection extends HttpConnection {
 
   ContextInternal getContext();
 
+  boolean isValid();
+
   Object metric();
 
 }

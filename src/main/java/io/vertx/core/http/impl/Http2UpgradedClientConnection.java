@@ -475,6 +475,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
+  public boolean isValid() {
+    return current.isValid();
+  }
+
+  @Override
   public String indicatedServerName() {
     return current.indicatedServerName();
   }

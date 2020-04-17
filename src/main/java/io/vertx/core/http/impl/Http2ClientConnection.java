@@ -46,6 +46,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private final HttpClientImpl client;
   private final HttpClientMetrics metrics;
   private final Object queueMetric;
+  private long expirationTimestamp;
 
   Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
                                Object queueMetric,
@@ -133,7 +134,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private void recycle() {
     int timeout = client.getOptions().getHttp2KeepAliveTimeout();
     long expired = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
-    listener.onRecycle(expired);
+    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
+    listener.onRecycle();
+  }
+
+  @Override
+  public boolean isValid() {
+    return expirationTimestamp > 0 && System.currentTimeMillis() <= expirationTimestamp;
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
