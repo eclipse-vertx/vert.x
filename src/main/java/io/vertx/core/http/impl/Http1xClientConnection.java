@@ -900,7 +900,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
   @Override
   public boolean isValid() {
-    return expirationTimestamp > 0 && System.currentTimeMillis() <= expirationTimestamp;
+    return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
   }
 
   private void recycle() {

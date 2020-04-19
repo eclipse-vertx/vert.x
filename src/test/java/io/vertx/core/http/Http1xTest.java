@@ -4005,14 +4005,6 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testKeepAliveTimeout() throws Exception {
-    server.requestHandler(req -> {
-      req.response().end();
-    });
-    testKeepAliveTimeout(new HttpClientOptions().setMaxPoolSize(1).setKeepAliveTimeout(3), 1);
-  }
-
-  @Test
   public void testKeepAliveTimeoutHeader() throws Exception {
     AtomicBoolean sent = new AtomicBoolean();
     server.requestHandler(req -> {
@@ -4051,61 +4043,6 @@ public class Http1xTest extends HttpTest {
       resp.end();
     });
     testKeepAliveTimeout(new HttpClientOptions().setMaxPoolSize(1).setKeepAliveTimeout(30), 2);
-  }
-
-  private void testKeepAliveTimeout(HttpClientOptions options, int numReqs) throws Exception {
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(options.setPoolCleanerPeriod(1));
-    AtomicInteger respCount = new AtomicInteger();
-    for (int i = 0;i < numReqs;i++) {
-      int current = 1 + i;
-      client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
-        .onComplete(onSuccess(resp -> {
-          respCount.incrementAndGet();
-          if (current == numReqs) {
-            long now = System.currentTimeMillis();
-            resp.request().connection().closeHandler(v -> {
-              long timeout = System.currentTimeMillis() - now;
-              int delta = 500;
-              int low = 3000 - delta;
-              int high = 3000 + delta;
-              assertTrue("Expected actual close timeout " + timeout + " to be > " + low, low < timeout);
-              assertTrue("Expected actual close timeout " + timeout + " + to be < " + high, timeout < high);
-              testComplete();
-            });
-          }
-        }))
-        .end();
-    }
-    await();
-  }
-
-  @Test
-  public void testPoolNotExpiring() throws Exception {
-    AtomicLong now = new AtomicLong();
-    server.requestHandler(req -> {
-      req.response().end();
-      now.set(System.currentTimeMillis());
-      vertx.setTimer(2000, id -> {
-        req.connection().close();
-      });
-    });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(new HttpClientOptions().setPoolCleanerPeriod(0).setKeepAliveTimeout(100));
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
-      .onComplete(onSuccess(resp -> {
-        resp.endHandler(v1 -> {
-          resp.request().connection().closeHandler(v2 -> {
-            long time = System.currentTimeMillis() - now.get();
-            assertTrue("Was expecting " + time + " to be > 2000", time >= 2000);
-            testComplete();
-          });
-        });
-      }))
-      .end();
-    await();
   }
 
   @Test

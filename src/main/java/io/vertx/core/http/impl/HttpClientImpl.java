@@ -163,7 +163,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     webSocketCM = webSocketConnectionManager();
     httpCM = httpConnectionManager();
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
-    if (options.getPoolCleanerPeriod() > 0) {
+    if (options.getPoolCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       timerID = vertx.setTimer(options.getPoolCleanerPeriod(), id -> checkExpired());
     }
   }

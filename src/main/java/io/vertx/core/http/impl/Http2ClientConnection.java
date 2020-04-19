@@ -140,7 +140,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public boolean isValid() {
-    return expirationTimestamp > 0 && System.currentTimeMillis() <= expirationTimestamp;
+    return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {

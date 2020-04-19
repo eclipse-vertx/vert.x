@@ -462,31 +462,6 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testKeepAliveTimeout() throws Exception {
-    server.requestHandler(req -> {
-      req.response().end();
-    });
-    startServer(testAddress);
-    client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
-    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
-      .onComplete(onSuccess(resp -> {
-        long now = System.currentTimeMillis();
-        resp.request().connection().closeHandler(v -> {
-          long timeout = System.currentTimeMillis() - now;
-          int delta = 500;
-          int low = 3000 - delta;
-          int high = 3000 + delta;
-          assertTrue("Expected actual close timeout " + timeout + " to be > " + low, low < timeout);
-          assertTrue("Expected actual close timeout " + timeout + " to be < " + high, timeout < high);
-          testComplete();
-        });
-      }))
-      .end();
-    await();
-  }
-
-  @Test
   public void testStreamWeightAndDependency() throws Exception {
     int requestStreamDependency = 56;
     short requestStreamWeight = 43;
