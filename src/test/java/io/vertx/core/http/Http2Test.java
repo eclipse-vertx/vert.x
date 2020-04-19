@@ -27,7 +27,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -479,7 +478,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
       .onComplete(onSuccess(resp -> {
         assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
@@ -529,7 +528,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
       .onComplete(onSuccess(resp -> {
         assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
@@ -576,7 +575,7 @@ public class Http2Test extends HttpTest {
       });
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
       .onComplete( onSuccess(resp -> {
       resp.endHandler(v -> {
@@ -619,7 +618,7 @@ public class Http2Test extends HttpTest {
       });
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
       .onComplete(onSuccess(resp -> {
         assertEquals(weight, resp.request().getStreamPriority().getWeight());
@@ -648,7 +647,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
       .onComplete(onSuccess(resp -> {
         assertEquals(requestStreamWeight, resp.request().getStreamPriority().getWeight());
@@ -675,7 +674,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
       .onComplete(onSuccess(resp -> {
         assertEquals(defaultStreamWeight, resp.request().getStreamPriority().getWeight());
@@ -705,7 +704,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
       .onComplete(resp -> {
         complete();
@@ -736,7 +735,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
       .onComplete(onSuccess(resp -> {
         complete();
