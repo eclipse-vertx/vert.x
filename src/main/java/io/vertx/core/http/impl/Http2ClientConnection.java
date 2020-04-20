@@ -142,7 +142,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   @Override
   public boolean isValid() {
     long now = System.currentTimeMillis();
-    return expirationTimestamp == 0 || now <= expirationTimestamp && (!client.getOptions().isKeepAliveTTLEnabled() || client.getOptions().getKeepAliveTTL() * 1000 > now - initialTimestamp);
+    return (expirationTimestamp == 0 || now <= expirationTimestamp) &&
+      (!client.getOptions().isKeepAliveTTLEnabled() || client.getOptions().getKeepAliveTTL() * 1000 > now - initialTimestamp);
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {

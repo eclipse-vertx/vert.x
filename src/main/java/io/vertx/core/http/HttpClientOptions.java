@@ -715,7 +715,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * <p/>
    * This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
    *
-   * @param keepAliveTTL the active connection ttl, in seconds. -1 is default ie this option is disabled and will never drop active connections.
+   * @param keepAliveTTL the active connection ttl, in seconds. {@code -1} is default ie this option is disabled and will never drop active connections.
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setKeepAliveTTL(int keepAliveTTL) {
