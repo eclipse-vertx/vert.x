@@ -78,7 +78,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 60;
 
   /**
-   *  Default keep alive time to live. -1 represents that it is disabled. Connection will never drop if active.
+   *  Default keep alive time to live. {@code -1} represents that it is disabled. Connection will never drop if active.
    */
   public static final int DEFAULT_KEEP_ALIVE_TTL = -1;
 
