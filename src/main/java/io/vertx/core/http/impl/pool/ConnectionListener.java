@@ -27,9 +27,8 @@ public interface ConnectionListener<C> {
   /**
    * Recycles the connection.
    *
-   * @param expirationTimestamp the expiration timestamp or {@code 0L} to expire immediately
    */
-  void onRecycle(long expirationTimestamp);
+  void onRecycle();
 
   /**
    * Evict the connection from the pool, it will now be fully managed by the borrower.

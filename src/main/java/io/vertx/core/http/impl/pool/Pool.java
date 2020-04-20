@@ -21,7 +21,6 @@ import io.vertx.core.impl.ContextInternal;
 import java.io.File;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.LongSupplier;
 
 /**
  * The pool is a state machine that maintains a queue of waiters and a list of available connections.
@@ -56,10 +55,7 @@ import java.util.function.LongSupplier;
  *
  * <h3>Recycling a connection</h3>
  * When a connection is recycled and reaches its full capacity (i.e {@code Holder#concurrency == Holder#capacity},
- * the behavior depends on the {@link ConnectionListener#onRecycle(long)} event that releases this connection.
- * When {@code expirationTimestamp} is {@code 0L} the connection is closed, otherwise it is maintained in the pool,
- * letting the borrower define the expiration timestamp. The value is set according to the HTTP client connection
- * keep alive timeout.
+ * then it is put back in the pool so it can be borrowed again.
  *
  * <h3>Acquiring a connection</h3>
  * When a waiter wants to acquire a connection it is added to the {@link #waitersQueue} and the request
@@ -77,6 +73,11 @@ import java.util.function.LongSupplier;
  * Connection can be evicted from the pool with {@link ConnectionListener#onEvict()}, after this call, the connection
  * is fully managed by the caller. This can be used for signalling a connection close or when the connection has
  * been upgraded for an HTTP connection.
+ *
+ * <h3>Idle closing</h3>
+ * Closing idle connection can be achieved by calling {@link #closeIdle}. This will check every available connection
+ * (i.e that are not borrowed) by calling the {@link ConnectionProvider#isValid} predicate. When {@link ConnectionProvider#isValid}
+ * return {@code false} then the connection is closed.
  *
  * <h3>Pool progress</h3>
  * When the pool state is modified, an asynchronous task is executed to make the pool state progress. The pool ensures
@@ -97,14 +98,12 @@ public class Pool<C> {
     long concurrency;         // How many times we can borrow from the connection
     long capacity;            // How many times the connection is currently borrowed (0 <= capacity <= concurrency)
     long weight;              // The weight that participates in the pool weight
-    long expirationTimestamp; // The expiration timestamp when (concurrency == capacity) otherwise -1L
 
     private void init(long concurrency, C conn, long weight) {
       this.concurrency = concurrency;
       this.connection = conn;
       this.weight = weight;
       this.capacity = concurrency;
-      this.expirationTimestamp = -1L;
     }
 
     @Override
@@ -113,8 +112,8 @@ public class Pool<C> {
     }
 
     @Override
-    public void onRecycle(long expirationTimestamp) {
-      recycle(this, expirationTimestamp);
+    public void onRecycle() {
+      recycle(this);
     }
 
     @Override
@@ -134,7 +133,7 @@ public class Pool<C> {
 
     @Override
     public String toString() {
-      return "Holder[removed=" + removed + ",capacity=" + capacity + ",concurrency=" + concurrency + ",expirationTimestamp=" + expirationTimestamp + "]";
+      return "Holder[removed=" + removed + ",capacity=" + capacity + ",concurrency=" + concurrency + "]";
     }
   }
 
@@ -142,7 +141,6 @@ public class Pool<C> {
   private final ConnectionProvider<C> connector;
   private final Consumer<C> connectionAdded;
   private final Consumer<C> connectionRemoved;
-  private final LongSupplier clock;
 
   private final int queueMaxSize;                                   // the queue max size (does not include inflight waiters)
   private final Deque<Waiter<C>> waitersQueue = new ArrayDeque<>(); // The waiters pending
@@ -162,7 +160,6 @@ public class Pool<C> {
 
   public Pool(Context context,
               ConnectionProvider<C> connector,
-              LongSupplier clock,
               int queueMaxSize,
               long initialWeight,
               long maxWeight,
@@ -170,7 +167,6 @@ public class Pool<C> {
               Consumer<C> connectionAdded,
               Consumer<C> connectionRemoved,
               boolean fifo) {
-    this.clock = clock;
     this.context = (ContextInternal) context;
     this.maxWeight = maxWeight;
     this.initialWeight = initialWeight;
@@ -212,9 +208,7 @@ public class Pool<C> {
   }
 
   /**
-   * Close all unused connections with a {@code timestamp} greater than expiration timestamp.
-   *
-   * @return the number of closed connections when calling this method
+   * Close all connections returning {@code false} when {@link ConnectionProvider#isValid} is called.
    */
   public synchronized void closeIdle() {
     checkProgress();
@@ -285,7 +279,6 @@ public class Pool<C> {
         Holder conn = available.peek();
         capacity--;
         if (--conn.capacity == 0) {
-          conn.expirationTimestamp = -1L;
           available.poll();
         }
         Waiter<C> waiter = waitersQueue.poll();
@@ -300,16 +293,14 @@ public class Pool<C> {
         return () -> waiter.handler.handle(Future.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize)));
       }
     } else if (capacity > 0) {
-      long now = clock.getAsLong();
       List<Holder> expired = null;
       for (Iterator<Holder> it  = available.iterator();it.hasNext();) {
         Holder holder = it.next();
-        if (holder.capacity == holder.concurrency && (holder.expirationTimestamp == 0 || now >= holder.expirationTimestamp)) {
+        if (holder.capacity == holder.concurrency && !connector.isValid(holder.connection)) {
           it.remove();
           if (holder.capacity > 0) {
             capacity -= holder.capacity;
           }
-          holder.expirationTimestamp = -1L;
           holder.capacity = 0;
           if (expired == null) {
             expired = new ArrayList<>();
@@ -338,6 +329,29 @@ public class Pool<C> {
       // No waitersQueue and no connections - remove the ConnQueue
       closed = true;
       poolClosed.handle(null);
+    }
+  }
+
+  /**
+   * Sanity check of pool invariants.
+   *
+   * @throws IllegalStateException when an invariant is invalid
+   */
+  public synchronized void checkInvariants() {
+    int weight = 0;
+    int capacity = 0;
+    for (Holder holder : available) {
+      weight += holder.weight;
+      capacity += holder.capacity;
+      if (holder.capacity < 1) {
+        throw new IllegalStateException("Holder capacity must be > 0");
+      }
+    }
+    if (weight != this.weight) {
+      throw new IllegalStateException("Weight invariant");
+    }
+    if (capacity != this.capacity) {
+      throw new IllegalStateException("Capacity invariant");
     }
   }
 
@@ -406,28 +420,12 @@ public class Pool<C> {
     }
   }
 
-  private void recycle(Holder holder, long timestamp) {
-    if (timestamp < 0L) {
-      throw new IllegalArgumentException("Invalid timestamp");
-    }
+  private synchronized void recycle(Holder holder) {
     if (holder.removed) {
       return;
     }
-    C toClose;
-    synchronized (this) {
-      if (recycleConnection(holder, timestamp)) {
-        toClose = holder.connection;
-      } else {
-        toClose = null;
-      }
-    }
-    if (toClose != null) {
-      connector.close(holder.connection);
-    } else {
-      synchronized (this) {
-        checkProgress();
-      }
-    }
+    recycleConnection(holder);
+    checkProgress();
   }
 
   private synchronized void evicted(Holder holder) {
@@ -455,35 +453,21 @@ public class Pool<C> {
    * Recycles a connection.
    *
    * @param holder the connection to recycle
-   * @param timestamp the expiration timestamp of the connection
-   * @return {@code true} if the connection shall be closed
    */
-  private boolean recycleConnection(Holder holder, long timestamp) {
+  private void recycleConnection(Holder holder) {
     long newCapacity = holder.capacity + 1;
     if (newCapacity > holder.concurrency) {
       throw new AssertionError("Attempt to recycle a connection more than permitted");
     }
-    if (timestamp == 0L && newCapacity == holder.concurrency && capacity >= waitersQueue.size()) {
-      if (holder.capacity > 0) {
-        capacity -= holder.capacity;
-        available.remove(holder);
+    capacity++;
+    if (holder.capacity == 0) {
+      if (fifo) {
+        available.addLast(holder);
+      } else {
+        available.addFirst(holder);
       }
-      holder.expirationTimestamp = -1L;
-      holder.capacity = 0;
-      return true;
-    } else {
-      capacity++;
-      if (holder.capacity == 0) {
-        if (fifo) {
-          available.addLast(holder);
-        } else {
-          available.addFirst(holder);
-        }
-      }
-      holder.expirationTimestamp = timestamp;
-      holder.capacity++;
-      return false;
     }
+    holder.capacity++;
   }
 
   public String toString() {

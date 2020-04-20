@@ -33,8 +33,6 @@ import java.util.function.LongSupplier;
  */
 class ConnectionManager {
 
-  private static final LongSupplier CLOCK = System::currentTimeMillis;
-
   private final int maxWaitQueueSize;
   private final HttpClientMetrics metrics; // Shall be removed later combining the PoolMetrics with HttpClientMetrics
   private final HttpClientImpl client;
@@ -128,7 +126,7 @@ class ConnectionManager {
         }
         Object metric = metrics != null ? metrics.createEndpoint(host, port, maxPoolSize) : null;
         HttpChannelConnector connector = new HttpChannelConnector(client, metric, version, ssl, peerAddress, server);
-        Pool<HttpClientConnection> pool = new Pool<>(ctx, connector, CLOCK, maxWaitQueueSize, connector.weight(), maxSize,
+        Pool<HttpClientConnection> pool = new Pool<>(ctx, connector, maxWaitQueueSize, connector.weight(), maxSize,
           v -> {
             if (metrics != null) {
               metrics.closeEndpoint(host, port, metric);

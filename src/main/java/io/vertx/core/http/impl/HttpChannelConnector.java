@@ -93,6 +93,11 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
   }
 
   @Override
+  public boolean isValid(HttpClientConnection conn) {
+    return conn.isValid();
+  }
+
+  @Override
   public void connect(ConnectionListener<HttpClientConnection> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<HttpClientConnection>>> handler) {
     Promise<ConnectResult<HttpClientConnection>> promise = Promise.promise();
     promise.future().onComplete(handler);

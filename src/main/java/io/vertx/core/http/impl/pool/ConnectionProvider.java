@@ -32,6 +32,16 @@ public interface ConnectionProvider<C> {
   void connect(ConnectionListener<C> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<C>>> resultHandler);
 
   /**
+   * Check the connection validity
+   *
+   * @param conn the connection
+   * @return {@code true} when connection is still valid
+   */
+  default boolean isValid(C conn) {
+    return true;
+  }
+
+  /**
    * Close a connection.
    *
    * @param conn the connection

@@ -44,6 +44,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private final HttpClientImpl client;
   private final HttpClientMetrics metrics;
   private final Object queueMetric;
+  private long expirationTimestamp;
 
   Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
                                Object queueMetric,
@@ -134,8 +135,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private void recycle() {
     int timeout = client.getOptions().getHttp2KeepAliveTimeout();
-    long expired = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
-    listener.onRecycle(expired);
+    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
+    listener.onRecycle();
+  }
+
+  @Override
+  public boolean isValid() {
+    return expirationTimestamp > 0 && System.currentTimeMillis() <= expirationTimestamp;
   }
 
   @Override
@@ -306,7 +312,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       response.handleUnknownFrame(new HttpFrameImpl(type, flags, buff));
     }
 
-    
+
     @Override
     void handlePriorityChange(StreamPriority streamPriority) {
       if(streamPriority != null && !streamPriority.equals(priority())) {
@@ -426,7 +432,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         handlerContext.flush();
       }
     }
-    
+
     @Override
     public void writeFrame(int type, int flags, ByteBuf payload) {
       super.writeFrame(type, flags, payload);
@@ -525,7 +531,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (m == null)  {
           m = metrics.connected(conn.remoteAddress(), conn.remoteName());
           metrics.endpointConnected(queueMetric, m);
-        } 
+        }
         conn.metric(m);
       }
       long concurrency = conn.remoteSettings().getMaxConcurrentStreams();
