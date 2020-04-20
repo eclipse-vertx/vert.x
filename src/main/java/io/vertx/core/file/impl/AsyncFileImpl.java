@@ -183,6 +183,7 @@ public class AsyncFileImpl implements AsyncFile {
     Objects.requireNonNull(buffer, "buffer");
     Arguments.require(position >= 0, "position must be >= 0");
     check();
+    boolean full = writesOutstanding > lwm;
     Handler<AsyncResult<Void>> wrapped = ar -> {
       if (ar.succeeded()) {
         checkContext();
@@ -191,10 +192,19 @@ public class AsyncFileImpl implements AsyncFile {
           if (writesOutstanding == 0 && closedDeferred != null) {
             action = closedDeferred;
           } else {
-            action = this::checkDrained;
+            Handler<Void> h = drainHandler;
+            if (full && writesOutstanding <= lwm && h != null) {
+              action = () -> {
+                h.handle(null);
+              };
+            } else {
+              action = null;
+            }
           }
         }
-        action.run();
+        if (action != null) {
+          action.run();
+        }
         if (handler != null) {
           handler.handle(ar);
         }
@@ -254,7 +264,6 @@ public class AsyncFileImpl implements AsyncFile {
   public synchronized AsyncFile drainHandler(Handler<Void> handler) {
     check();
     this.drainHandler = handler;
-    checkDrained();
     return this;
   }
 
@@ -343,14 +352,6 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public synchronized long getWritePos() {
     return writePos;
-  }
-
-  private synchronized void checkDrained() {
-    if (drainHandler != null && writesOutstanding <= lwm) {
-      Handler<Void> handler = drainHandler;
-      drainHandler = null;
-      handler.handle(null);
-    }
   }
 
   private void handleException(Throwable t) {
