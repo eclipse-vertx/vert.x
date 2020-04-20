@@ -663,8 +663,13 @@ public class ConnectionPoolTest extends VertxTestBase {
     }
     assertEquals(1, mgr.closeCount());
 */
+    // This is synchronous
+    new HashSet<>(mgr.active).forEach(FakeConnection::close);
     // Check state at the end
+    assertEquals(0, mgr.size());
     mgr.pool.checkInvariants();
+    assertEquals(0, mgr.pool.weight());
+    assertEquals(0, mgr.pool.capacity());
     assertEquals(0, mgr.pool.waitersInQueue());
   }
 

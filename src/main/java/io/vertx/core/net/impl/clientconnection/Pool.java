@@ -17,7 +17,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.NoStackTraceThrowable;
 
 import java.io.File;
 import java.util.*;
@@ -56,10 +55,7 @@ import java.util.function.Consumer;
  *
  * <h3>Recycling a connection</h3>
  * When a connection is recycled and reaches its full capacity (i.e {@code Holder#concurrency == Holder#capacity},
- * the behavior depends on the {@link ConnectionListener#onRecycle()} event that releases this connection.
- * When {@code expirationTimestamp} is {@code 0L} the connection is closed, otherwise it is maintained in the pool,
- * letting the borrower define the expiration timestamp. The value is set according to the HTTP client connection
- * keep alive timeout.
+ * then it is put back in the pool so it can be borrowed again.
  *
  * <h3>Acquiring a connection</h3>
  * When a waiter wants to acquire a connection it is added to the {@link #waitersQueue} and the request
@@ -77,6 +73,11 @@ import java.util.function.Consumer;
  * Connection can be evicted from the pool with {@link ConnectionListener#onEvict()}, after this call, the connection
  * is fully managed by the caller. This can be used for signalling a connection close or when the connection has
  * been upgraded for an HTTP connection.
+ *
+ * <h3>Idle closing</h3>
+ * Closing idle connection can be achieved by calling {@link #closeIdle}. This will check every available connection
+ * (i.e that are not borrowed) by calling the {@link ConnectionProvider#isValid} predicate. When {@link ConnectionProvider#isValid}
+ * return {@code false} then the connection is closed.
  *
  * <h3>Pool progress</h3>
  * When the pool state is modified, an asynchronous task is executed to make the pool state progress. The pool ensures
@@ -200,7 +201,7 @@ public class Pool<C> {
   }
 
   /**
-   * Close all unused connections with a {@code timestamp} greater than expiration timestamp.
+   * Close all connections returning {@code false} when {@link ConnectionProvider#isValid} is called.
    */
   public synchronized void closeIdle() {
     checkProgress();
