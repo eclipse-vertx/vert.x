@@ -666,6 +666,8 @@ Set the default HTTP/2 connection window size. It overrides the initial window
 Set the keep alive timeout for HTTP/2 connections, in seconds.
  <p/>
  This value determines how long a connection remains unused in the pool before being evicted and closed.
+ <p/>
+ A timeout of <code>0</code> means there is no timeout.
 +++
 |[[http2MaxPoolSize]]`@http2MaxPoolSize`|`Number (int)`|+++
 Set the maximum pool size for HTTP/2 connections
@@ -700,7 +702,7 @@ Set the keep alive timeout for HTTP/1.x, in seconds.
  <p/>
  This value determines how long a connection remains unused in the pool before being evicted and closed.
  <p/>
- A timeout of <code>0</code> means there is no timeout and the connection can remain indefinitely in the pool.
+ A timeout of <code>0</code> means there is no timeout.
 +++
 |[[localAddress]]`@localAddress`|`String`|+++
 Set the local interface to bind for network connections. When the local address is null,

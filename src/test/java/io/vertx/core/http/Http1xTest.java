@@ -271,6 +271,10 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setHttp2KeepAliveTimeout(10));
     assertEquals(10, options.getHttp2KeepAliveTimeout());
     assertIllegalArgumentException(() -> options.setHttp2KeepAliveTimeout(-1));
+
+    assertEquals(HttpClientOptions.DEFAULT_KEEP_ALIVE_TTL, options.getKeepAliveTTL());
+    assertEquals(options, options.setKeepAliveTTL(10));
+    assertEquals(10, options.getKeepAliveTTL());
   }
 
   @Test

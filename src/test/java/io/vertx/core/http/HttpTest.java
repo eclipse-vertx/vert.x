@@ -5048,6 +5048,19 @@ public abstract class HttpTest extends HttpTestBase {
     testKeepAliveTimeout(options, 1);
   }
 
+  @Test
+  public void testKeepAliveTTL() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    HttpClientOptions options = createBaseClientOptions()
+      .setKeepAlive(true)
+      .setKeepAliveTimeout(300)
+      .setHttp2KeepAliveTimeout(300)
+      .setKeepAliveTTL(3);
+    testKeepAliveTimeout(options, 1);
+  }
+
   protected void testKeepAliveTimeout(HttpClientOptions options, int numReqs) throws Exception {
     startServer(testAddress);
     client.close();

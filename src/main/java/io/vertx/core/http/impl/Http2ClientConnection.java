@@ -46,6 +46,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private final HttpClientImpl client;
   private final HttpClientMetrics metrics;
   private final Object queueMetric;
+  private final long initialTimestamp;
   private long expirationTimestamp;
 
   Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
@@ -59,6 +60,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     this.queueMetric = queueMetric;
     this.client = client;
     this.listener = listener;
+    initialTimestamp = client.getOptions().isKeepAliveTTLEnabled() ? System.currentTimeMillis() : 0L;
   }
 
   @Override
@@ -133,14 +135,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private void recycle() {
     int timeout = client.getOptions().getHttp2KeepAliveTimeout();
-    long expired = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
     expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
     listener.onRecycle();
   }
 
   @Override
   public boolean isValid() {
-    return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
+    long now = System.currentTimeMillis();
+    return expirationTimestamp == 0 || now <= expirationTimestamp && (!client.getOptions().isKeepAliveTTLEnabled() || client.getOptions().getKeepAliveTTL() * 1000 > now - initialTimestamp);
   }
 
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {

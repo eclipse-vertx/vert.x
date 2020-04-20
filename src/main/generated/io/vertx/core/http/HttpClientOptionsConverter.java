@@ -75,11 +75,6 @@ public class HttpClientOptionsConverter {
             obj.setInitialSettings(new io.vertx.core.http.Http2Settings((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
-        case "isActiveConnectionTTL":
-          if (member.getValue() instanceof Boolean) {
-            obj.setIsActiveConnectionTTL((Boolean)member.getValue());
-          }
-          break;
         case "keepAlive":
           if (member.getValue() instanceof Boolean) {
             obj.setKeepAlive((Boolean)member.getValue());

@@ -75,7 +75,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   /**
    * The default keep alive timeout for HTTP/1.1 connection can send = 60 seconds
    */
-  public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = -1;
+  public static final int DEFAULT_KEEP_ALIVE_TIMEOUT = 60;
 
   /**
    *  Default keep alive time to live. -1 represents that it is disabled. Connection will never drop if active.
