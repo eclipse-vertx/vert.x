@@ -704,14 +704,14 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return the active connection ttl value in seconds for HTTP/1.x connections
+   * @return the active connection ttl value in seconds for HTTP connections
    */
   public int getKeepAliveTTL() {
     return keepAliveTTL;
   }
 
   /**
-   * Set the active connection ttl for HTTP/1.x, in seconds.
+   * Set the active connection ttl for HTTP request, in seconds.
    * <p/>
    * This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
    *
