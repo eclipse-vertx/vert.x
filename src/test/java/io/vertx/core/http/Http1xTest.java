@@ -104,11 +104,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(options, options.setTcpKeepAlive(!tcpKeepAlive));
     assertEquals(!tcpKeepAlive, options.isTcpKeepAlive());
 
-    boolean isKeepAliveTTLEnabled = false;
-    assertEquals(isKeepAliveTTLEnabled, options.isKeepAliveTTLEnabled());
-    assertEquals(options, options.setKeepAliveTTL(10));
-    assertEquals(!isKeepAliveTTLEnabled, options.isKeepAliveTTLEnabled());
-
     int soLinger = -1;
     assertEquals(soLinger, options.getSoLinger());
     rand = TestUtils.randomPositiveInt();
@@ -272,9 +267,12 @@ public class Http1xTest extends HttpTest {
     assertEquals(10, options.getHttp2KeepAliveTimeout());
     assertIllegalArgumentException(() -> options.setHttp2KeepAliveTimeout(-1));
 
+    boolean isKeepAliveTTLEnabled = false;
     assertEquals(HttpClientOptions.DEFAULT_KEEP_ALIVE_TTL, options.getKeepAliveTTL());
+    assertEquals(isKeepAliveTTLEnabled, options.isKeepAliveTTLEnabled());
     assertEquals(options, options.setKeepAliveTTL(10));
     assertEquals(10, options.getKeepAliveTTL());
+    assertEquals(!isKeepAliveTTLEnabled, options.isKeepAliveTTLEnabled());
   }
 
   @Test
