@@ -15,6 +15,7 @@ import io.netty.channel.Channel;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.impl.ContextInternal;
@@ -55,8 +56,13 @@ class ConnectionManager {
   }
 
   synchronized void start() {
-    long period = client.getOptions().getPoolCleanerPeriod();
-    this.timerID = period > 0 ? client.getVertx().setTimer(period, id -> checkExpired(period)) : -1;
+    HttpClientOptions options = client.getOptions();
+    long period = options.getPoolCleanerPeriod();
+    if (period > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
+      timerID = client.getVertx().setTimer(options.getPoolCleanerPeriod(), id -> checkExpired(period));
+    } else {
+      timerID = -1;
+    }
   }
 
   private synchronized void checkExpired(long period) {
