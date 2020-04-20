@@ -5067,6 +5067,7 @@ public abstract class HttpTest extends HttpTestBase {
     AtomicInteger current = new AtomicInteger();
     AtomicLong connection1CloseTimestamp = new AtomicLong();
     AtomicLong connection2StartTimestamp = new AtomicLong();
+    ArrayList<HttpConnection> connections = new ArrayList<>();
     server.requestHandler(req -> {
       current.getAndIncrement();
       if(current.get() == 2)
@@ -5083,21 +5084,24 @@ public abstract class HttpTest extends HttpTestBase {
       .setKeepAlive(true)
       .setKeepAliveTimeout(300)
       .setHttp2KeepAliveTimeout(300)
-      .setKeepAliveTTL(1);
+      .setKeepAliveTTL(1)
+      .setPoolCleanerPeriod(1);
     startServer(testAddress);
     client.close();
-    client = vertx.createHttpClient(options.setPoolCleanerPeriod(1));
-    for (int i = 0;i < numReqs; i++) {
+    client = vertx.createHttpClient(options);
+    for (int i = 0; i < numReqs; i++) {
       client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
         .onComplete(onSuccess(resp -> {
-          resp.request().connection().closeHandler(v -> {
-            if(current.get() == 1)
+          connections.add(resp.request().connection().closeHandler(v -> {
+            if(current.get() == 1) {
               connection1CloseTimestamp.set(System.currentTimeMillis());
+            }
             if (current.get() == numReqs) {
               assertTrue("Connection2 start timestamp > Connection1 end timestamp", connection2StartTimestamp.get() > connection1CloseTimestamp.get());
+              assertNotSame("Connection1 and connection2 are different physical connections", connections.get(0), connections.get(1));
               testComplete();
             }
-          });
+          }));
         }))
         .end();
     }
