@@ -5061,6 +5061,49 @@ public abstract class HttpTest extends HttpTestBase {
     testKeepAliveTimeout(options, 1);
   }
 
+  @Test
+  public void testKeepAliveTTLWith2Req() throws Exception {
+    int numReqs = 2;
+    AtomicInteger current = new AtomicInteger();
+    AtomicLong connection1CloseTimestamp = new AtomicLong();
+    AtomicLong connection2StartTimestamp = new AtomicLong();
+    server.requestHandler(req -> {
+      current.getAndIncrement();
+      if(current.get() == 2)
+        connection2StartTimestamp.set(System.currentTimeMillis());
+      try {
+        Thread.sleep(1500);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      req.response().end();
+    });
+    HttpClientOptions options = createBaseClientOptions()
+      .setMaxPoolSize(1)
+      .setKeepAlive(true)
+      .setKeepAliveTimeout(300)
+      .setHttp2KeepAliveTimeout(300)
+      .setKeepAliveTTL(1);
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(options.setPoolCleanerPeriod(1));
+    for (int i = 0;i < numReqs; i++) {
+      client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
+        .onComplete(onSuccess(resp -> {
+          resp.request().connection().closeHandler(v -> {
+            if(current.get() == 1)
+              connection1CloseTimestamp.set(System.currentTimeMillis());
+            if (current.get() == numReqs) {
+              assertTrue("Connection2 start timestamp > Connection1 end timestamp", connection2StartTimestamp.get() > connection1CloseTimestamp.get());
+              testComplete();
+            }
+          });
+        }))
+        .end();
+    }
+    await();
+  }
+
   protected void testKeepAliveTimeout(HttpClientOptions options, int numReqs) throws Exception {
     startServer(testAddress);
     client.close();
