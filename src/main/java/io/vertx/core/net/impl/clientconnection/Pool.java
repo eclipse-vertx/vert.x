@@ -266,26 +266,7 @@ public class Pool<C> {
   }
 
   private Runnable nextTask() {
-    if (waitersQueue.size() > 0) {
-      // Acquire a task that will deliver a connection
-      if (canAcquireConnection()) {
-        Holder conn = available.peek();
-        capacity--;
-        if (--conn.capacity == 0) {
-          available.poll();
-        }
-        Waiter<C> waiter = waitersQueue.poll();
-        return () -> waiter.handler.handle(Future.succeededFuture(conn.connection));
-      } else if (needToCreateConnection()) {
-        connecting++;
-        weight += initialWeight;
-        Holder holder  = new Holder();
-        return holder::connect;
-      } else if (canEvictWaiter()) {
-        Waiter<C> waiter = waitersQueue.removeLast();
-        return () -> waiter.handler.handle(Future.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize)));
-      }
-    } else if (capacity > 0) {
+    if (capacity > 0) {
       List<Holder> expired = null;
       for (Iterator<Holder> it  = available.iterator();it.hasNext();) {
         Holder holder = it.next();
@@ -308,6 +289,26 @@ public class Pool<C> {
             connector.close(holder.connection);
           });
         };
+      }
+    }
+    if (waitersQueue.size() > 0) {
+      // Acquire a task that will deliver a connection
+      if (canAcquireConnection()) {
+        Holder conn = available.peek();
+        capacity--;
+        if (--conn.capacity == 0) {
+          available.poll();
+        }
+        Waiter<C> waiter = waitersQueue.poll();
+        return () -> waiter.handler.handle(Future.succeededFuture(conn.connection));
+      } else if (needToCreateConnection()) {
+        connecting++;
+        weight += initialWeight;
+        Holder holder  = new Holder();
+        return holder::connect;
+      } else if (canEvictWaiter()) {
+        Waiter<C> waiter = waitersQueue.removeLast();
+        return () -> waiter.handler.handle(Future.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + queueMaxSize)));
       }
     }
     return null;
