@@ -693,7 +693,7 @@ Set the idle timeout unit. If not specified, default is seconds.
 Set whether keep alive is enabled on the client
 +++
 |[[keepAliveTTL]]`@keepAliveTTL`|`Number (int)`|+++
-Set the active connection ttl for HTTP/1.x, in seconds.
+Set the active connection ttl for HTTP request, in seconds.
  <p/>
  This value determines how long a connection remains even if it is being used in the pool before being evicted and closed.
 +++
