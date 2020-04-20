@@ -425,7 +425,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
@@ -474,7 +474,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
@@ -528,7 +528,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(responseStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(responseStreamDependency, resp.request().getStreamPriority().getDependency());
@@ -565,7 +565,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(requestStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(requestStreamDependency, resp.request().getStreamPriority().getDependency());
@@ -591,7 +591,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       assertEquals(defaultStreamWeight, resp.request().getStreamPriority().getWeight());
       assertEquals(defaultStreamDependency, resp.request().getStreamPriority().getDependency());
@@ -620,7 +620,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       complete();
     });
@@ -651,7 +651,7 @@ public class Http2Test extends HttpTest {
       complete();
     });
     startServer(testAddress);
-    client = vertx.createHttpClient(createBaseClientOptions().setHttp2KeepAliveTimeout(3).setPoolCleanerPeriod(1));
+    client = vertx.createHttpClient(createBaseClientOptions());
     HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       complete();
     });
