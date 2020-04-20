@@ -1825,6 +1825,30 @@ public class FileSystemTest extends VertxTestBase {
   }
 
   @Test
+  public void testDrainSetOnce() {
+    String fileName = "some-file.dat";
+    Buffer buff = TestUtils.randomBuffer(1024);
+    vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
+      file.setWriteQueueMaxSize(1024 * 4);
+      AtomicInteger times = new AtomicInteger(7);
+      file.drainHandler(v -> {
+        if (times.decrementAndGet() > 0) {
+          while (!file.writeQueueFull()) {
+            file.write(buff);
+          }
+        } else {
+          assertEquals(0, times.get());
+          testComplete();
+        }
+      });
+      while (!file.writeQueueFull()) {
+        file.write(buff);
+      }
+    }));
+    await();
+  }
+
+  @Test
   public void testResumeFileInEndHandler() throws Exception {
     Buffer expected = TestUtils.randomBuffer(10000);
     String fileName = "some-file.dat";
