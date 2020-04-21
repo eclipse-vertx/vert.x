@@ -73,6 +73,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   private StreamImpl responseInProgress;                         // The request waiting for a response
 
   private boolean close;
+  private long timerID;
+  private boolean shutdown;
   private boolean upgraded;
   private int keepAliveTimeout;
   private long expirationTimestamp;
@@ -95,6 +97,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     this.server = server;
     this.metrics = metrics;
     this.version = version;
+    this.timerID = -1L;
     this.endpointMetric = endpointMetric;
     this.keepAliveTimeout = options.getKeepAliveTimeout();
   }
@@ -374,7 +377,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       synchronized (conn) {
         if (conn.requestInProgress == this) {
           if (request == null) {
-            // Is that possible in practice ???
             conn.handleRequestEnd(true);
           } else {
             conn.close();
@@ -533,9 +535,15 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   private void checkLifecycle() {
-    if (upgraded) {
-      // Do nothing
-    } else if (close) {
+    boolean close;
+    synchronized (this) {
+      if (upgraded) {
+        // Do nothing
+        return;
+      }
+      close = this.close;
+    }
+    if (close) {
       close();
     } else {
       recycle();
@@ -781,6 +789,10 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     WebSocketImpl ws;
     List<StreamImpl> list = Collections.emptyList();
     synchronized (this) {
+      if (timerID > 0L) {
+        vertx.cancelTimer(timerID);
+        timerID = -1L;
+      }
       ws = this.ws;
       for (StreamImpl r = responseInProgress;r != null;r = r.next) {
         if (metrics != null) {
@@ -841,7 +853,39 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   private void recycle() {
-    expirationTimestamp = keepAliveTimeout == 0 ? 0L : System.currentTimeMillis() + keepAliveTimeout * 1000;
-    listener.onRecycle();
+    if (shutdown) {
+      if (requestInProgress == null && responseInProgress == null) {
+        close();
+      }
+    } else {
+      expirationTimestamp = keepAliveTimeout == 0 ? 0L : System.currentTimeMillis() + keepAliveTimeout * 1000;
+      listener.onRecycle();
+    }
+  }
+
+  @Override
+  public HttpConnection shutdown(long timeoutMs) {
+    synchronized (this) {
+      if (upgraded) {
+        throw new IllegalStateException();
+      }
+      if (shutdown) {
+        return this;
+      }
+      if (timeoutMs > 0) {
+        timerID = vertx.setTimer(timeoutMs, id -> {
+          synchronized (Http1xClientConnection.this) {
+            timerID = -1L;
+          }
+          close();
+        });
+      } else {
+        close = true;
+      }
+      shutdown = true;
+    }
+    listener.onEvict();
+    checkLifecycle();
+    return this;
   }
 }

@@ -424,11 +424,6 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpConnection shutdown() {
-    return current.shutdown();
-  }
-
-  @Override
   public HttpConnection shutdown(long timeoutMs) {
     return current.shutdown(timeoutMs);
   }
