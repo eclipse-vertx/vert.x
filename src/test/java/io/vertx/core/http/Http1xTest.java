@@ -4748,4 +4748,116 @@ public class Http1xTest extends HttpTest {
     }
     await();
   }
+
+  @Test
+  public void testClientConnectionGracefulShutdown() throws Exception {
+    int numReq = 3;
+    AtomicReference<HttpConnection> clientConnection = new AtomicReference<>();
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      if (count.getAndIncrement() == 0) {
+        clientConnection.get().shutdown();
+      }
+      req.response().end();
+    });
+    startServer(testAddress);
+    AtomicInteger responses = new AtomicInteger();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true));
+    client.connectionHandler(conn -> {
+      conn.closeHandler(v -> {
+        assertEquals(3, responses.get());
+        testComplete();
+      });
+      clientConnection.set(conn);
+    });
+    for (int i = 0;i < numReq;i++) {
+      client.request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+        responses.incrementAndGet();
+      }).end();
+    }
+    await();
+  }
+
+  @Test
+  public void testClientConnectionGracefulShutdownWhenRequestCompletedAfterResponse() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      AtomicBoolean requestEnded = new AtomicBoolean();
+      HttpClientRequest req = resp.request();
+      HttpConnection conn = req.connection();
+      conn.closeHandler(v -> {
+        assertTrue(requestEnded.get());
+        testComplete();
+      });
+      conn.shutdown();
+      resp.endHandler(v -> {
+        vertx.runOnContext(v2 -> {
+          requestEnded.set(true);
+          req.end();
+        });
+      });
+    }).setChunked(true).sendHead();
+    await();
+  }
+
+  @Test
+  public void testClientConnectionShutdownTimedOut() throws Exception {
+    AtomicReference<HttpConnection> clientConnectionRef = new AtomicReference<>();
+    int numReq = 3;
+    waitFor(numReq + 1);
+    server.requestHandler(req -> {
+      HttpConnection clientConnection = clientConnectionRef.getAndSet(null);
+      if (clientConnection != null) {
+        long now = System.currentTimeMillis();
+        clientConnection.closeHandler(v -> {
+          assertTrue(System.currentTimeMillis() - now >= 500L);
+          complete();
+        });
+        clientConnection.shutdown(500L);
+      }
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true));
+    client.connectionHandler(clientConnectionRef::set);
+    for (int i = 0;i < numReq;i++) {
+      AtomicBoolean failed = new AtomicBoolean();
+      client.request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      }).exceptionHandler(err -> {
+        if (failed.compareAndSet(false, true)) {
+          complete();
+        }
+      }).end();
+    }
+    await();
+  }
+
+  @Test
+  public void testClientConnectionShutdownNow() throws Exception {
+    AtomicReference<HttpConnection> clientConnectionRef = new AtomicReference<>();
+    waitFor(2);
+    server.requestHandler(req -> {
+      long now = System.currentTimeMillis();
+      HttpConnection clientConnection = clientConnectionRef.get();
+      clientConnection.closeHandler(v -> {
+        assertTrue(System.currentTimeMillis() - now <= 2000L);
+        complete();
+      });
+      clientConnection.shutdown(0L);
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true));
+    client.connectionHandler(clientConnectionRef::set);
+    AtomicBoolean failed = new AtomicBoolean();
+    client
+      .request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {})
+      .exceptionHandler(err -> {
+        if (failed.compareAndSet(false, true)) {
+          complete();
+        }
+      }).end();
+    await();
+  }
 }

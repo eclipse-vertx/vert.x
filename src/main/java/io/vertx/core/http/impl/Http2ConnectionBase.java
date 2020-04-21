@@ -389,11 +389,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  public HttpConnection shutdown() {
-    return shutdown(30000);
-  }
-
-  @Override
   public Http2ConnectionBase closeHandler(Handler<Void> handler) {
     return (Http2ConnectionBase) super.closeHandler(handler);
   }
