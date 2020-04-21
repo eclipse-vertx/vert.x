@@ -117,27 +117,38 @@ public interface HttpConnection {
   HttpConnection shutdownHandler(@Nullable  Handler<Void> handler);
 
   /**
-   * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current active streams
-   * are closed or after a time out of 30 seconds.
-   * <p/>
-   * This is not implemented for HTTP/1.x.
+   * Initiate a graceful connection shutdown, the connection is taken out of service and closed when all current requests
+   * are processed, otherwise after 30 seconds the connection will be closed. Client connection are immediately removed
+   * from the pool.
    *
-   * @return a reference to this, so the API can be used fluently
+   * <ul>
+   *   <li>HTTP/2 connections will send a go away frame immediately to signal the other side the connection will close</li>
+   *   <li>HTTP/1.x client connection supports this feature</li>
+   *   <li>HTTP/1.x server connections do not support this feature</li>
+   * </ul>
+   *
+   * @param handler the handler called when shutdown has completed
    */
-  @Fluent
-  HttpConnection shutdown();
+  default void shutdown(Handler<AsyncResult<Void>> handler) {
+    shutdown(30000, handler);
+  }
 
   /**
-   * Initiate a connection shutdown, a go away frame is sent and the connection is closed when all current streams
-   * will be closed or the {@code timeout} is fired.
-   * <p/>
-   * This is not implemented for HTTP/1.x.
-   *
-   * @param timeoutMs the timeout in milliseconds
-   * @return a reference to this, so the API can be used fluently
+   * Like {@link #shutdown(Handler)} but returns a {@code Future} of the asynchronous result
    */
-  @Fluent
-  HttpConnection shutdown(long timeoutMs);
+  default Future<Void> shutdown() {
+    return shutdown(30000L);
+  }
+
+  /**
+   * Like {@link #shutdown(Handler)} but with a specific {@code timeout} in milliseconds.
+   */
+  void shutdown(long timeout, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #shutdown(long, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> shutdown(long timeoutMs);
 
   /**
    * Set a close handler. The handler will get notified when the connection is closed.

@@ -4800,4 +4800,122 @@ public class Http1xTest extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testClientConnectionGracefulShutdown() throws Exception {
+    waitFor(2);
+    int numReq = 3;
+    AtomicReference<HttpConnection> clientConnection = new AtomicReference<>();
+    AtomicInteger count = new AtomicInteger();
+    server.requestHandler(req -> {
+      if (count.getAndIncrement() == 0) {
+        clientConnection
+          .get()
+          .shutdown()
+          .onComplete(onSuccess(v -> complete()));
+      }
+      req.response().end();
+    });
+    startServer(testAddress);
+    AtomicInteger responses = new AtomicInteger();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true));
+    client.connectionHandler(conn -> {
+      conn.closeHandler(v -> {
+        assertEquals(3, responses.get());
+        complete();
+      });
+      clientConnection.set(conn);
+    });
+    for (int i = 0;i < numReq;i++) {
+      client.request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
+        .onComplete(onSuccess(resp -> {
+        responses.incrementAndGet();
+      })).end();
+    }
+    await();
+  }
+
+  @Test
+  public void testClientConnectionGracefulShutdownWhenRequestCompletedAfterResponse() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+    client
+      .request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
+      .onComplete(onSuccess(resp -> {
+      AtomicBoolean requestEnded = new AtomicBoolean();
+      HttpClientRequest req = resp.request();
+      HttpConnection conn = req.connection();
+      conn.closeHandler(v -> {
+        assertTrue(requestEnded.get());
+        complete();
+      });
+      conn.shutdown().onComplete(onSuccess(v -> complete()));
+      resp.endHandler(v -> {
+        vertx.runOnContext(v2 -> {
+          requestEnded.set(true);
+          req.end();
+        });
+      });
+    })).setChunked(true).sendHead();
+    await();
+  }
+
+  @Test
+  public void testClientConnectionShutdownTimedOut() throws Exception {
+    AtomicReference<HttpConnection> clientConnectionRef = new AtomicReference<>();
+    int numReq = 3;
+    waitFor(numReq + 2);
+    server.requestHandler(req -> {
+      HttpConnection clientConnection = clientConnectionRef.getAndSet(null);
+      if (clientConnection != null) {
+        long now = System.currentTimeMillis();
+        clientConnection
+          .shutdown(500L)
+          .onComplete(onSuccess(v -> {
+            assertTrue(System.currentTimeMillis() - now >= 500L);
+            complete();
+        }));
+      }
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true));
+    client.connectionHandler(conn -> {
+      clientConnectionRef.set(conn);
+      long now = System.currentTimeMillis();
+      conn.closeHandler(v -> {
+        assertTrue(System.currentTimeMillis() - now >= 500L);
+        complete();
+      });
+    });
+    for (int i = 0;i < numReq;i++) {
+      client
+        .request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
+        .onComplete(onFailure(err -> complete())).end();
+    }
+    await();
+  }
+
+  @Test
+  public void testClientConnectionShutdownNow() throws Exception {
+    AtomicReference<HttpConnection> clientConnectionRef = new AtomicReference<>();
+    waitFor(2);
+    server.requestHandler(req -> {
+      long now = System.currentTimeMillis();
+      clientConnectionRef.get().shutdown(0L)
+        .onComplete(onSuccess(v -> {
+          assertTrue(System.currentTimeMillis() - now <= 2000L);
+          complete();
+      }));
+    });
+    startServer(testAddress);
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true));
+    client.connectionHandler(clientConnectionRef::set);
+    client
+      .request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
+      .onComplete(onFailure(err -> complete())).end();
+    await();
+  }
 }

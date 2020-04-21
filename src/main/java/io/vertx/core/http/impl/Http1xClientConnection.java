@@ -31,6 +31,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
+import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -80,6 +81,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   private Deque<Stream> requests = new ArrayDeque<>();
   private Deque<Stream> responses = new ArrayDeque<>();
   private boolean closed;
+  private boolean shutdown;
+  private long shutdownTimerID = -1L;
 
   private Handler<Object> invalidMessageHandler = INVALID_MSG_HANDLER;
   private boolean close;
@@ -88,7 +91,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   private long expirationTimestamp;
   private int seq = 1;
   private long bytesRead;
-
 
   Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
                          HttpVersion version,
@@ -816,6 +818,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
   protected void handleClosed() {
     super.handleClosed();
+    long timerID = shutdownTimerID;
+    if (timerID != -1) {
+      shutdownTimerID = -1L;
+      vertx.cancelTimer(timerID);
+    }
     closed = true;
     if (metrics != null) {
       metrics.endpointDisconnected(endpointMetric, metric());
@@ -904,7 +911,56 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   private void recycle() {
-    expirationTimestamp = keepAliveTimeout == 0 ? 0L : System.currentTimeMillis() + keepAliveTimeout * 1000;
-    listener.onRecycle();
+    if (shutdown) {
+      if (requests.isEmpty() && responses.isEmpty()) {
+        close();
+      }
+    } else {
+      expirationTimestamp = keepAliveTimeout == 0 ? 0L : System.currentTimeMillis() + keepAliveTimeout * 1000;
+      listener.onRecycle();
+    }
+  }
+
+  @Override
+  public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
+    shutdown(timeout, vertx.promise(handler));
+  }
+
+  @Override
+  public Future<Void> shutdown(long timeoutMs) {
+    PromiseInternal<Void> promise = vertx.promise();
+    shutdown(timeoutMs, promise);
+    return promise.future();
+  }
+
+  private synchronized void shutdownNow() {
+    shutdownTimerID = -1L;
+    close();
+  }
+
+  private void shutdown(long timeoutMs, PromiseInternal<Void> promise) {
+    synchronized (this) {
+      if (shutdown) {
+        promise.fail("Already shutdown");
+        return;
+      }
+      if (netSocketPromise != null) {
+        promise.fail("Connection upgraded to NetSocket");
+        return;
+      }
+      shutdown = true;
+      closeFuture().onComplete(promise);
+    }
+    listener.onEvict();
+    synchronized (this) {
+      if (!closed) {
+        if (timeoutMs > 0L) {
+          shutdownTimerID = context.setTimer(timeoutMs, id -> shutdownNow());
+        } else {
+          close = true;
+        }
+      }
+    }
+    checkLifecycle();
   }
 }
