@@ -305,8 +305,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @param key the string to return the value for
    * @return the value or null if no value for that key
-   * @throws java.lang.ClassCastException       if the value is not a String
-   * @throws java.lang.IllegalArgumentException if the value is not a legal Base64 encoded String
+   * @throws java.lang.ClassCastException       if the value is not a string
+   * @throws java.lang.IllegalArgumentException if the value is not a legal Base64 encoded string
    */
   public Buffer getBuffer(String key) {
     Objects.requireNonNull(key);
