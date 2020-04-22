@@ -298,15 +298,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
-   * Get the Buffer value with the specified key.
+   * Get the {@code Buffer} value with the specified key.
    *
    * JSON itself has no notion of a binary, this extension complies to the RFC-7493, so this method assumes there is a
    * String value with the key and it contains a Base64 encoded binary, which it decodes if found and returns.
    *
-   * @param key the key to return the value for
+   * @param key the string to return the value for
    * @return the value or null if no value for that key
    * @throws java.lang.ClassCastException       if the value is not a String
-   * @throws java.lang.IllegalArgumentException if the String value is not a legal Base64 encoded value
+   * @throws java.lang.IllegalArgumentException if the String is not a legal Base64 encoded value
    */
   public Buffer getBuffer(String key) {
     Objects.requireNonNull(key);
