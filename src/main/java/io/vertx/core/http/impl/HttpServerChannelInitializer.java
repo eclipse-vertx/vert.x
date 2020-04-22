@@ -103,6 +103,7 @@ public class HttpServerChannelInitializer extends ChannelInitializer<Channel> {
         pipeline.addFirst(sniHandler);
       } else {
         SslHandler handler = new SslHandler(sslHelper.createEngine(vertx));
+        handler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
         pipeline.addFirst("ssl", handler);
       }
     } else {
