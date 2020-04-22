@@ -136,6 +136,8 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       return ISO_INSTANT.format((Instant) val);
     } else if (val instanceof byte[]) {
       return BASE64_ENCODER.encodeToString((byte[]) val);
+    } else if (val instanceof Buffer) {
+      return BASE64_ENCODER.encodeToString(((Buffer) val).getBytes());
     } else if (val instanceof Enum) {
       return ((Enum) val).name();
     } else {
@@ -285,10 +287,48 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     if (val instanceof byte[]) {
       return (byte[]) val;
     }
+    // unwrap if value is already a Buffer
+    if (val instanceof Buffer) {
+      return ((Buffer) val).getBytes();
+    }
     // assume that the value is in String format as per RFC
     String encoded = (String) val;
     // parse to proper type
     return BASE64_DECODER.decode(encoded);
+  }
+
+  /**
+   * Get the {@code Buffer} value with the specified key.
+   *
+   * JSON itself has no notion of a binary, this extension complies to the RFC-7493, so this method assumes there is a
+   * String value with the key and it contains a Base64 encoded binary, which it decodes if found and returns.
+   *
+   * @param key the string to return the value for
+   * @return the value or null if no value for that key
+   * @throws java.lang.ClassCastException       if the value is not a string
+   * @throws java.lang.IllegalArgumentException if the value is not a legal Base64 encoded string
+   */
+  public Buffer getBuffer(String key) {
+    Objects.requireNonNull(key);
+    Object val = map.get(key);
+    // no-op
+    if (val == null) {
+      return null;
+    }
+    // no-op if value is already an Buffer
+    if (val instanceof Buffer) {
+      return (Buffer) val;
+    }
+
+    // wrap if value is already an byte[]
+    if (val instanceof byte[]) {
+      return Buffer.buffer((byte[]) val);
+    }
+
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return Buffer.buffer(BASE64_DECODER.decode(encoded));
   }
 
   /**
@@ -477,6 +517,22 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     Objects.requireNonNull(key);
     if (map.containsKey(key)) {
       return getBinary(key);
+    } else {
+      return def;
+    }
+  }
+
+  /**
+   * Like {@link #getBuffer(String)} but specifying a default value to return if there is no entry.
+   *
+   * @param key the key to lookup
+   * @param def the default value to use if the entry is not present
+   * @return the value or {@code def} if no entry present
+   */
+  public Buffer getBuffer(String key, Buffer def) {
+    Objects.requireNonNull(key);
+    if (map.containsKey(key)) {
+      return getBuffer(key);
     } else {
       return def;
     }

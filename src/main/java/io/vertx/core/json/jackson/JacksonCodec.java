@@ -313,6 +313,9 @@ public class JacksonCodec implements JsonCodec {
       } else if (json instanceof byte[]) {
         // RFC-7493
         generator.writeString(BASE64_ENCODER.encodeToString((byte[]) json));
+      } else if (json instanceof Buffer) {
+        // RFC-7493
+        generator.writeString(BASE64_ENCODER.encodeToString(((Buffer) json).getBytes()));
       } else if (json instanceof Enum) {
         // vert.x extra (non standard but allowed conversion)
         generator.writeString(((Enum<?>) json).name());

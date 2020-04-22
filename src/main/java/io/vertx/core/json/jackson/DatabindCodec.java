@@ -58,6 +58,8 @@ public class DatabindCodec extends JacksonCodec {
     module.addDeserializer(Instant.class, new InstantDeserializer());
     module.addSerializer(byte[].class, new ByteArraySerializer());
     module.addDeserializer(byte[].class, new ByteArrayDeserializer());
+    module.addSerializer(Buffer.class, new BufferSerializer());
+    module.addDeserializer(Buffer.class, new BufferDeserializer());
 
     mapper.registerModule(module);
     prettyMapper.registerModule(module);

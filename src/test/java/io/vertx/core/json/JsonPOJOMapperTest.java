@@ -12,6 +12,7 @@
 package io.vertx.core.json;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import io.vertx.core.buffer.Buffer;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -89,6 +90,11 @@ public class JsonPOJOMapperTest {
     public byte[] base64 = "Hello World!".getBytes();
   }
 
+  public static class MyType3 {
+    public Instant isodate = Instant.now();
+    public Buffer base64 = Buffer.buffer("Hello World!");
+  }
+
   @Test
   public void testInstantFromPOJO() {
     JsonObject json = JsonObject.mapFrom(new MyType2());
@@ -116,11 +122,16 @@ public class JsonPOJOMapperTest {
     // already means that there was an attempt to parse a string to byte[]
     // and that the parsing succeeded (the object is of type byte[] and not null)
     assertNotNull(json.getBinary("base64"));
+    // same applies to Buffer
+    assertNotNull(json.getBuffer("base64"));
   }
 
   @Test
   public void testBase64ToPOJO() {
     MyType2 obj = new JsonObject().put("base64", "Hello World!".getBytes()).mapTo(MyType2.class);
+    assertArrayEquals("Hello World!".getBytes(), obj.base64);
+    // same test but with Buffers
+    MyType3 obj2 = new JsonObject().put("base64", "Hello World!".getBytes()).mapTo(MyType3.class);
     assertArrayEquals("Hello World!".getBytes(), obj.base64);
   }
 
