@@ -281,7 +281,9 @@ public class RegistrationListenerTest extends VertxTestBase {
     }
 
     Future<RegistrationListener> getRegistrationListener(int nodeIndex, String address) {
-      return getVertx(nodeIndex).getClusterManager().registrationListener(address);
+      Promise<RegistrationListener> promise = getVertx(nodeIndex).getOrCreateContext().promise();
+      getVertx(nodeIndex).getClusterManager().registrationListener(address, promise);
+      return promise.future();
     }
 
     Future<MessageConsumer<String>> register(int nodeIndex, String address) {

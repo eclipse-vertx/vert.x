@@ -158,7 +158,7 @@ public class ClusteredEventBus extends EventBusImpl {
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      clusterManager.register(handlerHolder.getHandler().address, registrationInfo).onComplete(promise);
+      clusterManager.register(handlerHolder.getHandler().address, registrationInfo, promise);
     } else {
       promise.complete();
     }
@@ -177,11 +177,12 @@ public class ClusteredEventBus extends EventBusImpl {
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      Future<Void> unregisterFuture = clusterManager.unregister(handlerHolder.getHandler().address, registrationInfo);
+      Promise<Void> promise = Promise.promise();
+      clusterManager.unregister(handlerHolder.getHandler().address, registrationInfo, promise);
       if (completionHandler != null) {
-        unregisterFuture.onComplete(completionHandler);
+        promise.future().onComplete(completionHandler);
       } else {
-        unregisterFuture.onFailure(t -> log.error("Failed to remove sub", t));
+        promise.future().onFailure(t -> log.error("Failed to remove sub", t));
       }
     } else {
       completionHandler.complete();

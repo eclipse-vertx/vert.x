@@ -126,7 +126,9 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       }
     }
 
-    clusterManager.registrationListener(address).onComplete(ar -> {
+    Promise<RegistrationListener> promise = context.promise();
+    clusterManager.registrationListener(address, promise);
+    promise.future().onComplete(ar -> {
       if (ar.succeeded()) {
         registrationListenerCreated(context, address, ar.result());
       } else {
