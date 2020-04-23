@@ -104,7 +104,6 @@ public class ClusteredEventBus extends EventBusImpl {
     server = vertx.createNetServer(getServerOptions());
     server.connectHandler(getServerHandler());
     return server.listen()
-      .<Void>mapEmpty()
       .onSuccess(v -> {
         int serverPort = getClusterPublicPort(options, server.actualPort());
         String serverHost = getClusterPublicHost(options);
