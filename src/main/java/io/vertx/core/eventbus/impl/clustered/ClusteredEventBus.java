@@ -110,7 +110,11 @@ public class ClusteredEventBus extends EventBusImpl {
         nodeInfo = new NodeInfo(new NodeAddress(serverHost, serverPort), options.getNodeMetadata());
         nodeId = clusterManager.getNodeId();
       })
-      .flatMap(v -> clusterManager.setNodeInfo(nodeInfo))
+      .flatMap(v -> {
+        Promise<Void> promise = Promise.promise();
+        clusterManager.setNodeInfo(nodeInfo, promise);
+        return promise.future();
+      })
       .onSuccess(v -> {
         started = true;
         deliveryStrategy.eventBusStarted();

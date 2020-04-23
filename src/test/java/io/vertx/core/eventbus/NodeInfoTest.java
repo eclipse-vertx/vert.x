@@ -11,8 +11,10 @@
 
 package io.vertx.core.eventbus;
 
+import io.vertx.core.Promise;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Test;
@@ -33,7 +35,9 @@ public class NodeInfoTest extends VertxTestBase {
     ClusterManager clusterManager = ((VertxInternal) vertices[0]).getClusterManager();
     // Create unknown node identifier
     String unknown = String.join("", clusterManager.getNodes());
-    clusterManager.getNodeInfo(unknown).onComplete(onFailure(t -> testComplete()));
+    Promise<NodeInfo> promise = Promise.promise();
+    clusterManager.getNodeInfo(unknown, promise);
+    promise.future().onComplete(onFailure(t -> testComplete()));
     await();
   }
 }

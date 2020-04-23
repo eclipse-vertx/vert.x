@@ -11,6 +11,7 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
@@ -24,6 +25,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.spi.cluster.NodeAddress;
+import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
 import java.util.ArrayDeque;
@@ -67,7 +69,9 @@ class ConnectionHolder {
         throw new IllegalStateException("Already connected");
       }
     }
-    eventBus.vertx().getClusterManager().getNodeInfo(remoteNodeId)
+    Promise<NodeInfo> promise = Promise.promise();
+    eventBus.vertx().getClusterManager().getNodeInfo(remoteNodeId, promise);
+    promise.future()
       .flatMap(info -> {
         NodeAddress address = info.getAddress();
         return client.connect(address.getPort(), address.getHost());

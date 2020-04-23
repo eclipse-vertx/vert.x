@@ -79,7 +79,7 @@ public interface ClusterManager {
   /**
    * Store the details about this clustered node.
    */
-  Future<Void> setNodeInfo(NodeInfo nodeInfo);
+  void setNodeInfo(NodeInfo nodeInfo, Promise<Void> promise);
 
   /**
    * Get details about this clustered node.
@@ -91,7 +91,7 @@ public interface ClusterManager {
    *
    * @param nodeId the clustered node id
    */
-  Future<NodeInfo> getNodeInfo(String nodeId);
+  void getNodeInfo(String nodeId, Promise<NodeInfo> promise);
 
   /**
    * Join the cluster

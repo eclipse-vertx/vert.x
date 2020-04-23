@@ -158,9 +158,9 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public Future<Void> setNodeInfo(NodeInfo nodeInfo) {
+  public void setNodeInfo(NodeInfo nodeInfo, Promise<Void> promise) {
     nodeInfos.put(nodeID, nodeInfo);
-    return vertx.getOrCreateContext().succeededFuture();
+    promise.complete();
   }
 
   @Override
@@ -169,10 +169,13 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public Future<NodeInfo> getNodeInfo(String nodeId) {
+  public void getNodeInfo(String nodeId, Promise<NodeInfo> promise) {
     NodeInfo result = nodeInfos.get(nodeId);
-    ContextInternal ctx = vertx.getOrCreateContext();
-    return result != null ? ctx.succeededFuture(result) : ctx.failedFuture("Not a member of the cluster");
+    if (result != null) {
+      promise.complete(result);
+    } else {
+      promise.fail("Not a member of the cluster");
+    }
   }
 
   @Override

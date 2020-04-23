@@ -531,8 +531,11 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     public Future<List<String>> chooseNodes(Message<?> message) {
       List<String> nodes = clusterManager.getNodes();
       CompositeFuture future = nodes.stream()
-        .map(clusterManager::getNodeInfo)
-        .map(Future.class::cast)
+        .map(nodeId -> {
+          Promise promise = Promise.promise();
+          clusterManager.getNodeInfo(nodeId, promise);
+          return promise.future();
+        })
         .collect(collectingAndThen(toList(), CompositeFuture::all));
       return future.map(cf -> {
         List<String> res = new ArrayList<>();
