@@ -60,7 +60,7 @@ public abstract class HandlerRegistration<T> {
 
   protected abstract void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
 
-  synchronized void register(String repliedAddress, boolean localOnly, Handler<AsyncResult<Void>> promise) {
+  synchronized void register(String repliedAddress, boolean localOnly, Promise<Void> promise) {
     if (registered != null) {
       throw new IllegalStateException();
     }

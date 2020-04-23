@@ -235,15 +235,15 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     return msg;
   }
 
-  protected <T> HandlerHolder<T> addRegistration(String address, HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, Handler<AsyncResult<Void>> completionHandler) {
+  protected <T> HandlerHolder<T> addRegistration(String address, HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, Promise<Void> promise) {
 //    Objects.requireNonNull(registration.getHandler(), "handler");
     HandlerHolder<T> holder = addLocalRegistration(address, registration, replyHandler, localOnly);
-    onLocalRegistration(holder, completionHandler);
+    onLocalRegistration(holder, promise);
     return holder;
   }
 
-  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Handler<AsyncResult<Void>> completionHandler) {
-    completionHandler.handle(Future.succeededFuture());
+  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
+    promise.complete();
   }
 
   private <T> HandlerHolder<T> addLocalRegistration(String address, HandlerRegistration<T> registration,

@@ -214,7 +214,9 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
             p.future().onComplete(completionHandler);
           }
           result = p;
-          register(null, localOnly, ar -> {
+          Promise<Void> reg = context.promise();
+          register(null, localOnly, reg);
+          reg.future().onComplete(ar -> {
             if (ar.succeeded()) {
               p.tryComplete();
             } else {

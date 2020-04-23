@@ -152,16 +152,16 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Handler<AsyncResult<Void>> completionHandler) {
+  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
     if (!handlerHolder.isReplyHandler()) {
       RegistrationInfo registrationInfo = new RegistrationInfo(
         nodeId,
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      clusterManager.register(handlerHolder.getHandler().address, registrationInfo).onComplete(completionHandler);
+      clusterManager.register(handlerHolder.getHandler().address, registrationInfo).onComplete(promise);
     } else {
-      completionHandler.handle(Future.succeededFuture());
+      promise.complete();
     }
   }
 
