@@ -108,7 +108,7 @@ public class ClusteredEventBus extends EventBusImpl {
       .onSuccess(v -> {
         int serverPort = getClusterPublicPort(options, server.actualPort());
         String serverHost = getClusterPublicHost(options);
-        nodeInfo = new NodeInfo(new NodeAddress(serverHost, serverPort), options.getNodeMetaData());
+        nodeInfo = new NodeInfo(new NodeAddress(serverHost, serverPort), options.getNodeMetadata());
         nodeId = clusterManager.getNodeId();
       })
       .flatMap(v -> clusterManager.setNodeInfo(nodeInfo))

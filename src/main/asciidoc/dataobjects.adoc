@@ -455,7 +455,7 @@ Set the idle timeout unit. If not specified, default is seconds.
 |[[logActivity]]`@logActivity`|`Boolean`|+++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
 +++
-|[[nodeMetaData]]`@nodeMetaData`|`Json object`|+++
+|[[nodeMetadata]]`@nodeMetadata`|`Json object`|+++
 Set information about this node when Vert.x is clustered.
  <p>
  The data may be used by the  to select a recipient for a given message.

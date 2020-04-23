@@ -64,7 +64,7 @@ public class EventBusOptions extends TCPSSLOptions {
   private int clusterPublicPort = DEFAULT_CLUSTER_PUBLIC_PORT;
   private long clusterPingInterval = DEFAULT_CLUSTER_PING_INTERVAL;
   private long clusterPingReplyInterval = DEFAULT_CLUSTER_PING_REPLY_INTERVAL;
-  private JsonObject nodeMetaData;
+  private JsonObject nodeMetadata;
 
   // Attributes used to configure the server of the event bus when the event bus is clustered.
 
@@ -151,7 +151,7 @@ public class EventBusOptions extends TCPSSLOptions {
     this.clusterPublicPort = other.clusterPublicPort;
     this.clusterPingInterval = other.clusterPingInterval;
     this.clusterPingReplyInterval = other.clusterPingReplyInterval;
-    this.nodeMetaData = other.nodeMetaData == null ? null : other.nodeMetaData.copy();
+    this.nodeMetadata = other.nodeMetadata == null ? null : other.nodeMetadata.copy();
 
     this.port = other.port;
     this.host = other.host;
@@ -653,8 +653,8 @@ public class EventBusOptions extends TCPSSLOptions {
    *
    * @return user-supplied information about this node when Vert.x is clustered
    */
-  public JsonObject getNodeMetaData() {
-    return nodeMetaData;
+  public JsonObject getNodeMetadata() {
+    return nodeMetadata;
   }
 
   /**
@@ -665,11 +665,11 @@ public class EventBusOptions extends TCPSSLOptions {
    * <p>
    * The default {@link DeliveryStrategy} does not use the node metadata.
    *
-   * @param nodeMetaData user-supplied information about this node when Vert.x is clustered
+   * @param nodeMetadata user-supplied information about this node when Vert.x is clustered
    * @return a reference to this, so the API can be used fluently
    */
-  public EventBusOptions setNodeMetaData(JsonObject nodeMetaData) {
-    this.nodeMetaData = nodeMetaData;
+  public EventBusOptions setNodeMetadata(JsonObject nodeMetadata) {
+    this.nodeMetadata = nodeMetadata;
     return this;
   }
 }

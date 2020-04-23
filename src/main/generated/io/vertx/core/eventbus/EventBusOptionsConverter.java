@@ -114,9 +114,9 @@ public class EventBusOptionsConverter {
             obj.setLogActivity((Boolean)member.getValue());
           }
           break;
-        case "nodeMetaData":
+        case "nodeMetadata":
           if (member.getValue() instanceof JsonObject) {
-            obj.setNodeMetaData(((JsonObject)member.getValue()).copy());
+            obj.setNodeMetadata(((JsonObject)member.getValue()).copy());
           }
           break;
         case "openSslEngineOptions":
@@ -298,8 +298,8 @@ public class EventBusOptionsConverter {
       json.put("keyStoreOptions", obj.getKeyStoreOptions().toJson());
     }
     json.put("logActivity", obj.getLogActivity());
-    if (obj.getNodeMetaData() != null) {
-      json.put("nodeMetaData", obj.getNodeMetaData());
+    if (obj.getNodeMetadata() != null) {
+      json.put("nodeMetadata", obj.getNodeMetadata());
     }
     if (obj.getOpenSslEngineOptions() != null) {
       json.put("openSslEngineOptions", obj.getOpenSslEngineOptions().toJson());

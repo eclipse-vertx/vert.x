@@ -464,7 +464,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       .mapToObj(i -> {
         VertxOptions vertxOptions = getOptions();
         vertxOptions.getEventBusOptions()
-          .setNodeMetaData(new JsonObject().put("rack", i % 2 == 0 ? "foo" : "bar"));
+          .setNodeMetadata(new JsonObject().put("rack", i % 2 == 0 ? "foo" : "bar"));
         return vertxOptions;
       })
       .map(options -> {
