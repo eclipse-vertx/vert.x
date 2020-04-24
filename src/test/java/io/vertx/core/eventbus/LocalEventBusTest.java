@@ -654,7 +654,9 @@ public class LocalEventBusTest extends EventBusTestBase {
 
   @Test
   public void testCloseEventBus() {
-    eb.close(ar -> {
+    Promise<Void> promise = Promise.promise();
+    eb.close(promise);
+    promise.future().onComplete(ar -> {
       assertTrue(ar.succeeded());
       testComplete();
     });

@@ -11,10 +11,7 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
+import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
@@ -211,7 +208,9 @@ public class HAManager {
     if (!stopped) {
       killed = true;
       CountDownLatch latch = new CountDownLatch(1);
-      clusterManager.leave()
+      Promise<Void> promise = Promise.promise();
+      clusterManager.leave(promise);
+      promise.future()
         .onFailure(t -> log.error("Failed to leave cluster", t))
         .onComplete(ar -> latch.countDown());
       vertx.cancelTimer(quorumTimerID);

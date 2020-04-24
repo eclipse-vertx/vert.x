@@ -11,10 +11,8 @@
 
 package io.vertx.test.fakecluster;
 
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -29,17 +27,18 @@ import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class FakeClusterManager implements ClusterManager {
 
-  private static Map<String, FakeClusterManager> nodes = Collections.synchronizedMap(new LinkedHashMap<>());
+  private static final Map<String, FakeClusterManager> nodes = Collections.synchronizedMap(new LinkedHashMap<>());
 
-  private static ConcurrentMap<String, List<RegistrationInfo>> registrations = new ConcurrentHashMap<>();
-  private static ConcurrentMap<String, NodeInfo> nodeInfos = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, List<RegistrationInfo>> registrations = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, NodeInfo> nodeInfos = new ConcurrentHashMap<>();
 
-  private static ConcurrentMap<String, LocalAsyncMapImpl> asyncMaps = new ConcurrentHashMap<>();
-  private static ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, LocalAsyncMapImpl> asyncMaps = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, Map> syncMaps = new ConcurrentHashMap<>();
   private static LocalAsyncLocks localAsyncLocks = new LocalAsyncLocks();
-  private static ConcurrentMap<String, AtomicLong> counters = new ConcurrentHashMap<>();
+  private static final ConcurrentMap<String, AtomicLong> counters = new ConcurrentHashMap<>();
 
   private String nodeID;
   private NodeListener nodeListener;
@@ -99,11 +98,8 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <K, V> Future<AsyncMap<K, V>> getAsyncMap(String name) {
-    LocalAsyncMapImpl<K, V> asyncMap = asyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl(vertx));
-    ContextInternal context = vertx.getOrCreateContext();
-    return context.succeededFuture(asyncMap);
+  public <K, V> void getAsyncMap(String name, Promise<AsyncMap<K, V>> promise) {
+    promise.complete(asyncMaps.computeIfAbsent(name, n -> new LocalAsyncMapImpl(vertx)));
   }
 
   @Override
@@ -116,26 +112,18 @@ public class FakeClusterManager implements ClusterManager {
         map = prevMap;
       }
     }
-    @SuppressWarnings("unchecked")
     Map<K, V> theMap = map;
     return theMap;
   }
 
   @Override
-  public Future<Lock> getLockWithTimeout(String name, long timeout) {
-    return localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout);
+  public void getLockWithTimeout(String name, long timeout, Promise<Lock> promise) {
+    localAsyncLocks.acquire(vertx.getOrCreateContext(), name, timeout).onComplete(promise);
   }
 
   @Override
-  public Future<Counter> getCounter(String name) {
-    AtomicLong counter = new AtomicLong();
-    AtomicLong prev = counters.putIfAbsent(name, counter);
-    if (prev != null) {
-      counter = prev;
-    }
-    AtomicLong theCounter = counter;
-    ContextInternal context = vertx.getOrCreateContext();
-    return context.succeededFuture(new AsynchronousCounter(vertx, theCounter));
+  public void getCounter(String name, Promise<Counter> promise) {
+    promise.complete(new AsynchronousCounter(vertx, counters.computeIfAbsent(name, k -> new AtomicLong())));
   }
 
   @Override
@@ -179,24 +167,24 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public Future<Void> join() {
-    return vertx.executeBlocking(fut -> {
+  public void join(Promise<Void> promise) {
+    vertx.executeBlocking(fut -> {
       synchronized (this) {
         this.nodeID = UUID.randomUUID().toString();
         doJoin(nodeID, this);
       }
       fut.complete();
-    });
+    }, promise);
   }
 
   @Override
-  public Future<Void> leave() {
+  public void leave(Promise<Void> promise) {
     registrations.forEach((address, registrationInfos) -> {
       synchronized (registrationInfos) {
         registrationInfos.removeIf(registrationInfo -> registrationInfo.getNodeId().equals(nodeID));
       }
     });
-    return vertx.executeBlocking(fut -> {
+    vertx.executeBlocking(fut -> {
       synchronized (this) {
         if (nodeID != null) {
           nodeInfos.remove(nodeID);
@@ -208,7 +196,7 @@ public class FakeClusterManager implements ClusterManager {
         }
       }
       fut.complete();
-    });
+    }, promise);
   }
 
   @Override

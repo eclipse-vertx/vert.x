@@ -169,7 +169,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   void init() {
-    eventBus.start();
+    eventBus.start(Promise.promise());
     if (metrics != null) {
       metrics.vertxCreated(this);
     }
@@ -177,42 +177,64 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   void initClustered(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     clusterManager.setVertx(this);
-    clusterManager.join()
-      .compose(v -> createHaManager(options))
-      .compose(v -> eventBus.start())
-      .compose(v -> initializeHaManager())
-      .onSuccess(v -> {
+    Promise<Void> initPromise = getOrCreateContext().promise();
+    initPromise.future().onComplete(ar -> {
+      if (ar.succeeded()) {
         if (metrics != null) {
           metrics.vertxCreated(this);
         }
-      })
-      .<Vertx>map(this)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          resultHandler.handle(ar);
-        } else {
-          log.error("Failed to initialize clustered Vert.x", ar.cause());
-          close().onComplete(ignore -> resultHandler.handle(ar));
-        }
-      });
+        resultHandler.handle(Future.succeededFuture(this));
+      } else {
+        log.error("Failed to initialize clustered Vert.x", ar.cause());
+        close().onComplete(ignore -> resultHandler.handle(Future.failedFuture(ar.cause())));
+      }
+    });
+    Promise<Void> joinPromise = Promise.promise();
+    joinPromise.future().onComplete(ar -> {
+      if (ar.succeeded()) {
+        createHaManager(options, initPromise);
+      } else {
+        initPromise.fail(ar.cause());
+      }
+    });
+    clusterManager.join(joinPromise);
   }
 
-  private Future<Void> createHaManager(VertxOptions options) {
-    return this.<Map<String, String>>executeBlocking(fut -> {
-      fut.complete(clusterManager.getSyncMap(CLUSTER_MAP_NAME));
-    }, false).onSuccess(clusterMap -> {
-      haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterMap, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
-    }).mapEmpty();
+  private void createHaManager(VertxOptions options, Promise<Void> initPromise) {
+    this.<HAManager>executeBlocking(fut -> {
+      Map<String, String> syncMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
+      HAManager haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, syncMap, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
+      fut.complete(haManager);
+    }, false, ar -> {
+      if (ar.succeeded()) {
+        haManager = ar.result();
+        startEventBus(initPromise);
+      } else {
+        initPromise.fail(ar.cause());
+      }
+    });
   }
 
-  private Future<Void> initializeHaManager() {
-    return this.executeBlocking(fut -> {
+  private void startEventBus(Promise<Void> initPromise) {
+    Promise<Void> promise = Promise.promise();
+    eventBus.start(promise);
+    promise.future().onComplete(ar -> {
+      if (ar.succeeded()) {
+        initializeHaManager(initPromise);
+      } else {
+        initPromise.fail(ar.cause());
+      }
+    });
+  }
+
+  private void initializeHaManager(Promise<Void> initPromise) {
+    this.executeBlocking(fut -> {
       // Init the manager (i.e register listener and check the quorum)
       // after the event bus has been fully started and updated its state
       // it will have also set the clustered changed view handler on the ha manager
       haManager.init();
       fut.complete();
-    }, false);
+    }, false, initPromise);
   }
 
   /**
@@ -481,20 +503,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void closeClusterManager(Handler<AsyncResult<Void>> completionHandler) {
+    Promise<Void> leavePromise = getOrCreateContext().promise();
     if (clusterManager != null) {
-      clusterManager.leave()
-        .recover(t -> {
-          log.error("Failed to leave cluster", t);
-          return Future.succeededFuture();
-        })
-        .onComplete(ar -> {
-          if (completionHandler != null) {
-            runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
-          }
-        });
-    } else if (completionHandler != null) {
-      runOnContext(v -> completionHandler.handle(Future.succeededFuture()));
+      clusterManager.leave(leavePromise);
+    } else {
+      leavePromise.complete();
     }
+    leavePromise.future().onComplete(ar -> {
+      if (ar.failed()) {
+        log.error("Failed to leave cluster", ar.cause());
+      }
+      if (completionHandler != null) {
+        completionHandler.handle(Future.succeededFuture());
+      }
+    });
   }
 
   @Override
@@ -522,7 +544,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
         haPromise.future().onComplete(ar2 -> {
           addressResolver.close(ar3 -> {
-            eventBus.close(ar4 -> {
+            Promise<Void> ebClose = getOrCreateContext().promise();
+            eventBus.close(ebClose);
+            ebClose.future().onComplete(ar4 -> {
               closeClusterManager(ar5 -> {
                 // Copy set to prevent ConcurrentModificationException
                 Set<HttpServerImpl> httpServers = new HashSet<>(sharedHttpServers.values());

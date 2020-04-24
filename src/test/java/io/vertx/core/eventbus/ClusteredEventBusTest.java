@@ -245,8 +245,10 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   @Test
   public void testSubsRemovedForKilledNode() throws Exception {
     testSubsRemoved(latch -> {
-      VertxInternal vi = (VertxInternal)vertices[1];
-      vi.getClusterManager().leave().onComplete(onSuccess(v -> {
+      VertxInternal vi = (VertxInternal) vertices[1];
+      Promise<Void> promise = vi.getOrCreateContext().promise();
+      vi.getClusterManager().leave(promise);
+      promise.future().onComplete(onSuccess(v -> {
         latch.countDown();
       }));
     });
@@ -528,16 +530,16 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     }
 
     @Override
-    public Future<List<String>> chooseNodes(Message<?> message) {
+    public void chooseNodes(Message<?> message, Promise<List<String>> promise, Context context) {
       List<String> nodes = clusterManager.getNodes();
       CompositeFuture future = nodes.stream()
         .map(nodeId -> {
-          Promise promise = Promise.promise();
-          clusterManager.getNodeInfo(nodeId, promise);
-          return promise.future();
+          Promise nodeInfo = Promise.promise();
+          clusterManager.getNodeInfo(nodeId, nodeInfo);
+          return nodeInfo.future();
         })
         .collect(collectingAndThen(toList(), CompositeFuture::all));
-      return future.map(cf -> {
+      future.map(cf -> {
         List<String> res = new ArrayList<>();
         for (int i = 0; i < nodes.size(); i++) {
           NodeInfo nodeInfo = cf.resultAt(i);
@@ -546,7 +548,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
           }
         }
         return res;
-      });
+      }).onComplete(promise);
     }
   }
 }

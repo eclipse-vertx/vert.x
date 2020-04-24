@@ -11,7 +11,8 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.Future;
+import io.vertx.core.Context;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxFactory;
@@ -37,8 +38,8 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
     vertices = new Vertx[1];
     DeliveryStrategy strategy = new DefaultDeliveryStrategy() {
       @Override
-      public Future<List<String>> chooseNodes(Message<?> message) {
-        return Future.failedFuture(cause);
+      public void chooseNodes(Message<?> message, Promise<List<String>> promise, Context ctx) {
+        promise.fail(cause);
       }
     };
     new VertxFactory(options).deliveryStrategy(strategy).clusteredVertx(onSuccess(node -> {

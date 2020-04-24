@@ -11,7 +11,7 @@
 
 package io.vertx.core.spi.cluster.impl;
 
-import io.vertx.core.Future;
+import io.vertx.core.Context;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
@@ -53,40 +53,40 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
   }
 
   @Override
-  public Future<List<String>> chooseNodes(Message<?> message) {
-    return selector(message.address()).map(selector -> selector.selectNodes(message));
-  }
-
-  public Future<NodeSelector> selector(String address) {
+  public void chooseNodes(Message<?> message, Promise<List<String>> promise, Context ctx) {
     ContextInternal context = (ContextInternal) Vertx.currentContext();
-    Objects.requireNonNull(context, "Method must be invoked on a Vert.x thread");
+    if (ctx != context) {
+      // This implementation has to run on the ctx to guarantee message delivery ordering
+      ctx.runOnContext(v -> chooseNodes(message, promise, ctx));
+      return;
+    }
 
-    Queue<Promise<NodeSelector>> waiters = getWaiters(context, address);
+    String address = message.address();
+
+    Queue<Waiter> waiters = getWaiters(context, address);
 
     NodeSelector selector = selectors.get(address);
     if (selector != null && waiters.isEmpty()) {
-      return context.succeededFuture(selector);
+      promise.complete(selector.selectNodes(message));
+      return;
     }
 
-    Promise<NodeSelector> promise = context.promise();
-
-    waiters.add(promise);
+    waiters.add(new Waiter(message, promise));
     if (waiters.size() == 1) {
       dequeueWaiters(context, address);
     }
-    return promise.future();
   }
 
   @SuppressWarnings("unchecked")
-  private Queue<Promise<NodeSelector>> getWaiters(ContextInternal context, String address) {
-    Map<String, Queue<Promise<NodeSelector>>> map = (Map<String, Queue<Promise<NodeSelector>>>) context.contextData().computeIfAbsent(this, ctx -> new HashMap<>());
+  private Queue<Waiter> getWaiters(ContextInternal context, String address) {
+    Map<String, Queue<Waiter>> map = (Map<String, Queue<Waiter>>) context.contextData().computeIfAbsent(this, ctx -> new HashMap<>());
     return map.computeIfAbsent(address, a -> new ArrayDeque<>());
   }
 
   @SuppressWarnings("unchecked")
   private void removeWaiters(ContextInternal context, String address) {
     context.contextData().compute(this, (k, v) -> {
-      Map<String, Queue<Promise<NodeSelector>>> map = (Map<String, Queue<Promise<NodeSelector>>>) v;
+      Map<String, Queue<Waiter>> map = (Map<String, Queue<Waiter>>) v;
       if (map == null) {
         throw new IllegalStateException();
       }
@@ -100,21 +100,21 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       throw new IllegalStateException();
     }
 
-    Queue<Promise<NodeSelector>> waiters = getWaiters(context, address);
+    Queue<Waiter> waiters = getWaiters(context, address);
 
-    Promise<NodeSelector> waiter;
+    Waiter waiter;
     for (int i = 0; ; i++) {
       if (i == 10) {
         // Give a chance to other tasks every 10 iterations
         context.runOnContext(v -> dequeueWaiters(context, address));
       }
-      Promise<NodeSelector> peeked = waiters.peek();
+      Waiter peeked = waiters.peek();
       if (peeked == null) {
         throw new IllegalStateException();
       }
       NodeSelector selector = selectors.get(address);
       if (selector != null) {
-        peeked.complete(selector);
+        peeked.promise.complete(selector.selectNodes(peeked.message));
         waiters.remove();
         if (waiters.isEmpty()) {
           removeWaiters(context, address);
@@ -132,7 +132,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       if (ar.succeeded()) {
         registrationListenerCreated(context, address, ar.result());
       } else {
-        waiter.fail(ar.cause());
+        waiter.promise.fail(ar.cause());
         removeFirstAndDequeueWaiters(context, address);
       }
     });
@@ -143,15 +143,15 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       throw new IllegalStateException();
     }
 
-    Queue<Promise<NodeSelector>> waiters = getWaiters(context, address);
+    Queue<Waiter> waiters = getWaiters(context, address);
 
-    Promise<NodeSelector> waiter = waiters.peek();
+    Waiter waiter = waiters.peek();
     if (waiter == null) {
       throw new IllegalStateException();
     }
 
     if (listener.initialState().isEmpty()) {
-      waiter.complete(NodeSelector.EMPTY_SELECTOR);
+      waiter.promise.complete(NodeSelector.EMPTY_SELECTOR.selectNodes(waiter.message));
       removeFirstAndDequeueWaiters(context, address);
       return;
     }
@@ -160,7 +160,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
     NodeSelector previous = selectors.putIfAbsent(address, candidate);
     NodeSelector current = previous != null ? previous : candidate;
 
-    waiter.complete(current);
+    waiter.promise.complete(current.selectNodes(waiter.message));
     removeFirstAndDequeueWaiters(context, address);
 
     if (previous == null) {
@@ -173,7 +173,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
       throw new IllegalStateException();
     }
 
-    Queue<Promise<NodeSelector>> waiters = getWaiters(context, address);
+    Queue<Waiter> waiters = getWaiters(context, address);
     waiters.remove();
     if (!waiters.isEmpty()) {
       context.runOnContext(v -> dequeueWaiters(context, address));
@@ -197,5 +197,15 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
 
   private void removeSelector(String address) {
     selectors.remove(address);
+  }
+
+  private static class Waiter {
+    final Message<?> message;
+    final Promise<List<String>> promise;
+
+    private Waiter(Message<?> message, Promise<List<String>> promise) {
+      this.message = message;
+      this.promise = promise;
+    }
   }
 }

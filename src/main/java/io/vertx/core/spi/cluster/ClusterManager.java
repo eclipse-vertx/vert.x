@@ -12,7 +12,6 @@
 package io.vertx.core.spi.cluster;
 
 
-import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
@@ -47,16 +46,16 @@ public interface ClusterManager {
   /**
    * Return an async map for the given name
    */
-  <K, V> Future<AsyncMap<K, V>> getAsyncMap(String name);
+  <K, V> void getAsyncMap(String name, Promise<AsyncMap<K, V>> promise);
 
   /**
    * Return a synchronous map for the given name
    */
   <K, V> Map<K, V> getSyncMap(String name);
 
-  Future<Lock> getLockWithTimeout(String name, long timeout);
+  void getLockWithTimeout(String name, long timeout, Promise<Lock> promise);
 
-  Future<Counter> getCounter(String name);
+  void getCounter(String name, Promise<Counter> promise);
 
   /**
    * Return the unique node ID for this node
@@ -71,8 +70,6 @@ public interface ClusterManager {
 
   /**
    * Set a listener that will be called when a node joins or leaves the cluster.
-   *
-   * @param listener
    */
   void nodeListener(NodeListener listener);
 
@@ -96,12 +93,12 @@ public interface ClusterManager {
   /**
    * Join the cluster
    */
-  Future<Void> join();
+  void join(Promise<Void> promise);
 
   /**
    * Leave the cluster
    */
-  Future<Void> leave();
+  void leave(Promise<Void> promise);
 
   /**
    * Is the cluster manager active?

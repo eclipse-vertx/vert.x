@@ -11,7 +11,10 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.vertx.core.*;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
@@ -99,48 +102,51 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  public Future<Void> start() {
+  public void start(Promise<Void> promise) {
     deliveryStrategy.setVertx(vertx);
     server = vertx.createNetServer(getServerOptions());
     server.connectHandler(getServerHandler());
-    return server.listen()
-      .onSuccess(v -> {
+    server.listen(s -> {
+      if (s.succeeded()) {
         int serverPort = getClusterPublicPort(options, server.actualPort());
         String serverHost = getClusterPublicHost(options);
         nodeInfo = new NodeInfo(new NodeAddress(serverHost, serverPort), options.getNodeMetadata());
         nodeId = clusterManager.getNodeId();
-      })
-      .flatMap(v -> {
-        Promise<Void> promise = Promise.promise();
-        clusterManager.setNodeInfo(nodeInfo, promise);
-        return promise.future();
-      })
-      .onSuccess(v -> {
-        started = true;
-        deliveryStrategy.eventBusStarted();
-      });
+        Promise<Void> setPromise = Promise.promise();
+        setPromise.future().onComplete(ar -> {
+          if (ar.succeeded()) {
+            started = true;
+            deliveryStrategy.eventBusStarted();
+            promise.complete();
+          } else {
+            promise.fail(ar.cause());
+          }
+        });
+        clusterManager.setNodeInfo(nodeInfo, setPromise);
+      } else {
+        promise.fail(s.cause());
+      }
+    });
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
-    super.close(ar1 -> {
+  public void close(Promise<Void> promise) {
+    Promise<Void> parentClose = Promise.promise();
+    super.close(parentClose);
+    parentClose.future().onComplete(ar -> {
       if (server != null) {
-        server.close(ar -> {
-          if (ar.failed()) {
-            log.error("Failed to close server", ar.cause());
+        server.close(serverClose -> {
+          if (serverClose.failed()) {
+            log.error("Failed to close server", serverClose.cause());
           }
           // Close all outbound connections explicitly - don't rely on context hooks
           for (ConnectionHolder holder : connections.values()) {
             holder.close();
           }
-          if (completionHandler != null) {
-            completionHandler.handle(ar);
-          }
+          promise.handle(serverClose);
         });
       } else {
-        if (completionHandler != null) {
-          completionHandler.handle(ar1);
-        }
+        promise.handle(ar);
       }
     });
   }
@@ -200,18 +206,18 @@ public class ClusteredEventBus extends EventBusImpl {
     } else if (sendContext.options.isLocalOnly()) {
       super.sendOrPub(sendContext);
     } else {
-      sendContext.ctx.succeededFuture(sendContext.message)
-        .flatMap(deliveryStrategy::chooseNodes)
-        .onComplete(ar -> {
-          if (ar.succeeded()) {
-            sendToNodes(ar.result(), sendContext);
-          } else {
-            if (log.isDebugEnabled()) {
-              log.error("Failed to send message", ar.cause());
-            }
-            sendContext.written(ar.cause());
+      Promise<List<String>> promise = sendContext.ctx.promise();
+      deliveryStrategy.chooseNodes(sendContext.message, promise, sendContext.ctx);
+      promise.future().onComplete(ar -> {
+        if (ar.succeeded()) {
+          sendToNodes(ar.result(), sendContext);
+        } else {
+          if (log.isDebugEnabled()) {
+            log.error("Failed to send message", ar.cause());
           }
-        });
+          sendContext.written(ar.cause());
+        }
+      });
     }
   }
 

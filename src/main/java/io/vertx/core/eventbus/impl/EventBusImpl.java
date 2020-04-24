@@ -85,12 +85,12 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   @Override
-  public synchronized Future<Void> start() {
+  public synchronized void start(Promise<Void> promise) {
     if (started) {
       throw new IllegalStateException("Already started");
     }
     started = true;
-    return Future.succeededFuture();
+    promise.complete();
   }
 
   @Override
@@ -205,16 +205,14 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
+  public void close(Promise<Void> promise) {
     if (started) {
       unregisterAll();
       if (metrics != null) {
         metrics.close();
       }
     }
-    if (completionHandler != null) {
-      completionHandler.handle(Future.succeededFuture());
-    }
+    promise.complete();
   }
 
   @Override
@@ -477,7 +475,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     // Make sure this gets cleaned up if there are no more references to it
     // so as not to leave connections and resources dangling until the system is shutdown
     // which could make the JVM run out of file handles.
-    close(ar -> {});
+    close(Promise.promise());
     super.finalize();
   }
 

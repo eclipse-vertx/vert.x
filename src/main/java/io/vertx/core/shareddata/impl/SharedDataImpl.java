@@ -14,14 +14,11 @@ package io.vertx.core.shareddata.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.shareddata.AsyncMap;
-import io.vertx.core.shareddata.Counter;
-import io.vertx.core.shareddata.LocalMap;
-import io.vertx.core.shareddata.Lock;
-import io.vertx.core.shareddata.SharedData;
+import io.vertx.core.shareddata.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.io.Serializable;
@@ -64,7 +61,9 @@ public class SharedDataImpl implements SharedData {
     if (clusterManager == null) {
       throw new IllegalStateException("Can't get cluster wide map if not clustered");
     }
-    return clusterManager.<K, V>getAsyncMap(name).map(WrappedAsyncMap::new);
+    Promise<AsyncMap<K, V>> promise = vertx.promise();
+    clusterManager.getAsyncMap(name, promise);
+    return promise.future().map(WrappedAsyncMap::new);
   }
 
   @Override
@@ -79,7 +78,9 @@ public class SharedDataImpl implements SharedData {
     if (clusterManager == null) {
       return getLocalAsyncMap(name);
     } else {
-      return clusterManager.<K, V>getAsyncMap(name).map(WrappedAsyncMap::new);
+      Promise<AsyncMap<K, V>> promise = vertx.promise();
+      clusterManager.getAsyncMap(name, promise);
+      return promise.future().map(WrappedAsyncMap::new);
     }
   }
 
@@ -106,7 +107,9 @@ public class SharedDataImpl implements SharedData {
     if (clusterManager == null) {
       return getLocalLockWithTimeout(name, timeout);
     } else {
-      return clusterManager.getLockWithTimeout(name, timeout);
+      Promise<Lock> promise = vertx.promise();
+      clusterManager.getLockWithTimeout(name, timeout, promise);
+      return promise.future();
     }
   }
 
@@ -139,7 +142,9 @@ public class SharedDataImpl implements SharedData {
     if (clusterManager == null) {
       return getLocalCounter(name);
     } else {
-      return clusterManager.getCounter(name);
+      Promise<Counter> promise = vertx.promise();
+      clusterManager.getCounter(name, promise);
+      return promise.future();
     }
   }
 

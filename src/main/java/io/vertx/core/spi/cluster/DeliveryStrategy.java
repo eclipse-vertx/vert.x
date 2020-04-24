@@ -11,7 +11,8 @@
 
 package io.vertx.core.spi.cluster;
 
-import io.vertx.core.Future;
+import io.vertx.core.Context;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.VertxInternal;
 
@@ -46,7 +47,9 @@ public interface DeliveryStrategy {
    * Choose nodes the given {@code message} should be delivered to.
    * <p>
    * The result must not be null and must hold distinct values.
+   * <p>
+   * The implementation may or may not guarantee delivery ordering on the given {@code context}.
    */
-  Future<List<String>> chooseNodes(Message<?> message);
+  void chooseNodes(Message<?> message, Promise<List<String>> promise, Context context);
 
 }

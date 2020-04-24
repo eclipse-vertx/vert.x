@@ -11,9 +11,7 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 
 public interface EventBusInternal extends EventBus {
@@ -21,12 +19,10 @@ public interface EventBusInternal extends EventBus {
   /**
    * Start the event bus.
    */
-  Future<Void> start();
+  void start(Promise<Void> promise);
 
   /**
    * Close the event bus and release any resources held.
-   *
-   * @param completionHandler may be {@code null}
    */
-  void close(Handler<AsyncResult<Void>> completionHandler);
+  void close(Promise<Void> promise);
 }
