@@ -172,10 +172,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   private void deliver(Handler<Message<T>> theHandler, Message<T> message) {
     // Handle the message outside the sync block
     // https://bugs.eclipse.org/bugs/show_bug.cgi?id=473714
-    String creditsAddress = message.headers().get(MessageProducerImpl.CREDIT_ADDRESS_HEADER_NAME);
-    if (creditsAddress != null) {
-      eventBus.send(creditsAddress, 1);
-    }
     dispatch(theHandler, message, context.duplicate());
     checkNextTick();
   }

@@ -142,8 +142,7 @@ or when end of request is reached if it's an HTTP request, or when the connectio
 === WriteStream
 
 `WriteStream` is implemented by {@link io.vertx.core.http.HttpClientRequest}, {@link io.vertx.core.http.HttpServerResponse}
-{@link io.vertx.core.http.WebSocket}, {@link io.vertx.core.net.NetSocket}, {@link io.vertx.core.file.AsyncFile},
-and {@link io.vertx.core.eventbus.MessageProducer}
+{@link io.vertx.core.http.WebSocket}, {@link io.vertx.core.net.NetSocket} and {@link io.vertx.core.file.AsyncFile}.
 
 Functions:
 

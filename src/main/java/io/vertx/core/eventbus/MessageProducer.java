@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.http.RequestOptions;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -25,18 +26,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 @VertxGen
-public interface MessageProducer<T> extends WriteStream<T> {
-
-  int DEFAULT_WRITE_QUEUE_MAX_SIZE = 1000;
-
-  @Override
-  MessageProducer<T> exceptionHandler(Handler<Throwable> handler);
-
-  @Override
-  MessageProducer<T> setWriteQueueMaxSize(int maxSize);
-
-  @Override
-  MessageProducer<T> drainHandler(Handler<Void> handler);
+public interface MessageProducer<T> {
 
   /**
    * Update the delivery options of this producer.
@@ -53,18 +43,18 @@ public interface MessageProducer<T> extends WriteStream<T> {
   String address();
 
   /**
-   * Closes the producer, calls {@link #close()}
+   * Write a message to the event-bus, either sending or publishing.
    *
-   * @return a future completed with the result
+   * @param body the message body
+   * @param handler the handler called when the message has been successfully or failed to be written, this is not a delivery
+   *                guarantee
    */
-  @Override
-  Future<Void> end();
+  void write(T body, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Closes the producer, calls {@link #close(Handler)}
+   * Like {@link #write(Object, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  @Override
-  void end(Handler<AsyncResult<Void>> handler);
+  Future<Void> write(T body);
 
   /**
    * Closes the producer, this method should be called when the message producer is not used anymore.
