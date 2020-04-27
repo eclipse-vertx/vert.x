@@ -871,7 +871,6 @@ public class VertxOptions {
         ", metrics=" + metricsOptions +
         ", fileSystemOptions=" + fileSystemOptions +
         ", addressResolver=" + addressResolverOptions.toJson() +
-        ", addressResolver=" + addressResolverOptions.toJson() +
         ", eventbus=" + eventBusOptions.toJson() +
         ", warningExceptionTimeUnit=" + warningExceptionTimeUnit +
         ", warningExceptionTime=" + warningExceptionTime +
