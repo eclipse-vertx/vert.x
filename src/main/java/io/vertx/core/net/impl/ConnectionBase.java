@@ -135,33 +135,25 @@ public abstract class ConnectionBase {
   /**
    * This method is exclusively called on the event-loop thread
    *
-   * @param msg the messsage to write
-   * @param flush {@code true} to perform a write and flush operation
+   * @param msg the message to write
+   * @param flush a {@code null} {@code flush} value means to flush when there is no read in progress, otherwise it will apply the policy
    * @param promise the promise receiving the completion event
    */
-  private void write(Object msg, boolean flush, ChannelPromise promise) {
+  private void write(Object msg, Boolean flush, ChannelPromise promise) {
     if (METRICS_ENABLED) {
       reportsBytesWritten(msg);
     }
-    needsFlush = !flush;
-    if (flush) {
+    boolean writeAndFlush;
+    if (flush == null) {
+      writeAndFlush = !read;
+    } else {
+      writeAndFlush = flush;
+    }
+    needsFlush = !writeAndFlush;
+    if (writeAndFlush) {
       chctx.writeAndFlush(msg, promise);
     } else {
       chctx.write(msg, promise);
-    }
-  }
-
-  /**
-   * This method is exclusively called on the event-loop thread
-   *
-   * @param promise the promise receiving the completion event
-   */
-  private void writeFlush(ChannelPromise promise) {
-    if (needsFlush) {
-      needsFlush = false;
-      chctx.writeAndFlush(Unpooled.EMPTY_BUFFER, promise);
-    } else {
-      promise.setSuccess();
     }
   }
 
@@ -182,7 +174,7 @@ public abstract class ConnectionBase {
       .addListener((ChannelFutureListener) f -> {
         chctx.channel().close().addListener(promise);
       });
-    writeFlush(channelPromise);
+    writeToChannel(Unpooled.EMPTY_BUFFER, true, channelPromise);
   }
 
   protected void reportsBytesWritten(Object msg) {
@@ -199,26 +191,34 @@ public abstract class ConnectionBase {
   }
 
   public final void writeToChannel(Object msg, ChannelPromise promise) {
+    writeToChannel(msg, false, promise);
+  }
+
+  public final void writeToChannel(Object msg, boolean forceFlush, ChannelPromise promise) {
     synchronized (this) {
       if (!chctx.executor().inEventLoop() || writeInProgress > 0) {
         // Make sure we serialize all the messages as this method can be called from various threads:
         // two "sequential" calls to writeToChannel (we can say that as it is synchronized) should preserve
         // the message order independently of the thread. To achieve this we need to reschedule messages
         // not on the event loop or if there are pending async message for the channel.
-        queueForWrite(msg, promise);
+        queueForWrite(msg, forceFlush, promise);
         return;
       }
     }
     // On the event loop thread
-    write(msg, !read, promise);
+    write(msg, forceFlush ? true : null, promise);
   }
 
-  private void queueForWrite(Object msg, ChannelPromise promise) {
+  private void queueForWrite(Object msg, boolean forceFlush, ChannelPromise promise) {
     writeInProgress++;
     chctx.executor().execute(() -> {
       boolean flush;
-      synchronized (this) {
-        flush = --writeInProgress == 0 && !read;
+      if (forceFlush) {
+        flush = true;
+      } else {
+        synchronized (this) {
+          flush = --writeInProgress == 0;
+        }
       }
       write(msg, flush, promise);
     });
@@ -241,12 +241,7 @@ public abstract class ConnectionBase {
    * @param promise the promise resolved when flush occurred
    */
   public final void flush(ChannelPromise promise) {
-    EventExecutor exec = chctx.executor();
-    if (exec.inEventLoop()) {
-      writeFlush(promise);
-    } else {
-      exec.execute(() -> writeFlush(promise));
-    }
+    writeToChannel(Unpooled.EMPTY_BUFFER, true, promise);
   }
 
   // This is a volatile read inside the Netty channel implementation
