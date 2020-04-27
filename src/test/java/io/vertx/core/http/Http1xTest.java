@@ -4819,19 +4819,21 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     AtomicInteger responses = new AtomicInteger();
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setPipelining(true));
-    client.connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        assertEquals(3, responses.get());
-        complete();
+    vertx.runOnContext(v1 -> {
+      client.connectionHandler(conn -> {
+        conn.closeHandler(v2 -> {
+          assertEquals(3, responses.get());
+          complete();
+        });
+        clientConnection.set(conn);
       });
-      clientConnection.set(conn);
+      for (int i = 0;i < numReq;i++) {
+        client.request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
+          .onComplete(onSuccess(resp -> {
+            responses.incrementAndGet();
+          })).end();
+      }
     });
-    for (int i = 0;i < numReq;i++) {
-      client.request(HttpMethod.PUT, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI)
-        .onComplete(onSuccess(resp -> {
-        responses.incrementAndGet();
-      })).end();
-    }
     await();
   }
 
