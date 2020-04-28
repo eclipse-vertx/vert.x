@@ -37,7 +37,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   void handleClosed() {
     // THAT SHOULD BE CALLED ON EVENT LOOP
     synchronized (conn) {
-      HttpClientMetrics metrics = ((Http1xClientConnection) conn).metrics();
+      HttpClientMetrics metrics = (HttpClientMetrics)conn.metrics();
       if (metrics != null) {
         metrics.disconnected(getMetric());
       }

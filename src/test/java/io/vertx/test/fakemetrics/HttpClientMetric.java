@@ -23,14 +23,12 @@ public class HttpClientMetric {
 
   public final EndpointMetric endpoint;
   public final HttpClientRequest request;
-  public final SocketMetric socket;
   public final AtomicInteger requestEnded = new AtomicInteger();
   public final AtomicInteger responseBegin = new AtomicInteger();
   public final AtomicBoolean failed = new AtomicBoolean();
 
-  public HttpClientMetric(EndpointMetric endpoint, HttpClientRequest request, SocketMetric socket) {
+  public HttpClientMetric(EndpointMetric endpoint, HttpClientRequest request) {
     this.endpoint = endpoint;
     this.request = request;
-    this.socket = socket;
   }
 }

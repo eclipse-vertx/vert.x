@@ -41,6 +41,7 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -74,8 +75,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   private final HttpClientOptions options;
   private final boolean ssl;
   private final SocketAddress server;
-  private final Object endpointMetric;
-  private final HttpClientMetrics metrics;
+  public final ClientMetrics metrics;
   private final HttpVersion version;
 
   private Deque<Stream> requests = new ArrayDeque<>();
@@ -95,12 +95,11 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
                          HttpVersion version,
                          HttpClientImpl client,
-                         Object endpointMetric,
                          ChannelHandlerContext channel,
                          boolean ssl,
                          SocketAddress server,
                          ContextInternal context,
-                         HttpClientMetrics metrics) {
+                         ClientMetrics metrics) {
     super(client.getVertx(), channel, context);
     this.listener = listener;
     this.client = client;
@@ -109,12 +108,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     this.server = server;
     this.metrics = metrics;
     this.version = version;
-    this.endpointMetric = endpointMetric;
     this.keepAliveTimeout = options.getKeepAliveTimeout();
-  }
-
-  Object endpointMetric() {
-    return endpointMetric;
   }
 
   ConnectionListener<HttpClientConnection> listener() {
@@ -159,7 +153,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       responses.add(stream);
       this.netSocketPromise = ((StreamImpl)stream).netSocketPromise;
       if (this.metrics != null) {
-        stream.metric = this.metrics.requestBegin(this.endpointMetric, this.metric(), this.localAddress(), this.remoteAddress(), stream.request);
+        stream.metric = this.metrics.requestBegin(stream.request.uri, stream.request);
       }
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
@@ -610,7 +604,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           pipeline.remove("codec");
 
           // replace the old handler with one that handle plain sockets
-          NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics) {
+          NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics()) {
             @Override
             protected void handleClosed() {
               if (metrics != null) {
@@ -676,7 +670,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   public HttpClientMetrics metrics() {
-    return metrics;
+    return client.metrics();
   }
 
   synchronized void toWebSocket(
@@ -743,8 +737,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
         }
         log.debug("WebSocket handshake complete");
+        HttpClientMetrics metrics = client.metrics();
         if (metrics != null) {
-          webSocket.setMetric(metrics.connected(endpointMetric, metric(), webSocket));
+          webSocket.setMetric(metrics.connected(webSocket));
         }
         getContext().dispatch(wsRes, res -> {
           if (res.succeeded()) {
@@ -819,7 +814,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
     closed = true;
     if (metrics != null) {
-      metrics.endpointDisconnected(endpointMetric, metric());
+      HttpClientMetrics met = client.metrics();
+      met.endpointDisconnected(metrics);
     }
     WebSocketImpl ws;
     VertxTracer tracer = context.tracer();
