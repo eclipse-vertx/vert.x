@@ -128,7 +128,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
           ChannelPipeline pipeline = ctx.pipeline();
           if (evt == HttpClientUpgradeHandler.UpgradeEvent.UPGRADE_SUCCESSFUL) {
             // Upgrade handler will remove itself and remove the HttpClientCodec
-            pipeline.remove(conn.handler());
+            pipeline.remove(conn.channelHandlerContext().handler());
           }
         }
 

@@ -102,11 +102,7 @@ public abstract class ConnectionBase {
    * @param error the {@code Throwable} to propagate
    */
   public void fail(Throwable error) {
-    handler().fail(error);
-  }
-
-  public VertxHandler handler() {
-    return (VertxHandler) chctx.handler();
+    chctx.pipeline().fireExceptionCaught(error);
   }
 
   /**
