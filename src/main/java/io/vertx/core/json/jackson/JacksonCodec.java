@@ -79,11 +79,11 @@ public class JacksonCodec implements JsonCodec {
 
   @Override
   public <T> T fromValue(Object json, Class<T> toValueType) {
-    throw new UnsupportedOperationException("Mapping is not available without Jackson Databind on the classpath");
+    throw new DecodeException("Mapping " + toValueType.getName() + "  is not available without Jackson Databind on the classpath");
   }
 
   public <T> T fromValue(Object json, TypeReference<T> type) {
-    throw new UnsupportedOperationException("Mapping is not available without Jackson Databind on the classpath");
+    throw new DecodeException("Mapping " + type.getType().getTypeName() + " is not available without Jackson Databind on the classpath");
   }
 
   @Override
@@ -303,7 +303,7 @@ public class JacksonCodec implements JsonCodec {
         } else if (json instanceof BigDecimal) {
           generator.writeNumber((BigDecimal) json);
         } else {
-          throw new UnsupportedOperationException();
+          generator.writeNumber(((Number) json).doubleValue());
         }
       } else if (json instanceof Boolean) {
         generator.writeBoolean((Boolean)json);
@@ -322,7 +322,7 @@ public class JacksonCodec implements JsonCodec {
       } else if (json == null) {
         generator.writeNull();
       } else {
-        throw new UnsupportedOperationException();
+        throw new EncodeException("Mapping " + json.getClass().getName() + "  is not available without Jackson Databind on the classpath");
       }
     } catch (IOException e) {
       throw new EncodeException(e.getMessage(), e);
