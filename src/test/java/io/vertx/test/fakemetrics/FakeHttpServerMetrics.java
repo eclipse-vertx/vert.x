@@ -79,7 +79,7 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
     if (!requests.remove(requestMetric)) {
       throw new IllegalStateException();
     }
-    WebSocketMetric metric = new WebSocketMetric(socketMetric, serverWebSocket);
+    WebSocketMetric metric = new WebSocketMetric(serverWebSocket);
     if (webSockets.put(serverWebSocket, metric) != null) {
       throw new AssertionError();
     }

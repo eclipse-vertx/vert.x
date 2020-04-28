@@ -15,6 +15,7 @@ import io.vertx.core.Context;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
@@ -23,6 +24,7 @@ import io.vertx.test.fakemetrics.FakeMetricsBase;
 import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import io.vertx.test.fakemetrics.HttpClientMetric;
 import io.vertx.test.fakemetrics.HttpServerMetric;
+import io.vertx.test.fakemetrics.SocketMetric;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -84,17 +86,20 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     startServer();
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
+    AtomicReference<SocketMetric> socketMetric = new AtomicReference<>();
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
       assertEquals(Collections.emptySet(), metrics.endpoints());
       HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
         .onComplete(onSuccess(resp -> {
+          socketMetric.set(metrics.getSocket(SocketAddress.inetSocketAddress(8080, "localhost")));
+          assertNotNull(socketMetric.get());
           assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
           clientMetric.set(metrics.getMetric(resp.request()));
           assertNotNull(clientMetric.get());
-          assertNotNull(clientMetric.get().socket);
-          assertTrue(clientMetric.get().socket.connected.get());
+          // assertNotNull(clientMetric.get().socket);
+          // assertTrue(clientMetric.get().socket.connected.get());
           assertEquals((Integer) 1, metrics.connectionCount("localhost:8080"));
           resp.bodyHandler(buff -> {
             assertNull(metrics.getMetric(resp.request()));
@@ -122,9 +127,9 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       throw e;
     }
     AsyncTestBase.assertWaitUntil(() -> contentLength  == serverMetric.get().socket.bytesWritten.get());
-    AsyncTestBase.assertWaitUntil(() -> !clientMetric.get().socket.connected.get());
-    assertEquals(contentLength, clientMetric.get().socket.bytesRead.get());
-    assertEquals(contentLength, clientMetric.get().socket.bytesWritten.get());
+    AsyncTestBase.assertWaitUntil(() -> !socketMetric.get().connected.get());
+    assertEquals(contentLength, socketMetric.get().bytesRead.get());
+    assertEquals(contentLength, socketMetric.get().bytesWritten.get());
   }
 
   @Test

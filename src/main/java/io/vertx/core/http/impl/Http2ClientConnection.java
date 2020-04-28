@@ -29,6 +29,7 @@ import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -44,19 +45,16 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
-  private final HttpClientMetrics metrics;
-  private final Object queueMetric;
+  private final ClientMetrics metrics;
   private long expirationTimestamp;
 
   Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
-                               Object queueMetric,
                                HttpClientImpl client,
                                ContextInternal context,
                                VertxHttp2ConnectionHandler connHandler,
-                               HttpClientMetrics metrics) {
+                               ClientMetrics metrics) {
     super(context, connHandler);
     this.metrics = metrics;
-    this.queueMetric = queueMetric;
     this.client = client;
     this.listener = listener;
   }
@@ -90,7 +88,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   public HttpClientMetrics metrics() {
-    return metrics;
+    return client.metrics();
   }
 
   void upgradeStream(Object metric, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
@@ -186,7 +184,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(this, client, isSsl(), method, uri, host, port, headersMap);
         pushReq.getStream().init(promisedStream);
         if (metrics != null) {
-          ((Stream)pushReq.getStream()).metric = metrics.responsePushed(queueMetric, metric(), localAddress(), remoteAddress(), pushReq);
+          Object metric = metrics.requestBegin(pushReq.uri, pushReq);
+          ((Stream)pushReq.getStream()).metric = metric;
+          metrics.requestEnd(metric);
         }
         stream.context.emit(pushReq, pushHandler);
         return;
@@ -248,7 +248,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         return;
       }
       if (conn.metrics != null) {
-        metric = conn.metrics.requestBegin(conn.queueMetric, conn.metric(), conn.localAddress(), conn.remoteAddress(), request);
+        metric = conn.metrics.requestBegin(request.uri, request);
       }
       init(stream);
       super.doWriteHeaders(headers, end, handler);
@@ -534,22 +534,22 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   public static VertxHttp2ConnectionHandler<Http2ClientConnection> createHttp2ConnectionHandler(
     HttpClientImpl client,
-    Object queueMetric,
+    ClientMetrics metrics,
     ConnectionListener<HttpClientConnection> listener,
     ContextInternal context,
     Object socketMetric,
     BiConsumer<Http2ClientConnection, Long> c) {
     long http2MaxConcurrency = client.getOptions().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.getOptions().getHttp2MultiplexingLimit();
     HttpClientOptions options = client.getOptions();
-    HttpClientMetrics metrics = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
       .server(false)
       .useCompression(client.getOptions().isTryUseCompression())
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.getOptions().getInitialSettings())
-      .connectionFactory(connHandler -> new Http2ClientConnection(listener, queueMetric, client, context, connHandler, metrics))
+      .connectionFactory(connHandler -> new Http2ClientConnection(listener, client, context, connHandler, metrics))
       .logEnabled(options.getLogActivity())
       .build();
+    HttpClientMetrics met = client.metrics();
     handler.addHandler(conn -> {
       if (options.getHttp2ConnectionWindowSize() > 0) {
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
@@ -557,8 +557,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (metrics != null) {
         Object m = socketMetric;
         if (m == null)  {
-          m = metrics.connected(conn.remoteAddress(), conn.remoteName());
-          metrics.endpointConnected(queueMetric, m);
+          m = met.connected(conn.remoteAddress(), conn.remoteName());
+          met.endpointConnected(metrics);
         }
         conn.metric(m);
       }
@@ -570,7 +570,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     });
     handler.removeHandler(conn -> {
       if (metrics != null) {
-        metrics.endpointDisconnected(queueMetric, conn.metric());
+        met.endpointDisconnected(metrics);
       }
       listener.onEvict();
     });

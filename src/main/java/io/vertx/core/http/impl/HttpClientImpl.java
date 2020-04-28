@@ -35,6 +35,7 @@ import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.clientconnection.Endpoint;
+import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -203,9 +204,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
         host = key.serverAddr.path();
         port = 0;
       }
-      Object metric = metrics != null ? metrics.createEndpoint(host, port, maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(this, channelGroup, ctx, metric, options.getProtocolVersion(), key.ssl, key.peerAddr, key.serverAddr);
-      return new ClientHttpStreamEndpoint(metrics, metric, options.getMaxWaitQueueSize(), maxSize, host, port, ctx, connector, dispose);
+      ClientMetrics metrics = this.metrics != null ? this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
+      HttpChannelConnector connector = new HttpChannelConnector(this, channelGroup, ctx, metrics, options.getProtocolVersion(), key.ssl, key.peerAddr, key.serverAddr);
+      return new ClientHttpStreamEndpoint(metrics, metrics, options.getMaxWaitQueueSize(), maxSize, host, port, ctx, connector, dispose);
     });
   }
 
@@ -221,9 +222,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
         host = key.serverAddr.path();
         port = 0;
       }
-      Object metric = metrics != null ? metrics.createEndpoint(host, port, maxPoolSize) : null;
-      HttpChannelConnector connector = new HttpChannelConnector(this, channelGroup, ctx, metric, HttpVersion.HTTP_1_1, key.ssl, key.peerAddr, key.serverAddr);
-      return new WebSocketEndpoint(metrics, port, host, metric, maxPoolSize, connector, dispose);
+      ClientMetrics metrics = this.metrics != null ? this.metrics.createEndpointMetrics(key.serverAddr, maxPoolSize) : null;
+      HttpChannelConnector connector = new HttpChannelConnector(this, channelGroup, ctx, metrics, HttpVersion.HTTP_1_1, key.ssl, key.peerAddr, key.serverAddr);
+      return new WebSocketEndpoint(null, port, host, metrics, maxPoolSize, connector, dispose);
     });
   }
 

@@ -287,7 +287,7 @@ public class MetricsContextTest extends VertxTestBase {
   private void testHttpClientRequest(Function<Vertx, Context> contextFactory) throws Exception {
     AtomicReference<Thread> expectedThread = new AtomicReference<>();
     AtomicReference<Context> expectedContext = new AtomicReference<>();
-    AtomicBoolean requestBeginCalled = new AtomicBoolean();
+    AtomicReference<String> requestBeginCalled = new AtomicReference();
     AtomicBoolean responseEndCalled = new AtomicBoolean();
     AtomicBoolean socketConnectedCalled = new AtomicBoolean();
     AtomicBoolean socketDisconnectedCalled = new AtomicBoolean();
@@ -299,13 +299,18 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
           @Override
-          public Void requestBegin(Void endpointMetric, Void socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
-            requestBeginCalled.set(true);
-            return null;
-          }
-          @Override
-          public void responseEnd(Void requestMetric, HttpClientResponse response) {
-            responseEndCalled.set(true);
+          public ClientMetrics<Void, Void, HttpClientRequest, HttpClientResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+            return new ClientMetrics<Void, Void, HttpClientRequest, HttpClientResponse>() {
+              @Override
+              public Void requestBegin(String uri, HttpClientRequest request) {
+                requestBeginCalled.set(uri);
+                return null;
+              }
+              @Override
+              public void responseEnd(Void requestMetric, HttpClientResponse response) {
+                responseEndCalled.set(true);
+              }
+            };
           }
           @Override
           public Void connected(SocketAddress remoteAddress, String remoteName) {
@@ -355,11 +360,11 @@ public class MetricsContextTest extends VertxTestBase {
       expectedContext.set(Vertx.currentContext());
       HttpClient client = vertx.createHttpClient();
       assertSame(expectedThread.get(), Thread.currentThread());
-      client.put(8080, "localhost", "/", Buffer.buffer("hello"), resp -> {
+      client.put(8080, "localhost", "/the-uri", Buffer.buffer("hello"), resp -> {
         executeInVanillaThread(() -> {
           client.close();
           vertx.close(v2 -> {
-            assertTrue(requestBeginCalled.get());
+            assertEquals("/the-uri", requestBeginCalled.get());
             assertTrue(responseEndCalled.get());
             assertTrue(socketConnectedCalled.get());
             assertTrue(socketDisconnectedCalled.get());
@@ -398,7 +403,12 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
           @Override
-          public Void connected(Void endpointMetric, Void socketMetric, WebSocket webSocket) {
+          public ClientMetrics<Void, Void, HttpClientRequest, HttpClientResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+            return new ClientMetrics<Void, Void, HttpClientRequest, HttpClientResponse>() {
+            };
+          }
+          @Override
+          public Void connected(WebSocket webSocket) {
             webSocketConnected.set(true);
             assertTrue(Context.isOnEventLoopThread());
             return null;

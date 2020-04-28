@@ -36,7 +36,9 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ChannelProvider;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
+import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.metrics.Metrics;
 
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
@@ -49,7 +51,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
   private final ChannelGroup channelGroup;
   private final ContextInternal context;
   private final HttpClientOptions options;
-  private final HttpClientMetrics metrics;
+  private final ClientMetrics metrics;
   private final SSLHelper sslHelper;
   private final HttpVersion version;
   private final long weight;
@@ -59,12 +61,11 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
   private final boolean ssl;
   private final SocketAddress peerAddress;
   private final SocketAddress server;
-  private final Object endpointMetric;
 
   public HttpChannelConnector(HttpClientImpl client,
                               ChannelGroup channelGroup,
                               ContextInternal context,
-                              Object endpointMetric,
+                              ClientMetrics metrics,
                               HttpVersion version,
                               boolean ssl,
                               SocketAddress peerAddress,
@@ -72,9 +73,8 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
     this.client = client;
     this.channelGroup = channelGroup;
     this.context = context;
-    this.endpointMetric = endpointMetric;
+    this.metrics = metrics;
     this.options = client.getOptions();
-    this.metrics = client.metrics();
     this.sslHelper = client.getSslHelper();
     this.version = version;
     // this is actually normal (although it sounds weird)
@@ -226,11 +226,12 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
                                Promise<ConnectResult<HttpClientConnection>> future) {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
     VertxHandler<Http1xClientConnection> clientHandler = VertxHandler.create(chctx -> {
-      Http1xClientConnection conn = new Http1xClientConnection(listener, upgrade ? HttpVersion.HTTP_1_1 : version, client, endpointMetric, chctx, ssl, server, context, metrics);
-      if (metrics != null) {
-        Object socketMetric = metrics.connected(conn.remoteAddress(), conn.remoteName());
+      HttpClientMetrics met = client.metrics();
+      Http1xClientConnection conn = new Http1xClientConnection(listener, upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, context, this.metrics);
+      if (met != null) {
+        Object socketMetric = met.connected(conn.remoteAddress(), conn.remoteName());
         conn.metric(socketMetric);
-        metrics.endpointConnected(endpointMetric, socketMetric);
+        met.endpointConnected(metrics);
       }
       return conn;
     });
@@ -252,7 +253,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
                               Channel ch,
                               Promise<ConnectResult<HttpClientConnection>> future) {
     try {
-      VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, endpointMetric, listener, context, null, (conn, concurrency) -> {
+      VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, listener, context, null, (conn, concurrency) -> {
         future.complete(new ConnectResult<>(conn, concurrency, http2Weight));
       });
       ch.pipeline().addLast("handler", clientHandler);

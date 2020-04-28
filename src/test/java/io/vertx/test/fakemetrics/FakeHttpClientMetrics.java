@@ -16,24 +16,27 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric, EndpointMetric, Void> {
+public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric, Void> {
 
   private final String name;
+  private final ConcurrentMap<SocketAddress, SocketMetric> sockets = new ConcurrentHashMap<>();
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
-  private final ConcurrentMap<HttpClientRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<String, EndpointMetric> endpoints = new ConcurrentHashMap<>();
+  private final ConcurrentMap<SocketAddress, EndpointMetric> endpoints = new ConcurrentHashMap<>();
 
   public FakeHttpClientMetrics(String name) {
     this.name = name;
@@ -44,7 +47,13 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   }
 
   public HttpClientMetric getMetric(HttpClientRequest request) {
-    return requests.get(request);
+    for (EndpointMetric metric : endpoints.values()) {
+      HttpClientMetric m = metric.requests.get(request);
+      if (m != null) {
+        return m;
+      }
+    }
+    return null;
   }
 
   public String getName() {
@@ -52,59 +61,53 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   }
 
   public Set<String> endpoints() {
-    return new HashSet<>(endpoints.keySet());
+    return endpoints.keySet().stream().map(Object::toString).collect(Collectors.toSet());
   }
 
   public EndpointMetric endpoint(String name) {
-    return endpoints.get(name);
+    for (Map.Entry<SocketAddress, EndpointMetric> entry : endpoints.entrySet()) {
+      if (entry.getKey().toString().equalsIgnoreCase(name)) {
+        return entry.getValue();
+      }
+    }
+    return null;
   }
 
   public Integer queueSize(String name) {
-    EndpointMetric server = endpoints.get(name);
+    EndpointMetric server = endpoint(name);
     return server != null ? server.queueSize.get() : null;
   }
 
   public Integer connectionCount(String name) {
-    EndpointMetric server = endpoints.get(name);
+    EndpointMetric server = endpoint(name);
     return server != null ? server.connectionCount.get() : null;
   }
 
   @Override
-  public EndpointMetric createEndpoint(String host, int port, int maxPoolSize) {
-    EndpointMetric metric = new EndpointMetric();
-    endpoints.put(host + ":" + port, metric);
+  public ClientMetrics<HttpClientMetric, Void, HttpClientRequest, HttpClientResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+    EndpointMetric metric = new EndpointMetric() {
+      @Override
+      public void close() {
+        endpoints.remove(remoteAddress);
+      }
+    };
+    endpoints.put(remoteAddress, metric);
     return metric;
   }
 
   @Override
-  public Void enqueueRequest(EndpointMetric endpointMetric) {
-    endpointMetric.queueSize.incrementAndGet();
-    return null;
+  public void endpointConnected(ClientMetrics<HttpClientMetric, Void, ?, ?> endpointMetric) {
+    ((EndpointMetric)endpointMetric).connectionCount.incrementAndGet();
   }
 
   @Override
-  public void dequeueRequest(EndpointMetric endpointMetric, Void v) {
-    endpointMetric.queueSize.decrementAndGet();
+  public void endpointDisconnected(ClientMetrics<HttpClientMetric, Void, ?, ?> endpointMetric) {
+    ((EndpointMetric)endpointMetric).connectionCount.decrementAndGet();
   }
 
   @Override
-  public void closeEndpoint(String host, int port, EndpointMetric endpointMetric) {
-    endpoints.remove(host + ":" + port);
-  }
-
-  @Override
-  public void endpointConnected(EndpointMetric endpointMetric, SocketMetric socketMetric) {
-    endpointMetric.connectionCount.incrementAndGet();
-  }
-
-  @Override
-  public void endpointDisconnected(EndpointMetric endpointMetric, SocketMetric socketMetric) {
-    endpointMetric.connectionCount.decrementAndGet();
-  }
-
-  @Override
-  public WebSocketMetric connected(EndpointMetric endpointMetric, SocketMetric socketMetric, WebSocket webSocket) {
-    WebSocketMetric metric = new WebSocketMetric(socketMetric, webSocket);
+  public WebSocketMetric connected(WebSocket webSocket) {
+    WebSocketMetric metric = new WebSocketMetric(webSocket);
     webSockets.put(webSocket, metric);
     return metric;
   }
@@ -114,52 +117,19 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
     webSockets.remove(webSocketMetric.ws);
   }
 
-  @Override
-  public HttpClientMetric requestBegin(EndpointMetric endpointMetric, SocketMetric socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
-    endpointMetric.requests.incrementAndGet();
-    HttpClientMetric metric = new HttpClientMetric(endpointMetric, request, socketMetric);
-    requests.put(request, metric);
-    return metric;
-  }
-
-  @Override
-  public void requestEnd(HttpClientMetric requestMetric) {
-    requestMetric.requestEnded.incrementAndGet();
-  }
-
-  @Override
-  public void responseBegin(HttpClientMetric requestMetric, HttpClientResponse response) {
-    assertNotNull(response);
-    requestMetric.responseBegin.incrementAndGet();
-  }
-
-  @Override
-  public HttpClientMetric responsePushed(EndpointMetric endpointMetric, SocketMetric socketMetric, SocketAddress localAddress, SocketAddress remoteAddress, HttpClientRequest request) {
-    endpointMetric.requests.incrementAndGet();
-    HttpClientMetric metric = new HttpClientMetric(endpointMetric, request, socketMetric);
-    requests.put(request, metric);
-    return metric;
-  }
-
-  @Override
-  public void requestReset(HttpClientMetric requestMetric) {
-    requestMetric.endpoint.requests.decrementAndGet();
-    requestMetric.failed.set(true);
-    requests.remove(requestMetric.request);
-  }
-
-  @Override
-  public void responseEnd(HttpClientMetric requestMetric, HttpClientResponse response) {
-    requestMetric.endpoint.requests.decrementAndGet();
-    requests.remove(requestMetric.request);
-  }
-
   public SocketMetric connected(SocketAddress remoteAddress, String remoteName) {
-    return new SocketMetric(remoteAddress, remoteName);
+    SocketMetric metric = new SocketMetric(remoteAddress, remoteName);
+    sockets.put(remoteAddress, metric);
+    return metric;
   }
 
   public void disconnected(SocketMetric socketMetric, SocketAddress remoteAddress) {
+    sockets.remove(remoteAddress);
     socketMetric.connected.set(false);
+  }
+
+  public SocketMetric getSocket(SocketAddress address) {
+    return sockets.get(address);
   }
 
   @Override
