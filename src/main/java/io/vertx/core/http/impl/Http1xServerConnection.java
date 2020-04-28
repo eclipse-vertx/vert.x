@@ -484,12 +484,12 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       fut.addListener(res -> {
         // fail(result.cause());
         // because of CCE
-        ((VertxHandler)chctx.handler()).fail(result.cause());
+        fail(result.cause());
       });
     } else {
       // fail(result.cause());
       // because of CCE
-      ((VertxHandler)chctx.handler()).fail(result.cause());
+      fail(result.cause());
     }
   }
 }

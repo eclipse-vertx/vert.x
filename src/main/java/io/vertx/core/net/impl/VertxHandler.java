@@ -79,18 +79,8 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
     }
   }
 
-  /**
-   * Fail the connection, the {@code error} will be sent to the pipeline and the connection will
-   * stop processing any further message.
-   *
-   * @param error the {@code Throwable} to propagate
-   */
-  public void fail(Throwable error) {
-    conn.chctx.pipeline().fireExceptionCaught(error);
-  }
-
   @Override
-  public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+  public void handlerAdded(ChannelHandlerContext ctx) {
     setConnection(connectionFactory.apply(ctx));
   }
 
