@@ -63,6 +63,7 @@ public class AsyncFileImpl implements AsyncFile {
   private boolean closed;
   private Runnable closedDeferred;
   private long writesOutstanding;
+  private boolean overflow;
   private Handler<Throwable> exceptionHandler;
   private Handler<Void> drainHandler;
   private long writePos;
@@ -183,7 +184,6 @@ public class AsyncFileImpl implements AsyncFile {
     Objects.requireNonNull(buffer, "buffer");
     Arguments.require(position >= 0, "position must be >= 0");
     check();
-    boolean full = writesOutstanding > lwm;
     Handler<AsyncResult<Void>> wrapped = ar -> {
       if (ar.succeeded()) {
         checkContext();
@@ -192,11 +192,16 @@ public class AsyncFileImpl implements AsyncFile {
           if (writesOutstanding == 0 && closedDeferred != null) {
             action = closedDeferred;
           } else {
-            Handler<Void> h = drainHandler;
-            if (full && writesOutstanding <= lwm && h != null) {
-              action = () -> {
-                h.handle(null);
-              };
+            if (overflow && writesOutstanding <= lwm) {
+              overflow = false;
+              Handler<Void> h = drainHandler;
+              if (h != null) {
+                action = () -> {
+                  h.handle(null);
+                };
+              } else {
+                action = null;
+              }
             } else {
               action = null;
             }
@@ -257,7 +262,7 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public synchronized boolean writeQueueFull() {
     check();
-    return writesOutstanding >= maxWrites;
+    return overflow;
   }
 
   @Override
@@ -448,6 +453,7 @@ public class AsyncFileImpl implements AsyncFile {
     if (toWrite > 0) {
       synchronized (this) {
         writesOutstanding += toWrite;
+        overflow |= writesOutstanding >= maxWrites;
       }
       writeInternal(buff, position, handler);
     } else {

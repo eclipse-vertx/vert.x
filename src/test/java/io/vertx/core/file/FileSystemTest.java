@@ -14,6 +14,7 @@ package io.vertx.core.file;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -25,6 +26,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
@@ -1830,8 +1832,11 @@ public class FileSystemTest extends VertxTestBase {
     Buffer buff = TestUtils.randomBuffer(1024);
     vertx.fileSystem().open(testDir + pathSep + fileName, new OpenOptions(), onSuccess(file -> {
       file.setWriteQueueMaxSize(1024 * 4);
+      Context ctx = Vertx.currentContext();
+      assertNotNull(ctx);
       AtomicInteger times = new AtomicInteger(7);
       file.drainHandler(v -> {
+        assertSame(ctx, Vertx.currentContext());
         if (times.decrementAndGet() > 0) {
           while (!file.writeQueueFull()) {
             file.write(buff);
