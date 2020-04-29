@@ -93,7 +93,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         return;
       }
     }
-    context.emit(t, handler);
+    // Might be called from non vertx thread
+    context.dispatch(t, handler);
     endPromise.tryFail(t);
   }
 

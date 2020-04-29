@@ -5632,6 +5632,22 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testResetFromNonVertxThread() {
+    Context ctx = vertx.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      HttpClientRequest request = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI);
+      request.exceptionHandler(err -> {
+        assertSame(Vertx.currentContext(), ctx);
+        testComplete();
+      });
+      new Thread(() -> {
+        request.reset();
+      }).start();
+    });
+    await();
+  }
+
+  @Test
   public void testResetClientRequestInProgress() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
