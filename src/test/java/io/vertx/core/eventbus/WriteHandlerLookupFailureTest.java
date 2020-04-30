@@ -11,7 +11,6 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.Context;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -20,8 +19,6 @@ import io.vertx.core.spi.cluster.DeliveryStrategy;
 import io.vertx.core.spi.cluster.impl.DefaultDeliveryStrategy;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * @author Julien Viet
@@ -38,8 +35,13 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
     vertices = new Vertx[1];
     DeliveryStrategy strategy = new DefaultDeliveryStrategy() {
       @Override
-      public void chooseNodes(Message<?> message, Promise<List<String>> promise, Context ctx) {
+      public void chooseForSend(Message<?> message, Promise<String> promise) {
         promise.fail(cause);
+      }
+
+      @Override
+      public void chooseForPublish(Message<?> message, Promise<Iterable<String>> promise) {
+        promise.fail("Not implemented");
       }
     };
     new VertxFactory(options).deliveryStrategy(strategy).clusteredVertx(onSuccess(node -> {

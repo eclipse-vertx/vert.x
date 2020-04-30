@@ -27,7 +27,6 @@ import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.*;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -116,6 +115,7 @@ public class ClusteredEventBus extends EventBusImpl {
         setPromise.future().onComplete(ar -> {
           if (ar.succeeded()) {
             started = true;
+            clusterManager.setDeliveryStrategy(deliveryStrategy);
             deliveryStrategy.eventBusStarted();
             promise.complete();
           } else {
@@ -168,7 +168,7 @@ public class ClusteredEventBus extends EventBusImpl {
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      clusterManager.register(handlerHolder.getHandler().address, registrationInfo, promise);
+      clusterManager.addRegistration(handlerHolder.getHandler().address, registrationInfo, promise);
     } else {
       promise.complete();
     }
@@ -188,7 +188,7 @@ public class ClusteredEventBus extends EventBusImpl {
         handlerHolder.isLocalOnly()
       );
       Promise<Void> promise = Promise.promise();
-      clusterManager.unregister(handlerHolder.getHandler().address, registrationInfo, promise);
+      clusterManager.removeRegistration(handlerHolder.getHandler().address, registrationInfo, promise);
       if (completionHandler != null) {
         promise.future().onComplete(completionHandler);
       } else {
@@ -206,19 +206,38 @@ public class ClusteredEventBus extends EventBusImpl {
     } else if (sendContext.options.isLocalOnly()) {
       super.sendOrPub(sendContext);
     } else {
-      Promise<List<String>> promise = sendContext.ctx.promise();
-      deliveryStrategy.chooseNodes(sendContext.message, promise, sendContext.ctx);
-      promise.future().onComplete(ar -> {
-        if (ar.succeeded()) {
-          sendToNodes(ar.result(), sendContext);
-        } else {
-          if (log.isDebugEnabled()) {
-            log.error("Failed to send message", ar.cause());
-          }
-          sendContext.written(ar.cause());
-        }
-      });
+      Serializer serializer = Serializer.get(sendContext.ctx, deliveryStrategy);
+      if (sendContext.message.isSend()) {
+        send(sendContext, serializer);
+      } else {
+        publish(sendContext, serializer);
+      }
     }
+  }
+
+  private <T> void send(OutboundDeliveryContext<T> sendContext, Serializer serializer) {
+    serializer.<String>queue(
+      sendContext,
+      (strategy, message, promise) -> strategy.chooseForSend(message, promise),
+      (sc, res) -> sendToNode(sc, res),
+      (sc, throwable) -> sendOrPublishFailed(sc, throwable)
+    );
+  }
+
+  private <T> void publish(OutboundDeliveryContext<T> sendContext, Serializer serializer) {
+    serializer.<Iterable<String>>queue(
+      sendContext,
+      (strategy, message, promise) -> strategy.chooseForPublish(message, promise),
+      (sc, res) -> sendToNodes(sc, res),
+      (sc, throwable) -> sendOrPublishFailed(sc, throwable)
+    );
+  }
+
+  private <T> void sendOrPublishFailed(OutboundDeliveryContext<T> sendContext, Throwable cause) {
+    if (log.isDebugEnabled()) {
+      log.error("Failed to send message", cause);
+    }
+    sendContext.written(cause);
   }
 
   @Override
@@ -284,16 +303,25 @@ public class ClusteredEventBus extends EventBusImpl {
     };
   }
 
-  private <T> void sendToNodes(List<String> nodeIds, OutboundDeliveryContext<T> sendContext) {
-    if (!nodeIds.isEmpty()) {
-      for (String nid : nodeIds) {
-        if (!nid.equals(nodeId)) {
-          sendRemote(sendContext, nid, sendContext.message);
-        } else {
-          super.sendOrPub(sendContext);
-        }
-      }
+  private <T> void sendToNode(OutboundDeliveryContext<T> sendContext, String nodeId) {
+    if (nodeId != null && !nodeId.equals(this.nodeId)) {
+      sendRemote(sendContext, nodeId, sendContext.message);
     } else {
+      super.sendOrPub(sendContext);
+    }
+  }
+
+  private <T> void sendToNodes(OutboundDeliveryContext<T> sendContext, Iterable<String> nodeIds) {
+    boolean sentRemote = false;
+    if (nodeIds != null) {
+      for (String nid : nodeIds) {
+        if (!sentRemote) {
+          sentRemote = true;
+        }
+        sendToNode(sendContext, nid);
+      }
+    }
+    if (!sentRemote) {
       super.sendOrPub(sendContext);
     }
   }

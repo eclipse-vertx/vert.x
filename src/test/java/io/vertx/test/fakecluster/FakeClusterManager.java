@@ -11,8 +11,8 @@
 
 package io.vertx.test.fakecluster;
 
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
@@ -24,8 +24,13 @@ import io.vertx.core.spi.cluster.*;
 
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Predicate;
+
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class FakeClusterManager implements ClusterManager {
@@ -43,9 +48,16 @@ public class FakeClusterManager implements ClusterManager {
   private String nodeID;
   private NodeListener nodeListener;
   private VertxInternal vertx;
+  private DeliveryStrategy deliveryStrategy;
 
-  public void setVertx(VertxInternal vertx) {
-    this.vertx = vertx;
+  @Override
+  public void setVertx(Vertx vertx) {
+    this.vertx = (VertxInternal) vertx;
+  }
+
+  @Override
+  public void setDeliveryStrategy(DeliveryStrategy deliveryStrategy) {
+    this.deliveryStrategy = deliveryStrategy;
   }
 
   private static void doJoin(String nodeID, FakeClusterManager node) {
@@ -179,11 +191,25 @@ public class FakeClusterManager implements ClusterManager {
 
   @Override
   public void leave(Promise<Void> promise) {
-    registrations.forEach((address, registrationInfos) -> {
-      synchronized (registrationInfos) {
-        registrationInfos.removeIf(registrationInfo -> registrationInfo.getNodeId().equals(nodeID));
-      }
+    List<RegistrationUpdateEvent> events = new ArrayList<>();
+    registrations.keySet().forEach(address -> {
+      List<RegistrationInfo> current = registrations.compute(address, (addr, infos) -> {
+        if (infos == null) return null;
+        return infos.stream()
+          .filter(info -> !info.getNodeId().equals(nodeID))
+          .collect(collectingAndThen(toList(), list -> list.isEmpty() ? null : list));
+      });
+      events.add(new RegistrationUpdateEvent(address, current));
     });
+    for (String nid : getNodes()) {
+      if (Objects.equals(nodeID, nid)) {
+        continue;
+      }
+      for (RegistrationUpdateEvent event : events) {
+        FakeClusterManager clusterManager = nodes.get(nid);
+        clusterManager.deliveryStrategy.registrationsUpdated(event);
+      }
+    }
     vertx.executeBlocking(fut -> {
       synchronized (this) {
         if (nodeID != null) {
@@ -205,25 +231,41 @@ public class FakeClusterManager implements ClusterManager {
   }
 
   @Override
-  public void register(String address, RegistrationInfo registrationInfo, Promise<Void> promise) {
-    registrations.computeIfAbsent(address, k -> Collections.synchronizedList(new ArrayList<>()))
-      .add(registrationInfo);
+  public void addRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise) {
+    List<RegistrationInfo> current = registrations.compute(address, (addrr, infos) -> {
+      List<RegistrationInfo> res;
+      if (infos == null) {
+        res = new ArrayList<>();
+      } else {
+        res = infos;
+      }
+      res.add(registrationInfo);
+      return res;
+    });
     promise.complete();
+    deliveryStrategy.registrationsUpdated(new RegistrationUpdateEvent(address, current));
   }
 
   @Override
-  public void unregister(String address, RegistrationInfo registrationInfo, Promise<Void> promise) {
-    List<RegistrationInfo> infos = registrations.get(address);
-    if (infos != null && infos.remove(registrationInfo)) {
-      promise.complete();
-    } else {
-      promise.fail("Registration not found");
-    }
+  public void removeRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise) {
+    List<RegistrationInfo> current = registrations.compute(address, (addrr, infos) -> {
+      List<RegistrationInfo> res;
+      if (infos == null) {
+        res = null;
+      } else {
+        res = infos.stream()
+          .filter(Predicate.isEqual(registrationInfo).negate())
+          .collect(collectingAndThen(toList(), list -> list.isEmpty() ? null : list));
+      }
+      return res;
+    });
+    promise.complete();
+    deliveryStrategy.registrationsUpdated(new RegistrationUpdateEvent(address, current));
   }
 
   @Override
-  public void registrationListener(String address, Promise<RegistrationListener> promise) {
-    promise.complete(new FakeRegistrationListener(address));
+  public void getRegistrations(String address, Promise<List<RegistrationInfo>> promise) {
+    promise.complete(registrations.get(address));
   }
 
   public static void reset() {
@@ -233,121 +275,5 @@ public class FakeClusterManager implements ClusterManager {
     localAsyncLocks = new LocalAsyncLocks();
     counters.clear();
     syncMaps.clear();
-  }
-
-  private static class FakeRegistrationListener implements RegistrationListener {
-
-    static final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(
-      Runtime.getRuntime().availableProcessors(),
-      r -> {
-        Thread thread = new Thread(r);
-        thread.setDaemon(true);
-        return thread;
-      });
-
-    private final String address;
-
-    private List<RegistrationInfo> initial, last;
-    private Handler<List<RegistrationInfo>> handler;
-    private Handler<Void> endHandler;
-    private ScheduledFuture<?> scheduledFuture;
-
-    FakeRegistrationListener(String address) {
-      this.address = address;
-      initial = getRegistrationInfos();
-    }
-
-    private List<RegistrationInfo> getRegistrationInfos() {
-      List<RegistrationInfo> registrationInfos = registrations.get(address);
-      if (registrationInfos == null || registrationInfos.isEmpty()) {
-        return Collections.emptyList();
-      }
-      synchronized (registrationInfos) {
-        return Collections.unmodifiableList(new ArrayList<>(registrationInfos));
-      }
-    }
-
-    @Override
-    public List<RegistrationInfo> initialState() {
-      return initial;
-    }
-
-    @Override
-    public RegistrationListener exceptionHandler(Handler<Throwable> handler) {
-      return this;
-    }
-
-    @Override
-    public synchronized RegistrationListener handler(Handler<List<RegistrationInfo>> handler) {
-      this.handler = handler;
-      return this;
-    }
-
-    @Override
-    public synchronized RegistrationListener endHandler(Handler<Void> endHandler) {
-      this.endHandler = endHandler;
-      return this;
-    }
-
-    @Override
-    public synchronized void start() {
-      scheduledFuture = executorService.scheduleWithFixedDelay(this::checkUpdate, 5, 5, TimeUnit.MILLISECONDS);
-    }
-
-    private void checkUpdate() {
-      List<RegistrationInfo> infos = getRegistrationInfos();
-      Runnable emission;
-      synchronized (this) {
-        if (initial != null) {
-          if (infos.isEmpty()) {
-            emission = terminalEvent();
-          } else if (!initial.equals(infos)) {
-            emission = itemEvent(infos);
-          } else {
-            emission = null;
-          }
-          last = infos;
-          initial = null;
-        } else if (last.isEmpty() || last.equals(infos)) {
-          emission = null;
-        } else {
-          last = infos;
-          if (last.isEmpty()) {
-            emission = terminalEvent();
-          } else {
-            emission = itemEvent(infos);
-          }
-        }
-      }
-      if (emission != null) {
-        emission.run();
-      }
-    }
-
-    private synchronized Runnable itemEvent(List<RegistrationInfo> infos) {
-      Handler<List<RegistrationInfo>> h = handler;
-      return () -> {
-        if (h != null) {
-          h.handle(infos);
-        }
-      };
-    }
-
-    private synchronized Runnable terminalEvent() {
-      Handler<Void> e = endHandler;
-      return () -> {
-        if (e != null) {
-          e.handle(null);
-        }
-        stop();
-      };
-    }
-
-    @Override
-    public synchronized void stop() {
-      if (scheduledFuture != null) {
-        scheduledFuture.cancel(false);
-      }
-    }
   }
 }

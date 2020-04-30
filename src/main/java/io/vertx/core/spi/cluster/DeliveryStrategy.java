@@ -11,12 +11,9 @@
 
 package io.vertx.core.spi.cluster;
 
-import io.vertx.core.Context;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.impl.VertxInternal;
-
-import java.util.List;
 
 /**
  * {@link io.vertx.core.eventbus.EventBus Clustered EventBus (CEB)} delivery strategy.
@@ -36,7 +33,7 @@ public interface DeliveryStrategy {
   /**
    * Invoked after the cluster manager has started.
    */
-  void setVertx(VertxInternal vertx);
+  void setVertx(Vertx vertx);
 
   /**
    * Invoked after the {@link io.vertx.core.eventbus.EventBus} has started
@@ -44,12 +41,22 @@ public interface DeliveryStrategy {
   void eventBusStarted();
 
   /**
-   * Choose nodes the given {@code message} should be delivered to.
-   * <p>
-   * The result must not be null and must hold distinct values.
-   * <p>
-   * The implementation may or may not guarantee delivery ordering on the given {@code context}.
+   * Choose a node for sending the given {@code message}.
+   *
+   * @throws IllegalArgumentException if {@link Message#isSend()} returns false
    */
-  void chooseNodes(Message<?> message, Promise<List<String>> promise, Context context);
+  void chooseForSend(Message<?> message, Promise<String> promise);
+
+  /**
+   * Choose a node for publishing the given {@code message}.
+   *
+   * @throws IllegalArgumentException if {@link Message#isSend()} returns true
+   */
+  void chooseForPublish(Message<?> message, Promise<Iterable<String>> promise);
+
+  /**
+   * Invoked by the {@link ClusterManager} when messaging handler registrations are added or removed.
+   */
+  void registrationsUpdated(RegistrationUpdateEvent event);
 
 }

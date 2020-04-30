@@ -13,7 +13,7 @@ package io.vertx.core.spi.cluster;
 
 
 import io.vertx.core.Promise;
-import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
@@ -41,7 +41,9 @@ import java.util.Map;
  */
 public interface ClusterManager {
 
-  void setVertx(VertxInternal vertx);
+  void setVertx(Vertx vertx);
+
+  void setDeliveryStrategy(DeliveryStrategy deliveryStrategy);
 
   /**
    * Return an async map for the given name
@@ -110,19 +112,15 @@ public interface ClusterManager {
   /**
    * Share a new messaging handler registration with other nodes in the cluster.
    */
-  void register(String address, RegistrationInfo registrationInfo, Promise<Void> promise);
+  void addRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise);
 
   /**
    * Signal removal of a messaging handler registration to other nodes in the cluster.
    */
-  void unregister(String address, RegistrationInfo registrationInfo, Promise<Void> promise);
+  void removeRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise);
 
   /**
-   * Get a {@link RegistrationListener} for the given {@code address}.
-   * <p>
-   * After {@link #register(String, RegistrationInfo, Promise)} or {@link #unregister(String, RegistrationInfo, Promise)} is invoked
-   * on this node or any other node in the cluster, the listener will emit a new list of {@link RegistrationInfo}.
-   * This list represents the new state of registrations for the given {@code address}.
+   * Get the messaging handler currently registered in the cluster.
    */
-  void registrationListener(String address, Promise<RegistrationListener> promise);
+  void getRegistrations(String address, Promise<List<RegistrationInfo>> promise);
 }

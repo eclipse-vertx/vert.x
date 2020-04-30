@@ -11,13 +11,17 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.*;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxFactory;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.DeliveryStrategy;
 import io.vertx.core.spi.cluster.NodeInfo;
+import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
@@ -471,11 +475,10 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       })
       .map(options -> {
         VertxFactory factory = new VertxFactory(options).deliveryStrategy(new CustomDeliveryStrategy());
-        Promise<Vertx> promise = Promise.promise();
+        Promise promise = Promise.promise();
         factory.clusteredVertx(promise);
         return promise.future();
       })
-      .map(Future.class::cast)
       .collect(collectingAndThen(toList(), CompositeFuture::all));
 
     CountDownLatch startLatch = new CountDownLatch(1);
@@ -491,11 +494,10 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         latch.countDown();
       }))
       .map(consumer -> {
-        Promise<Void> promise = Promise.promise();
+        Promise promise = Promise.promise();
         consumer.completionHandler(promise);
         return promise.future();
       })
-      .map(Future.class::cast)
       .collect(collectingAndThen(toList(), CompositeFuture::all));
 
     Map<Integer, Set<String>> expected = new HashMap<>();
@@ -519,8 +521,8 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     private String rack;
 
     @Override
-    public void setVertx(VertxInternal vertx) {
-      this.vertx = vertx;
+    public void setVertx(Vertx vertx) {
+      this.vertx = (VertxInternal) vertx;
     }
 
     @Override
@@ -530,7 +532,12 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     }
 
     @Override
-    public void chooseNodes(Message<?> message, Promise<List<String>> promise, Context context) {
+    public void chooseForSend(Message<?> message, Promise<String> promise) {
+      promise.fail("Not implemented");
+    }
+
+    @Override
+    public void chooseForPublish(Message<?> message, Promise<Iterable<String>> promise) {
       List<String> nodes = clusterManager.getNodes();
       CompositeFuture future = nodes.stream()
         .map(nodeId -> {
@@ -539,7 +546,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
           return nodeInfo.future();
         })
         .collect(collectingAndThen(toList(), CompositeFuture::all));
-      future.map(cf -> {
+      future.<Iterable<String>>map(cf -> {
         List<String> res = new ArrayList<>();
         for (int i = 0; i < nodes.size(); i++) {
           NodeInfo nodeInfo = cf.resultAt(i);
@@ -549,6 +556,10 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         }
         return res;
       }).onComplete(promise);
+    }
+
+    @Override
+    public void registrationsUpdated(RegistrationUpdateEvent event) {
     }
   }
 }
