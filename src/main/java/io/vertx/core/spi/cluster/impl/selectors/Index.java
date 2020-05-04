@@ -11,13 +11,25 @@
 
 package io.vertx.core.spi.cluster.impl.selectors;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * @author Thomas Segismont
  */
-public interface Selector {
+class Index {
 
-  String selectForSend();
+  private final int max;
+  private final AtomicInteger idx = new AtomicInteger(0);
 
-  Iterable<String> selectForPublish();
+  Index(int max) {
+    this.max = max;
+  }
 
+  int nextVal() {
+    return idx.getAndUpdate(this::update);
+  }
+
+  private int update(int i) {
+    return i == max - 1 ? 0 : i + 1;
+  }
 }

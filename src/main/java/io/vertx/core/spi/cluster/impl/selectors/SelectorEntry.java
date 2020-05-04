@@ -13,7 +13,10 @@ package io.vertx.core.spi.cluster.impl.selectors;
 
 import io.vertx.core.Promise;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Thomas Segismont
@@ -44,7 +47,26 @@ class SelectorEntry {
     if (nodeIds == null || nodeIds.isEmpty()) {
       return null;
     }
-    return new SelectorEntry(Selector.create(nodeIds), selectorPromise, counter);
+    Map<String, Integer> weights = computeWeights(nodeIds);
+    Selector selector;
+    if (isEvenlyDistributed(weights)) {
+      selector = new RoundRobinSelector(new ArrayList<>(weights.keySet()));
+    } else {
+      selector = new WeightedRoundRobinSelector(weights);
+    }
+    return new SelectorEntry(selector, selectorPromise, counter);
+  }
+
+  private Map<String, Integer> computeWeights(List<String> nodeIds) {
+    Map<String, Integer> weights = new HashMap<>();
+    for (String nodeId : nodeIds) {
+      weights.merge(nodeId, 1, Math::addExact);
+    }
+    return weights;
+  }
+
+  private boolean isEvenlyDistributed(Map<String, Integer> weights) {
+    return weights.values().stream().distinct().count() == 1;
   }
 
   boolean shouldInitialize() {

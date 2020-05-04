@@ -83,7 +83,7 @@ public class Selectors {
       if (next == null) {
         if (map.remove(address, previous)) {
           if (previous.isNotReady()) {
-            previous.selectorPromise.complete(Selector.EMPTY);
+            previous.selectorPromise.complete(EmptySelector.INSTANCE);
           }
           break;
         }

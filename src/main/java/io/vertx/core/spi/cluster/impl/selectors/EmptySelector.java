@@ -11,13 +11,21 @@
 
 package io.vertx.core.spi.cluster.impl.selectors;
 
+import java.util.Collections;
+
 /**
  * @author Thomas Segismont
  */
-public interface Selector {
+enum EmptySelector implements Selector {
+  INSTANCE;
 
-  String selectForSend();
+  @Override
+  public String selectForSend() {
+    return null;
+  }
 
-  Iterable<String> selectForPublish();
-
+  @Override
+  public Iterable<String> selectForPublish() {
+    return Collections.emptyList();
+  }
 }
