@@ -11,6 +11,7 @@
 
 package io.vertx.it;
 
+import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -28,7 +29,7 @@ public class JsonCodecTest extends VertxTestBase {
     try {
       obj.mapTo(Object.class);
       fail();
-    } catch (UnsupportedOperationException ignore) {
+    } catch (DecodeException ignore) {
       // Expected
     }
   }
