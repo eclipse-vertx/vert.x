@@ -757,13 +757,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         });
       });
       p.addBefore("handler", "handshakeCompleter", handshakeInboundHandler);
-      handshaker
-        .handshake(chctx.channel())
-        .addListener(f -> {
-        if (!f.isSuccess()) {
-          promise.fail(f.cause());
-        }
-      });
+      handshaker.handshake(chctx.channel());
     } catch (Exception e) {
       handleException(e);
     }
