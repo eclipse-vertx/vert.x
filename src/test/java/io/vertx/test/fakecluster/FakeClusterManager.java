@@ -201,15 +201,7 @@ public class FakeClusterManager implements ClusterManager {
       });
       events.add(new RegistrationUpdateEvent(address, current));
     });
-    for (String nid : getNodes()) {
-      if (Objects.equals(nodeID, nid)) {
-        continue;
-      }
-      for (RegistrationUpdateEvent event : events) {
-        FakeClusterManager clusterManager = nodes.get(nid);
-        clusterManager.deliveryStrategy.registrationsUpdated(event);
-      }
-    }
+    fireRegistrationUpdateEvents(events, true);
     vertx.executeBlocking(fut -> {
       synchronized (this) {
         if (nodeID != null) {
@@ -223,6 +215,20 @@ public class FakeClusterManager implements ClusterManager {
       }
       fut.complete();
     }, promise);
+  }
+
+  private synchronized void fireRegistrationUpdateEvents(List<RegistrationUpdateEvent> events, boolean skipThisNode) {
+    for (String nid : getNodes()) {
+      if (skipThisNode && Objects.equals(nodeID, nid)) {
+        continue;
+      }
+      for (RegistrationUpdateEvent event : events) {
+        FakeClusterManager clusterManager = nodes.get(nid);
+        if (clusterManager.isActive()) {
+          clusterManager.deliveryStrategy.registrationsUpdated(event);
+        }
+      }
+    }
   }
 
   @Override
@@ -243,7 +249,8 @@ public class FakeClusterManager implements ClusterManager {
       return res;
     });
     promise.complete();
-    deliveryStrategy.registrationsUpdated(new RegistrationUpdateEvent(address, current));
+    RegistrationUpdateEvent event = new RegistrationUpdateEvent(address, current);
+    fireRegistrationUpdateEvents(Collections.singletonList(event), false);
   }
 
   @Override
@@ -260,7 +267,8 @@ public class FakeClusterManager implements ClusterManager {
       return res;
     });
     promise.complete();
-    deliveryStrategy.registrationsUpdated(new RegistrationUpdateEvent(address, current));
+    RegistrationUpdateEvent event = new RegistrationUpdateEvent(address, current);
+    fireRegistrationUpdateEvents(Collections.singletonList(event), false);
   }
 
   @Override
