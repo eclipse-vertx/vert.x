@@ -720,6 +720,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testClientResetServerStreamDuringResponse() throws Exception {
+    waitFor(3);
     server.requestHandler(req -> {
       req.exceptionHandler(err -> {
         assertEquals(err.getClass(), StreamResetException.class);
@@ -732,7 +733,7 @@ public class Http2ClientTest extends Http2TestBase {
       });
       req.response().closeHandler(v -> {
         assertEquals(10L, reset.get());
-        testComplete();
+        complete();
       });
       req.response().setChunked(true).write(Buffer.buffer("some-data"));
     });
@@ -740,8 +741,14 @@ public class Http2ClientTest extends Http2TestBase {
     client.put(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/somepath", Buffer.buffer("hello"),
       onSuccess(resp -> {
         resp.request().reset(10);
-        assertIllegalStateException(() -> resp.request().write(Buffer.buffer()));
-        assertIllegalStateException(resp.request()::end);
+        resp.request().write(Buffer.buffer()).onComplete(onFailure(err -> {
+          assertEquals(IllegalStateException.class, err.getClass());
+          complete();
+        }));
+        resp.request().end().onComplete(onFailure(err -> {
+          assertEquals(IllegalStateException.class, err.getClass());
+          complete();
+        }));
       }));
     await();
   }
