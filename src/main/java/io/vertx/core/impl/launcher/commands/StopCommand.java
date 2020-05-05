@@ -110,15 +110,12 @@ public class StopCommand extends DefaultCommand {
   }
 
   private void terminateWindowsApplication() {
-    // Use wmic.
-    List<String> cmd = Arrays.asList(
-        "WMIC",
-        "PROCESS",
-        "WHERE",
-        "CommandLine like '%vertx.id=" + id + "%'",
-        "CALL",
-        "TERMINATE"
-    );
+    String filter = "Name LIKE 'java%' AND CommandLine LIKE '%-Dvertx.id=" + id + "%'";
+    String command =
+      "\"Get-CimInstance -ClassName Win32_Process -Filter \\\"" + filter + "\\\"" +
+        " | " +
+        "Invoke-CimMethod -MethodName Terminate\"";
+    List<String> cmd = Arrays.asList("powershell", "-Command", command);
 
     try {
       final Process process = new ProcessBuilder(cmd).start();
