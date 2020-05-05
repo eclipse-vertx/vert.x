@@ -18,6 +18,43 @@ import java.util.*;
  */
 class WeightedRoundRobinSelector implements Selector {
 
+  /*
+   * Implementation notes.
+   *
+   * This selector is made of:
+   *
+   *  - a list of unique node ids, ordered by weight
+   *  - an index, ranging from 0 to the total weight (excluded)
+   *  - a map of offsets built to determine, for any index value, the subset of unique node ids that can receive messages
+   *
+   * Consider the following node ids with their weight:
+   *
+   * +-----+-----+-----+-----+
+   * +  a  +  b  +  c  +  d  +
+   * +-----+-----+-----+-----+
+   * + 15  + 25  + 25  + 35  +
+   * +-----+-----+-----+-----+
+   *
+   * Total weight is 100, index ranges from 0 to 99.
+   *
+   * Weight increments are:
+   *
+   * +-----+-----+-----+-----+
+   * + 15  + 10  +  0  + 10  +
+   * +-----+-----+-----+-----+
+   *
+   * From 0 to 59 (4 * 15): a,b,c,d can receive messages.
+   * From 60 to 89 (3 * 10): b,c,d can receive messages.
+   * From 90 to 90 (2 * 0): c,d can receive messages.
+   * From 90 to 99 (1 * 10): d can receive messages.
+   *
+   * Consequently, the following map of offsets can be built: (0 => 0, 60 => 1, 90 => 3)
+   * A tree map allows to retrieve efficiently the entry that has the biggest key less than or equal to the current index value.
+   *
+   * In practice, the first mapping (0 => 0) is not stored as it is superfluous:
+   * The tree map lookup will return null for index values between 0 to 59 and in this case the offset is inferred to 0.
+   */
+
   private final List<String> uniqueIds;
   private final TreeMap<Integer, Integer> offsets = new TreeMap<>();
   private final Index index;
