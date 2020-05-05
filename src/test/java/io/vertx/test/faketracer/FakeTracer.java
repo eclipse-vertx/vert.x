@@ -76,6 +76,9 @@ public class FakeTracer implements VertxTracer<Span, Span> {
     String traceId = null;
     String spanId = null;
     String spanParentId = null;
+    if (headers == null) {
+      System.out.println("NULL");
+    }
     for (Map.Entry<String, String> header : headers) {
       switch (header.getKey()) {
         case "span-trace-id":

@@ -152,7 +152,7 @@ abstract class HandlerRegistration<T> {
           bus.metrics.messageDelivered(m, isLocal(message));
         }
         if (tracer != null && !src) {
-          message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers, MessageTagExtractor.INSTANCE);
+          message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
           HandlerRegistration.this.dispatch(message, context, handler);
           if (message.replyAddress == null) {
             tracer.sendResponse(context, null, message.trace, null, TagExtractor.empty());
