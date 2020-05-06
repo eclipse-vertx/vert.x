@@ -14,6 +14,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
+import io.vertx.core.Context;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetServer;
 import io.vertx.test.core.VertxTestBase;
@@ -22,6 +23,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ConnectionBaseTest extends VertxTestBase {
 
@@ -56,11 +59,10 @@ public class ConnectionBaseTest extends VertxTestBase {
             }
           }
         });
-        new Thread(() -> {
+        executeAsyncTask(() -> {
           conn.writeMessage("msg1");
           conn.writeMessage("msg2");
-        }).start();
-
+        });
       });
       server.listen(1234, "localhost", onSuccess(s -> {
         client.connect(1234, "localhost", onSuccess(so -> {
@@ -113,11 +115,10 @@ public class ConnectionBaseTest extends VertxTestBase {
             super.flush(ctx);
           }
         });
-        new Thread(() -> {
+        executeAsyncTask(() -> {
           conn.writeToChannel("msg1");
           conn.writeToChannel("msg2");
-        }).start();
-
+        });
       });
       server.listen(1234, "localhost", onSuccess(s -> {
         client.connect(1234, "localhost", onSuccess(so -> {
@@ -127,6 +128,20 @@ public class ConnectionBaseTest extends VertxTestBase {
     } finally {
       server.close();
       client.close();
+    }
+  }
+
+  private void executeAsyncTask(Runnable runnable) {
+    assertTrue(Context.isOnEventLoopThread());
+    CountDownLatch latch = new CountDownLatch(1);
+    new Thread(() -> {
+      runnable.run();
+      latch.countDown();
+    }).start();
+    try {
+      latch.await(20, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
     }
   }
 }
