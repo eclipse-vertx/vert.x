@@ -357,7 +357,7 @@
         <version>2.19.1</version>
         <executions>
           <execution>
-            <id>no-alpn</id>
+            <id>ssl-engine:default</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -367,7 +367,6 @@
                 <include>io/vertx/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <classpathDependencyExcludes>
@@ -376,7 +375,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>openssl-alpn</id>
+            <id>ssl-engine:openssl</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -386,14 +385,12 @@
                 <include>io/vertx/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
                 <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
-                <vertx-test-sslcontext>openssl</vertx-test-sslcontext>
               </systemProperties>
             </configuration>
           </execution>
           <execution>
-            <id>jdk-alpn</id>
+            <id>ssl-engine:agent</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -404,9 +401,7 @@
                 <include>io/vertx/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
-                <vertx-test-alpn-jdk>true</vertx-test-alpn-jdk>
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-                <vertx-test-sslcontext>jdk</vertx-test-sslcontext>
               </systemProperties>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
@@ -414,7 +409,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>jdk-openssl-alpn</id>
+            <id>ssl-engine:openssl+agent</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -425,9 +420,7 @@
                 <include>io/vertx/it/SSLEngineTest.java</include>
               </includes>
               <systemProperties>
-                <vertx-test-alpn-jdk>true</vertx-test-alpn-jdk>
                 <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
-                <vertx-test-sslcontext>jdk</vertx-test-sslcontext>
               </systemProperties>
             </configuration>
           </execution>
@@ -660,7 +653,7 @@
     <profile>
       <id>java-8</id>
       <properties>
-        <jetty.alpnAgent.version>2.0.9</jetty.alpnAgent.version>
+        <jetty.alpnAgent.version>2.0.10</jetty.alpnAgent.version>
         <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
         <jetty.alpnAgent.argLine>-javaagent:"${jetty.alpnAgent.path}"</jetty.alpnAgent.argLine>
       </properties>

@@ -3,6 +3,8 @@ branches:
   only:
   - master
   - /^\d+\.\d+$/
+before_install:
+  - wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
 cache:
   directories:
     - $HOME/.m2
@@ -14,6 +16,7 @@ jobs:
       name: "OpenJDK 8"
       jdk: openjdk8
       script: mvn -q clean verify -B
+      install: . ./install-jdk.sh --url "https://api.adoptopenjdk.net/v2/binary/releases/openjdk8?openjdk_impl=hotspot&os=linux&type=jdk&release=latest&heap_size=normal&arch=x64"
     - if: type != pull_request
       name: "OpenJDK 11"
       jdk: openjdk11
@@ -22,10 +25,16 @@ jobs:
       name: "OpenJDK 8 / native transport"
       jdk: openjdk8
       script: mvn -q clean verify -B -PtestNativeTransport
+      install: . ./install-jdk.sh --url "https://api.adoptopenjdk.net/v2/binary/releases/openjdk8?openjdk_impl=hotspot&os=linux&type=jdk&release=latest&heap_size=normal&arch=x64"
     - if: type != pull_request
       name: "OpenJDK 8 / domain sockets"
       jdk: openjdk8
       script: mvn -q clean verify -B -PtestDomainSockets
+      install: . ./install-jdk.sh --url "https://api.adoptopenjdk.net/v2/binary/releases/openjdk8?openjdk_impl=hotspot&os=linux&type=jdk&release=latest&heap_size=normal&arch=x64"
+    - stage: test
+      name: "OpenJDK 8 / ALPN agent"
+      jdk: openjdk8
+      script: mvn -q clean verify -B -Dtest=Http*TLSTest
     - stage: deploy
       name: "Deploy to Sonatype's snapshots repository"
       jdk: openjdk8
