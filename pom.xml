@@ -496,47 +496,6 @@
               </classpathDependencyExcludes>
             </configuration>
           </execution>
-          <!-- Check some netty compat (dns / http2) with unstable classes -->
-          <!-- Uncomment to run them, you need to have also the dependencies in the repo as they won't be downloaded automatically -->
-          <!-- It is possible to have them easily by running the build with -Dnetty.version=4.1.9.Final -Dtcnative.version=2.0.0.Final -->
-<!--
-          <execution>
-            <id>netty-4.1.9-compat</id>
-            <goals>
-              <goal>integration-test</goal>
-            </goals>
-            <phase>integration-test</phase>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/NettyCompatTest.java</include>
-              </includes>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-common</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-buffer</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-transport</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-handler</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-handler-proxy</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-handler-codec-http</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-handler-codec-http2</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-resolver</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-resolver-dns</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-              <additionalClasspathElements>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-common/4.1.9.Final/netty-common-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-buffer/4.1.9.Final/netty-buffer-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-transport/4.1.9.Final/netty-transport-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-handler/4.1.9.Final/netty-handler-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-handler-proxy/4.1.9.Final/netty-handler-proxy-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-codec-http/4.1.9.Final/netty-codec-http-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-codec-http2/4.1.9.Final/netty-codec-http2-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-resolver/4.1.9.Final/netty-resolver-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-resolver-dns/4.1.9.Final/netty-resolver-dns-4.1.9.Final.jar</additionalClasspathElement>
-                <additionalClasspathElement>${settings.localRepository}/io/netty/netty-tcnative-boringssl-static/2.0.0.Final/netty-tcnative-boringssl-static-2.0.0.Final.jar</additionalClasspathElement>
-              </additionalClasspathElements>
-            </configuration>
-          </execution>
--->
         </executions>
       </plugin>
 
