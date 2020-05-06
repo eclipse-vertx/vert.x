@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.netty.channel.EventLoopGroup;
+import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 
@@ -28,6 +29,7 @@ public class Http2TestBase extends HttpTestBase {
     return new HttpServerOptions()
         .setPort(port)
         .setHost(host)
+        .setSslEngineOptions(new JdkSSLEngineOptions())
         .setUseAlpn(true)
         .setSsl(true)
         .addEnabledCipherSuite("TLS_RSA_WITH_AES_128_CBC_SHA") // Non Diffie-helman -> debuggable in wireshark
@@ -35,11 +37,12 @@ public class Http2TestBase extends HttpTestBase {
   };
 
   public static HttpClientOptions createHttp2ClientOptions() {
-    return new HttpClientOptions().
-        setUseAlpn(true).
-        setSsl(true).
-        setTrustStoreOptions(Trust.SERVER_JKS.get()).
-        setProtocolVersion(HttpVersion.HTTP_2);
+    return new HttpClientOptions()
+      .setSslEngineOptions(new JdkSSLEngineOptions())
+      .setUseAlpn(true)
+      .setSsl(true)
+      .setTrustStoreOptions(Trust.SERVER_JKS.get())
+      .setProtocolVersion(HttpVersion.HTTP_2);
   }
 
   protected HttpServerOptions serverOptions;

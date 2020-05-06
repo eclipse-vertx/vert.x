@@ -1126,6 +1126,8 @@ public abstract class HttpTLSTest extends HttpTestBase {
       }
       if (clientOpenSSL) {
         options.setOpenSslEngineOptions(new OpenSSLEngineOptions());
+      } else {
+        options.setJdkSslEngineOptions(new JdkSSLEngineOptions());
       }
       if (clientUsesAlpn) {
         options.setUseAlpn(true);
