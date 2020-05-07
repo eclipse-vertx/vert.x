@@ -18,13 +18,6 @@ import io.vertx.core.eventbus.Message;
 /**
  * {@link io.vertx.core.eventbus.EventBus Clustered EventBus (CEB)} delivery strategy.
  * <p>
- * The <em>CEB</em> uses this regardless of the messaging paradigm: send, publish or request/reply.
- * When a node is chosen, implementations should return a list holding:
- * <ul>
- *   <li>at most one value when {{@link Message#isSend()}} returns {@code true}</li>
- *   <li>zero, one or more values when {{@link Message#isSend()}} returns {@code false}</li>
- * </ul>
- * <p>
  * This strategy is skipped by the <em>CEB</em> only when the user raises the {@link io.vertx.core.eventbus.DeliveryOptions#setLocalOnly(boolean)} flag.
  * Consequently, implementations must be aware of local {@link io.vertx.core.eventbus.EventBus} registrations.
  */
