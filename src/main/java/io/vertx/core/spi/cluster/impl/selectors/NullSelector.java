@@ -16,7 +16,7 @@ import java.util.Collections;
 /**
  * @author Thomas Segismont
  */
-enum EmptySelector implements Selector {
+enum NullSelector implements Selector {
   INSTANCE;
 
   @Override
