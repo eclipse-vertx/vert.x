@@ -26,11 +26,7 @@ public class RegistrationUpdateEvent {
 
   public RegistrationUpdateEvent(String address, List<RegistrationInfo> registrations) {
     this.address = address;
-    if (registrations == null || registrations.isEmpty()) {
-      this.registrations = Collections.emptyList();
-    } else {
-      this.registrations = Collections.unmodifiableList(registrations);
-    }
+    this.registrations = registrations == null ? Collections.emptyList() : registrations;
   }
 
   /**
