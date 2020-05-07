@@ -24,7 +24,6 @@ import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.NetClientImpl;
-import io.vertx.core.spi.cluster.NodeAddress;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
@@ -72,10 +71,7 @@ class ConnectionHolder {
     Promise<NodeInfo> promise = Promise.promise();
     eventBus.vertx().getClusterManager().getNodeInfo(remoteNodeId, promise);
     promise.future()
-      .flatMap(info -> {
-        NodeAddress address = info.getAddress();
-        return client.connect(address.getPort(), address.getHost());
-      })
+      .flatMap(info -> client.connect(info.getPort(), info.getHost()))
       .onComplete(ar -> {
         if (ar.succeeded()) {
           connected(ar.result());

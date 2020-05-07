@@ -11,6 +11,7 @@
 
 package io.vertx.core.spi.cluster;
 
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 
 import java.util.Objects;
@@ -22,19 +23,36 @@ import java.util.Objects;
  */
 public final class NodeInfo {
 
-  private final NodeAddress address;
+  private final String host;
+  private final int port;
   private final JsonObject metadata;
 
-  public NodeInfo(NodeAddress address, JsonObject metadata) {
-    this.address = Objects.requireNonNull(address, "address is null");
+  public NodeInfo(String host, int port, JsonObject metadata) {
+    this.host = Objects.requireNonNull(host, "host is null");
+    Arguments.requireInRange(port, 1, 65535, "Not an actual port: " + port);
+    this.port = port;
     this.metadata = metadata;
   }
 
-  public NodeAddress getAddress() {
-    return address;
+
+  public String getHost() {
+    return host;
+  }
+
+  public int getPort() {
+    return port;
   }
 
   public JsonObject getMetadata() {
     return metadata;
+  }
+
+  @Override
+  public String toString() {
+    return "NodeInfo{" +
+      "host='" + host + '\'' +
+      ", port=" + port +
+      ", metadata=" + metadata +
+      '}';
   }
 }

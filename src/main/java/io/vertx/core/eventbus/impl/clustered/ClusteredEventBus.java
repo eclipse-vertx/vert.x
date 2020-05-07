@@ -25,7 +25,10 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
-import io.vertx.core.spi.cluster.*;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.DeliveryStrategy;
+import io.vertx.core.spi.cluster.NodeInfo;
+import io.vertx.core.spi.cluster.RegistrationInfo;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -109,7 +112,7 @@ public class ClusteredEventBus extends EventBusImpl {
       if (s.succeeded()) {
         int serverPort = getClusterPublicPort(options, server.actualPort());
         String serverHost = getClusterPublicHost(options);
-        nodeInfo = new NodeInfo(new NodeAddress(serverHost, serverPort), options.getNodeMetadata());
+        nodeInfo = new NodeInfo(serverHost, serverPort, options.getNodeMetadata());
         nodeId = clusterManager.getNodeId();
         Promise<Void> setPromise = Promise.promise();
         setPromise.future().onComplete(ar -> {
