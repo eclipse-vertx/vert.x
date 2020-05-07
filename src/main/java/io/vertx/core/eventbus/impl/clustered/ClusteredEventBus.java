@@ -105,7 +105,6 @@ public class ClusteredEventBus extends EventBusImpl {
 
   @Override
   public void start(Promise<Void> promise) {
-    deliveryStrategy.setVertx(vertx);
     server = vertx.createNetServer(getServerOptions());
     server.connectHandler(getServerHandler());
     server.listen(s -> {
@@ -118,6 +117,7 @@ public class ClusteredEventBus extends EventBusImpl {
         setPromise.future().onComplete(ar -> {
           if (ar.succeeded()) {
             started = true;
+            deliveryStrategy.init(vertx);
             promise.complete();
           } else {
             promise.fail(ar.cause());

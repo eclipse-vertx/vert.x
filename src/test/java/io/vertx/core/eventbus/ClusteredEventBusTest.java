@@ -520,7 +520,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     private String rack;
 
     @Override
-    public void setVertx(Vertx vertx) {
+    public void init(Vertx vertx) {
       clusterManager = ((VertxInternal) vertx).getClusterManager();
       rack = clusterManager.getNodeInfo().getMetadata().getString("rack");
     }

@@ -29,7 +29,7 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
   private Selectors selectors;
 
   @Override
-  public void setVertx(Vertx vertx) {
+  public void init(Vertx vertx) {
     ClusterManager clusterManager = ((VertxInternal) vertx).getClusterManager();
     selectors = new Selectors(clusterManager);
   }

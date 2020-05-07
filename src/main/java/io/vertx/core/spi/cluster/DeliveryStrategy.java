@@ -24,9 +24,9 @@ import io.vertx.core.eventbus.Message;
 public interface DeliveryStrategy {
 
   /**
-   * Invoked after the cluster manager has started.
+   * Invoked after the {@link io.vertx.core.eventbus.EventBus Clustered EventBus} has started.
    */
-  void setVertx(Vertx vertx);
+  void init(Vertx vertx);
 
   /**
    * Choose a node for sending the given {@code message}.
