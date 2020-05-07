@@ -41,9 +41,7 @@ import java.util.Map;
  */
 public interface ClusterManager {
 
-  void setVertx(Vertx vertx);
-
-  void setDeliveryStrategy(DeliveryStrategy deliveryStrategy);
+  void init(Vertx vertx, DeliveryStrategy deliveryStrategy);
 
   /**
    * Return an async map for the given name

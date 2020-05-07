@@ -26,16 +26,11 @@ import io.vertx.core.spi.cluster.impl.selectors.Selectors;
  */
 public class DefaultDeliveryStrategy implements DeliveryStrategy {
 
-  private ClusterManager clusterManager;
   private Selectors selectors;
 
   @Override
   public void setVertx(Vertx vertx) {
-    clusterManager = ((VertxInternal) vertx).getClusterManager();
-  }
-
-  @Override
-  public void eventBusStarted() {
+    ClusterManager clusterManager = ((VertxInternal) vertx).getClusterManager();
     selectors = new Selectors(clusterManager);
   }
 

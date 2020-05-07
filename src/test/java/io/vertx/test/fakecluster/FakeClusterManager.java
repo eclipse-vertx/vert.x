@@ -51,12 +51,8 @@ public class FakeClusterManager implements ClusterManager {
   private DeliveryStrategy deliveryStrategy;
 
   @Override
-  public void setVertx(Vertx vertx) {
+  public void init(Vertx vertx, DeliveryStrategy deliveryStrategy) {
     this.vertx = (VertxInternal) vertx;
-  }
-
-  @Override
-  public void setDeliveryStrategy(DeliveryStrategy deliveryStrategy) {
     this.deliveryStrategy = deliveryStrategy;
   }
 

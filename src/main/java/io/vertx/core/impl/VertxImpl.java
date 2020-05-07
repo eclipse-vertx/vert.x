@@ -97,6 +97,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
   private final AtomicLong timeoutCounter = new AtomicLong(0);
   private final ClusterManager clusterManager;
+  private final DeliveryStrategy deliveryStrategy;
   private final DeploymentManager deploymentManager;
   private final VerticleManager verticleManager;
   private final FileResolver fileResolver;
@@ -162,6 +163,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.tracer = tracer;
     this.clusterManager = clusterManager;
+    this.deliveryStrategy = deliveryStrategy;
     this.eventBus = clusterManager != null ? new ClusteredEventBus(this, options, clusterManager, deliveryStrategy) : new EventBusImpl(this);
     this.sharedData = new SharedDataImpl(this, clusterManager);
     this.deploymentManager = new DeploymentManager(this);
@@ -176,7 +178,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   void initClustered(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    clusterManager.setVertx(this);
+    clusterManager.init(this, deliveryStrategy);
     Promise<Void> initPromise = getOrCreateContext().promise();
     initPromise.future().onComplete(ar -> {
       if (ar.succeeded()) {

@@ -36,11 +36,6 @@ public interface DeliveryStrategy {
   void setVertx(Vertx vertx);
 
   /**
-   * Invoked after the {@link io.vertx.core.eventbus.EventBus} has started
-   */
-  void eventBusStarted();
-
-  /**
    * Choose a node for sending the given {@code message}.
    *
    * @throws IllegalArgumentException if {@link Message#isSend()} returns false

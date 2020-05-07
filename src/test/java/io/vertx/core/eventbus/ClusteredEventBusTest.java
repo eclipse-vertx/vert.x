@@ -516,18 +516,12 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   private static class CustomDeliveryStrategy implements DeliveryStrategy {
-    private VertxInternal vertx;
     private ClusterManager clusterManager;
     private String rack;
 
     @Override
     public void setVertx(Vertx vertx) {
-      this.vertx = (VertxInternal) vertx;
-    }
-
-    @Override
-    public void eventBusStarted() {
-      clusterManager = vertx.getClusterManager();
+      clusterManager = ((VertxInternal) vertx).getClusterManager();
       rack = clusterManager.getNodeInfo().getMetadata().getString("rack");
     }
 

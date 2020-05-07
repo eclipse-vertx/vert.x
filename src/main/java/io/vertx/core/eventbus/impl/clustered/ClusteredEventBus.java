@@ -118,8 +118,6 @@ public class ClusteredEventBus extends EventBusImpl {
         setPromise.future().onComplete(ar -> {
           if (ar.succeeded()) {
             started = true;
-            clusterManager.setDeliveryStrategy(deliveryStrategy);
-            deliveryStrategy.eventBusStarted();
             promise.complete();
           } else {
             promise.fail(ar.cause());
