@@ -168,8 +168,8 @@ public class ClusteredEventBus extends EventBusImpl {
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      clusterManager.addRegistration(handlerHolder.getHandler().address, registrationInfo, promise);
-    } else {
+      clusterManager.addRegistration(handlerHolder.getHandler().address, registrationInfo, Objects.requireNonNull(promise));
+    } else if (promise != null) {
       promise.complete();
     }
   }

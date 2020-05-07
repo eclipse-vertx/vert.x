@@ -70,7 +70,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> {
   }
 
   void register() {
-    register(repliedAddress, true, Promise.promise());
+    register(repliedAddress, true, null);
   }
 
   @Override

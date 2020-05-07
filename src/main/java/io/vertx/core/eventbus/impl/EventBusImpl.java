@@ -241,7 +241,9 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
-    promise.complete();
+    if (promise != null) {
+      promise.complete();
+    }
   }
 
   private <T> HandlerHolder<T> addLocalRegistration(String address, HandlerRegistration<T> registration,
