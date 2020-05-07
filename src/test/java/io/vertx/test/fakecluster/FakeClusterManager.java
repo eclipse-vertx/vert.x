@@ -220,7 +220,7 @@ public class FakeClusterManager implements ClusterManager {
       }
       for (RegistrationUpdateEvent event : events) {
         FakeClusterManager clusterManager = nodes.get(nid);
-        if (clusterManager.isActive()) {
+        if (clusterManager != null && clusterManager.isActive()) {
           clusterManager.deliveryStrategy.registrationsUpdated(event);
         }
       }
