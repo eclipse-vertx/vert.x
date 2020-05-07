@@ -12,11 +12,12 @@
 package io.vertx.core.spi.cluster.impl.selectors;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntUnaryOperator;
 
 /**
  * @author Thomas Segismont
  */
-class Index {
+class Index implements IntUnaryOperator {
 
   private final int max;
   private final AtomicInteger idx = new AtomicInteger(0);
@@ -26,10 +27,11 @@ class Index {
   }
 
   int nextVal() {
-    return idx.getAndUpdate(this::update);
+    return idx.getAndUpdate(this);
   }
 
-  private int update(int i) {
+  @Override
+  public int applyAsInt(int i) {
     return i == max - 1 ? 0 : i + 1;
   }
 }
