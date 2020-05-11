@@ -198,34 +198,16 @@ public class ClusteredEventBus extends EventBusImpl {
     } else if (sendContext.options.isLocalOnly()) {
       super.sendOrPub(sendContext);
     } else {
-      Serializer serializer = Serializer.get(sendContext.ctx, deliveryStrategy);
+      Serializer serializer = Serializer.get(sendContext.ctx);
       if (sendContext.message.isSend()) {
-        send(sendContext, serializer);
+        serializer.queue(sendContext, deliveryStrategy::chooseForSend, this::sendToNode, this::sendOrPublishFailed);
       } else {
-        publish(sendContext, serializer);
+        serializer.queue(sendContext, deliveryStrategy::chooseForPublish, this::sendToNodes, this::sendOrPublishFailed);
       }
     }
   }
 
-  private <T> void send(OutboundDeliveryContext<T> sendContext, Serializer serializer) {
-    serializer.<String>queue(
-      sendContext,
-      (strategy, message, promise) -> strategy.chooseForSend(message, promise),
-      (sc, res) -> sendToNode(sc, res),
-      (sc, throwable) -> sendOrPublishFailed(sc, throwable)
-    );
-  }
-
-  private <T> void publish(OutboundDeliveryContext<T> sendContext, Serializer serializer) {
-    serializer.<Iterable<String>>queue(
-      sendContext,
-      (strategy, message, promise) -> strategy.chooseForPublish(message, promise),
-      (sc, res) -> sendToNodes(sc, res),
-      (sc, throwable) -> sendOrPublishFailed(sc, throwable)
-    );
-  }
-
-  private <T> void sendOrPublishFailed(OutboundDeliveryContext<T> sendContext, Throwable cause) {
+  private void sendOrPublishFailed(OutboundDeliveryContext<?> sendContext, Throwable cause) {
     if (log.isDebugEnabled()) {
       log.error("Failed to send message", cause);
     }

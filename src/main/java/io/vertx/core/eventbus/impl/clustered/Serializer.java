@@ -11,20 +11,20 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.spi.cluster.DeliveryStrategy;
-import org.apache.logging.log4j.util.BiConsumer;
-import org.apache.logging.log4j.util.TriConsumer;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
 
 /**
  * @author Thomas Segismont
@@ -32,27 +32,32 @@ import java.util.concurrent.ConcurrentMap;
 public class Serializer {
 
   private final ContextInternal context;
-  private final DeliveryStrategy deliveryStrategy;
   private final Map<String, SerializerQueue> queues;
 
-  private Serializer(ContextInternal context, DeliveryStrategy deliveryStrategy) {
+  private Serializer(ContextInternal context) {
     this.context = context;
-    this.deliveryStrategy = deliveryStrategy;
     queues = new HashMap<>();
     context.addCloseHook(this::close);
   }
 
-  public static Serializer get(ContextInternal context, DeliveryStrategy deliveryStrategy) {
+  public static Serializer get(ContextInternal context) {
     ConcurrentMap<Object, Object> contextData = context.contextData();
-    Serializer serializer = (Serializer) contextData.computeIfAbsent(Serializer.class, v -> {
-      return new Serializer(context, deliveryStrategy);
-    });
+    Serializer serializer = (Serializer) contextData.get(Serializer.class);
+    if (serializer == null) {
+      Serializer candidate = new Serializer(context);
+      Serializer previous = (Serializer) contextData.putIfAbsent(Serializer.class, candidate);
+      if (previous == null) {
+        serializer = candidate;
+      } else {
+        serializer = previous;
+      }
+    }
     return serializer;
   }
 
   public <T> void queue(
     OutboundDeliveryContext<?> sendContext,
-    TriConsumer<DeliveryStrategy, Message<?>, Promise<T>> chooseHandler,
+    BiConsumer<Message<?>, Promise<T>> chooseHandler,
     BiConsumer<OutboundDeliveryContext<?>, T> successHandler,
     BiConsumer<OutboundDeliveryContext<?>, Throwable> failureHandler
   ) {
@@ -76,7 +81,7 @@ public class Serializer {
     });
 
     SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
-    queue.add(new SerializedTask<>(sendContext, promise, chooseHandler));
+    queue.add(new SerializedTask<>(sendContext, chooseHandler, promise));
   }
 
   private void close(Promise<Void> promise) {
@@ -128,34 +133,39 @@ public class Serializer {
     }
   }
 
-  private class SerializedTask<U> {
+  private class SerializedTask<U> implements Handler<AsyncResult<U>> {
 
     final OutboundDeliveryContext<?> sendContext;
+    final BiConsumer<Message<?>, Promise<U>> chooseHandler;
     final Promise<U> promise;
     final Promise<U> internalPromise;
-    final TriConsumer<DeliveryStrategy, Message<?>, Promise<U>> task;
+    Promise<Void> completion;
 
     SerializedTask(
       OutboundDeliveryContext<?> sendContext,
-      Promise<U> promise,
-      TriConsumer<DeliveryStrategy, Message<?>, Promise<U>> task
+      BiConsumer<Message<?>, Promise<U>> chooseHandler,
+      Promise<U> promise
     ) {
       this.sendContext = sendContext;
+      this.chooseHandler = chooseHandler;
       this.promise = promise;
       this.internalPromise = context.promise();
-      this.task = task;
+      internalPromise.future().onComplete(this);
     }
 
     void process(Promise<Void> completion) {
-      task.accept(deliveryStrategy, sendContext.message, internalPromise);
-      internalPromise.future().onComplete(ar -> {
-        if (ar.succeeded()) {
-          promise.tryComplete(ar.result());
-        } else {
-          promise.tryFail(ar.cause());
-        }
-        completion.complete();
-      });
+      this.completion = completion;
+      chooseHandler.accept(sendContext.message, internalPromise);
+    }
+
+    @Override
+    public void handle(AsyncResult<U> ar) {
+      if (ar.succeeded()) {
+        promise.tryComplete(ar.result());
+      } else {
+        promise.tryFail(ar.cause());
+      }
+      completion.complete();
     }
   }
 }
