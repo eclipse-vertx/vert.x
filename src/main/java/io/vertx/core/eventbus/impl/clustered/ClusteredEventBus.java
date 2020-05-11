@@ -107,27 +107,18 @@ public class ClusteredEventBus extends EventBusImpl {
   public void start(Promise<Void> promise) {
     server = vertx.createNetServer(getServerOptions());
     server.connectHandler(getServerHandler());
-    server.listen(s -> {
-      if (s.succeeded()) {
-        int serverPort = getClusterPublicPort(options, server.actualPort());
-        String serverHost = getClusterPublicHost(options);
-        nodeInfo = new NodeInfo(serverHost, serverPort, options.getNodeMetadata());
-        nodeId = clusterManager.getNodeId();
-        Promise<Void> setPromise = Promise.promise();
-        setPromise.future().onComplete(ar -> {
-          if (ar.succeeded()) {
-            started = true;
-            deliveryStrategy.init(vertx);
-            promise.complete();
-          } else {
-            promise.fail(ar.cause());
-          }
-        });
-        clusterManager.setNodeInfo(nodeInfo, setPromise);
-      } else {
-        promise.fail(s.cause());
-      }
-    });
+    server.listen().flatMap(v -> {
+      int serverPort = getClusterPublicPort(options, server.actualPort());
+      String serverHost = getClusterPublicHost(options);
+      nodeInfo = new NodeInfo(serverHost, serverPort, options.getNodeMetadata());
+      nodeId = clusterManager.getNodeId();
+      Promise<Void> setPromise = Promise.promise();
+      clusterManager.setNodeInfo(nodeInfo, setPromise);
+      return setPromise.future();
+    }).onSuccess(v -> {
+      started = true;
+      deliveryStrategy.init(vertx);
+    }).onComplete(promise);
   }
 
   @Override
