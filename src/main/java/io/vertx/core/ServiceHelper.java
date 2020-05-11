@@ -14,7 +14,7 @@ package io.vertx.core;
 import java.util.*;
 
 /**
- * A helper class for loading factories from the classpath and from the vert.x OSGi bundle.
+ * A helper class for loading factories from the classpath.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

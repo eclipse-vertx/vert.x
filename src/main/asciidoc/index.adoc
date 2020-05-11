@@ -775,45 +775,6 @@ order to gather metrics. For more information on this, please consult the
 You can also specify a metrics factory programmatically if embedding Vert.x using
 {@link io.vertx.core.metrics.MetricsOptions#setFactory(io.vertx.core.spi.VertxMetricsFactory)}.
 
-== OSGi
-
-Vert.x Core is packaged as an OSGi bundle, so can be used in any OSGi R4.2+ environment such as Apache Felix
-or Eclipse Equinox. The bundle exports `io.vertx.core*`.
-
-However, the bundle has some dependencies on Jackson and Netty. To get the vert.x core bundle resolved deploy:
-
-* Jackson Annotation [2.6.0,3)
-* Jackson Core [2.6.2,3)
-* Jackson Databind [2.6.2,3)
-* Netty Buffer [4.0.31,5)
-* Netty Codec [4.0.31,5)
-* Netty Codec/Socks [4.0.31,5)
-* Netty Codec/Common [4.0.31,5)
-* Netty Codec/Handler [4.0.31,5)
-* Netty Codec/Transport [4.0.31,5)
-
-Here is a working deployment on Apache Felix 5.2.0:
-
-[source]
-----
-14|Active     |    1|Jackson-annotations (2.6.0)
-15|Active     |    1|Jackson-core (2.6.2)
-16|Active     |    1|jackson-databind (2.6.2)
-18|Active     |    1|Netty/Buffer (4.0.31.Final)
-19|Active     |    1|Netty/Codec (4.0.31.Final)
-20|Active     |    1|Netty/Codec/HTTP (4.0.31.Final)
-21|Active     |    1|Netty/Codec/Socks (4.0.31.Final)
-22|Active     |    1|Netty/Common (4.0.31.Final)
-23|Active     |    1|Netty/Handler (4.0.31.Final)
-24|Active     |    1|Netty/Transport (4.0.31.Final)
-25|Active     |    1|Netty/Transport/SCTP (4.0.31.Final)
-26|Active     |    1|Vert.x Core (3.1.0)
-----
-
-On Equinox, you may want to disable the `ContextFinder` with the following framework property:
-`eclipse.bundle.setTCCL=false`
-
-
 == The 'vertx' command line
 
 The `vertx` command is used to interact with Vert.x from the command line. It's main use is to run Vert.x verticles.
