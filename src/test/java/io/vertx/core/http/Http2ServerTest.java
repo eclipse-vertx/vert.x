@@ -58,6 +58,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import io.vertx.test.core.FileDescriptorLeak;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
@@ -2320,6 +2321,7 @@ public class Http2ServerTest extends Http2TestBase {
     await();
   }
 
+  @FileDescriptorLeak
   @Test
   public void testNetSocketSendFile() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(1000 * 1000));
@@ -2335,6 +2337,7 @@ public class Http2ServerTest extends Http2TestBase {
     int to = 700 * 1000;
     testNetSocketSendFile(expected.slice(from, to), tmp.getAbsolutePath(), from, to - from);
   }
+
 
   private void testNetSocketSendFile(Buffer expected, String path, long offset, long length) throws Exception {
     server.requestHandler(req -> {
