@@ -104,11 +104,11 @@ public class Selectors {
     }
     return registrations.stream()
       .filter(this::isAccessible)
-      .map(RegistrationInfo::getNodeId)
+      .map(RegistrationInfo::nodeId)
       .collect(toList());
   }
 
   private boolean isAccessible(RegistrationInfo registrationInfo) {
-    return !registrationInfo.isLocalOnly() || clusterManager.getNodeId().equals(registrationInfo.getNodeId());
+    return !registrationInfo.localOnly() || clusterManager.getNodeId().equals(registrationInfo.nodeId());
   }
 }

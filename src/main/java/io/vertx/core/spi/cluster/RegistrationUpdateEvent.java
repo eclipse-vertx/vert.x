@@ -32,14 +32,14 @@ public class RegistrationUpdateEvent {
   /**
    * @return the address related to this event
    */
-  public String getAddress() {
+  public String address() {
     return address;
   }
 
   /**
    * @return the new state of messaging handler registrations
    */
-  public List<RegistrationInfo> getRegistrations() {
+  public List<RegistrationInfo> registrations() {
     return registrations;
   }
 }

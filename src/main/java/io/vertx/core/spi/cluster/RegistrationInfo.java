@@ -31,15 +31,15 @@ public final class RegistrationInfo {
     this.localOnly = localOnly;
   }
 
-  public String getNodeId() {
+  public String nodeId() {
     return nodeId;
   }
 
-  public long getSeq() {
+  public long seq() {
     return seq;
   }
 
-  public boolean isLocalOnly() {
+  public boolean localOnly() {
     return localOnly;
   }
 

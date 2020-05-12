@@ -71,7 +71,7 @@ class ConnectionHolder {
     Promise<NodeInfo> promise = Promise.promise();
     eventBus.vertx().getClusterManager().getNodeInfo(remoteNodeId, promise);
     promise.future()
-      .flatMap(info -> client.connect(info.getPort(), info.getHost()))
+      .flatMap(info -> client.connect(info.port(), info.host()))
       .onComplete(ar -> {
         if (ar.succeeded()) {
           connected(ar.result());

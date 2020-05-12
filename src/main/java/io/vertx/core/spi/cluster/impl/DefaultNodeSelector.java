@@ -48,6 +48,6 @@ public class DefaultNodeSelector implements NodeSelector {
 
   @Override
   public void registrationsUpdated(RegistrationUpdateEvent event) {
-    selectors.dataReceived(event.getAddress(), event.getRegistrations());
+    selectors.dataReceived(event.address(), event.registrations());
   }
 }

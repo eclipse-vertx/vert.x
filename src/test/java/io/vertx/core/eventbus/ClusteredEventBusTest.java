@@ -522,7 +522,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     @Override
     public void init(Vertx vertx) {
       clusterManager = ((VertxInternal) vertx).getClusterManager();
-      rack = clusterManager.getNodeInfo().getMetadata().getString("rack");
+      rack = clusterManager.getNodeInfo().metadata().getString("rack");
     }
 
     @Override
@@ -544,7 +544,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         List<String> res = new ArrayList<>();
         for (int i = 0; i < nodes.size(); i++) {
           NodeInfo nodeInfo = cf.resultAt(i);
-          if (nodeInfo.getMetadata().getString("rack").equals(this.rack)) {
+          if (nodeInfo.metadata().getString("rack").equals(this.rack)) {
             res.add(nodes.get(i));
           }
         }

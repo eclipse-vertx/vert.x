@@ -192,7 +192,7 @@ public class FakeClusterManager implements ClusterManager {
       List<RegistrationInfo> current = registrations.compute(address, (addr, infos) -> {
         if (infos == null) return null;
         return infos.stream()
-          .filter(info -> !info.getNodeId().equals(nodeID))
+          .filter(info -> !info.nodeId().equals(nodeID))
           .collect(collectingAndThen(toList(), list -> list.isEmpty() ? null : list));
       });
       events.add(new RegistrationUpdateEvent(address, current));

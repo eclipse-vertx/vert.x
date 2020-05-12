@@ -35,15 +35,15 @@ public final class NodeInfo {
   }
 
 
-  public String getHost() {
+  public String host() {
     return host;
   }
 
-  public int getPort() {
+  public int port() {
     return port;
   }
 
-  public JsonObject getMetadata() {
+  public JsonObject metadata() {
     return metadata;
   }
 
