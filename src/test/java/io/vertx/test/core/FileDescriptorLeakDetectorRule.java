@@ -17,21 +17,31 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class FileDescriptorLeakRule implements TestRule {
+public class FileDescriptorLeakDetectorRule implements TestRule {
   private static final int BASE_LINE_RUNS = 20;
   private static final int TEST_RUNS = 20;
 
-  private static final UnixOperatingSystemMXBean os = (UnixOperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+  private final UnixOperatingSystemMXBean os;
+
+  public FileDescriptorLeakDetectorRule() {
+    OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
+    if (!(os instanceof UnixOperatingSystemMXBean))
+      this.os = null;
+    else
+      this.os = (UnixOperatingSystemMXBean) os;
+
+  }
 
   @Override
   public Statement apply(Statement statement, Description description) {
-    FileDescriptorLeak fileDescriptorLeak = description.getAnnotation(FileDescriptorLeak.class);
-    if (fileDescriptorLeak == null) {
+    DetectFileDescriptorLeaks detectFileDescriptorsLeaks = description.getAnnotation(DetectFileDescriptorLeaks.class);
+    if (detectFileDescriptorsLeaks == null || os == null) {
       return statement;
     }
     return new Statement() {
