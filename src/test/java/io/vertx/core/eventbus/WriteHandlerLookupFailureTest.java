@@ -44,7 +44,7 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
         promise.fail("Not implemented");
       }
     };
-    new VertxFactory(options).nodeSelector(nodeSelector).clusteredVertx(onSuccess(node -> {
+    new VertxFactory(options).clusterNodeSelector(nodeSelector).clusteredVertx(onSuccess(node -> {
       vertices[0] = node;
     }));
     assertWaitUntil(() -> vertices[0] != null);

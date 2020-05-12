@@ -474,7 +474,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         return vertxOptions;
       })
       .map(options -> {
-        VertxFactory factory = new VertxFactory(options).nodeSelector(new CustomNodeSelector());
+        VertxFactory factory = new VertxFactory(options).clusterNodeSelector(new CustomNodeSelector());
         Promise promise = Promise.promise();
         factory.clusteredVertx(promise);
         return promise.future();

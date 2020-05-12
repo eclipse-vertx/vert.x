@@ -35,7 +35,7 @@ public class VertxFactory {
   private VertxOptions options;
   private Transport transport;
   private ClusterManager clusterManager;
-  private NodeSelector nodeSelector;
+  private NodeSelector clusterNodeSelector;
   private VertxTracer tracer;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
@@ -59,8 +59,8 @@ public class VertxFactory {
     return this;
   }
 
-  public VertxFactory nodeSelector(NodeSelector nodeSelector) {
-    this.nodeSelector = nodeSelector;
+  public VertxFactory clusterNodeSelector(NodeSelector clusterNodeSelector) {
+    this.clusterNodeSelector = clusterNodeSelector;
     return this;
   }
 
@@ -107,11 +107,11 @@ public class VertxFactory {
   }
 
   private NodeSelector createNodeSelector() {
-    if (nodeSelector == null) {
+    if (clusterNodeSelector == null) {
       Collection<NodeSelector> selectors = ServiceHelper.loadFactories(NodeSelector.class);
-      nodeSelector = !selectors.isEmpty() ? selectors.iterator().next() : new DefaultNodeSelector();
+      clusterNodeSelector = !selectors.isEmpty() ? selectors.iterator().next() : new DefaultNodeSelector();
     }
-    return nodeSelector;
+    return clusterNodeSelector;
   }
 
   private Transport createTransport() {
