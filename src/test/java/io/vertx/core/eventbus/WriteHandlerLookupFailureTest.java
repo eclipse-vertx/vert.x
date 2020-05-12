@@ -15,8 +15,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxFactory;
-import io.vertx.core.spi.cluster.DeliveryStrategy;
-import io.vertx.core.spi.cluster.impl.DefaultDeliveryStrategy;
+import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -33,18 +33,18 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
       .setHost("localhost")
       .setPort(0);
     vertices = new Vertx[1];
-    DeliveryStrategy strategy = new DefaultDeliveryStrategy() {
+    NodeSelector nodeSelector = new DefaultNodeSelector() {
       @Override
-      public void chooseForSend(Message<?> message, Promise<String> promise) {
+      public void selectForSend(Message<?> message, Promise<String> promise) {
         promise.fail(cause);
       }
 
       @Override
-      public void chooseForPublish(Message<?> message, Promise<Iterable<String>> promise) {
+      public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
         promise.fail("Not implemented");
       }
     };
-    new VertxFactory(options).deliveryStrategy(strategy).clusteredVertx(onSuccess(node -> {
+    new VertxFactory(options).nodeSelector(nodeSelector).clusteredVertx(onSuccess(node -> {
       vertices[0] = node;
     }));
     assertWaitUntil(() -> vertices[0] != null);

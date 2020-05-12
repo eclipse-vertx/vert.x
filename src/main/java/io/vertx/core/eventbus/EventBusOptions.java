@@ -17,7 +17,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
-import io.vertx.core.spi.cluster.DeliveryStrategy;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -646,10 +645,10 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * User-supplied information about this node when Vert.x is clustered.
    * <p>
-   * The data may be used by the {@link DeliveryStrategy} to select a recipient for a given message.
+   * The data may be used by the {@link io.vertx.core.spi.cluster.NodeSelector} to select a node for a given message.
    * For example, it could be used to implement a partioning strategy.
    * <p>
-   * The default {@link DeliveryStrategy} does not use the node metadata.
+   * The default {@link io.vertx.core.spi.cluster.NodeSelector} does not use the node metadata.
    *
    * @return user-supplied information about this node when Vert.x is clustered
    */
@@ -660,10 +659,10 @@ public class EventBusOptions extends TCPSSLOptions {
   /**
    * Set information about this node when Vert.x is clustered.
    * <p>
-   * The data may be used by the {@link DeliveryStrategy} to select a recipient for a given message.
+   * The data may be used by the {@link io.vertx.core.spi.cluster.NodeSelector} to select a node for a given message.
    * For example, it could be used to implement a partioning strategy.
    * <p>
-   * The default {@link DeliveryStrategy} does not use the node metadata.
+   * The default {@link io.vertx.core.spi.cluster.NodeSelector} does not use the node metadata.
    *
    * @param nodeMetadata user-supplied information about this node when Vert.x is clustered
    * @return a reference to this, so the API can be used fluently

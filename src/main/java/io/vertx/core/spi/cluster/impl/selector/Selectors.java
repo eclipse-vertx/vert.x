@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster.impl.selectors;
+package io.vertx.core.spi.cluster.impl.selector;
 
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
@@ -36,7 +36,7 @@ public class Selectors {
     this.clusterManager = clusterManager;
   }
 
-  public <T> void withSelector(Message<?> message, Promise<T> promise, BiConsumer<Promise<T>, Selector> task) {
+  public <T> void withSelector(Message<?> message, Promise<T> promise, BiConsumer<Promise<T>, RoundRobinSelector> task) {
     String address = message.address();
     SelectorEntry entry = map.compute(address, (addr, curr) -> {
       return curr == null ? new SelectorEntry() : (curr.isNotReady() ? curr.increment() : curr);
@@ -83,7 +83,7 @@ public class Selectors {
       if (next == null) {
         if (map.remove(address, previous)) {
           if (previous.isNotReady()) {
-            previous.selectorPromise.complete(NullSelector.INSTANCE);
+            previous.selectorPromise.complete(NullRoundRobinSelector.INSTANCE);
           }
           break;
         }

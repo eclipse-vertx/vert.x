@@ -26,8 +26,8 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.DeliveryStrategy;
 import io.vertx.core.spi.cluster.NodeInfo;
+import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 
 import java.util.Objects;
@@ -52,7 +52,7 @@ public class ClusteredEventBus extends EventBusImpl {
 
   private final EventBusOptions options;
   private final ClusterManager clusterManager;
-  private final DeliveryStrategy deliveryStrategy;
+  private final NodeSelector nodeSelector;
   private final AtomicLong handlerSequence = new AtomicLong(0);
 
   private final ConcurrentMap<String, ConnectionHolder> connections = new ConcurrentHashMap<>();
@@ -61,11 +61,11 @@ public class ClusteredEventBus extends EventBusImpl {
   private String nodeId;
   private NetServer server;
 
-  public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager, DeliveryStrategy deliveryStrategy) {
+  public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector) {
     super(vertx);
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
-    this.deliveryStrategy = deliveryStrategy;
+    this.nodeSelector = nodeSelector;
   }
 
   private NetServerOptions getServerOptions() {
@@ -117,7 +117,7 @@ public class ClusteredEventBus extends EventBusImpl {
       return setPromise.future();
     }).onSuccess(v -> {
       started = true;
-      deliveryStrategy.init(vertx);
+      nodeSelector.init(vertx);
     }).onComplete(promise);
   }
 
@@ -200,9 +200,9 @@ public class ClusteredEventBus extends EventBusImpl {
     } else {
       Serializer serializer = Serializer.get(sendContext.ctx);
       if (sendContext.message.isSend()) {
-        serializer.queue(sendContext, deliveryStrategy::chooseForSend, this::sendToNode, this::sendOrPublishFailed);
+        serializer.queue(sendContext, nodeSelector::selectForSend, this::sendToNode, this::sendOrPublishFailed);
       } else {
-        serializer.queue(sendContext, deliveryStrategy::chooseForPublish, this::sendToNodes, this::sendOrPublishFailed);
+        serializer.queue(sendContext, nodeSelector::selectForPublish, this::sendToNodes, this::sendOrPublishFailed);
       }
     }
   }

@@ -19,8 +19,8 @@ import io.vertx.core.impl.VertxFactory;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.DeliveryStrategy;
 import io.vertx.core.spi.cluster.NodeInfo;
+import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
@@ -465,7 +465,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   @Test
-  public void testCustomDeliveryStrategy() throws Exception {
+  public void testCustomNodeSelector() throws Exception {
     CompositeFuture startFuture = IntStream.range(0, 4)
       .mapToObj(i -> {
         VertxOptions vertxOptions = getOptions();
@@ -474,7 +474,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         return vertxOptions;
       })
       .map(options -> {
-        VertxFactory factory = new VertxFactory(options).deliveryStrategy(new CustomDeliveryStrategy());
+        VertxFactory factory = new VertxFactory(options).nodeSelector(new CustomNodeSelector());
         Promise promise = Promise.promise();
         factory.clusteredVertx(promise);
         return promise.future();
@@ -515,7 +515,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     assertEquals(expected, received);
   }
 
-  private static class CustomDeliveryStrategy implements DeliveryStrategy {
+  private static class CustomNodeSelector implements NodeSelector {
     private ClusterManager clusterManager;
     private String rack;
 
@@ -526,12 +526,12 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     }
 
     @Override
-    public void chooseForSend(Message<?> message, Promise<String> promise) {
+    public void selectForSend(Message<?> message, Promise<String> promise) {
       promise.fail("Not implemented");
     }
 
     @Override
-    public void chooseForPublish(Message<?> message, Promise<Iterable<String>> promise) {
+    public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
       List<String> nodes = clusterManager.getNodes();
       CompositeFuture future = nodes.stream()
         .map(nodeId -> {

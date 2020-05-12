@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster.impl.selectors;
+package io.vertx.core.spi.cluster.impl.selector;
 
 import io.vertx.core.Promise;
 
@@ -23,8 +23,8 @@ import java.util.Map;
  */
 class SelectorEntry {
 
-  final Selector selector;
-  final Promise<Selector> selectorPromise;
+  final RoundRobinSelector selector;
+  final Promise<RoundRobinSelector> selectorPromise;
   final int counter;
 
   SelectorEntry() {
@@ -33,7 +33,7 @@ class SelectorEntry {
     counter = 0;
   }
 
-  private SelectorEntry(Selector selector, Promise<Selector> selectorPromise, int counter) {
+  private SelectorEntry(RoundRobinSelector selector, Promise<RoundRobinSelector> selectorPromise, int counter) {
     this.selector = selector;
     this.selectorPromise = selectorPromise;
     this.counter = counter;
@@ -48,9 +48,9 @@ class SelectorEntry {
       return null;
     }
     Map<String, Integer> weights = computeWeights(nodeIds);
-    Selector selector;
+    RoundRobinSelector selector;
     if (isEvenlyDistributed(weights)) {
-      selector = new RoundRobinSelector(new ArrayList<>(weights.keySet()));
+      selector = new SimpleRoundRobinSelector(new ArrayList<>(weights.keySet()));
     } else {
       selector = new WeightedRoundRobinSelector(weights);
     }

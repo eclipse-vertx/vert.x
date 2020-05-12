@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster.impl.selectors;
+package io.vertx.core.spi.cluster.impl.selector;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,7 +28,7 @@ import static org.junit.runners.Parameterized.Parameters;
  * @author Thomas Segismont
  */
 @RunWith(Parameterized.class)
-public class RoundRobinSelectorTest {
+public class SimpleRoundRobinSelectorTest {
 
   @Parameters
   public static Collection<Object[]> data() {
@@ -39,11 +39,11 @@ public class RoundRobinSelectorTest {
   }
 
   private final List<String> nodeIds;
-  private final RoundRobinSelector selector;
+  private final SimpleRoundRobinSelector selector;
 
-  public RoundRobinSelectorTest(List<String> nodeIds) {
+  public SimpleRoundRobinSelectorTest(List<String> nodeIds) {
     this.nodeIds = nodeIds;
-    selector = new RoundRobinSelector(nodeIds);
+    selector = new SimpleRoundRobinSelector(nodeIds);
   }
 
   @Test

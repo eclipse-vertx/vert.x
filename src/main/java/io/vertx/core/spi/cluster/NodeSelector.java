@@ -16,12 +16,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 
 /**
- * {@link io.vertx.core.eventbus.EventBus Clustered EventBus (CEB)} delivery strategy.
+ * Used by the {@link io.vertx.core.eventbus.EventBus clustered EventBus} to select a node for a given message..
  * <p>
- * This strategy is skipped by the <em>CEB</em> only when the user raises the {@link io.vertx.core.eventbus.DeliveryOptions#setLocalOnly(boolean)} flag.
+ * This selector is skipped only when the user raises the {@link io.vertx.core.eventbus.DeliveryOptions#setLocalOnly(boolean)} flag.
  * Consequently, implementations must be aware of local {@link io.vertx.core.eventbus.EventBus} registrations.
  */
-public interface DeliveryStrategy {
+public interface NodeSelector {
 
   /**
    * Invoked after the {@link io.vertx.core.eventbus.EventBus Clustered EventBus} has started.
@@ -29,18 +29,18 @@ public interface DeliveryStrategy {
   void init(Vertx vertx);
 
   /**
-   * Choose a node for sending the given {@code message}.
+   * Select a node for sending the given {@code message}.
    *
    * @throws IllegalArgumentException if {@link Message#isSend()} returns false
    */
-  void chooseForSend(Message<?> message, Promise<String> promise);
+  void selectForSend(Message<?> message, Promise<String> promise);
 
   /**
-   * Choose a node for publishing the given {@code message}.
+   * Select a node for publishing the given {@code message}.
    *
    * @throws IllegalArgumentException if {@link Message#isSend()} returns true
    */
-  void chooseForPublish(Message<?> message, Promise<Iterable<String>> promise);
+  void selectForPublish(Message<?> message, Promise<Iterable<String>> promise);
 
   /**
    * Invoked by the {@link ClusterManager} when messaging handler registrations are added or removed.

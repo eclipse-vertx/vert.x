@@ -48,12 +48,12 @@ public class FakeClusterManager implements ClusterManager {
   private String nodeID;
   private NodeListener nodeListener;
   private VertxInternal vertx;
-  private DeliveryStrategy deliveryStrategy;
+  private NodeSelector nodeSelector;
 
   @Override
-  public void init(Vertx vertx, DeliveryStrategy deliveryStrategy) {
+  public void init(Vertx vertx, NodeSelector nodeSelector) {
     this.vertx = (VertxInternal) vertx;
-    this.deliveryStrategy = deliveryStrategy;
+    this.nodeSelector = nodeSelector;
   }
 
   private static void doJoin(String nodeID, FakeClusterManager node) {
@@ -221,7 +221,7 @@ public class FakeClusterManager implements ClusterManager {
       for (RegistrationUpdateEvent event : events) {
         FakeClusterManager clusterManager = nodes.get(nid);
         if (clusterManager != null && clusterManager.isActive()) {
-          clusterManager.deliveryStrategy.registrationsUpdated(event);
+          clusterManager.nodeSelector.registrationsUpdated(event);
         }
       }
     }

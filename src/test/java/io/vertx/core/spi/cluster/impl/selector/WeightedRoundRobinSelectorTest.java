@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster.impl.selectors;
+package io.vertx.core.spi.cluster.impl.selector;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

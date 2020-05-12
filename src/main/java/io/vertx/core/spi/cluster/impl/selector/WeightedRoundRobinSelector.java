@@ -9,14 +9,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.spi.cluster.impl.selectors;
+package io.vertx.core.spi.cluster.impl.selector;
 
 import java.util.*;
 
 /**
  * @author Thomas Segismont
  */
-class WeightedRoundRobinSelector implements Selector {
+class WeightedRoundRobinSelector implements RoundRobinSelector {
 
   /*
    * Implementation notes.

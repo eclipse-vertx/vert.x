@@ -458,10 +458,10 @@ Set to true to enabled network activity logging: Netty's pipeline is configured 
 |[[nodeMetadata]]`@nodeMetadata`|`Json object`|+++
 Set information about this node when Vert.x is clustered.
  <p>
- The data may be used by the  to select a recipient for a given message.
+ The data may be used by the link to select a node for a given message.
  For example, it could be used to implement a partioning strategy.
  <p>
- The default  does not use the node metadata.
+ The default link does not use the node metadata.
 +++
 |[[port]]`@port`|`Number (int)`|+++
 Sets the port.

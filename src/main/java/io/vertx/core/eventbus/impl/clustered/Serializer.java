@@ -57,14 +57,14 @@ public class Serializer {
 
   public <T> void queue(
     OutboundDeliveryContext<?> sendContext,
-    BiConsumer<Message<?>, Promise<T>> chooseHandler,
+    BiConsumer<Message<?>, Promise<T>> selectHandler,
     BiConsumer<OutboundDeliveryContext<?>, T> successHandler,
     BiConsumer<OutboundDeliveryContext<?>, Throwable> failureHandler
   ) {
 
     ContextInternal ctx = (ContextInternal) Vertx.currentContext();
     if (ctx != context) {
-      context.runOnContext(v -> queue(sendContext, chooseHandler, successHandler, failureHandler));
+      context.runOnContext(v -> queue(sendContext, selectHandler, successHandler, failureHandler));
       return;
     }
 
@@ -81,7 +81,7 @@ public class Serializer {
     });
 
     SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
-    queue.add(new SerializedTask<>(sendContext, chooseHandler, promise));
+    queue.add(new SerializedTask<>(sendContext, selectHandler, promise));
   }
 
   private void close(Promise<Void> promise) {
@@ -136,18 +136,18 @@ public class Serializer {
   private class SerializedTask<U> implements Handler<AsyncResult<U>> {
 
     final OutboundDeliveryContext<?> sendContext;
-    final BiConsumer<Message<?>, Promise<U>> chooseHandler;
+    final BiConsumer<Message<?>, Promise<U>> selectHandler;
     final Promise<U> promise;
     final Promise<U> internalPromise;
     Promise<Void> completion;
 
     SerializedTask(
       OutboundDeliveryContext<?> sendContext,
-      BiConsumer<Message<?>, Promise<U>> chooseHandler,
+      BiConsumer<Message<?>, Promise<U>> selectHandler,
       Promise<U> promise
     ) {
       this.sendContext = sendContext;
-      this.chooseHandler = chooseHandler;
+      this.selectHandler = selectHandler;
       this.promise = promise;
       this.internalPromise = context.promise();
       internalPromise.future().onComplete(this);
@@ -155,7 +155,7 @@ public class Serializer {
 
     void process(Promise<Void> completion) {
       this.completion = completion;
-      chooseHandler.accept(sendContext.message, internalPromise);
+      selectHandler.accept(sendContext.message, internalPromise);
     }
 
     @Override

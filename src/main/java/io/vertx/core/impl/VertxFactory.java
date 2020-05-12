@@ -17,8 +17,8 @@ import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.DeliveryStrategy;
-import io.vertx.core.spi.cluster.impl.DefaultDeliveryStrategy;
+import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -35,7 +35,7 @@ public class VertxFactory {
   private VertxOptions options;
   private Transport transport;
   private ClusterManager clusterManager;
-  private DeliveryStrategy deliveryStrategy;
+  private NodeSelector nodeSelector;
   private VertxTracer tracer;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
@@ -59,8 +59,8 @@ public class VertxFactory {
     return this;
   }
 
-  public VertxFactory deliveryStrategy(DeliveryStrategy deliveryStrategy) {
-    this.deliveryStrategy = deliveryStrategy;
+  public VertxFactory nodeSelector(NodeSelector nodeSelector) {
+    this.nodeSelector = nodeSelector;
     return this;
   }
 
@@ -81,7 +81,7 @@ public class VertxFactory {
   }
 
   public void clusteredVertx(Handler<AsyncResult<Vertx>> handler) {
-    VertxImpl vertx = new VertxImpl(options, createClusterManager(), createDeliveryStrategy(), createMetrics(), createTracer(), createTransport(), createFileResolver());
+    VertxImpl vertx = new VertxImpl(options, createClusterManager(), createNodeSelector(), createMetrics(), createTracer(), createTransport(), createFileResolver());
     vertx.initClustered(options, handler);
   }
 
@@ -106,12 +106,12 @@ public class VertxFactory {
     return clusterManager;
   }
 
-  private DeliveryStrategy createDeliveryStrategy() {
-    if (deliveryStrategy == null) {
-      Collection<DeliveryStrategy> strategies = ServiceHelper.loadFactories(DeliveryStrategy.class);
-      deliveryStrategy = !strategies.isEmpty() ? strategies.iterator().next() : new DefaultDeliveryStrategy();
+  private NodeSelector createNodeSelector() {
+    if (nodeSelector == null) {
+      Collection<NodeSelector> selectors = ServiceHelper.loadFactories(NodeSelector.class);
+      nodeSelector = !selectors.isEmpty() ? selectors.iterator().next() : new DefaultNodeSelector();
     }
-    return deliveryStrategy;
+    return nodeSelector;
   }
 
   private Transport createTransport() {

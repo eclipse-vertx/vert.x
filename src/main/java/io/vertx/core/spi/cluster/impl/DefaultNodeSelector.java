@@ -17,14 +17,14 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.core.spi.cluster.DeliveryStrategy;
+import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
-import io.vertx.core.spi.cluster.impl.selectors.Selectors;
+import io.vertx.core.spi.cluster.impl.selector.Selectors;
 
 /**
  * @author Thomas Segismont
  */
-public class DefaultDeliveryStrategy implements DeliveryStrategy {
+public class DefaultNodeSelector implements NodeSelector {
 
   private Selectors selectors;
 
@@ -35,13 +35,13 @@ public class DefaultDeliveryStrategy implements DeliveryStrategy {
   }
 
   @Override
-  public void chooseForSend(Message<?> message, Promise<String> promise) {
+  public void selectForSend(Message<?> message, Promise<String> promise) {
     Arguments.require(message.isSend(), "selectForSend used for publishing");
     selectors.withSelector(message, promise, (prom, selector) -> prom.complete(selector.selectForSend()));
   }
 
   @Override
-  public void chooseForPublish(Message<?> message, Promise<Iterable<String>> promise) {
+  public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
     Arguments.require(!message.isSend(), "selectForPublish used for sending");
     selectors.withSelector(message, promise, (prom, selector) -> prom.complete(selector.selectForPublish()));
   }
