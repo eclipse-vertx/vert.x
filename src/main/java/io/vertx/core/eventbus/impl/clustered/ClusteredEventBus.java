@@ -110,7 +110,7 @@ public class ClusteredEventBus extends EventBusImpl {
     server.listen().flatMap(v -> {
       int serverPort = getClusterPublicPort(options, server.actualPort());
       String serverHost = getClusterPublicHost(options);
-      nodeInfo = new NodeInfo(serverHost, serverPort, options.getNodeMetadata());
+      nodeInfo = new NodeInfo(serverHost, serverPort, options.getClusterNodeMetadata());
       nodeId = clusterManager.getNodeId();
       Promise<Void> setPromise = Promise.promise();
       clusterManager.setNodeInfo(nodeInfo, setPromise);
