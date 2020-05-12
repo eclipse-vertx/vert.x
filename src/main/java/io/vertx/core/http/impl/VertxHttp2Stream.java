@@ -285,20 +285,22 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       resultHandler.handle(Future.failedFuture(new FileNotFoundException()));
       return;
     }
+
+    //We open the fileName using a RandomAccessFile to make sure that this is an actual file that can be read.
+    //i.e is not a directory
     try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
+      FileSystem fs = conn.vertx().fileSystem();
+      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
+        if (ar.succeeded()) {
+          AsyncFile file = ar.result();
+          long contentLength = Math.min(length, file_.length() - offset);
+          file.setReadPos(offset);
+          file.setReadLength(contentLength);
+        }
+        resultHandler.handle(ar);
+      });
     } catch (IOException e) {
       resultHandler.handle(Future.failedFuture(e));
-      return;
     }
-    FileSystem fs = conn.vertx().fileSystem();
-    fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
-      if (ar.succeeded()) {
-        AsyncFile file = ar.result();
-        long contentLength = Math.min(length, file_.length() - offset);
-        file.setReadPos(offset);
-        file.setReadLength(contentLength);
-      }
-      resultHandler.handle(ar);
-    });
   }
 }
