@@ -16,7 +16,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>14</version>
+    <version>15</version>
   </parent>
 
   <artifactId>vertx-core</artifactId>
@@ -601,7 +601,7 @@
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-surefire-plugin</artifactId>
               <configuration>
-                <argLine>-Xmx1200M @{surefireArgLine} ${jetty.alpnAgent.argLine}</argLine>
+                <argLine>-Xmx1200M ${jetty.alpnAgent.argLine}</argLine>
               </configuration>
             </plugin>
           </plugins>
