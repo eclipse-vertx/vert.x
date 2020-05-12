@@ -41,30 +41,44 @@ import java.util.Map;
  */
 public interface ClusterManager {
 
+  /**
+   * Invoked before this cluster node tries to join the cluster.
+   * <p>
+   * Implementations must signal the provided {@code nodeSelector} when messaging handler registrations are added or removed
+   * by sending a {@link RegistrationUpdateEvent} with {@link NodeSelector#registrationsUpdated(RegistrationUpdateEvent)}.
+   *
+   * @param vertx        the Vert.x instance
+   * @param nodeSelector the {@link NodeSelector} that must receive {@link RegistrationUpdateEvent}.
+   */
   void init(Vertx vertx, NodeSelector nodeSelector);
 
   /**
-   * Return an async map for the given name
+   * Return an {@link AsyncMap} for the given {@code name}.
    */
   <K, V> void getAsyncMap(String name, Promise<AsyncMap<K, V>> promise);
 
   /**
-   * Return a synchronous map for the given name
+   * Return a synchronous map for the given {@code name}.
    */
   <K, V> Map<K, V> getSyncMap(String name);
 
+  /**
+   * Attempts to acquire a {@link Lock} for the given {@code name} within {@code timeout} milliseconds.
+   */
   void getLockWithTimeout(String name, long timeout, Promise<Lock> promise);
 
+  /**
+   * Return a {@link Counter} for the given {@code name}.
+   */
   void getCounter(String name, Promise<Counter> promise);
 
   /**
-   * Return the unique node ID for this node
+   * Return the unique node identifier for this node.
    */
   String getNodeId();
 
   /**
-   * Return a list of node IDs corresponding to the nodes in the cluster
-   *
+   * Return a list of node identifiers corresponding to the nodes in the cluster.
    */
   List<String> getNodes();
 
@@ -84,19 +98,19 @@ public interface ClusterManager {
   NodeInfo getNodeInfo();
 
   /**
-   * Get details about a clustered Vert.x node.
+   * Get details about a specific node in the cluster.
    *
    * @param nodeId the clustered node id
    */
   void getNodeInfo(String nodeId, Promise<NodeInfo> promise);
 
   /**
-   * Join the cluster
+   * Join the cluster.
    */
   void join(Promise<Void> promise);
 
   /**
-   * Leave the cluster
+   * Leave the cluster.
    */
   void leave(Promise<Void> promise);
 
