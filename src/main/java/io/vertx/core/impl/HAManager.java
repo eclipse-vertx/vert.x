@@ -11,14 +11,11 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 
@@ -131,7 +128,7 @@ public class HAManager {
     this.group = enabled ? group : "__DISABLED__";
     this.enabled = enabled;
     this.haInfo = new JsonObject().put("verticles", new JsonArray()).put("group", this.group);
-    this.nodeID = clusterManager.getNodeID();
+    this.nodeID = clusterManager.getNodeId();
   }
 
   /**
@@ -211,12 +208,11 @@ public class HAManager {
     if (!stopped) {
       killed = true;
       CountDownLatch latch = new CountDownLatch(1);
-      clusterManager.leave(ar -> {
-        if (ar.failed()) {
-          log.error("Failed to leave cluster", ar.cause());
-        }
-        latch.countDown();
-      });
+      Promise<Void> promise = Promise.promise();
+      clusterManager.leave(promise);
+      promise.future()
+        .onFailure(t -> log.error("Failed to leave cluster", t))
+        .onComplete(ar -> latch.countDown());
       vertx.cancelTimer(quorumTimerID);
 
       boolean interrupted = false;
@@ -245,10 +241,6 @@ public class HAManager {
 
   public void setFailoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
     this.failoverCompleteHandler = failoverCompleteHandler;
-  }
-
-  public void setClusterViewChangedHandler(Consumer<Set<String>> handler) {
-    this.clusterViewChangedHandler = handler;
   }
 
   public boolean isKilled() {
@@ -303,8 +295,6 @@ public class HAManager {
 
     checkQuorum();
     if (attainedQuorum) {
-      checkSubs(leftNodeID);
-
       // Check for failover
       String sclusterInfo = clusterMap.get(leftNodeID);
 
@@ -339,9 +329,6 @@ public class HAManager {
   private synchronized void checkQuorumWhenAdded(final String nodeID, final long start) {
     if (clusterMap.containsKey(nodeID)) {
       checkQuorum();
-      if (attainedQuorum) {
-        checkSubs(nodeID);
-      }
     } else {
       vertx.setTimer(200, tid -> {
         // This can block on a monitor so it needs to run as a worker
@@ -498,16 +485,6 @@ public class HAManager {
           failoverCompleteHandler.handle(failedNodeID, theHAInfo, false);
         }
       });
-    }
-  }
-
-  private void checkSubs(String failedNodeID) {
-    if (clusterViewChangedHandler == null) {
-      return;
-    }
-    String chosen = chooseHashedNode(null, failedNodeID.hashCode());
-    if (chosen != null && chosen.equals(this.nodeID)) {
-      runOnContextAndWait(() -> clusterViewChangedHandler.accept(new HashSet<>(clusterManager.getNodes())));
     }
   }
 

@@ -407,6 +407,14 @@ Set the accept back log.
 |[[clientAuth]]`@clientAuth`|`link:enums.html#ClientAuth[ClientAuth]`|+++
 Set whether client auth is required
 +++
+|[[clusterNodeMetadata]]`@clusterNodeMetadata`|`Json object`|+++
+Set information about this node when Vert.x is clustered.
+ <p>
+ The data may be used by the link to select a node for a given message.
+ For example, it could be used to implement a partioning strategy.
+ <p>
+ The default link does not use the node metadata.
++++
 |[[clusterPingInterval]]`@clusterPingInterval`|`Number (long)`|+++
 Set the value of cluster ping interval, in ms.
 +++
@@ -1897,28 +1905,6 @@ Sets the value of blocked thread check period, in link.
 +++
 |[[blockedThreadCheckIntervalUnit]]`@blockedThreadCheckIntervalUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the time unit of <code>blockedThreadCheckInterval</code>.
-+++
-|[[clusterHost]]`@clusterHost`|`String`|+++
-Set the hostname to be used for clustering.
-+++
-|[[clusterPingInterval]]`@clusterPingInterval`|`Number (long)`|+++
-Set the value of cluster ping interval, in ms.
-+++
-|[[clusterPingReplyInterval]]`@clusterPingReplyInterval`|`Number (long)`|+++
-Set the value of cluster ping reply interval, in ms.
-+++
-|[[clusterPort]]`@clusterPort`|`Number (int)`|+++
-Set the port to be used for clustering.
-+++
-|[[clusterPublicHost]]`@clusterPublicHost`|`String`|+++
-Set the public facing hostname to be used for clustering.
- Sometimes, e.g. when running on certain clouds, the local address the server listens on for clustering is not the same
- address that other nodes connect to it at, as the OS / cloud infrastructure does some kind of proxying.
- If this is the case you can specify a public hostname which is different from the hostname the server listens at.
- The default value is null which means use the same as the cluster hostname.
-+++
-|[[clusterPublicPort]]`@clusterPublicPort`|`Number (int)`|+++
-See link for an explanation.
 +++
 |[[eventLoopPoolSize]]`@eventLoopPoolSize`|`Number (int)`|+++
 Set the number of event loop threads to be used by the Vert.x instance.

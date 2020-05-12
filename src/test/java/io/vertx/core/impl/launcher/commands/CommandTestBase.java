@@ -42,6 +42,12 @@ public class CommandTestBase {
 
   @Before
   public void setUp() throws IOException {
+    System.getProperties().stringPropertyNames().forEach(prop -> {
+      if (prop.startsWith("vertx.")) {
+        System.clearProperty(prop);
+      }
+    });
+
     cli = new VertxCommandLauncher();
     output = new ByteArrayOutputStream();
     error = new ByteArrayOutputStream();

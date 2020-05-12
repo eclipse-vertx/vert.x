@@ -25,6 +25,11 @@ public class EventBusOptionsConverter {
             obj.setClientAuth(io.vertx.core.http.ClientAuth.valueOf((String)member.getValue()));
           }
           break;
+        case "clusterNodeMetadata":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setClusterNodeMetadata(((JsonObject)member.getValue()).copy());
+          }
+          break;
         case "clusterPingInterval":
           if (member.getValue() instanceof Number) {
             obj.setClusterPingInterval(((Number)member.getValue()).longValue());
@@ -251,6 +256,9 @@ public class EventBusOptionsConverter {
     json.put("acceptBacklog", obj.getAcceptBacklog());
     if (obj.getClientAuth() != null) {
       json.put("clientAuth", obj.getClientAuth().name());
+    }
+    if (obj.getClusterNodeMetadata() != null) {
+      json.put("clusterNodeMetadata", obj.getClusterNodeMetadata());
     }
     json.put("clusterPingInterval", obj.getClusterPingInterval());
     json.put("clusterPingReplyInterval", obj.getClusterPingReplyInterval());

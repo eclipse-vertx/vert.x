@@ -13,16 +13,15 @@ package io.vertx.core.shareddata;
 
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.shareddata.AsynchronousLockTest;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -111,7 +110,9 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
   public void testLockReleasedForKilledNode() throws Exception {
     testLockReleased(latch -> {
       VertxInternal vi = (VertxInternal) vertices[0];
-      vi.getClusterManager().leave(onSuccess(v -> {
+      Promise<Void> promise = vi.getOrCreateContext().promise();
+      vi.getClusterManager().leave(promise);
+      promise.future().onComplete(onSuccess(v -> {
         latch.countDown();
       }));
     });

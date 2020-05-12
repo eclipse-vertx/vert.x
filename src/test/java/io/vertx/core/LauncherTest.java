@@ -624,8 +624,8 @@ public class LauncherTest extends VertxTestBase {
   @Test
   public void testConfigureClusterHostPortFromProperties() throws Exception {
     int clusterPort = TestUtils.randomHighPortInt();
-    System.setProperty(RunCommand.VERTX_OPTIONS_PROP_PREFIX + "clusterHost", "127.0.0.1");
-    System.setProperty(RunCommand.VERTX_OPTIONS_PROP_PREFIX + "clusterPort", Integer.toString(clusterPort));
+    System.setProperty(RunCommand.VERTX_EVENTBUS_PROP_PREFIX + "host", "127.0.0.1");
+    System.setProperty(RunCommand.VERTX_EVENTBUS_PROP_PREFIX + "port", Integer.toString(clusterPort));
     MyLauncher launcher = new MyLauncher();
     String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-cluster"};
     launcher.dispatch(args);

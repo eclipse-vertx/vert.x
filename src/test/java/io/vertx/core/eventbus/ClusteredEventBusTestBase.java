@@ -11,7 +11,8 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakecluster.FakeClusterManager;
@@ -19,11 +20,8 @@ import org.junit.Test;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 
 /**
@@ -183,70 +181,6 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     reg.completionHandler(new MyRegisterHandler());
     vertices[0].eventBus().publish(ADDRESS1, val);
     await();
-  }
-
-  @Test
-  public void testSendWhileUnsubscribing() throws Exception {
-    startNodes(2);
-
-    AtomicBoolean unregistered = new AtomicBoolean();
-
-    Verticle sender = new AbstractVerticle() {
-
-      @Override
-      public void start() throws Exception {
-        getVertx().runOnContext(v -> sendMsg());
-      }
-
-      private void sendMsg() {
-        if (!unregistered.get()) {
-          getVertx().eventBus().send("whatever", "marseille");
-          vertx.setTimer(1, id -> {
-            sendMsg();
-          });
-        } else {
-          getVertx().eventBus().request("whatever", "marseille", ar -> {
-            Throwable cause = ar.cause();
-            assertThat(cause, instanceOf(ReplyException.class));
-            ReplyException replyException = (ReplyException) cause;
-            assertEquals(ReplyFailure.NO_HANDLERS, replyException.failureType());
-            testComplete();
-          });
-        }
-      }
-    };
-
-    Verticle receiver = new AbstractVerticle() {
-      boolean unregisterCalled;
-
-      @Override
-      public void start(Promise<Void> startPromise) throws Exception {
-        EventBus eventBus = getVertx().eventBus();
-        MessageConsumer<String> consumer = eventBus.consumer("whatever");
-        consumer.handler(m -> {
-          if (!unregisterCalled) {
-            consumer.unregister(v -> unregistered.set(true));
-            unregisterCalled = true;
-          }
-          m.reply("ok");
-        }).completionHandler(startPromise);
-      }
-    };
-
-    CountDownLatch deployLatch = new CountDownLatch(1);
-    vertices[0].exceptionHandler(this::fail).deployVerticle(receiver, onSuccess(receiverId -> {
-      vertices[1].exceptionHandler(this::fail).deployVerticle(sender, onSuccess(senderId -> {
-        deployLatch.countDown();
-      }));
-    }));
-    awaitLatch(deployLatch);
-
-    await();
-
-    CountDownLatch closeLatch = new CountDownLatch(2);
-    vertices[0].close(v -> closeLatch.countDown());
-    vertices[1].close(v -> closeLatch.countDown());
-    awaitLatch(closeLatch);
   }
 
   @Test

@@ -12,9 +12,6 @@
 package io.vertx.core.spi.cluster;
 
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.AsyncMap;
@@ -44,59 +41,98 @@ import java.util.Map;
  */
 public interface ClusterManager {
 
-  void setVertx(Vertx vertx);
-
   /**
-   * Return an async multi-map for the given name
+   * Invoked before this cluster node tries to join the cluster.
+   * <p>
+   * Implementations must signal the provided {@code nodeSelector} when messaging handler registrations are added or removed
+   * by sending a {@link RegistrationUpdateEvent} with {@link NodeSelector#registrationsUpdated(RegistrationUpdateEvent)}.
+   *
+   * @param vertx        the Vert.x instance
+   * @param nodeSelector the {@link NodeSelector} that must receive {@link RegistrationUpdateEvent}.
    */
-  <K, V> void getAsyncMultiMap(String name, Handler<AsyncResult<AsyncMultiMap<K, V>>> resultHandler);
+  void init(Vertx vertx, NodeSelector nodeSelector);
 
   /**
-   * Return an async map for the given name
+   * Return an {@link AsyncMap} for the given {@code name}.
    */
-  <K, V> Future<AsyncMap<K, V>> getAsyncMap(String name);
+  <K, V> void getAsyncMap(String name, Promise<AsyncMap<K, V>> promise);
 
   /**
-   * Return a synchronous map for the given name
+   * Return a synchronous map for the given {@code name}.
    */
   <K, V> Map<K, V> getSyncMap(String name);
 
-  Future<Lock> getLockWithTimeout(String name, long timeout);
-
-  Future<Counter> getCounter(String name);
-
   /**
-   * Return the unique node ID for this node
+   * Attempts to acquire a {@link Lock} for the given {@code name} within {@code timeout} milliseconds.
    */
-  String getNodeID();
+  void getLockWithTimeout(String name, long timeout, Promise<Lock> promise);
 
   /**
-   * Return a list of node IDs corresponding to the nodes in the cluster
-   *
+   * Return a {@link Counter} for the given {@code name}.
+   */
+  void getCounter(String name, Promise<Counter> promise);
+
+  /**
+   * Return the unique node identifier for this node.
+   */
+  String getNodeId();
+
+  /**
+   * Return a list of node identifiers corresponding to the nodes in the cluster.
    */
   List<String> getNodes();
 
   /**
    * Set a listener that will be called when a node joins or leaves the cluster.
-   *
-   * @param listener
    */
   void nodeListener(NodeListener listener);
 
   /**
-   * Join the cluster
+   * Store the details about this clustered node.
    */
-  void join(Handler<AsyncResult<Void>> resultHandler);
+  void setNodeInfo(NodeInfo nodeInfo, Promise<Void> promise);
 
   /**
-   * Leave the cluster
+   * Get details about this clustered node.
    */
-  void leave(Handler<AsyncResult<Void>> resultHandler);
+  NodeInfo getNodeInfo();
+
+  /**
+   * Get details about a specific node in the cluster.
+   *
+   * @param nodeId the clustered node id
+   */
+  void getNodeInfo(String nodeId, Promise<NodeInfo> promise);
+
+  /**
+   * Join the cluster.
+   */
+  void join(Promise<Void> promise);
+
+  /**
+   * Leave the cluster.
+   */
+  void leave(Promise<Void> promise);
 
   /**
    * Is the cluster manager active?
    *
-   * @return  true if active, false otherwise
+   * @return true if active, false otherwise
    */
   boolean isActive();
+
+  /**
+   * Share a new messaging handler registration with other nodes in the cluster.
+   */
+  void addRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise);
+
+  /**
+   * Signal removal of a messaging handler registration to other nodes in the cluster.
+   */
+  void removeRegistration(String address, RegistrationInfo registrationInfo, Promise<Void> promise);
+
+  /**
+   * Get the messaging handler currently registered in the cluster.
+   */
+  void getRegistrations(String address, Promise<List<RegistrationInfo>> promise);
 }

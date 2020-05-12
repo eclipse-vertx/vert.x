@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class BareCommand extends ClasspathHandler {
 
   public static final String VERTX_OPTIONS_PROP_PREFIX = "vertx.options.";
+  public static final String VERTX_EVENTBUS_PROP_PREFIX = "vertx.eventBus.options.";
   public static final String DEPLOYMENT_OPTIONS_PROP_PREFIX = "vertx.deployment.options.";
   public static final String METRICS_OPTIONS_PROP_PREFIX = "vertx.metrics.options.";
 
@@ -200,20 +201,26 @@ public class BareCommand extends ClasspathHandler {
   @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
   protected Vertx startVertx() {
     JsonObject optionsJson = getJsonFromFileOrString(vertxOptions, "options");
+
+    EventBusOptions eventBusOptions;
+    MetricsOptions metricsOptions;
     if (optionsJson == null) {
-      MetricsOptions metricsOptions = getMetricsOptions();
-      options = new VertxOptions().setMetricsOptions(metricsOptions);
+      eventBusOptions = getEventBusOptions();
+      metricsOptions = getMetricsOptions();
+      options = new VertxOptions();
     } else {
-      MetricsOptions metricsOptions = getMetricsOptions(optionsJson.getJsonObject("metricsOptions"));
-      options = new VertxOptions(optionsJson).setMetricsOptions(metricsOptions);
+      eventBusOptions = getEventBusOptions(optionsJson.getJsonObject("eventBusOptions"));
+      metricsOptions = getMetricsOptions(optionsJson.getJsonObject("metricsOptions"));
+      options = new VertxOptions(optionsJson);
     }
+    options.setEventBusOptions(eventBusOptions).setMetricsOptions(metricsOptions);
 
     configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
     beforeStartingVertx(options);
     Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
-      EventBusOptions eventBusOptions = options.getEventBusOptions();
+      eventBusOptions = options.getEventBusOptions();
       if (!Objects.equals(eventBusOptions.getHost(), EventBusOptions.DEFAULT_CLUSTER_HOST)) {
         clusterHost = eventBusOptions.getHost();
       }
@@ -351,6 +358,22 @@ public class BareCommand extends ClasspathHandler {
     }
     configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);
     return metricsOptions;
+  }
+
+  /**
+   * @return the event bus options.
+   */
+  protected EventBusOptions getEventBusOptions() {
+    return getEventBusOptions(null);
+  }
+
+  /**
+   * @return the event bus options.
+   */
+  protected EventBusOptions getEventBusOptions(JsonObject jsonObject) {
+    EventBusOptions eventBusOptions = jsonObject == null ? new EventBusOptions() : new EventBusOptions(jsonObject);
+    configureFromSystemProperties(eventBusOptions, VERTX_EVENTBUS_PROP_PREFIX);
+    return eventBusOptions;
   }
 
   protected void configureFromSystemProperties(Object options, String prefix) {

@@ -11,24 +11,20 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -39,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>                                                                                        T
  */
-public class EventBusImpl implements EventBus, MetricsProvider {
+public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
 
@@ -88,12 +84,13 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return this;
   }
 
-  public synchronized void start(Handler<AsyncResult<Void>> completionHandler) {
+  @Override
+  public synchronized void start(Promise<Void> promise) {
     if (started) {
       throw new IllegalStateException("Already started");
     }
     started = true;
-    completionHandler.handle(Future.succeededFuture());
+    promise.complete();
   }
 
   @Override
@@ -208,16 +205,14 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   @Override
-  public void close(Handler<AsyncResult<Void>> completionHandler) {
+  public void close(Promise<Void> promise) {
     if (started) {
       unregisterAll();
       if (metrics != null) {
         metrics.close();
       }
     }
-    if (completionHandler != null) {
-      completionHandler.handle(Future.succeededFuture());
-    }
+    promise.complete();
   }
 
   @Override
@@ -238,37 +233,26 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     return msg;
   }
 
-  protected <T> HandlerHolder<T> addRegistration(String address,
-                                                 HandlerRegistration<T> registration,
-                                                 boolean replyHandler,
-                                                 boolean localOnly,
-                                                 Handler<AsyncResult<Void>> completionHandler) {
+  protected <T> HandlerHolder<T> addRegistration(String address, HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, Promise<Void> promise) {
 //    Objects.requireNonNull(registration.getHandler(), "handler");
-    LocalRegistrationResult<T> result = addLocalRegistration(address, registration, replyHandler, localOnly);
-    addRegistration(result.newAddress, result.holder, completionHandler);
-    return result.holder;
+    HandlerHolder<T> holder = addLocalRegistration(address, registration, replyHandler, localOnly);
+    onLocalRegistration(holder, promise);
+    return holder;
   }
 
-  protected <T> void addRegistration(boolean newAddress, HandlerHolder<T> holder, Handler<AsyncResult<Void>> completionHandler) {
-    completionHandler.handle(Future.succeededFuture());
-  }
-
-  private static class LocalRegistrationResult<T> {
-    final HandlerHolder<T> holder;
-    final boolean newAddress;
-    LocalRegistrationResult(HandlerHolder<T> holder, boolean newAddress) {
-      this.holder = holder;
-      this.newAddress = newAddress;
+  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
+    if (promise != null) {
+      promise.complete();
     }
   }
 
-  private <T> LocalRegistrationResult<T> addLocalRegistration(String address, HandlerRegistration<T> registration,
-                                                           boolean replyHandler, boolean localOnly) {
+  private <T> HandlerHolder<T> addLocalRegistration(String address, HandlerRegistration<T> registration,
+                                                    boolean replyHandler, boolean localOnly) {
     Objects.requireNonNull(address, "address");
 
     ContextInternal context = registration.context;
 
-    HandlerHolder<T> holder = new HandlerHolder<>(registration, address, replyHandler, localOnly, context);
+    HandlerHolder<T> holder = createHandlerHolder(registration, replyHandler, localOnly, context);
 
     ConcurrentCyclicSequence<HandlerHolder> handlers = new ConcurrentCyclicSequence<HandlerHolder>().add(holder);
     ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
@@ -281,32 +265,34 @@ public class EventBusImpl implements EventBus, MetricsProvider {
       context.addCloseHook(entry);
     }
 
-    boolean newAddress = handlers == actualHandlers;
-    return new LocalRegistrationResult<>(holder, newAddress);
+    return holder;
   }
 
-  protected <T> void removeRegistration(HandlerHolder<T> holder, Promise<Void> promise) {
-    boolean last = removeLocalRegistration(holder);
-    removeRegistration(last ? holder : null, holder.address, promise);
+  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, ContextInternal context) {
+    return new HandlerHolder<>(registration, replyHandler, localOnly, context);
   }
 
-  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, String address,
-                                        Promise<Void> promise) {
+  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
+    removeLocalRegistration(handlerHolder);
+    onLocalUnregistration(handlerHolder, promise);
+  }
+
+  protected <T> void onLocalUnregistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
     promise.complete();
   }
 
-  private <T> boolean removeLocalRegistration(HandlerHolder<T> holder) {
-    boolean last = handlerMap.compute(holder.address, (key, val) -> {
+  private <T> void removeLocalRegistration(HandlerHolder<T> holder) {
+    String address = holder.getHandler().address;
+    handlerMap.compute(address, (key, val) -> {
       if (val == null) {
         return null;
       }
       ConcurrentCyclicSequence<HandlerHolder> next = val.remove(holder);
       return next.size() == 0 ? null : next;
-    }) == null;
+    });
     if (holder.setRemoved() && holder.getContext().deploymentID() != null) {
-      holder.getContext().removeCloseHook(new HandlerEntry<>(holder.address, holder.getHandler()));
+      holder.getContext().removeCloseHook(new HandlerEntry<>(address, holder.getHandler()));
     }
-    return last;
   }
 
   protected <T> void sendReply(MessageImpl replyMessage, DeliveryOptions options, ReplyHandler<T> replyHandler) {
@@ -491,7 +477,7 @@ public class EventBusImpl implements EventBus, MetricsProvider {
     // Make sure this gets cleaned up if there are no more references to it
     // so as not to leave connections and resources dangling until the system is shutdown
     // which could make the JVM run out of file handles.
-    close(ar -> {});
+    close(Promise.promise());
     super.finalize();
   }
 

@@ -11,19 +11,18 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-import io.vertx.core.ServiceHelper;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.file.impl.FileResolver;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -36,6 +35,7 @@ public class VertxFactory {
   private VertxOptions options;
   private Transport transport;
   private ClusterManager clusterManager;
+  private NodeSelector clusterNodeSelector;
   private VertxTracer tracer;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
@@ -59,6 +59,11 @@ public class VertxFactory {
     return this;
   }
 
+  public VertxFactory clusterNodeSelector(NodeSelector clusterNodeSelector) {
+    this.clusterNodeSelector = clusterNodeSelector;
+    return this;
+  }
+
   public VertxFactory tracer(VertxTracer tracer) {
     this.tracer = tracer;
     return this;
@@ -70,14 +75,14 @@ public class VertxFactory {
   }
 
   public Vertx vertx() {
-    VertxImpl vertx = new VertxImpl(options, null, createMetrics(), createTracer(), createTransport(), createFileResolver());
+    VertxImpl vertx = new VertxImpl(options, null, null, createMetrics(), createTracer(), createTransport(), createFileResolver());
     vertx.init();
     return vertx;
   }
 
   public void clusteredVertx(Handler<AsyncResult<Vertx>> handler) {
-    VertxImpl vertx = new VertxImpl(options, createClusterManager(), createMetrics(), createTracer(), createTransport(), createFileResolver());
-    vertx.joinCluster(options, handler);
+    VertxImpl vertx = new VertxImpl(options, createClusterManager(), createNodeSelector(), createMetrics(), createTracer(), createTransport(), createFileResolver());
+    vertx.initClustered(options, handler);
   }
 
   private ClusterManager createClusterManager() {
@@ -99,6 +104,14 @@ public class VertxFactory {
       }
     }
     return clusterManager;
+  }
+
+  private NodeSelector createNodeSelector() {
+    if (clusterNodeSelector == null) {
+      Collection<NodeSelector> selectors = ServiceHelper.loadFactories(NodeSelector.class);
+      clusterNodeSelector = !selectors.isEmpty() ? selectors.iterator().next() : new DefaultNodeSelector();
+    }
+    return clusterNodeSelector;
   }
 
   private Transport createTransport() {

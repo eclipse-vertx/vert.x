@@ -60,8 +60,8 @@ public class VertxStartFailureTest extends AsyncTestBase {
     Exception expected = new Exception();
     FakeClusterManager clusterManager = new FakeClusterManager() {
       @Override
-      public void join(Handler<AsyncResult<Void>> resultHandler) {
-        resultHandler.handle(Future.failedFuture(expected));
+      public void join(Promise<Void> promise) {
+        promise.fail(expected);
       }
     };
     VertxOptions options = new VertxOptions().setClusterManager(clusterManager);

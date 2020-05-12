@@ -30,36 +30,6 @@ public class VertxOptionsConverter {
             obj.setBlockedThreadCheckIntervalUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
-        case "clusterHost":
-          if (member.getValue() instanceof String) {
-            obj.setClusterHost((String)member.getValue());
-          }
-          break;
-        case "clusterPingInterval":
-          if (member.getValue() instanceof Number) {
-            obj.setClusterPingInterval(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "clusterPingReplyInterval":
-          if (member.getValue() instanceof Number) {
-            obj.setClusterPingReplyInterval(((Number)member.getValue()).longValue());
-          }
-          break;
-        case "clusterPort":
-          if (member.getValue() instanceof Number) {
-            obj.setClusterPort(((Number)member.getValue()).intValue());
-          }
-          break;
-        case "clusterPublicHost":
-          if (member.getValue() instanceof String) {
-            obj.setClusterPublicHost((String)member.getValue());
-          }
-          break;
-        case "clusterPublicPort":
-          if (member.getValue() instanceof Number) {
-            obj.setClusterPublicPort(((Number)member.getValue()).intValue());
-          }
-          break;
         case "eventBusOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setEventBusOptions(new io.vertx.core.eventbus.EventBusOptions((io.vertx.core.json.JsonObject)member.getValue()));
@@ -161,16 +131,6 @@ public class VertxOptionsConverter {
     if (obj.getBlockedThreadCheckIntervalUnit() != null) {
       json.put("blockedThreadCheckIntervalUnit", obj.getBlockedThreadCheckIntervalUnit().name());
     }
-    if (obj.getClusterHost() != null) {
-      json.put("clusterHost", obj.getClusterHost());
-    }
-    json.put("clusterPingInterval", obj.getClusterPingInterval());
-    json.put("clusterPingReplyInterval", obj.getClusterPingReplyInterval());
-    json.put("clusterPort", obj.getClusterPort());
-    if (obj.getClusterPublicHost() != null) {
-      json.put("clusterPublicHost", obj.getClusterPublicHost());
-    }
-    json.put("clusterPublicPort", obj.getClusterPublicPort());
     if (obj.getEventBusOptions() != null) {
       json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }
