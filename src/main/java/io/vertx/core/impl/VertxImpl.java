@@ -178,6 +178,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   void initClustered(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+    nodeSelector.init(this, clusterManager);
     clusterManager.init(this, nodeSelector);
     Promise<Void> initPromise = getOrCreateContext().promise();
     initPromise.future().onComplete(ar -> {

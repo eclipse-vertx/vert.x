@@ -42,4 +42,12 @@ public class RegistrationUpdateEvent {
   public List<RegistrationInfo> registrations() {
     return registrations;
   }
+
+  @Override
+  public String toString() {
+    return "RegistrationUpdateEvent{" +
+      "address='" + address + '\'' +
+      ", registrations=" + registrations +
+      '}';
+  }
 }

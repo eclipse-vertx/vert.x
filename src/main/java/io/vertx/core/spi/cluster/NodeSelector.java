@@ -24,9 +24,14 @@ import io.vertx.core.eventbus.Message;
 public interface NodeSelector {
 
   /**
-   * Invoked after the {@link io.vertx.core.eventbus.EventBus Clustered EventBus} has started.
+   * Invoked before the {@code vertx} instance tries to join the cluster.
    */
-  void init(Vertx vertx);
+  void init(Vertx vertx, ClusterManager clusterManager);
+
+  /**
+   * Invoked after the clustered {@link io.vertx.core.eventbus.EventBus} has started.
+   */
+  void eventBusStarted();
 
   /**
    * Select a node for sending the given {@code message}.

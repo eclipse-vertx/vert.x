@@ -15,7 +15,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
@@ -29,9 +28,12 @@ public class DefaultNodeSelector implements NodeSelector {
   private Selectors selectors;
 
   @Override
-  public void init(Vertx vertx) {
-    ClusterManager clusterManager = ((VertxInternal) vertx).getClusterManager();
+  public void init(Vertx vertx, ClusterManager clusterManager) {
     selectors = new Selectors(clusterManager);
+  }
+
+  @Override
+  public void eventBusStarted() {
   }
 
   @Override

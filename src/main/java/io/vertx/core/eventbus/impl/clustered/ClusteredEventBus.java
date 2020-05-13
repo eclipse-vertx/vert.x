@@ -117,7 +117,7 @@ public class ClusteredEventBus extends EventBusImpl {
       return setPromise.future();
     }).onSuccess(v -> {
       started = true;
-      nodeSelector.init(vertx);
+      nodeSelector.eventBusStarted();
     }).onComplete(promise);
   }
 
