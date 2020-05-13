@@ -20,10 +20,14 @@ import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.util.Collections;
+
 /**
  * @author Julien Viet
  */
 public final class WriteHandlerLookupFailureTest extends VertxTestBase {
+
+  private Vertx vertx;
 
   @Test
   public void test() {
@@ -32,7 +36,6 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
     options.getEventBusOptions()
       .setHost("localhost")
       .setPort(0);
-    vertices = new Vertx[1];
     NodeSelector nodeSelector = new DefaultNodeSelector() {
       @Override
       public void selectForSend(Message<?> message, Promise<String> promise) {
@@ -45,14 +48,24 @@ public final class WriteHandlerLookupFailureTest extends VertxTestBase {
       }
     };
     new VertxFactory(options).clusterNodeSelector(nodeSelector).clusteredVertx(onSuccess(node -> {
-      vertices[0] = node;
-    }));
-    assertWaitUntil(() -> vertices[0] != null);
-    MessageProducer<String> sender = vertices[0].eventBus().sender("foo");
-    sender.write("the_string", onFailure(err -> {
-      assertSame(cause, err);
-      testComplete();
+      vertx = node;
+      MessageProducer<String> sender = vertx.eventBus().sender("foo");
+      sender.write("the_string", onFailure(err -> {
+        assertSame(cause, err);
+        testComplete();
+      }));
     }));
     await();
+  }
+
+  @Override
+  protected void tearDown() throws Exception {
+    try {
+      if (vertx != null) {
+        closeClustered(Collections.singletonList(vertx));
+      }
+    } finally {
+      super.tearDown();
+    }
   }
 }
