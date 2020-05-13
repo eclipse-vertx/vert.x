@@ -1,0 +1,2 @@
+Automatic-Module-Name: io.vertx.core
+
