@@ -624,7 +624,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
           checkSendHeaders(false);
           file.setReadPos(offset);
           file.setReadLength(contentLength);
-          file.pipeTo(this, h);
+          file.pipeTo(this, ar1 -> file.close(ar2 -> {
+            Throwable failure = ar1.failed() ? ar1.cause() : ar2.failed() ? ar2.cause() : null;
+            if(failure == null)
+              h.handle(ar1);
+            else
+              h.handle(Future.failedFuture(failure));
+          }));
         } else {
           h.handle(ar.mapEmpty());
         }
