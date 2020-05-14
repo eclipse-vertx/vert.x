@@ -18,5 +18,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({java.lang.annotation.ElementType.METHOD})
 public @interface DetectFileDescriptorLeaks {
+  long baseline() default 20;
+  long iterations() default 20;
 }
 
