@@ -24,6 +24,7 @@ import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.net.*;
 import io.vertx.core.streams.Pump;
+import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.netty.TestLoggerFactory;
@@ -1851,6 +1852,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  @DetectFileDescriptorLeaks
   public void testSendFile() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
     sendFile("test-send-file.html", content, false,
