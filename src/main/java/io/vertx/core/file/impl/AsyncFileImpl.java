@@ -167,31 +167,32 @@ public class AsyncFileImpl implements AsyncFile {
     Arguments.require(position >= 0, "position must be >= 0");
     check();
     Handler<AsyncResult<Void>> wrapped = ar -> {
-      if (ar.succeeded()) {
-        checkContext();
-        Runnable action;
-        synchronized (AsyncFileImpl.this) {
-          if (writesOutstanding == 0 && closedDeferred != null) {
-            action = closedDeferred;
-          } else {
-            if (overflow && writesOutstanding <= lwm) {
-              overflow = false;
-              Handler<Void> h = drainHandler;
-              if (h != null) {
-                action = () -> {
-                  h.handle(null);
-                };
-              } else {
-                action = null;
-              }
+      checkContext();
+      Runnable action;
+      synchronized (AsyncFileImpl.this) {
+        if (writesOutstanding == 0 && closedDeferred != null) {
+          action = closedDeferred;
+        } else {
+          if (overflow && writesOutstanding <= lwm) {
+            overflow = false;
+            Handler<Void> h = drainHandler;
+            if (h != null) {
+              action = () -> {
+                h.handle(null);
+              };
             } else {
               action = null;
             }
+          } else {
+            action = null;
           }
         }
-        if (action != null) {
-          action.run();
-        }
+      }
+      if (action != null) {
+        action.run();
+      }
+
+      if (ar.succeeded()) {
         if (handler != null) {
           handler.handle(ar);
         }
@@ -461,7 +462,12 @@ public class AsyncFileImpl implements AsyncFile {
 
       public void failed(Throwable exc, Object attachment) {
         if (exc instanceof Exception) {
-          context.runOnContext((v) -> handler.handle(Future.failedFuture(exc)));
+          context.runOnContext((v) -> {
+            synchronized (AsyncFileImpl.this) {
+              writesOutstanding -= buff.limit();
+            }
+            handler.handle(Future.failedFuture(exc));
+          });
         } else {
           log.error("Error occurred", exc);
         }
