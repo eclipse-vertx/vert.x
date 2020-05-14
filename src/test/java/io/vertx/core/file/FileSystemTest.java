@@ -13,12 +13,7 @@ package io.vertx.core.file;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Utils;
@@ -26,7 +21,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
@@ -1130,6 +1124,24 @@ public class FileSystemTest extends VertxTestBase {
         fail(arr.cause().getMessage());
       }
     });
+    await();
+  }
+
+  @Test
+  public void testCloseFileAfterFailure() {
+    if (!vertx.fileSystem().existsBlocking("/dev/full")) {
+      throw new AssumptionViolatedException("/dev/full special device file is not available");
+    }
+    AsyncFile asyncFile = vertx.fileSystem().openBlocking("/dev/full", new OpenOptions());
+
+    int loops = 100;
+    waitFor(loops + 1);
+
+    for (int i = 0; i < loops; i++) {
+      asyncFile.write(TestUtils.randomBuffer(256), onFailure(write -> complete()));
+    }
+    asyncFile.close(onSuccess(close -> complete()));
+
     await();
   }
 
