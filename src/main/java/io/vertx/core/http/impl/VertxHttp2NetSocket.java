@@ -293,7 +293,13 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
     resolveFile(filename, offset, length, ar -> {
       if (ar.succeeded()) {
         AsyncFile file = ar.result();
-        file.pipeTo(this, h);
+        file.pipeTo(this, ar1 -> file.close(ar2 -> {
+          Throwable failure = ar1.failed() ? ar1.cause() : ar2.failed() ? ar2.cause() : null;
+          if(failure == null)
+            h.handle(ar1);
+          else
+            h.handle(Future.failedFuture(failure));
+        }));
       } else {
         h.handle(ar.mapEmpty());
       }
