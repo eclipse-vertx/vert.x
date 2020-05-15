@@ -389,6 +389,23 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   boolean reset(long code);
 
   /**
+   * Reset this request:
+   * <p/>
+   * <ul>
+   *   <li>for HTTP/2, this performs send an HTTP/2 reset frame with the specified error {@code code}</li>
+   *   <li>for HTTP/1.x, this closes the connection when the current request is inflight</li>
+   * </ul>
+   * <p/>
+   * When the request has not yet been sent, the request will be aborted and false is returned as indicator.
+   * <p/>
+   *
+   * @param code the error code
+   * @param cause an optional cause that can be attached to the error code
+   * @return true when reset has been performed
+   */
+  boolean reset(long code, Throwable cause);
+
+  /**
    * @return the {@link HttpConnection} associated with this request
    */
   @CacheReturn

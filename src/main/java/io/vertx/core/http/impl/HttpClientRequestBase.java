@@ -161,6 +161,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     return reset(new StreamResetException(code));
   }
 
+  @Override
+  public boolean reset(long code, Throwable cause) {
+    return reset(new StreamResetException(code, cause));
+  }
+
   abstract boolean reset(Throwable cause);
 
   @Override

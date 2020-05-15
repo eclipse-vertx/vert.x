@@ -27,6 +27,11 @@ public class StreamResetException extends VertxException {
     this.code = code;
   }
 
+  public StreamResetException(long code, Throwable cause) {
+    super("Stream reset: " + code, cause, true);
+    this.code = code;
+  }
+
   /**
    * @return the reset error code
    */
