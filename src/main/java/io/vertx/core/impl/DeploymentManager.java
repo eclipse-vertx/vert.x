@@ -185,14 +185,16 @@ public class DeploymentManager {
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
+      CloseHooks closeHooks = new CloseHooks(log);
       WorkerExecutorInternal workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
       WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
-      ContextImpl context = (ContextImpl) (options.isWorker() ? vertx.createWorkerContext(deployment, pool, tccl) :
-        vertx.createEventLoopContext(deployment, pool, tccl));
+      ContextImpl context = (ContextImpl) (options.isWorker() ? vertx.createWorkerContext(deployment, closeHooks, pool, tccl) :
+        vertx.createEventLoopContext(deployment, closeHooks, pool, tccl));
       if (workerExec != null) {
         context.addCloseHook(workerExec);
       }
-      deployment.addVerticle(new VerticleHolder(verticle, context));
+      VerticleHolder holder = new VerticleHolder(verticle, context, closeHooks);
+      deployment.addVerticle(holder);
       context.runOnContext(v -> {
         try {
           verticle.init(vertx, context);
@@ -219,12 +221,12 @@ public class DeploymentManager {
                 promise.complete(deployment);
               }
             } else if (failureReported.compareAndSet(false, true)) {
-              deployment.rollback(callingContext, promise, context, ar.cause());
+              deployment.rollback(callingContext, promise, context, holder.closeHooks, ar.cause());
             }
           });
         } catch (Throwable t) {
           if (failureReported.compareAndSet(false, true))
-            deployment.rollback(callingContext, promise, context, t);
+            deployment.rollback(callingContext, promise, context, holder.closeHooks, t);
         }
       });
     }
@@ -233,12 +235,15 @@ public class DeploymentManager {
   }
 
   static class VerticleHolder {
+
     final Verticle verticle;
     final ContextImpl context;
+    final CloseHooks closeHooks;
 
-    VerticleHolder(Verticle verticle, ContextImpl context) {
+    VerticleHolder(Verticle verticle, ContextImpl context, CloseHooks closeHooks) {
       this.verticle = verticle;
       this.context = context;
+      this.closeHooks = closeHooks;
     }
   }
 
@@ -269,7 +274,7 @@ public class DeploymentManager {
       verticles.add(holder);
     }
 
-    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextImpl context, Throwable cause) {
+    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextImpl context, CloseHooks closeHooks, Throwable cause) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext).onComplete(childrenResult -> {
@@ -289,7 +294,7 @@ public class DeploymentManager {
           if (childrenResult.failed()) {
             reportFailure(cause, callingContext, completionHandler);
           } else {
-            context.runCloseHooks(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
+            closeHooks.run(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
           }
         });
       }
@@ -344,7 +349,7 @@ public class DeploymentManager {
               if (metrics != null) {
                 metrics.verticleUndeployed(verticleHolder.verticle);
               }
-              context.runCloseHooks(ar2 -> {
+              verticleHolder.closeHooks.run(ar2 -> {
                 if (ar2.failed()) {
                   // Log error but we report success anyway
                   log.error("Failed to run close hook", ar2.cause());
@@ -447,7 +452,6 @@ public class DeploymentManager {
     public String deploymentID() {
       return deploymentID;
     }
-
   }
 
 }

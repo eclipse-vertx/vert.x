@@ -382,7 +382,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ContextInternal ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
-      ctx = createEventLoopContext((Deployment) null, null, Thread.currentThread().getContextClassLoader());
+      ctx = createEventLoopContext((Deployment) null, null, null, Thread.currentThread().getContextClassLoader());
     }
     return ctx;
   }
@@ -427,26 +427,26 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, eventLoopGroup.next(), internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, tccl);
+  public EventLoopContext createEventLoopContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
+    return new EventLoopContext(this, tracer, eventLoopGroup.next(), internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
   public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, eventLoop, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, null, tccl);
+    return new EventLoopContext(this, tracer, eventLoop, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, null, null, tccl);
   }
 
   @Override
-  public ContextInternal createWorkerContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextInternal createWorkerContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
     if (workerPool == null) {
       workerPool = this.workerPool;
     }
-    return new WorkerContext(this, tracer, internalBlockingPool, workerPool, deployment, tccl);
+    return new WorkerContext(this, tracer, internalBlockingPool, workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
   public ContextInternal createWorkerContext() {
-    return createWorkerContext(null, null, null);
+    return createWorkerContext(null, null, null, null);
   }
 
   @Override

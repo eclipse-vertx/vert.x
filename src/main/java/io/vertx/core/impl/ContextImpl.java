@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
-import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -77,6 +76,7 @@ abstract class ContextImpl extends AbstractContext {
               WorkerPool internalBlockingPool,
               WorkerPool workerPool,
               Deployment deployment,
+              CloseHooks closeHooks,
               ClassLoader tccl) {
     if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
@@ -88,10 +88,10 @@ abstract class ContextImpl extends AbstractContext {
     this.tccl = tccl;
     this.owner = vertx;
     this.workerPool = workerPool;
+    this.closeHooks = closeHooks;
     this.internalBlockingPool = internalBlockingPool;
     this.orderedTasks = new TaskQueue();
     this.internalOrderedTasks = new TaskQueue();
-    this.closeHooks = new CloseHooks(log);
   }
 
   public Deployment getDeployment() {
@@ -99,15 +99,15 @@ abstract class ContextImpl extends AbstractContext {
   }
 
   public void addCloseHook(Closeable hook) {
-    closeHooks.add(hook);
+    if (closeHooks != null) {
+      closeHooks.add(hook);
+    }
   }
 
-  public boolean removeCloseHook(Closeable hook) {
-    return closeHooks.remove(hook);
-  }
-
-  public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
-    closeHooks.run(completionHandler);
+  public void removeCloseHook(Closeable hook) {
+    if (deployment != null) {
+      closeHooks.add(hook);
+    }
   }
 
   @Override
@@ -290,8 +290,8 @@ abstract class ContextImpl extends AbstractContext {
     }
 
     @Override
-    public final boolean removeCloseHook(Closeable hook) {
-      return delegate.removeCloseHook(hook);
+    public final void removeCloseHook(Closeable hook) {
+      delegate.removeCloseHook(hook);
     }
 
     @Override

@@ -33,7 +33,7 @@ public class ContextTest extends VertxTestBase {
   private ExecutorService workerExecutor;
 
   private ContextInternal createWorkerContext() {
-    return ((VertxInternal) vertx).createWorkerContext(null, new WorkerPool(workerExecutor, null), Thread.currentThread().getContextClassLoader());
+    return ((VertxInternal) vertx).createWorkerContext(null, null, new WorkerPool(workerExecutor, null), Thread.currentThread().getContextClassLoader());
   }
 
   @Override
