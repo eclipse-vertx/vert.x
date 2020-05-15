@@ -22,6 +22,7 @@ import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -206,13 +207,16 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public void close(Promise<Void> promise) {
-    if (started) {
-      unregisterAll();
+    if (!started) {
+      promise.complete();
+      return;
+    }
+    unregisterAll().onComplete(ar -> {
       if (metrics != null) {
         metrics.close();
       }
-    }
-    promise.complete();
+      promise.handle(ar);
+    });
   }
 
   @Override
@@ -410,13 +414,15 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     sendOrPubInternal(newSendContext(message, options, handler, writePromise));
   }
 
-  private void unregisterAll() {
+  private Future<Void> unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
-    for (ConcurrentCyclicSequence<HandlerHolder> handlers: handlerMap.values()) {
-      for (HandlerHolder holder: handlers) {
-        holder.getHandler().unregister(ar -> {});
+    List<Future> futures = new ArrayList<>();
+    for (ConcurrentCyclicSequence<HandlerHolder> handlers : handlerMap.values()) {
+      for (HandlerHolder holder : handlers) {
+        futures.add(holder.getHandler().unregister());
       }
     }
+    return CompositeFuture.join(futures).mapEmpty();
   }
 
   private <T> void deliverToHandler(MessageImpl msg, HandlerHolder<T> holder) {
