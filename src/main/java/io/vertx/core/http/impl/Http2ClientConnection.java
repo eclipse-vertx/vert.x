@@ -416,7 +416,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         writeBuffer(content, end, handler);
       } else {
         writeHeaders(h, end, handler);
-        handlerContext.flush();
       }
     }
 

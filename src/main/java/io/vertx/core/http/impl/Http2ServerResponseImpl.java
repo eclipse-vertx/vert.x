@@ -328,7 +328,6 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     synchronized (conn) {
       checkHeadWritten();
       stream.writeHeaders(new DefaultHttp2Headers().status("100"), false, null);
-      ctx.flush();
       return this;
     }
   }

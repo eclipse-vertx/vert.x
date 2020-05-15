@@ -61,13 +61,49 @@ public class Http2Test extends HttpTest {
   public void testServerResponseWriteBufferFromOtherThread() throws Exception {
     server.requestHandler(req -> {
       runAsync(() -> {
-        req.response().write("hello ").end("world");
+        req.response().write("hello world");
       });
     }).listen(testAddress, onSuccess(v -> {
       client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", resp -> {
         assertEquals(200, resp.statusCode());
-        resp.bodyHandler(buff -> {
+        resp.handler(buff -> {
           assertEquals(Buffer.buffer("hello world"), buff);
+          testComplete();
+        });
+      }).exceptionHandler(this::fail).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerResponseEndFromOtherThread() throws Exception {
+    server.requestHandler(req -> {
+      runAsync(() -> {
+        req.response().end();
+      });
+    }).listen(testAddress, onSuccess(v1 -> {
+      client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", resp -> {
+        assertEquals(200, resp.statusCode());
+        resp.endHandler(v2 -> {
+          testComplete();
+        });
+      }).exceptionHandler(this::fail).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerResponseEndWithTrailersFromOtherThread() throws Exception {
+    server.requestHandler(req -> {
+      runAsync(() -> {
+        req.response().putTrailer("some", "trailer").end();
+      });
+    }).listen(testAddress, onSuccess(v1 -> {
+      client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath", resp -> {
+        assertEquals(200, resp.statusCode());
+        resp.endHandler(v2 -> {
+          assertEquals(1, resp.trailers().size());
+          assertEquals("trailer", resp.trailers().get("some"));
           testComplete();
         });
       }).exceptionHandler(this::fail).end();
