@@ -51,15 +51,6 @@ abstract class ContextImpl extends AbstractContext {
     }
   }
 
-  private static EventLoop getEventLoop(VertxInternal vertx) {
-    EventLoopGroup group = vertx.getEventLoopGroup();
-    if (group != null) {
-      return group.next();
-    } else {
-      return null;
-    }
-  }
-
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
@@ -80,13 +71,13 @@ abstract class ContextImpl extends AbstractContext {
   final WorkerPool workerPool;
   final TaskQueue orderedTasks;
 
-  ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
-                        ClassLoader tccl) {
-    this(vertx, tracer, getEventLoop(vertx), internalBlockingPool, workerPool, deployment, tccl);
-  }
-
-  ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
-                        ClassLoader tccl) {
+  ContextImpl(VertxInternal vertx,
+              VertxTracer<?, ?> tracer,
+              EventLoop eventLoop,
+              WorkerPool internalBlockingPool,
+              WorkerPool workerPool,
+              Deployment deployment,
+              ClassLoader tccl) {
     if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
     }

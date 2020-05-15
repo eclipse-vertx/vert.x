@@ -23,11 +23,6 @@ import io.vertx.core.spi.tracing.VertxTracer;
  */
 public class EventLoopContext extends ContextImpl {
 
-  EventLoopContext(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
-                   ClassLoader tccl) {
-    super(vertx, tracer, internalBlockingPool, workerPool, deployment, tccl);
-  }
-
   EventLoopContext(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                           ClassLoader tccl) {
     super(vertx, tracer, eventLoop, internalBlockingPool, workerPool, deployment, tccl);

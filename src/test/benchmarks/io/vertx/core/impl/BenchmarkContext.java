@@ -21,11 +21,17 @@ public class BenchmarkContext extends ContextImpl {
 
   public static BenchmarkContext create(Vertx vertx) {
     VertxImpl impl = (VertxImpl) vertx;
-    return new BenchmarkContext(impl, impl.internalBlockingPool, impl.workerPool, null, Thread.currentThread().getContextClassLoader());
+    return new BenchmarkContext(
+      impl,
+      impl.internalBlockingPool,
+      impl.workerPool,
+      null,
+      Thread.currentThread().getContextClassLoader()
+    );
   }
 
   public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment, ClassLoader tccl) {
-    super(vertx, null, internalBlockingPool, workerPool, deployment, tccl);
+    super(vertx, null, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, tccl);
   }
 
   @Override

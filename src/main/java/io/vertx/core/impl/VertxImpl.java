@@ -428,7 +428,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public EventLoopContext createEventLoopContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, tccl);
+    return new EventLoopContext(this, tracer, eventLoopGroup.next(), internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, tccl);
   }
 
   @Override

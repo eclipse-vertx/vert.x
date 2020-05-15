@@ -28,7 +28,7 @@ public class WorkerContext extends ContextImpl {
 
   WorkerContext(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
                 ClassLoader tccl) {
-    super(vertx, tracer, internalBlockingPool, workerPool, deployment, tccl);
+    super(vertx, tracer, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, tccl);
   }
 
   @Override
