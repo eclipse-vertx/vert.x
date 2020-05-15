@@ -55,24 +55,60 @@ public class Http2Test extends HttpTest {
   // Extra test
 
   @Test
-  public void testServerResponseWriteBufferFromOtherThread() throws Exception {
+  public void testServerResponseWriteBufferFromOtherThread() {
     server.requestHandler(req -> {
       runAsync(() -> {
-        HttpServerResponse resp = req.response();
-        resp.write("hello ");
-        resp.end("world");
+        req.response().write("hello world");
       });
     }).listen(testAddress, onSuccess(v -> {
       client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath")
         .onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
-          resp.bodyHandler(buff -> {
+          resp.handler(buff -> {
             assertEquals(Buffer.buffer("hello world"), buff);
             testComplete();
           });
         }))
         .exceptionHandler(this::fail)
         .end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerResponseEndFromOtherThread() {
+    server.requestHandler(req -> {
+      runAsync(() -> {
+        req.response().end();
+      });
+    }).listen(testAddress, onSuccess(v1 -> {
+      client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath")
+        .onComplete(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        resp.endHandler(v2 -> {
+          testComplete();
+        });
+      })).end();
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerResponseEndWithTrailersFromOtherThread() {
+    server.requestHandler(req -> {
+      runAsync(() -> {
+        req.response().putTrailer("some", "trailer").end();
+      });
+    }).listen(testAddress, onSuccess(v1 -> {
+      client.request(HttpMethod.GET, testAddress, 8080, "localhost", "/somepath")
+        .onComplete(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        resp.endHandler(v2 -> {
+          assertEquals(1, resp.trailers().size());
+          assertEquals("trailer", resp.trailers().get("some"));
+          testComplete();
+        });
+      })).end();
     }));
     await();
   }
