@@ -137,6 +137,11 @@ public class WorkerContext extends ContextImpl {
     }
 
     @Override
+    public CloseHooks closeHooks() {
+      return delegate.closeHooks();
+    }
+
+    @Override
     <T> void execute(T argument, Handler<T> task) {
       delegate.execute(this, orderedTasks, argument, task);
     }

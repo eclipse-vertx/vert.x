@@ -151,4 +151,6 @@ public interface VertxInternal extends Vertx {
 
   void removeCloseHook(Closeable hook);
 
+  CloseHooks closeHooks();
+
 }

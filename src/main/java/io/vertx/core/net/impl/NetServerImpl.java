@@ -228,15 +228,6 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     return !isListening();
   }
 
-  @Override
-  protected void finalize() throws Throwable {
-    // Make sure this gets cleaned up if there are no more references to it
-    // so as not to leave connections and resources dangling until the system is shutdown
-    // which could make the JVM run out of file handles.
-    close();
-    super.finalize();
-  }
-
   private class NetServerWorker implements Handler<Channel> {
 
     private final ContextInternal context;

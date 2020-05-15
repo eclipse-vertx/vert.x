@@ -98,6 +98,11 @@ abstract class ContextImpl extends AbstractContext {
     return deployment;
   }
 
+  @Override
+  public CloseHooks closeHooks() {
+    return closeHooks;
+  }
+
   public void addCloseHook(Closeable hook) {
     if (closeHooks != null) {
       closeHooks.add(hook);
@@ -106,7 +111,7 @@ abstract class ContextImpl extends AbstractContext {
 
   public void removeCloseHook(Closeable hook) {
     if (deployment != null) {
-      closeHooks.add(hook);
+      closeHooks.remove(hook);
     }
   }
 

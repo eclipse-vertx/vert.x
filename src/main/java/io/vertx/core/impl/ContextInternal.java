@@ -261,4 +261,6 @@ public interface ContextInternal extends Context, Executor {
    */
   long setTimer(long delay, Handler<Long> handler);
 
+  CloseHooks closeHooks();
+
 }

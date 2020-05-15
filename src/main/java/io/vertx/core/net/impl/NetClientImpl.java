@@ -21,12 +21,12 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.concurrent.GlobalEventExecutor;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.impl.CloseHooks;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class NetClientImpl implements MetricsProvider, NetClient {
+public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
   protected final int idleTimeout;
@@ -61,39 +61,33 @@ public class NetClientImpl implements MetricsProvider, NetClient {
 
   private final VertxInternal vertx;
   private final NetClientOptions options;
-  protected final SSLHelper sslHelper;
+  private final SSLHelper sslHelper;
   private final ChannelGroup channelGroup;
-  private final Closeable closeHook;
-  private final ContextInternal creatingContext;
+  private final CloseHooks closeHooks;
   private final TCPMetrics metrics;
+  private final PromiseInternal<Void> closePromise;
+  private final Future<Void> closeFuture;
   private volatile boolean closed;
 
-  public NetClientImpl(VertxInternal vertx, NetClientOptions options) {
-    this(vertx, options, true);
-  }
-
-  public NetClientImpl(VertxInternal vertx, NetClientOptions options, boolean useCreatingContext) {
+  public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseHooks closeHooks) {
     this.vertx = vertx;
-    this.channelGroup = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+    this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
-    this.closeHook = completionHandler -> {
-      NetClientImpl.this.close();
-      completionHandler.handle(Future.succeededFuture());
-    };
-    if (useCreatingContext) {
-      creatingContext = vertx.getContext();
-      if (creatingContext != null) {
-        creatingContext.addCloseHook(closeHook);
-      }
-    } else {
-      creatingContext = null;
-    }
-    VertxMetrics metrics = vertx.metricsSPI();
-    this.metrics = metrics != null ? metrics.createNetClientMetrics(options) : null;
+    this.closeHooks = closeHooks;
+    this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null;
     logEnabled = options.getLogActivity();
     idleTimeout = options.getIdleTimeout();
     idleTimeoutUnit = options.getIdleTimeoutUnit();
+    closePromise = (PromiseInternal) Promise.promise();
+    if (metrics != null) {
+      closeFuture = closePromise.future().compose(v -> {
+        metrics.close();
+        return Future.succeededFuture();
+      });
+    } else {
+      closeFuture = closePromise.future();
+    }
   }
 
   protected void initChannel(ChannelPipeline pipeline) {
@@ -142,34 +136,42 @@ public class NetClientImpl implements MetricsProvider, NetClient {
   }
 
   @Override
+  public Future<Void> closeFuture() {
+    return closePromise.future();
+  }
+
+  @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    close(vertx.getOrCreateContext().promise(handler));
+    if (closeHooks != null) {
+      closeHooks.remove(this);
+    }
+    ContextInternal closingCtx = vertx.getOrCreateContext();
+    close(handler != null ? closingCtx.promise(handler) : null);
   }
 
   @Override
   public Future<Void> close() {
-    PromiseInternal<Void> promise = vertx.getOrCreateContext().promise();
+    if (closeHooks != null) {
+      closeHooks.remove(this);
+    }
+    ContextInternal closingCtx = vertx.getOrCreateContext();
+    PromiseInternal<Void> promise = closingCtx.promise();
     close(promise);
     return promise.future();
   }
 
-  private void close(PromiseInternal<Void> promise) {
-    boolean closed;
+  @Override
+  public void close(Promise<Void> completion) {
+    boolean close;
     synchronized (this) {
-      closed = this.closed;
-      this.closed = true;
+      close = !closed;
+      closed = true;
     }
-    if (closed) {
-      promise.complete();
-      return;
+    if (close) {
+      ChannelGroupFuture fut = channelGroup.close();
+      fut.addListener(closePromise);
     }
-    ChannelGroupFuture fut = channelGroup.close();
-    fut.addListener(promise);
-    promise.future().onComplete(ar -> {
-      if (metrics != null) {
-        metrics.close();
-      }
-    });
+    closeFuture.onComplete(completion);
   }
 
   @Override
@@ -277,7 +279,7 @@ public class NetClientImpl implements MetricsProvider, NetClient {
     // Make sure this gets cleaned up if there are no more references to it
     // so as not to leave connections and resources dangling until the system is shutdown
     // which could make the JVM run out of file handles.
-    close((PromiseInternal<Void>) Promise.<Void>promise());
+    close((Handler<AsyncResult<Void>>) null);
     super.finalize();
   }
 }

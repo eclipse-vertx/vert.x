@@ -81,6 +81,11 @@ public class EventLoopContext extends ContextImpl {
     }
 
     @Override
+    public CloseHooks closeHooks() {
+      return delegate.closeHooks();
+    }
+
+    @Override
     <T> void execute(T argument, Handler<T> task) {
       nettyEventLoop().execute(() -> emit(argument, task));
     }

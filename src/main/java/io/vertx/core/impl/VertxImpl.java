@@ -277,7 +277,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public NetClient createNetClient(NetClientOptions options) {
-    return new NetClientImpl(this, options);
+    CloseHooks hooks = resolveHooks();
+    NetClientImpl client = new NetClientImpl(this, options, hooks);
+    hooks.add(client);
+    return client;
   }
 
   @Override
@@ -313,7 +316,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpClient createHttpClient(HttpClientOptions options) {
-    return new HttpClientImpl(this, options);
+    CloseHooks hooks = resolveHooks();
+    HttpClientImpl client = new HttpClientImpl(this, hooks, options);
+    hooks.add(client);
+    return client;
   }
 
   @Override
@@ -382,7 +388,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ContextInternal ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
-      ctx = createEventLoopContext((Deployment) null, null, null, Thread.currentThread().getContextClassLoader());
+      ctx = createEventLoopContext(null, null, null, Thread.currentThread().getContextClassLoader());
     }
     return ctx;
   }
@@ -532,7 +538,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       return;
     }
     closed = true;
-
     closeHooks.run(ar -> {
       deploymentManager.undeployAll().onComplete(ar1 -> {
         HAManager haManager = haManager();
@@ -1073,9 +1078,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       sharedWorkerPool.refCount++;
     }
-    ContextInternal context = getOrCreateContext();
-    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(context, sharedWorkerPool);
-    context.addCloseHook(namedExec);
+    ContextInternal ctx = getContext();
+    CloseHooks hooks = ctx != null ? ctx.closeHooks() : null;
+    if (hooks == null) {
+      hooks = closeHooks;
+    }
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, closeHooks, sharedWorkerPool);
+    hooks.add(namedExec);
     return namedExec;
   }
 
@@ -1098,5 +1107,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public void removeCloseHook(Closeable hook) {
     closeHooks.remove(hook);
+  }
+
+  @Override
+  public CloseHooks closeHooks() {
+    return closeHooks;
+  }
+
+  private CloseHooks resolveHooks() {
+    ContextInternal context = getContext();
+    CloseHooks hooks = context != null ? context.closeHooks() : null;
+    if (hooks == null) {
+      hooks = closeHooks();
+    }
+    return hooks;
   }
 }

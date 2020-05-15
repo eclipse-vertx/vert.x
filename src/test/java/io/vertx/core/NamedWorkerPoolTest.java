@@ -328,7 +328,7 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       try {
         exec.executeBlocking(fut -> fail(), ar -> fail());
         fail();
-      } catch (RejectedExecutionException ignore) {
+      } catch (IllegalStateException ignore) {
       }
       // Check we can still close
       exec.close();

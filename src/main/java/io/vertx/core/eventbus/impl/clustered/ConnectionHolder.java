@@ -59,7 +59,7 @@ class ConnectionHolder {
     NetClientOptions clientOptions = new NetClientOptions(options.toJson());
     ClusteredEventBus.setCertOptions(clientOptions, options.getKeyCertOptions());
     ClusteredEventBus.setTrustOptions(clientOptions, options.getTrustOptions());
-    client = new NetClientImpl(eventBus.vertx(), clientOptions, false);
+    client = new NetClientImpl(eventBus.vertx(), clientOptions, null);
   }
 
   void connect() {
