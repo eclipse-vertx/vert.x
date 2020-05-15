@@ -364,10 +364,12 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     startNodes(1);
     MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1);
     AtomicInteger completionCount = new AtomicInteger();
-    consumer.completionHandler(onSuccess(v -> {
+    consumer.completionHandler(v -> {
+      // Do not assert success because the handler could be unregistered locally
+      // before the registration was propagated to the cluster manager
       int val = completionCount.getAndIncrement();
       assertEquals(0, val);
-    }));
+    });
     consumer.handler(msg -> {});
     consumer.unregister(onSuccess(v -> {
       int val = completionCount.getAndIncrement();
