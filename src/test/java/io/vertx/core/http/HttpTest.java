@@ -3097,6 +3097,14 @@ public abstract class HttpTest extends HttpTestBase {
 
     AtomicInteger attributeCount = new AtomicInteger();
 
+    AtomicReference<HttpConnection> clientConn = new AtomicReference<>();
+    AtomicReference<HttpConnection> serverConn = new AtomicReference<>();
+    Runnable checkClose = () -> {
+      if (clientConn.get() != null && serverConn.get() != null) {
+        clientConn.get().close();
+      }
+    };
+
     server.requestHandler(req -> {
       if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
@@ -3109,6 +3117,10 @@ public abstract class HttpTest extends HttpTestBase {
         assertTrue(req.isExpectMultipart());
 
         req.uploadHandler(upload -> {
+
+          serverConn.set(req.connection());
+          checkClose.run();
+
           Buffer tot = Buffer.buffer();
           assertEquals("file", upload.name());
           assertEquals("tmp-0.txt", upload.filename());
@@ -3187,12 +3199,10 @@ public abstract class HttpTest extends HttpTestBase {
       req.headers().set("content-length", "" + (pro + contentStr + epi).length());
       req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
       if (abortClient) {
-        client.connectionHandler(conn -> {
-          vertx.setTimer(100, id -> {
-            conn.close();
-          });
-        });
-        req.write(pro + contentStr.substring(0, contentStr.length() / 2));
+        req.write(pro + contentStr.substring(0, contentStr.length() / 2), onSuccess(v -> {
+          clientConn.set(req.connection());
+          checkClose.run();
+        }));
       } else {
         req.end(pro + contentStr + epi);
       }
