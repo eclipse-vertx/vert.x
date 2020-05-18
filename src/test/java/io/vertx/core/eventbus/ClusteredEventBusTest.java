@@ -49,10 +49,12 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testLocalHandlerClusteredSend() throws Exception {
     startNodes(2);
     waitFor(2);
-    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> complete());
-    vertices[0].eventBus().localConsumer(ADDRESS1).handler(msg -> complete());
-    vertices[0].eventBus().send(ADDRESS1, "foo");
-    vertices[0].eventBus().send(ADDRESS1, "foo");
+    vertices[1].eventBus().consumer(ADDRESS1, msg -> complete()).completionHandler(v1 -> {
+      vertices[0].eventBus().localConsumer(ADDRESS1, msg -> complete()).completionHandler(v2 -> {
+        vertices[0].eventBus().send(ADDRESS1, "foo");
+        vertices[0].eventBus().send(ADDRESS1, "foo");
+      });
+    });
     await();
   }
 
@@ -60,9 +62,11 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testLocalHandlerClusteredPublish() throws Exception {
     startNodes(2);
     waitFor(2);
-    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> complete());
-    vertices[0].eventBus().localConsumer(ADDRESS1).handler(msg -> complete());
-    vertices[0].eventBus().publish(ADDRESS1, "foo");
+    vertices[1].eventBus().consumer(ADDRESS1, msg -> complete()).completionHandler(v1 -> {
+      vertices[0].eventBus().localConsumer(ADDRESS1, msg -> complete()).completionHandler(v2 -> {
+        vertices[0].eventBus().publish(ADDRESS1, "foo");
+      });
+    });
     await();
   }
 
