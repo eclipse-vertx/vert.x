@@ -111,4 +111,13 @@ public class Selectors {
   private boolean isAccessible(RegistrationInfo registrationInfo) {
     return !registrationInfo.localOnly() || clusterManager.getNodeId().equals(registrationInfo.nodeId());
   }
+
+  public void dataLost() {
+    for (String address : map.keySet()) {
+      SelectorEntry entry = map.remove(address);
+      if (entry.isNotReady()) {
+        entry.selectorPromise.complete(NullRoundRobinSelector.INSTANCE);
+      }
+    }
+  }
 }

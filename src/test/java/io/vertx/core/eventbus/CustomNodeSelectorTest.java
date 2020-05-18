@@ -143,5 +143,9 @@ public class CustomNodeSelectorTest extends VertxTestBase {
     @Override
     public void registrationsUpdated(RegistrationUpdateEvent event) {
     }
+
+    @Override
+    public void registrationsLost() {
+    }
   }
 }

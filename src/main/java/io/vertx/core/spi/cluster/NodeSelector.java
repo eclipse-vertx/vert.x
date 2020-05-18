@@ -52,4 +52,9 @@ public interface NodeSelector {
    */
   void registrationsUpdated(RegistrationUpdateEvent event);
 
+  /**
+   * Invoked by the {@link ClusterManager} when some handler registrations have been lost.
+   */
+  void registrationsLost();
+
 }

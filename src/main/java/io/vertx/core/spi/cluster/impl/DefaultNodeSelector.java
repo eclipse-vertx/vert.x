@@ -52,4 +52,9 @@ public class DefaultNodeSelector implements NodeSelector {
   public void registrationsUpdated(RegistrationUpdateEvent event) {
     selectors.dataReceived(event.address(), event.registrations());
   }
+
+  @Override
+  public void registrationsLost() {
+    selectors.dataLost();
+  }
 }
