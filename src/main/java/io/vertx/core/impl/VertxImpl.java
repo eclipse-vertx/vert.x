@@ -552,33 +552,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             ebClose.future().onComplete(ar4 -> {
               closeClusterManager(ar5 -> {
                 // Copy set to prevent ConcurrentModificationException
-                Set<HttpServerImpl> httpServers = new HashSet<>(sharedHttpServers.values());
-                Set<NetServerImpl> netServers = new HashSet<>(sharedNetServers.values());
-                sharedHttpServers.clear();
-                sharedNetServers.clear();
-
-                int serverCount = httpServers.size() + netServers.size();
-
-                AtomicInteger serverCloseCount = new AtomicInteger();
-
-                Handler<AsyncResult<Void>> serverCloseHandler = res -> {
-                  if (res.failed()) {
-                    log.error("Failure in shutting down server", res.cause());
-                  }
-                  if (serverCloseCount.incrementAndGet() == serverCount) {
-                    deleteCacheDirAndShutdown(completionHandler);
-                  }
-                };
-
-                for (HttpServerImpl server : httpServers) {
-                  server.closeAll(serverCloseHandler);
-                }
-                for (NetServerImpl server : netServers) {
-                  server.closeAll(serverCloseHandler);
-                }
-                if (serverCount == 0) {
-                  deleteCacheDirAndShutdown(completionHandler);
-                }
+                deleteCacheDirAndShutdown(completionHandler);
               });
             });
           });
