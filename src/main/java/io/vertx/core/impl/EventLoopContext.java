@@ -23,14 +23,15 @@ import io.vertx.core.spi.tracing.VertxTracer;
  */
 public class EventLoopContext extends ContextImpl {
 
-  EventLoopContext(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
+  EventLoopContext(VertxInternal vertx,
+                   VertxTracer<?, ?> tracer,
+                   EventLoop eventLoop,
+                   WorkerPool internalBlockingPool,
+                   WorkerPool workerPool,
+                   Deployment deployment,
+                   CloseHooks closeHooks,
                    ClassLoader tccl) {
-    super(vertx, tracer, internalBlockingPool, workerPool, deployment, tccl);
-  }
-
-  EventLoopContext(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
-                          ClassLoader tccl) {
-    super(vertx, tracer, eventLoop, internalBlockingPool, workerPool, deployment, tccl);
+    super(vertx, tracer, eventLoop, internalBlockingPool, workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
@@ -77,6 +78,11 @@ public class EventLoopContext extends ContextImpl {
 
     Duplicated(EventLoopContext delegate) {
       super(delegate);
+    }
+
+    @Override
+    public CloseHooks closeHooks() {
+      return delegate.closeHooks();
     }
 
     @Override

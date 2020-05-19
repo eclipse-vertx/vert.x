@@ -277,7 +277,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public NetClient createNetClient(NetClientOptions options) {
-    return new NetClientImpl(this, options);
+    CloseHooks hooks = resolveHooks();
+    NetClientImpl client = new NetClientImpl(this, options, hooks);
+    hooks.add(client);
+    return client;
   }
 
   @Override
@@ -313,7 +316,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpClient createHttpClient(HttpClientOptions options) {
-    return new HttpClientImpl(this, options);
+    CloseHooks hooks = resolveHooks();
+    HttpClientImpl client = new HttpClientImpl(this, hooks, options);
+    hooks.add(client);
+    return client;
   }
 
   @Override
@@ -382,7 +388,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ContextInternal ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
-      ctx = createEventLoopContext((Deployment) null, null, Thread.currentThread().getContextClassLoader());
+      ctx = createEventLoopContext(null, null, null, Thread.currentThread().getContextClassLoader());
     }
     return ctx;
   }
@@ -427,26 +433,26 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, tccl);
+  public EventLoopContext createEventLoopContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
+    return new EventLoopContext(this, tracer, eventLoopGroup.next(), internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
   public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, eventLoop, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, null, tccl);
+    return new EventLoopContext(this, tracer, eventLoop, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, null, null, tccl);
   }
 
   @Override
-  public ContextInternal createWorkerContext(Deployment deployment, WorkerPool workerPool, ClassLoader tccl) {
+  public ContextInternal createWorkerContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
     if (workerPool == null) {
       workerPool = this.workerPool;
     }
-    return new WorkerContext(this, tracer, internalBlockingPool, workerPool, deployment, tccl);
+    return new WorkerContext(this, tracer, internalBlockingPool, workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
   public ContextInternal createWorkerContext() {
-    return createWorkerContext(null, null, null);
+    return createWorkerContext(null, null, null, null);
   }
 
   @Override
@@ -532,7 +538,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       return;
     }
     closed = true;
-
     closeHooks.run(ar -> {
       deploymentManager.undeployAll().onComplete(ar1 -> {
         HAManager haManager = haManager();
@@ -552,33 +557,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
             ebClose.future().onComplete(ar4 -> {
               closeClusterManager(ar5 -> {
                 // Copy set to prevent ConcurrentModificationException
-                Set<HttpServerImpl> httpServers = new HashSet<>(sharedHttpServers.values());
-                Set<NetServerImpl> netServers = new HashSet<>(sharedNetServers.values());
-                sharedHttpServers.clear();
-                sharedNetServers.clear();
-
-                int serverCount = httpServers.size() + netServers.size();
-
-                AtomicInteger serverCloseCount = new AtomicInteger();
-
-                Handler<AsyncResult<Void>> serverCloseHandler = res -> {
-                  if (res.failed()) {
-                    log.error("Failure in shutting down server", res.cause());
-                  }
-                  if (serverCloseCount.incrementAndGet() == serverCount) {
-                    deleteCacheDirAndShutdown(completionHandler);
-                  }
-                };
-
-                for (HttpServerImpl server : httpServers) {
-                  server.closeAll(serverCloseHandler);
-                }
-                for (NetServerImpl server : netServers) {
-                  server.closeAll(serverCloseHandler);
-                }
-                if (serverCount == 0) {
-                  deleteCacheDirAndShutdown(completionHandler);
-                }
+                deleteCacheDirAndShutdown(completionHandler);
               });
             });
           });
@@ -1099,9 +1078,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       sharedWorkerPool.refCount++;
     }
-    ContextInternal context = getOrCreateContext();
-    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(context, sharedWorkerPool);
-    context.addCloseHook(namedExec);
+    ContextInternal ctx = getContext();
+    CloseHooks hooks = ctx != null ? ctx.closeHooks() : null;
+    if (hooks == null) {
+      hooks = closeHooks;
+    }
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, closeHooks, sharedWorkerPool);
+    hooks.add(namedExec);
     return namedExec;
   }
 
@@ -1124,5 +1107,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public void removeCloseHook(Closeable hook) {
     closeHooks.remove(hook);
+  }
+
+  @Override
+  public CloseHooks closeHooks() {
+    return closeHooks;
+  }
+
+  private CloseHooks resolveHooks() {
+    ContextInternal context = getContext();
+    CloseHooks hooks = context != null ? context.closeHooks() : null;
+    if (hooks == null) {
+      hooks = closeHooks();
+    }
+    return hooks;
   }
 }

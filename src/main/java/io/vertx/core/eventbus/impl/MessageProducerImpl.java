@@ -83,11 +83,4 @@ public class MessageProducerImpl<T> implements MessageProducer<T> {
       fut.onComplete(handler);
     }
   }
-
-  // Just in case user forget to call close()
-  @Override
-  protected void finalize() throws Throwable {
-    close();
-    super.finalize();
-  }
 }

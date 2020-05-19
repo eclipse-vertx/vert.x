@@ -21,6 +21,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.impl.CloseHooks;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -53,6 +54,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   protected final NetServerOptions options;
   protected final ContextInternal creatingContext;
   protected final SSLHelper sslHelper;
+  protected final CloseHooks closeHooks;
 
   // Per server
   private EventLoop eventLoop;
@@ -71,14 +73,20 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   private TCPMetrics<?> metrics;
 
   public TCPServerBase(VertxInternal vertx, NetServerOptions options) {
+
+    ContextInternal context = vertx.getContext();
+    CloseHooks hooks = context != null ? context.closeHooks() : null;
+    if (hooks == null) {
+      hooks = vertx.closeHooks();
+    }
+
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
-    this.creatingContext = vertx.getContext();
+    this.creatingContext = context;
+    this.closeHooks = hooks;
 
-    if (creatingContext != null) {
-      creatingContext.addCloseHook(this);
-    }
+    closeHooks.add(this);
   }
 
   public int actualPort() {
@@ -188,9 +196,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   @Override
   public synchronized void close(Promise<Void> completion) {
-    if (creatingContext != null) {
-      creatingContext.removeCloseHook(this);
-    }
+    closeHooks.remove(this);
     if (!listening) {
       completion.complete();
       return;
@@ -239,5 +245,16 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       .collect(Collectors.toList());
     CompositeFuture fut = CompositeFuture.all(futures);
     fut.onComplete(ar -> handler.handle(ar.mapEmpty()));
+  }
+
+  public abstract Future<Void> close();
+
+  @Override
+  protected void finalize() throws Throwable {
+    // Make sure this gets cleaned up if there are no more references to it
+    // so as not to leave connections and resources dangling until the system is shutdown
+    // which could make the JVM run out of file handles.
+    close();
+    super.finalize();
   }
 }

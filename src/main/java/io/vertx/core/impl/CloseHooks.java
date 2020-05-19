@@ -18,22 +18,24 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.logging.Logger;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class CloseHooks {
+public class CloseHooks {
 
   private final Logger log;
   private boolean closeHooksRun;
-  private Set<Closeable> closeHooks;
+  private Map<Closeable, CloseHooks> closeHooks;
 
   CloseHooks(Logger log) {
     this.log = log;
+    this.closeHooks = new WeakHashMap<>();
   }
 
   /**
@@ -41,25 +43,21 @@ class CloseHooks {
    *
    * @param hook the hook to add
    */
-  synchronized void add(Closeable hook) {
+  public synchronized void add(Closeable hook) {
     if (closeHooks == null) {
-      // Has to be concurrent as can be removed from non context thread
-      closeHooks = new HashSet<>();
+      throw new IllegalStateException();
     }
-    closeHooks.add(hook);
+    closeHooks.put(hook, this);
   }
 
   /**
    * Remove an existing hook.
    *
    * @param hook the hook to remove
-   * @return {@code} true if the hook was removed
    */
-  synchronized boolean remove(Closeable hook) {
+  public synchronized void remove(Closeable hook) {
     if (closeHooks != null) {
-      return closeHooks.remove(hook);
-    } else {
-      return false;
+      closeHooks.remove(hook);
     }
   }
 
@@ -69,51 +67,38 @@ class CloseHooks {
    * @param completionHandler called when all hooks have beene executed
    */
   void run(Handler<AsyncResult<Void>> completionHandler) {
-    Set<Closeable> copy = null;
+    Map<Closeable, CloseHooks> copy;
     synchronized (this) {
       if (closeHooksRun) {
         // Sanity check
         throw new IllegalStateException("Close hooks already run");
       }
       closeHooksRun = true;
-      if (closeHooks != null && !closeHooks.isEmpty()) {
-        // Must copy before looping as can be removed during loop otherwise
-        copy = new HashSet<>(closeHooks);
-      }
+      copy = closeHooks;
+      closeHooks = null;
     }
-    if (copy != null && !copy.isEmpty()) {
-      int num = copy.size();
-      if (num != 0) {
-        AtomicInteger count = new AtomicInteger();
-        AtomicBoolean failed = new AtomicBoolean();
-        for (Closeable hook : copy) {
-          Promise<Void> promise = Promise.promise();
-          promise.future().onComplete(ar -> {
-            if (ar.failed()) {
-              if (failed.compareAndSet(false, true)) {
-                // Only report one failure
-                completionHandler.handle(Future.failedFuture(ar.cause()));
-              }
-            } else {
-              if (count.incrementAndGet() == num) {
-                // closeHooksRun = true;
-                completionHandler.handle(Future.succeededFuture());
-              }
-            }
-          });
-          try {
-            hook.close(promise);
-          } catch (Throwable t) {
-            log.warn("Failed to run close hooks", t);
-            promise.tryFail(t);
+    // We want an immutable version of the list holding strong references to avoid racing against finalization
+    List<Closeable> list = new ArrayList<>(copy.size());
+    copy.keySet().forEach(list::add);
+    int num = list.size();
+    if (num > 0) {
+      AtomicInteger count = new AtomicInteger();
+      for (Closeable hook : list) {
+        Promise<Void> promise = Promise.promise();
+        promise.future().onComplete(ar -> {
+          if (count.incrementAndGet() == num) {
+            completionHandler.handle(Future.succeededFuture());
           }
+        });
+        try {
+          hook.close(promise);
+        } catch (Throwable t) {
+          log.warn("Failed to run close hook", t);
+          promise.tryFail(t);
         }
-      } else {
-        completionHandler.handle(Future.succeededFuture());
       }
     } else {
       completionHandler.handle(Future.succeededFuture());
     }
   }
-
 }

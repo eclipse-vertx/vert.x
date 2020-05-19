@@ -30,6 +30,7 @@ import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.verticles.SimpleServer;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -64,6 +65,12 @@ public class Http1xTest extends HttpTest {
       "127.0.0.1 host1\n" +
       "127.0.0.1 host2\n"));
     return options;
+  }
+
+  @Ignore
+  @Override
+  public void testBrokenFormUploadLargeFile() {
+    super.testBrokenFormUploadLargeFile();
   }
 
   @Test

@@ -26,9 +26,14 @@ import java.util.Objects;
  */
 public class WorkerContext extends ContextImpl {
 
-  WorkerContext(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
+  WorkerContext(VertxInternal vertx,
+                VertxTracer<?, ?> tracer,
+                WorkerPool internalBlockingPool,
+                WorkerPool workerPool,
+                Deployment deployment,
+                CloseHooks closeHooks,
                 ClassLoader tccl) {
-    super(vertx, tracer, internalBlockingPool, workerPool, deployment, tccl);
+    super(vertx, tracer, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
@@ -129,6 +134,11 @@ public class WorkerContext extends ContextImpl {
 
     Duplicated(WorkerContext delegate) {
       super(delegate);
+    }
+
+    @Override
+    public CloseHooks closeHooks() {
+      return delegate.closeHooks();
     }
 
     @Override

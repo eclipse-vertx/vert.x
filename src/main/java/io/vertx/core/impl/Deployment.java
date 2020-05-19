@@ -57,4 +57,5 @@ public interface Deployment {
   void undeployHandler(Handler<Void> handler);
 
   boolean isChild();
+
 }

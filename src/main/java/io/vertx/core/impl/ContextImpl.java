@@ -12,7 +12,6 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
-import io.netty.channel.EventLoopGroup;
 import io.vertx.core.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -51,15 +50,6 @@ abstract class ContextImpl extends AbstractContext {
     }
   }
 
-  private static EventLoop getEventLoop(VertxInternal vertx) {
-    EventLoopGroup group = vertx.getEventLoopGroup();
-    if (group != null) {
-      return group.next();
-    } else {
-      return null;
-    }
-  }
-
   private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
 
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
@@ -80,13 +70,14 @@ abstract class ContextImpl extends AbstractContext {
   final WorkerPool workerPool;
   final TaskQueue orderedTasks;
 
-  ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
-                        ClassLoader tccl) {
-    this(vertx, tracer, getEventLoop(vertx), internalBlockingPool, workerPool, deployment, tccl);
-  }
-
-  ContextImpl(VertxInternal vertx, VertxTracer<?, ?> tracer, EventLoop eventLoop, WorkerPool internalBlockingPool, WorkerPool workerPool, Deployment deployment,
-                        ClassLoader tccl) {
+  ContextImpl(VertxInternal vertx,
+              VertxTracer<?, ?> tracer,
+              EventLoop eventLoop,
+              WorkerPool internalBlockingPool,
+              WorkerPool workerPool,
+              Deployment deployment,
+              CloseHooks closeHooks,
+              ClassLoader tccl) {
     if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
     }
@@ -97,26 +88,31 @@ abstract class ContextImpl extends AbstractContext {
     this.tccl = tccl;
     this.owner = vertx;
     this.workerPool = workerPool;
+    this.closeHooks = closeHooks;
     this.internalBlockingPool = internalBlockingPool;
     this.orderedTasks = new TaskQueue();
     this.internalOrderedTasks = new TaskQueue();
-    this.closeHooks = new CloseHooks(log);
   }
 
   public Deployment getDeployment() {
     return deployment;
   }
 
+  @Override
+  public CloseHooks closeHooks() {
+    return closeHooks;
+  }
+
   public void addCloseHook(Closeable hook) {
-    closeHooks.add(hook);
+    if (closeHooks != null) {
+      closeHooks.add(hook);
+    }
   }
 
-  public boolean removeCloseHook(Closeable hook) {
-    return closeHooks.remove(hook);
-  }
-
-  public void runCloseHooks(Handler<AsyncResult<Void>> completionHandler) {
-    closeHooks.run(completionHandler);
+  public void removeCloseHook(Closeable hook) {
+    if (deployment != null) {
+      closeHooks.remove(hook);
+    }
   }
 
   @Override
@@ -299,8 +295,8 @@ abstract class ContextImpl extends AbstractContext {
     }
 
     @Override
-    public final boolean removeCloseHook(Closeable hook) {
-      return delegate.removeCloseHook(hook);
+    public final void removeCloseHook(Closeable hook) {
+      delegate.removeCloseHook(hook);
     }
 
     @Override
