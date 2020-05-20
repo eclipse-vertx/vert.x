@@ -272,10 +272,4 @@ public interface Context {
   @Nullable
   Handler<Throwable> exceptionHandler();
 
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  void addCloseHook(Closeable hook);
-
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  void removeCloseHook(Closeable hook);
-
 }

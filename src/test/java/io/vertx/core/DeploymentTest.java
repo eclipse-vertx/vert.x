@@ -1473,8 +1473,8 @@ public class DeploymentTest extends VertxTestBase {
     };
     Verticle v = new AbstractVerticle() {
       @Override
-      public void start(Promise<Void> startPromise) throws Exception {
-        this.context.addCloseHook(closeable);
+      public void start(Promise<Void> startPromise) {
+        ((ContextInternal)context).addCloseHook(closeable);
         startPromise.fail("Fail to deploy.");
       }
     };

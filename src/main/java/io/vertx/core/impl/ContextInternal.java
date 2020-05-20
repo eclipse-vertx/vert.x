@@ -13,6 +13,7 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.FastThreadLocalThread;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.*;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -260,6 +261,10 @@ public interface ContextInternal extends Context, Executor {
    * Like {@link Vertx#setTimer(long, Handler)} except the timer will fire on this context.
    */
   long setTimer(long delay, Handler<Long> handler);
+
+  void addCloseHook(Closeable hook);
+
+  void removeCloseHook(Closeable hook);
 
   CloseHooks closeHooks();
 
