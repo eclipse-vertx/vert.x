@@ -73,6 +73,12 @@ public class Http1xTest extends HttpTest {
     super.testBrokenFormUploadLargeFile();
   }
 
+  @Ignore
+  @Override
+  public void testBrokenFormUploadLargeFileStreamToDisk() {
+    super.testBrokenFormUploadLargeFileStreamToDisk();
+  }
+
   @Test
   public void testClientOptions() {
     HttpClientOptions options = new HttpClientOptions();
