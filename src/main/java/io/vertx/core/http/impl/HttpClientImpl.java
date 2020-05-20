@@ -22,7 +22,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
-import io.vertx.core.impl.CloseHooks;
+import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.net.impl.clientconnection.ConnectionManager;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
@@ -114,24 +114,22 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   private final HttpClientOptions options;
   private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
   private final ConnectionManager<EndpointKey, HttpClientConnection> httpCM;
-  private final CloseHooks closeHooks;
   private final ProxyType proxyType;
   private final SSLHelper sslHelper;
   private final HttpClientMetrics metrics;
   private final boolean keepAlive;
   private final boolean pipelining;
-  private final PromiseInternal<Void> closePromise;
-  private final Future<Void> closeFuture;
+  private final CloseFuture closeFuture;
   private long timerID;
-  private volatile boolean closed;
   private volatile Handler<HttpConnection> connectionHandler;
   private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
 
-  public HttpClientImpl(VertxInternal vertx, CloseHooks hooks, HttpClientOptions options) {
+  public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
+    this.closeFuture = closeFuture;
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
       switch (options.getProtocolVersion()) {
@@ -154,16 +152,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     if (!keepAlive && pipelining) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
-    closePromise = (PromiseInternal) Promise.promise();
-    if (metrics != null) {
-      closeFuture = closePromise.future().compose(v -> {
-        metrics.close();
-        return Future.succeededFuture();
-      });
-    } else {
-      closeFuture = closePromise.future();
-    }
-    closeHooks = hooks;
     webSocketCM = webSocketConnectionManager();
     httpCM = httpConnectionManager();
     proxyType = options.getProxyOptions() != null ? options.getProxyOptions().getType() : null;
@@ -196,7 +184,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   private void checkExpired(Handler<Long> checker) {
     httpCM.forEach(EXPIRED_CHECKER);
     synchronized (this) {
-      if (!closed) {
+      if (!closeFuture.isClosed()) {
         timerID = vertx.setTimer(options.getPoolCleanerPeriod(), checker);
       }
     }
@@ -1216,45 +1204,38 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
 
   @Override
   public void close(Promise<Void> completion) {
-    boolean close;
     synchronized (this) {
-      close = !closed;
-      if (close) {
-        closed = true;
-        if (timerID >= 0) {
-          vertx.cancelTimer(timerID);
-          timerID = -1;
-        }
+      if (timerID >= 0) {
+        vertx.cancelTimer(timerID);
+        timerID = -1;
       }
     }
-    if (close) {
-      webSocketCM.close();
-      httpCM.close();
-      ChannelGroupFuture fut = channelGroup.close();
-      fut.addListener(closePromise);
-    }
-    if (completion != null) {
-      closePromise.future().onComplete(completion);
+    webSocketCM.close();
+    httpCM.close();
+    ChannelGroupFuture fut = channelGroup.close();
+    if (metrics != null) {
+      PromiseInternal<Void> p = (PromiseInternal) Promise.promise();
+      fut.addListener(p);
+      p.future().<Void>compose(v -> {
+        metrics.close();
+        return Future.succeededFuture();
+      }).onComplete(completion);
+    } else {
+      fut.addListener((PromiseInternal)completion);
     }
   }
 
   @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    if (closeHooks != null) {
-      closeHooks.remove(this);
-    }
     ContextInternal closingCtx = vertx.getOrCreateContext();
-    close(handler != null ? closingCtx.promise(handler) : null);
+    closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
   }
 
   @Override
   public Future<Void> close() {
-    if (closeHooks != null) {
-      closeHooks.remove(this);
-    }
     ContextInternal closingCtx = vertx.getOrCreateContext();
-    Promise<Void> promise = closingCtx.promise();
-    close(promise);
+    PromiseInternal<Void> promise = closingCtx.promise();
+    closeFuture.close(promise);
     return promise.future();
   }
 
@@ -1370,15 +1351,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     return req;
   }
 
-  private synchronized void checkClosed() {
-    if (closed) {
+  private void checkClosed() {
+    if (closeFuture.isClosed()) {
       throw new IllegalStateException("Client is closed");
     }
-  }
-
-  @Override
-  public Future<Void> closeFuture() {
-    return closePromise.future();
   }
 
   @Override
@@ -1386,7 +1362,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     // Make sure this gets cleaned up if there are no more references to it
     // so as not to leave connections and resources dangling until the system is shutdown
     // which could make the JVM run out of file handles.
-    close((Handler<AsyncResult<Void>>) null);
+    close((Handler<AsyncResult<Void>>) Promise.<Void>promise());
     super.finalize();
   }
 }

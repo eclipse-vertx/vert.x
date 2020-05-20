@@ -68,12 +68,14 @@ public class Http1xTest extends HttpTest {
   }
 
   @Ignore
+  @Test
   @Override
   public void testBrokenFormUploadLargeFile() {
     super.testBrokenFormUploadLargeFile();
   }
 
   @Ignore
+  @Test
   @Override
   public void testBrokenFormUploadLargeFileStreamToDisk() {
     super.testBrokenFormUploadLargeFileStreamToDisk();

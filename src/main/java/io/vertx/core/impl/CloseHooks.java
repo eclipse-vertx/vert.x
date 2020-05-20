@@ -47,6 +47,10 @@ public class CloseHooks {
     if (closeHooks == null) {
       throw new IllegalStateException();
     }
+    if (hook instanceof CloseFuture) {
+      CloseFuture fut = (CloseFuture) hook;
+      hook = fut.register(this);
+    }
     closeHooks.put(hook, this);
   }
 

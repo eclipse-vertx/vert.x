@@ -114,9 +114,4 @@ public interface NetClient extends Measured {
    */
   Future<Void> close();
 
-  /**
-   * @return a future closed when the client is closed
-   */
-  Future<Void> closeFuture();
-
 }

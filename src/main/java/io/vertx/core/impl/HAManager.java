@@ -110,6 +110,7 @@ public class HAManager {
   private final boolean enabled;
 
   private long quorumTimerID;
+  private long checkQuorumTimerID = -1L;
   private volatile boolean attainedQuorum;
   private volatile FailoverCompleteHandler failoverCompleteHandler;
   private volatile boolean failDuringFailover;
@@ -199,6 +200,11 @@ public class HAManager {
       if (clusterManager.isActive()) {
         clusterMap.remove(nodeID);
       }
+      long timerID = checkQuorumTimerID;
+      if (timerID >= 0L) {
+        checkQuorumTimerID = -1L;
+        vertx.cancelTimer(timerID);
+      }
       vertx.cancelTimer(quorumTimerID);
       stopped = true;
     }
@@ -213,6 +219,11 @@ public class HAManager {
       promise.future()
         .onFailure(t -> log.error("Failed to leave cluster", t))
         .onComplete(ar -> latch.countDown());
+      long timerID = checkQuorumTimerID;
+      if (timerID >= 0L) {
+        checkQuorumTimerID = -1L;
+        vertx.cancelTimer(timerID);
+      }
       vertx.cancelTimer(quorumTimerID);
 
       boolean interrupted = false;
@@ -327,23 +338,28 @@ public class HAManager {
   }
 
   private synchronized void checkQuorumWhenAdded(final String nodeID, final long start) {
-    if (clusterMap.containsKey(nodeID)) {
-      checkQuorum();
-    } else {
-      vertx.setTimer(200, tid -> {
-        // This can block on a monitor so it needs to run as a worker
-        vertx.executeBlockingInternal(fut -> {
-          if (System.currentTimeMillis() - start > 10000) {
-            log.warn("Timed out waiting for group information to appear");
-          } else if (!stopped) {
-            // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
-            ContextImpl.executeIsolated(v -> {
-              checkQuorumWhenAdded(nodeID, start);
-            });
+    if (!stopped) {
+      if (clusterMap.containsKey(nodeID)) {
+        checkQuorum();
+      } else {
+        checkQuorumTimerID = vertx.setTimer(200, tid -> {
+          checkQuorumTimerID = -1L;
+          if (!stopped) {
+            // This can block on a monitor so it needs to run as a worker
+            vertx.executeBlockingInternal(fut -> {
+              if (System.currentTimeMillis() - start > 10000) {
+                log.warn("Timed out waiting for group information to appear");
+              } else {
+                // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
+                ContextImpl.executeIsolated(v -> {
+                  checkQuorumWhenAdded(nodeID, start);
+                });
+              }
+              fut.complete();
+            }, null);
           }
-          fut.complete();
-        }, null);
-      });
+        });
+      }
     }
   }
 

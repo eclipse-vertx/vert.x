@@ -12,18 +12,18 @@
 package io.vertx.core.eventbus.impl.clustered;
 
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
 import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
+import io.vertx.core.impl.CloseFuture;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 
@@ -42,7 +42,7 @@ class ConnectionHolder {
   private final ClusteredEventBus eventBus;
   private final NetClient client;
   private final String remoteNodeId;
-  private final Vertx vertx;
+  private final VertxInternal vertx;
   private final EventBusMetrics metrics;
 
   private Queue<OutboundDeliveryContext<?>> pending;
@@ -59,7 +59,7 @@ class ConnectionHolder {
     NetClientOptions clientOptions = new NetClientOptions(options.toJson());
     ClusteredEventBus.setCertOptions(clientOptions, options.getKeyCertOptions());
     ClusteredEventBus.setTrustOptions(clientOptions, options.getTrustOptions());
-    client = new NetClientImpl(eventBus.vertx(), clientOptions, null);
+    this.client = vertx.createNetClient(clientOptions, new CloseFuture());
   }
 
   void connect() {

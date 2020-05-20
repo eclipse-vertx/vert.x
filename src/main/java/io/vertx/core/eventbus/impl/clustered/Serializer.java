@@ -37,7 +37,9 @@ public class Serializer {
   private Serializer(ContextInternal context) {
     this.context = context;
     queues = new HashMap<>();
-    context.addCloseHook(this::close);
+    if (context.isDeployment()) {
+      context.addCloseHook(this::close);
+    }
   }
 
   public static Serializer get(ContextInternal context) {

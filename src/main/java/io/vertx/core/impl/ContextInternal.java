@@ -262,10 +262,28 @@ public interface ContextInternal extends Context, Executor {
    */
   long setTimer(long delay, Handler<Long> handler);
 
+  /**
+   * @return {@code true} when the context is associated with a deployment
+   */
+  boolean isDeployment();
+
+  /**
+   * Add a close hook.
+   *
+   * <p> The {@code hook} will be called when the associated resource needs to be released. Hooks are useful
+   * for automatically cleanup resources when a Verticle is undeployed.
+   *
+   * @param hook the close hook
+   */
   void addCloseHook(Closeable hook);
 
+  /**
+   * Remove a close hook.
+   *
+   * <p> This is called when the resource is released explicitly and does not need anymore a managed close.
+   *
+   * @param hook the close hook
+   */
   void removeCloseHook(Closeable hook);
-
-  CloseHooks closeHooks();
 
 }

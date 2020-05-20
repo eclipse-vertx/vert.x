@@ -106,12 +106,21 @@ abstract class ContextImpl extends AbstractContext {
   public void addCloseHook(Closeable hook) {
     if (closeHooks != null) {
       closeHooks.add(hook);
+    } else {
+      owner.addCloseHook(hook);
     }
+  }
+
+  @Override
+  public boolean isDeployment() {
+    return deployment != null;
   }
 
   public void removeCloseHook(Closeable hook) {
     if (deployment != null) {
       closeHooks.remove(hook);
+    } else {
+      owner.removeCloseHook(hook);
     }
   }
 
@@ -256,6 +265,11 @@ abstract class ContextImpl extends AbstractContext {
 
     Duplicated(C delegate) {
       this.delegate = delegate;
+    }
+
+    @Override
+    public boolean isDeployment() {
+      return delegate.isDeployment();
     }
 
     @Override

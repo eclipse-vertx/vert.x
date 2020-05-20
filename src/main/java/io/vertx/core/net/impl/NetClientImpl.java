@@ -26,7 +26,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.CloseHooks;
+import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -39,7 +39,6 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
-import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
@@ -63,31 +62,19 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final NetClientOptions options;
   private final SSLHelper sslHelper;
   private final ChannelGroup channelGroup;
-  private final CloseHooks closeHooks;
   private final TCPMetrics metrics;
-  private final PromiseInternal<Void> closePromise;
-  private final Future<Void> closeFuture;
-  private volatile boolean closed;
+  private final CloseFuture closeFuture;
 
-  public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseHooks closeHooks) {
+  public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
-    this.closeHooks = closeHooks;
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null;
-    logEnabled = options.getLogActivity();
-    idleTimeout = options.getIdleTimeout();
-    idleTimeoutUnit = options.getIdleTimeoutUnit();
-    closePromise = (PromiseInternal) Promise.promise();
-    if (metrics != null) {
-      closeFuture = closePromise.future().compose(v -> {
-        metrics.close();
-        return Future.succeededFuture();
-      });
-    } else {
-      closeFuture = closePromise.future();
-    }
+    this.logEnabled = options.getLogActivity();
+    this.idleTimeout = options.getIdleTimeout();
+    this.idleTimeoutUnit = options.getIdleTimeoutUnit();
+    this.closeFuture = closeFuture;
   }
 
   protected void initChannel(ChannelPipeline pipeline) {
@@ -136,42 +123,32 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   }
 
   @Override
-  public Future<Void> closeFuture() {
-    return closePromise.future();
-  }
-
-  @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    if (closeHooks != null) {
-      closeHooks.remove(this);
-    }
     ContextInternal closingCtx = vertx.getOrCreateContext();
-    close(handler != null ? closingCtx.promise(handler) : null);
+    closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
   }
 
   @Override
   public Future<Void> close() {
-    if (closeHooks != null) {
-      closeHooks.remove(this);
-    }
     ContextInternal closingCtx = vertx.getOrCreateContext();
     PromiseInternal<Void> promise = closingCtx.promise();
-    close(promise);
+    closeFuture.close(promise);
     return promise.future();
   }
 
   @Override
   public void close(Promise<Void> completion) {
-    boolean close;
-    synchronized (this) {
-      close = !closed;
-      closed = true;
+    ChannelGroupFuture fut = channelGroup.close();
+    if (metrics != null) {
+      PromiseInternal<Void> p = (PromiseInternal) Promise.promise();
+      fut.addListener(p);
+      p.future().<Void>compose(v -> {
+        metrics.close();
+        return Future.succeededFuture();
+      }).onComplete(completion);
+    } else {
+      fut.addListener((PromiseInternal)completion);
     }
-    if (close) {
-      ChannelGroupFuture fut = channelGroup.close();
-      fut.addListener(closePromise);
-    }
-    closeFuture.onComplete(completion);
   }
 
   @Override
@@ -185,7 +162,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   }
 
   private void checkClosed() {
-    if (closed) {
+    if (closeFuture.isClosed()) {
       throw new IllegalStateException("Client is closed");
     }
   }
@@ -279,7 +256,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     // Make sure this gets cleaned up if there are no more references to it
     // so as not to leave connections and resources dangling until the system is shutdown
     // which could make the JVM run out of file handles.
-    close((Handler<AsyncResult<Void>>) null);
+    close((Handler<AsyncResult<Void>>) Promise.<Void>promise());
     super.finalize();
   }
 }

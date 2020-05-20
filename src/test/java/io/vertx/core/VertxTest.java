@@ -13,9 +13,13 @@ package io.vertx.core;
 
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.impl.HttpClientImpl;
+import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 import org.openjdk.jmh.runner.Runner;
@@ -121,7 +125,7 @@ public class VertxTest extends AsyncTestBase {
 
   @Test
   public void testFinalizeHttpClient() throws Exception {
-    Vertx vertx = Vertx.vertx();
+    VertxInternal vertx = (VertxInternal) Vertx.vertx();
     try {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<NetSocket> socketRef = new AtomicReference<>();
@@ -132,10 +136,13 @@ public class VertxTest extends AsyncTestBase {
       awaitLatch(latch);
       AtomicBoolean closed = new AtomicBoolean();
       // No keep alive so the connection is not held in the pool ????
-      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false));
-      client.closeFuture().onComplete(ar -> closed.set(true));
+      CloseFuture closeFuture = new CloseFuture();
+      closeFuture.onComplete(ar -> closed.set(true));
+      HttpClient client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false), closeFuture);
+      vertx.addCloseHook(closeFuture);
       client.get(8080, "localhost", "/", onFailure(err -> {}));
       WeakReference<HttpClient> ref = new WeakReference<>(client);
+      closeFuture = null;
       client = null;
       assertWaitUntil(() -> socketRef.get() != null);
       for (int i = 0;i < 10;i++) {
@@ -164,7 +171,7 @@ public class VertxTest extends AsyncTestBase {
 
   @Test
   public void testFinalizeNetClient() throws Exception {
-    Vertx vertx = Vertx.vertx();
+    VertxInternal vertx = (VertxInternal) Vertx.vertx();
     try {
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<NetSocket> socketRef = new AtomicReference<>();
@@ -174,8 +181,11 @@ public class VertxTest extends AsyncTestBase {
         .onComplete(onSuccess(server -> latch.countDown()));
       awaitLatch(latch);
       AtomicBoolean closed = new AtomicBoolean();
-      NetClient client = vertx.createNetClient();
-      client.closeFuture().onComplete(ar -> closed.set(true));
+      CloseFuture closeFuture = new CloseFuture();
+      NetClient client = vertx.createNetClient(new NetClientOptions(), closeFuture);
+      vertx.addCloseHook(closeFuture);
+      closeFuture.onComplete(ar -> closed.set(true));
+      closeFuture = null;
       client.connect(1234, "localhost", onSuccess(so -> {}));
       WeakReference<NetClient> ref = new WeakReference<>(client);
       client = null;

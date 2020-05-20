@@ -16,7 +16,11 @@ import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.vertx.core.*;
+import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
@@ -73,6 +77,24 @@ public interface VertxInternal extends Vertx {
   VertxMetrics metricsSPI();
 
   Transport transport();
+
+  /**
+   * Create a TCP/SSL client using the specified options and close future
+   *
+   * @param options  the options to use
+   * @param closeFuture  the close future
+   * @return the client
+   */
+  NetClient createNetClient(NetClientOptions options, CloseFuture closeFuture);
+
+  /**
+   * Create a HTTP/HTTPS client using the specified options and close future
+   *
+   * @param options  the options to use
+   * @param closeFuture  the close future
+   * @return the client
+   */
+  HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture);
 
   /**
    * Get the current context
@@ -150,7 +172,5 @@ public interface VertxInternal extends Vertx {
   void addCloseHook(Closeable hook);
 
   void removeCloseHook(Closeable hook);
-
-  CloseHooks closeHooks();
 
 }

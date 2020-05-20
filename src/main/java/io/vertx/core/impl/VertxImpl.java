@@ -69,7 +69,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -276,10 +275,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return createNetServer(new NetServerOptions());
   }
 
+  @Override
+  public NetClient createNetClient(NetClientOptions options, CloseFuture closeFuture) {
+    NetClientImpl client = new NetClientImpl(this, options, closeFuture);
+    closeFuture.init(client);
+    return client;
+  }
+
   public NetClient createNetClient(NetClientOptions options) {
+    CloseFuture closeFuture = new CloseFuture();
+    NetClient client = createNetClient(options, closeFuture);
     CloseHooks hooks = resolveHooks();
-    NetClientImpl client = new NetClientImpl(this, options, hooks);
-    hooks.add(client);
+    hooks.add(closeFuture);
     return client;
   }
 
@@ -315,10 +322,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return createHttpServer(new HttpServerOptions());
   }
 
+  @Override
+  public HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture) {
+    HttpClientImpl client = new HttpClientImpl(this, options, closeFuture);
+    closeFuture.init(client);
+    return client;
+  }
+
   public HttpClient createHttpClient(HttpClientOptions options) {
+    CloseFuture closeFuture = new CloseFuture();
+    HttpClient client = createHttpClient(options, closeFuture);
     CloseHooks hooks = resolveHooks();
-    HttpClientImpl client = new HttpClientImpl(this, hooks, options);
-    hooks.add(client);
+    hooks.add(closeFuture);
     return client;
   }
 
@@ -487,12 +502,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     long timerId = timeoutCounter.getAndIncrement();
     InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, delay, context);
     timeouts.put(timerId, task);
-    context.addCloseHook(task);
+    if (context.isDeployment()) {
+      context.addCloseHook(task);
+    }
     return timerId;
   }
 
-  public ContextInternal getContext() {
-    ContextInternal context = ContextInternal.current();
+  public AbstractContext getContext() {
+    AbstractContext context = (AbstractContext) ContextInternal.current();
     if (context != null && context.owner() == this) {
       return context;
     }
@@ -912,7 +929,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     private void cancel() {
       future.cancel(false);
-      context.removeCloseHook(this);
+      if (context.isDeployment()) {
+        context.removeCloseHook(this);
+      }
     }
 
     // Called via Context close hook when Verticle is undeployed
@@ -1078,7 +1097,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       sharedWorkerPool.refCount++;
     }
-    ContextInternal ctx = getContext();
+    AbstractContext ctx = getContext();
     CloseHooks hooks = ctx != null ? ctx.closeHooks() : null;
     if (hooks == null) {
       hooks = closeHooks;
@@ -1109,16 +1128,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     closeHooks.remove(hook);
   }
 
-  @Override
-  public CloseHooks closeHooks() {
-    return closeHooks;
-  }
-
   private CloseHooks resolveHooks() {
-    ContextInternal context = getContext();
+    AbstractContext context = getContext();
     CloseHooks hooks = context != null ? context.closeHooks() : null;
     if (hooks == null) {
-      hooks = closeHooks();
+      hooks = closeHooks;
     }
     return hooks;
   }

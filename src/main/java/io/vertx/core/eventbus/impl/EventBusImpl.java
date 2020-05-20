@@ -264,7 +264,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       handlers,
       (old, prev) -> old.add(prev.first()));
 
-    if (context.deploymentID() != null) {
+    if (context.isDeployment()) {
       HandlerEntry entry = new HandlerEntry<>(address, registration);
       context.addCloseHook(entry);
     }

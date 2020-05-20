@@ -21,7 +21,6 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.impl.CloseHooks;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -52,14 +51,13 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   protected final VertxInternal vertx;
   protected final NetServerOptions options;
-  protected final ContextInternal creatingContext;
   protected final SSLHelper sslHelper;
-  protected final CloseHooks closeHooks;
 
   // Per server
   private EventLoop eventLoop;
   private Handler<Channel> worker;
   private volatile boolean listening;
+  private ContextInternal listenContext;
   private ServerID id;
   private TCPServerBase actualServer;
 
@@ -74,19 +72,10 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   public TCPServerBase(VertxInternal vertx, NetServerOptions options) {
 
-    ContextInternal context = vertx.getContext();
-    CloseHooks hooks = context != null ? context.closeHooks() : null;
-    if (hooks == null) {
-      hooks = vertx.closeHooks();
-    }
 
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
-    this.creatingContext = context;
-    this.closeHooks = hooks;
-
-    closeHooks.add(this);
   }
 
   public int actualPort() {
@@ -98,6 +87,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       throw new IllegalStateException("Listen already called");
     }
 
+    this.listenContext = context;
     this.listening = true;
     this.eventLoop = context.nettyEventLoop();
     this.worker = worker;
@@ -132,6 +122,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
                 actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
               }
               id = new ServerID(TCPServerBase.this.actualPort, id.host);
+              listenContext.addCloseHook(this);
               metrics = createMetrics(localAddress);
               // We will overwrite the server in most case but not if the port was randomly chosen
               synchronized (sharedNetServers) {
@@ -159,6 +150,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         actualServer.channelBalancer.addWorker(eventLoop, worker);
         actualPort = shared.actualPort;
         metrics = shared.metrics;
+        listenContext.addCloseHook(this);
       }
     }
 
@@ -196,12 +188,12 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   @Override
   public synchronized void close(Promise<Void> completion) {
-    closeHooks.remove(this);
     if (!listening) {
       completion.complete();
       return;
     }
     listening = false;
+    listenContext.removeCloseHook(this);
     Map<ServerID, TCPServerBase> servers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
     synchronized (servers) {
       ServerChannelLoadBalancer balancer = actualServer.channelBalancer;
