@@ -191,7 +191,7 @@ public class DeploymentManager {
       ContextImpl context = (ContextImpl) (options.isWorker() ? vertx.createWorkerContext(deployment, closeHooks, pool, tccl) :
         vertx.createEventLoopContext(deployment, closeHooks, pool, tccl));
       if (workerExec != null) {
-        context.addCloseHook(workerExec);
+        closeHooks.add(workerExec);
       }
       VerticleHolder holder = new VerticleHolder(verticle, context, closeHooks);
       deployment.addVerticle(holder);
