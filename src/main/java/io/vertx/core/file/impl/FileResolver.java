@@ -26,8 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -385,16 +383,16 @@ public class FileResolver {
     }
     // Add shutdown hook to delete on exit
     shutdownHook = new Thread(() -> {
-      CountDownLatch latch = new CountDownLatch(1);
-      new Thread(() -> {
+      final Thread deleteCacheDirThread = new Thread(() -> {
         try {
           deleteCacheDir();
         } catch (IOException ignore) {
         }
-        latch.countDown();
-      }).start();
+      });
+      // start the thread
+      deleteCacheDirThread.start();
       try {
-        latch.await(10, TimeUnit.SECONDS);
+        deleteCacheDirThread.join(10 * 1000);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
       }
