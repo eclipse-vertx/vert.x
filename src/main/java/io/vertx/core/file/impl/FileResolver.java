@@ -112,7 +112,7 @@ public class FileResolver {
       cwd = null;
     }
     if (this.enableCpResolving) {
-      setupCacheDir();
+      setupCacheDir(UUID.randomUUID().toString());
     }
   }
 
@@ -377,31 +377,29 @@ public class FileResolver {
     return cl;
   }
 
-  private void setupCacheDir() {
-    String cacheDirName = fileCacheDir + "/file-cache-" + UUID.randomUUID().toString();
+  private synchronized void setupCacheDir(String id) {
+    String cacheDirName = fileCacheDir + "/file-cache-" + id;
     cacheDir = new File(cacheDirName);
     if (!cacheDir.mkdirs()) {
       throw new IllegalStateException("Failed to create cache dir: " + cacheDirName);
     }
     // Add shutdown hook to delete on exit
-    synchronized (this) {
-      shutdownHook = new Thread(() -> {
-        CountDownLatch latch = new CountDownLatch(1);
-        new Thread(() -> {
-          try {
-            deleteCacheDir();
-          } catch (IOException ignore) {
-          }
-          latch.countDown();
-        }).run();
+    shutdownHook = new Thread(() -> {
+      CountDownLatch latch = new CountDownLatch(1);
+      new Thread(() -> {
         try {
-          latch.await(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
+          deleteCacheDir();
+        } catch (IOException ignore) {
         }
-      });
-      Runtime.getRuntime().addShutdownHook(shutdownHook);
-    }
+        latch.countDown();
+      }).start();
+      try {
+        latch.await(10, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    });
+    Runtime.getRuntime().addShutdownHook(shutdownHook);
   }
 
   private void deleteCacheDir() throws IOException {
