@@ -26,8 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -112,7 +110,7 @@ public class FileResolver {
       cwd = null;
     }
     if (this.enableCpResolving) {
-      setupCacheDir();
+      setupCacheDir(UUID.randomUUID().toString());
     }
   }
 
@@ -377,31 +375,29 @@ public class FileResolver {
     return cl;
   }
 
-  private void setupCacheDir() {
-    String cacheDirName = fileCacheDir + "/file-cache-" + UUID.randomUUID().toString();
+  private synchronized void setupCacheDir(String id) {
+    String cacheDirName = fileCacheDir + "/file-cache-" + id;
     cacheDir = new File(cacheDirName);
     if (!cacheDir.mkdirs()) {
       throw new IllegalStateException("Failed to create cache dir: " + cacheDirName);
     }
     // Add shutdown hook to delete on exit
-    synchronized (this) {
-      shutdownHook = new Thread(() -> {
-        CountDownLatch latch = new CountDownLatch(1);
-        new Thread(() -> {
-          try {
-            deleteCacheDir();
-          } catch (IOException ignore) {
-          }
-          latch.countDown();
-        }).run();
+    shutdownHook = new Thread(() -> {
+      final Thread deleteCacheDirThread = new Thread(() -> {
         try {
-          latch.await(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-          Thread.currentThread().interrupt();
+          deleteCacheDir();
+        } catch (IOException ignore) {
         }
       });
-      Runtime.getRuntime().addShutdownHook(shutdownHook);
-    }
+      // start the thread
+      deleteCacheDirThread.start();
+      try {
+        deleteCacheDirThread.join(10 * 1000);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    });
+    Runtime.getRuntime().addShutdownHook(shutdownHook);
   }
 
   private void deleteCacheDir() throws IOException {
