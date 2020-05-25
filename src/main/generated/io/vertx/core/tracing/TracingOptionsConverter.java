@@ -15,11 +15,6 @@ public class TracingOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, TracingOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "enabled":
-          if (member.getValue() instanceof Boolean) {
-            obj.setEnabled((Boolean)member.getValue());
-          }
-          break;
       }
     }
   }
@@ -29,6 +24,5 @@ public class TracingOptionsConverter {
   }
 
    static void toJson(TracingOptions obj, java.util.Map<String, Object> json) {
-    json.put("enabled", obj.isEnabled());
   }
 }

@@ -94,7 +94,7 @@ public class VertxFactoryTest {
   public void testFactoryTracerOverridesMetaInf() {
     runWithServiceFromMetaInf(VertxTracerFactory.class, FakeTracerFactory.class.getName(), () -> {
       FakeTracer tracer = new FakeTracer();
-      TracingOptions tracingOptions = new TracingOptions().setEnabled(true);
+      TracingOptions tracingOptions = new TracingOptions();
       VertxFactory factory = new VertxFactory(new VertxOptions().setTracingOptions(tracingOptions));
       factory.tracer(tracer);
       Vertx vertx = factory.vertx();
@@ -105,7 +105,7 @@ public class VertxFactoryTest {
   @Test
   public void testFactoryTracerFactoryOverridesOptions() {
     FakeTracer tracer = new FakeTracer();
-    TracingOptions tracingOptions = new TracingOptions().setEnabled(true).setFactory(new VertxTracerFactory() {
+    TracingOptions tracingOptions = new TracingOptions().setFactory(new VertxTracerFactory() {
       @Override
       public VertxTracer tracer(TracingOptions options) {
         throw new AssertionError();

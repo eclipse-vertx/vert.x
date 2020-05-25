@@ -1881,9 +1881,6 @@ Set the ALPN usage.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[enabled]]`@enabled`|`Boolean`|+++
-Set whether tracing will be enabled on the Vert.x instance.
-+++
 |===
 
 [[VertxOptions]]

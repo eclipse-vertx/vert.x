@@ -77,7 +77,7 @@ public class VertxTestBase extends AsyncTestBase {
     options.setPreferNativeTransport(USE_NATIVE_TRANSPORT);
     VertxTracer tracer = getTracer();
     if (tracer != null) {
-      options.setTracingOptions(new TracingOptions().setEnabled(true).setFactory(opts -> tracer));
+      options.setTracingOptions(new TracingOptions().setFactory(opts -> tracer));
     }
     return options;
   }

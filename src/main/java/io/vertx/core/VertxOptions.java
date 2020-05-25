@@ -120,7 +120,7 @@ public class VertxOptions {
   private int quorumSize = DEFAULT_QUORUM_SIZE;
   private String haGroup = DEFAULT_HA_GROUP;
   private MetricsOptions metricsOptions = new MetricsOptions();
-  private TracingOptions tracingOptions = new TracingOptions();
+  private TracingOptions tracingOptions;
   private FileSystemOptions fileSystemOptions = new FileSystemOptions();
   private long warningExceptionTime = DEFAULT_WARNING_EXCEPTION_TIME;
   private EventBusOptions eventBusOptions = new EventBusOptions();

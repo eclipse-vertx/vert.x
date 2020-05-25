@@ -24,12 +24,6 @@ import io.vertx.core.spi.VertxTracerFactory;
 @DataObject(generateConverter = true, publicConverter = false)
 public class TracingOptions {
 
-  /**
-   * The default value of tracing enabled false
-   */
-  public static final boolean DEFAULT_TRACING_ENABLED = false;
-
-  private boolean enabled;
   private JsonObject json; // Keep a copy of the original json, so we don't lose info when building options subclasses
   private VertxTracerFactory factory;
 
@@ -37,7 +31,6 @@ public class TracingOptions {
    * Default constructor
    */
   public TracingOptions() {
-    enabled = DEFAULT_TRACING_ENABLED;
   }
 
   /**
@@ -46,7 +39,6 @@ public class TracingOptions {
    * @param other The other {@link TracingOptions} to copy when creating this
    */
   public TracingOptions(TracingOptions other) {
-    enabled = other.isEnabled();
     factory = other.factory;
   }
 
@@ -59,26 +51,6 @@ public class TracingOptions {
     this();
     TracingOptionsConverter.fromJson(json, this);
     this.json = json.copy();
-  }
-
-  /**
-   * Will tracing be enabled on the Vert.x instance?
-   *
-   * @return true if enabled, false if not.
-   */
-  public boolean isEnabled() {
-    return enabled;
-  }
-
-  /**
-   * Set whether tracing will be enabled on the Vert.x instance.
-   *
-   * @param enable true if tracing enabled, or false if not.
-   * @return a reference to this, so the API can be used fluently
-   */
-  public TracingOptions setEnabled(boolean enable) {
-    this.enabled = enable;
-    return this;
   }
 
   /**
@@ -97,8 +69,6 @@ public class TracingOptions {
 
   /**
    * Programmatically set the tracer factory to be used when tracing are enabled.
-   * <p>
-   * Only valid if {@link TracingOptions#isEnabled} = true.
    * <p>
    * Normally Vert.x will look on the classpath for a tracer factory implementation, but if you want to set one
    * programmatically you can use this method.
@@ -122,8 +92,7 @@ public class TracingOptions {
   @Override
   public String toString() {
     return "TracingOptions{" +
-      "enabled=" + enabled +
-      ", json=" + json +
+      "json=" + json +
       '}';
   }
 }

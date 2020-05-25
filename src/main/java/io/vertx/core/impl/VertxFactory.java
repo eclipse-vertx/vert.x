@@ -142,7 +142,7 @@ public class VertxFactory {
 
   private VertxTracer createTracer() {
     if (tracer == null) {
-      if (options.getTracingOptions() != null && options.getTracingOptions().isEnabled()) {
+      if (options.getTracingOptions() != null) {
         VertxTracerFactory factory = options.getTracingOptions().getFactory();
         if (factory == null) {
           factory = ServiceHelper.loadFactoryOrNull(VertxTracerFactory.class);
