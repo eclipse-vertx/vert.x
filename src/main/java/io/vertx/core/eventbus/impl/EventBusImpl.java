@@ -347,7 +347,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
           metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), holder != null ? 1 : 0);
         }
         if (holder != null) {
-          deliverToHandler(msg, holder);
+          holder.handler.receive(msg.copyBeforeReceive());
         } else {
           // RACY issue !!!!!
         }
@@ -357,7 +357,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
           metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), handlers.size());
         }
         for (HandlerHolder holder: handlers) {
-          deliverToHandler(msg, holder);
+          holder.handler.receive(msg.copyBeforeReceive());
         }
       }
       return null;
@@ -423,25 +423,6 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       }
     }
     return CompositeFuture.join(futures).mapEmpty();
-  }
-
-  private <T> void deliverToHandler(MessageImpl msg, HandlerHolder<T> holder) {
-    // Each handler gets a fresh copy
-    MessageImpl copied = msg.copyBeforeReceive();
-
-    holder.getContext().nettyEventLoop().execute(() -> {
-      // Need to check handler is still there - the handler might have been removed after the message were sent but
-      // before it was received
-      try {
-        if (!holder.isRemoved()) {
-          holder.getHandler().receive(copied);
-        }
-      } finally {
-        if (holder.isReplyHandler()) {
-          holder.getHandler().unregister(ar -> {});
-        }
-      }
-    });
   }
 
   public class HandlerEntry<T> implements Closeable {

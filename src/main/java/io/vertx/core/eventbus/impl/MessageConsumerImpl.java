@@ -135,12 +135,16 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     return fut;
   }
 
-  protected void doReceive(Message<T> message) {
+  protected boolean doReceive(Message<T> message) {
     Handler<Message<T>> theHandler;
     synchronized (this) {
+      if (handler == null) {
+        return false;
+      }
       if (demand == 0L) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
+          return true;
         } else {
           discard(message);
           if (discardHandler != null) {
@@ -149,7 +153,7 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
             log.warn("Discarding message as more than " + maxBufferedMessages + " buffered in paused consumer. address: " + address);
           }
         }
-        return;
+        return true;
       } else {
         if (pending.size() > 0) {
           pending.add(message);
@@ -162,10 +166,14 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
       }
     }
     deliver(theHandler, message);
+    return true;
   }
 
   @Override
   protected void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler) {
+    if (handler == null) {
+      throw new NullPointerException();
+    }
     context.dispatch(msg, handler);
   }
 

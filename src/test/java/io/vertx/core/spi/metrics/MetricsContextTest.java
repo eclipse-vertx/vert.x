@@ -751,6 +751,7 @@ public class MetricsContextTest extends VertxTestBase {
   }
 
   private void testMessageHandler(BiConsumer<Vertx, Handler<Void>> runOnContext) {
+    AtomicReference<Thread> scheduleThread = new AtomicReference<>();
     AtomicReference<Thread> deliveredThread = new AtomicReference<>();
     AtomicBoolean registeredCalled = new AtomicBoolean();
     AtomicBoolean unregisteredCalled = new AtomicBoolean();
@@ -769,15 +770,21 @@ public class MetricsContextTest extends VertxTestBase {
             unregisteredCalled.set(true);
           }
           @Override
+          public void scheduleMessage(Void handler, boolean local) {
+            scheduleThread.set(Thread.currentThread());
+          }
+          @Override
           public void messageDelivered(Void handler, boolean local) {
             deliveredThread.set(Thread.currentThread());
-            messageDelivered.set(true);
           }
         };
       }
     };
     Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     EventBus eb = vertx.eventBus();
+    Thread t = new Thread(() -> {
+      eb.send("the_address", "the_msg");
+    });
     runOnContext.accept(vertx, v -> {
       MessageConsumer<Object> consumer = eb.consumer("the_address");
       consumer.handler(msg -> {
@@ -786,15 +793,15 @@ public class MetricsContextTest extends VertxTestBase {
           vertx.getOrCreateContext().runOnContext(v2 -> {
             consumer.unregister(onSuccess(v3 -> {
               assertTrue(registeredCalled.get());
-              assertTrue(messageDelivered.get());
-              assertSame(deliveredThread.get(), consumerThread);
+              assertSame(t, scheduleThread.get());
+              assertSame(consumerThread, deliveredThread.get());
               assertWaitUntil(() -> unregisteredCalled.get());
               testComplete();
             }));
           });
         });
       }).completionHandler(onSuccess(v2 -> {
-        eb.send("the_address", "the_msg");
+        t.start();
       }));
     });
     await();

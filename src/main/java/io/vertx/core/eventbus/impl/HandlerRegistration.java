@@ -16,7 +16,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -46,17 +45,20 @@ public abstract class HandlerRegistration<T> {
     this.address = address;
   }
 
-  final void receive(MessageImpl<?, T> msg) {
-    if (!isRegistered()) {
-      return;
-    }
+  void receive(MessageImpl msg) {
     if (bus.metrics != null) {
       bus.metrics.scheduleMessage(metric, msg.isLocal());
     }
-    doReceive(msg);
+    context.nettyEventLoop().execute(() -> {
+      // Need to check handler is still there - the handler might have been removed after the message were sent but
+      // before it was received
+      if (!doReceive(msg) && bus.metrics != null) {
+        bus.metrics.discardMessage(metric, msg.isLocal(), msg);
+      }
+    });
   }
 
-  protected abstract void doReceive(Message<T> msg);
+  protected abstract boolean doReceive(Message<T> msg);
 
   protected abstract void dispatch(Message<T> msg, ContextInternal context, Handler<Message<T>> handler);
 
@@ -105,7 +107,7 @@ public abstract class HandlerRegistration<T> {
 
   void discard(Message<T> msg) {
     if (bus.metrics != null) {
-      bus.metrics.discardMessage(metric, isLocal(msg), msg);
+      bus.metrics.discardMessage(metric, ((MessageImpl)msg).isLocal(), msg);
     }
   }
 
@@ -149,7 +151,7 @@ public abstract class HandlerRegistration<T> {
         Object m = metric;
         VertxTracer tracer = context.tracer();
         if (bus.metrics != null) {
-          bus.metrics.messageDelivered(m, isLocal(message));
+          bus.metrics.messageDelivered(m, message.isLocal());
         }
         if (tracer != null && !src) {
           message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
@@ -173,16 +175,4 @@ public abstract class HandlerRegistration<T> {
       return message.receivedBody;
     }
   }
-
-  private boolean isLocal(Message<?> message) {
-    if (message instanceof ClusteredMessage) {
-      // A bit hacky
-      ClusteredMessage cmsg = (ClusteredMessage)message;
-      if (cmsg.isFromWire()) {
-        return false;
-      }
-    }
-    return true;
-  }
-
 }
