@@ -635,18 +635,17 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
 
   @Override
   public void writeToBuffer(Buffer buffer) {
-    String encoded = encode();
-    byte[] bytes = encoded.getBytes();
-    buffer.appendInt(bytes.length);
-    buffer.appendBytes(bytes);
+    Buffer buf = toBuffer();
+    buffer.appendInt(buf.length());
+    buffer.appendBuffer(buf);
   }
 
   @Override
   public int readFromBuffer(int pos, Buffer buffer) {
     int length = buffer.getInt(pos);
     int start = pos + 4;
-    String encoded = buffer.getString(start, start + length);
-    fromJson(encoded);
+    Buffer buf = buffer.getBuffer(start, start + length);
+    fromBuffer(buf);
     return pos + length + 4;
   }
 

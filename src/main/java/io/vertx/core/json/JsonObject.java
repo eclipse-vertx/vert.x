@@ -14,7 +14,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
@@ -874,18 +873,17 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   @Override
   public void writeToBuffer(Buffer buffer) {
-    String encoded = encode();
-    byte[] bytes = encoded.getBytes(StandardCharsets.UTF_8);
-    buffer.appendInt(bytes.length);
-    buffer.appendBytes(bytes);
+    Buffer buf = toBuffer();
+    buffer.appendInt(buf.length());
+    buffer.appendBuffer(buf);
   }
 
   @Override
   public int readFromBuffer(int pos, Buffer buffer) {
     int length = buffer.getInt(pos);
     int start = pos + 4;
-    String encoded = buffer.getString(start, start + length);
-    fromJson(encoded);
+    Buffer buf = buffer.getBuffer(start, start + length);
+    fromBuffer(buf);
     return pos + length + 4;
   }
 
