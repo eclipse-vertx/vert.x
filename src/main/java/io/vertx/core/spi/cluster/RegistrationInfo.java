@@ -11,6 +11,9 @@
 
 package io.vertx.core.spi.cluster;
 
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.shareddata.impl.ClusterSerializable;
+
 import java.util.Objects;
 
 /**
@@ -18,11 +21,14 @@ import java.util.Objects;
  *
  * @author Thomas Segismont
  */
-public final class RegistrationInfo {
+public class RegistrationInfo implements ClusterSerializable {
 
-  private final String nodeId;
-  private final long seq;
-  private final boolean localOnly;
+  private String nodeId;
+  private long seq;
+  private boolean localOnly;
+
+  public RegistrationInfo() {
+  }
 
   public RegistrationInfo(String nodeId, long seq, boolean localOnly) {
     Objects.requireNonNull(nodeId, "nodeId is null");
@@ -70,5 +76,26 @@ public final class RegistrationInfo {
       ", seq=" + seq +
       ", localOnly=" + localOnly +
       '}';
+  }
+
+  @Override
+  public void writeToBuffer(Buffer buffer) {
+    buffer.appendInt(nodeId.length()).appendString(nodeId);
+    buffer.appendLong(seq);
+    buffer.appendByte((byte) (localOnly ? 1 : 0));
+  }
+
+  @Override
+  public int readFromBuffer(int start, Buffer buffer) {
+    int pos = start;
+    int len = buffer.getInt(pos);
+    pos += 4;
+    nodeId = buffer.getString(pos, pos + len);
+    pos += len;
+    seq = buffer.getLong(pos);
+    pos += 8;
+    localOnly = buffer.getByte(pos) > 0;
+    pos += 1;
+    return pos;
   }
 }
