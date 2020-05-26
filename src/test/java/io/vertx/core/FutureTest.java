@@ -803,6 +803,39 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testHandlerFailureWithContext() {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    Promise<String> promise = ctx.promise();
+    promise.complete("abc");
+    RuntimeException failure = new RuntimeException();
+    ctx.exceptionHandler(err -> {
+      assertSame(failure, err);
+      testComplete();
+    });
+    promise.future().onComplete(ar -> {
+      throw failure;
+    });
+    await();
+  }
+
+  @Test
+  public void testHandlerFailureWithoutContext() {
+    Promise<String> promise = Promise.promise();
+    promise.complete("abc");
+    RuntimeException failure = new RuntimeException();
+    try {
+      promise.future().onComplete(ar -> {
+        throw failure;
+      });
+      fail();
+    } catch (Exception e) {
+      // This is the expected behavior, without a context we don't have a specific place to report to
+      // and we let the exception bubble to the caller so it is not swallowed
+      assertSame(failure, e);
+    }
+  }
+
+  @Test
   public void testDefaultCompleter() {
     AsyncResult<Object> succeededAsyncResult = new AsyncResult<Object>() {
       Object result = new Object();
@@ -1323,6 +1356,7 @@ public class FutureTest extends VertxTestBase {
 
     await();
   }
+
 
   private void testOtherwiseEmpty(AsyncResult<String> res, Promise<String> p) {
     AsyncResult<String> otherwise = res.otherwiseEmpty();
