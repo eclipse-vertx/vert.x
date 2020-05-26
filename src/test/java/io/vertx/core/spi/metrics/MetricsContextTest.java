@@ -795,6 +795,7 @@ public class MetricsContextTest extends VertxTestBase {
   }
 
   private void testMessageHandler(BiConsumer<Vertx, Handler<Void>> runOnContext, BiConsumer<Thread, Context> checker) {
+    AtomicReference<Thread> scheduleThread = new AtomicReference<>();
     AtomicReference<Thread> consumerThread = new AtomicReference<>();
     AtomicReference<Context> consumerContext = new AtomicReference<>();
     AtomicBoolean registeredCalled = new AtomicBoolean();
@@ -819,6 +820,10 @@ public class MetricsContextTest extends VertxTestBase {
             unregisteredCalled.set(true);
           }
           @Override
+          public void scheduleMessage(Void handler, boolean local) {
+            scheduleThread.set(Thread.currentThread());
+          }
+          @Override
           public void beginHandleMessage(Void handler, boolean local) {
             consumerThread.set(Thread.currentThread());
             consumerContext.set(Vertx.currentContext());
@@ -834,6 +839,9 @@ public class MetricsContextTest extends VertxTestBase {
     };
     Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
     EventBus eb = vertx.eventBus();
+    Thread t = new Thread(() -> {
+      eb.send("the_address", "the_msg");
+    });
     runOnContext.accept(vertx, v -> {
       MessageConsumer<Object> consumer = eb.consumer("the_address");
       consumer.handler(msg -> {
@@ -841,6 +849,7 @@ public class MetricsContextTest extends VertxTestBase {
         executeInVanillaThread(() -> {
           vertx.getOrCreateContext().runOnContext(v2 -> {
             consumer.unregister(onSuccess(v3 -> {
+              assertSame(t, scheduleThread.get());
               assertTrue(registeredCalled.get());
               assertTrue(beginHandleCalled.get());
               assertTrue(endHandleCalled.get());
@@ -850,7 +859,7 @@ public class MetricsContextTest extends VertxTestBase {
           });
         });
       }).completionHandler(onSuccess(v2 -> {
-        eb.send("the_address", "the_msg");
+        t.start();
       }));
     });
     await();

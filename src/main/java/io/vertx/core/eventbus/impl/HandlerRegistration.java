@@ -227,11 +227,13 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     Handler<Message<T>> theHandler;
     ContextInternal ctx;
     synchronized (this) {
+      // Need to check handler is still there - the handler might have been removed after the message were sent but
+      // before it was received
       if (registered == null) {
+        if (metrics != null) {
+          metrics.discardMessage(metric, local, message);
+        }
         return;
-      }
-      if (metrics != null) {
-        metrics.scheduleMessage(metric, local);
       }
       if (demand == 0L) {
         if (pending.size() < maxBufferedMessages) {
