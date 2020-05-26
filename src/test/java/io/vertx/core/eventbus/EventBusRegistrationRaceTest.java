@@ -10,8 +10,11 @@
  */
 package io.vertx.core.eventbus;
 
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -32,6 +35,39 @@ public class EventBusRegistrationRaceTest extends VertxTestBase {
   private static final int NUM_MSG = 300_000;
   private static String TEST_ADDR = "the-addr";
 
+  private final AtomicInteger count = new AtomicInteger();
+
+  @Override
+  protected VertxOptions getOptions() {
+    VertxOptions options = super.getOptions();
+    options.setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new VertxMetricsFactory() {
+      @Override
+      public VertxMetrics metrics(VertxOptions options) {
+        return new VertxMetrics() {
+          @Override
+          public EventBusMetrics<Void> createEventBusMetrics() {
+            return new EventBusMetrics<Void>() {
+              @Override
+              public void scheduleMessage(Void handler, boolean local) {
+                count.incrementAndGet();
+              }
+
+              @Override
+              public void beginHandleMessage(Void handler, boolean local) {
+                count.decrementAndGet();
+              }
+              @Override
+              public void discardMessage(Void handler, boolean local, Message<?> msg) {
+                count.decrementAndGet();
+              }
+            };
+          }
+        };
+      }
+    }));
+    return options;
+  }
+
   @Test
   public void theTest() throws Exception {
     AtomicInteger seq = new AtomicInteger();
@@ -43,6 +79,7 @@ public class EventBusRegistrationRaceTest extends VertxTestBase {
     threadB.start();
     threadA.join(20 * 1000);
     threadB.join(20 * 1000);
+    assertEquals(0, count.get());
   }
 
   private void threadA(AtomicInteger seq) {

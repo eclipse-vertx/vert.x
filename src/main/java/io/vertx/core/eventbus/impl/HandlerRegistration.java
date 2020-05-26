@@ -16,7 +16,6 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
-import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.logging.Logger;
@@ -98,7 +97,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     }
     for (Message<T> msg : discarded) {
       if (metrics != null) {
-        metrics.discardMessage(metric, isLocal(msg), msg);
+        metrics.discardMessage(metric, ((MessageImpl)msg).isLocal(), msg);
       }
       if (discardHandler != null) {
         discardHandler.handle(msg);
@@ -176,7 +175,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
       if (metrics != null) {
         Message<T> msg;
         while ((msg = pending.poll()) != null) {
-          metrics.discardMessage(metric, isLocal(msg), msg);
+          metrics.discardMessage(metric, ((MessageImpl)msg).isLocal(), msg);
         }
       } else {
         pending.clear();
@@ -224,21 +223,24 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   @Override
   public void handle(Message<T> message) {
+    boolean local = ((MessageImpl) message).isLocal();
     Handler<Message<T>> theHandler;
     ContextInternal ctx;
     synchronized (this) {
+      // Need to check handler is still there - the handler might have been removed after the message were sent but
+      // before it was received
       if (registered == null) {
+        if (metrics != null) {
+          metrics.discardMessage(metric, local, message);
+        }
         return;
-      }
-      if (metrics != null) {
-        metrics.scheduleMessage(metric, isLocal(message));
       }
       if (demand == 0L) {
         if (pending.size() < maxBufferedMessages) {
           pending.add(message);
         } else {
           if (metrics != null) {
-            metrics.discardMessage(metric, isLocal(message), message);
+            metrics.discardMessage(metric, local, message);
           }
           if (discardHandler != null) {
             discardHandler.handle(message);
@@ -271,7 +273,7 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
     }
     try {
       if (metrics != null) {
-        metrics.beginHandleMessage(metric, isLocal(message));
+        metrics.beginHandleMessage(metric, ((MessageImpl)message).isLocal());
       }
       theHandler.handle(message);
       if (metrics != null) {
@@ -390,17 +392,5 @@ public class HandlerRegistration<T> implements MessageConsumer<T>, Handler<Messa
 
   public Object getMetric() {
     return metric;
-  }
-
-  private boolean isLocal(Message<?> message) {
-    boolean local = true;
-    if (message instanceof ClusteredMessage) {
-      // A bit hacky
-      ClusteredMessage cmsg = (ClusteredMessage)message;
-      if (cmsg.isFromWire()) {
-        return false;
-      }
-    }
-    return true;
   }
 }
