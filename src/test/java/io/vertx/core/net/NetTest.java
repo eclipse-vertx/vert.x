@@ -2308,24 +2308,20 @@ public class NetTest extends VertxTestBase {
     }).listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
       for (int i = 0; i < numThreads; i++) {
-        threads[i] = new Thread() {
-          public void run() {
-            client.connect(testAddress, result -> {
-              assertTrue(result.succeeded());
-              Buffer buff = TestUtils.randomBuffer(100000);
-              NetSocket sock = result.result();
-              sock.write(buff);
-              Buffer received = Buffer.buffer();
-              sock.handler(rec -> {
-                received.appendBuffer(rec);
-                if (received.length() == buff.length()) {
-                  assertEquals(buff, received);
-                  latch.countDown();
-                }
-              });
-            });
-          }
-        };
+        threads[i] = new Thread(() -> client.connect(testAddress, result -> {
+          assertTrue(result.succeeded());
+          Buffer buff = randomBuffer(100000);
+          NetSocket sock = result.result();
+          sock.write(buff);
+          Buffer received = Buffer.buffer();
+          sock.handler(rec -> {
+            received.appendBuffer(rec);
+            if (received.length() == buff.length()) {
+              assertEquals(buff, received);
+              latch.countDown();
+            }
+          });
+        }));
         threads[i].start();
       }
     });
@@ -2429,12 +2425,15 @@ public class NetTest extends VertxTestBase {
     CountDownLatch clientLatch = new CountDownLatch(1);
     // Each connect should be in its own context
     for (int i = 0; i < numConnections; i++) {
-      client.connect(testAddress, conn -> {
-        contexts.add(Vertx.currentContext());
-        if (connectCount.incrementAndGet() == numConnections) {
-          assertEquals(numConnections, contexts.size());
-          clientLatch.countDown();
-        }
+      Context context = ((VertxInternal)vertx).createEventLoopContext();
+      context.runOnContext(v -> {
+        client.connect(testAddress, conn -> {
+          contexts.add(Vertx.currentContext());
+          if (connectCount.incrementAndGet() == numConnections) {
+            assertEquals(numConnections, contexts.size());
+            clientLatch.countDown();
+          }
+        });
       });
     }
     awaitLatch(clientLatch);
@@ -2445,7 +2444,7 @@ public class NetTest extends VertxTestBase {
       assertTrue(ar.succeeded());
       Context closeContext = Vertx.currentContext();
       assertFalse(contexts.contains(closeContext));
-      assertNotSame(serverConnectContext.get(), closeContext);
+      assertSame(serverConnectContext.get(), closeContext);
       assertFalse(contexts.contains(listenContext.get()));
       assertSame(serverConnectContext.get(), listenContext.get());
       testComplete();

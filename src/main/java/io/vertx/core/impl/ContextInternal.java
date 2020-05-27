@@ -107,10 +107,17 @@ public interface ContextInternal extends Context, Executor {
    */
   <T> void executeBlockingInternal(Handler<Promise<T>> action, Handler<AsyncResult<T>> resultHandler);
 
+  <T> void executeBlockingInternal(Handler<Promise<T>> action, boolean ordered, Handler<AsyncResult<T>> resultHandler);
+
   /**
    * Like {@link #executeBlockingInternal(Handler, Handler)} but returns a {@code Future} of the asynchronous result
    */
   <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action);
+
+  /**
+   * Like {@link #executeBlockingInternal(Handler, boolean, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered);
 
   /**
    * @return the deployment associated with this context or {@code null}

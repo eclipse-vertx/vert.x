@@ -2127,7 +2127,7 @@ public class Http1xTest extends HttpTest {
       CompletableFuture<Long> cf = new CompletableFuture<>();
       String path = "/" + i;
       requestResumeMap.put(path, cf);
-      Context requestCtx = vertx.getOrCreateContext();
+      Context requestCtx = ((VertxInternal)vertx).createEventLoopContext();
       requestCtx.runOnContext(v -> {
         HttpClientRequest req = client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, path)
           .onComplete(onSuccess(resp -> {
@@ -2164,15 +2164,17 @@ public class Http1xTest extends HttpTest {
     }
     awaitLatch(latch2, 40, TimeUnit.SECONDS);
     // Close should be in own context
-    server.close(onSuccess(v -> {
-      ContextInternal closeContext = ((VertxInternal) vertx).getContext();
-      assertFalse(contexts.contains(closeContext));
-      assertNotSame(serverCtx, closeContext);
-      assertFalse(contexts.contains(serverCtx));
-      testComplete();
-    }));
+    new Thread(() -> {
+      server.close(onSuccess(v -> {
+        ContextInternal closeContext = ((VertxInternal) vertx).getContext();
+        assertFalse(contexts.contains(closeContext));
+        assertNotSame(serverCtx, closeContext);
+        assertFalse(contexts.contains(serverCtx));
+        testComplete();
+      }));
+      server = null;
+    }).start();
 
-    server = null;
     await();
   }
 

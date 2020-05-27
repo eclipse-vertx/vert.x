@@ -148,6 +148,11 @@ abstract class ContextImpl extends AbstractContext {
   }
 
   @Override
+  public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
+    return executeBlocking(this, action, internalBlockingPool, ordered ? internalOrderedTasks : null);
+  }
+
+  @Override
   public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
     return executeBlocking(this, blockingCodeHandler, workerPool, ordered ? orderedTasks : null);
   }

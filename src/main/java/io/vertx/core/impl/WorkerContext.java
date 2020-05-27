@@ -157,6 +157,11 @@ public class WorkerContext extends ContextImpl {
     }
 
     @Override
+    public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
+      return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, ordered ? delegate.internalOrderedTasks : null);
+    }
+
+    @Override
     public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
       return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? orderedTasks : null);
     }

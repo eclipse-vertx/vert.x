@@ -65,6 +65,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -123,6 +124,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final CloseHooks closeHooks;
   private final Transport transport;
   private final VertxTracer tracer;
+  private final ThreadLocal<WeakReference<AbstractContext>> stickyContext = new ThreadLocal<>();
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver) {
     // Sanity check
@@ -400,10 +402,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public ContextInternal getOrCreateContext() {
-    ContextInternal ctx = getContext();
+    AbstractContext ctx = getContext();
     if (ctx == null) {
       // We are running embedded - Create a context
-      ctx = createEventLoopContext(null, null, null, Thread.currentThread().getContextClassLoader());
+      ctx = createEventLoopContext();
+      stickyContext.set(new WeakReference<>(ctx));
     }
     return ctx;
   }
@@ -458,11 +461,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public EventLoopContext createEventLoopContext() {
+    return createEventLoopContext(null, null, null, Thread.currentThread().getContextClassLoader());
+  }
+
+  @Override
   public ContextInternal createWorkerContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
-    if (workerPool == null) {
-      workerPool = this.workerPool;
-    }
-    return new WorkerContext(this, tracer, internalBlockingPool, workerPool, deployment, closeHooks, tccl);
+    return new WorkerContext(this, tracer, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
@@ -512,8 +517,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     AbstractContext context = (AbstractContext) ContextInternal.current();
     if (context != null && context.owner() == this) {
       return context;
+    } else {
+      WeakReference<AbstractContext> ref = stickyContext.get();
+      return ref != null ? ref.get() : null;
     }
-    return null;
   }
 
   public ClusterManager getClusterManager() {
@@ -727,6 +734,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     ContextInternal context = getOrCreateContext();
 
     context.executeBlockingInternal(blockingCodeHandler, resultHandler);
+  }
+
+  @Override
+  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+    ContextInternal context = getOrCreateContext();
+
+    context.executeBlockingInternal(blockingCodeHandler, ordered, resultHandler);
   }
 
   @Override

@@ -228,6 +228,12 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
+  public <T> void executeBlockingInternal(Handler<Promise<T>> action, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+    Future<T> fut = executeBlockingInternal(action, ordered);
+    setResultHandler(this, fut, resultHandler);
+  }
+
+  @Override
   public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
     Future<T> fut = executeBlocking(blockingCodeHandler, ordered);
     setResultHandler(this, fut, resultHandler);

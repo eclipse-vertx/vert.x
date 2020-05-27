@@ -57,7 +57,7 @@ public class ContextTaskTest extends VertxTestBase {
   }
 
   private ContextInternal createEventLoopContext() {
-    return ((VertxInternal) vertx).getOrCreateContext();
+    return ((VertxInternal) vertx).createEventLoopContext();
   }
 
   private ContextInternal createWorkerContext() {
