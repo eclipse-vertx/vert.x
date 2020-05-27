@@ -122,7 +122,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final TimeUnit maxEventLoopExecTimeUnit;
   private final CloseHooks closeHooks;
   private final Transport transport;
-  final VertxTracer tracer;
+  private final VertxTracer tracer;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver) {
     // Sanity check
