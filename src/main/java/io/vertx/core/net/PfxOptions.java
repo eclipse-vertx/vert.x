@@ -32,7 +32,7 @@ import io.vertx.core.json.JsonObject;
  * Or directly provided as a buffer:<p>
  *
  * <pre>
- * Buffer store = vertx.fileSystem().readFileSync("/mykeystore.p12");
+ * Buffer store = vertx.fileSystem().readFileBlocking("/mykeystore.p12");
  * options.setPfxKeyCertOptions(new PfxOptions().setValue(store).setPassword("foo"));
  * </pre>
  *
