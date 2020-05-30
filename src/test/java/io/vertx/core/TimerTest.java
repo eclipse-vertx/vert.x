@@ -12,6 +12,7 @@
 package io.vertx.core;
 
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -392,10 +393,11 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testTimerOnContext() {
-    ContextInternal ctx1 = (ContextInternal) vertx.getOrCreateContext();
-    ContextInternal ctx2 = (ContextInternal) vertx.getOrCreateContext();
-    assertNotSame(ctx1, ctx2);
+    disableThreadChecks();
+    ContextInternal ctx1 = ((VertxInternal)vertx).createEventLoopContext();
     waitFor(2);
+    ContextInternal ctx2 = ((VertxInternal)vertx).createEventLoopContext();
+    assertNotSame(ctx1, ctx2);
     ctx2.runOnContext(v -> {
       vertx.setTimer(10, l -> {
         assertSame(ctx2, vertx.getOrCreateContext());
@@ -411,11 +413,11 @@ public class TimerTest extends VertxTestBase {
 
   @Test
   public void testPeriodicOnContext() {
-    ContextInternal ctx1 = (ContextInternal) vertx.getOrCreateContext();
-    ContextInternal ctx2 = (ContextInternal) vertx.getOrCreateContext();
-    assertNotSame(ctx1, ctx2);
-
+    disableThreadChecks();
     waitFor(4);
+    ContextInternal ctx1 = ((VertxInternal)vertx).createEventLoopContext();
+    ContextInternal ctx2 = ((VertxInternal)vertx).createEventLoopContext();
+    assertNotSame(ctx1, ctx2);
     ctx2.runOnContext(v -> {
       vertx.setPeriodic(10, new Handler<Long>() {
         int count;

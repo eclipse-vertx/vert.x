@@ -6305,4 +6305,23 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(address1.port(), address2.port());
     }
   }
+
+  @Test
+  public void testStickyContext() throws Exception {
+    Set<Context> contexts = new HashSet<>();
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    int numReq = 3;
+    CountDownLatch latch = new CountDownLatch(numReq);
+    for (int i = 0;i < numReq;i++) {
+      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
+        contexts.add(Vertx.currentContext());
+        latch.countDown();
+      }));
+    }
+    awaitLatch(latch);
+    assertEquals(1, contexts.size());
+  }
 }
