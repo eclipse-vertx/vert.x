@@ -218,7 +218,7 @@ public class VertxTest extends AsyncTestBase {
 
   @Test
   public void testStickContextFinalization() throws Exception {
-    VertxInternal vertx = (VertxInternal) Vertx.vertx();
+    Vertx vertx = Vertx.vertx();
     try {
       AtomicReference<WeakReference<Context>> ref = new AtomicReference<>();
       Thread t = new Thread(() -> {
