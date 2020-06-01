@@ -2869,7 +2869,7 @@ public class NetTest extends VertxTestBase {
         .setHost("localhost")
         .setSsl(true)
         .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get());
-    NetServer server = vertx.createNetServer(options);
+    server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
         .setHostnameVerificationAlgorithm("HTTPS")
@@ -2904,7 +2904,7 @@ public class NetTest extends VertxTestBase {
         .setHost("localhost")
         .setSsl(true)
         .setKeyCertOptions(Cert.SERVER_JKS_ROOT_CA.get());
-    NetServer server = vertx.createNetServer(options);
+    server = vertx.createNetServer(options);
 
     NetClientOptions clientOptions = new NetClientOptions()
         .setHostnameVerificationAlgorithm("HTTPS")
