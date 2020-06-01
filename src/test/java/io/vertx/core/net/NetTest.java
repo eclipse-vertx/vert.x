@@ -1838,13 +1838,7 @@ public class NetTest extends VertxTestBase {
       theServer.connectHandler(sock -> {
         connectCount.compute(theServer, (s, cur) -> cur == null ? 1 : cur + 1);
         latchConns.countDown();
-      }).listen(testAddress, ar -> {
-        if (ar.succeeded()) {
-          latchListen.countDown();
-        } else {
-          fail("Failed to bind server");
-        }
-      });
+      }).listen(testAddress, onSuccess(s -> latchListen.countDown()));
     }
     assertTrue(latchListen.await(10, TimeUnit.SECONDS));
 
