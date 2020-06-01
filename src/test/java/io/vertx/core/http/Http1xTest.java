@@ -1751,6 +1751,8 @@ public class Http1xTest extends HttpTest {
     });
     assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
 
+    Thread.sleep(500); // Let some time
+
     testSharedServersRoundRobin();
   }
 

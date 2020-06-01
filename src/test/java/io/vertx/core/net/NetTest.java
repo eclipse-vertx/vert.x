@@ -1913,6 +1913,9 @@ public class NetTest extends VertxTestBase {
       closeLatch.countDown();
     });
     assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
+
+    Thread.sleep(500); // Let some time
+
     testSharedServersRoundRobin();
   }
 
