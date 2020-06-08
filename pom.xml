@@ -21,7 +21,7 @@
 
   <groupId>com.tracelink</groupId>
   <artifactId>vertx-core</artifactId>
-  <version>4.0.0-milestone5</version>
+  <version>4.0.0-milestone5-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
