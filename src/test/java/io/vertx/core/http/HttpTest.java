@@ -2703,6 +2703,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  @Ignore
   public void testListenInvalidPort() throws Exception {
     /* Port 7 is free for use by any application in Windows, so this test fails. */
     Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
