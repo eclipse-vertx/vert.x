@@ -124,7 +124,6 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testUnresolvedDnsServer() throws Exception {
-    final String ip = "10.0.0.1";
     try {
       DnsClient dns = vertx.createDnsClient(new DnsClientOptions().setHost("iamanunresolvablednsserver.com").setPort(53));
       fail();
