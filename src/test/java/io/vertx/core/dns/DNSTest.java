@@ -124,13 +124,12 @@ public class DNSTest extends VertxTestBase {
 
   @Test
   public void testUnresolvedDnsServer() throws Exception {
-    final String ip = "10.0.0.1";
     try {
-    	DnsClient dns = vertx.createDnsClient(new DnsClientOptions().setHost("iamanunresolvablednsserver.com").setPort(53));
-    	fail();
+      DnsClient dns = vertx.createDnsClient(new DnsClientOptions().setHost("iamanunresolvablednsserver.com").setPort(53));
+      fail();
     } catch (Exception e) {
-    	assertTrue(e instanceof IllegalArgumentException);
-    	assertEquals("Cannot resolve the host to a valid ip address", e.getMessage());
+      assertTrue(e instanceof IllegalArgumentException);
+      assertEquals("Cannot resolve the host to a valid ip address", e.getMessage());
     }
   }
 
