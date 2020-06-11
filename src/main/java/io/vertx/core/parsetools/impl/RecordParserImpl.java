@@ -228,7 +228,7 @@ public class RecordParserImpl implements RecordParser {
       int len = buff.length();
       if (start == len) {
         buff = EMPTY_BUFFER;
-      } else {
+      } else if (start > 0) {
         buff = buff.getBuffer(start, len);
       }
       pos -= start;
