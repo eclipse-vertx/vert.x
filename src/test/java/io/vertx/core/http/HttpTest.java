@@ -2706,11 +2706,18 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testListenInvalidPort() throws Exception {
     server.close();
-    try(ServerSocket occupied = new ServerSocket(0)){
+    ServerSocket occupied = null;
+    try{
+      /* Ask to be given a usable port, then use it exclusively so Vert.x can't use the port number */
+      occupied = new ServerSocket(0);
       occupied.setReuseAddress(false);
       server = vertx.createHttpServer(new HttpServerOptions().setPort(occupied.getLocalPort()));
       server.requestHandler(noOpHandler()).listen(onFailure(server -> testComplete()));
       await();
+    }finally {
+      if( occupied != null ) {
+        occupied.close();
+      }
     }
   }
 
