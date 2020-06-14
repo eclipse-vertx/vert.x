@@ -11,6 +11,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -24,7 +25,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.Iterator;
 
-public abstract class HandlerRegistration<T> {
+public abstract class HandlerRegistration<T> implements Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(HandlerRegistration.class);
 
@@ -174,5 +175,10 @@ public abstract class HandlerRegistration<T> {
     public Object body() {
       return message.receivedBody;
     }
+  }
+
+  @Override
+  public void close(Promise<Void> completion) {
+    unregister(completion);
   }
 }

@@ -263,8 +263,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       (old, prev) -> old.add(prev.first()));
 
     if (context.isDeployment()) {
-      HandlerEntry entry = new HandlerEntry<>(address, registration);
-      context.addCloseHook(entry);
+      context.addCloseHook(registration);
     }
 
     return holder;
@@ -293,7 +292,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       return next.size() == 0 ? null : next;
     });
     if (holder.setRemoved() && holder.getContext().deploymentID() != null) {
-      holder.getContext().removeCloseHook(new HandlerEntry<>(address, holder.getHandler()));
+      holder.getContext().removeCloseHook(holder.getHandler());
     }
   }
 
@@ -411,40 +410,6 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       }
     }
     return CompositeFuture.join(futures).mapEmpty();
-  }
-
-  public class HandlerEntry<T> implements Closeable {
-    final String address;
-    final HandlerRegistration<T> handler;
-
-    public HandlerEntry(String address, HandlerRegistration<T> handler) {
-      this.address = address;
-      this.handler = handler;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (o == null) return false;
-      if (this == o) return true;
-      if (getClass() != o.getClass()) return false;
-      HandlerEntry entry = (HandlerEntry) o;
-      if (!address.equals(entry.address)) return false;
-      if (!handler.equals(entry.handler)) return false;
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      int result = address != null ? address.hashCode() : 0;
-      result = 31 * result + (handler != null ? handler.hashCode() : 0);
-      return result;
-    }
-
-    // Called by context on undeploy
-    public void close(Promise<Void> completion) {
-      handler.unregister(completion);
-    }
-
   }
 }
 
