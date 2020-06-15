@@ -34,6 +34,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
+import java.net.ServerSocket;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -2691,12 +2692,20 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testListenInvalidPort() throws Exception {
-    /* Port 7 is free for use by any application in Windows, so this test fails. */
-    Assume.assumeFalse(System.getProperty("os.name").startsWith("Windows"));
     server.close();
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(7));
-    server.requestHandler(noOpHandler()).listen(onFailure(server -> testComplete()));
-    await();
+    ServerSocket occupied = null;
+    try{
+      /* Ask to be given any usable port, then use it exclusively so Vert.x can't use the same one */
+      occupied = new ServerSocket(0);
+      occupied.setReuseAddress(false);
+      server = vertx.createHttpServer(new HttpServerOptions().setPort(occupied.getLocalPort()));
+      server.requestHandler(noOpHandler()).listen(onFailure(server -> testComplete()));
+      await();
+    }finally {
+      if( occupied != null ) {
+        occupied.close();
+      }
+    }
   }
 
   @Test
