@@ -22,7 +22,7 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
@@ -67,7 +67,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private List<Handler<AsyncResult<Void>>> pendingHandlers;
   private int pendingMaxSize = -1;
   private int followRedirects;
-  private VertxHttpHeaders headers;
+  private HeadersMultiMap headers;
   private StreamPriority priority;
   private HttpClientStream stream;
   private boolean connecting;
@@ -165,7 +165,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized MultiMap headers() {
     if (headers == null) {
-      headers = new VertxHttpHeaders();
+      headers = HeadersMultiMap.httpHeaders();
     }
     return headers;
   }

@@ -13,8 +13,7 @@ package io.vertx.core.http.headers;
 
 import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.headers.HeadersTestBase;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
 
   @Override
   protected MultiMap newMultiMap() {
-    return new VertxHttpHeaders();
+    return HeadersMultiMap.httpHeaders();
   }
 
   @Test

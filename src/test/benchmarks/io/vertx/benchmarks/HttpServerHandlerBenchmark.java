@@ -38,7 +38,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.VertxHttpRequestDecoder;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.VertxHandler;
@@ -210,7 +210,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
         new HttpResponseEncoder() {
           @Override
           protected void encodeHeaders(HttpHeaders headers, ByteBuf buf) {
-            ((VertxHttpHeaders)headers).encode(buf);
+            ((HeadersMultiMap)headers).encode(buf);
           }
         }
     );

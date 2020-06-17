@@ -33,7 +33,7 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -89,7 +89,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   private Handler<Void> bodyEndHandler;
   private boolean writable;
   private boolean closed;
-  private final VertxHttpHeaders headers;
+  private final HeadersMultiMap headers;
   private Map<String, ServerCookie> cookies;
   private MultiMap trailers;
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
@@ -102,7 +102,7 @@ public class Http1xServerResponse implements HttpServerResponse {
     this.conn = conn;
     this.context = context;
     this.version = request.protocolVersion();
-    this.headers = new VertxHttpHeaders();
+    this.headers = HeadersMultiMap.httpHeaders();
     this.request = request;
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
@@ -120,7 +120,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public MultiMap trailers() {
     if (trailers == null) {
-      VertxHttpHeaders v = new VertxHttpHeaders();
+      HeadersMultiMap v = HeadersMultiMap.httpHeaders();
       trailers = v;
       trailingHeaders = v;
     }

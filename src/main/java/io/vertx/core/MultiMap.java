@@ -15,7 +15,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
    * @return the multi-map
    */
   static MultiMap caseInsensitiveMultiMap() {
-    return HttpHeaders.headers();
+    return HeadersMultiMap.headers();
   }
 
   @GenIgnore(GenIgnore.PERMITTED_TYPE)

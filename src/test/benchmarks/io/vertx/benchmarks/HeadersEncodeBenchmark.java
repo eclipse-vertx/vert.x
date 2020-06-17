@@ -17,7 +17,7 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Scope;
@@ -57,7 +57,7 @@ public class HeadersEncodeBenchmark extends BenchmarkBase {
     encoder = new PublicEncoder();
     emptyHeaders = EmptyHttpHeaders.INSTANCE;
     nettySmallHeaders = new DefaultHttpHeaders();
-    vertxSmallHeaders = new VertxHttpHeaders();
+    vertxSmallHeaders = HeadersMultiMap.httpHeaders();
     setBaseHeaders(nettySmallHeaders);
     setBaseHeaders(vertxSmallHeaders);
   }
