@@ -11,12 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.core.impl.VertxThread;
 import io.vertx.test.core.BlockedThreadWarning;
 import io.vertx.test.core.TestUtils;
@@ -213,12 +207,43 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   }
 
   @Test
-  public void testMaxExecuteTime() {
+  public void testMaxExecuteTime1() {
     String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
     int poolSize = 5;
     long maxExecuteTime = 60;
     TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
-    WorkerExecutor worker = vertx.createSharedWorkerExecutor(poolName, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+    Vertx vertx = Vertx.vertx(new VertxOptions().setMaxWorkerExecuteTime(maxExecuteTime).setMaxWorkerExecuteTimeUnit(maxExecuteTimeUnit));
+    try {
+      testMaxExecuteTime(vertx.createSharedWorkerExecutor(poolName, poolSize), maxExecuteTime, maxExecuteTimeUnit);
+    } finally {
+      vertx.close();
+    }
+  }
+
+  @Test
+  public void testMaxExecuteTime2() {
+    String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
+    int poolSize = 5;
+    long maxExecuteTime = 60;
+    TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
+    Vertx vertx = Vertx.vertx(new VertxOptions().setMaxWorkerExecuteTime(maxExecuteTime).setMaxWorkerExecuteTimeUnit(maxExecuteTimeUnit));
+    try {
+      testMaxExecuteTime(vertx.createSharedWorkerExecutor(poolName, poolSize, maxExecuteTime), maxExecuteTime, maxExecuteTimeUnit);
+    } finally {
+      vertx.close();
+    }
+  }
+
+  @Test
+  public void testMaxExecuteTime3() {
+    String poolName = "vert.x-" + TestUtils.randomAlphaString(10);
+    int poolSize = 5;
+    long maxExecuteTime = 60;
+    TimeUnit maxExecuteTimeUnit = TimeUnit.SECONDS;
+    testMaxExecuteTime(vertx.createSharedWorkerExecutor(poolName, poolSize, maxExecuteTime, maxExecuteTimeUnit), maxExecuteTime, maxExecuteTimeUnit);
+  }
+
+  public void testMaxExecuteTime(WorkerExecutor worker, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     worker.executeBlocking(f -> {
       Thread t = Thread.currentThread();
       assertTrue(t instanceof VertxThread);
