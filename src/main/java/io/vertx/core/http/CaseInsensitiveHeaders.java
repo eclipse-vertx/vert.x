@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * prior to making an HTTP request.
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
- * @deprecated instead use {@link MultiMap}
+ * @deprecated instead use {@link MultiMap#caseInsensitiveMultiMap}
  */
 @Deprecated
 public final class CaseInsensitiveHeaders implements MultiMap {
