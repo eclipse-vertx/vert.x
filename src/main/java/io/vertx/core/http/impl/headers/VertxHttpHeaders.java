@@ -452,6 +452,8 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     void remove() {
       before.after = after;
       after.before = before;
+      after = null;
+      before = null;
     }
 
     void addBefore(VertxHttpHeaders.MapEntry e) {
@@ -490,40 +492,19 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   private void remove0(int h, int i, CharSequence name) {
     VertxHttpHeaders.MapEntry e = entries[i];
-    if (e == null) {
-      return;
-    }
-
-    for (;;) {
+    MapEntry first = e;
+    while (e != null) {
+      MapEntry next = e.next;
       CharSequence key = e.key;
       if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
-        e.remove();
-        VertxHttpHeaders.MapEntry next = e.next;
-        if (next != null) {
-          entries[i] = next;
-          e = next;
-        } else {
-          entries[i] = null;
-          return;
+        if (e == first) {
+          first = e.next;
         }
-      } else {
-        break;
+        e.remove();
       }
+      e = next;
     }
-
-    for (;;) {
-      VertxHttpHeaders.MapEntry next = e.next;
-      if (next == null) {
-        break;
-      }
-      CharSequence key = next.key;
-      if (next.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
-        e.next = next.next;
-        next.remove();
-      } else {
-        e = next;
-      }
-    }
+    entries[i] = first;
   }
 
   private void add0(int h, int i, final CharSequence name, final CharSequence value) {
