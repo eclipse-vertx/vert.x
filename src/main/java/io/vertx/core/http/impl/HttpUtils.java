@@ -1,15 +1,21 @@
-/*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
- *
- * This program and the accompanying materials are made available under the
- * terms of the Eclipse Public License 2.0 which is available at
- * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
- * which is available at https://www.apache.org/licenses/LICENSE-2.0.
- *
- * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
- */
+INSERT INTO `xn_m_link_plat` ( `id`, `plat_code`, `agent_code`, `name`, `is_delete`, `creater`, `create_time`, `ver`, `modifier`, `modify_time` )
+  VALUES
+  ( '05m83Fg6ScGCYs8wsGdwmb', 'pff', 'pffbank', '浦发银行相关配置', 0, 'system', '2020-05-15 17:11:17', 0, 'system', '2020-05-15 17:11:17' );
 
-package io.vertx.core.http.impl;
+
+
+  /*
+   * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+   *
+   * This program and the accompanying materials are made available under the
+   * terms of the Eclipse Public License 2.0 which is available at
+   * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+   * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+   *
+   * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+   */
+
+  package io.vertx.core.http.impl;
 
 
 import io.netty.buffer.ByteBuf;
@@ -379,12 +385,12 @@ public final class HttpUtils {
     if (_ref.getScheme() != null) {
       scheme = _ref.getScheme();
       authority = _ref.getAuthority();
-      path = removeDots(_ref.getPath());
+      path = removeDots(_ref.getRawPath());
       query = _ref.getRawQuery();
     } else {
       if (_ref.getAuthority() != null) {
         authority = _ref.getAuthority();
-        path = _ref.getPath();
+        path = _ref.getRawPath();
         query = _ref.getRawQuery();
       } else {
         if (_ref.getPath().length() == 0) {
@@ -396,19 +402,19 @@ public final class HttpUtils {
           }
         } else {
           if (_ref.getPath().startsWith("/")) {
-            path = removeDots(_ref.getPath());
+            path = removeDots(_ref.getRawPath());
           } else {
             // Merge paths
             String mergedPath;
             String basePath = base.getPath();
             if (base.getAuthority() != null && basePath.length() == 0) {
-              mergedPath = "/" + _ref.getPath();
+              mergedPath = "/" + _ref.getRawPath();
             } else {
               int index = basePath.lastIndexOf('/');
               if (index > -1) {
                 mergedPath = basePath.substring(0, index + 1) + _ref.getPath();
               } else {
-                mergedPath = _ref.getPath();
+                mergedPath = _ref.getRawPath();
               }
             }
             path = removeDots(mergedPath);
