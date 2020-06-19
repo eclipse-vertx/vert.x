@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -710,6 +710,146 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   @Override
   public Future<HttpClientResponse> get(String requestURI) {
     return send(HttpMethod.GET, requestURI);
+  }
+
+  @Override
+  public void patch(int port, String host, String requestURI, MultiMap headers, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, port, host, requestURI, headers, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(int port, String host, String requestURI, MultiMap headers, Buffer body) {
+    return send(HttpMethod.PATCH, port, host, requestURI, headers, body);
+  }
+
+  @Override
+  public void patch(int port, String host, String requestURI, MultiMap headers, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, port, host, requestURI, headers, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(int port, String host, String requestURI, MultiMap headers, ReadStream<Buffer> body) {
+    return send(HttpMethod.PATCH, port, host, requestURI, headers, body);
+  }
+
+  @Override
+  public void patch(String host, String requestURI, MultiMap headers, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, host, requestURI, headers, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(String host, String requestURI, MultiMap headers, Buffer body) {
+    return send(HttpMethod.PATCH, host, requestURI, headers, body);
+  }
+
+  @Override
+  public void patch(String host, String requestURI, MultiMap headers, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, host, requestURI, headers, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(String host, String requestURI, MultiMap headers, ReadStream<Buffer> body) {
+    return send(HttpMethod.PATCH, host, requestURI, headers, body);
+  }
+
+  @Override
+  public void patch(String requestURI, MultiMap headers, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, requestURI, headers, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(String requestURI, MultiMap headers, Buffer body) {
+    return send(HttpMethod.PATCH, requestURI, headers, body);
+  }
+
+  @Override
+  public void patch(String requestURI, MultiMap headers, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, requestURI, headers, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(String requestURI, MultiMap headers, ReadStream<Buffer> body) {
+    return send(HttpMethod.PATCH, requestURI, headers, body);
+  }
+
+  @Override
+  public void patch(RequestOptions options, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(options.setMethod(HttpMethod.PATCH), body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(RequestOptions options, Buffer body) {
+    return send(options.setMethod(HttpMethod.PATCH), body);
+  }
+
+  @Override
+  public void patch(RequestOptions options, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(options.setMethod(HttpMethod.PATCH), body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(RequestOptions options, ReadStream<Buffer> body) {
+    return send(options.setMethod(HttpMethod.PATCH), body);
+  }
+
+  @Override
+  public void patch(int port, String host, String requestURI, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, port, host, requestURI, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(int port, String host, String requestURI, Buffer body) {
+    return send(HttpMethod.PATCH, port, host, requestURI, body);
+  }
+
+  @Override
+  public void patch(int port, String host, String requestURI, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, port, host, requestURI, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(int port, String host, String requestURI, ReadStream<Buffer> body) {
+    return send(HttpMethod.PATCH, port, host, requestURI, body);
+  }
+
+  @Override
+  public void patch(String host, String requestURI, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, host, requestURI, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(String host, String requestURI, Buffer body) {
+    return send(HttpMethod.PATCH, host, requestURI, body);
+  }
+
+  @Override
+  public void patch(String host, String requestURI, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, host, requestURI, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(String host, String requestURI, ReadStream<Buffer> body) {
+    return send(HttpMethod.PATCH, host, requestURI, body);
+  }
+
+  @Override
+  public void patch(String requestURI, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, requestURI, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(String requestURI, Buffer body) {
+    return send(HttpMethod.PATCH, requestURI, body);
+  }
+
+  @Override
+  public void patch(String requestURI, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
+    send(HttpMethod.PATCH, requestURI, body, responseHandler);
+  }
+
+  @Override
+  public Future<HttpClientResponse> patch(String requestURI, ReadStream<Buffer> body) {
+    return send(HttpMethod.PATCH, requestURI, body);
   }
 
   @Override

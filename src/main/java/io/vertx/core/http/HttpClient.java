@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -543,6 +543,220 @@ public interface HttpClient extends Measured {
    * Like {@link #get(String, Handler)} but returns a {@code Future} of the asynchronous result
    */
   Future<HttpClientResponse> get(String requestURI);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the specified host and port, specifying a response handler to receive
+   * the response
+   * @param port  the port
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param headers  the headers
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(int port, String host, String requestURI, MultiMap headers, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(int, String, String, MultiMap, Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(int port, String host, String requestURI, MultiMap headers, Buffer body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the specified host and port, specifying a response handler to receive
+   * the response
+   * @param port  the port
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param headers  the headers
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(int port, String host, String requestURI, MultiMap headers, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(int, String, String, MultiMap, ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(int port, String host, String requestURI, MultiMap headers, ReadStream<Buffer> body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the specified host and default port, specifying a response handler to receive
+   * the response
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param headers  the headers
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(String host, String requestURI, MultiMap headers, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(String, String, MultiMap, Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(String host, String requestURI, MultiMap headers, Buffer body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the specified host and default port, specifying a response handler to receive
+   * the response
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param headers  the headers
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(String host, String requestURI, MultiMap headers, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(String, String, MultiMap, ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(String host, String requestURI, MultiMap headers, ReadStream<Buffer> body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the default host and port, specifying a response handler to receive
+   * the response
+   * @param requestURI  the relative URI
+   * @param headers  the headers
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(String requestURI, MultiMap headers, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(String, MultiMap, Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(String requestURI, MultiMap headers, Buffer body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the default host and port, specifying a response handler to receive
+   * the response
+   * @param requestURI  the relative URI
+   * @param headers  the headers
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(String requestURI, MultiMap headers, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(String, MultiMap, ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(String requestURI, MultiMap headers, ReadStream<Buffer> body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server with the specified options, specifying a response handler to receive
+   * the response
+   * @param options  the request options
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(RequestOptions options, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(RequestOptions, Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(RequestOptions options, Buffer body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server with the specified options, specifying a response handler to receive
+   * the response
+   * @param options  the request options
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(RequestOptions options, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(RequestOptions, ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(RequestOptions options, ReadStream<Buffer> body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the specified host and port, specifying a response handler to receive
+   * the response
+   * @param port  the port
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(int port, String host, String requestURI, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(int, String, String, Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(int port, String host, String requestURI, Buffer body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the specified host and port, specifying a response handler to receive
+   * the response
+   * @param port  the port
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(int port, String host, String requestURI, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(int, String, String, ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(int port, String host, String requestURI, ReadStream<Buffer> body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the specified host and default port, specifying a response handler to receive
+   * the response
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(String host, String requestURI, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(String, String, Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(String host, String requestURI, Buffer body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the specified host and default port, specifying a response handler to receive
+   * the response
+   * @param host  the host
+   * @param requestURI  the relative URI
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(String host, String requestURI, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(String, String, ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(String host, String requestURI, ReadStream<Buffer> body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the default host and port, specifying a response handler to receive
+   * the response
+   * @param requestURI  the relative URI
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(String requestURI, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(String, Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(String requestURI, Buffer body);
+
+  /**
+   * Sends an HTTP PATCH request to send to the server at the default host and port, specifying a response handler to receive
+   * the response
+   * @param requestURI  the relative URI
+   * @param body  the request body
+   * @param responseHandler  the response handler
+   */
+  void patch(String requestURI, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler);
+
+  /**
+   * Like {@link #patch(String, ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> patch(String requestURI, ReadStream<Buffer> body);
 
   /**
    * Sends an HTTP POST request to send to the server at the specified host and port, specifying a response handler to receive
