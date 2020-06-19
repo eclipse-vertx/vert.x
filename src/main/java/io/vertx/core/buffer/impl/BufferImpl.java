@@ -13,15 +13,10 @@ package io.vertx.core.buffer.impl;
 
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.buffer.UnpooledHeapByteBuf;
-import io.netty.buffer.UnpooledUnsafeHeapByteBuf;
 import io.netty.util.CharsetUtil;
-import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.ByteBufUtils;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -30,8 +25,6 @@ import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Objects;
-
-import static io.netty.util.internal.ObjectUtil.checkPositiveOrZero;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -70,34 +63,18 @@ public class BufferImpl implements Buffer {
     return new BufferImpl(bytes, true);
   }
 
-  // this wrapper is used to save copying byte[]
-  public static final class UnpooledWrappedByteBuf extends UnpooledHeapByteBuf {
-
-    protected UnpooledWrappedByteBuf(ByteBufAllocator alloc, byte[] initialArray, int maxCapacity) {
-      super(alloc, initialArray, maxCapacity);
-    }
-  }
-
   private ByteBuf buffer;
-
-  private static UnpooledHeapByteBuf unpooledNotInstrumentedHeapByteBuf(int initialCapacity, int maxCapacity) {
-    // this save instrumented heap ByteBuf allocation that would save statistics collection
-    return PlatformDependent.hasUnsafe() ?
-      new UnpooledUnsafeHeapByteBuf(UnpooledByteBufAllocator.DEFAULT, initialCapacity, maxCapacity) :
-      new UnpooledHeapByteBuf(UnpooledByteBufAllocator.DEFAULT, initialCapacity, maxCapacity);
-  }
 
   public BufferImpl() {
     this(0);
   }
 
   BufferImpl(int initialSizeHint) {
-    checkPositiveOrZero(initialSizeHint, "initialCapacity");
-    buffer = unpooledNotInstrumentedHeapByteBuf(initialSizeHint, Integer.MAX_VALUE);
+    buffer = ByteBufUtils.unpooledNotInstrumentedHeapByteBuf(initialSizeHint, Integer.MAX_VALUE);
   }
 
   private BufferImpl(byte[] bytes, boolean direct) {
-    buffer = (!direct ? unpooledNotInstrumentedHeapByteBuf(bytes.length, Integer.MAX_VALUE) :
+    buffer = (!direct ? ByteBufUtils.unpooledNotInstrumentedHeapByteBuf(bytes.length, Integer.MAX_VALUE) :
       PartialPooledByteBufAllocator.DEFAULT.directBuffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
   }
 
@@ -106,52 +83,19 @@ public class BufferImpl implements Buffer {
   }
 
   private BufferImpl(String str, String enc, boolean direct) {
-    buffer = buffer(str, enc, direct);
+    buffer = ByteBufUtils.unpooledBufferOf(str, enc, direct);
   }
 
   BufferImpl(String str, String enc) {
     this(str, enc, false);
   }
 
-  private static ByteBuf buffer(String str, String enc, boolean direct) {
-    final Charset charset = Charset.forName(Objects.requireNonNull(enc));
-    return buffer(str, charset, direct);
-  }
-
-  private static ByteBuf buffer(String str, Charset charset, boolean direct) {
-    if (charset.equals(CharsetUtil.UTF_8)) {
-      return utf8Buffer(str, direct);
-    }
-    if (charset.equals(CharsetUtil.US_ASCII) || charset.equals(CharsetUtil.ISO_8859_1)) {
-      return usAsciiBuffer(str, direct);
-    }
-    final byte[] bytes = str.getBytes(charset);
-    return !direct ? new UnpooledWrappedByteBuf(UnpooledByteBufAllocator.DEFAULT, bytes, Integer.MAX_VALUE) :
-      PartialPooledByteBufAllocator.UNPOOLED.directBuffer(bytes.length, Integer.MAX_VALUE).writeBytes(bytes);
-  }
-
-  private static ByteBuf utf8Buffer(String str, boolean direct) {
-    final int utf8Bytes = ByteBufUtil.utf8Bytes(str);
-    final ByteBuf buffer = !direct ? unpooledNotInstrumentedHeapByteBuf(utf8Bytes, Integer.MAX_VALUE) :
-      PartialPooledByteBufAllocator.UNPOOLED.directBuffer(utf8Bytes, Integer.MAX_VALUE);
-    ByteBufUtil.reserveAndWriteUtf8(buffer, str, utf8Bytes);
-    return buffer;
-  }
-
-  private static ByteBuf usAsciiBuffer(String str, boolean direct) {
-    final int asciiBytes = str.length();
-    final ByteBuf buffer = !direct ? unpooledNotInstrumentedHeapByteBuf(asciiBytes, Integer.MAX_VALUE) :
-      PartialPooledByteBufAllocator.UNPOOLED.directBuffer(asciiBytes, Integer.MAX_VALUE);
-    ByteBufUtil.writeAscii(buffer, str);
-    return buffer;
-  }
-
   BufferImpl(String str, Charset cs) {
-    buffer = buffer(str, cs, false);
+    buffer = ByteBufUtils.unpooledBufferOf(str, cs, false);
   }
 
   BufferImpl(String str) {
-    this.buffer = utf8Buffer(str, false);
+    this.buffer = ByteBufUtils.utf8UnpooledBufferOf(str, false);
   }
 
   BufferImpl(ByteBuf buffer) {

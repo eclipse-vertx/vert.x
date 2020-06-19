@@ -29,6 +29,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.ByteBufUtils;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
@@ -319,25 +320,25 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public Future<Void> write(String chunk, String enc) {
     PromiseInternal<Void> promise = context.promise();
-    write(Buffer.buffer(chunk, enc).getByteBuf(), promise);
+    write(Unpooled.unreleasableBuffer(ByteBufUtils.unpooledBufferOf(chunk, enc)), promise);
     return promise.future();
   }
 
   @Override
   public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk, enc).getByteBuf(), handler == null ? null : context.promise(handler));
+    write(Unpooled.unreleasableBuffer(ByteBufUtils.unpooledBufferOf(chunk, enc)), handler == null ? null : context.promise(handler));
   }
 
   @Override
   public Future<Void> write(String chunk) {
     PromiseInternal<Void> promise = context.promise();
-    write(Buffer.buffer(chunk).getByteBuf(), promise);
+    write(Unpooled.unreleasableBuffer(ByteBufUtils.utf8UnpooledBufferOf(chunk)), promise);
     return promise.future();
   }
 
   @Override
   public void write(String chunk, Handler<AsyncResult<Void>> handler) {
-    write(Buffer.buffer(chunk).getByteBuf(), handler == null ? null : context.promise(handler));
+    write(Unpooled.unreleasableBuffer(ByteBufUtils.utf8UnpooledBufferOf(chunk)), handler == null ? null : context.promise(handler));
   }
 
   @Override
@@ -348,22 +349,26 @@ public class Http1xServerResponse implements HttpServerResponse {
 
   @Override
   public Future<Void> end(String chunk) {
-    return end(Buffer.buffer(chunk));
+    PromiseInternal<Void> promise = context.promise();
+    end(Unpooled.unreleasableBuffer(ByteBufUtils.utf8UnpooledBufferOf(chunk)), promise);
+    return promise.future();
   }
 
   @Override
   public void end(String chunk, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk), handler);
+    end(Unpooled.unreleasableBuffer(ByteBufUtils.utf8UnpooledBufferOf(chunk)), handler == null ? null : context.promise(handler));
   }
 
   @Override
   public Future<Void> end(String chunk, String enc) {
-    return end(Buffer.buffer(chunk, enc));
+    PromiseInternal<Void> promise = context.promise();
+    write(Unpooled.unreleasableBuffer(ByteBufUtils.unpooledBufferOf(chunk, enc)), promise);
+    return promise.future();
   }
 
   @Override
   public void end(String chunk, String enc, Handler<AsyncResult<Void>> handler) {
-    end(Buffer.buffer(chunk, enc), handler);
+    end(Unpooled.unreleasableBuffer(ByteBufUtils.utf8UnpooledBufferOf(chunk)), handler == null ? null : context.promise(handler));
   }
 
   @Override
@@ -379,20 +384,23 @@ public class Http1xServerResponse implements HttpServerResponse {
   }
 
   private void end(Buffer chunk, PromiseInternal<Void> listener) {
+    end(chunk.getByteBuf(), listener);
+  }
+
+  private void end(ByteBuf chunk, PromiseInternal<Void> listener) {
     synchronized (conn) {
       if (written) {
         throw new IllegalStateException(RESPONSE_WRITTEN);
       }
-      ByteBuf data = chunk.getByteBuf();
-      bytesWritten += data.readableBytes();
+      bytesWritten += chunk.readableBytes();
       HttpObject msg;
       if (!headWritten) {
         // if the head was not written yet we can write out everything in one go
         // which is cheaper.
         prepareHeaders(bytesWritten);
-        msg = new AssembledFullHttpResponse(head, version, status, headers, data, trailingHeaders);
+        msg = new AssembledFullHttpResponse(head, version, status, headers, chunk, trailingHeaders);
       } else {
-        msg = new AssembledLastHttpContent(data, trailingHeaders);
+        msg = new AssembledLastHttpContent(chunk, trailingHeaders);
       }
       conn.writeToChannel(msg, listener);
       written = true;
