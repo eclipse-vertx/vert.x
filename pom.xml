@@ -227,6 +227,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven.surefire.plugin.version}</version>
           <configuration>
+            <skipTests>true</skipTests>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <additionalClasspathElements>
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
