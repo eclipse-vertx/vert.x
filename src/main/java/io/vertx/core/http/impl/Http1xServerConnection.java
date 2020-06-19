@@ -469,7 +469,14 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       } else {
         version = HttpVersion.HTTP_1_1;
       }
-      HttpResponseStatus status = causeMsg.startsWith("An HTTP line is larger than") ? HttpResponseStatus.REQUEST_URI_TOO_LONG : HttpResponseStatus.BAD_REQUEST;
+      HttpResponseStatus status;
+      if (causeMsg.startsWith("An HTTP line is larger than")) {
+        status = HttpResponseStatus.REQUEST_URI_TOO_LONG;
+      } else if (causeMsg.startsWith("HTTP header is larger than")) {
+        status = HttpResponseStatus.REQUEST_HEADER_FIELDS_TOO_LARGE;
+      } else {
+        status = HttpResponseStatus.BAD_REQUEST;
+      }
       DefaultFullHttpResponse resp = new DefaultFullHttpResponse(version, status);
       ChannelPromise fut = chctx.newPromise();
       writeToChannel(resp, fut);

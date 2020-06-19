@@ -2674,7 +2674,7 @@ public class Http1xTest extends HttpTest {
                 assertEquals(200, resp.statusCode());
                 testComplete();
               } else {
-                assertEquals(400, resp.statusCode());
+                assertEquals(431, resp.statusCode());
                 resp.request().connection().closeHandler(v -> {
                   testComplete();
                 });
