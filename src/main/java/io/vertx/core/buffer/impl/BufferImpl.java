@@ -13,15 +13,10 @@ package io.vertx.core.buffer.impl;
 
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import io.netty.buffer.UnpooledHeapByteBuf;
-import io.netty.buffer.UnpooledUnsafeHeapByteBuf;
 import io.netty.util.CharsetUtil;
-import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.ByteBufUtils;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -30,83 +25,35 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Objects;
 
-import static io.netty.util.internal.ObjectUtil.checkPositiveOrZero;
-
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class BufferImpl implements Buffer {
 
-  // this wrapper is used to save copying byte[]
-  public static final class UnpooledWrappedByteBuf extends UnpooledHeapByteBuf {
-
-    protected UnpooledWrappedByteBuf(ByteBufAllocator alloc, byte[] initialArray, int maxCapacity) {
-      super(alloc, initialArray, maxCapacity);
-    }
-  }
-
   private ByteBuf buffer;
-
-  private static UnpooledHeapByteBuf unpooledNotInstrumentedHeapByteBuf(int initialCapacity, int maxCapacity) {
-    // this save instrumented heap ByteBuf allocation that would save statistics collection
-    return PlatformDependent.hasUnsafe() ?
-      new UnpooledUnsafeHeapByteBuf(UnpooledByteBufAllocator.DEFAULT, initialCapacity, maxCapacity) :
-      new UnpooledHeapByteBuf(UnpooledByteBufAllocator.DEFAULT, initialCapacity, maxCapacity);
-  }
 
   public BufferImpl() {
     this(0);
   }
 
   BufferImpl(int initialSizeHint) {
-    checkPositiveOrZero(initialSizeHint, "initialCapacity");
-    buffer = unpooledNotInstrumentedHeapByteBuf(initialSizeHint, Integer.MAX_VALUE);
+    buffer = ByteBufUtils.unpooledNotInstrumentedHeapByteBuf(initialSizeHint, Integer.MAX_VALUE);
   }
 
   BufferImpl(byte[] bytes) {
-    buffer = unpooledNotInstrumentedHeapByteBuf(bytes.length, Integer.MAX_VALUE).writeBytes(bytes);
+    buffer = ByteBufUtils.unpooledNotInstrumentedHeapByteBuf(bytes.length, Integer.MAX_VALUE).writeBytes(bytes);
   }
 
   BufferImpl(String str, String enc) {
-    buffer = buffer(str, enc);
-  }
-
-  private static ByteBuf buffer(String str, String enc) {
-    final Charset charset = Charset.forName(Objects.requireNonNull(enc));
-    return buffer(str, charset);
-  }
-
-  private static ByteBuf buffer(String str, Charset charset) {
-    if (charset.equals(CharsetUtil.UTF_8)) {
-      return utf8Buffer(str);
-    }
-    if (charset.equals(CharsetUtil.US_ASCII) || charset.equals(CharsetUtil.ISO_8859_1)) {
-      return usAsciiBuffer(str);
-    }
-    final byte[] bytes = str.getBytes(charset);
-    return new UnpooledWrappedByteBuf(UnpooledByteBufAllocator.DEFAULT, bytes, Integer.MAX_VALUE);
-  }
-
-  private static ByteBuf utf8Buffer(String str) {
-    final int utf8Bytes = ByteBufUtil.utf8Bytes(str);
-    final UnpooledHeapByteBuf buffer = unpooledNotInstrumentedHeapByteBuf(utf8Bytes, Integer.MAX_VALUE);
-    ByteBufUtil.reserveAndWriteUtf8(buffer, str, utf8Bytes);
-    return buffer;
-  }
-
-  private static ByteBuf usAsciiBuffer(String str) {
-    final int asciiBytes = str.length();
-    final UnpooledHeapByteBuf buffer = unpooledNotInstrumentedHeapByteBuf(asciiBytes, Integer.MAX_VALUE);
-    ByteBufUtil.writeAscii(buffer, str);
-    return buffer;
+    buffer = ByteBufUtils.unpooledBufferOf(str, enc);
   }
 
   BufferImpl(String str, Charset cs) {
-    buffer = buffer(str, cs);
+    buffer = ByteBufUtils.unpooledBufferOf(str, cs);
   }
 
   BufferImpl(String str) {
-    this.buffer = utf8Buffer(str);
+    this.buffer = ByteBufUtils.utf8UnpooledBufferOf(str);
   }
 
   BufferImpl(ByteBuf buffer) {
