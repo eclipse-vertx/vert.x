@@ -12,6 +12,7 @@
 package io.vertx.core.buffer;
 
 import io.netty.buffer.*;
+import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.netty.util.internal.PlatformDependent;
 
@@ -19,6 +20,7 @@ import java.nio.charset.Charset;
 import java.util.Objects;
 
 import static io.netty.util.internal.ObjectUtil.checkPositiveOrZero;
+import static io.netty.util.internal.StringUtil.isSurrogate;
 
 public final class ByteBufUtils {
   private ByteBufUtils() {
@@ -47,28 +49,78 @@ public final class ByteBufUtils {
   }
 
   public static ByteBuf unpooledBufferOf(String str, Charset charset) {
+    final byte[] bytes;
     if (charset.equals(CharsetUtil.UTF_8)) {
-      return utf8UnpooledBufferOf(str);
+      bytes = new byte[ByteBufUtil.utf8Bytes(str)];
+      writeUtf8(bytes, 0, str, 0, str.length());
+    } else if (charset.equals(CharsetUtil.US_ASCII) || charset.equals(CharsetUtil.ISO_8859_1)) {
+      bytes = new byte[str.length()];
+      writeAscii(bytes, 0, str, str.length());
+    } else {
+      bytes = str.getBytes(charset);
     }
-    if (charset.equals(CharsetUtil.US_ASCII) || charset.equals(CharsetUtil.ISO_8859_1)) {
-      return usAsciiUnpooledBufferOf(str);
-    }
-    final byte[] bytes = str.getBytes(charset);
     return new UnpooledWrappedByteBuf(UnpooledByteBufAllocator.DEFAULT, bytes, Integer.MAX_VALUE);
   }
 
   public static ByteBuf utf8UnpooledBufferOf(String str) {
-    final int utf8Bytes = ByteBufUtil.utf8Bytes(str);
-    final UnpooledHeapByteBuf buffer = unpooledNotInstrumentedHeapByteBuf(utf8Bytes, Integer.MAX_VALUE);
-    ByteBufUtil.reserveAndWriteUtf8(buffer, str, utf8Bytes);
-    return buffer;
+    byte[] bytes = new byte[ByteBufUtil.utf8Bytes(str)];
+    writeUtf8(bytes, 0, str, 0, str.length());
+    return new UnpooledWrappedByteBuf(UnpooledByteBufAllocator.DEFAULT, bytes, Integer.MAX_VALUE);
   }
 
-  public static ByteBuf usAsciiUnpooledBufferOf(String str) {
-    final int asciiBytes = str.length();
-    final UnpooledHeapByteBuf buffer = unpooledNotInstrumentedHeapByteBuf(asciiBytes, Integer.MAX_VALUE);
-    ByteBufUtil.writeAscii(buffer, str);
-    return buffer;
+  private static final byte WRITE_UTF_UNKNOWN = (byte) '?';
+
+  static int writeAscii(byte[] buffer, int writerIndex, CharSequence seq, int len) {
+    for (int i = 0; i < len; i++) {
+      buffer[writerIndex++] = AsciiString.c2b(seq.charAt(i));
+    }
+    return len;
+  }
+
+  // Fast-Path implementation
+  private static int writeUtf8(byte[] buffer, int writerIndex, CharSequence seq, int start, int end) {
+    int oldWriterIndex = writerIndex;
+    for (int i = start; i < end; i++) {
+      char c = seq.charAt(i);
+      if (c < 0x80) {
+        buffer[writerIndex++] = (byte) c;
+      } else if (c < 0x800) {
+        buffer[writerIndex++] = (byte) (0xc0 | (c >> 6));
+        buffer[writerIndex++] = (byte) (0x80 | (c & 0x3f));
+      } else if (isSurrogate(c)) {
+        if (!Character.isHighSurrogate(c)) {
+          buffer[writerIndex++] = WRITE_UTF_UNKNOWN;
+          continue;
+        }
+        // Surrogate Pair consumes 2 characters.
+        if (++i == end) {
+          buffer[writerIndex++] = WRITE_UTF_UNKNOWN;
+          break;
+        }
+        // Extra method to allow inlining the rest of writeUtf8 which is the most likely code path.
+        writerIndex = writeUtf8Surrogate(buffer, writerIndex, c, seq.charAt(i));
+      } else {
+        buffer[writerIndex++] = (byte) (0xe0 | (c >> 12));
+        buffer[writerIndex++] = (byte) (0x80 | ((c >> 6) & 0x3f));
+        buffer[writerIndex++] = (byte) (0x80 | (c & 0x3f));
+      }
+    }
+    return writerIndex - oldWriterIndex;
+  }
+
+  private static int writeUtf8Surrogate(byte[] buffer, int writerIndex, char c, char c2) {
+    if (!Character.isLowSurrogate(c2)) {
+      buffer[writerIndex++] = WRITE_UTF_UNKNOWN;
+      buffer[writerIndex++] = (byte) (Character.isHighSurrogate(c2) ? WRITE_UTF_UNKNOWN : c2);
+      return writerIndex;
+    }
+    int codePoint = Character.toCodePoint(c, c2);
+    // See http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G2630.
+    buffer[writerIndex++] = (byte) (0xf0 | (codePoint >> 18));
+    buffer[writerIndex++] = (byte) (0x80 | ((codePoint >> 12) & 0x3f));
+    buffer[writerIndex++] = (byte) (0x80 | ((codePoint >> 6) & 0x3f));
+    buffer[writerIndex++] = (byte) (0x80 | (codePoint & 0x3f));
+    return writerIndex;
   }
 
 }
