@@ -45,7 +45,17 @@ public final class ByteBufUtils {
 
   public static ByteBuf unpooledBufferOf(String str, String enc) {
     final Charset charset = Charset.forName(Objects.requireNonNull(enc));
-    return unpooledBufferOf(str, charset);
+    final byte[] bytes;
+    if (charset.equals(CharsetUtil.UTF_8)) {
+      bytes = new byte[ByteBufUtil.utf8Bytes(str)];
+      writeUtf8(bytes, 0, str, 0, str.length());
+    } else if (charset.equals(CharsetUtil.US_ASCII) || charset.equals(CharsetUtil.ISO_8859_1)) {
+      bytes = new byte[str.length()];
+      writeAscii(bytes, 0, str, str.length());
+    } else {
+      bytes = str.getBytes(charset);
+    }
+    return new UnpooledWrappedByteBuf(UnpooledByteBufAllocator.DEFAULT, bytes, Integer.MAX_VALUE);
   }
 
   public static ByteBuf unpooledBufferOf(String str, Charset charset) {
