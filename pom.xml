@@ -21,7 +21,7 @@
 
   <groupId>com.tracelink</groupId>
   <artifactId>vertx-core</artifactId>
-  <version>4.0.0-milestone5-SNAPSHOT</version>
+  <version>4.0.0-milestone5-tl-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -227,7 +227,6 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven.surefire.plugin.version}</version>
           <configuration>
-            <skipTests>false</skipTests>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <additionalClasspathElements>
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
