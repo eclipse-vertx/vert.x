@@ -19,8 +19,9 @@
     <version>15</version>
   </parent>
 
+  <groupId>com.tracelink</groupId>
   <artifactId>vertx-core</artifactId>
-  <version>4.1.0-SNAPSHOT</version>
+  <version>4.0.0-milestone5-tl</version>
 
   <name>Vert.x Core</name>
 
