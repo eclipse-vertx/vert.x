@@ -58,6 +58,7 @@
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
+    <git.hash>none</git.hash>
   </properties>
 
   <dependencyManagement>
@@ -296,6 +297,7 @@
                 <archive>
                   <manifestEntries>
                     <Multi-Release>true</Multi-Release>
+                    <Git-Hash>${git.hash}</Git-Hash>
                   </manifestEntries>
                 </archive>
               </configuration>
