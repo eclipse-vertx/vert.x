@@ -243,6 +243,7 @@
               <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
               <vertx.threadChecks>true</vertx.threadChecks>
             </systemPropertyVariables>
+            <useSystemClassLoader>false</useSystemClassLoader>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->
             <argLine>-Xmx1200M ${jetty.alpnAgent.argLine}</argLine>
