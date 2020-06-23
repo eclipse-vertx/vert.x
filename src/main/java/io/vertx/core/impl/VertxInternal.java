@@ -15,6 +15,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
@@ -109,6 +110,8 @@ public interface VertxInternal extends Vertx {
 
   ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
 
+  ContextInternal createEventLoopContext();
+
   /**
    * @return worker loop context
    */
@@ -144,6 +147,8 @@ public interface VertxInternal extends Vertx {
    * Like {@link #executeBlocking(Handler, Handler)} but using the internal worker thread pool.
    */
   <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
+
+  <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler);
 
   ClusterManager getClusterManager();
 

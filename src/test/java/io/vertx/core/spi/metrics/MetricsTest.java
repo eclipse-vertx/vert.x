@@ -964,7 +964,8 @@ public class MetricsTest extends VertxTestBase {
           hadWaitingQueue.set(true);
         }
         fut.complete();
-      }, ar -> {
+      }, false
+        ,ar -> {
         if (metrics.numberOfIdleThreads() > 0) {
           hadIdle.set(true);
         }

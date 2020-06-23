@@ -27,6 +27,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -203,6 +204,44 @@ public class VertxTest extends AsyncTestBase {
         RUNNER.runSystemGC();
         if (ref.get() == null) {
           assertTrue(closed.get());
+          break;
+        }
+      }
+    } finally {
+      vertx.close(ar -> {
+        testComplete();
+      });
+    }
+    await();
+  }
+
+
+  @Test
+  public void testStickContextFinalization() throws Exception {
+    Vertx vertx = Vertx.vertx();
+    try {
+      AtomicReference<WeakReference<Context>> ref = new AtomicReference<>();
+      Thread t = new Thread(() -> {
+        Context context = vertx.getOrCreateContext();
+        ref.set(new WeakReference<>(context));
+        CountDownLatch latch = new CountDownLatch(1);
+        context.runOnContext(v -> {
+          latch.countDown();
+        });
+        try {
+          latch.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      });
+      t.start();
+      t.join(10_000);
+      t = null;
+      long now = System.currentTimeMillis();
+      while (true) {
+        assertTrue(System.currentTimeMillis() - now < 20_000);
+        RUNNER.runSystemGC();
+        if (ref.get().get() == null) {
           break;
         }
       }

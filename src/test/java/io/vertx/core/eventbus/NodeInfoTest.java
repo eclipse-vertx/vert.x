@@ -35,6 +35,8 @@ public class NodeInfoTest extends VertxTestBase {
     ClusterManager clusterManager = ((VertxInternal) vertices[0]).getClusterManager();
     // Create unknown node identifier
     String unknown = String.join("", clusterManager.getNodes());
+    // Needed as callback might be done from non Vert.x thread
+    disableThreadChecks();
     Promise<NodeInfo> promise = Promise.promise();
     clusterManager.getNodeInfo(unknown, promise);
     promise.future().onComplete(onFailure(t -> testComplete()));

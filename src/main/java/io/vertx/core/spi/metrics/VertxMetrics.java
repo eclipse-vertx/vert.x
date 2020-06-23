@@ -11,7 +11,6 @@
 
 package io.vertx.core.spi.metrics;
 
-import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -31,28 +30,6 @@ import io.vertx.core.net.*;
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
 public interface VertxMetrics extends Metrics, Measured {
-
-  /**
-   * Called when a verticle is deployed in Vert.x .<p/>
-   * <p>
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the deployed verticle and therefore
-   * might be  different on every invocation.
-   *
-   * @param verticle the verticle which was deployed
-   */
-  default void verticleDeployed(Verticle verticle) {
-  }
-
-  /**
-   * Called when a verticle is undeployed in Vert.x .<p/>
-   * <p>
-   * This method is invoked with {@link io.vertx.core.Context} and thread of the deployed verticle and therefore
-   * might be  different on every invocation, however these are the same than the {@link #verticleDeployed} invocation.
-   *
-   * @param verticle the verticle which was undeployed
-   */
-  default void verticleUndeployed(Verticle verticle) {
-  }
 
   /**
    * Provides the event bus metrics SPI when the event bus is created.<p/>
