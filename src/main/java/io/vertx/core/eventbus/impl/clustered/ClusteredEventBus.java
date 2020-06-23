@@ -187,7 +187,8 @@ public class ClusteredEventBus extends EventBusImpl {
         promise.future().onFailure(t -> log.error("Failed to remove sub", t));
       }
     } else {
-      completionHandler.complete();
+      removeLocalRegistration(handlerHolder);
+      onLocalUnregistration(handlerHolder, completionHandler);
     }
   }
 

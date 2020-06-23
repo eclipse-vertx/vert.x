@@ -94,7 +94,10 @@ public class VertxStartFailureTest extends AsyncTestBase {
         throw expected;
       }
     };
-    VertxOptions options = new VertxOptions().setClusterManager(clusterManager);
+    VertxOptions options = new VertxOptions()
+      .setClusterManager(clusterManager)
+      .setHAEnabled(true);
+
     Throwable failure = failStart(options);
     assertSame(expected,  failure);
   }
