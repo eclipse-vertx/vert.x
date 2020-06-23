@@ -48,13 +48,11 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   protected final ConcurrentMap<String, ConcurrentCyclicSequence<HandlerHolder>> handlerMap = new ConcurrentHashMap<>();
   protected final CodecManager codecManager = new CodecManager();
   protected volatile boolean started;
-  private final ContextInternal sendNoContext;
 
   public EventBusImpl(VertxInternal vertx) {
     VertxMetrics metrics = vertx.metricsSPI();
     this.vertx = vertx;
     this.metrics = metrics != null ? metrics.createEventBusMetrics() : null;
-    this.sendNoContext = vertx.getOrCreateContext();
   }
 
   @Override
@@ -303,12 +301,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     if (replyMessage.address() == null) {
       throw new IllegalStateException("address not specified");
     } else {
-      ContextInternal ctx = vertx.getOrCreateContext();
-      if (ctx == null) {
-        // Guarantees the order when there is no current context in clustered mode
-        ctx = sendNoContext;
-      }
-      sendOrPubInternal(new OutboundDeliveryContext<>(ctx, replyMessage, options, replyHandler, null));
+      sendOrPubInternal(new OutboundDeliveryContext<>(vertx.getOrCreateContext(), replyMessage, options, replyHandler, null));
     }
   }
 
@@ -392,12 +385,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   public <T> OutboundDeliveryContext<T> newSendContext(MessageImpl message, DeliveryOptions options,
                                                ReplyHandler<T> handler, Promise<Void> writePromise) {
-    ContextInternal ctx = vertx.getContext();
-    if (ctx == null) {
-      // Guarantees the order when there is no current context in clustered mode
-      ctx = sendNoContext;
-    }
-    return new OutboundDeliveryContext<>(ctx, message, options, handler, writePromise);
+    return new OutboundDeliveryContext<>(vertx.getOrCreateContext(), message, options, handler, writePromise);
   }
 
   public <T> void sendOrPubInternal(OutboundDeliveryContext<T> senderCtx) {

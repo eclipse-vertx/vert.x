@@ -78,7 +78,7 @@ public class EventBusRegistrationRaceTest extends VertxTestBase {
     threadB.start();
     threadA.join(20 * 1000);
     threadB.join(20 * 1000);
-    assertEquals(0, count.get());
+    assertWaitUntil(() -> count.get() == 0);
   }
 
   private void threadA(AtomicInteger seq) {

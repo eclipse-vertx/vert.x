@@ -212,10 +212,6 @@ public class DeploymentManager {
                   return;
                 }
               }
-              VertxMetrics metrics = vertx.metricsSPI();
-              if (metrics != null) {
-                metrics.verticleDeployed(verticle);
-              }
               deployments.put(deploymentID, deployment);
               if (deployCount.incrementAndGet() == verticles.length) {
                 promise.complete(deployment);
@@ -345,10 +341,6 @@ public class DeploymentManager {
             Future<Void> stopFuture = stopPromise.future();
             stopFuture.onComplete(ar -> {
               deployments.remove(deploymentID);
-              VertxMetrics metrics = vertx.metricsSPI();
-              if (metrics != null) {
-                metrics.verticleUndeployed(verticleHolder.verticle);
-              }
               verticleHolder.closeHooks.run(ar2 -> {
                 if (ar2.failed()) {
                   // Log error but we report success anyway

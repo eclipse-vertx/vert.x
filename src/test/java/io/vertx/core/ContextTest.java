@@ -809,4 +809,10 @@ public class ContextTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testSticky() {
+    Context ctx = vertx.getOrCreateContext();
+    assertSame(ctx, vertx.getOrCreateContext());
+  }
 }

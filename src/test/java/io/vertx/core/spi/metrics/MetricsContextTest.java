@@ -807,54 +807,6 @@ public class MetricsContextTest extends VertxTestBase {
     await();
   }
 
-  @Test
-  public void testDeployEventLoop() {
-    testDeploy(false);
-  }
-
-  @Test
-  public void testDeployWorker() {
-    testDeploy(true);
-  }
-
-  private void testDeploy(boolean worker) {
-    AtomicReference<Thread> verticleThread = new AtomicReference<>();
-    AtomicReference<Context> verticleContext = new AtomicReference<>();
-    AtomicBoolean deployedCalled = new AtomicBoolean();
-    AtomicBoolean undeployedCalled = new AtomicBoolean();
-    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
-      @Override
-      public void verticleDeployed(Verticle verticle) {
-        deployedCalled.set(true);
-        // TODO FIXME
-        // assertTrue(Context.isOnEventLoopThread());
-      }
-      @Override
-      public void verticleUndeployed(Verticle verticle) {
-        undeployedCalled.set(true);
-        // TODO FIXME
-        // assertTrue(Context.isOnEventLoopThread());
-      }
-    };
-    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        verticleThread.set(Thread.currentThread());
-        verticleContext.set(Vertx.currentContext());
-      }
-    }, new DeploymentOptions().setWorker(worker), ar1 -> {
-      assertTrue(ar1.succeeded());
-      vertx.undeploy(ar1.result(), ar2 -> {
-        assertTrue(ar1.succeeded());
-        assertTrue(deployedCalled.get());
-        assertTrue(undeployedCalled.get());
-        testComplete();
-      });
-    });
-    await();
-  }
-
   private void executeInVanillaThread(Runnable task) {
     new Thread(task).start();
   }
