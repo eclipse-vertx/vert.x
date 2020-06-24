@@ -4939,4 +4939,33 @@ public class Http1xTest extends HttpTest {
       .onComplete(onFailure(err -> complete())).end();
     await();
   }
+
+  @Test
+  public void testClientNetSocketPooling() {
+    int maxPoolSize = 5; // Default
+    int num = 6;
+    waitFor(num);
+    server.requestHandler(req -> {
+      NetSocket so = req.netSocket();
+      vertx.setTimer(200, id -> {
+        so.close();
+      });
+    });
+    server.listen(onSuccess(s -> {
+      AtomicInteger count = new AtomicInteger();
+      for (int i = 0;i < num;i++) {
+        HttpClientRequest req = client.request(HttpMethod.CONNECT, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).onComplete(onSuccess(resp -> {
+        }));
+        req.netSocket(onSuccess(so -> {
+          int val = count.incrementAndGet();
+          assertTrue("Expected " + val + " <= " + maxPoolSize, val <= maxPoolSize);
+          so.closeHandler(v -> {
+            count.decrementAndGet();
+            complete();
+          });
+        })).end();
+      }
+    }));
+    await();
+  }
 }
