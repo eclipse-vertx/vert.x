@@ -595,8 +595,6 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
              request.method == HttpMethod.GET &&
              request.headers().contains("connection", "Upgrade", false) &&
              response.statusCode() == 101)) {
-          // remove connection from the pool
-          listener.onEvict();
 
           // remove old http handlers
           ChannelPipeline pipeline = chctx.pipeline();
@@ -618,6 +616,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
               if (metrics != null) {
                 metrics.responseEnd(stream.metric, response);
               }
+              // remove connection from the pool
+              listener.onEvict();
               super.handleClosed();
             }
           };
