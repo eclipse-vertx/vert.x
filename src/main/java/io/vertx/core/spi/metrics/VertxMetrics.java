@@ -69,9 +69,10 @@ public interface VertxMetrics extends Metrics, Measured {
    *
    * @param remoteAddress the server remote address
    * @param type the metrics type, e.g {@code http} or {@code ws}
+   * @param namespace an optional namespace for scoping the metrics
    * @return the client metrics SPI or {@code null} when metrics are disabled
    */
-  default ClientMetrics<?, ?, ?, ?> createClientMetrics(SocketAddress remoteAddress, String type) {
+  default ClientMetrics<?, ?, ?, ?> createClientMetrics(SocketAddress remoteAddress, String type, String namespace) {
     return null;
   }
 
