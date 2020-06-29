@@ -6333,4 +6333,18 @@ public abstract class HttpTest extends HttpTestBase {
     awaitLatch(latch);
     assertEquals(1, contexts.size());
   }
+
+  @Test
+  public void testRetrySameHostOnCallbackFailure() {
+    client
+      .get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      .onComplete(onFailure(err1 -> {
+        client
+          .get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+          .onComplete(onFailure(err2 -> {
+            testComplete();
+          }));
+    }));
+    await();
+  }
 }
