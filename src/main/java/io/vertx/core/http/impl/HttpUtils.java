@@ -379,12 +379,12 @@ public final class HttpUtils {
     if (_ref.getScheme() != null) {
       scheme = _ref.getScheme();
       authority = _ref.getAuthority();
-      path = removeDots(_ref.getPath());
+      path = removeDots(_ref.getRawPath());
       query = _ref.getRawQuery();
     } else {
       if (_ref.getAuthority() != null) {
         authority = _ref.getAuthority();
-        path = _ref.getPath();
+        path = _ref.getRawPath();
         query = _ref.getRawQuery();
       } else {
         if (_ref.getPath().length() == 0) {
@@ -396,19 +396,19 @@ public final class HttpUtils {
           }
         } else {
           if (_ref.getPath().startsWith("/")) {
-            path = removeDots(_ref.getPath());
+            path = removeDots(_ref.getRawPath());
           } else {
             // Merge paths
             String mergedPath;
             String basePath = base.getPath();
             if (base.getAuthority() != null && basePath.length() == 0) {
-              mergedPath = "/" + _ref.getPath();
+              mergedPath = "/" + _ref.getRawPath();
             } else {
               int index = basePath.lastIndexOf('/');
               if (index > -1) {
                 mergedPath = basePath.substring(0, index + 1) + _ref.getPath();
               } else {
-                mergedPath = _ref.getPath();
+                mergedPath = _ref.getRawPath();
               }
             }
             path = removeDots(mergedPath);

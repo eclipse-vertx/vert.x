@@ -192,6 +192,14 @@ public class HttpUtilsTest {
     assertEquals("/b/", HttpUtils.normalizePath("/b/c/.."));
   }
 
+  @Test
+  public void testResolveURIEncode() throws Exception {
+    String url = "https://example.com";
+    String ref = "/%7Eusername/";
+    URI uri = HttpUtils.resolveURIReference(url, ref);
+    assertEquals(ref,uri.getPath());
+  }
+
   private void assertResolveUri(String expected, String base, String rel) throws Exception {
     URI resolved = HttpUtils.resolveURIReference(base, rel);
     assertEquals(URI.create(expected), resolved);
