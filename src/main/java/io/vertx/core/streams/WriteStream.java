@@ -46,12 +46,17 @@ public interface WriteStream<T> extends StreamBase {
    * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
    *
    * @param data  the data to write
-   * @return a future completed with the result
+   * @return a future completed when the internal queue got the data
    */
   Future<Void> write(T data);
 
   /**
-   * Same as {@link #write(T)} but with an {@code handler} called when the operation completes
+   * Write some data to the stream. The data is put on an internal write queue, and the write actually happens
+   * asynchronously. To avoid running out of memory by putting too much on the write queue,
+   * check the {@link #writeQueueFull} method before writing. This is done automatically if using a {@link Pump}.
+   *
+   * @param data  the data to write
+   * @param handler  called after the internal queue got the data
    */
   void write(T data, Handler<AsyncResult<Void>> handler);
 
