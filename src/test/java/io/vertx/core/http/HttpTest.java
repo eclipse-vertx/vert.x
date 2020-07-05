@@ -35,6 +35,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.net.ServerSocket;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -3033,6 +3034,11 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testFormUploadWithExtFilename() {
+    testFormUploadFile(null, "%c2%a3%20and%20%e2%82%ac%20rates", "the-content", true, false);
+  }
+
+  @Test
   public void testBrokenFormUploadEmptyFile() {
     testFormUploadFile("", true, true);
   }
@@ -3073,6 +3079,25 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   private void testFormUploadFile(String contentStr, boolean streamToDisk, boolean abortClient) {
+    testFormUploadFile("tmp-0.txt", "tmp-0.txt", contentStr, streamToDisk, abortClient);
+  }
+
+  private void testFormUploadFile(String filename,
+                                  String extFilename,
+                                  String contentStr,
+                                  boolean streamToDisk,
+                                  boolean abortClient) {
+    String expectedFilename;
+    try {
+      if (extFilename != null) {
+        expectedFilename = URLDecoder.decode(extFilename, "UTF-8");
+      } else {
+        expectedFilename = filename;
+      }
+    } catch (UnsupportedEncodingException e) {
+      fail(e);
+      return;
+    }
 
     waitFor(2);
 
@@ -3094,7 +3119,7 @@ public abstract class HttpTest extends HttpTestBase {
         req.uploadHandler(upload -> {
           Buffer tot = Buffer.buffer();
           assertEquals("file", upload.name());
-          assertEquals("tmp-0.txt", upload.filename());
+          assertEquals(expectedFilename, upload.filename());
           assertEquals("image/gif", upload.contentType());
           String uploadedFileName;
           if (!streamToDisk) {
@@ -3166,7 +3191,7 @@ public abstract class HttpTest extends HttpTestBase {
       String epi = "\r\n" +
         "--" + boundary + "--\r\n";
       String pro = "--" + boundary + "\r\n" +
-        "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+        "Content-Disposition: form-data; name=\"file\"" + (filename == null ? "" : "; filename=\"" + filename + "\"" ) + (extFilename == null ? "" : "; filename*=\"UTF-8''" + extFilename) + "\"\r\n" +
         "Content-Type: image/gif\r\n" +
         "\r\n";
       req.headers().set("content-length", "" + (pro + contentStr + epi).length());
