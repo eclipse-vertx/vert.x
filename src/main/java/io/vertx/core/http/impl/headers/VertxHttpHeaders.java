@@ -90,7 +90,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
     for (Object vstr: values) {
-      add0(h, i, name, (String) vstr);
+      add0(h, i, name, (CharSequence) vstr);
     }
     return this;
   }
