@@ -124,6 +124,17 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return the Integer, or null if a null value present
    * @throws java.lang.ClassCastException if the value cannot be converted to Integer
    */
+  public Number getNumber(int pos) {
+    return (Number) list.get(pos);
+  }
+
+  /**
+   * Get the Integer at position {@code pos} in the array,
+   *
+   * @param pos the position in the array
+   * @return the Integer, or null if a null value present
+   * @throws java.lang.ClassCastException if the value cannot be converted to Integer
+   */
   public Integer getInteger(int pos) {
     Number number = (Number) list.get(pos);
     if (number == null) {
