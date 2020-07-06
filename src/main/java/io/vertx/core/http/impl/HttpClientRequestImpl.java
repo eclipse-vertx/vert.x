@@ -196,8 +196,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized boolean writeQueueFull() {
-    checkEnded();
+  public boolean writeQueueFull() {
     synchronized (this) {
       checkEnded();
       if (stream == null) {
