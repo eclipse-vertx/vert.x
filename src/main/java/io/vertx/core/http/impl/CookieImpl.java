@@ -133,6 +133,11 @@ public class CookieImpl implements ServerCookie {
   }
 
   @Override
+  public boolean isSecure() {
+    return nettyCookie.isSecure();
+  }
+
+  @Override
   public Cookie setHttpOnly(final boolean httpOnly) {
     nettyCookie.setHttpOnly(httpOnly);
     this.changed = true;
@@ -140,10 +145,20 @@ public class CookieImpl implements ServerCookie {
   }
 
   @Override
+  public boolean isHttpOnly() {
+    return nettyCookie.isHttpOnly();
+  }
+
+  @Override
   public Cookie setSameSite(final CookieSameSite sameSite) {
     this.sameSite = sameSite;
     this.changed = true;
     return this;
+  }
+
+  @Override
+  public CookieSameSite getSameSite() {
+    return this.sameSite;
   }
 
   @Override
