@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.CookieSameSite;
 
