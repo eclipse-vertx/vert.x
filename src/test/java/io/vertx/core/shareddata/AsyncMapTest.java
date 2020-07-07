@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Red Hat, Inc. and others
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -299,74 +299,76 @@ public abstract class AsyncMapTest extends VertxTestBase {
 
   @Test
   public void testMapRemoveIfPresentByte() {
-    testMapRemoveIfPresent((byte)1, (byte)2, (byte)3);
+    testMapRemoveIfPresent((byte) 1, (byte) 2, (byte) 3, (byte) 4);
   }
 
   @Test
   public void testMapRemoveIfPresentShort() {
-    testMapRemoveIfPresent((short)1, (short)2, (short)3);
+    testMapRemoveIfPresent((short) 1, (short) 2, (short) 3, (short) 4);
   }
 
   @Test
   public void testMapRemoveIfPresentInt() {
-    testMapRemoveIfPresent(1, 2, 3);
+    testMapRemoveIfPresent(1, 2, 3, 4);
   }
 
   @Test
   public void testMapRemoveIfPresentLong() {
-    testMapRemoveIfPresent(1l, 2l, 3l);
+    testMapRemoveIfPresent(1l, 2l, 3l, 4l);
   }
 
   @Test
   public void testMapRemoveIfPresentChar() {
-    testMapRemoveIfPresent('X', 'Y', 'Z');
+    testMapRemoveIfPresent('W', 'X', 'Y', 'Z');
   }
 
   @Test
   public void testMapRemoveIfPresentFloat() {
-    testMapRemoveIfPresent(1.2f, 2.2f, 3.3f);
+    testMapRemoveIfPresent(1.2f, 2.2f, 3.2f, 4.2f);
   }
 
   @Test
   public void testMapRemoveIfPresentBuffer() {
-    testMapRemoveIfPresent(randomBuffer(4), randomBuffer(12), randomBuffer(14));
+    testMapRemoveIfPresent(randomBuffer(4), randomBuffer(4), randomBuffer(12), randomBuffer(14));
   }
 
   @Test
   public void testMapRemoveIfPresentDouble() {
-    testMapRemoveIfPresent(1.2d, 2.2d, 3.3d);
+    testMapRemoveIfPresent(1.2d, 2.2d, 3.2d, 4.2d);
   }
 
   @Test
   public void testMapRemoveIfPresentBoolean() {
-    testMapRemoveIfPresent("foo", true, false);
+    testMapRemoveIfPresent("foo", "bar", true, false);
   }
 
   @Test
   public void testMapRemoveIfPresentString() {
-    testMapRemoveIfPresent("foo", "bar", "quux");
+    testMapRemoveIfPresent("foo", "bar", "baz", "quux");
   }
 
   @Test
   public void testMapRemoveIfPresentJsonObject() {
-    testMapRemoveIfPresent(new JsonObject().put("foo", "bar"), new JsonObject().put("uihwqduh", "qiwiojw"),
-                           new JsonObject().put("regerg", "wfwef"));
+    testMapRemoveIfPresent(
+      new JsonObject().put("foo", "bar"), new JsonObject().put("baz", "quux"),
+      new JsonObject().put("uihwqduh", "qiwiojw"), new JsonObject().put("regerg", "wfwef"));
   }
 
   @Test
   public void testMapRemoveIfPresentJsonArray() {
-    testMapRemoveIfPresent(new JsonArray().add("foo").add(2), new JsonArray().add("uihwqduh").add(false),
-                           new JsonArray().add("qqddq").add(true));
+    testMapRemoveIfPresent(
+      new JsonArray().add("foo").add(2), new JsonArray().add("bar").add(4),
+      new JsonArray().add("uihwqduh").add(false), new JsonArray().add("qqddq").add(true));
   }
 
   @Test
   public void testMapRemoveIfPresentSerializableObject() {
-    testMapRemoveIfPresent(new SomeSerializableObject("foo"), new SomeSerializableObject("bar"), new SomeSerializableObject("quux"));
+    testMapRemoveIfPresent(new SomeSerializableObject("foo"), new SomeSerializableObject("bar"), new SomeSerializableObject("baz"), new SomeSerializableObject("quux"));
   }
 
   @Test
   public void testMapRemoveIfPresentClusterSerializableObject() {
-    testMapRemoveIfPresent(new SomeClusterSerializableObject("foo"), new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("quux"));
+    testMapRemoveIfPresent(new SomeClusterSerializableObject("foo"), new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("baz"), new SomeClusterSerializableObject("quux"));
   }
 
   @Test
@@ -741,16 +743,19 @@ public abstract class AsyncMapTest extends VertxTestBase {
     await();
   }
 
-  private <K, V> void testMapRemoveIfPresent(K k, V v, V other) {
+  private <K, V> void testMapRemoveIfPresent(K k, K otherKey, V v, V otherValue) {
     getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map -> {
       map.put(k, v, onSuccess(res -> {
         assertNull(res);
         getVertx().sharedData().<K, V>getAsyncMap("foo", onSuccess(map2 -> {
-          map2.removeIfPresent(k, other, onSuccess(res2 -> {
+          map2.removeIfPresent(otherKey, v, onSuccess(res2 -> {
             assertFalse(res2);
-            map2.removeIfPresent(k, v, onSuccess(res3 -> {
-              assertTrue(res3);
-              testComplete();
+            map2.removeIfPresent(k, otherValue, onSuccess(res3 -> {
+              assertFalse(res3);
+              map2.removeIfPresent(k, v, onSuccess(res4 -> {
+                assertTrue(res4);
+                testComplete();
+              }));
             }));
           }));
         }));
