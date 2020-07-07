@@ -38,8 +38,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private String path;
   private String query;
   private final PromiseInternal<HttpClientResponse> responsePromise;
-  private long currentTimeoutTimerId = -1;
-  private long currentTimeoutMs;
+  long currentTimeoutTimerId = -1;
+  long currentTimeoutMs;
   private long lastDataReceived;
 
   HttpClientRequestBase(HttpClientImpl client, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
@@ -146,8 +146,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
         }
       }
     }
-    String msg = "The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + server;
-    reset(new NoStackTraceTimeoutException(msg));
+    reset(timeoutEx(timeoutMs, method, server, uri));
+  }
+
+  static NoStackTraceTimeoutException timeoutEx(long timeoutMs, HttpMethod method, SocketAddress server, String uri) {
+    return new NoStackTraceTimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + server);
   }
 
   synchronized void dataReceived() {

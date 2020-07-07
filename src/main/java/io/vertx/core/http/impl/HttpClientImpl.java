@@ -29,7 +29,6 @@ import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
@@ -98,7 +97,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
         if (query != null) {
           requestURI += "?" + query;
         }
-        return Future.succeededFuture(createRequest(m, null, uri.getHost(), port, ssl, requestURI, null));
+        RequestOptions options = new RequestOptions();
+        options.setMethod(m);
+        options.setHost(uri.getHost());
+        options.setPort(port);
+        options.setSsl(ssl);
+        options.setURI(requestURI);
+        return request(options);
       }
       return null;
     } catch (Exception e) {
@@ -360,22 +365,22 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
 
   @Override
   public void send(RequestOptions options, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(options.getMethod(), getHost(options.getHost()), getPort(options.getPort()), options.getURI(), options.getHeaders(), options.isSsl(), options.getFollowRedirects(), options.getTimeout(), body, responseHandler);
+    send(options.getServer(), options.getMethod(), getHost(options.getHost()), getPort(options.getPort()), options.getURI(), options.getHeaders(), options.isSsl(), options.getFollowRedirects(), options.getTimeout(), options.getAuthority(), body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(RequestOptions options, ReadStream<Buffer> body) {
-    return send(options.getMethod(), getHost(options.getHost()), getPort(options.getPort()), options.getURI(), options.getHeaders(), options.isSsl(), options.getFollowRedirects(), options.getTimeout(), body);
+    return send__(options.getServer(), options.getMethod(), getHost(options.getHost()), getPort(options.getPort()), options.getURI(), options.getHeaders(), options.isSsl(), options.getFollowRedirects(), options.getTimeout(), options.getAuthority(), body);
   }
 
   @Override
   public void send(RequestOptions options, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(options.getMethod(), getHost(options.getHost()), getPort(options.getPort()), options.getURI(), options.getHeaders(), options.isSsl(), options.getFollowRedirects(), options.getTimeout(), body, responseHandler);
+    send(options.getServer(), options.getMethod(), getHost(options.getHost()), getPort(options.getPort()), options.getURI(), options.getHeaders(), options.isSsl(), options.getFollowRedirects(), options.getTimeout(), options.getAuthority(), body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(RequestOptions options, Buffer body) {
-    return send(options.getMethod(), getHost(options.getHost()), getPort(options.getPort()), options.getURI(), options.getHeaders(), options.isSsl(), options.getFollowRedirects(), options.getTimeout(), body);
+    return send__(options.getServer(), options.getMethod(), getHost(options.getHost()), getPort(options.getPort()), options.getURI(), options.getHeaders(), options.isSsl(), options.getFollowRedirects(), options.getTimeout(), options.getAuthority(), body);
   }
 
   @Override
@@ -390,22 +395,22 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
 
   @Override
   public void send(HttpMethod method, int port, String host, String requestURI, MultiMap headers, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, host, port, requestURI, headers, null, false, 0, body, responseHandler);
+    send(null, method, host, port, requestURI, headers, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, int port, String host, String requestURI, MultiMap headers, Buffer body) {
-    return send(method, host, port, requestURI, headers, null, false, 0, body);
+    return send__(null, method, host, port, requestURI, headers, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, int port, String host, String requestURI, MultiMap headers, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, host, port, requestURI, headers, null, false, 0, body, responseHandler);
+    send(null, method, host, port, requestURI, headers, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, int port, String host, String requestURI, MultiMap headers, ReadStream<Buffer> body) {
-    return send(method, host, port, requestURI, headers, null, false, 0, body);
+    return send__(null, method, host, port, requestURI, headers, null, false, 0, null, body);
   }
 
   @Override
@@ -420,22 +425,22 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
 
   @Override
   public void send(HttpMethod method, int port, String host, String requestURI, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, host, port, requestURI, null, null, false, 0, body, responseHandler);
+    send(null, method, host, port, requestURI, null, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, int port, String host, String requestURI, ReadStream<Buffer> body) {
-    return send(method, host, port, requestURI, null, null, false, 0, body);
+    return send__(null, method, host, port, requestURI, null, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, int port, String host, String requestURI, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, host, port, requestURI, null, null, false, 0, body, responseHandler);
+    send(null, method, host, port, requestURI, null, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, int port, String host, String requestURI, Buffer body) {
-    return send(method, host, port, requestURI, null, null, false, 0, body);
+    return send__(null, method, host, port, requestURI, null, null, false, 0, null, body);
   }
 
   @Override
@@ -450,52 +455,52 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
 
   @Override
   public void send(HttpMethod method, String host, String requestURI, MultiMap headers, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, host, options.getDefaultPort(), requestURI, headers, null, false, 0, body, responseHandler);
+    send(null, method, host, options.getDefaultPort(), requestURI, headers, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String host, String requestURI, MultiMap headers, Buffer body) {
-    return send(method, host, options.getDefaultPort(), requestURI, headers, null, false, 0, body);
+    return send__(null, method, host, options.getDefaultPort(), requestURI, headers, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, String host, String requestURI, MultiMap headers, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, host, options.getDefaultPort(), requestURI, headers, null, false, 0, body, responseHandler);
+    send(null, method, host, options.getDefaultPort(), requestURI, headers, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String host, String requestURI, MultiMap headers, ReadStream<Buffer> body) {
-    return send(method, host, options.getDefaultPort(), requestURI, headers, null, false, 0, body);
+    return send__(null, method, host, options.getDefaultPort(), requestURI, headers, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, String host, String requestURI, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, host, options.getDefaultPort(), requestURI, null, null, false, 0, body, responseHandler);
+    send(null, method, host, options.getDefaultPort(), requestURI, null, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String host, String requestURI, Buffer body) {
-    return send(method, host, options.getDefaultPort(), requestURI, null, null, false, 0, body);
+    return send__(null, method, host, options.getDefaultPort(), requestURI, null, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, String host, String requestURI, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, host, options.getDefaultPort(), requestURI, null, null, false, 0, body, responseHandler);
+    send(null, method, host, options.getDefaultPort(), requestURI, null, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String host, String requestURI, ReadStream<Buffer> body) {
-    return send(method, host, options.getDefaultPort(), requestURI, null, null, false, 0, body);
+    return send__(null, method, host, options.getDefaultPort(), requestURI, null, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, String host, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, host, options.getDefaultPort(), requestURI, null, null, false, 0, null, responseHandler);
+    send(null, method, host, options.getDefaultPort(), requestURI, null, null, false, 0, null, null, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String host, String requestURI) {
-    return send(method, host, options.getDefaultPort(), requestURI, null, null, false, 0, null);
+    return send__(null, method, host, options.getDefaultPort(), requestURI, null, null, false, 0, null, null);
   }
 
   @Override
@@ -510,55 +515,56 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
 
   @Override
   public void send(HttpMethod method, String requestURI, MultiMap headers, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, headers, null, false, 0, body, responseHandler);
+    send(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, headers, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String requestURI, MultiMap headers, Buffer body) {
-    return send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, headers, null, false, 0, body);
+    return send__(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, headers, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, String requestURI, MultiMap headers, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, headers, null, false, 0, body, responseHandler);
+    send(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, headers, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String requestURI, MultiMap headers, ReadStream<Buffer> body) {
-    return send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, headers, null, false, 0, body);
+    return send__(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, headers, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, String requestURI, Buffer body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, body, responseHandler);
+    send(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String requestURI, Buffer body) {
-    return send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, body);
+    return send__(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, String requestURI, ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, body, responseHandler);
+    send(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, null, body, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String requestURI, ReadStream<Buffer> body) {
-    return send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, body);
+    return send__(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, null, body);
   }
 
   @Override
   public void send(HttpMethod method, String requestURI, Handler<AsyncResult<HttpClientResponse>> responseHandler) {
-    send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, null, responseHandler);
+    send(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, null, null, responseHandler);
   }
 
   @Override
   public Future<HttpClientResponse> send(HttpMethod method, String requestURI) {
-    return send(method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, null);
+    return send__(null, method, options.getDefaultHost(), options.getDefaultPort(), requestURI, null, null, false, 0, null, null);
   }
 
-  private void send(HttpMethod method,
+  private void send(SocketAddress server,
+                    HttpMethod method,
                     String host,
                     int port,
                     String requestURI,
@@ -566,81 +572,128 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
                     Boolean ssl,
                     boolean followRedirects,
                     long timeout,
+                    String authority,
                     Object body,
                     Handler<AsyncResult<HttpClientResponse>> handler) {
-    send(method, host, port, requestURI, headers, ssl, followRedirects, timeout, body, vertx.promise(handler));
+    send_(server, method, host, port, requestURI, headers, ssl, followRedirects, timeout, body, authority, vertx.promise(handler));
   }
 
-  private Future<HttpClientResponse> send(HttpMethod method,
-                                          String host,
-                                          int port,
-                                          String requestURI,
-                                          MultiMap headers,
-                                          Boolean ssl,
-                                          boolean followRedirects,
-                                          long timeout,
-                                          Object body) {
+  private Future<HttpClientResponse> send__(SocketAddress server,
+                                            HttpMethod method,
+                                            String host,
+                                            int port,
+                                            String requestURI,
+                                            MultiMap headers,
+                                            Boolean ssl,
+                                            boolean followRedirects,
+                                            long timeout,
+                                            String authority,
+                                            Object body) {
     Promise<HttpClientResponse> promise = vertx.promise();
-    send(method, host, port, requestURI, headers, ssl, followRedirects, timeout, body, promise);
+    send(server, method, host, port, requestURI, headers, ssl, followRedirects, timeout, authority, body, promise);
     return promise.future();
   }
 
-  private void send(HttpMethod method,
-                    String host,
-                    int port,
-                    String requestURI,
-                    MultiMap headers,
-                    Boolean ssl,
-                    boolean followRedirects,
-                    long timeout,
-                    Object body,
-                    PromiseInternal<HttpClientResponse> responsePromise) {
-    HttpClientRequestBase req = createRequest(method, null, host, port, ssl, requestURI, headers, responsePromise);
-    req.setFollowRedirects(followRedirects);
-    if (body instanceof Buffer) {
-      req.end((Buffer) body);
-    } else if (body instanceof ReadStream<?>) {
-      ReadStream<Buffer> stream = (ReadStream<Buffer>) body;
-      if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
-        req.setChunked(true);
+  private void send_(SocketAddress server,
+                     HttpMethod method,
+                     String host,
+                     int port,
+                     String requestURI,
+                     MultiMap headers,
+                     Boolean ssl,
+                     boolean followRedirects,
+                     long timeout,
+                     Object body,
+                     String authority,
+                     PromiseInternal<HttpClientResponse> responsePromise) {
+
+    ContextInternal ctx = (ContextInternal) responsePromise.future().context();
+    PromiseInternal<HttpClientRequest> promise = ctx.promise();
+    request(method, server, host, port, ssl, requestURI, headers, authority, 0L, followRedirects, promise);
+    promise.future().onComplete(ar -> {
+      if (ar.succeeded()) {
+        HttpClientRequest req = ar.result();
+        if (authority != null) {
+          req.setAuthority(authority);
+        }
+        req.onComplete(responsePromise);
+        if (body instanceof Buffer) {
+          req.end((Buffer) body);
+        } else if (body instanceof ReadStream<?>) {
+          ReadStream<Buffer> stream = (ReadStream<Buffer>) body;
+          if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+            req.setChunked(true);
+          }
+          stream.pipeTo(req);
+        } else {
+          req.end();
+        }
+        if (timeout > 0) {
+          req.setTimeout(timeout);
+        }
+      } else {
+        responsePromise.fail(ar.cause());
       }
-      stream.pipeTo(req);
-    } else {
-      req.end();
-    }
-    if (timeout > 0) {
-      req.setTimeout(timeout);
-    }
+    });
+  }
+
+  // todo: should be renamed "request" after
+  @Override
+  public void request(RequestOptions options, Handler<AsyncResult<HttpClientRequest>> handler) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    PromiseInternal<HttpClientRequest> promise = ctx.promise(handler);
+    request(options, promise);
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, String requestURI) {
-    return request(method, options.getDefaultPort(), options.getDefaultHost(), requestURI);
+  public Future<HttpClientRequest> request(RequestOptions options) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    PromiseInternal<HttpClientRequest> promise = ctx.promise();
+    request(options, promise);
+    return promise.future();
+  }
+
+  private void request(RequestOptions options, PromiseInternal<HttpClientRequest> promise) {
+    request(options.getMethod(), options.getServer(), getHost(options.getHost()), getPort(options.getPort()), options.isSsl(), options.getURI(), options.getHeaders(), options.getAuthority(), options.getTimeout(), options.getFollowRedirects(), promise);
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, int port, String host, String requestURI) {
-    return createRequest(method, null, host, port, null, requestURI, null);
+  public void request(HttpMethod method, int port, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    PromiseInternal<HttpClientRequest> promise = ctx.promise(handler);
+    request(method, port, host, requestURI, promise);
   }
 
   @Override
-  public HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, int port, String host, String requestURI) {
-    return createRequest(method, serverAddress, host, port, null, requestURI, null);
+  public Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    PromiseInternal<HttpClientRequest> promise = ctx.promise();
+    request(method, port, host, requestURI, promise);
+    return promise.future();
+  }
+
+  private void request(HttpMethod method, int port, String host, String requestURI, PromiseInternal<HttpClientRequest> promise) {
+    request(method, null, host, port, null, requestURI, null, null, 0L, null, promise);
   }
 
   @Override
-  public HttpClientRequest request(SocketAddress serverAddress, RequestOptions options) {
-    return createRequest(options.getMethod(), serverAddress, getHost(options.getHost()), getPort(options.getPort()), options.isSsl(), options.getURI(), null);
+  public void request(HttpMethod method, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler) {
+    request(method, options.getDefaultPort(), host, requestURI, handler);
   }
 
   @Override
-  public HttpClientRequest request(RequestOptions options) {
-    return createRequest(options.getMethod(), null, getHost(options.getHost()), getPort(options.getPort()), options.isSsl(), options.getURI(), options.getHeaders());
-  }
-
-  @Override
-  public HttpClientRequest request(HttpMethod method, String host, String requestURI) {
+  public Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI) {
     return request(method, options.getDefaultPort(), host, requestURI);
+  }
+
+  @Override
+  public void request(HttpMethod method, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler) {
+    request(method, options.getDefaultPort(), options.getDefaultHost(), requestURI, handler);
+  }
+
+  @Override
+  public Future<HttpClientRequest> request(HttpMethod method, String requestURI) {
+    return request(method, options.getDefaultPort(), options.getDefaultHost(), requestURI);
   }
 
   @Override
@@ -1278,23 +1331,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     return options;
   }
 
-  void getConnectionForRequest(ContextInternal ctx,
-                               SocketAddress peerAddress,
-                               HttpClientRequestImpl req,
-                               Promise<NetSocket> netSocketPromise,
-                               boolean ssl,
-                               SocketAddress server,
-                               Handler<AsyncResult<HttpClientStream>> handler) {
-    EndpointKey key = new EndpointKey(ssl, server, peerAddress);
-    httpCM.getConnection(ctx, key, ar -> {
-      if (ar.succeeded()) {
-        ar.result().createStream(ctx, req, netSocketPromise, handler);
-      } else {
-        ctx.emit(Future.failedFuture(ar.cause()), handler);
-      }
-    });
-  }
-
   /**
    * @return the vertx, for use in package related classes only.
    */
@@ -1306,11 +1342,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     return sslHelper;
   }
 
-  private HttpClientRequestBase createRequest(HttpMethod method, SocketAddress server, String host, int port, Boolean ssl, String requestURI, MultiMap headers) {
-    return createRequest(method, server, host, port, ssl, requestURI, headers, vertx.promise());
-  }
-
-  private HttpClientRequestBase createRequest(HttpMethod method, SocketAddress server, String host, int port, Boolean ssl, String requestURI, MultiMap headers, PromiseInternal<HttpClientResponse> responsePromise) {
+  private void request(HttpMethod method, SocketAddress server, String host, int port,
+                       Boolean ssl, String requestURI, MultiMap headers, String authority,
+                       long timeout, Boolean followRedirects, PromiseInternal<HttpClientRequest> requestPromise) {
     Objects.requireNonNull(method, "no null method accepted");
     Objects.requireNonNull(host, "no null host accepted");
     Objects.requireNonNull(requestURI, "no null requestURI accepted");
@@ -1320,7 +1354,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
       throw new IllegalArgumentException("Must enable ALPN when using H2");
     }
     checkClosed();
-    HttpClientRequestBase req;
     boolean useProxy = !useSSL && proxyType == ProxyType.HTTP;
 
     if (useProxy) {
@@ -1336,20 +1369,71 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
           headers = HttpHeaders.headers();
         }
         headers.add("Proxy-Authorization", "Basic " + Base64.getEncoder()
-            .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
+          .encodeToString((proxyOptions.getUsername() + ":" + proxyOptions.getPassword()).getBytes()));
       }
-      req = new HttpClientRequestImpl(this, responsePromise, useSSL, method, SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost()),
-          host, port, requestURI);
+      server = SocketAddress.inetSocketAddress(proxyOptions.getPort(), proxyOptions.getHost());
+    } else if (server == null) {
+      server = SocketAddress.inetSocketAddress(port, host);
+    }
+
+    SocketAddress peerAddress;
+    if (authority != null) {
+      int idx = authority.lastIndexOf(':');
+      if (idx != -1) {
+        peerAddress = SocketAddress.inetSocketAddress(Integer.parseInt(authority.substring(idx + 1)), authority.substring(0, idx));
+      } else {
+        peerAddress = SocketAddress.inetSocketAddress(80, authority);
+      }
     } else {
-      if (server == null) {
-        server = SocketAddress.inetSocketAddress(port, host);
+      String peerHost = host;
+      if (peerHost.endsWith(".")) {
+        peerHost = peerHost.substring(0, peerHost.length() -  1);
       }
-      req = new HttpClientRequestImpl(this, responsePromise, useSSL, method, server, host, port, requestURI);
+      peerAddress = SocketAddress.inetSocketAddress(port, peerHost);
     }
-    if (headers != null) {
-      req.headers().setAll(headers);
+    request(method, peerAddress, server, host, port, useSSL, requestURI, headers, authority, timeout, followRedirects, requestPromise);
+  }
+
+  private void request(HttpMethod method, SocketAddress peerAddress, SocketAddress server, String host, int port, Boolean useSSL, String requestURI, MultiMap headers, String authority, long timeout, Boolean followRedirects, PromiseInternal<HttpClientRequest> requestPromise) {
+    ContextInternal ctx = (ContextInternal) requestPromise.future().context();
+    EndpointKey key = new EndpointKey(useSSL, server, peerAddress);
+    long timerID;
+    if (timeout > 0L) {
+      timerID = ctx.setTimer(timeout, id -> {
+        requestPromise.tryFail(HttpClientRequestBase.timeoutEx(timeout, method, server, requestURI));
+      });
+    } else {
+      timerID = -1L;
     }
-    return req;
+    httpCM.getConnection(ctx, key, ar1 -> {
+      if (ar1.succeeded()) {
+        HttpClientRequestImpl req = new HttpClientRequestImpl(this, ctx.promise(), useSSL, method, server, host, port, requestURI);
+        if (headers != null) {
+          req.headers().setAll(headers);
+        }
+        if (followRedirects != null) {
+          req.setFollowRedirects(followRedirects);
+        }
+        HttpClientConnection conn = ar1.result();
+        conn.createStream(ctx, req, ar2 -> {
+          if (ar2.succeeded()) {
+            HttpClientStream stream = ar2.result();
+            req.connected2(stream);
+            req.currentTimeoutMs = timeout;
+            req.currentTimeoutTimerId = timerID;
+            if (requestPromise.tryComplete(req)) {
+              // OK
+            } else {
+              req.reset(0);
+            }
+          } else {
+            requestPromise.tryFail(ar2.cause());
+          }
+        });
+      } else {
+        requestPromise.tryFail(ar1.cause());
+      }
+    });
   }
 
   private void checkClosed() {

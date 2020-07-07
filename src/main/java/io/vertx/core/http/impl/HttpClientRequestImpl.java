@@ -12,8 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.Unpooled;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
@@ -31,8 +29,6 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import static io.vertx.core.http.HttpHeaders.*;
@@ -63,14 +59,11 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private Handler<Throwable> exceptionHandler;
   private boolean ended;
   private Throwable reset;
-  private ByteBuf pendingChunks;
-  private List<Handler<AsyncResult<Void>>> pendingHandlers;
-  private int pendingMaxSize = -1;
   private int followRedirects;
   private HeadersMultiMap headers;
   private StreamPriority priority;
   private HttpClientStream stream;
-  private boolean connecting;
+  private boolean headWritten;
   private Promise<NetSocket> netSocketPromise;
 
   HttpClientRequestImpl(HttpClientImpl client, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method,
@@ -136,7 +129,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized HttpClientRequestImpl setChunked(boolean chunked) {
     checkEnded();
-    if (stream != null) {
+    if (headWritten) {
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
     }
     // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
@@ -187,11 +180,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized HttpClientRequest setWriteQueueMaxSize(int maxSize) {
     checkEnded();
-    if (stream == null) {
-      pendingMaxSize = maxSize;
-    } else {
-      stream.doSetWriteQueueMaxSize(maxSize);
-    }
+    stream.doSetWriteQueueMaxSize(maxSize);
     return this;
   }
 
@@ -248,14 +237,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   @Override
-  public synchronized HttpClientRequest sendHead(Handler<AsyncResult<HttpVersion>> headersHandler) {
+  public HttpClientRequest sendHead(Handler<AsyncResult<HttpVersion>> headersHandler) {
     checkEnded();
-    checkResponseHandler();
-    if (stream != null) {
-      throw new IllegalStateException("Head already written");
-    } else {
-      connect(headersHandler);
-    }
+    write2(null, false, ar -> {
+      // FIX THIS WORKAROUND
+      if (ar.succeeded()) {
+        headersHandler.handle(Future.succeededFuture(stream.version()));
+      } else {
+        headersHandler.handle(Future.failedFuture(ar.cause()));
+      }
+    });
     return this;
   }
 
@@ -396,6 +387,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     return authority != null ? authority : super.authority();
   }
 
+/*
   private synchronized void connect(Handler<AsyncResult<HttpVersion>> headersHandler) {
     if (!connecting) {
       SocketAddress peerAddress;
@@ -434,14 +426,22 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       });
     }
   }
+*/
 
-  private void connected(Handler<AsyncResult<HttpVersion>> headersHandler, HttpClientStream stream) {
+  void connected2(HttpClientStream stream) {
+    synchronized (this) {
+      this.stream = stream;
+    }
+  }
+
+  void connected(Handler<AsyncResult<HttpVersion>> headersHandler, HttpClientStream stream) {
     synchronized (this) {
       this.stream = stream;
 
       // If anything was written or the request ended before we got the connection, then
       // we need to write it now
 
+/*
       if (pendingMaxSize != -1) {
         stream.doSetWriteQueueMaxSize(pendingMaxSize);
       }
@@ -455,6 +455,8 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
           handlers.forEach(h -> h.handle(ar));
         };
       }
+*/
+/*
       if (headersHandler != null) {
         Handler<AsyncResult<Void>> others = handler;
         handler = ar -> {
@@ -474,6 +476,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
       this.connecting = false;
       this.stream = stream;
+*/
     }
   }
 
@@ -572,6 +575,19 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (buff == null && !end) {
       return;
     }
+    if (end) {
+      if (buff != null && requiresContentLength()) {
+        headers().set(CONTENT_LENGTH, String.valueOf(buff.readableBytes()));
+      }
+    } else if (requiresContentLength()) {
+      throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
+        + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+    }
+    write2(buff, end, completionHandler);
+  }
+
+  private void write2(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> completionHandler) {
+    boolean writeHead;
     HttpClientStream s;
     synchronized (this) {
       if (ended) {
@@ -579,43 +595,22 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         return;
       }
       checkResponseHandler();
-      if (end) {
-        if (buff != null && requiresContentLength()) {
-          headers().set(CONTENT_LENGTH, String.valueOf(buff.readableBytes()));
-        }
-      } else if (requiresContentLength()) {
-        throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
-          + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
+      if (!headWritten) {
+        headWritten = true;
+        writeHead = true;
+      } else {
+        writeHead = false;
       }
       ended |= end;
-      if (stream == null) {
-        if (buff != null) {
-          if (pendingChunks == null) {
-            pendingChunks = buff;
-          } else {
-            CompositeByteBuf pending;
-            if (pendingChunks instanceof CompositeByteBuf) {
-              pending = (CompositeByteBuf) pendingChunks;
-            } else {
-              pending = Unpooled.compositeBuffer();
-              pending.addComponent(true, pendingChunks);
-              pendingChunks = pending;
-            }
-            pending.addComponent(true, buff);
-          }
-        }
-        if (completionHandler != null) {
-          if (pendingHandlers == null) {
-            pendingHandlers = new ArrayList<>();
-          }
-          pendingHandlers.add(completionHandler);
-        }
-        connect(null);
-        return;
-      }
       s = stream;
     }
-    s.writeBuffer(buff, end, completionHandler);
+
+    // WRITE HEAD
+    if (writeHead) {
+      s.writeHead(method, uri, headers, authority(), chunked, buff, ended, priority, netSocketPromise, completionHandler);
+    } else {
+      s.writeBuffer(buff, end, completionHandler);
+    }
     if (end) {
       tryComplete();
     }
@@ -641,7 +636,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public synchronized HttpClientRequest setStreamPriority(StreamPriority priority) {
-    if (stream != null) {
+    if (headWritten) {
       stream.updatePriority(priority);
     } else {
       this.priority = priority;

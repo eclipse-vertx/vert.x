@@ -64,6 +64,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.context = context;
     this.pending = new InboundBuffer<>(context, 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
+    this.writable = true;
 
     pending.handler(item -> {
       if (item instanceof MultiMap) {

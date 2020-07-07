@@ -32,7 +32,7 @@ public interface HttpClientConnection extends HttpConnection {
 
   Future<Void> close();
 
-  void createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<HttpClientStream>> handler);
+  void createStream(ContextInternal context, HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler);
 
   ContextInternal getContext();
 

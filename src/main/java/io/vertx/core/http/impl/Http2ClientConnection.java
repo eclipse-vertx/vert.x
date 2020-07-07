@@ -95,7 +95,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
-        StreamImpl stream = createStream(context, req, netSocketPromise);
+        StreamImpl stream = createStream(context, req);
         stream.init(handler.connection().stream(1));
         ((Stream)stream).metric = metric;
         fut = Future.succeededFuture(stream);
@@ -107,11 +107,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public void createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  public void createStream(ContextInternal context, HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
-        StreamImpl stream = createStream(context, req, netSocketPromise);
+        StreamImpl stream = createStream(context, req);
         VertxTracer tracer = context.tracer();
         if (tracer != null) {
           BiConsumer<String, String> headers = (key, val) -> req.headers().add(key, val);
@@ -122,11 +122,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         fut = Future.failedFuture(e);
       }
     }
-    context.dispatch(fut, completionHandler);
+    context.dispatch(fut, handler);
   }
 
-  private StreamImpl createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise) {
-    return new StreamImpl(this, context, req, netSocketPromise);
+  private StreamImpl createStream(ContextInternal context, HttpClientRequestImpl req) {
+    return new StreamImpl(this, context, req);
   }
 
   private void recycle() {
@@ -200,18 +200,17 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   static abstract class Stream extends VertxHttp2Stream<Http2ClientConnection> {
 
     protected final HttpClientRequestBase request;
-    private Promise<NetSocket> netSocketPromise;
+    protected Promise<NetSocket> netSocketPromise;
     private HttpClientResponseImpl response;
     private Object metric;
     private Object trace;
     private boolean requestEnded;
     private boolean responseEnded;
 
-    Stream(Http2ClientConnection conn, HttpClientRequestBase request, Promise<NetSocket> netSocketPromise, ContextInternal context) {
+    Stream(Http2ClientConnection conn, HttpClientRequestBase request, ContextInternal context) {
       super(conn, context);
 
       this.request = request;
-      this.netSocketPromise = netSocketPromise;
     }
 
     void onContinue() {
@@ -372,8 +371,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     private HttpClientResponseImpl response;
 
-    StreamImpl(Http2ClientConnection conn, ContextInternal context, HttpClientRequestBase request, Promise<NetSocket> netSocketPromise) {
-      super(conn, request, netSocketPromise, context);
+    StreamImpl(Http2ClientConnection conn, ContextInternal context, HttpClientRequestBase request) {
+      super(conn, request, context);
     }
 
     @Override
@@ -453,7 +452,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpMethod method, String uri, MultiMap headers, String authority, boolean chunked, ByteBuf content, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
+    public void writeHead(HttpMethod method, String uri, MultiMap headers, String authority, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
+      this.netSocketPromise = netSocketPromise;
       Http2Headers h = new DefaultHttp2Headers();
       h.method(method.name());
       boolean e;
@@ -482,9 +482,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       }
       priority(priority);
       conn.context.dispatch(null, v -> {
-        if (content != null) {
+        if (buf != null) {
           writeHeaders(h, false, null);
-          writeBuffer(content, e, handler);
+          writeBuffer(buf, e, handler);
         } else {
           writeHeaders(h, e, handler);
         }

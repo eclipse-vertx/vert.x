@@ -87,16 +87,14 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   private class UpgradingStream implements HttpClientStream {
 
     private HttpClientRequestImpl request;
-    private Promise<NetSocket> netSocketPromise;
     private Http1xClientConnection conn;
     private HttpClientStream stream;
     private long pendingSize = 0;
     private List<Object> pending = new ArrayList<>();
 
-    UpgradingStream(HttpClientStream stream, HttpClientRequestImpl request, Promise<NetSocket> netSocketPromise, Http1xClientConnection conn) {
+    UpgradingStream(HttpClientStream stream, HttpClientRequestImpl request, Http1xClientConnection conn) {
       this.conn = conn;
       this.request = request;
-      this.netSocketPromise = netSocketPromise;
       this.stream = stream;
     }
 
@@ -117,6 +115,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                           ByteBuf buf,
                           boolean end,
                           StreamPriority priority,
+                          Promise<NetSocket> netSocketPromise,
                           Handler<AsyncResult<Void>> listener) {
       ChannelPipeline pipeline = conn.channel().pipeline();
       HttpClientCodec httpCodec = pipeline.get(HttpClientCodec.class);
@@ -221,7 +220,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       };
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      doWriteHead(method, uri, headers, authority, chunked, buf, end, priority, listener);
+      doWriteHead(method, uri, headers, authority, chunked, buf, end, priority, netSocketPromise, listener);
     }
 
     private void doWriteHead(HttpMethod method,
@@ -232,15 +231,16 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                              ByteBuf buf,
                              boolean end,
                              StreamPriority priority,
-                             Handler<AsyncResult<Void>> listener) {
+                             Promise<NetSocket> netSocketPromise,
+                             Handler<AsyncResult<Void>> handler) {
       EventExecutor exec = conn.channelHandlerContext().executor();
       if (exec.inEventLoop()) {
-        stream.writeHead(method, uri, headers, authority, chunked, buf, end, priority, listener);
+        stream.writeHead(method, uri, headers, authority, chunked, buf, end, priority, netSocketPromise, handler);
         if (end) {
           end();
         }
       } else {
-        exec.execute(() -> doWriteHead(method, uri, headers, authority, chunked, buf, end, priority, listener));
+        exec.execute(() -> doWriteHead(method, uri, headers, authority, chunked, buf, end, priority, netSocketPromise, handler));
       }
     }
 
@@ -329,19 +329,19 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public void createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<HttpClientStream>> handler) {
+  public void createStream(ContextInternal context, HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler) {
     if (current instanceof Http1xClientConnection) {
-      current.createStream(context, req, netSocketPromise, ar -> {
+      current.createStream(context, req, ar -> {
         if (ar.succeeded()) {
           HttpClientStream stream = ar.result();
-          UpgradingStream upgradingStream = new UpgradingStream(stream, req, netSocketPromise, (Http1xClientConnection) current);
+          UpgradingStream upgradingStream = new UpgradingStream(stream, req, (Http1xClientConnection) current);
           handler.handle(Future.succeededFuture(upgradingStream));
         } else {
           handler.handle(ar);
         }
       });
     } else {
-      current.createStream(context, req, netSocketPromise, handler);
+      current.createStream(context, req, handler);
     }
   }
 

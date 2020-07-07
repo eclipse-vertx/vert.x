@@ -1739,6 +1739,7 @@ Set proxy username.
 Parse an absolute URI to use, this will update the <code>ssl</code>, <code>host</code>,
  <code>port</code> and <code>uri</code> fields.
 +++
+|[[authority]]`@authority`|`String`|-
 |[[followRedirects]]`@followRedirects`|`Boolean`|+++
 Set whether to follow HTTP redirect
 +++
@@ -1969,6 +1970,7 @@ Set the maximum number of worker threads to be used by the Vert.x instance.
 Parse an absolute URI to use, this will update the <code>ssl</code>, <code>host</code>,
  <code>port</code> and <code>uri</code> fields.
 +++
+|[[authority]]`@authority`|`String`|-
 |[[followRedirects]]`@followRedirects`|`Boolean`|+++
 Set whether to follow HTTP redirect
 +++

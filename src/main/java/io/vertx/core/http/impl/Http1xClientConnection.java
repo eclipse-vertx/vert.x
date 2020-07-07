@@ -148,10 +148,10 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     return request;
   }
 
-  private void beginRequest(Stream stream, HttpRequest request, Handler<AsyncResult<Void>> handler) {
+  private void beginRequest(Stream stream, HttpRequest request, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
     synchronized (this) {
       responses.add(stream);
-      this.netSocketPromise = ((StreamImpl)stream).netSocketPromise;
+      this.netSocketPromise = netSocketPromise;
       if (this.metrics != null) {
         stream.metric = this.metrics.requestBegin(stream.request.uri, stream.request);
       }
@@ -260,16 +260,14 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
     private final Http1xClientConnection conn;
     private final InboundBuffer<Object> queue;
-    private final Promise<NetSocket> netSocketPromise;
     private boolean reset;
     private boolean writable;
 
-    StreamImpl(ContextInternal context, Http1xClientConnection conn, HttpClientRequestImpl request, Promise<NetSocket> netSocketPromise, int id) {
+    StreamImpl(ContextInternal context, Http1xClientConnection conn, HttpClientRequestImpl request, int id) {
       super(context, id, request);
 
       this.writable = !conn.isNotWritable();
       this.conn = conn;
-      this.netSocketPromise = netSocketPromise;
       this.queue = new InboundBuffer<>(context, 5)
         .drainHandler(v -> {
           EventLoop eventLoop = conn.context.nettyEventLoop();
@@ -312,7 +310,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    public void writeHead(HttpMethod method, String uri, MultiMap headers, String authority, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> handler) {
+    public void writeHead(HttpMethod method, String uri, MultiMap headers, String authority, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
       HttpRequest request = conn.createRequest(method, uri, headers, authority, chunked);
       if (end) {
         if (buf != null) {
@@ -325,15 +323,15 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           request = new AssembledHttpRequest(request, buf);
         }
       }
-      writeHead(request, handler == null ? null : context.promise(handler));
+      writeHead(request, netSocketPromise, handler == null ? null : context.promise(handler));
     }
 
-    private void writeHead(HttpRequest request, Handler<AsyncResult<Void>> handler) {
+    private void writeHead(HttpRequest request, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        conn.beginRequest(this, request, handler);
+        conn.beginRequest(this, request, netSocketPromise, handler);
       } else {
-        eventLoop.execute(() -> writeHead(request, handler));
+        eventLoop.execute(() -> writeHead(request, netSocketPromise, handler));
       }
     }
 
@@ -868,7 +866,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   @Override
-  public void createStream(ContextInternal context, HttpClientRequestImpl req, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<HttpClientStream>> handler) {
+  public void createStream(ContextInternal context, HttpClientRequestImpl req, Handler<AsyncResult<HttpClientStream>> handler) {
     EventLoop eventLoop = context.nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       StreamImpl stream;
@@ -876,7 +874,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         if (closed) {
           stream = null;
         } else {
-          stream = new StreamImpl(context, this, req, netSocketPromise, seq++);
+          stream = new StreamImpl(context, this, req, seq++);
           requests.add(stream);
           if (requests.size() == 1) {
             stream.promise.complete(stream);
@@ -890,7 +888,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       }
     } else {
       eventLoop.execute(() -> {
-        createStream(context, req, netSocketPromise, handler);
+        createStream(context, req, handler);
       });
     }
   }

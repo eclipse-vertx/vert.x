@@ -13,7 +13,6 @@ package io.vertx.core.spi.tracing;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
@@ -128,14 +127,19 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
-    HttpClientRequest req = client.request(HttpMethod.GET, 8080, "localhost", "/")
-      .onComplete(onFailure(err -> {
-        complete();
-      }))
-      .setChunked(true);
-    req.sendHead(v -> {
-      req.connection().close();
-    });
+    client.request(new RequestOptions()
+      .setPort(8080)
+      .setHost("localhost")
+      .setURI("/")).onComplete(onSuccess(req -> {
+      req
+        .onComplete(onFailure(err -> {
+          complete();
+        }))
+        .setChunked(true);
+      req.sendHead(v -> {
+        req.connection().close();
+      });
+    }));
     await();
   }
 

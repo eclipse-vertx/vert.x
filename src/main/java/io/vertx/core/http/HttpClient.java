@@ -20,7 +20,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.Measured;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
@@ -390,59 +389,66 @@ public interface HttpClient extends Measured {
   Future<HttpClientResponse> send(HttpMethod method, String requestURI, ReadStream<Buffer> body);
 
   /**
-   * Like {@link #request(RequestOptions)} using the {@code serverAddress} parameter to connect to the
-   * server instead of the {@code absoluteURI} parameter.
-   * <p>
-   * The request host header will still be created from the {@code options} parameter.
-   * <p>
-   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
-   */
-  HttpClientRequest request(SocketAddress serverAddress, RequestOptions options);
-
-  /**
-   * Create an HTTP request to send to the server with the specified options.
+   * Create an HTTP request to send to the server. The {@code handler}
+   * is called when the request is ready to be sent.
    *
-   * @param options  the request options
-   * @return  an HTTP client request object
+   * @param options    the request options
+   * @param handler    the handler called when the request is ready to be sent
    */
-  HttpClientRequest request(RequestOptions options);
+  void request(RequestOptions options, Handler<AsyncResult<HttpClientRequest>> handler);
 
   /**
-   * Create an HTTP request to send to the server at the specified host and port.
-   * @param method  the HTTP method
-   * @param port  the port
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   * Like {@link #request(RequestOptions, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  HttpClientRequest request(HttpMethod method, int port, String host, String requestURI);
+  Future<HttpClientRequest> request(RequestOptions options);
 
   /**
-   * Like {@link #request(HttpMethod, int, String, String)} using the {@code serverAddress} parameter to connect to the
-   * server instead of the {@code absoluteURI} parameter.
-   * <p>
-   * The request host header will still be created from the {@code host} and {@code port} parameters.
-   * <p>
-   * Use {@link SocketAddress#domainSocketAddress(String)} to connect to a unix domain socket server.
+   * Create an HTTP request to send to the server at the {@code host} and {@code port}. The {@code handler}
+   * is called when the request is ready to be sent.
+   *
+   * @param method     the HTTP method
+   * @param port       the port
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param handler    the handler called when the request is ready to be sent
    */
-  HttpClientRequest request(HttpMethod method, SocketAddress serverAddress, int port, String host, String requestURI);
+  void request(HttpMethod method, int port, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler);
 
   /**
-   * Create an HTTP request to send to the server at the specified host and default port.
-   * @param method  the HTTP method
-   * @param host  the host
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   * Like {@link #request(HttpMethod, int, String, String, Handler)} but returns a {@code Future} of the asynchronous result
    */
-  HttpClientRequest request(HttpMethod method, String host, String requestURI);
+  Future<HttpClientRequest> request(HttpMethod method, int port, String host, String requestURI);
 
   /**
-   * Create an HTTP request to send to the server at the default host and port.
-   * @param method  the HTTP method
-   * @param requestURI  the relative URI
-   * @return  an HTTP client request object
+   * Create an HTTP request to send to the server at the {@code host} and default port. The {@code handler}
+   * is called when the request is ready to be sent.
+   *
+   * @param method     the HTTP method
+   * @param host       the host
+   * @param requestURI the relative URI
+   * @param handler    the handler called when the request is ready to be sent
    */
-  HttpClientRequest request(HttpMethod method, String requestURI);
+  void request(HttpMethod method, String host, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler);
+
+  /**
+   * Like {@link #request(HttpMethod, String, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientRequest> request(HttpMethod method, String host, String requestURI);
+
+  /**
+   * Create an HTTP request to send to the server at the default host and port. The {@code handler}
+   * is called when the request is ready to be sent.
+   *
+   * @param method     the HTTP method
+   * @param requestURI the relative URI
+   * @param handler    the handler called when the request is ready to be sent
+   */
+  void request(HttpMethod method, String requestURI, Handler<AsyncResult<HttpClientRequest>> handler);
+
+  /**
+   * Like {@link #request(HttpMethod, String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientRequest> request(HttpMethod method, String requestURI);
 
   /**
    * Sends an HTTP GET request to the server at the specified host and port, specifying a response handler to receive

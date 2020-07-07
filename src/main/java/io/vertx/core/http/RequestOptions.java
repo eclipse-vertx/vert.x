@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.SocketAddress;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -28,6 +29,11 @@ import java.util.Objects;
  */
 @DataObject(generateConverter = true)
 public class RequestOptions {
+
+  /**
+   * The default value for server method = null
+   */
+  public static final SocketAddress DEFAULT_SERVER = null;
 
   /**
    * The default value for HTTP method = {@link HttpMethod#GET}
@@ -64,11 +70,13 @@ public class RequestOptions {
    */
   public static final long DEFAULT_TIMEOUT = 0;
 
+  private SocketAddress server;
   private HttpMethod method;
   private String host;
   private Integer port;
   private Boolean ssl;
   private String uri;
+  private String authority;
   private MultiMap headers;
   private boolean followRedirects;
   private long timeout;
@@ -77,6 +85,7 @@ public class RequestOptions {
    * Default constructor
    */
   public RequestOptions() {
+    server = DEFAULT_SERVER;
     method = DEFAULT_HTTP_METHOD;
     host = DEFAULT_HOST;
     port = DEFAULT_PORT;
@@ -92,6 +101,7 @@ public class RequestOptions {
    * @param other  the options to copy
    */
   public RequestOptions(RequestOptions other) {
+    setServer(other.server);
     setMethod(other.method);
     setHost(other.host);
     setPort(other.port);
@@ -111,6 +121,41 @@ public class RequestOptions {
    */
   public RequestOptions(JsonObject json) {
     RequestOptionsConverter.fromJson(json, this);
+    JsonObject server = json.getJsonObject("server");
+    if (server != null) {
+      Integer port = server.getInteger("port", 80);
+      String host = server.getString("host");
+      String path = server.getString("path");
+      if (host != null) {
+        this.server = SocketAddress.inetSocketAddress(port, host);
+      } else if (path != null) {
+        this.server = SocketAddress.domainSocketAddress(path);
+      }
+    }
+  }
+
+  /**
+   * Get the server address to be used by the client request.
+   *
+   * @return the server address
+   */
+  public SocketAddress getServer() {
+    return server;
+  }
+
+  /**
+   * Set the server address to be used by the client request.
+   *
+   * <p> When the server address is {@code null}, the address will be resolved after the {@code host}
+   * property by the Vert.x resolver.
+   *
+   * <p> Use this when you want to connect to a specific server address without name resolution.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setServer(SocketAddress server) {
+    this.server = server;
+    return this;
   }
 
   /**
@@ -203,6 +248,30 @@ public class RequestOptions {
    */
   public RequestOptions setURI(String uri) {
     this.uri = uri;
+    return this;
+  }
+
+  /**
+   * Return the request authority.
+   *
+   * <p>For HTTP/2 the {@literal :authority} pseudo header otherwise the {@literal Host} header.
+   *
+   * @return the request authority.
+   */
+  public String getAuthority() {
+    return authority;
+  }
+
+  /**
+   * Set the request authority.
+   *
+   * <p>For HTTP/2 the {@literal :authority} pseudo header otherwise the {@literal Host} header.
+   *
+   * @param authority the authority
+   * @return a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setAuthority(String authority) {
+    this.authority = authority;
     return this;
   }
 
@@ -329,6 +398,39 @@ public class RequestOptions {
   }
 
   /**
+   * Set a request header.
+   *
+   * @param key  the header key
+   * @param value  the header value
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public RequestOptions putHeader(String key, String value) {
+    return putHeader((CharSequence) key, value);
+  }
+
+  /**
+   * Set a request header.
+   *
+   * @param key  the header key
+   * @param value  the header value
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public RequestOptions putHeader(CharSequence key, CharSequence value) {
+    checkHeaders();
+    headers.set(key, value);
+    return this;
+  }
+
+  @GenIgnore
+  public RequestOptions putHeader(CharSequence key, Iterable<CharSequence> values) {
+    checkHeaders();
+    headers.set(key, values);
+    return this;
+  }
+
+  /**
    * Set request headers from a multi-map.
    *
    * @param headers  the headers
@@ -359,6 +461,16 @@ public class RequestOptions {
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     RequestOptionsConverter.toJson(this, json);
+    if (this.server != null) {
+      JsonObject server = new JsonObject();
+      if (this.server.isInetSocket()) {
+        server.put("host", this.server.host());
+        server.put("port", this.server.port());
+      } else {
+        server.put("path", this.server.path());
+      }
+      json.put("server", server);
+    }
     return json;
   }
 }

@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.MetricsOptions;
@@ -91,29 +92,35 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
       assertEquals(Collections.emptySet(), metrics.endpoints());
-      HttpClientRequest req = client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-        .onComplete(onSuccess(resp -> {
-          socketMetric.set(metrics.getSocket(SocketAddress.inetSocketAddress(8080, "localhost")));
-          assertNotNull(socketMetric.get());
-          assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
-          clientMetric.set(metrics.getMetric(resp.request()));
-          assertNotNull(clientMetric.get());
-          // assertNotNull(clientMetric.get().socket);
-          // assertTrue(clientMetric.get().socket.connected.get());
-          assertEquals((Integer) 1, metrics.connectionCount("localhost:8080"));
-          resp.bodyHandler(buff -> {
-            assertNull(metrics.getMetric(resp.request()));
-            assertEquals(contentLength, buff.length());
-            latch.countDown();
-          });
-        }))
-        .exceptionHandler(this::fail)
-        .setChunked(true);
-      assertNull(metrics.getMetric(req));
-      for (int i = 0;i < numBuffers;i++) {
-        req.write(TestUtils.randomBuffer(chunkSize));
-      }
-      req.end();
+      client.request(new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/somepath"))
+        .onComplete(onSuccess(req -> {
+          req
+            .onComplete(onSuccess(resp -> {
+              socketMetric.set(metrics.getSocket(SocketAddress.inetSocketAddress(8080, "localhost")));
+              assertNotNull(socketMetric.get());
+              assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
+              clientMetric.set(metrics.getMetric(resp.request()));
+              assertNotNull(clientMetric.get());
+              // assertNotNull(clientMetric.get().socket);
+              // assertTrue(clientMetric.get().socket.connected.get());
+              assertEquals((Integer) 1, metrics.connectionCount("localhost:8080"));
+              resp.bodyHandler(buff -> {
+                assertNull(metrics.getMetric(resp.request()));
+                assertEquals(contentLength, buff.length());
+                latch.countDown();
+              });
+            }))
+            .exceptionHandler(this::fail)
+            .setChunked(true);
+          assertNull(metrics.getMetric(req));
+          for (int i = 0;i < numBuffers;i++) {
+            req.write(TestUtils.randomBuffer(chunkSize));
+          }
+          req.end();
+      }));
     });
     awaitLatch(latch);
     client.close();
@@ -175,24 +182,30 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     FakeHttpClientMetrics clientMetrics = FakeMetricsBase.getMetrics(client);
     CountDownLatch responseBeginLatch = new CountDownLatch(1);
     CountDownLatch responseEndLatch = new CountDownLatch(1);
-    HttpClientRequest req = client.request(HttpMethod.POST, 8080, "localhost", "/somepath")
-      .onComplete(onSuccess(resp -> {
-        responseBeginLatch.countDown();
-        resp.endHandler(v -> {
-          responseEndLatch.countDown();
-        });
-      }))
-      .setChunked(true);
-    req.sendHead();
+    Future<HttpClientRequest> request = client.request(new RequestOptions()
+      .setMethod(HttpMethod.POST)
+      .setPort(8080)
+      .setHost("localhost")
+      .setURI("/somepath")).onComplete(onSuccess(req -> {
+      req
+        .onComplete(onSuccess(resp -> {
+          responseBeginLatch.countDown();
+          resp.endHandler(v -> {
+            responseEndLatch.countDown();
+          });
+        }))
+        .setChunked(true);
+      req.sendHead();
+    }));
     awaitLatch(requestBeginLatch);
-    HttpClientMetric reqMetric = clientMetrics.getMetric(req);
+    HttpClientMetric reqMetric = clientMetrics.getMetric(request.result());
     waitUntil(() -> reqMetric.requestEnded.get() == 0);
     waitUntil(() -> reqMetric.responseBegin.get() == 0);
-    req.write(TestUtils.randomAlphaString(1024));
+    request.result().write(TestUtils.randomAlphaString(1024));
     awaitLatch(requestBodyLatch);
     assertEquals(0, reqMetric.requestEnded.get());
     assertEquals(0, reqMetric.responseBegin.get());
-    req.end();
+    request.result().end();
     awaitLatch(requestEndLatch);
     waitUntil(() -> reqMetric.requestEnded.get() == 1);
     assertEquals(0, reqMetric.responseBegin.get());
@@ -202,7 +215,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     waitUntil(() -> reqMetric.responseBegin.get() == 1);
     endResponse.complete(null);
     awaitLatch(responseEndLatch);
-    waitUntil(() -> clientMetrics.getMetric(req) == null);
+    waitUntil(() -> clientMetrics.getMetric(request.result()) == null);
     assertEquals(1, reqMetric.requestEnded.get());
     assertEquals(1, reqMetric.responseBegin.get());
   }

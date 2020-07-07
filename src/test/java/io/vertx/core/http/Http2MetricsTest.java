@@ -12,14 +12,11 @@ package io.vertx.core.http;
 
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
-import io.vertx.test.tls.Cert;
-import io.vertx.test.tls.Trust;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -86,10 +83,8 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
     startServer();
     client = vertx.createHttpClient(createBaseClientOptions());
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-      .onComplete(resp -> {
-      })
-      .pushHandler(pushedReq -> {
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.pushHandler(pushedReq -> {
         HttpClientMetric metric = metrics.getMetric(pushedReq);
         assertNotNull(metric);
         assertSame(pushedReq, metric.request);
@@ -100,7 +95,8 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
           });
         }));
       })
-      .end();
+        .end();
+    }));
     await();
   }
 }

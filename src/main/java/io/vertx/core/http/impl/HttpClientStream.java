@@ -15,11 +15,13 @@ import io.netty.buffer.ByteBuf;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.net.NetSocket;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -42,7 +44,16 @@ public interface HttpClientStream {
   HttpConnection connection();
   ContextInternal getContext();
 
-  void writeHead(HttpMethod method, String uri, MultiMap headers, String authority, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Handler<AsyncResult<Void>> listener);
+  void writeHead(HttpMethod method,
+                 String uri,
+                 MultiMap headers,
+                 String authority,
+                 boolean chunked,
+                 ByteBuf buf,
+                 boolean end,
+                 StreamPriority priority,
+                 Promise<NetSocket> netSocketPromise,
+                 Handler<AsyncResult<Void>> handler);
   void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener);
   void writeFrame(int type, int flags, ByteBuf payload);
 

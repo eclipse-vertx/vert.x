@@ -28,7 +28,6 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.*;
@@ -810,25 +809,30 @@ public class MetricsTest extends VertxTestBase {
       });
     }).listen(8080, onSuccess(s -> {
       client = vertx.createHttpClient();
-      HttpClientRequest request = client.request(HttpMethod.CONNECT, 8080, host, "/");
-      FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-      request.netSocket(onSuccess(socket -> {
-        socket.write(Buffer.buffer("hello"));
-        socket.handler(buf -> {
-          assertEquals("hello", buf.toString());
-          assertNotNull(metrics.getMetric(request));
-          socket.closeHandler(v -> {
-            assertNull(metrics.getMetric(request));
+      client.request(new RequestOptions()
+        .setMethod(HttpMethod.CONNECT)
+        .setPort(8080)
+        .setHost(host)
+        .setURI("/")).onComplete(onSuccess(req -> {
+        FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+        req.netSocket(onSuccess(socket -> {
+          socket.write(Buffer.buffer("hello"));
+          socket.handler(buf -> {
+            assertEquals("hello", buf.toString());
+            assertNotNull(metrics.getMetric(req));
+            socket.closeHandler(v -> {
+              assertNull(metrics.getMetric(req));
+            });
+            socket.close();
+            complete();
           });
-          socket.close();
-          complete();
-        });
+        }));
+        req.onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          clientMetric.set(metrics.getMetric(req));
+          assertNotNull(clientMetric.get());
+        })).end();
       }));
-      request.onComplete(onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        clientMetric.set(metrics.getMetric(request));
-        assertNotNull(clientMetric.get());
-      })).end();
     }));
     await();
   }
