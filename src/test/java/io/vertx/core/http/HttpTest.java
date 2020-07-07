@@ -5748,7 +5748,7 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testCookieSameSiteFieldEncoding() throws Exception {
+  public void testCookieSameSiteFieldEncoding() {
     Cookie cookie = Cookie.cookie("foo", "bar").setSameSite(CookieSameSite.LAX);
     assertEquals("foo", cookie.getName());
     assertEquals("bar", cookie.getValue());
