@@ -5740,8 +5740,10 @@ public abstract class HttpTest extends HttpTestBase {
 
     cookie.setMaxAge(Long.MIN_VALUE);
     cookie.setSecure(true);
+    assertTrue(cookie.isSecure());
     assertEquals("foo=bar; Path=/somepath; Domain=foo.com; Secure", cookie.encode());
     cookie.setHttpOnly(true);
+    assertTrue(cookie.isHttpOnly());
     assertEquals("foo=bar; Path=/somepath; Domain=foo.com; Secure; HTTPOnly", cookie.encode());
   }
 
@@ -5750,6 +5752,7 @@ public abstract class HttpTest extends HttpTestBase {
     Cookie cookie = Cookie.cookie("foo", "bar").setSameSite(CookieSameSite.LAX);
     assertEquals("foo", cookie.getName());
     assertEquals("bar", cookie.getValue());
+    assertEquals(CookieSameSite.LAX, cookie.getSameSite());
     assertEquals("foo=bar; SameSite=Lax", cookie.encode());
 
     cookie.setSecure(true);
