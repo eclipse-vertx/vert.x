@@ -60,7 +60,6 @@ public class BareCommandTest extends CommandTestBase {
 
     assertThat(error.toString())
         .contains("Starting clustering...")
-        .contains("No cluster-host specified")
         .contains("Any deploymentIDs waiting on a quorum will now be deployed");
   }
 
@@ -75,7 +74,6 @@ public class BareCommandTest extends CommandTestBase {
 
     assertThat(error.toString())
         .contains("Starting clustering...")
-        .contains("No cluster-host specified")
         .contains("Any deploymentIDs waiting on a quorum will now be deployed");
   }
 
