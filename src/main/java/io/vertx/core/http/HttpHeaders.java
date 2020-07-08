@@ -404,6 +404,12 @@ public interface HttpHeaders {
   CharSequence GET = createOptimized("GET");
 
   /**
+   * Vary header name
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence VARY = createOptimized("vary");
+
+  /**
    * Create an optimized {@link CharSequence} which can be used as header name or value.
    * This should be used if you expect to use it multiple times liked for example adding the same header name or value
    * for multiple responses or requests.
