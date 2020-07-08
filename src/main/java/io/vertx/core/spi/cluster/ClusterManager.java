@@ -135,4 +135,24 @@ public interface ClusterManager {
    * Get the messaging handler currently registered in the cluster.
    */
   void getRegistrations(String address, Promise<List<RegistrationInfo>> promise);
+
+  /**
+   * If the cluster manager has its own server for data/membership, this returns the host it is listening to.
+   * When users don't configure the eventbus cluster host, the value will serve as a default.
+   *
+   * @return null if the cluster manager does not start a server or the host couldn't be determined
+   */
+  default String clusterHost() {
+    return null;
+  }
+
+  /**
+   * If the cluster manager has its own server for data/membership, this returns the host it advertises to other nodes.
+   * When users don't configure the eventbus cluster public host, the value will serve as a default.
+   *
+   * @return null if the cluster manager does not advertise a host that is different from the cluster host or the public host couldn't be determined
+   */
+  default String clusterPublicHost() {
+    return null;
+  }
 }
