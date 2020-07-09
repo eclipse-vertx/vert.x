@@ -537,8 +537,9 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
           prev.next = next;
         }
         e.remove();
+      } else {
+        prev = e;
       }
-      prev = e;
       e = next;
     }
   }

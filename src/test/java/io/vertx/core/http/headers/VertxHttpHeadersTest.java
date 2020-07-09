@@ -214,7 +214,8 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     MultiMap mmap = newMultiMap();
     String name1 = this.sameHash1;
     String name2 = this.sameHash2;
-    mmap.set(name1, "v");
+    mmap.add(name1, "v");
+    mmap.add(name1, "v");
     mmap.add(name2, "q");
     mmap.remove(name1);
     mmap.set(name1, "w");
