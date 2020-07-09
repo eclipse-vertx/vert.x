@@ -526,19 +526,21 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
 
   private void remove0(int h, int i, CharSequence name) {
     HeadersMultiMap.MapEntry e = entries[i];
-    MapEntry first = e;
+    MapEntry prev = null;
     while (e != null) {
       MapEntry next = e.next;
       CharSequence key = e.key;
       if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
-        if (e == first) {
-          first = e.next;
+        if (prev == null) {
+          entries[i] = next;
+        } else {
+          prev.next = next;
         }
         e.remove();
       }
+      prev = e;
       e = next;
     }
-    entries[i] = first;
   }
 
   private void add0(int h, int i, final CharSequence name, final CharSequence value) {

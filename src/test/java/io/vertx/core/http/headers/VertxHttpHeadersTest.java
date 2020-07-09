@@ -208,4 +208,16 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     mm.remove(name2);
     assertTrue("not empty", mm.isEmpty());
   }
+
+  @Test
+  public void testRemovalNext() {
+    MultiMap mmap = newMultiMap();
+    String name1 = this.sameHash1;
+    String name2 = this.sameHash2;
+    mmap.set(name1, "v");
+    mmap.add(name2, "q");
+    mmap.remove(name1);
+    mmap.set(name1, "w");
+    assertEquals("w", mmap.get(name1));
+  }
 }
