@@ -449,7 +449,11 @@ Add an enabled cipher suite, appended to the ordered suites.
 Sets the list of enabled SSL/TLS protocols.
 +++
 |[[host]]`@host`|`String`|+++
-Sets the host.
+Sets the host. Defaults to <code>null</code>.
+ <p>
+ When the clustered eventbus starts, it tries to bind to the provided <code>host</code>.
+ If <code>host</code> is <code>null</code>, then it tries to bind to the same host as the underlying cluster manager.
+ As a last resort, an address will be picked among the available network interfaces.
 +++
 |[[idleTimeout]]`@idleTimeout`|`Number (int)`|+++
 Set the idle timeout, default time unit is seconds. Zero means don't timeout.

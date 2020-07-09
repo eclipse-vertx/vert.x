@@ -842,8 +842,9 @@ one instance. If omitted a single instance will be deployed.
  cluster communication with other Vert.x instances. Default is `0` - which means '_choose a free random port_'. You
  don't usually need to specify this parameter unless you really need to bind to a specific port.
  * `-cluster-host` - If the `cluster` option has also been specified then this determines which host address will be
- bound for cluster communication with other Vert.x instances. By default it will try and pick one from the available
- interfaces. If you have more than one interface and you want to use a specific one, specify it here.
+ bound for cluster communication with other Vert.x instances. If not set, the clustered eventbus tries to bind to the
+ same host as the underlying cluster manager. As a last resort, an address will be picked among the available network
+ interfaces.
  * `-cluster-public-port` - If the `cluster` option has also been specified then this determines which port will be advertised for
  cluster communication with other Vert.x instances. Default is `-1`, which means same as `cluster-port`.
  * `-cluster-public-host` - If the `cluster` option has also been specified then this determines which host address will be advertised for

@@ -219,14 +219,18 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * @return the host
+   * @return the host or {@code null} if the clustered eventbus should try to pick one automatically
    */
   public String getHost() {
     return host;
   }
 
   /**
-   * Sets the host.
+   * Sets the host. Defaults to {@code null}.
+   * <p>
+   * When the clustered eventbus starts, it tries to bind to the provided {@code host}.
+   * If {@code host} is {@code null}, then it tries to bind to the same host as the underlying cluster manager.
+   * As a last resort, an address will be picked among the available network interfaces.
    *
    * @param host the host
    * @return a reference to this, so the API can be used fluently
