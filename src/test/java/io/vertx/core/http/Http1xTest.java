@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpUtils;
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -3056,13 +3058,79 @@ public class Http1xTest extends HttpTest {
         ports.add(port);
         client.getNow(port, DEFAULT_HTTP_HOST, "/somepath", resp -> {
           if (count.incrementAndGet() == numServers) {
-            assertEquals(numServers, ports.size());
+            assertEquals(10, ports.size());
             testComplete();
           }
         });
       }));
     }
     await();
+  }
+
+  /**
+   * Tests that a wildcard binding from the same verticle shares the port binding.
+   * @throws Exception
+   */
+  @Test
+  public void testRandomPortsSameVerticle() throws Exception{
+    CompletableFuture<String> deploymentId = new CompletableFuture<>();
+    try {
+      int numServers = 10;
+      Set<Integer> ports = Collections.synchronizedSet(new HashSet<>());
+      AtomicInteger count = new AtomicInteger();
+      vertx.deployVerticle(new Supplier<Verticle>() {
+        @Override
+        public Verticle get() {
+          return new Verticle() {
+            volatile HttpServer server;
+            @Override
+            public Vertx getVertx() {
+              return vertx;
+            }
+
+            @Override
+            public void init(Vertx vertx, Context context) {
+
+            }
+
+            @Override
+            public void start(Future<Void> startFuture) throws Exception {
+              server = vertx.createHttpServer().requestHandler(req -> {
+                req.response().end();
+              }).listen(0, DEFAULT_HTTP_HOST, onSuccess(s -> {
+                int port = s.actualPort();
+                ports.add(port);
+                client.getNow(port, DEFAULT_HTTP_HOST, "/somepath", resp -> {
+                  if (count.incrementAndGet() == numServers) {
+                    assertEquals(1, ports.size());
+                    testComplete();
+                  }
+                });
+              }));
+            }
+
+            @Override
+            public void stop(Future<Void> stopFuture) throws Exception {
+              server.close();
+            }
+          };
+        }
+      }, new DeploymentOptions().setInstances(numServers), new Handler<AsyncResult<String>>() {
+        @Override
+        public void handle(AsyncResult<String> event) {
+          if (event.succeeded()) {
+            deploymentId.complete(event.result());
+          } else {
+            deploymentId.completeExceptionally(event.cause());
+          }
+        }
+      });
+      await();
+    } finally {
+     if (deploymentId.isDone()) {
+       vertx.undeploy(deploymentId.get());
+     }
+    }
   }
 
   @Test

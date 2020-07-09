@@ -19,15 +19,31 @@ import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.*;
+import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpVersion;
+import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.*;
+import io.vertx.core.net.impl.AsyncResolveConnectHelper;
+import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.net.impl.HandlerHolder;
+import io.vertx.core.net.impl.HandlerManager;
+import io.vertx.core.net.impl.SSLHelper;
+import io.vertx.core.net.impl.ServerID;
+import io.vertx.core.net.impl.VertxEventLoopGroup;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -72,7 +88,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
 
   private ChannelGroup serverChannelGroup;
   private volatile boolean listening;
-  private io.netty.util.concurrent.Future<Channel> bindFuture;
+  private Future<Channel> bindFuture;
   private ServerID id;
   private HttpServerImpl actualServer;
   private volatile int actualPort;
@@ -236,11 +252,24 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     }
     sslHelper.setApplicationProtocols(applicationProtocols);
     Map<ServerID, HttpServerImpl> sharedHttpServers = vertx.sharedHttpServers();
+    //for fixed port number we want to share the binding. For wildcard port number
+    //we share the binding for deployments from the same verticle.
+    //wildcard bindings done outside a verticle are not shared
+    boolean unsharable = false;
     synchronized (sharedHttpServers) {
-      this.actualPort = port; // Will be updated on bind for a wildcard port
-      id = new ServerID(port, hostOrPath);
+      if (port != 0) {
+        this.actualPort = port; // Will be updated on bind for a wildcard port
+        id = new ServerID(port, hostOrPath);
+      } else {
+        if (creatingContext != null && creatingContext.getDeployment() != null) {
+          id = new ServerID(port, creatingContext.getDeployment().deploymentID() + "/" + hostOrPath);
+        } else {
+          id = new ServerID(port, hostOrPath);
+          unsharable = true;
+        }
+      }
       HttpServerImpl shared = sharedHttpServers.get(id);
-      if (shared == null || port == 0) {
+      if (shared == null || unsharable) {
         serverChannelGroup = new DefaultChannelGroup("vertx-acceptor-channels", GlobalEventExecutor.INSTANCE);
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), availableWorkers);
@@ -249,24 +278,24 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
         String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
         bootstrap.childHandler(childHandler(address, serverOrigin));
         addHandlers(this, listenContext);
+        Promise<Channel> bindPromise = Promise.promise();
         try {
-          bindFuture = AsyncResolveConnectHelper.doBind(vertx, address, bootstrap);
-          bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
+          io.netty.util.concurrent.Future<Channel> tempFuture = AsyncResolveConnectHelper.doBind(vertx, address, bootstrap);
+          tempFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
             if (!res.isSuccess()) {
               synchronized (sharedHttpServers) {
                 sharedHttpServers.remove(id);
               }
+              bindPromise.fail(res.cause());
             } else {
               Channel serverChannel = res.getNow();
-              if (serverChannel.localAddress() instanceof InetSocketAddress) {
-                HttpServerImpl.this.actualPort = ((InetSocketAddress)serverChannel.localAddress()).getPort();
-              } else {
-                HttpServerImpl.this.actualPort = address.port();
-              }
               serverChannelGroup.add(serverChannel);
+              bindPromise.complete(serverChannel);
             }
           });
+          bindFuture = bindPromise.future();
         } catch (final Throwable t) {
+          bindPromise.fail(t); //just in case
           // Make sure we send the exception back through the handler (if any)
           if (listenHandler != null) {
             vertx.runOnContext(v -> listenHandler.handle(Future.failedFuture(t)));
@@ -282,22 +311,29 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = shared;
-        this.actualPort = shared.actualPort;
         addHandlers(actualServer, listenContext);
         VertxMetrics metrics = vertx.metricsSPI();
         this.metrics = metrics != null ? metrics.createHttpServerMetrics(options, address) : null;
       }
-      actualServer.bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
+      actualServer.bindFuture.onComplete(future -> {
+        if (future.succeeded()) {
+          Channel serverChannel = future.result();
+          if (serverChannel.localAddress() instanceof InetSocketAddress) {
+            HttpServerImpl.this.actualPort = ((InetSocketAddress) serverChannel.localAddress()).getPort();
+          } else {
+            HttpServerImpl.this.actualPort = address.port();
+          }
+        }
         if (listenHandler != null) {
           final AsyncResult<HttpServer> res;
-          if (future.isSuccess()) {
+          if (future.succeeded()) {
             res = Future.succeededFuture(HttpServerImpl.this);
           } else {
             res = Future.failedFuture(future.cause());
             listening = false;
           }
           listenContext.runOnContext((v) -> listenHandler.handle(res));
-        } else if (!future.isSuccess()) {
+        } else if (!future.succeeded()) {
           listening  = false;
           if (metrics != null) {
             metrics.close();
