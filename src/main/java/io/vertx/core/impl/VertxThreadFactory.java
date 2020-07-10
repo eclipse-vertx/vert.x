@@ -11,8 +11,6 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.VertxOptions;
-
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ThreadFactory;
@@ -40,7 +38,7 @@ public class VertxThreadFactory implements ThreadFactory {
   private final long maxExecTime;
   private final TimeUnit maxExecTimeUnit;
 
-  VertxThreadFactory(String prefix, BlockedThreadChecker checker, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
+  protected VertxThreadFactory(String prefix, BlockedThreadChecker checker, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
     this.prefix = prefix;
     this.checker = checker;
     this.worker = worker;
@@ -56,8 +54,12 @@ public class VertxThreadFactory implements ThreadFactory {
     }
   }
 
+  protected VertxThread createVertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
+      return new VertxThread(target, name, worker, maxExecTime, maxExecTimeUnit);
+  }
+
   public Thread newThread(Runnable runnable) {
-    VertxThread t = new VertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecTime, maxExecTimeUnit);
+    VertxThread t = createVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecTime, maxExecTimeUnit);
     // Vert.x threads are NOT daemons - we want them to prevent JVM exit so embededd user doesn't
     // have to explicitly prevent JVM from exiting.
     if (checker != null) {

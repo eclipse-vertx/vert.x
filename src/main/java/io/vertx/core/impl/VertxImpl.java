@@ -129,6 +129,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final TimeUnit maxEventLoopExecTimeUnit;
   private final CloseHooks closeHooks;
   private final Transport transport;
+  private final VertxThreadFactoryCreator threadFactoryCreator;
 
   private VertxImpl(VertxOptions options, Transport transport) {
     // Sanity check
@@ -137,11 +138,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     closeHooks = new CloseHooks(log);
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
+    threadFactoryCreator = options.getThreadFactoryCreator();
     maxEventLoopExTime = options.getMaxEventLoopExecuteTime();
     maxEventLoopExecTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
-    eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, maxEventLoopExTime, maxEventLoopExecTimeUnit);
+    eventLoopThreadFactory = createVertxThreadFactory("vert.x-eventloop-thread-", checker, false, maxEventLoopExTime, maxEventLoopExecTimeUnit);
     eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
-    ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
+    ThreadFactory acceptorEventLoopThreadFactory = createVertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
@@ -151,10 +153,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     int workerPoolSize = options.getWorkerPoolSize();
     ExecutorService workerExec = new ThreadPoolExecutor(workerPoolSize, workerPoolSize,
       0L, TimeUnit.MILLISECONDS, new LinkedTransferQueue<>(),
-      new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
+      createVertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
     PoolMetrics workerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
     ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
-        new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
+        createVertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
     internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
@@ -176,6 +178,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       this.eventBus = new EventBusImpl(this);
     }
     this.sharedData = new SharedDataImpl(this, clusterManager);
+  }
+
+  private ThreadFactory createVertxThreadFactory(String prefix, BlockedThreadChecker checker, boolean worker, long maxExecTime,
+                                                 TimeUnit maxExecTimeUnit) {
+    if(threadFactoryCreator != null)
+        return threadFactoryCreator.createVertxThreadFactory(prefix, checker, worker, maxExecTime, maxExecTimeUnit);
+    return new VertxThreadFactory(prefix, checker, worker, maxExecTime, maxExecTimeUnit);
   }
 
   private void init() {
@@ -1097,7 +1106,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
     if (sharedWorkerPool == null) {
-      ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory(name + "-", checker, true, maxExecuteTime, maxExecuteTimeUnit));
+      ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, createVertxThreadFactory(name + "-", checker, true, maxExecuteTime, maxExecuteTimeUnit));
       PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
       namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
     } else {

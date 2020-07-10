@@ -186,6 +186,7 @@ public class VertxOptions {
   private TimeUnit maxWorkerExecuteTimeUnit = DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT;
   private TimeUnit warningExceptionTimeUnit = DEFAULT_WARNING_EXCEPTION_TIME_UNIT;
   private TimeUnit blockedThreadCheckIntervalUnit = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL_UNIT;
+  private VertxThreadFactoryCreator threadFactoryCreator;
 
   /**
    * Default constructor
@@ -218,6 +219,7 @@ public class VertxOptions {
     this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
     this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
     this.blockedThreadCheckIntervalUnit = other.blockedThreadCheckIntervalUnit;
+    this.threadFactoryCreator = other.threadFactoryCreator;
   }
 
   /**
@@ -895,6 +897,23 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * @return the current {@code VertxThreadFactoryCreator}, or null.
+   */
+  public VertxThreadFactoryCreator getThreadFactoryCreator() {
+      return this.threadFactoryCreator;
+  }
+
+  /**
+   * Set the {@code VertxThreadFactoryCreator} to use when creating new thread factories.
+   * @param threadFactoryCreator the thread factory creator.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setThreadFactoryCreator(VertxThreadFactoryCreator threadFactoryCreator) {
+      this.threadFactoryCreator = threadFactoryCreator;
+      return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -926,6 +945,9 @@ public class VertxOptions {
     if (fileSystemOptions != null ? !fileSystemOptions.equals(that.fileSystemOptions) : that.fileSystemOptions != null) {
       return false;
     }
+    if (threadFactoryCreator != null ? !threadFactoryCreator.equals(that.threadFactoryCreator) : that.threadFactoryCreator != null) {
+      return false;
+    }
     return !(metricsOptions != null ? !metricsOptions.equals(that.metricsOptions) : that.metricsOptions != null);
   }
 
@@ -951,6 +973,7 @@ public class VertxOptions {
     result = 31 * result + (maxWorkerExecuteTimeUnit != null ? maxWorkerExecuteTimeUnit.hashCode() : 0);
     result = 31 * result + (warningExceptionTimeUnit != null ? warningExceptionTimeUnit.hashCode() : 0);
     result = 31 * result + (blockedThreadCheckIntervalUnit != null ? blockedThreadCheckIntervalUnit.hashCode() : 0);
+    result = 31 * result + (threadFactoryCreator != null ? threadFactoryCreator.hashCode() : 0);
     return result;
   }
 
@@ -978,6 +1001,8 @@ public class VertxOptions {
         ", eventbus=" + eventBusOptions.toJson() +
         ", warningExceptionTimeUnit=" + warningExceptionTimeUnit +
         ", warningExceptionTime=" + warningExceptionTime +
+        ", threadFactoryCreator=" + threadFactoryCreator +
         '}';
   }
+
 }
