@@ -298,7 +298,11 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public final void put(String key, Object value) {
-    contextData().put(key, value);
+    if (value == null) {
+      contextData().remove(key);
+    } else {
+      contextData().put(key, value);
+    }
   }
 
   @Override
@@ -314,7 +318,11 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public final void putLocal(String key, Object value) {
-    localContextData().put(key, value);
+    if (value == null) {
+      localContextData().remove(key);
+    } else {
+      localContextData().put(key, value);
+    }
   }
 
   @Override
