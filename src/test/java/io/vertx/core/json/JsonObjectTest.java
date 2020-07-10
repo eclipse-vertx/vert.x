@@ -1866,4 +1866,24 @@ public class JsonObjectTest {
     // but not overflow if int
     assertEquals(42000, n.intValue());
   }
+
+  @Test
+  public void testNumberDefaults() {
+
+    JsonObject numbers = new JsonObject();
+
+    // getting any kind of number should be allowed
+    for (Number n : new Number[] {
+      new BigDecimal("124567890.0987654321"),
+      new BigInteger("1234567890123456789012345678901234567890"),
+      (byte) 0x0a,
+      Math.PI,
+      (float) Math.PI,
+      42,
+      1234567890123456789L,
+      Short.MAX_VALUE
+    }) {
+      assertNumberEquals(n, numbers.getNumber("missingKey", n));
+    }
+  }
 }

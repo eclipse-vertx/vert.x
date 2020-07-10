@@ -118,11 +118,11 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
-   * Get the Integer at position {@code pos} in the array,
+   * Get the Number at position {@code pos} in the array,
    *
    * @param pos the position in the array
    * @return the Number, or null if a null value present
-   * @throws java.lang.ClassCastException if the value cannot be converted to Number
+   * @throws java.lang.ClassCastException if the value is not a Number
    */
   public Number getNumber(int pos) {
     return (Number) list.get(pos);

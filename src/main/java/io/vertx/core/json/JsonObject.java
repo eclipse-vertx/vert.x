@@ -150,7 +150,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @param key the key to return the value for
    * @return the value or null if no value for that key
-   * @throws java.lang.ClassCastException if the value is not an Number
+   * @throws java.lang.ClassCastException if the value is not a Number
    */
   public Number getNumber(String key) {
     Objects.requireNonNull(key);
@@ -413,7 +413,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @param def the default value to use if the entry is not present
    * @return the value or {@code def} if no entry present
    */
-  public Number getInteger(String key, Number def) {
+  public Number getNumber(String key, Number def) {
     Objects.requireNonNull(key);
     if (map.containsKey(key)) {
       return getNumber(key);
