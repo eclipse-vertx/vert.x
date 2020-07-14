@@ -1512,7 +1512,7 @@ public class Http2ClientTest extends Http2TestBase {
         }));
       req.sendHead(onSuccess(version -> {
         assertEquals(0, status.getAndIncrement());
-        assertSame(HttpVersion.HTTP_2, version);
+        assertSame(HttpVersion.HTTP_2, req.version());
         req.end();
       }));
     }));
@@ -1550,7 +1550,7 @@ public class Http2ClientTest extends Http2TestBase {
         });
       }));
       req.sendHead(onSuccess(version -> {
-        assertSame(HttpVersion.HTTP_2, version);
+        assertSame(HttpVersion.HTTP_2, req.version());
         req.writeCustomFrame(10, 253, expectedSend);
         req.end();
       }));

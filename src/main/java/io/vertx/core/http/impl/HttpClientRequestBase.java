@@ -11,13 +11,16 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.http2.Http2Error;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
@@ -29,6 +32,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   protected final HttpClientImpl client;
   protected final ContextInternal context;
+  protected final HttpClientStream stream;
   protected final io.vertx.core.http.HttpMethod method;
   protected final String uri;
   protected final String host;
@@ -38,12 +42,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private String path;
   private String query;
   private final PromiseInternal<HttpClientResponse> responsePromise;
+  private Handler<HttpClientRequest> pushHandler;
   long currentTimeoutTimerId = -1;
   long currentTimeoutMs;
   private long lastDataReceived;
 
-  HttpClientRequestBase(HttpClientImpl client, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
+    this.stream = stream;
     this.responsePromise = responsePromise;
     this.context = (ContextInternal) responsePromise.future().context();
     this.uri = uri;
@@ -52,6 +58,17 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.host = host;
     this.port = port;
     this.ssl = ssl;
+
+    //
+    stream.pushHandler(this::handlePush);
+    stream.headHandler(resp -> {
+      HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
+      stream.chunkHandler(response::handleChunk);
+      stream.endHandler(response::handleEnd);
+      stream.priorityHandler(response::handlePriorityChange);
+      stream.unknownFrameHandler(response::handleUnknownFrame);
+      handleResponse(response);
+    });
   }
 
   protected String authority() {
@@ -60,6 +77,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     } else {
       return host + ':' + port;
     }
+  }
+
+  @Override
+  public int streamId() {
+    return stream.id();
   }
 
   @Override
@@ -113,6 +135,30 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     HttpClientResponseImpl response = (HttpClientResponseImpl) responsePromise.future().result();
     if (response != null) {
       response.handleException(t);
+    }
+  }
+
+  void handlePush(HttpClientPush push) {
+    String rawMethod = push.headers.method().toString();
+    HttpMethod method = HttpMethod.valueOf(rawMethod);
+    String uri = push.headers.path().toString();
+    String authority = push.headers.authority() != null ? push.headers.authority().toString() : null;
+    MultiMap headersMap = new Http2HeadersAdaptor(push.headers);
+    int pos = authority.indexOf(':');
+    int port;
+    String host;
+    if (pos == -1) {
+      host = authority;
+      port = 80;
+    } else {
+      host = authority.substring(0, pos);
+      port = Integer.parseInt(authority.substring(pos + 1));
+    }
+    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, client, ssl, method, uri, host, port, headersMap);
+    if (pushHandler != null) {
+      pushHandler.handle(pushReq);
+    } else {
+      pushReq.reset(Http2Error.CANCEL.code());
     }
   }
 
@@ -200,5 +246,15 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   @Override
   public boolean failed() {
     return responsePromise.future().failed();
+  }
+
+  synchronized Handler<HttpClientRequest> pushHandler() {
+    return pushHandler;
+  }
+
+  @Override
+  public synchronized HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) {
+    pushHandler = handler;
+    return this;
   }
 }

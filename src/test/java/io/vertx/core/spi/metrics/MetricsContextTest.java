@@ -299,15 +299,15 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
           @Override
-          public ClientMetrics<Void, Void, HttpClientRequest, HttpClientResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
-            return new ClientMetrics<Void, Void, HttpClientRequest, HttpClientResponse>() {
+          public ClientMetrics<Void, Void, HttpClientMetrics.Request, HttpClientMetrics.Response> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+            return new ClientMetrics<Void, Void, HttpClientMetrics.Request, HttpClientMetrics.Response>() {
               @Override
-              public Void requestBegin(String uri, HttpClientRequest request) {
+              public Void requestBegin(String uri, HttpClientMetrics.Request request) {
                 requestBeginCalled.set(uri);
                 return null;
               }
               @Override
-              public void responseEnd(Void requestMetric, HttpClientResponse response) {
+              public void responseEnd(Void requestMetric) {
                 responseEndCalled.set(true);
               }
             };
@@ -403,8 +403,8 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpClientMetrics createHttpClientMetrics(HttpClientOptions options) {
         return new DummyHttpClientMetrics() {
           @Override
-          public ClientMetrics<Void, Void, HttpClientRequest, HttpClientResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
-            return new ClientMetrics<Void, Void, HttpClientRequest, HttpClientResponse>() {
+          public ClientMetrics<Void, Void, HttpClientMetrics.Request, HttpClientMetrics.Response> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+            return new ClientMetrics<Void, Void, HttpClientMetrics.Request, HttpClientMetrics.Response>() {
             };
           }
           @Override

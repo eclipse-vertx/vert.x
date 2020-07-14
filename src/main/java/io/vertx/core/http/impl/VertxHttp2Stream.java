@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -211,10 +212,20 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  void doWriteData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
-    bytesWritten += chunk.readableBytes();
-    FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-    conn.handler.writeData(stream, chunk, end, promise);
+  void doWriteData(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
+    ByteBuf chunk;
+    if (buf == null && end) {
+      chunk = Unpooled.EMPTY_BUFFER;
+    } else {
+      chunk = buf;
+    }
+    if (chunk != null) {
+      bytesWritten += chunk.readableBytes();
+      FutureListener<Void> promise = handler == null ? null : context.promise(handler);
+      conn.handler.writeData(stream, chunk, end, promise);
+    } else {
+      // todo ??????????
+    }
   }
 
   final void writeReset(long code) {

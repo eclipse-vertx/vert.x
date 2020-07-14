@@ -23,8 +23,6 @@ import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
@@ -102,13 +100,13 @@ public final class HttpUtils {
     }
   };
 
-  static final TagExtractor<HttpClientRequest> CLIENT_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpClientRequest>() {
+  static final TagExtractor<HttpRequestHead> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpRequestHead>() {
     @Override
-    public int len(HttpClientRequest req) {
+    public int len(HttpRequestHead req) {
       return 2;
     }
     @Override
-    public String name(HttpClientRequest req, int index) {
+    public String name(HttpRequestHead req, int index) {
       switch (index) {
         case 0:
           return "http.url";
@@ -118,33 +116,33 @@ public final class HttpUtils {
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
     @Override
-    public String value(HttpClientRequest req, int index) {
+    public String value(HttpRequestHead req, int index) {
       switch (index) {
         case 0:
-          return req.absoluteURI();
+          return req.absoluteURI;
         case 1:
-          return req.method().name();
+          return req.method.name();
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
   };
 
-  static final TagExtractor<HttpClientResponse> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpClientResponse>() {
+  static final TagExtractor<HttpResponseHead> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpResponseHead>() {
     @Override
-    public int len(HttpClientResponse resp) {
+    public int len(HttpResponseHead resp) {
       return 1;
     }
     @Override
-    public String name(HttpClientResponse resp, int index) {
+    public String name(HttpResponseHead resp, int index) {
       if (index == 0) {
         return "http.status_code";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
     @Override
-    public String value(HttpClientResponse resp, int index) {
+    public String value(HttpResponseHead resp, int index) {
       if (index == 0) {
-        return "" + resp.statusCode();
+        return "" + resp.statusCode;
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }

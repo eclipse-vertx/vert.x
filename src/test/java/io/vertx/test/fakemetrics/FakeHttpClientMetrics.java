@@ -48,9 +48,10 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
 
   public HttpClientMetric getMetric(HttpClientRequest request) {
     for (EndpointMetric metric : endpoints.values()) {
-      HttpClientMetric m = metric.requests.get(request);
-      if (m != null) {
-        return m;
+      for (HttpClientMetrics.Request req : metric.requests.keySet()) {
+        if (req.id() == request.streamId()) {
+          return metric.requests.get(req);
+        }
       }
     }
     return null;
@@ -84,7 +85,7 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   }
 
   @Override
-  public ClientMetrics<HttpClientMetric, Void, HttpClientRequest, HttpClientResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+  public ClientMetrics<HttpClientMetric, Void, HttpClientMetrics.Request, HttpClientMetrics.Response> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
     EndpointMetric metric = new EndpointMetric() {
       @Override
       public void close() {

@@ -87,7 +87,6 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
       req.pushHandler(pushedReq -> {
         HttpClientMetric metric = metrics.getMetric(pushedReq);
         assertNotNull(metric);
-        assertSame(pushedReq, metric.request);
         pushedReq.onComplete(onSuccess(resp -> {
           resp.endHandler(v -> {
             assertNull(metrics.getMetric(pushedReq));

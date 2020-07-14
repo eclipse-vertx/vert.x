@@ -11,9 +11,8 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.spi.metrics.ClientMetrics;
+import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -24,12 +23,12 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, HttpClientRequest, HttpClientResponse> {
+public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, HttpClientMetrics.Request, HttpClientMetrics.Response> {
 
   public final AtomicInteger queueSize = new AtomicInteger();
   public final AtomicInteger connectionCount = new AtomicInteger();
   public final AtomicInteger requestCount = new AtomicInteger();
-  public final ConcurrentMap<HttpClientRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
+  public final ConcurrentMap<HttpClientMetrics.Request, HttpClientMetric> requests = new ConcurrentHashMap<>();
 
   public EndpointMetric() {
   }
@@ -46,7 +45,7 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   }
 
   @Override
-  public HttpClientMetric requestBegin(String uri, HttpClientRequest request) {
+  public HttpClientMetric requestBegin(String uri, HttpClientMetrics.Request request) {
     requestCount.incrementAndGet();
     HttpClientMetric metric = new HttpClientMetric(this, request);
     requests.put(request, metric);
@@ -59,7 +58,7 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   }
 
   @Override
-  public void responseBegin(HttpClientMetric requestMetric, HttpClientResponse response) {
+  public void responseBegin(HttpClientMetric requestMetric, HttpClientMetrics.Response response) {
     assertNotNull(response);
     requestMetric.responseBegin.incrementAndGet();
   }
@@ -72,9 +71,8 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   }
 
   @Override
-  public void responseEnd(HttpClientMetric requestMetric, HttpClientResponse response) {
+  public void responseEnd(HttpClientMetric requestMetric) {
     requestCount.decrementAndGet();
     requests.remove(requestMetric.request);
   }
-
 }

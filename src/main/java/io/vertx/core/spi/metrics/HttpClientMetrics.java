@@ -13,6 +13,7 @@ package io.vertx.core.spi.metrics;
 
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.net.SocketAddress;
 
@@ -37,6 +38,16 @@ import io.vertx.core.net.SocketAddress;
  */
 public interface HttpClientMetrics<R, W, S, T> extends TCPMetrics<S> {
 
+  interface Request {
+    int id();
+    String uri();
+    HttpMethod method();
+  }
+
+  interface Response {
+    int statusCode();
+  }
+
   /**
    * Provides metrics for a particular endpoint
    *
@@ -44,7 +55,7 @@ public interface HttpClientMetrics<R, W, S, T> extends TCPMetrics<S> {
    * @param maxPoolSize the server max pool size
    * @return the endpoint metric
    */
-  default ClientMetrics<R, T, HttpClientRequest, HttpClientResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+  default ClientMetrics<R, T, Request, Response> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
     return null;
   }
 

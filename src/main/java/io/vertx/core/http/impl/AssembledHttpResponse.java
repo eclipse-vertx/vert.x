@@ -23,7 +23,7 @@ import io.netty.handler.codec.http.*;
  *
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-class AssembledHttpResponse implements HttpResponse, HttpContent {
+class AssembledHttpResponse implements io.netty.handler.codec.http.HttpResponse, HttpContent {
 
   private boolean head;
   private HttpResponseStatus status;

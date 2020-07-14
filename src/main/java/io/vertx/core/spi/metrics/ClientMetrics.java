@@ -78,8 +78,7 @@ public interface ClientMetrics<M, T, Req, Resp> extends Metrics {
    * Called when the client response has ended
    *
    * @param requestMetric the request metric
-   * @param response the response
    */
-  default void responseEnd(M requestMetric, Resp response) {
+  default void responseEnd(M requestMetric) {
   }
 }

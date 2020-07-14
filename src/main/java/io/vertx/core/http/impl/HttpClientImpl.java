@@ -637,7 +637,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     });
   }
 
-  // todo: should be renamed "request" after
   @Override
   public void request(RequestOptions options, Handler<AsyncResult<HttpClientRequest>> handler) {
     ContextInternal ctx = vertx.getOrCreateContext();
@@ -1407,18 +1406,17 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     }
     httpCM.getConnection(ctx, key, ar1 -> {
       if (ar1.succeeded()) {
-        HttpClientRequestImpl req = new HttpClientRequestImpl(this, ctx.promise(), useSSL, method, server, host, port, requestURI);
-        if (headers != null) {
-          req.headers().setAll(headers);
-        }
-        if (followRedirects != null) {
-          req.setFollowRedirects(followRedirects);
-        }
         HttpClientConnection conn = ar1.result();
-        conn.createStream(ctx, req, ar2 -> {
+        conn.createStream(ctx, ar2 -> {
           if (ar2.succeeded()) {
             HttpClientStream stream = ar2.result();
-            req.connected2(stream);
+            HttpClientRequestImpl req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, server, host, port, requestURI);
+            if (headers != null) {
+              req.headers().setAll(headers);
+            }
+            if (followRedirects != null) {
+              req.setFollowRedirects(followRedirects);
+            }
             req.currentTimeoutMs = timeout;
             req.currentTimeoutTimerId = timerID;
             if (requestPromise.tryComplete(req)) {

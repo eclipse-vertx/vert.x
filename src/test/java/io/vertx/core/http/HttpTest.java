@@ -4246,6 +4246,7 @@ public abstract class HttpTest extends HttpTestBase {
       public boolean isChunked() { return false; }
       public HttpMethod method() { return method; }
       public String absoluteURI() { return baseURI; }
+      public HttpVersion version() { return HttpVersion.HTTP_1_1; }
       public String uri() { throw new UnsupportedOperationException(); }
       public String path() { throw new UnsupportedOperationException(); }
       public String query() { throw new UnsupportedOperationException(); }
@@ -4262,8 +4263,8 @@ public abstract class HttpTest extends HttpTestBase {
       public void write(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public void write(String chunk, String enc, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
-      public Future<HttpVersion> sendHead() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest sendHead(Handler<AsyncResult<HttpVersion>> completionHandler) { throw new UnsupportedOperationException(); }
+      public Future<Void> sendHead() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler) { throw new UnsupportedOperationException(); }
       public Future<Void> end(String chunk) { throw new UnsupportedOperationException(); }
       public Future<Void> end(String chunk, String enc) { throw new UnsupportedOperationException(); }
       public void end(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
