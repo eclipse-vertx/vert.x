@@ -17,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -1714,6 +1715,68 @@ public class JsonObjectTest {
     assertNotEquals(new JsonObject().putNull("a"), new JsonObject().put("a", 1));
     assertEquals(new JsonObject().putNull("a"), new JsonObject().putNull("a"));
   }
+
+  @Test
+  public void testNumber() {
+
+    // storing any kind of number should be allowed
+    JsonObject numbers = new JsonObject()
+      .put("byte", (byte) 0x0a)
+      .put("double", Math.PI)
+      .put("float", (float) Math.PI)
+      .put("int", 42)
+      .put("long", 1234567890123456789L)
+      .put("short", Short.MAX_VALUE);
+
+    // copy should have no side effects
+    JsonObject json2 = numbers.copy();
+    // same for encode
+    assertEquals("{\"byte\":10,\"double\":3.141592653589793,\"float\":3.1415927,\"int\":42,\"long\":1234567890123456789,\"short\":32767}", numbers.encode());
+
+    // fetching any property should always be a number
+    // the test asserts on not null because not being a number would cause a class cast exception
+    // and the compiler would here just warn that the condition is alwasy true
+    assertNotNull(numbers.getNumber("byte"));
+    assertNotNull(numbers.getNumber("double"));
+    assertNotNull(numbers.getNumber("float"));
+    assertNotNull(numbers.getNumber("int"));
+    assertNotNull(numbers.getNumber("long"));
+    assertNotNull(numbers.getNumber("short"));
+
+    // ensure that types are preserved
+    assertTrue(numbers.getNumber("byte") instanceof Byte);
+    assertTrue(numbers.getNumber("double") instanceof Double);
+    assertTrue(numbers.getNumber("float") instanceof Float);
+    assertTrue(numbers.getNumber("int") instanceof Integer);
+    assertTrue(numbers.getNumber("long") instanceof Long);
+    assertTrue(numbers.getNumber("short") instanceof Short);
+
+    // test overflow
+    JsonObject object = new JsonObject().put("v", 42000);
+
+    Number n = object.getNumber("v");
+
+    // 42000 is bigger than Short.MAX_VALUE so it shall overflow (silently)
+    assertEquals(Short.MIN_VALUE + (42000 - Short.MAX_VALUE - 1), n.shortValue());
+    // but not overflow if int
+    assertEquals(42000, n.intValue());
+  }
+
+  @Test
+  public void testNumberDefaults() {
+
+    JsonObject numbers = new JsonObject();
+
+    // getting any kind of number should be allowed
+    for (Number n : new Number[] {
+      (byte) 0x0a,
+      Math.PI,
+      (float) Math.PI,
+      42,
+      1234567890123456789L,
+      Short.MAX_VALUE
+    }) {
+      assertNumberEquals(n, numbers.getNumber("missingKey", n));
+    }
+  }
 }
-
-

@@ -138,6 +138,18 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Get the Number value with the specified key
+   *
+   * @param key the key to return the value for
+   * @return the value or null if no value for that key
+   * @throws java.lang.ClassCastException if the value is not a Number
+   */
+  public Number getNumber(String key) {
+    Objects.requireNonNull(key);
+    return (Number) map.get(key);
+  }
+
+  /**
    * Get the Integer value with the specified key
    *
    * @param key  the key to return the value for
@@ -323,6 +335,22 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     Objects.requireNonNull(key);
     CharSequence cs = (CharSequence)map.get(key);
     return cs != null || map.containsKey(key) ? cs == null ? null : cs.toString() : def;
+  }
+
+  /**
+   * Like {@link #getNumber(String)} but specifying a default value to return if there is no entry.
+   *
+   * @param key the key to lookup
+   * @param def the default value to use if the entry is not present
+   * @return the value or {@code def} if no entry present
+   */
+  public Number getNumber(String key, Number def) {
+    Objects.requireNonNull(key);
+    if (map.containsKey(key)) {
+      return getNumber(key);
+    } else {
+      return def;
+    }
   }
 
   /**
