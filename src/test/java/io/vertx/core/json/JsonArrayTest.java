@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1319,4 +1320,55 @@ public class JsonArrayTest {
     JsonArray json2 = json.copy();
   }
 
+  @Test
+  public void testNumber() {
+
+    // storing any kind of number should be allowed
+    JsonArray numbers = new JsonArray()
+      .add(new BigDecimal("124567890.0987654321"))
+      .add(new BigInteger("1234567890123456789012345678901234567890"))
+      .add((byte) 0x0a)
+      .add(Math.PI)
+      .add((float) Math.PI)
+      .add(42)
+      .add(1234567890123456789L)
+      .add(Short.MAX_VALUE);
+
+    // copy should have no side effects
+    JsonArray json2 = numbers.copy();
+    // same for encode
+    assertEquals("[124567890.0987654321,1234567890123456789012345678901234567890,10,3.141592653589793,3.1415927,42,1234567890123456789,32767]", numbers.encode());
+
+    // fetching any property should always be a number
+    // the test asserts on not null because not being a number would cause a class cast exception
+    // and the compiler would here just warn that the condition is alwasy true
+    assertNotNull(numbers.getNumber(0));
+    assertNotNull(numbers.getNumber(1));
+    assertNotNull(numbers.getNumber(2));
+    assertNotNull(numbers.getNumber(3));
+    assertNotNull(numbers.getNumber(4));
+    assertNotNull(numbers.getNumber(5));
+    assertNotNull(numbers.getNumber(6));
+    assertNotNull(numbers.getNumber(7));
+
+    // ensure that types are preserved
+    assertTrue(numbers.getNumber(0) instanceof BigDecimal);
+    assertTrue(numbers.getNumber(1) instanceof BigInteger);
+    assertTrue(numbers.getNumber(2) instanceof Byte);
+    assertTrue(numbers.getNumber(3) instanceof Double);
+    assertTrue(numbers.getNumber(4) instanceof Float);
+    assertTrue(numbers.getNumber(5) instanceof Integer);
+    assertTrue(numbers.getNumber(6) instanceof Long);
+    assertTrue(numbers.getNumber(7) instanceof Short);
+
+    // test overflow
+    JsonArray object = new JsonArray().add(42000);
+
+    Number n = object.getNumber(0);
+
+    // 42000 is bigger than Short.MAX_VALUE so it shall overflow (silently)
+    assertEquals(Short.MIN_VALUE + (42000 - Short.MAX_VALUE - 1), n.shortValue());
+    // but not overflow if int
+    assertEquals(42000, n.intValue());
+  }
 }
