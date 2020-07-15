@@ -38,7 +38,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -4723,6 +4722,35 @@ public class Http1xTest extends HttpTest {
     servers.forEach(server -> {
       assertTrue(server.isClosed());
     });
+  }
+
+  @Test
+  public void testRandomPortsSameVerticle() throws Exception{
+    int numServers = 3;
+    waitFor(numServers);
+    Set<Integer> ports = Collections.synchronizedSet(new HashSet<>());
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startFuture) {
+        server = vertx.createHttpServer().requestHandler(req -> {
+          req.response().end();
+        }).listen(0, DEFAULT_HTTP_HOST, onSuccess(s -> {
+          int port = s.actualPort();
+          assertTrue(port > 0);
+          ports.add(port);
+          startFuture.complete();
+        }));
+      }
+    }, new DeploymentOptions().setInstances(numServers), event -> {
+      assertEquals(1, ports.size());
+      int port = ports.iterator().next();
+      for (int i = 0;i < numServers;i++) {
+        client.get(port, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).onComplete(onSuccess(v -> {
+          complete();
+        }));
+      }
+    });
+    await();
   }
 
   @Test
