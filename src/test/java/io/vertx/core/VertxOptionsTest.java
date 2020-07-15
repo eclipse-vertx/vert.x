@@ -91,7 +91,7 @@ public class VertxOptionsTest extends VertxTestBase {
     } catch (IllegalArgumentException e) {
       // OK
     }
-    assertEquals("localhost", options.getEventBusOptions().getHost());
+    assertNull(options.getEventBusOptions().getHost());
     String randString = TestUtils.randomUnicodeString(100);
     options.getEventBusOptions().setHost(randString);
     assertEquals(randString, options.getEventBusOptions().getHost());
@@ -318,7 +318,7 @@ public class VertxOptionsTest extends VertxTestBase {
     assertEquals(20, options.getInternalBlockingPoolSize());
     assertEquals(20, options.getWorkerPoolSize());
     assertEquals(1000, options.getBlockedThreadCheckInterval());
-    assertEquals("localhost", options.getEventBusOptions().getHost());
+    assertNull(options.getEventBusOptions().getHost());
     assertNull(options.getEventBusOptions().getClusterPublicHost());
     assertEquals(null, options.getClusterManager());
     assertEquals(2000l * 1000000, options.getMaxEventLoopExecuteTime());

@@ -56,10 +56,12 @@ class ConnectionHolder {
     this.remoteNodeId = remoteNodeId;
     this.vertx = eventBus.vertx();
     this.metrics = eventBus.getMetrics();
-    NetClientOptions clientOptions = new NetClientOptions(options.toJson());
-    ClusteredEventBus.setCertOptions(clientOptions, options.getKeyCertOptions());
-    ClusteredEventBus.setTrustOptions(clientOptions, options.getTrustOptions());
+    NetClientOptions clientOptions = getClientOptions(options);
     this.client = vertx.createNetClient(clientOptions, new CloseFuture());
+  }
+
+  private NetClientOptions getClientOptions(EventBusOptions options) {
+    return new NetClientOptions(options.toJson());
   }
 
   void connect() {
