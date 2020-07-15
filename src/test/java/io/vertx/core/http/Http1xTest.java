@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
+import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpUtils;
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -3056,12 +3058,41 @@ public class Http1xTest extends HttpTest {
         ports.add(port);
         client.getNow(port, DEFAULT_HTTP_HOST, "/somepath", resp -> {
           if (count.incrementAndGet() == numServers) {
-            assertEquals(numServers, ports.size());
+            assertEquals(10, ports.size());
             testComplete();
           }
         });
       }));
     }
+    await();
+  }
+
+  @Test
+  public void testRandomPortsSameVerticle() throws Exception {
+    int numServers = 3;
+    waitFor(numServers);
+    Set<Integer> ports = Collections.synchronizedSet(new HashSet<>());
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startFuture) {
+        server = vertx.createHttpServer().requestHandler(req -> {
+          req.response().end();
+        }).listen(0, DEFAULT_HTTP_HOST, onSuccess(s -> {
+          int port = s.actualPort();
+          assertTrue(port > 0);
+          ports.add(port);
+          startFuture.complete();
+        }));
+      }
+    }, new DeploymentOptions().setInstances(numServers), event -> {
+      assertEquals(1, ports.size());
+      int port = ports.iterator().next();
+      for (int i = 0; i < numServers; i++) {
+        client.getNow(port, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, v -> {
+          complete();
+        });
+      }
+    });
     await();
   }
 
