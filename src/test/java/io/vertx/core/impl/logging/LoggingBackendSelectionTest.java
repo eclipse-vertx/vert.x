@@ -67,17 +67,9 @@ public class LoggingBackendSelectionTest {
   }
 
   @Test
-  public void Log4jPriority() throws Exception {
-    testClassLoader.hideVertxJulFile = true;
-    testClassLoader.hiddenPackages.add("org.slf4j");
-    assertEquals("Log4j", loggingBackend());
-  }
-
-  @Test
   public void Log4j2Priority() throws Exception {
     testClassLoader.hideVertxJulFile = true;
     testClassLoader.hiddenPackages.add("org.slf4j");
-    testClassLoader.hiddenPackages.add("org.apache.log4j");
     assertEquals("Log4j2", loggingBackend());
   }
 
@@ -85,7 +77,6 @@ public class LoggingBackendSelectionTest {
   public void JULDefault() throws Exception {
     testClassLoader.hideVertxJulFile = true;
     testClassLoader.hiddenPackages.add("org.slf4j");
-    testClassLoader.hiddenPackages.add("org.apache.log4j");
     testClassLoader.hiddenPackages.add("org.apache.logging");
     assertEquals("JUL", loggingBackend());
   }

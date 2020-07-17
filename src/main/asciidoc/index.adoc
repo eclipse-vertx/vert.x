@@ -1138,7 +1138,6 @@ Otherwise Vert.x defaults to JDK logging.
 Set the `vertx.logger-delegate-factory-class-name` system property to:
 
 * `io.vertx.core.logging.SLF4JLogDelegateFactory` for SLF4J or,
-* `io.vertx.core.logging.Log4jLogDelegateFactory` for Log4J or,
 * `io.vertx.core.logging.Log4j2LogDelegateFactory` for Log4J2 or,
 * `io.vertx.core.logging.JULLogDelegateFactory` for JDK logging
 
@@ -1167,8 +1166,8 @@ The logger implementation can be forced to a specific implementation by setting 
 
 [source,java]
 ----
-// Force logging to Log4j
-InternalLoggerFactory.setDefaultFactory(Log4JLoggerFactory.INSTANCE);
+// Force logging to Log4j 2
+InternalLoggerFactory.setDefaultFactory(Log4J2LoggerFactory.INSTANCE);
 ----
 
 === Troubleshooting

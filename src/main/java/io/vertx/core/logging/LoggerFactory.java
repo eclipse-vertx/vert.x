@@ -47,7 +47,6 @@ public class LoggerFactory {
     }
     if (loader.getResource("vertx-default-jul-logging.properties") == null) {
       if (configureWith("SLF4J", true, loader)
-        || configureWith("Log4j", true, loader)
         || configureWith("Log4j2", true, loader)) {
         return;
       }
