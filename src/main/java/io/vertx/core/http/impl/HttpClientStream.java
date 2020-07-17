@@ -44,7 +44,7 @@ public interface HttpClientStream {
   HttpClientConnection connection();
   ContextInternal getContext();
 
-  void writeHead(HttpRequestHead head,
+  void writeHead(HttpRequestHead request,
                  boolean chunked,
                  ByteBuf buf,
                  boolean end,

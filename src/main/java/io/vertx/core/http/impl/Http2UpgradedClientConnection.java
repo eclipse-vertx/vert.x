@@ -114,7 +114,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
      * HTTP/2 clear text upgrade here.
      */
     @Override
-    public void writeHead(HttpRequestHead head,
+    public void writeHead(HttpRequestHead request,
                           boolean chunked,
                           ByteBuf buf,
                           boolean end,
@@ -250,7 +250,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       };
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
       pipeline.addAfter("codec", null, upgradeHandler);
-      doWriteHead(head, chunked, buf, end, priority, netSocketPromise, handler);
+      doWriteHead(request, chunked, buf, end, priority, netSocketPromise, handler);
     }
 
     private void doWriteHead(HttpRequestHead head,

@@ -457,45 +457,43 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpRequestHead head, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
+    public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
       this.netSocketPromise = netSocketPromise;
       priority(priority);
       conn.context.dispatch(null, v -> {
-        writeHeaders(head, chunked, buf, end, priority, netSocketPromise, handler);
+        writeHeaders(request, buf, end, priority, netSocketPromise, handler);
       });
     }
 
-    private void writeHeaders(HttpRequestHead head, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
-
-      // Create h
-      Http2Headers h = new DefaultHttp2Headers();
-      h.method(head.method.name());
+    private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
+      Http2Headers headers = new DefaultHttp2Headers();
+      headers.method(request.method.name());
       boolean e;
-      if (head.method == HttpMethod.CONNECT) {
-        if (head.authority == null) {
+      if (request.method == HttpMethod.CONNECT) {
+        if (request.authority == null) {
           throw new IllegalArgumentException("Missing :authority / host header");
         }
-        h.authority(head.authority);
+        headers.authority(request.authority);
         // don't end stream for CONNECT
         e = false;
       } else {
-        h.path(head.uri);
-        h.scheme(conn.isSsl() ? "https" : "http");
-        if (head.authority != null) {
-          h.authority(head.authority);
+        headers.path(request.uri);
+        headers.scheme(conn.isSsl() ? "https" : "http");
+        if (request.authority != null) {
+          headers.authority(request.authority);
         }
         e= end;
       }
-      if (head.headers != null && head.headers.size() > 0) {
-        for (Map.Entry<String, String> header : head.headers) {
-          h.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
+      if (request.headers != null && request.headers.size() > 0) {
+        for (Map.Entry<String, String> header : request.headers) {
+          headers.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
         }
       }
-      if (conn.client.getOptions().isTryUseCompression() && h.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
-        h.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
+      if (conn.client.getOptions().isTryUseCompression() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
+        headers.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
       }
       try {
-        createStream(head, h, handler);
+        createStream(request, headers, handler);
       } catch (Http2Exception ex) {
         if (handler != null) {
           handler.handle(context.failedFuture(ex));
@@ -504,10 +502,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         return;
       }
       if (buf != null) {
-        doWriteHeaders(h, false, null);
+        doWriteHeaders(headers, false, null);
         doWriteData(buf, e, handler);
       } else {
-        doWriteHeaders(h, e, handler);
+        doWriteHeaders(headers, e, handler);
       }
     }
 

@@ -377,8 +377,8 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     }
 
     @Override
-    public void writeHead(HttpRequestHead head, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
-      writeHead(head, chunked, buf, end, netSocketPromise, handler == null ? null : context.promise(handler));
+    public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
+      writeHead(request, chunked, buf, end, netSocketPromise, handler == null ? null : context.promise(handler));
     }
 
     private void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
