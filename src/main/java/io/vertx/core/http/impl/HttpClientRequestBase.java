@@ -119,7 +119,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   public synchronized HttpClientRequest setTimeout(long timeoutMs) {
     cancelTimeout();
     currentTimeoutMs = timeoutMs;
-    currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
+    currentTimeoutTimerId = context.setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
     return this;
   }
 
