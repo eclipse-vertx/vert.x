@@ -519,6 +519,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         id += 2;
       }
       head.id = id;
+      head.remoteAddress = conn.remoteAddress();
       Http2Stream stream = this.conn.handler.encoder().connection().local().createStream(id, false);
       init(stream);
       if (conn.metrics != null) {

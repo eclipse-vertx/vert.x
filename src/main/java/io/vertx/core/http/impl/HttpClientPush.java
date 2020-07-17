@@ -11,20 +11,41 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http2.Http2Headers;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.observability.HttpRequest;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpClientPush implements HttpClientMetrics.Request {
+public class HttpClientPush implements HttpRequest {
 
-  final Http2Headers headers;
+  final int port;
+  final String uri;
+  final HttpMethod method;
+  final String host;
   final HttpClientStream stream;
+  final MultiMap headers;
 
   public HttpClientPush(Http2Headers headers, HttpClientStream stream) {
-    this.headers = headers;
+
+    String rawMethod = headers.method().toString();
+    String authority = headers.authority() != null ? headers.authority().toString() : null;
+    MultiMap headersMap = new Http2HeadersAdaptor(headers);
+    int pos = authority.indexOf(':');
+    if (pos == -1) {
+      this.host = authority;
+      this.port = 80;
+    } else {
+      this.host = authority.substring(0, pos);
+      this.port = Integer.parseInt(authority.substring(pos + 1));
+    }
+    this.method = HttpMethod.valueOf(rawMethod);
+    this.uri = headers.path().toString();
     this.stream = stream;
+    this.headers = headersMap;
   }
 
   @Override
@@ -33,14 +54,27 @@ public class HttpClientPush implements HttpClientMetrics.Request {
   }
 
   @Override
+  public MultiMap headers() {
+    return headers;
+  }
+
+  @Override
+  public String absoluteURI() {
+    return null;
+  }
+
+  @Override
+  public SocketAddress remoteAddress() {
+    return stream.connection().remoteAddress();
+  }
+
+  @Override
   public String uri() {
-    return headers.path().toString();
+    return uri;
   }
 
   @Override
   public HttpMethod method() {
-    String rawMethod = headers.method().toString();
-    HttpMethod method = HttpMethod.valueOf(rawMethod);
     return method;
   }
 }

@@ -12,7 +12,8 @@
 package io.vertx.test.fakemetrics;
 
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -23,12 +24,12 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, HttpClientMetrics.Request, HttpClientMetrics.Response> {
+public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, HttpRequest, HttpResponse> {
 
   public final AtomicInteger queueSize = new AtomicInteger();
   public final AtomicInteger connectionCount = new AtomicInteger();
   public final AtomicInteger requestCount = new AtomicInteger();
-  public final ConcurrentMap<HttpClientMetrics.Request, HttpClientMetric> requests = new ConcurrentHashMap<>();
+  public final ConcurrentMap<HttpRequest, HttpClientMetric> requests = new ConcurrentHashMap<>();
 
   public EndpointMetric() {
   }
@@ -45,7 +46,7 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   }
 
   @Override
-  public HttpClientMetric requestBegin(String uri, HttpClientMetrics.Request request) {
+  public HttpClientMetric requestBegin(String uri, HttpRequest request) {
     requestCount.incrementAndGet();
     HttpClientMetric metric = new HttpClientMetric(this, request);
     requests.put(request, metric);
@@ -58,7 +59,7 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   }
 
   @Override
-  public void responseBegin(HttpClientMetric requestMetric, HttpClientMetrics.Response response) {
+  public void responseBegin(HttpClientMetric requestMetric, HttpResponse response) {
     assertNotNull(response);
     requestMetric.responseBegin.incrementAndGet();
   }

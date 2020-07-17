@@ -12,14 +12,16 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.observability.HttpRequest;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpRequestHead implements HttpClientMetrics.Request {
+public class HttpRequestHead implements HttpRequest {
 
   int id; // For internal testing correlation
+  SocketAddress remoteAddress;
   public final HttpMethod method;
   public final String uri;
   public final MultiMap headers;
@@ -32,6 +34,21 @@ public class HttpRequestHead implements HttpClientMetrics.Request {
     this.headers = headers;
     this.authority = authority;
     this.absoluteURI = absoluteURI;
+  }
+
+  @Override
+  public MultiMap headers() {
+    return headers;
+  }
+
+  @Override
+  public SocketAddress remoteAddress() {
+    return remoteAddress;
+  }
+
+  @Override
+  public String absoluteURI() {
+    return absoluteURI;
   }
 
   @Override

@@ -160,9 +160,10 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   }
 
   private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
+    request.id = stream.id;
+    request.remoteAddress = remoteAddress();
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
     synchronized (this) {
-      request.id = stream.id;
       responses.add(stream);
       this.netSocketPromise = netSocketPromise;
       if (this.metrics != null) {

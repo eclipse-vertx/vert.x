@@ -12,12 +12,12 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpVersion;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.observability.HttpResponse;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class HttpResponseHead implements HttpClientMetrics.Response {
+public class HttpResponseHead implements HttpResponse {
 
   public final HttpVersion version;
   public final int statusCode;
@@ -34,5 +34,10 @@ public class HttpResponseHead implements HttpClientMetrics.Response {
   @Override
   public int statusCode() {
     return statusCode;
+  }
+
+  @Override
+  public MultiMap headers() {
+    return headers;
   }
 }

@@ -14,13 +14,11 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http2.Http2Error;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
-import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
@@ -139,22 +137,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   void handlePush(HttpClientPush push) {
-    String rawMethod = push.headers.method().toString();
-    HttpMethod method = HttpMethod.valueOf(rawMethod);
-    String uri = push.headers.path().toString();
-    String authority = push.headers.authority() != null ? push.headers.authority().toString() : null;
-    MultiMap headersMap = new Http2HeadersAdaptor(push.headers);
-    int pos = authority.indexOf(':');
-    int port;
-    String host;
-    if (pos == -1) {
-      host = authority;
-      port = 80;
-    } else {
-      host = authority.substring(0, pos);
-      port = Integer.parseInt(authority.substring(pos + 1));
-    }
-    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, client, ssl, method, uri, host, port, headersMap);
+    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, client, ssl, push.method, push.uri, push.host, push.port, push.headers);
     if (pushHandler != null) {
       pushHandler.handle(pushReq);
     } else {
