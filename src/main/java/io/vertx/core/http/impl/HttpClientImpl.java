@@ -613,9 +613,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     promise.future().onComplete(ar -> {
       if (ar.succeeded()) {
         HttpClientRequest req = ar.result();
-        if (authority != null) {
-          req.setAuthority(authority);
-        }
         req.onComplete(responsePromise);
         if (body instanceof Buffer) {
           req.end((Buffer) body);
@@ -1411,6 +1408,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
           if (ar2.succeeded()) {
             HttpClientStream stream = ar2.result();
             HttpClientRequestImpl req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, server, host, port, requestURI);
+            if (authority != null) {
+              req.setAuthority(authority);
+            }
             if (headers != null) {
               req.headers().setAll(headers);
             }
