@@ -539,10 +539,8 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     EventBus eb = vertx.eventBus();
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
-    AtomicReference<String> replyAddress = new AtomicReference<>();
     CountDownLatch regLatch = new CountDownLatch(1);
     eb.consumer("foo", msg -> {
-      replyAddress.set(msg.replyAddress());
       msg.fail(0, "whatever");
     }).completionHandler(onSuccess(v -> {
       regLatch.countDown();
