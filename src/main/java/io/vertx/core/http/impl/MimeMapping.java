@@ -993,6 +993,7 @@ public class MimeMapping {
     m.put("f4v", "video/x-f4v");
     m.put("fli", "video/x-fli");
     m.put("flv", "video/x-flv");
+    m.put("m4a", "audio/x-m4a");
     m.put("m4v", "video/x-m4v");
     m.put("mkv", "video/x-matroska");
     m.put("mk3d", "video/x-matroska");
