@@ -1420,13 +1420,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
             if (followRedirects != null) {
               req.setFollowRedirects(followRedirects);
             }
-            req.currentTimeoutMs = timeout;
-            req.currentTimeoutTimerId = timerID;
-            if (requestPromise.tryComplete(req)) {
-              // OK
-            } else {
-              req.reset(0);
+            if (timerID >= 0L) {
+              if (!vertx.cancelTimer(timerID)) {
+                req.reset(0);
+                return;
+              }
+              req.setTimeout(timeout);
             }
+            requestPromise.complete(req);
           } else {
             requestPromise.tryFail(ar2.cause());
           }
