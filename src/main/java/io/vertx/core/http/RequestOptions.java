@@ -31,7 +31,7 @@ import java.util.Objects;
 public class RequestOptions {
 
   /**
-   * The default value for server method = null
+   * The default value for server method = {@code null}
    */
   public static final SocketAddress DEFAULT_SERVER = null;
 
@@ -56,9 +56,9 @@ public class RequestOptions {
   public static final Boolean DEFAULT_SSL = null;
 
   /**
-   * The default relative request URI = ""
+   * The default request URI = {@code "/"}
    */
-  public static final String DEFAULT_URI = "";
+  public static final String DEFAULT_URI = "/";
 
   /**
    * Follow redirection by default = {@code false}
@@ -223,7 +223,7 @@ public class RequestOptions {
   }
 
   /**
-   * Set whether SSL/TLS is enabled
+   * Set whether SSL/TLS is enabled.
    *
    * @param ssl  true if enabled
    * @return a reference to this, so the API can be used fluently
@@ -241,7 +241,7 @@ public class RequestOptions {
   }
 
   /**
-   * Set the request relative URI
+   * Set the request relative URI.
    *
    * @param uri  the relative uri
    * @return a reference to this, so the API can be used fluently

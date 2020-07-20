@@ -424,6 +424,9 @@ public final class HttpUtils {
    * Extract the path out of the uri.
    */
   static String parsePath(String uri) {
+    if (uri.length() == 0) {
+      return "";
+    }
     int i;
     if (uri.charAt(0) == '/') {
       i = 0;

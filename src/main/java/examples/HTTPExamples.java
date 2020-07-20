@@ -12,6 +12,7 @@
 package examples;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -687,7 +688,7 @@ public class HTTPExamples {
         String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
 
         // Create a new ready to use request that the client will use
-        return client.request(new RequestOptions().setAbsoluteURI(absoluteURI));
+        return Future.succeededFuture(new RequestOptions().setAbsoluteURI(absoluteURI));
       }
 
       // We don't redirect

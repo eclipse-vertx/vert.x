@@ -63,7 +63,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   // Pattern to check we are not dealing with an absoluate URI
   private static final Pattern ABS_URI_START_PATTERN = Pattern.compile("^\\p{Alpha}[\\p{Alpha}\\p{Digit}+.\\-]*:");
 
-  private final Function<HttpClientResponse, Future<HttpClientRequest>> DEFAULT_HANDLER = resp -> {
+  private static final Function<HttpClientResponse, Future<RequestOptions>> DEFAULT_HANDLER = resp -> {
     try {
       int statusCode = resp.statusCode();
       String location = resp.getHeader(HttpHeaders.LOCATION);
@@ -93,6 +93,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
           return null;
         }
         String requestURI = uri.getPath();
+        if (requestURI == null || requestURI.isEmpty()) {
+          requestURI = "/";
+        }
         String query = uri.getQuery();
         if (query != null) {
           requestURI += "?" + query;
@@ -103,7 +106,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
         options.setPort(port);
         options.setSsl(ssl);
         options.setURI(requestURI);
-        return request(options);
+        return Future.succeededFuture(options);
       }
       return null;
     } catch (Exception e) {
@@ -128,7 +131,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   private final CloseFuture closeFuture;
   private long timerID;
   private volatile Handler<HttpConnection> connectionHandler;
-  private volatile Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler = DEFAULT_HANDLER;
+  private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
@@ -1310,7 +1313,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   }
 
   @Override
-  public HttpClient redirectHandler(Function<HttpClientResponse, Future<HttpClientRequest>> handler) {
+  public HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler) {
     if (handler == null) {
       handler = DEFAULT_HANDLER;
     }
@@ -1319,7 +1322,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   }
 
   @Override
-  public Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler() {
+  public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
     return redirectHandler;
   }
 

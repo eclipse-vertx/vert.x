@@ -4183,14 +4183,13 @@ public abstract class HttpTest extends HttpTestBase {
     Context ctx = vertx.getOrCreateContext();
     client.redirectHandler(resp -> {
       assertEquals(ctx, Vertx.currentContext());
-      Promise<HttpClientRequest> fut = Promise.promise();
+      Promise<RequestOptions> fut = Promise.promise();
       vertx.setTimer(25, id -> {
-        client.request(
-        new RequestOptions()
+        fut.complete(new RequestOptions()
           .setAbsoluteURI(scheme + "://localhost:" + port + "/custom")
           .addHeader("foo", "foo_another")
-          .setAuthority("localhost:" + port)).onComplete(fut);
-
+          .setAuthority("localhost:" + port)
+        );
       });
       return fut.future();
     });
@@ -4226,7 +4225,7 @@ public abstract class HttpTest extends HttpTestBase {
     testFoo("http://:8080/somepath", null);
   }
 
-  private void testFoo(String location, String expected) throws Exception {
+  private void testFoo(String location, String expectedAbsoluteURI) throws Exception {
     int status = 301;
     Map<String, String> headers = Collections.singletonMap(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
@@ -4316,12 +4315,16 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<Buffer> body() { throw new UnsupportedOperationException(); }
     }
     MockResp resp = new MockResp();
-    Function<HttpClientResponse, Future<HttpClientRequest>> handler = client.redirectHandler();
-    Future<HttpClientRequest> redirection = handler.apply(resp);
-    if (expected != null) {
-      assertEquals(location, redirection.result().absoluteURI());
+    Function<HttpClientResponse, Future<RequestOptions>> handler = client.redirectHandler();
+    Future<RequestOptions> redirection = handler.apply(resp);
+    if (expectedAbsoluteURI != null) {
+      RequestOptions expectedOptions = new RequestOptions().setAbsoluteURI(location);
+      assertEquals(expectedOptions.getHost(), redirection.result().getHost());
+      assertEquals(expectedOptions.getPort(), redirection.result().getPort());
+      assertEquals(expectedOptions.getURI(), redirection.result().getURI());
+      assertEquals(expectedOptions.isSsl(), redirection.result().isSsl());
     } else {
-      assertTrue(redirection == null || redirection.failed());
+      assertTrue(redirection == null || redirection.failed() || redirection.result().getHost() == null);
     }
   }
 

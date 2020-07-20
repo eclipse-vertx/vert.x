@@ -1374,13 +1374,13 @@ public interface HttpClient extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  HttpClient redirectHandler(Function<HttpClientResponse, Future<HttpClientRequest>> handler);
+  HttpClient redirectHandler(Function<HttpClientResponse, Future<RequestOptions>> handler);
 
   /**
    * @return the current redirect handler.
    */
   @GenIgnore
-  Function<HttpClientResponse, Future<HttpClientRequest>> redirectHandler();
+  Function<HttpClientResponse, Future<RequestOptions>> redirectHandler();
 
   /**
    * Close the client. Closing will close down any pooled connections.
