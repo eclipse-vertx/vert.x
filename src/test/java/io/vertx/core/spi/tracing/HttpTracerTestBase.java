@@ -14,6 +14,8 @@ import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -154,14 +156,16 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertSame(val, context.getLocal(key));
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("header-key","header-value");
+        assertNotNull(request);
+        assertTrue(request instanceof HttpRequest);
         return request;
       }
       @Override
       public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(context.removeLocal(key));
-//        assertNotNull(response);
-//        assertTrue(response instanceof HttpClientResponse);
+        assertNotNull(response);
+        assertTrue(response instanceof HttpResponse);
         assertNull(failure);
         assertTrue(seq.compareAndSet(1, 2));
       }
