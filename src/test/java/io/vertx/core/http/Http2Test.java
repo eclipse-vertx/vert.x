@@ -350,7 +350,6 @@ public class Http2Test extends HttpTest {
       req.onComplete(onFailure(err -> {
         complete();
       }));
-      req.setChunked(true).write(TestUtils.randomBuffer(1024));
       assertTrue(req.reset());
     }));
     await();
