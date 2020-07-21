@@ -219,13 +219,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     } else {
       chunk = buf;
     }
-    if (chunk != null) {
-      bytesWritten += chunk.readableBytes();
-      FutureListener<Void> promise = handler == null ? null : context.promise(handler);
-      conn.handler.writeData(stream, chunk, end, promise);
-    } else {
-      // todo ??????????
-    }
+    bytesWritten += chunk.readableBytes();
+    FutureListener<Void> promise = handler == null ? null : context.promise(handler);
+    conn.handler.writeData(stream, chunk, end, promise);
   }
 
   final void writeReset(long code) {

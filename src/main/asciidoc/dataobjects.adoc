@@ -1757,7 +1757,7 @@ Set the host name to be used by the client request.
 Set the port to be used by the client request.
 +++
 |[[ssl]]`@ssl`|`Boolean`|+++
-Set whether SSL/TLS is enabled
+Set whether SSL/TLS is enabled.
 +++
 |[[timeout]]`@timeout`|`Number (long)`|+++
 Sets the amount of time after which if the request does not return any data within the timeout period an
@@ -1765,7 +1765,7 @@ Sets the amount of time after which if the request does not return any data with
  the request will be closed.
 +++
 |[[uri]]`@uri`|`String`|+++
-Set the request relative URI
+Set the request relative URI.
 +++
 |===
 
@@ -1992,7 +1992,7 @@ Set the host name to be used by the client request.
 Set the port to be used by the client request.
 +++
 |[[ssl]]`@ssl`|`Boolean`|+++
-Set whether SSL/TLS is enabled
+Set whether SSL/TLS is enabled.
 +++
 |[[subProtocols]]`@subProtocols`|`Array of String`|+++
 Set the WebSocket sub protocols to use.
@@ -2003,7 +2003,7 @@ Sets the amount of time after which if the request does not return any data with
  the request will be closed.
 +++
 |[[uri]]`@uri`|`String`|+++
-Set the request relative URI
+Set the request relative URI.
 +++
 |[[version]]`@version`|`link:enums.html#WebsocketVersion[WebsocketVersion]`|+++
 Set the WebSocket version.

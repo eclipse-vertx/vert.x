@@ -474,9 +474,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void write(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> completionHandler) {
-    if (buff == null && !end) {
-      return;
-    }
     if (end) {
       if (buff != null && requiresContentLength()) {
         headers().set(CONTENT_LENGTH, String.valueOf(buff.readableBytes()));
@@ -503,15 +500,17 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         writeHead = false;
       }
-      ended |= end;
+      ended = end;
       s = stream;
     }
 
-    // WRITE HEAD
     if (writeHead) {
       HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI());
       s.writeHead(head, chunked, buff, ended, priority, netSocketPromise, completionHandler);
     } else {
+      if (buff == null && !end) {
+        throw new IllegalArgumentException();
+      }
       s.writeBuffer(buff, end, completionHandler);
     }
     if (end) {
