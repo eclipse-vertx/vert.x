@@ -48,9 +48,6 @@ public class ClusteredEventBus extends EventBusImpl {
 
   private static final Logger log = LoggerFactory.getLogger(ClusteredEventBus.class);
 
-  public static final String CLUSTER_PUBLIC_HOST_PROP_NAME = "vertx.cluster.public.host";
-  public static final String CLUSTER_PUBLIC_PORT_PROP_NAME = "vertx.cluster.public.port";
-
   private static final Buffer PONG = Buffer.buffer(new byte[]{(byte) 1});
 
   private final EventBusOptions options;
