@@ -195,7 +195,7 @@ public interface Context {
    * @param key  the key of the data
    * @param <T>  the type of the data
    * @return the data
-   * @throws NullPointerException  if the specified key is null
+   * @throws NullPointerException  if the specified key is {@code null}
    */
   <T> T get(String key);
 
@@ -205,8 +205,8 @@ public interface Context {
    * This can be used to share data between different handlers that share a context
    *
    * @param key  the key of the data
-   * @param value  the data, or null to remove the key
-   * @throws NullPointerException  if the specified key is null
+   * @param value  the data, or {@code null} to remove the key
+   * @throws NullPointerException  if the specified key is {@code null}
    */
   void put(String key, Object value);
 
@@ -215,7 +215,7 @@ public interface Context {
    *
    * @param key  the key to remove
    * @return true if removed successfully, false otherwise
-   * @throws NullPointerException  if the specified key is null
+   * @throws NullPointerException  if the specified key is {@code null}
    */
   boolean remove(String key);
 
@@ -225,7 +225,7 @@ public interface Context {
    * @param key  the key of the data
    * @param <T>  the type of the data
    * @return the data
-   * @throws NullPointerException  if the specified key is null
+   * @throws NullPointerException  if the specified key is {@code null}
    */
   <T> T getLocal(String key);
 
@@ -235,8 +235,8 @@ public interface Context {
    * This can be used to share data between different handlers that share a context
    *
    * @param key  the key of the data
-   * @param value  the data, or null to remove the key
-   * @throws NullPointerException  if the specified key is null
+   * @param value  the data, or {@code null} to remove the key
+   * @throws NullPointerException  if the specified key is {@code null}
    */
   void putLocal(String key, Object value);
 
@@ -245,7 +245,7 @@ public interface Context {
    *
    * @param key  the key to remove
    * @return true if removed successfully, false otherwise
-   * @throws NullPointerException  if the specified key is null
+   * @throws NullPointerException  if the specified key is {@code null}
    */
   boolean removeLocal(String key);
 
