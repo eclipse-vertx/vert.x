@@ -12,14 +12,14 @@
 package io.vertx.test.fakemetrics;
 
 import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,9 +48,10 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
 
   public HttpClientMetric getMetric(HttpClientRequest request) {
     for (EndpointMetric metric : endpoints.values()) {
-      HttpClientMetric m = metric.requests.get(request);
-      if (m != null) {
-        return m;
+      for (HttpRequest req : metric.requests.keySet()) {
+        if (req.id() == request.streamId()) {
+          return metric.requests.get(req);
+        }
       }
     }
     return null;
@@ -84,7 +85,7 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   }
 
   @Override
-  public ClientMetrics<HttpClientMetric, Void, HttpClientRequest, HttpClientResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+  public ClientMetrics<HttpClientMetric, Void, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
     EndpointMetric metric = new EndpointMetric() {
       @Override
       public void close() {

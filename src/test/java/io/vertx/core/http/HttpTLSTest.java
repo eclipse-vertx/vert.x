@@ -680,9 +680,16 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Client provides SNI and server responds with a matching certificate for the indicated server name
   public void testSNIWithHostHeader() throws Exception {
+
     X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
-        .requestProvider(client -> client.request(HttpMethod.POST, 4043, "localhost", "/somepath").setAuthority("host2.com:4043"))
+        .requestProvider(client -> client.request(new RequestOptions()
+          .setMethod(HttpMethod.POST)
+          .setPort(4043)
+          .setHost("localhost")
+          .setURI("/somepath")
+          .setAuthority("host2.com:4043"))
+        )
         .pass()
         .clientPeerCert();
     assertEquals("host2.com", TestUtils.cnOf(cert));
@@ -934,7 +941,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
     private boolean followRedirects;
     private boolean serverSNI;
     private boolean clientForceSNI;
-    private Function<HttpClient, HttpClientRequest> requestProvider = client -> {
+    private Function<HttpClient, Future<HttpClientRequest>> requestProvider = client -> {
       String httpHost;
       if (connectHostname != null) {
         httpHost = connectHostname;
@@ -948,7 +955,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
       } else {
         httpPort = 4043;
       }
-      return client.request(HttpMethod.POST, httpPort, httpHost, DEFAULT_TEST_URI);
+      return client.request(new RequestOptions()
+        .setMethod(HttpMethod.POST)
+        .setHost(httpHost)
+        .setPort(httpPort)
+        .setURI(DEFAULT_TEST_URI));
     };
     X509Certificate clientPeerCert;
     String indicatedServerName;
@@ -1076,7 +1087,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
       return this;
     }
 
-    TLSTest requestProvider(Function<HttpClient, HttpClientRequest> requestProvider) {
+    TLSTest requestProvider(Function<HttpClient, Future<HttpClientRequest>> requestProvider) {
       this.requestProvider = requestProvider;
       return this;
     }
@@ -1215,30 +1226,39 @@ public abstract class HttpTLSTest extends HttpTestBase {
         } else {
           httpHost = DEFAULT_HTTP_HOST;
         }
-        HttpClientRequest req = requestProvider.apply(client).onComplete(ar2 -> {
-          if (ar2.succeeded()) {
-            HttpClientResponse response = ar2.result();
-            HttpConnection conn = response.request().connection();
-            if (conn.isSsl()) {
-              try {
-                clientPeerCert = conn.peerCertificateChain()[0];
-              } catch (SSLPeerUnverifiedException ignore) {
-              }
-            }
-            if (shouldPass) {
-              response.version();
-              HttpMethod method = response.request().method();
-              if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
-                complete();
+        requestProvider.apply(client).onComplete(ar_ -> {
+          if (ar_.succeeded()) {
+            HttpClientRequest req = ar_.result();
+            req.setFollowRedirects(followRedirects);
+            req.onComplete(ar2 -> {
+              if (ar2.succeeded()) {
+                HttpClientResponse response = ar2.result();
+                HttpConnection conn = response.request().connection();
+                if (conn.isSsl()) {
+                  try {
+                    clientPeerCert = conn.peerCertificateChain()[0];
+                  } catch (SSLPeerUnverifiedException ignore) {
+                  }
+                }
+                if (shouldPass) {
+                  response.version();
+                  HttpMethod method = response.request().method();
+                  if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
+                    complete();
+                  } else {
+                    response.bodyHandler(data -> {
+                      assertEquals("bar", data.toString());
+                      complete();
+                    });
+                  }
+                } else {
+                  HttpTLSTest.this.fail("Should not get a response");
+                }
               } else {
-                response.bodyHandler(data -> {
-                  assertEquals("bar", data.toString());
-                  complete();
-                });
+                System.out.println("HANDLE ME");
               }
-            } else {
-              HttpTLSTest.this.fail("Should not get a response");
-            }
+            });
+            req.end("foo");
           } else {
             Throwable t = ar.cause();
             if (shouldPass) {
@@ -1249,8 +1269,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
             }
           }
         });
-        req.setFollowRedirects(followRedirects);
-        req.end("foo");
       });
       await();
       return this;

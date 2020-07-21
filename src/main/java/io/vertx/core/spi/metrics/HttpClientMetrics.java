@@ -11,10 +11,10 @@
 
 package io.vertx.core.spi.metrics;
 
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
 
 /**
  * The http client metrics SPI that Vert.x will use to call when http client events occur.<p/>
@@ -44,7 +44,7 @@ public interface HttpClientMetrics<R, W, S, T> extends TCPMetrics<S> {
    * @param maxPoolSize the server max pool size
    * @return the endpoint metric
    */
-  default ClientMetrics<R, T, HttpClientRequest, HttpClientResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
+  default ClientMetrics<R, T, HttpRequest, HttpResponse> createEndpointMetrics(SocketAddress remoteAddress, int maxPoolSize) {
     return null;
   }
 

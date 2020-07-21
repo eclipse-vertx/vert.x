@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.http2.Http2Error;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -29,6 +30,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   protected final HttpClientImpl client;
   protected final ContextInternal context;
+  protected final HttpClientStream stream;
   protected final io.vertx.core.http.HttpMethod method;
   protected final String uri;
   protected final String host;
@@ -38,12 +40,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private String path;
   private String query;
   private final PromiseInternal<HttpClientResponse> responsePromise;
+  private Handler<HttpClientRequest> pushHandler;
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
 
-  HttpClientRequestBase(HttpClientImpl client, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
+  HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
+    this.stream = stream;
     this.responsePromise = responsePromise;
     this.context = (ContextInternal) responsePromise.future().context();
     this.uri = uri;
@@ -52,6 +56,17 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.host = host;
     this.port = port;
     this.ssl = ssl;
+
+    //
+    stream.pushHandler(this::handlePush);
+    stream.headHandler(resp -> {
+      HttpClientResponseImpl response = new HttpClientResponseImpl(this, stream.version(), stream, resp.statusCode, resp.statusMessage, resp.headers);
+      stream.chunkHandler(response::handleChunk);
+      stream.endHandler(response::handleEnd);
+      stream.priorityHandler(response::handlePriorityChange);
+      stream.unknownFrameHandler(response::handleUnknownFrame);
+      handleResponse(response);
+    });
   }
 
   protected String authority() {
@@ -60,6 +75,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     } else {
       return host + ':' + port;
     }
+  }
+
+  @Override
+  public int streamId() {
+    return stream.id();
   }
 
   @Override
@@ -99,7 +119,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   public synchronized HttpClientRequest setTimeout(long timeoutMs) {
     cancelTimeout();
     currentTimeoutMs = timeoutMs;
-    currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
+    currentTimeoutTimerId = context.setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
     return this;
   }
 
@@ -113,6 +133,15 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     HttpClientResponseImpl response = (HttpClientResponseImpl) responsePromise.future().result();
     if (response != null) {
       response.handleException(t);
+    }
+  }
+
+  void handlePush(HttpClientPush push) {
+    HttpClientRequestPushPromise pushReq = new HttpClientRequestPushPromise(push.stream, client, ssl, push.method, push.uri, push.host, push.port, push.headers);
+    if (pushHandler != null) {
+      pushHandler.handle(pushReq);
+    } else {
+      pushReq.reset(Http2Error.CANCEL.code());
     }
   }
 
@@ -146,8 +175,11 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
         }
       }
     }
-    String msg = "The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + server;
-    reset(new NoStackTraceTimeoutException(msg));
+    reset(timeoutEx(timeoutMs, method, server, uri));
+  }
+
+  static NoStackTraceTimeoutException timeoutEx(long timeoutMs, HttpMethod method, SocketAddress server, String uri) {
+    return new NoStackTraceTimeoutException("The timeout period of " + timeoutMs + "ms has been exceeded while executing " + method + " " + uri + " for server " + server);
   }
 
   synchronized void dataReceived() {
@@ -197,5 +229,15 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   @Override
   public boolean failed() {
     return responsePromise.future().failed();
+  }
+
+  synchronized Handler<HttpClientRequest> pushHandler() {
+    return pushHandler;
+  }
+
+  @Override
+  public synchronized HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) {
+    pushHandler = handler;
+    return this;
   }
 }

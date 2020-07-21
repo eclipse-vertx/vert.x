@@ -1424,16 +1424,18 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> fail());
     server.listen(onSuccess(ar -> {
       client = vertx.createHttpClient();
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTPS_HOST, path)
+      client.send(new RequestOptions()
+        .setHost(DEFAULT_HTTP_HOST)
+        .setPort(DEFAULT_HTTP_PORT)
+        .setURI(path)
+        .putHeader("Upgrade", "Websocket")
+        .putHeader("Connection", "Upgrade"), TestUtils.randomBuffer(8192 + 1))
         .onComplete(onSuccess(resp -> {
           assertEquals(413, resp.statusCode());
           resp.request().connection().closeHandler(v -> {
             testComplete();
           });
-        }))
-        .putHeader("Upgrade", "Websocket")
-        .putHeader("Connection", "Upgrade")
-        .end(TestUtils.randomBuffer(8192 + 1));
+        }));
     }));
     await();
   }
@@ -1940,11 +1942,10 @@ public class WebSocketTest extends VertxTestBase {
     });
     server.listen(onSuccess(s -> {
       client = vertx.createHttpClient();
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      client.send(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
         .onComplete(onSuccess(resp -> {
           testComplete();
-        }))
-        .end();
+        }));
     }));
     await();
   }
@@ -2019,19 +2020,25 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   private void handshake(HttpClient client, Handler<NetSocket> handler) {
-    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
-      .onComplete(onSuccess(resp -> {
-          assertEquals(101, resp.statusCode());
-        })
-      )
-      .netSocket(onSuccess(handler::handle))
-      .putHeader("Upgrade", "websocket")
-      .putHeader("Connection", "Upgrade")
-      .putHeader("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
-      .putHeader("Sec-WebSocket-Protocol", "chat")
-      .putHeader("Sec-WebSocket-Version", "13")
-      .putHeader("Origin", "http://example.com")
-      .end();
+    client.request(new RequestOptions()
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setURI("/")
+    ).onComplete(onSuccess(req -> {
+      req
+        .onComplete(onSuccess(resp -> {
+            assertEquals(101, resp.statusCode());
+          })
+        )
+        .netSocket(onSuccess(handler::handle))
+        .putHeader("Upgrade", "websocket")
+        .putHeader("Connection", "Upgrade")
+        .putHeader("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
+        .putHeader("Sec-WebSocket-Protocol", "chat")
+        .putHeader("Sec-WebSocket-Version", "13")
+        .putHeader("Origin", "http://example.com")
+        .end();
+    }));
   }
 
   private void testRaceConditionWithWebSocketClient(Context context) {

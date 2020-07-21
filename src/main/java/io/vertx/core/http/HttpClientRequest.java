@@ -172,6 +172,11 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values);
 
   /**
+   * @return the HTTP version for this request
+   */
+  HttpVersion version();
+
+  /**
    * Write a {@link String} to the request body, encoded as UTF-8.
    *
    * @param chunk the data chunk
@@ -223,14 +228,14 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * @return a reference to this, so the API can be used fluently
    * @throws java.lang.IllegalStateException when no response handler is set
    */
-  Future<HttpVersion> sendHead();
+  Future<Void> sendHead();
 
   /**
    * Like {@link #sendHead()} but with an handler after headers have been sent. The handler will be called with
    * the {@link HttpVersion} if it can be determined or null otherwise.<p>
    */
   @Fluent
-  HttpClientRequest sendHead(Handler<AsyncResult<HttpVersion>> completionHandler);
+  HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler);
 
   /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding

@@ -23,7 +23,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
-import io.vertx.core.streams.Pump;
 
 /**
  * Created by tim on 09/01/15.
@@ -437,28 +436,33 @@ public class HTTPExamples {
   public void example34(Vertx vertx, String body) {
     HttpClient client = vertx.createHttpClient();
 
-    HttpClientRequest request = client.request(HttpMethod.POST, "some-uri")
-      .onSuccess(response -> {
-        System.out.println("Received response with status code " + response.statusCode());
-      });
+    client.request(HttpMethod.POST, "some-uri")
+      .onSuccess(request -> {
+        request.onSuccess(response -> {
+          System.out.println("Received response with status code " + response.statusCode());
+        });
 
-    // Now do stuff with the request
-    request.putHeader("content-length", "1000");
-    request.putHeader("content-type", "text/plain");
-    request.write(body);
+        // Now do stuff with the request
+        request.putHeader("content-length", "1000");
+        request.putHeader("content-type", "text/plain");
+        request.write(body);
 
-    // Make sure the request is ended when you're done with it
-    request.end();
+        // Make sure the request is ended when you're done with it
+        request.end();
+    });
 
     // Or fluently:
 
     client.request(HttpMethod.POST, "some-uri")
-      .onSuccess(response -> {
-        System.out.println("Received response with status code " + response.statusCode());
-      })
-      .putHeader("content-length", "1000")
-      .putHeader("content-type", "text/plain")
-      .end(body);
+      .onSuccess(request -> {
+        request
+          .onSuccess(response -> {
+            System.out.println("Received response with status code " + response.statusCode());
+          })
+          .putHeader("content-length", "1000")
+          .putHeader("content-type", "text/plain")
+          .end(body);
+    });
   }
 
   public void example35(HttpClientRequest request) {
@@ -684,7 +688,7 @@ public class HTTPExamples {
         String absoluteURI = resolveURI(response.request().absoluteURI(), response.getHeader("Location"));
 
         // Create a new ready to use request that the client will use
-        return Future.succeededFuture(client.request(new RequestOptions().setAbsoluteURI(absoluteURI)));
+        return Future.succeededFuture(new RequestOptions().setAbsoluteURI(absoluteURI));
       }
 
       // We don't redirect
@@ -694,18 +698,22 @@ public class HTTPExamples {
 
   public void example50(HttpClient client) {
 
-    HttpClientRequest request = client.request(HttpMethod.PUT, "some-uri")
-      .onSuccess(response -> {
-        System.out.println("Received response with status code " + response.statusCode());
-      });
+    client.request(HttpMethod.PUT, "some-uri")
+      .onSuccess(request -> {
+        request.onSuccess(response -> {
+          System.out.println("Received response with status code " + response.statusCode());
+        });
 
-    request.putHeader("Expect", "100-Continue");
+        request.putHeader("Expect", "100-Continue");
 
-    request.continueHandler(v -> {
-      // OK to send rest of body
-      request.write("Some data");
-      request.write("Some more data");
-      request.end();
+        request.continueHandler(v -> {
+          // OK to send rest of body
+          request.write("Some data");
+          request.write("Some more data");
+          request.end();
+        });
+
+        request.sendHead();
     });
   }
 
@@ -758,21 +766,23 @@ public class HTTPExamples {
 
   public void clientTunnel(HttpClient client) {
 
-    HttpClientRequest request = client.request(HttpMethod.CONNECT, "some-uri")
-      .onSuccess(response -> {
-        if (response.statusCode() != 200) {
-          // Connect failed for some reason
-        }
-      });
+    client.request(HttpMethod.CONNECT, "some-uri")
+      .onSuccess(request -> {
+        request.onSuccess(response -> {
+          if (response.statusCode() != 200) {
+            // Connect failed for some reason
+          }
+        });
 
-    request.netSocket(ar -> {
-      if (ar.succeeded()) {
-        NetSocket socket = ar.result();
-        // Perform tunneling now
-      }
+        request.netSocket(ar -> {
+          if (ar.succeeded()) {
+            NetSocket socket = ar.result();
+            // Perform tunneling now
+          }
+        });
+
+        request.end();
     });
-
-    request.end();
   }
 
   public void example51(HttpServer server) {
