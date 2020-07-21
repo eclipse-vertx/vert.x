@@ -282,7 +282,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         }
 
         if (headHandler != null) {
-          headHandler.handle(response);
+          context.dispatch(response, headHandler);
         }
 
         Promise<NetSocket> promise = netSocketPromise;

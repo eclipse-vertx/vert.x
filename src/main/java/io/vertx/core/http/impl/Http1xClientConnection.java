@@ -500,9 +500,9 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
 
     @Override
     void handleHead(HttpResponseHead response) {
-      Handler<HttpResponseHead> handler = this.headHandler;
+      Handler<HttpResponseHead> handler = headHandler;
       if (handler != null) {
-        handler.handle(response);
+        context.dispatch(response, handler);
       }
     }
 

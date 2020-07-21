@@ -3846,6 +3846,7 @@ public abstract class HttpTest extends HttpTestBase {
       t = expectedURI;
     }
     AtomicInteger numRequests = new AtomicInteger();
+    Buffer expectedBody = Buffer.buffer(TestUtils.randomAlphaString(256));
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       if (numRequests.getAndIncrement() == 0) {
@@ -3858,7 +3859,7 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(t, req.absoluteURI());
         assertEquals("foo_value", req.getHeader("foo"));
         assertEquals(expectedMethod, req.method());
-        resp.end();
+        resp.end(expectedBody);
       }
     });
     startServer();
@@ -3872,7 +3873,10 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(resp.request().absoluteURI(), t);
         assertEquals(expectedRequests, numRequests.get());
         assertEquals(expectedStatus, resp.statusCode());
-        testComplete();
+        resp.bodyHandler(body -> {
+          assertEquals(expectedBody, body);
+          testComplete();
+        });
       }));
     await();
   }

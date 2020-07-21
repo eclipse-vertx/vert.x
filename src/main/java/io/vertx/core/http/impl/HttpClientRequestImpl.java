@@ -23,7 +23,6 @@ import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -348,13 +347,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
     int statusCode = resp.statusCode();
     if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
-      ContextInternal prev = context.emitBegin();
-      Future<RequestOptions> next;
-      try {
-        next = client.redirectHandler().apply(resp);
-      } finally {
-        context.emitEnd(prev);
-      }
+      Future<RequestOptions> next = client.redirectHandler().apply(resp);
       if (next != null) {
         next.onComplete(ar1 -> {
           if (ar1.succeeded()) {
