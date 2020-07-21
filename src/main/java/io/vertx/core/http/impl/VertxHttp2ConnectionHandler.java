@@ -78,7 +78,8 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
    * @return this
    */
   public VertxHttp2ConnectionHandler<C> removeHandler(Handler<C> handler) {
-    this.removeHandler = handler;
+    removeHandler = handler;
+    connection = null;
     return this;
   }
 
@@ -86,6 +87,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
     chctx = ctx;
+    connection = connectionFactory.apply(this);
   }
 
   @Override
@@ -325,7 +327,6 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   @Override
   public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
-    assert connection != null;
     connection.onHeadersRead(ctx, streamId, headers, streamDependency, weight, exclusive, padding, endOfStream);
   }
 
@@ -346,7 +347,6 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   @Override
   public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
-    connection = connectionFactory.apply(this);
     if (useDecompressor) {
       decoder().frameListener(new DelegatingDecompressorFrameListener(decoder().connection(), connection));
     } else {
