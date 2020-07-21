@@ -41,8 +41,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private String query;
   private final PromiseInternal<HttpClientResponse> responsePromise;
   private Handler<HttpClientRequest> pushHandler;
-  long currentTimeoutTimerId = -1;
-  long currentTimeoutMs;
+  private long currentTimeoutTimerId = -1;
+  private long currentTimeoutMs;
   private long lastDataReceived;
 
   HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
