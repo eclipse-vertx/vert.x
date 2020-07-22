@@ -59,8 +59,10 @@ public interface Message<T> {
    * The reply address. Can be null.
    *
    * @return the reply address, or null, if message was sent without a reply handler.
+   * @deprecated deprecated as of Vert.x 4.0, exposes internal details
    */
   @Nullable
+  @Deprecated
   String replyAddress();
 
   /**
