@@ -99,11 +99,6 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     return receivedBody;
   }
 
-  @Override
-  public String replyAddress() {
-    return replyAddress;
-  }
-
   public Buffer encodeToWire() {
     toWire = true;
     int length = 1024; // TODO make this configurable

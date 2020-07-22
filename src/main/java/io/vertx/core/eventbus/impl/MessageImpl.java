@@ -13,7 +13,9 @@ package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
-import io.vertx.core.eventbus.*;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
@@ -95,11 +97,6 @@ public class MessageImpl<U, V> implements Message<V> {
       receivedBody = messageCodec.transform(sentBody);
     }
     return receivedBody;
-  }
-
-  @Override
-  public String replyAddress() {
-    return replyAddress;
   }
 
   @Override

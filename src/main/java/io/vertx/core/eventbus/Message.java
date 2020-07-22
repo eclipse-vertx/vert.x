@@ -54,14 +54,6 @@ public interface Message<T> {
   T body();
 
   /**
-   * The reply address. Can be null.
-   *
-   * @return the reply address, or null, if message was sent without a reply handler.
-   */
-  @Nullable
-  String replyAddress();
-
-  /**
    * Signals if this message represents a send or publish event.
    *
    * @return true if this is a send.
