@@ -3874,7 +3874,11 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(expectedRequests, numRequests.get());
         assertEquals(expectedStatus, resp.statusCode());
         resp.bodyHandler(body -> {
-          assertEquals(expectedBody, body);
+          if (resp.statusCode() == 200) {
+            assertEquals(expectedBody, body);
+          } else {
+            assertEquals(Buffer.buffer(), body);
+          }
           testComplete();
         });
       }));
