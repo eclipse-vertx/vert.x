@@ -15,8 +15,6 @@ package io.vertx.core.file;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;
 
-import java.io.File;
-
 import static io.vertx.core.file.impl.FileResolver.*;
 
 /**
@@ -40,13 +38,12 @@ public class FileSystemOptions {
   // get the system default temp dir location (can be overriden by using the standard java system property)
   // if not present default to the process start CWD
   private static final String TMPDIR = System.getProperty("java.io.tmpdir", ".");
-  private static final String DEFAULT_CACHE_DIR_BASE = "vertx-cache";
 
   /**
    * The default file caching dir. If the system property {@code "vertx.cacheDirBase"} is set, then this is the value
-   * If not, then the system property {@code java.io.tmpdir} is taken or {code .} if not set. suffixed with {@code vertx-cache}.
+   * If not, then the system property {@code java.io.tmpdir} is taken or {code .} if not set.
    */
-  public static final String DEFAULT_FILE_CACHING_DIR = System.getProperty(CACHE_DIR_BASE_PROP_NAME, TMPDIR + File.separator + DEFAULT_CACHE_DIR_BASE);
+  public static final String DEFAULT_FILE_CACHING_DIR = System.getProperty(CACHE_DIR_BASE_PROP_NAME, TMPDIR);
 
   private boolean classPathResolvingEnabled = DEFAULT_CLASS_PATH_RESOLVING_ENABLED;
   private boolean fileCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;
