@@ -26,10 +26,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Enumeration;
-import java.util.Set;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -379,12 +377,20 @@ public class FileResolver {
     return cl;
   }
 
-  private synchronized void setupCacheDir() {
-    FileAttribute<Set<PosixFilePermission>> ownerPermissions =
-        PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------"));
+  /**
+   * @return file attributes that allow owner access only, or no file attributes
+   *            if file system of {@code path} doesn't support posix file attributes
+   */
+  private FileAttribute<?> [] ownerPermissions(Path path) {
+    return path.getFileSystem().supportedFileAttributeViews().contains("posix")
+        ? new FileAttribute[] { PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")) }
+        : new FileAttribute[] {};
+  }
 
+  private synchronized void setupCacheDir() {
     try {
       Path cacheDirBase = new File(cacheDirBaseName).toPath();
+      FileAttribute<?> [] ownerPermissions = ownerPermissions(cacheDirBase);
       Files.createDirectories(cacheDirBase, ownerPermissions);
       cacheDir = Files.createTempDirectory(cacheDirBase, "vertx-cache-", ownerPermissions).toFile();
     } catch (IOException e) {
