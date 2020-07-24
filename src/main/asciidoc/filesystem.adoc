@@ -130,9 +130,10 @@ You can also use the _pipe_ to write file content into HTTP responses, or more g
 [[classpath]]
 ==== Accessing files from the classpath
 
-When vert.x cannot find the file on the filesystem it tries to resolve the
-file from the class path. Note that classpath resource paths never start with
-a `/`.
+When Vert.x needs to read a file from the classpath (embedded in a fat jar, in a jar form the classpath or a file
+that is on the classpath), it copies it to a cache directory. This behavior can be configured.
+
+Note that classpath resource paths never start with a `/`.
 
 Due to the fact that Java does not offer async access to classpath
 resources, the file is copied to the filesystem in a worker thread when the
@@ -142,21 +143,31 @@ the filesystem is served directly from the filesystem. The original content
 is served even if the classpath resource changes (e.g. in a development
 system).
 
+==== Configuring Vert.x cache
+
 This caching behaviour can be set on the {@link io.vertx.core.file.FileSystemOptions#setFileCachingEnabled(boolean)}
 option. The default value of this option is `true` unless the system property `vertx.disableFileCaching` is
 defined.
 
-The path where the files are cached is `.vertx` by default and can be customized by setting the system
-property `vertx.cacheDirBase`.
+When you are editing resources such as HTML, CSS or JavaScript, this cache mechanism can be annoying as it serves
+only the first version of the file (and so you won't see your edits if you reload your page). To avoid this
+behavior, launch your application with `-Dvertx.disableFileCaching=true`. With this setting, Vert.x still uses
+the cache, but always refresh the version stored in the cache with the original source. So if you edit a file
+served from the classpath and refresh your browser, Vert.x reads it from the classpath, copies it to the cache
+directory and serves it from there. Do not use this setting in production, it can kill your performances.
 
-The whole classpath resolving feature can be disabled system-wide by setting the system
-property `vertx.disableFileCPResolving` to `true`.
+The path where the files are cached is the default temporary directory as denoted by the `java.io.tmpdir`
+system property or the current directory as fall-back. The cache directory can be customized by setting the system
+property `vertx.cacheDirBase`. Vert.x creates a unique directory inside this one to avoid conflicts.
+If multiple users use the same `vertx.cacheDirBase` it must be created beforehand with write permissions
+for all of them.
+
+Finally, you can disable completely the cache by using `-Dvertx.disableFileCPResolving=true`. This setting is not
+without consequences. Vert.x would be unable to read any files from the classpath (only from the file system). Be
+very careful when using this settings.
 
 NOTE: these system properties are evaluated once when the the `io.vertx.core.file.FileSystemOptions` class is loaded, so
 these properties should be set before loading this class or as a JVM system property when launching it.
-
-If you want to disable classpath resolving for a particular application but keep it enabled by default system-wide,
-you can do so via the {@link io.vertx.core.file.FileSystemOptions#setClassPathResolvingEnabled(boolean)} option.
 
 ==== Closing an AsyncFile
 
