@@ -99,51 +99,62 @@ public class Http2CompressionTest extends Http2TestBase {
     public static boolean minCompressionTestPassed = false;
 
     public void testMinCompression() {
-      client.get(DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST, "some-uri",
-        onSuccess(resp -> {
-          resp.bodyHandler(responseBuffer -> {
-            String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
-            assertEquals(COMPRESS_TEST_STRING, responseBody);
-            minCompressionTestPassed = true;
-            terminateTestWhenAllPassed();
-          });
-        }));
+      client.request(new RequestOptions()
+        .setPort(DEFAULT_HTTP_PORT - 1)
+        .setHost(DEFAULT_HTTP_HOST)).onComplete(onSuccess(req -> {
+          req.onComplete(onSuccess(resp -> {
+            resp.bodyHandler(responseBuffer -> {
+              String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
+              assertEquals(COMPRESS_TEST_STRING, responseBody);
+              minCompressionTestPassed = true;
+              terminateTestWhenAllPassed();
+            });
+          })).end();
+      }));
     }
 
     public static boolean compressionWithoutTlsPassed = false;
 
     public void testCompressionWithHttp2Upgrade() {
-      clearTextClient.get(DEFAULT_HTTP_PORT + 2, DEFAULT_HTTP_HOST, "some-uri",
-        onSuccess(resp -> {
+      clearTextClient.request(new RequestOptions().setPort(DEFAULT_HTTP_PORT + 2).setHost(DEFAULT_HTTP_HOST))
+        .onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(responseBuffer -> {
             String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
             assertEquals(COMPRESS_TEST_STRING, responseBody);
             compressionWithoutTlsPassed = true;
             terminateTestWhenAllPassed();
           });
-        }));
+        })).end();
+      }));
     }
 
     public static boolean maxCompressionTestPassed = false;
 
     public void testMaxCompression() {
-      client.get(DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
-        onSuccess(resp -> {
+      client.request(new RequestOptions().setPort(DEFAULT_HTTP_PORT + 1).setHost(DEFAULT_HTTP_HOST))
+        .onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(responseBuffer -> {
             String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
             assertEquals(COMPRESS_TEST_STRING, responseBody);
             maxCompressionTestPassed = true;
             terminateTestWhenAllPassed();
           });
-        }));
+        })).end();
+      }));
     }
 
     public static Integer rawMaxCompressionResponseByteCount = null;
 
-    public void testRawMaxCompression() {
-      clientraw.get( DEFAULT_HTTP_PORT + 1, DEFAULT_HTTP_HOST, "some-uri",
-        HttpHeaders.set(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP),
-        onSuccess(resp -> {
+  public void testRawMaxCompression() {
+    clientraw.request(new RequestOptions()
+      .setPort(DEFAULT_HTTP_PORT + 1)
+      .setHost(DEFAULT_HTTP_HOST)
+    )
+      .onComplete(onSuccess(req -> {
+        req.putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP);
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(responseBuffer -> {
             String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
             Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
@@ -153,15 +164,20 @@ public class Http2CompressionTest extends Http2TestBase {
             rawMaxCompressionResponseByteCount = responseByteCount;
             terminateTestWhenAllPassed();
           });
-        }));
-    }
+        })).end();
+      }));
+  }
 
     public static Integer rawMinCompressionResponseByteCount = null;
 
-    public void testRawMinCompression() {
-      clientraw.get(DEFAULT_HTTP_PORT - 1, DEFAULT_HTTP_HOST, "some-uri",
-        HttpHeaders.set(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP),
-        onSuccess(resp -> {
+  public void testRawMinCompression() {
+    client.request(new RequestOptions()
+      .setPort(DEFAULT_HTTP_PORT - 1)
+      .setHost(DEFAULT_HTTP_HOST)
+    )
+      .onComplete(onSuccess(req -> {
+        req.putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP);
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(responseBuffer -> {
             String responseCompressedBody = responseBuffer.toString(CharsetUtil.UTF_8);
             Integer responseByteCount = responseCompressedBody.getBytes(CharsetUtil.UTF_8).length;
@@ -169,8 +185,9 @@ public class Http2CompressionTest extends Http2TestBase {
             rawMinCompressionResponseByteCount = responseByteCount;
             terminateTestWhenAllPassed();
           });
-        }));
-    }
+        })).end();
+      }));
+  }
 
     public void terminateTestWhenAllPassed() {
         if (maxCompressionTestPassed && minCompressionTestPassed && compressionWithoutTlsPassed

@@ -52,7 +52,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private final Promise<Void> endPromise;
   private final Future<Void> endFuture;
   private boolean chunked;
-  private String authority;
   private Handler<Void> continueHandler;
   private Handler<Void> drainHandler;
   private Handler<Throwable> exceptionHandler;
@@ -140,17 +139,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public synchronized boolean isChunked() {
     return chunked;
-  }
-
-  @Override
-  public synchronized HttpClientRequest setAuthority(String authority) {
-    this.authority = authority;
-    return this;
-  }
-
-  @Override
-  public synchronized String getAuthority() {
-    return authority;
   }
 
   @Override
@@ -313,9 +301,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     exceptionHandler(null);
     next.pushHandler(pushHandler());
     next.setMaxRedirects(followRedirects - 1);
-    if (next.getAuthority() == null) {
-      next.setAuthority(authority);
-    }
     if (headers != null) {
       next.headers().addAll(headers);
     }
@@ -368,11 +353,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
     }
     promise.complete(resp);
-  }
-
-  @Override
-  protected String authority() {
-    return authority != null ? authority : super.authority();
   }
 
   @Override

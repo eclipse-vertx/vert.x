@@ -87,8 +87,10 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
-    client.get(8080, "localhost", "/", onSuccess(resp -> {
-      testComplete();
+    client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+      req.send(onSuccess(resp -> {
+        testComplete();
+      }));
     }));
     await();
   }
@@ -182,15 +184,17 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.get(8080, "localhost", "/", onSuccess(resp -> {
-        resp.endHandler(v2 -> {
-          // Updates are done on the HTTP client context, so we need to run task on this context
-          // to avoid data race
-          ctx.runOnContext(v -> {
-            assertNull(tracerMap.get(key));
-            testComplete();
+      client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+        req.send(onSuccess(resp -> {
+          resp.endHandler(v2 -> {
+            // Updates are done on the HTTP client context, so we need to run task on this context
+            // to avoid data race
+            ctx.runOnContext(v -> {
+              assertNull(tracerMap.get(key));
+              testComplete();
+            });
           });
-        });
+        }));
       }));
     });
     await();
@@ -230,11 +234,13 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.get(8080, "localhost", "/", onFailure(err -> {
-        assertEquals(2, seq.get());
-        assertEquals(2, seq.get());
-        assertNull(tracerMap.get(key));
-        testComplete();
+      client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+        req.send(onFailure(err -> {
+          assertEquals(2, seq.get());
+          assertEquals(2, seq.get());
+          assertNull(tracerMap.get(key));
+          testComplete();
+        }));
       }));
     });
     await();

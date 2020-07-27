@@ -3283,12 +3283,14 @@ public class NetTest extends VertxTestBase {
     });
     startServer(SocketAddress.inetSocketAddress(1234, "localhost"));
     HttpClient client = vertx.createHttpClient(clientOptions);
-    client.get(1234, "localhost", "/somepath", onSuccess(resp -> {
-      assertEquals(200, resp.statusCode());
-      resp.bodyHandler(buff -> {
-        assertEquals("Hello World", buff.toString());
-        complete();
-      });
+    client.request(io.vertx.core.http.HttpMethod.GET, 1234, "localhost", "/somepath", onSuccess(req -> {
+      req.send(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        resp.body(onSuccess(body -> {
+          assertEquals("Hello World", body.toString());
+          complete();
+        }));
+      }));
     }));
     await();
   }

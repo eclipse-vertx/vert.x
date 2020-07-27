@@ -13,6 +13,7 @@ package io.vertx.it;
 
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.OpenSSLEngineOptions;
@@ -47,11 +48,13 @@ public class NettyCompatTest extends VertxTestBase {
               .setSsl(true)
               .setSslEngineOptions(new OpenSSLEngineOptions())
               .setTrustStoreOptions(Trust.SERVER_JKS.get()));
-          client.get(8443, "localhost", "/somepath", onSuccess(resp -> {
-            resp.bodyHandler(buff -> {
-              assertEquals("OK", buff.toString());
-              testComplete();
-            });
+          client.request(HttpMethod.GET, 8443, "localhost", "/somepath", onSuccess(req -> {
+            req.send(onSuccess(resp -> {
+              resp.bodyHandler(buff -> {
+                assertEquals("OK", buff.toString());
+                testComplete();
+              });
+            }));
           }));
         }));
     await();

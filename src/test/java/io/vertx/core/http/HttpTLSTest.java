@@ -684,12 +684,11 @@ public abstract class HttpTLSTest extends HttpTestBase {
     X509Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
         .requestProvider(client -> client.request(new RequestOptions()
+          .setServer(SocketAddress.inetSocketAddress(4043, "localhost"))
           .setMethod(HttpMethod.POST)
           .setPort(4043)
-          .setHost("localhost")
-          .setURI("/somepath")
-          .setAuthority("host2.com:4043"))
-        )
+          .setHost("host2.com")
+          .setURI("/somepath")))
         .pass()
         .clientPeerCert();
     assertEquals("host2.com", TestUtils.cnOf(cert));
@@ -1260,7 +1259,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
             });
             req.end("foo");
           } else {
-            Throwable t = ar.cause();
+            Throwable t = ar_.cause();
             if (shouldPass) {
               t.printStackTrace();
               HttpTLSTest.this.fail("Should not throw exception");

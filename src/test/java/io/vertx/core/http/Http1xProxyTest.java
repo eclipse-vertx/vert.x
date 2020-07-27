@@ -27,7 +27,16 @@ public class Http1xProxyTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
-    testHttpProxyRequest2(handler -> client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", handler));
+    testHttpProxyRequest2(handler -> {
+      client.request(new RequestOptions()
+        .setHost(DEFAULT_HTTP_HOST)
+        .setPort(DEFAULT_HTTP_PORT)
+        .setURI("/")
+      ).compose(req -> {
+        req.end();
+        return req;
+      }).onComplete(handler);
+    });
   }
 
   @Test
@@ -36,7 +45,13 @@ public class Http1xProxyTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setSsl(true).setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
-    testHttpProxyRequest2(handler -> client.get(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080), handler));
+    testHttpProxyRequest2(handler -> {
+      client.request(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080))
+        .compose(req -> {
+          req.end();
+          return req;
+        }).onComplete(handler);
+    });
   }
 
   private void testHttpProxyRequest2(Consumer<Handler<AsyncResult<HttpClientResponse>>> reqFact) throws Exception {
@@ -69,11 +84,17 @@ public class Http1xProxyTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertNotNull("request did not go through proxy", proxy.getLastUri());
-        assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
-        testComplete();
+      client.request(new RequestOptions()
+        .setHost(DEFAULT_HTTP_HOST)
+        .setPort(DEFAULT_HTTP_PORT)
+        .setURI("/")
+      ).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          assertNotNull("request did not go through proxy", proxy.getLastUri());
+          assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
+          testComplete();
+        })).end();
       }));
     }));
     await();
@@ -92,10 +113,13 @@ public class Http1xProxyTest extends HttpTestBase {
     });
 
     server.listen(onSuccess(s -> {
-      client.get(new RequestOptions().setURI(url), onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        assertEquals("request did sent the expected url", url, proxy.getLastUri());
-        testComplete();
+      client.request(new RequestOptions().setURI(url))
+        .onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          assertEquals("request did sent the expected url", url, proxy.getLastUri());
+          testComplete();
+        })).end();
       }));
     }));
     await();
@@ -113,10 +137,15 @@ public class Http1xProxyTest extends HttpTestBase {
 
     startServer();
 
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-      assertEquals(200, resp.statusCode());
-      assertNotNull("request did not go through proxy", proxy.getLastUri());
-      testComplete();
+    client.request(new RequestOptions()
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setURI("/")).onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        assertNotNull("request did not go through proxy", proxy.getLastUri());
+        testComplete();
+      })).end();
     }));
     await();
   }
@@ -136,10 +165,15 @@ public class Http1xProxyTest extends HttpTestBase {
 
     startServer();
 
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-      assertEquals(200, resp.statusCode());
-      assertNotNull("request did not go through proxy", proxy.getLastUri());
-      testComplete();
+    client.request(new RequestOptions()
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+      .setURI("/")).onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        assertNotNull("request did not go through proxy", proxy.getLastUri());
+        testComplete();
+      })).end();
     }));
     await();
   }

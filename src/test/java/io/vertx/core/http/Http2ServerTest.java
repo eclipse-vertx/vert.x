@@ -2674,26 +2674,34 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextInvalidConnectionHeader() throws Exception {
-    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
-      new RequestOptions()
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
         .setHost(DEFAULT_HTTP_HOST)
-        .setURI("/somepath")
-        .addHeader("Upgrade", "h2c")
-        .addHeader("Connection", "Upgrade")
-        .addHeader("HTTP2-Settings", ""), handler));
+        .setURI("/somepath"), onSuccess(req -> {
+          req
+            .putHeader("Upgrade", "h2c")
+            .putHeader("Connection", "Upgrade")
+            .putHeader("HTTP2-Settings", "")
+            .send(handler);
+        }));
+    });
   }
 
   @Test
   public void testUpgradeToClearTextMalformedSettings() throws Exception {
-    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
-      new RequestOptions()
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
         .setHost(DEFAULT_HTTP_HOST)
-        .setURI("/somepath")
-        .addHeader("Upgrade", "h2c")
-        .addHeader("Connection", "Upgrade")
-        .addHeader("HTTP2-Settings", "incorrect-settings"), handler));
+        .setURI("/somepath"), onSuccess(req -> {
+          req
+            .putHeader("Upgrade", "h2c")
+            .putHeader("Connection", "Upgrade")
+            .putHeader("HTTP2-Settings", "incorrect-settings")
+            .send(handler);
+        }));
+    });
   }
 
   @Test
@@ -2701,37 +2709,49 @@ public class Http2ServerTest extends Http2TestBase {
     Buffer buffer = Buffer.buffer();
     buffer.appendUnsignedShort(5).appendUnsignedInt((0xFFFFFF + 1));
     String s = new String(Base64.getUrlEncoder().encode(buffer.getBytes()), StandardCharsets.UTF_8);
-    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
-      new RequestOptions()
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
         .setHost(DEFAULT_HTTP_HOST)
-        .setURI("/somepath")
-        .addHeader("Upgrade", "h2c")
-        .addHeader("Connection", "Upgrade")
-        .addHeader("HTTP2-Settings", s), handler));
+        .setURI("/somepath"), onSuccess(req -> {
+          req
+            .putHeader("Upgrade", "h2c")
+            .putHeader("Connection", "Upgrade")
+            .putHeader("HTTP2-Settings", s)
+            .send(handler);
+      }));
+    });
   }
 
   @Test
   public void testUpgradeToClearTextMissingSettings() throws Exception {
-    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
-      new RequestOptions()
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
         .setHost(DEFAULT_HTTP_HOST)
-        .setURI("/somepath")
-        .addHeader("Upgrade", "h2c")
-        .addHeader("Connection", "Upgrade"), handler));
+        .setURI("/somepath"), onSuccess(req -> {
+        req
+          .putHeader("Upgrade", "h2c")
+          .putHeader("Connection", "Upgrade")
+          .send(handler);
+      }));
+    });
   }
 
   @Test
   public void testUpgradeToClearTextWorkerContext() throws Exception {
-    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> client.get(
-      new RequestOptions()
+    testUpgradeFailure(vertx.getOrCreateContext(), (client, handler) -> {
+      client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
         .setHost(DEFAULT_HTTP_HOST)
-        .setURI("/somepath")
-        .addHeader("Upgrade", "h2c")
-        .addHeader("Connection", "Upgrade")
-        .addHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings())), handler));
+        .setURI("/somepath"), onSuccess(req -> {
+          req
+            .putHeader("Upgrade", "h2c")
+            .putHeader("Connection", "Upgrade")
+            .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))
+            .send(handler);
+        }));
+    });
   }
 
   private void testUpgradeFailure(Context context, BiConsumer<HttpClient, Handler<AsyncResult<HttpClientResponse>>> doRequest) throws Exception {

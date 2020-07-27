@@ -638,11 +638,13 @@ public class MetricsTest extends VertxTestBase {
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.listen(8080, "localhost", onSuccess(s -> { listenLatch.countDown(); }));
     awaitLatch(listenLatch);
-    client = vertx.createHttpClient(new HttpClientOptions().setKeepAliveTimeout(0));
+    client = vertx.createHttpClient(new HttpClientOptions().setKeepAliveTimeout(1));
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
     CountDownLatch responsesLatch = new CountDownLatch(5);
     for (int i = 0;i < 5;i++) {
-      client.get(8080, "localhost", "/somepath", resp -> {
+      client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
+        .compose(HttpClientRequest::send)
+        .onComplete(resp -> {
         responsesLatch.countDown();
       });
     }
@@ -651,8 +653,10 @@ public class MetricsTest extends VertxTestBase {
     assertEquals(0, (int)metrics.queueSize("localhost:8080"));
     assertEquals(5, (int)metrics.connectionCount("localhost:8080"));
     for (int i = 0;i < 8;i++) {
-      client.get(8080, "localhost", "/somepath", resp -> {
-      });
+      client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
+        .compose(HttpClientRequest::send)
+        .onComplete(onSuccess(resp -> {
+      }));
     }
     assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
     assertEquals(8, (int)metrics.queueSize("localhost:8080"));
@@ -671,7 +675,11 @@ public class MetricsTest extends VertxTestBase {
     assertWaitUntil(() -> requests.size() == 3);
     assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
     assertEquals(0, (int)metrics.queueSize("localhost:8080"));
-    waitUntil(() -> metrics.connectionCount("localhost:8080") == 3);
+    assertWaitUntil(() -> metrics.connectionCount("localhost:8080") == 3);
+    copy = new ArrayList<>(requests);
+    requests.clear();
+    copy.forEach(Runnable::run);
+    assertWaitUntil(() -> metrics.connectionCount("localhost:8080") == null);
   }
 
   @Test
@@ -691,8 +699,10 @@ public class MetricsTest extends VertxTestBase {
     client = vertx.createHttpClient();
     FakeHttpClientMetrics metrics = FakeHttpClientMetrics.getMetrics(client);
     for (int i = 0;i < 5;i++) {
-      client.get(8080, "localhost", "/somepath", resp -> {
-      });
+      client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
+        .compose(HttpClientRequest::end)
+        .onComplete(onSuccess(resp -> {
+      }));
     }
     assertWaitUntil(() -> requests.size() == 5);
     EndpointMetric endpoint = metrics.endpoint("localhost:8080");
@@ -718,15 +728,17 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitLatch(started);
     CountDownLatch closed = new CountDownLatch(1);
-    client.get(8080, "localhost", "/somepath", onSuccess(resp -> {
-      resp.endHandler(v1 -> {
-        HttpConnection conn = resp.request().connection();
-        conn.closeHandler(v2 -> {
-          closed.countDown();
+    client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(resp -> {
+        resp.endHandler(v1 -> {
+          HttpConnection conn = resp.request().connection();
+          conn.closeHandler(v2 -> {
+            closed.countDown();
+          });
+          conn.close();
         });
-        conn.close();
-      });
-    }));
+      }));
     awaitLatch(closed);
     EndpointMetric val = endpointMetrics.get();
     assertWaitUntil(() -> val.connectionCount.get() == 0);
@@ -762,9 +774,11 @@ public class MetricsTest extends VertxTestBase {
         .onSuccess(v -> {
           assertEquals("Was expecting a single metric", 1, servers.stream().map(FakeMetricsBase::getMetrics).distinct().count());
           for (int i = 0;i < 2;i++) {
-            client.get(8080, "localhost", "/", onSuccess(resp -> {
-              complete();
-            }));
+            client.request(HttpMethod.GET, 8080, "localhost", "/")
+              .compose(HttpClientRequest::send)
+              .onComplete(onSuccess(resp -> {
+                complete();
+              }));
           }
       });
       await();

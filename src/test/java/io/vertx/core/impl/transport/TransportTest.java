@@ -17,6 +17,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpClient;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxFactory;
 import io.vertx.core.impl.VertxInternal;
@@ -123,8 +124,10 @@ public class TransportTest extends VertxTestBase {
         });
       }).listen(8080, onSuccess(s -> {
         HttpClient client = vertx.createHttpClient();
-        client.get(8080, "localhost", "/", onSuccess(resp -> {
-          testComplete();
+        client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+          req.send(onSuccess(resp -> {
+            testComplete();
+          }));
         }));
       }));
     });

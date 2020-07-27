@@ -16,6 +16,7 @@ import io.netty.handler.ssl.OpenSslContext;
 import io.netty.handler.ssl.SslContext;
 import io.vertx.core.VertxException;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.HttpServerImpl;
@@ -121,9 +122,11 @@ public class SSLEngineTest extends HttpTestBase {
           .setUseAlpn(useAlpn)
           .setTrustAll(true)
           .setProtocolVersion(version));
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        testComplete();
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(req -> {
+        req.send(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        }));
       }));
     }));
     await();
