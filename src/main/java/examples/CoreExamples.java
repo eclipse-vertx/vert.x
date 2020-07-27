@@ -398,13 +398,15 @@ public class CoreExamples {
     SocketAddress addr = SocketAddress.domainSocketAddress("/var/tmp/myservice.sock");
 
     // Send request to the server
-    httpClient.get(new RequestOptions()
+    httpClient.request(new RequestOptions()
       .setServer(addr)
       .setHost("localhost")
       .setPort(8080)
       .setURI("/"))
-      .onComplete(resp -> {
-        // Process response
+      .onSuccess(request -> {
+        request.send().onComplete(response -> {
+          // Process response
+        });
       });
   }
 }

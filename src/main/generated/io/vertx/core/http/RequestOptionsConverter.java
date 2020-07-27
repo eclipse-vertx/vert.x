@@ -20,11 +20,6 @@ public class RequestOptionsConverter {
             obj.setAbsoluteURI((String)member.getValue());
           }
           break;
-        case "authority":
-          if (member.getValue() instanceof String) {
-            obj.setAuthority((String)member.getValue());
-          }
-          break;
         case "followRedirects":
           if (member.getValue() instanceof Boolean) {
             obj.setFollowRedirects((Boolean)member.getValue());
@@ -77,9 +72,6 @@ public class RequestOptionsConverter {
   }
 
   public static void toJson(RequestOptions obj, java.util.Map<String, Object> json) {
-    if (obj.getAuthority() != null) {
-      json.put("authority", obj.getAuthority());
-    }
     if (obj.getFollowRedirects() != null) {
       json.put("followRedirects", obj.getFollowRedirects());
     }

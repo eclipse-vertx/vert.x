@@ -1048,19 +1048,21 @@ public class WebSocketTest extends VertxTestBase {
       ws.close();
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(ar -> {
-      client.get(new RequestOptions()
+      client.request(new RequestOptions()
         .setPort(DEFAULT_HTTP_PORT)
         .setHost(DEFAULT_HTTP_HOST)
-        .setURI("/")
-        .addHeader("origin", DEFAULT_HTTP_HOST)
-        .addHeader("Upgrade", "Websocket")
-        .addHeader("Connection", "upgrade")
-        .addHeader("Sec-WebSocket-Extensions", "permessage-deflate"), onSuccess(resp -> {
-        assertEquals(101, resp.statusCode());
-        assertEquals("permessage-deflate", resp.headers().get("sec-websocket-extensions"));
-        resp.endHandler(v1 -> {
-          testComplete();
-        });
+        .setURI("/"), onSuccess(req -> {
+        req.putHeader("origin", DEFAULT_HTTP_HOST)
+          .putHeader("Upgrade", "Websocket")
+          .putHeader("Connection", "upgrade")
+          .putHeader("Sec-WebSocket-Extensions", "permessage-deflate")
+          .send(onSuccess(resp -> {
+            assertEquals(101, resp.statusCode());
+            assertEquals("permessage-deflate", resp.headers().get("sec-websocket-extensions"));
+            resp.endHandler(v1 -> {
+              testComplete();
+            });
+          }));
       }));
     }));
     await();
@@ -1159,12 +1161,16 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_MISSING_CONNECTION_HEADER = handler -> client.get(
-    new RequestOptions()
+  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_MISSING_CONNECTION_HEADER = handler -> {
+    client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
-      .setURI("/some/path")
-      .addHeader("Upgrade", "Websocket"), handler);
+      .setURI("/some/path"), onSuccess(req -> {
+        req
+          .putHeader("Upgrade", "Websocket")
+          .send(handler);
+    }));
+  };
 
 
   @Test
@@ -1179,13 +1185,18 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_HTTP_METHOD = handler -> client.head(
-    new RequestOptions()
+  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_HTTP_METHOD = handler -> {
+
+    client.request(new RequestOptions()
+      .setMethod(HttpMethod.HEAD)
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
-      .setURI("/some/path")
-      .addHeader("Upgrade", "Websocket")
-      .addHeader("Connection", "Upgrade"), handler);
+      .setURI("/some/path")).onComplete(onSuccess(req -> {
+        req.putHeader("Upgrade", "Websocket")
+          .putHeader("Connection", "Upgrade");
+        req.onComplete(handler).end();
+    }));
+  };
 
   @Test
   public void testInvalidMethod() {
@@ -1199,13 +1210,17 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_URI = handler -> client.get(
-    new RequestOptions()
+  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_URI = handler -> {
+    client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
-      .setURI(":")
-      .addHeader("Upgrade", "Websocket")
-      .addHeader("Connection", "Upgrade"), handler);
+      .setURI(":")).onComplete(onSuccess(req -> {
+        req
+          .putHeader("Upgrade", "Websocket")
+          .putHeader("Connection", "Upgrade");
+        req.onComplete(handler).end();
+    }));
+  };
 
   @Test
   public void testInvalidUri() {
@@ -1219,14 +1234,19 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_WEBSOCKET_VERSION = handler -> client.get(
-    new RequestOptions()
+  Consumer<Handler<AsyncResult<HttpClientResponse>>> INVALID_WEBSOCKET_VERSION = handler -> {
+
+    client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
-      .setURI("/some/path")
-      .addHeader("Upgrade", "Websocket")
-      .addHeader("Sec-Websocket-Version", "15")
-      .addHeader("Connection", "Upgrade"), handler);
+      .setURI("/some/path"), onSuccess(req -> {
+        req
+          .putHeader("Upgrade", "Websocket")
+          .putHeader("Sec-Websocket-Version", "15")
+          .putHeader("Connection", "Upgrade")
+          .send(handler);
+    }));
+  };
 
   @Test
   public void testInvalidWebSocketVersion() {
@@ -1240,14 +1260,18 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-  Consumer<Handler<AsyncResult<HttpClientResponse>>> HANDSHAKE_EXCEPTION = handler -> client.get(
-    new RequestOptions()
+  Consumer<Handler<AsyncResult<HttpClientResponse>>> HANDSHAKE_EXCEPTION = handler -> {
+    client.request(new RequestOptions()
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTPS_HOST)
-      .setURI("/some/path")
-      .addHeader("Upgrade", "Websocket")
-      .addHeader("Sec-Websocket-Version", "13")
-      .addHeader("Connection", "Upgrade"), handler);
+      .setURI("/some/path"), onSuccess(req -> {
+        req
+          .putHeader("Upgrade", "Websocket")
+          .putHeader("Sec-Websocket-Version", "13")
+          .putHeader("Connection", "Upgrade")
+          .send(handler);
+    }));
+  };
 
   @Test
   public void testHandshakeException() {
@@ -1291,15 +1315,19 @@ public class WebSocketTest extends VertxTestBase {
         }
       });
     }
-    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(ar -> {
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(s -> {
       requestProvider.accept(onSuccess(resp -> {
         assertEquals(expectedStatus, resp.statusCode());
         resp.endHandler(v1 -> {
           // Make another request to check the connection remains usable
-          client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp2 -> {
-            resp2.endHandler(v2 -> {
-              testComplete();
-            });
+          client.request(new RequestOptions()
+            .setPort(DEFAULT_HTTP_PORT)
+            .setHost(DEFAULT_HTTP_HOST)).onComplete(onSuccess(req2 -> {
+              req2.onComplete(onSuccess(resp2 -> {
+                resp2.endHandler(v2 -> {
+                  testComplete();
+                });
+              })).end();
           }));
         });
       }));
@@ -1424,18 +1452,17 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> fail());
     server.listen(onSuccess(ar -> {
       client = vertx.createHttpClient();
-      client.send(new RequestOptions()
+      client.request(new RequestOptions()
         .setHost(DEFAULT_HTTP_HOST)
         .setPort(DEFAULT_HTTP_PORT)
-        .setURI(path)
-        .putHeader("Upgrade", "Websocket")
-        .putHeader("Connection", "Upgrade"), TestUtils.randomBuffer(8192 + 1))
-        .onComplete(onSuccess(resp -> {
+        .setURI(path), onSuccess(req -> req.putHeader("Upgrade", "Websocket")
+        .putHeader("Connection", "Upgrade")
+        .send(TestUtils.randomBuffer(8192 + 1), onSuccess(resp -> {
           assertEquals(413, resp.statusCode());
           resp.request().connection().closeHandler(v -> {
             testComplete();
           });
-        }));
+        }))));
     }));
     await();
   }
@@ -1942,7 +1969,8 @@ public class WebSocketTest extends VertxTestBase {
     });
     server.listen(onSuccess(s -> {
       client = vertx.createHttpClient();
-      client.send(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
+        .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           testComplete();
         }));
@@ -2115,14 +2143,17 @@ public class WebSocketTest extends VertxTestBase {
       ws.writeFinalTextFrame("ok");
     });
     server.listen(onSuccess(server -> {
-      client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", resp -> {
-        client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
-          ws.handler(buff -> {
-            assertEquals("ok", buff.toString());
-            testComplete();
-          });
+      client.request(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST))
+        .onComplete(onSuccess(req -> {
+          req.onComplete(onSuccess(resp -> {
+            client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
+              ws.handler(buff -> {
+                assertEquals("ok", buff.toString());
+                testComplete();
+              });
+            }));
+          })).end();
         }));
-      });
     }));
     await();
   }
@@ -2947,11 +2978,15 @@ public class WebSocketTest extends VertxTestBase {
       .listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v -> latch.countDown()));
     awaitLatch(latch);
     client = vertx.createHttpClient();
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(resp -> {
-      resp.endHandler(v -> {
-        assertEquals(400, resp.statusCode());
-        testComplete();
-      });
+    client.request(new RequestOptions()
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
+          resp.endHandler(v -> {
+            assertEquals(400, resp.statusCode());
+            testComplete();
+          });
+        })).end();
     }));
     await();
   }

@@ -144,13 +144,14 @@ public abstract class HttpTest extends HttpTestBase {
     for (int i = 0;i < len;i++) {
       SocketAddress sockAddress = addresses.get(i);
       for (int j = 0;j < len;j++) {
-        client.send(new RequestOptions(requestOptions).setServer(sockAddress))
-          .onComplete(onSuccess(resp -> {
+        client.request(new RequestOptions(requestOptions).setServer(sockAddress)).onComplete(onSuccess(req -> {
+          req.onComplete(onSuccess(resp -> {
             resp.body(onSuccess(body -> {
               assertEquals(sockAddress.path(), body.toString());
               complete();
             }));
-          }));
+          })).end();
+        }));
       }
     }
     try {
@@ -210,60 +211,73 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerActualPortWhenSet() {
+    Assume.assumeTrue(testAddress.isInetSocket());
     server
         .requestHandler(request -> {
           request.response().end("hello");
         })
-        .listen(ar -> {
-          assertEquals(ar.result().actualPort(), DEFAULT_HTTP_PORT);
-          vertx.createHttpClient(createBaseClientOptions()).get(ar.result().actualPort(), DEFAULT_HTTP_HOST, "/", onSuccess(response -> {
-            assertEquals(response.statusCode(), 200);
-            response.bodyHandler(body -> {
-              assertEquals(body.toString("UTF-8"), "hello");
-              testComplete();
-            });
+        .listen(onSuccess(s -> {
+          assertEquals(s.actualPort(), DEFAULT_HTTP_PORT);
+          HttpClient client = vertx.createHttpClient(createBaseClientOptions());
+          client.request(new RequestOptions(requestOptions).setPort(s.actualPort())).onComplete(onSuccess(req -> {
+            req.onComplete(onSuccess(response -> {
+              assertEquals(response.statusCode(), 200);
+              response.bodyHandler(body -> {
+                assertEquals(body.toString("UTF-8"), "hello");
+                testComplete();
+              });
+            })).end();
           }));
-        });
+        }));
     await();
   }
 
   @Test
   public void testServerActualPortWhenZero() {
+    Assume.assumeTrue(testAddress.isInetSocket());
     server = vertx.createHttpServer(createBaseServerOptions().setPort(0).setHost(DEFAULT_HTTP_HOST));
     server
         .requestHandler(request -> {
           request.response().end("hello");
         })
-        .listen(ar -> {
-          assertTrue(ar.result().actualPort() != 0);
-          vertx.createHttpClient(createBaseClientOptions()).get(ar.result().actualPort(), DEFAULT_HTTP_HOST, "/", onSuccess(response -> {
-            assertEquals(response.statusCode(), 200);
-            response.bodyHandler(body -> {
-              assertEquals(body.toString("UTF-8"), "hello");
-              testComplete();
-            });
+        .listen(onSuccess(s -> {
+          assertTrue(s.actualPort() != 0);
+          HttpClient client = vertx.createHttpClient(createBaseClientOptions());
+          client.request(new RequestOptions(requestOptions).setPort(s.actualPort())).onComplete(onSuccess(req -> {
+            req.onComplete(onSuccess(response -> {
+              assertEquals(response.statusCode(), 200);
+              response.bodyHandler(body -> {
+                assertEquals(body.toString("UTF-8"), "hello");
+                testComplete();
+              });
+            })).end();
           }));
-        });
+        }));
     await();
   }
 
   @Test
   public void testServerActualPortWhenZeroPassedInListen() {
+    Assume.assumeTrue(testAddress.isInetSocket());
     server = vertx.createHttpServer(new HttpServerOptions(createBaseServerOptions()).setHost(DEFAULT_HTTP_HOST));
     server
         .requestHandler(request -> {
           request.response().end("hello");
         })
-        .listen(0, ar -> {
-          assertTrue(ar.result().actualPort() != 0);
-          vertx.createHttpClient(createBaseClientOptions()).get(ar.result().actualPort(), DEFAULT_HTTP_HOST, "/", onSuccess(response -> {
-            assertEquals(response.statusCode(), 200);
-            response.bodyHandler(body -> {
-              assertEquals(body.toString("UTF-8"), "hello");
-              testComplete();
-            });
+        .listen(0, onSuccess(s -> {
+          assertTrue(s.actualPort() != 0);
+          HttpClient client = vertx.createHttpClient(createBaseClientOptions());
+          client.request(new RequestOptions(requestOptions).setPort(s.actualPort()), onSuccess(req -> {
+            req.onComplete(onSuccess(response -> {
+              assertEquals(response.statusCode(), 200);
+              response.bodyHandler(body -> {
+                assertEquals(body.toString("UTF-8"), "hello");
+                testComplete();
+              });
+            }));
+            req.end();
           }));
-        });
+        }));
     await();
   }
 
@@ -281,7 +295,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testInvalidAbsoluteURI() {
     try {
-      client.send(new RequestOptions().setAbsoluteURI("ijdijwidjqwoijd192d192192ej12d"));
+      client.request(new RequestOptions().setAbsoluteURI("ijdijwidjqwoijd192d192192ej12d"));
       fail("Should throw exception");
     } catch (VertxException e) {
       //OK
@@ -296,10 +310,13 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     server.listen(testAddress, onSuccess(server -> {
-      client.send(new RequestOptions(requestOptions).addHeader("foo", "bar"))
-        .onComplete(onSuccess(resp -> {
-          assertEquals(200, resp.statusCode());
-          testComplete();
+      client.request(requestOptions)
+        .onComplete(onSuccess(req -> {
+          req.putHeader("foo", "bar");
+          req.onComplete(onSuccess(resp -> {
+            assertEquals(200, resp.statusCode());
+            testComplete();
+          })).end();
         }));
     }));
     await();
@@ -313,11 +330,12 @@ public abstract class HttpTest extends HttpTestBase {
         .putHeader("location", "http://example2.org")
         .end());
     server.listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           assertEquals(singletonList("http://example2.org"), resp.headers().getAll("LocatioN"));
           testComplete();
-        }));
+        })).end();
+      }));
     }));
     await();
   }
@@ -478,7 +496,9 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     server.listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions).onComplete(onSuccess(handler::handle));
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(handler::handle)).end();
+      }));
     }));
     await();
   }
@@ -491,11 +511,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(server -> {
-      client.get(new RequestOptions()
-        .setHost(DEFAULT_HTTP_HOST)
-        .setPort(DEFAULT_HTTP_PORT)
-        .setURI(DEFAULT_TEST_URI)
-        .setServer(testAddress)).onComplete(noOpHandler());
+      client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::end));
     }));
 
     await();
@@ -512,7 +528,9 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions).onComplete(noOpHandler());
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.end();
+      }));
     }));
 
     await();
@@ -535,15 +553,13 @@ public abstract class HttpTest extends HttpTestBase {
       });
       req.response().end();
     }).listen(testAddress, onSuccess(server -> {
-      client.get(new RequestOptions()
-        .setHost(DEFAULT_HTTP_HOST)
-        .setPort(DEFAULT_HTTP_PORT)
-        .setURI(DEFAULT_TEST_URI)
-        .setServer(testAddress))
-        .onComplete(onSuccess(res -> {
-          assertEquals(200, res.statusCode());
-          assertEquals("wibble", res.headers().get("extraheader"));
-          complete();
+      client.request(requestOptions)
+        .onComplete(onSuccess(req -> {
+          req.onSuccess(resp -> {
+            assertEquals(200, resp.statusCode());
+            assertEquals("wibble", resp.headers().get("extraheader"));
+            complete();
+          }).end();
         }));
     }));
     await();
@@ -567,15 +583,16 @@ public abstract class HttpTest extends HttpTestBase {
       });
       req.response().end(content);
     }).listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(res -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(res -> {
           assertEquals(200, res.statusCode());
           assertEquals("wibble", res.headers().get("extraheader"));
           res.bodyHandler(buff -> {
             assertEquals(Buffer.buffer(content), buff);
             complete();
           });
-        }));
+        })).end();
+      }));
     }));
     await();
   }
@@ -605,15 +622,16 @@ public abstract class HttpTest extends HttpTestBase {
       // End with a chunk to ensure size is correctly calculated
       req.response().end(chunk);
     }).listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(res -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(res -> {
           assertEquals(200, res.statusCode());
           assertEquals("wibble", res.headers().get("extraheader"));
           res.bodyHandler(buff -> {
             assertEquals(Buffer.buffer(content.toString()), buff);
             complete();
           });
-        }));
+        })).end();
+      }));
     }));
     await();
   }
@@ -637,15 +655,16 @@ public abstract class HttpTest extends HttpTestBase {
       });
       req.response().sendFile(toSend.getAbsolutePath());
     }).listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(res -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(res -> {
           assertEquals(200, res.statusCode());
           assertEquals("wibble", res.headers().get("extraheader"));
           res.bodyHandler(buff -> {
             assertEquals(Buffer.buffer(content), buff);
             complete();
           });
-        }));
+        })).end();
+      }));
     }));
     await();
   }
@@ -657,11 +676,14 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().endHandler(v -> complete());
       req.response().end();
     }).listen(testAddress, onSuccess(server ->
-      client.send(new RequestOptions(requestOptions).putHeader(HttpHeaders.CONNECTION, "close"))
-        .onComplete(onSuccess(res -> {
+      client.request(requestOptions)
+      .onComplete(onSuccess(req -> {
+        req.putHeader(HttpHeaders.CONNECTION, "close");
+        req.onComplete(onSuccess(res -> {
           assertEquals(200, res.statusCode());
           complete();
-        }))));
+        })).end();
+      }))));
     await();
   }
 
@@ -698,8 +720,10 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(server -> {
-      client.send(new RequestOptions(requestOptions).setURI(uri))
-        .onComplete(resp -> testComplete());
+      client.request(new RequestOptions(requestOptions).setURI(uri))
+        .onComplete(onSuccess(req -> {
+          req.onComplete(onSuccess(resp -> testComplete())).end();
+        }));
     }));
 
     await();
@@ -747,10 +771,15 @@ public abstract class HttpTest extends HttpTestBase {
     });
     Buffer body = Buffer.buffer("param=" + URLEncoder.encode(value,"UTF-8"));
     server.listen(testAddress, onSuccess(server -> {
-      client.put(new RequestOptions(requestOptions)
-        .addHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(body.length()))
-        .addHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED), body)
-        .onComplete(onSuccess(resp -> testComplete()));
+      client.request(new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.PUT)
+      ).onComplete(onSuccess(req -> {
+        req
+          .putHeader(HttpHeaders.CONTENT_LENGTH, String.valueOf(body.length()))
+          .putHeader(HttpHeaders.CONTENT_TYPE, HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED)
+          .onComplete(onSuccess(resp -> testComplete()))
+          .end(body);
+      }));
     }));
 
     await();
@@ -779,8 +808,10 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(server -> {
-      client.send(new RequestOptions(requestOptions).setURI("some-uri/?" + query))
-        .onComplete(resp -> testComplete());
+      client.request(new RequestOptions(requestOptions).setURI("some-uri/?" + query))
+        .onComplete(onSuccess(req -> {
+          req.onComplete(resp -> testComplete()).end();
+        }));
     }));
 
     await();
@@ -795,8 +826,9 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions)
-        .onComplete(resp -> testComplete());
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(resp -> testComplete()).end();
+      }));
     }));
 
     await();
@@ -827,12 +859,13 @@ public abstract class HttpTest extends HttpTestBase {
       }
     });
     startServer(testAddress);
-    RequestOptions req = new RequestOptions(requestOptions).setMethod(method);
-    if (contentType != null) {
-      req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
-    }
-    client.send(req, Buffer.buffer("param=hello"))
-      .onComplete(onSuccess(resp -> testComplete()));
+    RequestOptions requestOptions = new RequestOptions(this.requestOptions).setMethod(method);
+    client.request(requestOptions, onSuccess(req -> {
+      if (contentType != null) {
+        req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+      }
+      req.send(onSuccess(resp -> testComplete()));
+    }));
     await();
   }
 
@@ -849,8 +882,9 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions)
-        .onComplete(resp -> testComplete());
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(resp -> testComplete()).end();
+      }));
     }));
 
     await();
@@ -954,15 +988,16 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           assertTrue(headers.size() < resp.headers().size());
           for (Map.Entry<String, String> entry : headers) {
             assertEquals(entry.getValue(), resp.headers().get(entry.getKey()));
             assertEquals(entry.getValue(), resp.getHeader(entry.getKey()));
           }
           testComplete();
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -981,13 +1016,13 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions).onComplete(onSuccess(resp -> {
-        assertTrue(headers.size() < resp.headers().size());
-
-        headers.forEach((k, v) -> assertEquals(v, resp.headers().get(k)));
-        headers.forEach((k, v) -> assertEquals(v, resp.getHeader(k)));
-
-        testComplete();
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
+          assertTrue(headers.size() < resp.headers().size());
+          headers.forEach((k, v) -> assertEquals(v, resp.headers().get(k)));
+          headers.forEach((k, v) -> assertEquals(v, resp.getHeader(k)));
+          testComplete();
+        })).end();
       }));
     }));
 
@@ -1032,8 +1067,8 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(server -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.endHandler(v -> {
             assertEquals(cookies.size(), resp.cookies().size());
             for (int i = 0; i < cookies.size(); ++i) {
@@ -1041,7 +1076,8 @@ public abstract class HttpTest extends HttpTestBase {
             }
             testComplete();
           });
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1292,10 +1328,9 @@ public abstract class HttpTest extends HttpTestBase {
     }).listen(testAddress, onSuccess(s -> {
       // Exception handler should be called for any requests in the pipeline if connection is closed
       for (int i = 0; i < numReqs; i++) {
-        client.send(requestOptions)
-          .onComplete(onFailure(err -> {
-            complete();
-          }));
+        client.request(requestOptions)
+          .compose(HttpClientRequest::send)
+          .onComplete(onFailure(err -> complete()));
       }
     }));
     await();
@@ -1310,9 +1345,11 @@ public abstract class HttpTest extends HttpTestBase {
       resp.close();
     }).listen(testAddress, onSuccess(s -> {
       // Exception handler should be called for any requests in the pipeline if connection is closed
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp ->
-          resp.exceptionHandler(t -> testComplete())));
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp ->
+          resp.exceptionHandler(t -> testComplete()))
+        ).end();
+      }));
     }));
     await();
   }
@@ -1332,12 +1369,13 @@ public abstract class HttpTest extends HttpTestBase {
         }
       });
       client = vertx.createHttpClient(createBaseClientOptions());
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.handler(data -> {
             throw cause;
           });
-        }));
+        })).end();
+      }));
     }));
     await();
   }
@@ -1357,12 +1395,13 @@ public abstract class HttpTest extends HttpTestBase {
           testComplete();
         }
       });
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(data -> {
             throw cause;
           });
-        }));
+        })).end();
+      }));
     }));
     await();
   }
@@ -1472,15 +1511,16 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().setChunked(true).write("chunk");
     });
     startServer(testAddress);
-    client.send(requestOptions)
-      .onComplete(onSuccess(resp -> {
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
         resp.handler(buff -> {
           conn.get().close();
         });
         resp.exceptionHandler(err -> {
           testComplete();
         });
-      }));
+      })).end();
+    }));
     await();
   }
 
@@ -1541,8 +1581,8 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           int theCode;
           if (code == -1) {
             // Default code - 200
@@ -1557,7 +1597,8 @@ public abstract class HttpTest extends HttpTestBase {
             assertEquals(HttpResponseStatus.valueOf(theCode).reasonPhrase(), resp.statusMessage());
           }
           testComplete();
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1589,8 +1630,8 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.endHandler(v -> {
             assertEquals(trailers.size(), resp.trailers().size());
             for (Map.Entry<String, String> entry : trailers) {
@@ -1599,7 +1640,8 @@ public abstract class HttpTest extends HttpTestBase {
             }
             testComplete();
           });
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1613,13 +1655,14 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.endHandler(v -> {
             assertTrue(resp.trailers().isEmpty());
             testComplete();
           });
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1660,8 +1703,9 @@ public abstract class HttpTest extends HttpTestBase {
       testComplete();
     });
     startServer(testAddress);
-    client.send(requestOptions)
-      .onComplete(noOpHandler());
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.end();
+    }));
     await();
   }
 
@@ -1674,13 +1718,14 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {
             assertEquals(body, buff);
             testComplete();
           });
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1721,13 +1766,14 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {
             assertEquals(body, buff);
             testComplete();
           });
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1788,13 +1834,14 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {
             assertEquals(bodyBuff, buff);
             testComplete();
           });
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1811,13 +1858,14 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {
             assertEquals(body, buff);
             testComplete();
           });
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1828,25 +1876,24 @@ public abstract class HttpTest extends HttpTestBase {
   public void testSendFile() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
     sendFile("test-send-file.html", content, false,
-      () -> new RequestOptions(requestOptions));
+      () -> client.request(requestOptions));
   }
 
   @Test
   public void testSendFileWithHandler() throws Exception {
     String content = TestUtils.randomUnicodeString(10000);
     sendFile("test-send-file.html", content, true,
-      () -> new RequestOptions(requestOptions));
+      () -> client.request(requestOptions));
   }
 
   @Test
   public void testSendFileWithConnectionCloseHeader() throws Exception {
     String content = TestUtils.randomUnicodeString(1024 * 1024 * 2);
     sendFile("test-send-file.html", content, false,
-      () -> new RequestOptions(requestOptions)
-        .putHeader(HttpHeaders.CONNECTION, "close"));
+      () -> client.request(requestOptions).map(req -> req.putHeader(HttpHeaders.CONNECTION, "close")));
   }
 
-  private void sendFile(String fileName, String contentExpected, boolean useHandler, Supplier<RequestOptions> requestFact) throws Exception {
+  private void sendFile(String fileName, String contentExpected, boolean useHandler, Supplier<Future<HttpClientRequest>> requestFact) throws Exception {
     waitFor(2);
     File fileToSend = setupFile(fileName, contentExpected);
     server.requestHandler(req -> {
@@ -1859,7 +1906,7 @@ public abstract class HttpTest extends HttpTestBase {
       }
     });
     startServer(testAddress);
-    client.request(requestFact.get()).onComplete(onSuccess(req -> {
+    requestFact.get().onComplete(onSuccess(req -> {
       req.onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         assertEquals("text/html", resp.headers().get("Content-Type"));
@@ -1887,13 +1934,14 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {
             assertEquals("failed", buff.toString());
             testComplete();
           });
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1910,8 +1958,8 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           assertEquals(file.length(), Long.parseLong(resp.headers().get("content-length")));
           assertEquals("wibble", resp.headers().get("content-type"));
           resp.bodyHandler(buff -> {
@@ -1919,7 +1967,8 @@ public abstract class HttpTest extends HttpTestBase {
             file.delete();
             testComplete();
           });
-        }));
+        })).end();
+      }));
     }));
 
     await();
@@ -1934,8 +1983,9 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onFailure(err -> {}));
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onFailure(err -> {})).end();
+      }));
       vertx.setTimer(100, tid -> testComplete());
     }));
 
@@ -1954,8 +2004,9 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onFailure(resp -> {}));
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onFailure(err -> {})).end();
+      }));
     }));
 
     await();
@@ -1975,8 +2026,9 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onFailure(err -> {}));
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onFailure(err -> {})).end();
+      }));
     }));
 
     await();
@@ -1987,13 +2039,14 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(res -> {
       res.response().sendFile("webroot/somefile.html", 6);
     }).listen(testAddress, onSuccess(res -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
-          resp.bodyHandler(buff -> {
-            assertTrue(buff.toString().startsWith("<body>blah</body></html>"));
-            testComplete();
-          });
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        client.request(requestOptions)
+          .compose(HttpClientRequest::send)
+          .compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
+          assertTrue(body.toString().startsWith("<body>blah</body></html>"));
+          testComplete();
         }));
+      }));
     }));
     await();
   }
@@ -2003,13 +2056,12 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(res -> {
       res.response().sendFile("webroot/somefile.html", 6, 6);
     }).listen(testAddress, onSuccess(res -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
-          resp.bodyHandler(buff -> {
-            assertEquals("<body>", buff.toString());
-            testComplete();
-          });
-        }));
+      client.request(requestOptions)
+        .compose(HttpClientRequest::send)
+        .compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
+        assertEquals("<body>", body.toString());
+        testComplete();
+      }));
     }));
     await();
   }
@@ -2182,11 +2234,12 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testServerDrainHandler() {
     drainingServer(resumeFuture -> {
-      client.send(requestOptions)
+      client.request(requestOptions)
+        .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
-          resp.pause();
-          resumeFuture.onComplete(ar -> resp.resume());
-        }));
+        resp.pause();
+        resumeFuture.onComplete(ar -> resp.resume());
+      }));
     });
 
     await();
@@ -2226,14 +2279,14 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(noOpHandler()); // No response handler so timeout triggers
     AtomicBoolean failed = new AtomicBoolean();
     server.listen(testAddress, onSuccess(s -> {
-      client.send(new RequestOptions(requestOptions).setTimeout(1000))
-        .onComplete(onFailure(t -> {
-          // Catch the first, the second is going to be a connection closed exception when the
-          // server is shutdown on testComplete
-          if (failed.compareAndSet(false, true)) {
-            testComplete();
-          }
-        }));
+      client.request(new RequestOptions(requestOptions).setTimeout(1000))
+        .compose(HttpClientRequest::send).onComplete(onFailure(t -> {
+        // Catch the first, the second is going to be a connection closed exception when the
+        // server is shutdown on testComplete
+        if (failed.compareAndSet(false, true)) {
+          testComplete();
+        }
+      }));
     }));
 
     await();
@@ -2243,7 +2296,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
     AtomicReference<Throwable> exception = new AtomicReference<>();
     // There is no server running, should fail to connect
-    client.send(new RequestOptions().setTimeout(800))
+    client.request(new RequestOptions().setTimeout(800))
       .onComplete(onFailure(exception::set));
 
     vertx.setTimer(1500, id -> {
@@ -2307,13 +2360,13 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testConnectInvalidPort() {
-    client.send(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).onComplete(onFailure(err -> complete()));
+    client.request(HttpMethod.GET, 9998, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI).onComplete(onFailure(err -> complete()));
     await();
   }
 
   @Test
   public void testConnectInvalidHost() {
-    client.send(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI).onComplete(onFailure(resp -> complete()));
+    client.request(HttpMethod.GET, 9998, "255.255.255.255", DEFAULT_TEST_URI).onComplete(onFailure(resp -> complete()));
     await();
   }
 
@@ -2379,10 +2432,14 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     startServer(testAddress);
-    client.head(requestOptions, onSuccess(resp -> {
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
+      .onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
         assertEquals("41", resp.headers().get("Content-Length"));
         resp.endHandler(v -> testComplete());
-      }));
+      }))
+        .end();
+    }));
     await();
   }
 
@@ -2479,20 +2536,21 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     try {
-      CompletableFuture<MultiMap> result = new CompletableFuture<>();
-      client.send(new RequestOptions(requestOptions).setMethod(method).setFollowRedirects(false)).onComplete(onSuccess(resp -> {
-        Buffer body = Buffer.buffer();
-        resp.exceptionHandler(result::completeExceptionally);
-        resp.handler(body::appendBuffer);
-        resp.endHandler(v -> {
-          if (body.length() > 0) {
-            result.completeExceptionally(new Exception());
-          } else {
-            result.complete(resp.headers());
-          }
-        });
-      }));
-      return result.get(20, TimeUnit.SECONDS);
+      CompletionStage<MultiMap> result = client
+        .request(new RequestOptions(requestOptions).setMethod(method)).compose(req ->
+          req
+            .setFollowRedirects(false)
+            .send()
+            .compose(resp ->
+              resp.body().compose(body -> {
+                if (body.length() > 0) {
+                  return Future.failedFuture(new Exception());
+                } else {
+                  return Future.succeededFuture(resp.headers());
+                }
+              })
+            )).toCompletionStage();
+      return result.toCompletableFuture().get(20, TimeUnit.SECONDS);
     } finally {
       client.close();
     }
@@ -2507,11 +2565,13 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.head(requestOptions)
-        .onComplete(onSuccess(resp -> {
-          assertNull(resp.headers().get(HttpHeaders.CONTENT_LENGTH));
-          resp.endHandler(v -> testComplete());
-        }));
+      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
+        .onComplete(onSuccess(req -> {
+          req.onComplete(onSuccess(resp -> {
+              assertNull(resp.headers().get(HttpHeaders.CONTENT_LENGTH));
+              resp.endHandler(v -> testComplete());
+            })).end();
+      }));
     }));
 
     await();
@@ -2527,10 +2587,14 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.head(requestOptions)
-        .onComplete(onSuccess(resp -> {
-          assertEquals("41", resp.headers().get(HttpHeaders.CONTENT_LENGTH));
-          resp.endHandler(v -> testComplete());
+      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.HEAD))
+        .onComplete(onSuccess(req -> {
+          req
+            .onComplete(onSuccess(resp -> {
+              assertEquals("41", resp.headers().get(HttpHeaders.CONTENT_LENGTH));
+              resp.endHandler(v -> testComplete());
+            }))
+            .end();
         }));
     }));
 
@@ -2549,8 +2613,12 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> resp.endHandler(v -> testComplete())));
+      client.request(requestOptions)
+        .compose(HttpClientRequest::send)
+        .compose(HttpClientResponse::body)
+        .onComplete(onSuccess(req -> {
+          testComplete();
+        }));
     }));
 
     await();
@@ -2564,8 +2632,12 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(new RequestOptions(requestOptions).setURI("/foo/bar"))
-        .onComplete(onSuccess(resp -> resp.endHandler(v -> testComplete())));
+      client.request(new RequestOptions(requestOptions).setURI("/foo/bar"))
+        .compose(HttpClientRequest::send)
+        .compose(HttpClientResponse::body)
+        .onComplete(onSuccess(req -> {
+          testComplete();
+        }));
     }));
 
     await();
@@ -2604,8 +2676,8 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end(expected);
     });
     startServer(testAddress);
-    client.send(requestOptions)
-      .onComplete(onSuccess(resp -> {
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send().onComplete(onSuccess(resp -> {
         resp.bodyHandler(body -> {
           assertEquals(expected, body);
           testComplete();
@@ -2614,6 +2686,7 @@ public abstract class HttpTest extends HttpTestBase {
         resp.pause();
         resp.resume();
       }));
+    }));
     await();
   }
 
@@ -2634,30 +2707,31 @@ public abstract class HttpTest extends HttpTestBase {
 
     AtomicBoolean paused = new AtomicBoolean();
     Buffer totBuff = Buffer.buffer();
-    client.send(requestOptions).onComplete(onSuccess(resp -> {
-      resp.pause();
-      paused.set(true);
-      resp.handler(chunk -> {
-        if (paused.get()) {
-          fail("Shouldn't receive chunks when paused");
-        } else {
-          totBuff.appendBuffer(chunk);
-        }
-      });
-      resp.endHandler(v -> {
-        if (paused.get()) {
-          fail("Shouldn't receive chunks when paused");
-        } else {
-          assertEquals(numWrites * numBytes, totBuff.length());
-          testComplete();
-        }
-      });
-      vertx.setTimer(500, id -> {
-        paused.set(false);
-        resp.resume();
-      });
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
+        resp.pause();
+        paused.set(true);
+        resp.handler(chunk -> {
+          if (paused.get()) {
+            fail("Shouldn't receive chunks when paused");
+          } else {
+            totBuff.appendBuffer(chunk);
+          }
+        });
+        resp.endHandler(v -> {
+          if (paused.get()) {
+            fail("Shouldn't receive chunks when paused");
+          } else {
+            assertEquals(numWrites * numBytes, totBuff.length());
+            testComplete();
+          }
+        });
+        vertx.setTimer(500, id -> {
+          paused.set(false);
+          resp.resume();
+        });
+      })).end();
     }));
-
     await();
   }
 
@@ -2705,8 +2779,8 @@ public abstract class HttpTest extends HttpTestBase {
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setKeepAlive(true));
     for (int i = 0;i < num;i++) {
       int idx = i;
-      client.send(new RequestOptions(requestOptions).setURI("/" + i))
-        .onComplete(onSuccess(resp -> {
+      client.request(new RequestOptions(requestOptions).setURI("/" + i)).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           Buffer body = Buffer.buffer();
           Thread t = Thread.currentThread();
           resp.handler(buff -> {
@@ -2720,7 +2794,8 @@ public abstract class HttpTest extends HttpTestBase {
           });
           resp.pause();
           scheduler.accept(resp::resume);
-        }));
+        })).end();
+      }));
     }
     await();
   }
@@ -2737,8 +2812,8 @@ public abstract class HttpTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1).setKeepAlive(true));
     for (int i = 0;i < num;i++) {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {
             assertEquals(data, buff);
             complete();
@@ -2747,7 +2822,8 @@ public abstract class HttpTest extends HttpTestBase {
           vertx.setTimer(10, id -> {
             resp.resume();
           });
-        }));
+        })).end();
+      }));
     }
     await();
   }
@@ -2831,10 +2907,13 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
-    client.put(requestOptions, Buffer.buffer("small"))
-      .onComplete(resp -> {
-        complete();
-      });
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
+      req
+        .onComplete(resp -> {
+          complete();
+        })
+        .end(Buffer.buffer("small"));
+    }));
     await();
   }
 
@@ -2855,8 +2934,8 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
-    client.send(requestOptions)
-      .onComplete(onSuccess(resp -> {
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
         AtomicBoolean ended = new AtomicBoolean();
         AtomicBoolean paused = new AtomicBoolean();
         resp.handler(buff -> {
@@ -2878,7 +2957,8 @@ public abstract class HttpTest extends HttpTestBase {
           ended.set(true);
           complete();
         });
-      }));
+      })).end();
+    }));
     await();
   }
 
@@ -3137,19 +3217,21 @@ public abstract class HttpTest extends HttpTestBase {
     // Make sure we have one param that needs url encoding
     buffer.appendString("framework=" + URLEncoder.encode("vert x", "UTF-8") + "&runson=jvm", "UTF-8");
     server.listen(testAddress, onSuccess(s -> {
-      client.send(new RequestOptions(requestOptions)
+      client.request(new RequestOptions(requestOptions)
         .setMethod(HttpMethod.POST)
-        .setURI("/form")
-        .putHeader("content-length", String.valueOf(buffer.length()))
-        .putHeader("content-type", "application/x-www-form-urlencoded"), buffer)
-        .onComplete(onSuccess(resp -> {
-          // assert the response
-          assertEquals(200, resp.statusCode());
-          resp.bodyHandler(body -> {
-            assertEquals(0, body.length());
-          });
-          assertEquals(2, attributeCount.get());
-          testComplete();
+        .setURI("/form"), onSuccess(req -> {
+          req
+            .putHeader("content-length", String.valueOf(buffer.length()))
+            .putHeader("content-type", "application/x-www-form-urlencoded")
+            .send(buffer, onSuccess(resp -> {
+            // assert the response
+            assertEquals(200, resp.statusCode());
+            resp.bodyHandler(body -> {
+              assertEquals(0, body.length());
+            });
+            assertEquals(2, attributeCount.get());
+            testComplete();
+          }));
         }));
     }));
 
@@ -3180,20 +3262,21 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(testAddress, onSuccess(s -> {
       Buffer buffer = Buffer.buffer();
       buffer.appendString("origin=junit-testUserAlias&login=admin%40foo.bar&pass+word=admin");
-      client.post(new RequestOptions(requestOptions)
-        .setURI("/form")
-        .putHeader("content-length", String.valueOf(buffer.length()))
-        .putHeader("content-type", "application/x-www-form-urlencoded")
-        , buffer)
-        .onComplete(onSuccess(resp -> {
-          // assert the response
-          assertEquals(200, resp.statusCode());
-          resp.bodyHandler(body -> {
-            assertEquals(0, body.length());
-          });
-          assertEquals(3, attributeCount.get());
-          testComplete();
-        }));
+      client.request(new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.POST)
+        .setURI("/form")).onComplete(onSuccess(req -> {
+        req.putHeader("content-length", String.valueOf(buffer.length()))
+          .putHeader("content-type", "application/x-www-form-urlencoded")
+          .onComplete(onSuccess(resp -> {
+            // assert the response
+            assertEquals(200, resp.statusCode());
+            resp.bodyHandler(body -> {
+              assertEquals(0, body.length());
+            });
+            assertEquals(3, attributeCount.get());
+            testComplete();
+          })).end(buffer);
+      }));
     }));
 
     await();
@@ -3207,8 +3290,9 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(new RequestOptions(requestOptions).setAuthority("localhost:4444"))
-        .onComplete(resp -> testComplete());
+      client.request(new RequestOptions().setServer(testAddress).setHost("localhost").setPort(4444))
+        .compose(HttpClientRequest::send)
+        .onComplete(onSuccess(resp -> testComplete()));
     }));
 
     await();
@@ -3226,12 +3310,13 @@ public abstract class HttpTest extends HttpTestBase {
     });
 
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
-        .onComplete(onSuccess(resp -> {
-          resp.bodyHandler(buff -> {
-            assertEquals(bodyBuff, buff);
-            testComplete();
-          });
+      client
+        .request(requestOptions)
+        .compose(HttpClientRequest::send)
+        .compose(HttpClientResponse::body)
+        .onComplete(onSuccess(buff -> {
+          assertEquals(bodyBuff, buff);
+          testComplete();
         }));
     }));
 
@@ -3291,12 +3376,13 @@ public abstract class HttpTest extends HttpTestBase {
         int index = i;
         threads[i] = new Thread() {
           public void run() {
-            client.send(new RequestOptions(requestOptions).putHeader("count", String.valueOf(index)))
-              .onComplete(onSuccess(res -> {
-                assertEquals(200, res.statusCode());
-                assertEquals(String.valueOf(index), res.headers().get("count"));
+            client.request(requestOptions)
+              .compose(req -> req.putHeader("count", String.valueOf(index)).send())
+              .onComplete(onSuccess(resp -> {
+                assertEquals(200, resp.statusCode());
+                assertEquals(String.valueOf(index), resp.headers().get("count"));
                 latch.countDown();
-              }));
+            }));
           }
         };
         threads[i].start();
@@ -3341,15 +3427,17 @@ public abstract class HttpTest extends HttpTestBase {
             assertSame(thr, Thread.currentThread());
           }
           client = vertx.createHttpClient(new HttpClientOptions());
-          client.send(requestOptions)
-            .onComplete(onSuccess(res -> {
+          client
+            .request(requestOptions)
+            .compose(HttpClientRequest::send)
+            .onComplete(onSuccess(resp -> {
               assertSameEventLoop(ctx, Vertx.currentContext());
               if (!worker) {
                 assertSame(thr, Thread.currentThread());
               }
-              assertEquals(200, res.statusCode());
+              assertEquals(200, resp.statusCode());
               testComplete();
-            }));
+          }));
         }));
       }
     }
@@ -3392,7 +3480,8 @@ public abstract class HttpTest extends HttpTestBase {
     }, new DeploymentOptions().setWorker(true), onSuccess(id -> latch.countDown()));
     awaitLatch(latch);
     for (int i = 0;i < numReq;i++) {
-      client.send(requestOptions)
+      client.request(requestOptions)
+        .compose(HttpClientRequest::send)
         .onComplete(
           onSuccess(resp -> {
             complete();
@@ -3464,7 +3553,8 @@ public abstract class HttpTest extends HttpTestBase {
       });
     });
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
+      client.request(requestOptions)
+        .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           testComplete();
@@ -3511,7 +3601,8 @@ public abstract class HttpTest extends HttpTestBase {
       });
     });
     server.listen(testAddress, onSuccess(s -> {
-      client.send(requestOptions)
+      client.request(requestOptions)
+        .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
         }));
@@ -3531,7 +3622,9 @@ public abstract class HttpTest extends HttpTestBase {
     });
     server.listen(testAddress, onSuccess(s -> {
       String path = "/path";
-      client.send(new RequestOptions(requestOptions).setURI(path)).onComplete(onSuccess(resp -> {
+      client.request(new RequestOptions(requestOptions).setURI(path))
+        .compose(HttpClientRequest::send)
+        .onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
       }));
@@ -3557,9 +3650,7 @@ public abstract class HttpTest extends HttpTestBase {
       }
     }).listen(testAddress, onSuccess(s -> {
       IntStream.range(0, sendRequests)
-        .forEach(x -> client.send(requestOptions)
-          .onComplete(noOpHandler())
-        );
+        .forEach(x -> client.request(requestOptions).compose(HttpClientRequest::send));
     }));
     await();
   }
@@ -3570,10 +3661,9 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals("COPY", r.method().name());
       r.response().end();
     }).listen(testAddress, onSuccess(s -> {
-      client.send(new RequestOptions(requestOptions).setMethod(HttpMethod.valueOf("COPY")))
-        .onComplete(onSuccess(resp -> {
-          testComplete();
-        }));
+      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.valueOf("COPY")))
+        .compose(HttpClientRequest::send)
+        .onComplete(onSuccess(resp -> testComplete()));
     }));
     await();
   }
@@ -3591,10 +3681,9 @@ public abstract class HttpTest extends HttpTestBase {
       complete();
     });
     ctx.runOnContext(v -> {
-      client.send(requestOptions)
-        .onComplete(resp -> {
-          complete();
-        });
+      client.request(requestOptions)
+        .compose(HttpClientRequest::send)
+        .onComplete(resp -> complete());
     });
     await();
   }
@@ -3615,10 +3704,9 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     startServer(testAddress, serverCtx, server);
-    client.send(requestOptions)
-      .onComplete(resp -> {
-        testComplete();
-      });
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(resp -> testComplete());
     await();
   }
 
@@ -3628,9 +3716,7 @@ public abstract class HttpTest extends HttpTestBase {
     Context serverCtx = vertx.getOrCreateContext();
     server.connectionHandler(conn -> {
       conn.close();
-      conn.closeHandler(v -> {
-        complete();
-      });
+      conn.closeHandler(v -> complete());
     });
     server.requestHandler(req -> {
       fail();
@@ -3641,8 +3727,7 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       });
     });
-    client.send(requestOptions)
-      .onComplete(noOpHandler());
+    client.request(requestOptions).compose(HttpClientRequest::send);
     await();
   }
 
@@ -3686,9 +3771,9 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       });
     });
-    client.send(requestOptions, onFailure(req -> {
-      complete();
-    }));
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onFailure(req -> complete()));
     await();
   }
 
@@ -3732,7 +3817,8 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     startServer();
-    client.send(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
+      .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         testComplete();
@@ -3863,25 +3949,30 @@ public abstract class HttpTest extends HttpTestBase {
       }
     });
     startServer();
-    client.send(new RequestOptions(requestOptions)
-      .setServer(null)
-      .setMethod(method)
-      .setURI("/somepath")
-      .putHeader("foo", "foo_value")
-      .setFollowRedirects(true))
-      .onComplete(onSuccess(resp -> {
-        assertEquals(resp.request().absoluteURI(), t);
-        assertEquals(expectedRequests, numRequests.get());
-        assertEquals(expectedStatus, resp.statusCode());
-        resp.bodyHandler(body -> {
-          if (resp.statusCode() == 200) {
-            assertEquals(expectedBody, body);
-          } else {
-            assertEquals(Buffer.buffer(), body);
-          }
-          testComplete();
-        });
-      }));
+    client.request(
+      new RequestOptions(requestOptions)
+        .setServer(null)
+        .setMethod(method)
+        .setURI("/somepath")
+    )
+      .compose(req -> req
+        .putHeader("foo", "foo_value")
+        .setFollowRedirects(true)
+        .send()
+        .compose(resp -> {
+          assertEquals(resp.request().absoluteURI(), t);
+          assertEquals(expectedRequests, numRequests.get());
+          assertEquals(expectedStatus, resp.statusCode());
+          return resp.body().compose(body -> {
+            if (resp.statusCode() == 200) {
+              assertEquals(expectedBody, body);
+            } else {
+              assertEquals(Buffer.buffer(), body);
+            }
+            return Future.succeededFuture();
+          });
+        })
+      ).onSuccess(v -> testComplete());
     await();
   }
 
@@ -3912,12 +4003,18 @@ public abstract class HttpTest extends HttpTestBase {
       }
     });
     startServer();
-    client.put(new RequestOptions()
+    client.request(new RequestOptions()
+      .setMethod(HttpMethod.PUT)
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
-      .setFollowRedirects(true), translator.apply(expected), onSuccess(resp -> {
-      assertEquals(200, resp.statusCode());
-      testComplete();
+    )
+      .onComplete(onSuccess(req -> {
+        req.setFollowRedirects(true);
+        req.onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        }))
+          .end(translator.apply(expected));
     }));
     await();
   }
@@ -3952,9 +4049,9 @@ public abstract class HttpTest extends HttpTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
       .setURI(DEFAULT_TEST_URI)
-      .setFollowRedirects(true)
     )
       .onComplete(onSuccess(req -> {
+        req.setFollowRedirects(true);
         req.setChunked(true);
         req.write(buff1);
         latch.future().onSuccess(v -> {
@@ -4068,14 +4165,15 @@ public abstract class HttpTest extends HttpTestBase {
       .setMethod(HttpMethod.PUT)
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
-      .setFollowRedirects(true)
-      .addHeader("Content-Length", "" + expected.length())
       .setURI("/somepath")
     ).onComplete(onSuccess(req -> {
-      req.onComplete(onSuccess(resp -> {
-        assertEquals(200, resp.statusCode());
-        testComplete();
-      }));
+      req
+        .setFollowRedirects(true)
+        .putHeader("Content-Length", "" + expected.length())
+        .onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        }));
       req.sendHead(onSuccess(v -> {
         req.end(expected);
       }));
@@ -4085,6 +4183,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectLimit() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
     AtomicInteger redirects = new AtomicInteger();
     server.requestHandler(req -> {
       int val = redirects.incrementAndGet();
@@ -4096,21 +4195,22 @@ public abstract class HttpTest extends HttpTestBase {
       }
     });
     startServer();
-    client.get(new RequestOptions()
-      .setHost(DEFAULT_HTTP_HOST)
-      .setPort(DEFAULT_HTTP_PORT)
-      .setURI(DEFAULT_TEST_URI)
-      .setFollowRedirects(true), onSuccess(resp -> {
-      assertEquals(16, redirects.get());
-      assertEquals(301, resp.statusCode());
-      assertEquals("/otherpath", resp.request().path());
-      testComplete();
-    }));
+    client.request(requestOptions)
+      .onComplete(onSuccess(req -> {
+        req.setFollowRedirects(true);
+        req.onComplete(onSuccess(resp -> {
+          assertEquals(16, redirects.get());
+          assertEquals(301, resp.statusCode());
+          assertEquals("/otherpath", resp.request().path());
+          testComplete();
+        })).end();
+      }));
     await();
   }
 
   @Test
   public void testFollowRedirectPropagatesTimeout() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
     AtomicInteger redirections = new AtomicInteger();
     server.requestHandler(req -> {
       switch (redirections.getAndIncrement()) {
@@ -4122,16 +4222,16 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer();
     AtomicBoolean done = new AtomicBoolean();
-    client.get(new RequestOptions()
-      .setHost(DEFAULT_HTTP_HOST)
-      .setPort(DEFAULT_HTTP_PORT)
-      .setURI(DEFAULT_TEST_URI)
-      .setFollowRedirects(true)
-      .setTimeout(500), onFailure(t -> {
-      if (done.compareAndSet(false, true)) {
-        assertEquals(2, redirections.get());
-        testComplete();
-      }
+    client.request(new RequestOptions(requestOptions)
+      .setTimeout(500), onSuccess(req -> {
+      req
+        .setFollowRedirects(true)
+        .send(onFailure(t -> {
+        if (done.compareAndSet(false, true)) {
+          assertEquals(2, redirections.get());
+          testComplete();
+        }
+      }));
     }));
     await();
   }
@@ -4157,10 +4257,13 @@ public abstract class HttpTest extends HttpTestBase {
       complete();
     });
     startServer(server2);
-    client.send(new RequestOptions(requestOptions)
-      .setFollowRedirects(true)
-      .setAuthority("localhost:" + options.getPort())
-    ).onComplete(onSuccess(resp -> {
+    client.request(requestOptions)
+      .compose(req -> req
+        .setFollowRedirects(true)
+        // .setAuthority("localhost:" + options.getPort())
+        .send()
+      )
+      .onComplete(onSuccess(resp -> {
         assertEquals(scheme + "://localhost:" + port + "/whatever", resp.request().absoluteURI());
         complete();
       }));
@@ -4193,26 +4296,21 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(ctx, Vertx.currentContext());
       Promise<RequestOptions> fut = Promise.promise();
       vertx.setTimer(25, id -> {
-        fut.complete(new RequestOptions()
-          .setAbsoluteURI(scheme + "://localhost:" + port + "/custom")
-          .addHeader("foo", "foo_another")
-          .setAuthority("localhost:" + port)
-        );
+        fut.complete(new RequestOptions().setAbsoluteURI(scheme + "://localhost:" + port + "/custom"));
       });
       return fut.future();
     });
     ctx.runOnContext(v -> {
-      client.get(new RequestOptions()
-        .setPort(DEFAULT_HTTP_PORT)
+      client.request(new RequestOptions()
         .setHost(DEFAULT_HTTP_HOST)
-        .setFollowRedirects(true)
-        .setURI("/somepath")
-        .setAuthority("localhost:" + options.getPort())
-        .addHeader("foo", "foo_value"))
-        .onComplete(onSuccess(resp -> {
-          assertEquals(scheme + "://localhost:" + port + "/custom", resp.request().absoluteURI());
-          complete();
-        }));
+        .setPort(DEFAULT_HTTP_PORT)).onComplete(onSuccess(req -> {
+          req.setFollowRedirects(true);
+          req.putHeader("foo", "foo_value");
+          req.onComplete(onSuccess(resp -> {
+            assertEquals(scheme + "://localhost:" + port + "/custom", resp.request().absoluteURI());
+            complete();
+          })).end();
+      }));
     });
     await();
   }
@@ -4338,6 +4436,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testFollowRedirectEncodedParams() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
     String value1 = "\ud55c\uae00", value2 = "A B+C", value3 = "123 \u20ac";
     server.requestHandler(req -> {
       switch (req.path()) {
@@ -4370,13 +4469,13 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer();
 
-    client.get(new RequestOptions()
-      .setPort(DEFAULT_HTTP_PORT)
-      .setHost(DEFAULT_HTTP_HOST)
-      .setURI("/first/call/from/client")
-      .setFollowRedirects(true), onSuccess(resp -> {
-      assertEquals(200, resp.statusCode());
-      testComplete();
+    client.request(new RequestOptions(requestOptions)
+      .setURI("/first/call/from/client")).onComplete(onSuccess(req -> {
+        req.setFollowRedirects(true);
+        req.onComplete(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        })).end();
     }));
     await();
   }
@@ -4425,8 +4524,8 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     for (int i = 0;i < 2;i++) {
       Buffer body = Buffer.buffer(randomAlphaString(256));
-      client.send(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setURI("/" + i), body)
-        .onComplete(onSuccess(resp -> {
+      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setURI("/" + i))
+        .onComplete(onSuccess(req -> req.send(body, onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           HttpConnection conn = resp.request().connection();
           switch (resp.request().path()) {
@@ -4464,7 +4563,7 @@ public abstract class HttpTest extends HttpTestBase {
               });
               break;
           }
-        }));
+        }))));
     }
     await();
   }
@@ -4527,11 +4626,13 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().setChunked(true).write("some-data");
     });
     startServer(testAddress);
-    client.send(requestOptions)
-      .onComplete(onSuccess(resp -> {
-        resp.handler(v -> {
-          resp.request().connection().close();
-        });
+    client.request(requestOptions)
+      .onComplete(onSuccess(req -> {
+        req.send(onSuccess(resp -> {
+          resp.handler(v -> {
+            resp.request().connection().close();
+          });
+        }));
       }));
     await();
   }
@@ -4588,9 +4689,11 @@ public abstract class HttpTest extends HttpTestBase {
       });
       clientConn.get().close();
     });
-    startServer();
+    startServer(testAddress);
     client.connectionHandler(clientConn::set);
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onFailure(resp -> {
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.onComplete(onFailure(err -> {
+      })).end();
     }));
     await();
   }
@@ -4616,12 +4719,13 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end("some-data");
     });
     startServer(testAddress);
-    client.send(requestOptions)
-      .onComplete(onSuccess(resp -> {
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.send(onSuccess(resp -> {
         resp.endHandler(v -> {
           resp.request().connection().close();
         });
       }));
+    }));
     await();
   }
 
@@ -4631,10 +4735,12 @@ public abstract class HttpTest extends HttpTestBase {
         server.requestHandler(req -> {
           req.response().end();
         });
-        startServer();
-        client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", resp -> {
-          testComplete();
-        });
+        startServer(testAddress);
+        client.request(requestOptions).onComplete(onSuccess(req -> {
+          req.onComplete(onSuccess(resp -> {
+            testComplete();
+          })).end();
+        }));
         await();
        } catch (Exception e) {
          throw new RuntimeException(e);
@@ -4659,7 +4765,8 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       });
     });
-    client.send(requestOptions)
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
       .onComplete(ar -> {
         if (ar.failed()) {
           complete();
@@ -4692,7 +4799,8 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     server.listen(testAddress, onSuccess(server -> {
-      client.send(new RequestOptions(requestOptions).putHeader("foo", "foo"))
+      client.request(requestOptions)
+        .compose(req -> req.putHeader("foo", "foo").send())
         .onComplete(onSuccess(resp -> {
           assertTrue(resp.headers().contains("Quux", "quux", false));
           assertFalse(resp.headers().contains("Quux", "quUx", false));
@@ -4711,7 +4819,8 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     server.listen(testAddress, onSuccess(server -> {
-      client.send(new RequestOptions(requestOptions).putHeader("foo", "foo"))
+      client.request(requestOptions)
+        .compose(req -> req.putHeader("foo", "foo").send())
         .onComplete(onSuccess(resp -> {
           assertTrue(resp.headers().contains("Quux", "quux", true));
           assertTrue(resp.headers().contains("Quux", "quUx", true));
@@ -4738,7 +4847,8 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     server.listen(testAddress, onSuccess(server -> {
-      client.send(new RequestOptions(requestOptions).putHeader(foo, foo))
+      client.request(requestOptions)
+        .compose(req -> req.putHeader(foo, foo).send())
         .onComplete(onSuccess(resp -> {
           assertTrue(resp.headers().contains(Quux, quux, false));
           assertFalse(resp.headers().contains(Quux, quUx, false));
@@ -4765,7 +4875,8 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     server.listen(testAddress, onSuccess(server -> {
-      client.send(new RequestOptions(requestOptions).putHeader(foo, foo))
+      client.request(requestOptions)
+        .compose(req -> req.putHeader(foo, foo).send())
         .onComplete(onSuccess(resp -> {
           assertTrue(resp.headers().contains(Quux, quux, true));
           assertTrue(resp.headers().contains(Quux, quUx, true));
@@ -4786,12 +4897,13 @@ public abstract class HttpTest extends HttpTestBase {
       });
     });
     startServer(testAddress);
-    client.put(requestOptions, expected)
-      .onComplete(onSuccess(resp -> {
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
         resp.bodyHandler(buff -> {
           testComplete();
         });
-      }));
+      })).end(expected);
+    }));
     await();
   }
 
@@ -4913,7 +5025,8 @@ public abstract class HttpTest extends HttpTestBase {
       req.response().end();
     });
     startServer(testAddress);
-    client.send(requestOptions)
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
         resp.headers().forEach(header -> {
           String name = header.getKey();
@@ -4941,7 +5054,8 @@ public abstract class HttpTest extends HttpTestBase {
       .setMaxPoolSize(1)
       .setKeepAliveTimeout(10)
     );
-    client.send(requestOptions)
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
         resp.endHandler(v1 -> {
           AtomicBoolean closed = new AtomicBoolean();
@@ -4975,7 +5089,8 @@ public abstract class HttpTest extends HttpTestBase {
     AtomicInteger respCount = new AtomicInteger();
     for (int i = 0;i < numReqs;i++) {
       int current = 1 + i;
-      client.send(requestOptions)
+      client.request(requestOptions)
+        .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           respCount.incrementAndGet();
           if (current == numReqs) {
@@ -5017,7 +5132,8 @@ public abstract class HttpTest extends HttpTestBase {
     startServer(testAddress);
     client.close();
     client = vertx.createHttpClient(options);
-    client.send(requestOptions)
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
         resp.endHandler(v1 -> {
           resp.request().connection().closeHandler(v2 -> {
@@ -5276,7 +5392,8 @@ public abstract class HttpTest extends HttpTestBase {
       }
     });
     server.listen(testAddress, onSuccess(s -> {
-      client.send(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT))
+      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT))
+        .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           complete();
@@ -5299,7 +5416,8 @@ public abstract class HttpTest extends HttpTestBase {
       }
     });
     server.listen(testAddress, onSuccess(s -> {
-      client.send(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT))
+      client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT))
+        .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           complete();
@@ -5322,7 +5440,8 @@ public abstract class HttpTest extends HttpTestBase {
       }).start();
     });
     startServer(testAddress);
-    client.send(requestOptions)
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
       .onComplete(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         complete();
@@ -5350,9 +5469,11 @@ public abstract class HttpTest extends HttpTestBase {
         complete();
       }));
     });
-    startServer();
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-      complete();
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
+        complete();
+      })).end();
     }));
     await();
   }
@@ -5377,9 +5498,11 @@ public abstract class HttpTest extends HttpTestBase {
       };
       task[0].run();
     });
-    startServer();
-    client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-      resp.request().connection().close();
+    startServer(testAddress);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.onComplete(onSuccess(resp -> {
+        resp.request().connection().close();
+      })).end();
     }));
     await();
   }
@@ -5822,12 +5945,12 @@ public abstract class HttpTest extends HttpTestBase {
   private void testCookies(String cookieHeader, Consumer<HttpServerRequest> serverChecker, Consumer<HttpClientResponse> clientChecker) throws Exception {
     server.requestHandler(serverChecker::accept);
     startServer(testAddress);
-    client.send(new RequestOptions(requestOptions)
-      .putHeader(HttpHeaders.COOKIE.toString(), cookieHeader)
-    ).onComplete(onSuccess(resp -> {
-      clientChecker.accept(resp);
-      testComplete();
-    }));
+    client.request(requestOptions)
+      .compose(req -> req.putHeader(HttpHeaders.COOKIE.toString(), cookieHeader).send())
+      .onComplete(onSuccess(resp -> {
+        clientChecker.accept(resp);
+        testComplete();
+      }));
     await();
   }
 
@@ -5903,10 +6026,14 @@ public abstract class HttpTest extends HttpTestBase {
       .setPort(DEFAULT_HTTP_PORT)
       .setHost(DEFAULT_HTTP_HOST)
       .setURI(DEFAULT_TEST_URI);
-    if (!chunked) {
-      options.addHeader(HttpHeaders.CONTENT_LENGTH, contentLength);
-    }
-    client.send(options, src, onSuccess(resp -> {
+    client.request(options)
+      .compose(req -> {
+        if (!chunked) {
+          req.putHeader(HttpHeaders.CONTENT_LENGTH, contentLength);
+        }
+        return req.send(src);
+      })
+      .onComplete(onSuccess(resp -> {
       assertEquals(200, resp.statusCode());
       complete();
     }));
@@ -5955,7 +6082,8 @@ public abstract class HttpTest extends HttpTestBase {
       complete();
     });
     startServer(testAddress);
-    client.send(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
+    client.request(HttpMethod.GET, proxy.getPort(), proxy.getHost(), DEFAULT_TEST_URI)
+      .compose(HttpClientRequest::send)
       .onComplete(onSuccess(v -> complete()));
     try {
       await();
@@ -6104,10 +6232,11 @@ public abstract class HttpTest extends HttpTestBase {
       .requestHandler(req -> fail());
 
     startServer(testAddress);
-    client.send(new RequestOptions()
+    client.request(new RequestOptions()
       .setPort(proxy.getPort())
       .setHost(proxy.getHost())
       .setURI(DEFAULT_TEST_URI))
+      .compose(HttpClientRequest::send)
       .onComplete(onFailure(req -> complete()));
 
     try {
@@ -6152,7 +6281,10 @@ public abstract class HttpTest extends HttpTestBase {
         });
       });
       for (int i = 0;i < num;i++) {
-        client.get(DEFAULT_HTTP_PORT + i, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI);
+        client.request(new RequestOptions()
+          .setHost(DEFAULT_HTTP_HOST)
+          .setPort(DEFAULT_HTTP_PORT + i))
+          .onComplete(onSuccess(HttpClientRequest::end));
       }
       assertWaitUntil(() -> inflight.get() == num);
       CountDownLatch latch = new CountDownLatch(1);
@@ -6181,10 +6313,11 @@ public abstract class HttpTest extends HttpTestBase {
       .requestHandler(req -> fail());
 
     startServer(testAddress);
-    client.send(new RequestOptions()
+    client.request(new RequestOptions()
       .setPort(proxy.getPort())
       .setHost(proxy.getHost())
       .setURI(DEFAULT_TEST_URI))
+      .compose(HttpClientRequest::send)
       .onComplete(onFailure(ex -> complete()));
     await();
     proxy.stop();
@@ -6205,13 +6338,15 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().end();
     });
-    startServer();
+    startServer(testAddress);
     int numReq = 3;
     CountDownLatch latch = new CountDownLatch(numReq);
     for (int i = 0;i < numReq;i++) {
-      client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, onSuccess(resp -> {
-        contexts.add(Vertx.currentContext());
-        latch.countDown();
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.onComplete(onSuccess(resp -> {
+          contexts.add(Vertx.currentContext());
+          latch.countDown();
+        })).end();
       }));
     }
     awaitLatch(latch);
@@ -6220,14 +6355,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testRetrySameHostOnCallbackFailure() {
-    client
-      .get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
-      .onComplete(onFailure(err1 -> {
-        client
-          .get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
-          .onComplete(onFailure(err2 -> {
-            testComplete();
-          }));
+    client.request(requestOptions).onComplete(onFailure(req1 -> {
+      client.request(requestOptions).onComplete(onFailure(req2 -> {
+        testComplete();
+      }));
     }));
     await();
   }

@@ -74,12 +74,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     return false;
   }
 
-
-  @Override
-  public String getAuthority() {
-    return server.host();
-  }
-
   @Override
   public MultiMap headers() {
     return headers;
@@ -112,11 +106,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public HttpClientRequest setChunked(boolean chunked) {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public HttpClientRequest setAuthority(String authority) {
     throw new IllegalStateException();
   }
 

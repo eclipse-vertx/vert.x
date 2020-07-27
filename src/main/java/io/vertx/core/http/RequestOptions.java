@@ -76,7 +76,6 @@ public class RequestOptions {
   private Integer port;
   private Boolean ssl;
   private String uri;
-  private String authority;
   private MultiMap headers;
   private boolean followRedirects;
   private long timeout;
@@ -107,7 +106,6 @@ public class RequestOptions {
     setPort(other.port);
     setSsl(other.ssl);
     setURI(other.uri);
-    setFollowRedirects(other.followRedirects);
     setTimeout(other.timeout);
     if (other.headers != null) {
       setHeaders(MultiMap.caseInsensitiveMultiMap().setAll(other.headers));
@@ -248,30 +246,6 @@ public class RequestOptions {
    */
   public RequestOptions setURI(String uri) {
     this.uri = uri;
-    return this;
-  }
-
-  /**
-   * Return the request authority.
-   *
-   * <p>For HTTP/2 the {@literal :authority} pseudo header otherwise the {@literal Host} header.
-   *
-   * @return the request authority.
-   */
-  public String getAuthority() {
-    return authority;
-  }
-
-  /**
-   * Set the request authority.
-   *
-   * <p>For HTTP/2 the {@literal :authority} pseudo header otherwise the {@literal Host} header.
-   *
-   * @param authority the authority
-   * @return a reference to this, so the API can be used fluently
-   */
-  public RequestOptions setAuthority(String authority) {
-    this.authority = authority;
     return this;
   }
 

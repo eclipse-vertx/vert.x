@@ -18,6 +18,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -118,17 +119,6 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * @return the query part of the uri. For example someparam=32&amp;someotherparam=x
    */
   String query();
-
-  /**
-   * For HTTP/2 it sets the {@literal :authority} pseudo header otherwise it sets the {@literal Host} header
-   */
-  @Fluent
-  HttpClientRequest setAuthority(String authority);
-
-  /**
-   * @return the request host. For HTTP/2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
-   */
-  String getAuthority();
 
   /**
    * @return The HTTP headers
@@ -238,6 +228,89 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler);
 
   /**
+   * Send the request with an empty body.
+   *
+   * @param handler the completion handler for the {@link HttpClientResponse}
+   */
+  default void send(Handler<AsyncResult<HttpClientResponse>> handler) {
+    onComplete(handler);
+    end();
+  }
+
+  /**
+   * Like {@link #send(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> send() {
+    end();
+    return this;
+  }
+
+  /**
+   * Send the request with a string {@code body}.
+   *
+   * @param handler the completion handler for the {@link HttpClientResponse}
+   */
+  default void send(String body, Handler<AsyncResult<HttpClientResponse>> handler) {
+    onComplete(handler);
+    end(body);
+  }
+
+  /**
+   * Like {@link #send(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> send(String body) {
+    end(body);
+    return this;
+  }
+
+  /**
+   * Send the request with a buffer {@code body}.
+   *
+   * @param handler the completion handler for the {@link HttpClientResponse}
+   */
+  default void send(Buffer body, Handler<AsyncResult<HttpClientResponse>> handler) {
+    onComplete(handler);
+    end(body);
+  }
+
+  /**
+   * Like {@link #send(Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> send(Buffer body) {
+    end(body);
+    return this;
+  }
+
+  /**
+   * Send the request with a stream {@code body}.
+   *
+   * <p> If the {@link HttpHeaders#CONTENT_LENGTH} is set then the request assumes this is the
+   * length of the {stream}, otherwise the request will set a chunked {@link HttpHeaders#CONTENT_ENCODING}.
+   *
+   * @param handler the completion handler for the {@link HttpClientResponse}
+   */
+  default void send(ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> handler) {
+    onComplete(handler);
+    MultiMap headers = headers();
+    if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      setChunked(true);
+    }
+    body.pipeTo(this);
+  }
+
+  /**
+   * Like {@link #send(ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> send(ReadStream<Buffer> body) {
+    MultiMap headers = headers();
+    if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      setChunked(true);
+    }
+    body.pipeTo(this);
+    return this;
+  }
+
+  /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding
    *
    * @param chunk the data chunk
@@ -326,10 +399,9 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    *   <li>{@link HttpClientRequest#method()}</li>
    *   <li>{@link HttpClientRequest#uri()}</li>
    *   <li>{@link HttpClientRequest#headers()}</li>
-   *   <li>{@link HttpClientRequest#getAuthority()}</li>
    * </ul>
    *
-   * In addition the handler should call the {@link HttpClientRequest#setHandler} method to set an handler to
+   * In addition the handler should call the {@link HttpClientRequest#onComplete(Handler)} method to set an handler to
    * process the response.<p/>
    *
    * @param handler the handler

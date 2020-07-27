@@ -168,9 +168,11 @@ public class MetricsContextTest extends VertxTestBase {
         });
       });
     });
-    client.put(8080, "localhost", "/", Buffer.buffer("hello"), onSuccess(resp -> {
-      complete();
-    }));
+    client.request(HttpMethod.PUT, 8080, "localhost", "/")
+      .compose(req -> req.send(Buffer.buffer("hello"))
+        .onComplete(onSuccess(resp -> {
+          complete();
+        })));
     await();
   }
 
@@ -362,21 +364,22 @@ public class MetricsContextTest extends VertxTestBase {
       expectedContext.set(Vertx.currentContext());
       HttpClient client = vertx.createHttpClient();
       assertSame(expectedThread.get(), Thread.currentThread());
-      client.put(8080, "localhost", "/the-uri", Buffer.buffer("hello"), resp -> {
-        executeInVanillaThread(() -> {
-          client.close();
-          vertx.close(v2 -> {
-            assertEquals("/the-uri", requestBeginCalled.get());
-            assertTrue(responseEndCalled.get());
-            assertTrue(socketConnectedCalled.get());
-            assertTrue(socketDisconnectedCalled.get());
-            assertTrue(bytesReadCalled.get());
-            assertTrue(bytesWrittenCalled.get());
-            assertTrue(closeCalled.get());
-            testComplete();
+      client.request(HttpMethod.PUT, 8080, "localhost", "/the-uri")
+        .compose(req -> req.send(Buffer.buffer("hello")).onComplete(onSuccess(resp -> {
+          executeInVanillaThread(() -> {
+            client.close();
+            vertx.close(v2 -> {
+              assertEquals("/the-uri", requestBeginCalled.get());
+              assertTrue(responseEndCalled.get());
+              assertTrue(socketConnectedCalled.get());
+              assertTrue(socketDisconnectedCalled.get());
+              assertTrue(bytesReadCalled.get());
+              assertTrue(bytesWrittenCalled.get());
+              assertTrue(closeCalled.get());
+              testComplete();
+            });
           });
-        });
-      });
+        })));
     });
     await();
   }

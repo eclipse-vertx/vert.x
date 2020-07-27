@@ -15,6 +15,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.file.impl.FileResolver;
@@ -235,7 +236,8 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       res.response().sendFile(webRoot + "/somefile.html");
     }).listen(onSuccess(res -> {
       vertx.createHttpClient(new HttpClientOptions())
-        .send(HttpMethod.GET, 8080, "localhost", "/")
+        .request(HttpMethod.GET, 8080, "localhost", "/")
+        .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
           resp.bodyHandler(buff -> {
             assertTrue(buff.toString().startsWith("<html><body>blah</body></html>"));
