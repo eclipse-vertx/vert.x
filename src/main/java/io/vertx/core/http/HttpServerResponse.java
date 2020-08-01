@@ -267,7 +267,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
 
   /**
    * Same as {@link #end()} but writes some data to the response body before ending. If the response is not chunked and
-   * no other data has been written then the @code{Content-Length} header will be automatically set.
+   * no other data has been written then the {@code Content-Length} header will be automatically set.
    *
    * @param chunk  the buffer to write before ending the response
    * @return a future completed with the body result
@@ -293,7 +293,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   Future<Void> end();
 
   /**
-   * Same as {@link #sendFile(String, long)} using offset @code{0} which means starting from the beginning of the file.
+   * Same as {@link #sendFile(String, long)} using offset {@code 0} which means starting from the beginning of the file.
    *
    * @param filename  path to the file to serve
    * @return a future completed with the body result
@@ -303,7 +303,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   }
 
   /**
-   * Same as {@link #sendFile(String, long, long)} using length @code{Long.MAX_VALUE} which means until the end of the
+   * Same as {@link #sendFile(String, long, long)} using length {@code Long.MAX_VALUE} which means until the end of the
    * file.
    *
    * @param filename  path to the file to serve
