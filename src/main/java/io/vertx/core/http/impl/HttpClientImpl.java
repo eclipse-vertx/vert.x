@@ -234,12 +234,28 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     });
   }
 
-  private int getPort(Integer port) {
-    return port != null ? port : options.getDefaultPort();
+  private int getPort(RequestOptions request) {
+    Integer port = request.getPort();
+    if (port != null) {
+      return port;
+    }
+    SocketAddress server = request.getServer();
+    if (server != null && server.isInetSocket()) {
+      return server.port();
+    }
+    return options.getDefaultPort();
   }
 
-  private String getHost(String host) {
-    return host != null ? host : options.getDefaultHost();
+  private String getHost(RequestOptions request) {
+    String host = request.getHost();
+    if (host != null) {
+      return host;
+    }
+    SocketAddress server = request.getServer();
+    if (server != null && server.isInetSocket()) {
+      return server.host();
+    }
+    return options.getDefaultHost();
   }
 
   HttpClientMetrics metrics() {
@@ -252,8 +268,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   }
 
   private void webSocket(WebSocketConnectOptions connectOptions, PromiseInternal<WebSocket> promise) {
-    int port = getPort(connectOptions.getPort());
-    String host = getHost(connectOptions.getHost());
+    int port = getPort(connectOptions);
+    String host = getHost(connectOptions);
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), addr, addr);
     webSocketCM.getConnection(
@@ -370,7 +386,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   }
 
   private void request(RequestOptions options, PromiseInternal<HttpClientRequest> promise) {
-    request(options.getMethod(), options.getServer(), getHost(options.getHost()), getPort(options.getPort()), options.isSsl(), options.getURI(), options.getHeaders(), options.getTimeout(), options.getFollowRedirects(), promise);
+    request(options.getMethod(), options.getServer(), getHost(options), getPort(options), options.isSsl(), options.getURI(), options.getHeaders(), options.getTimeout(), options.getFollowRedirects(), promise);
   }
 
   @Override

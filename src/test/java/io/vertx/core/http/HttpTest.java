@@ -281,7 +281,28 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-/*
+  @Test
+  public void testClientRequestOptionsSocketAddressOnly() throws Exception {
+    Assume.assumeTrue(testAddress.isInetSocket());
+    Integer port = requestOptions.getPort();
+    String host = requestOptions.getHost();
+    server
+      .requestHandler(request -> {
+        assertEquals(host + ":" + port, request.host());
+        request.response().end();
+      });
+    startServer(testAddress);
+    SocketAddress server = SocketAddress.inetSocketAddress(port, host);
+    client.request(new RequestOptions().setServer(server)).compose(req -> req.send().compose(resp -> {
+      assertEquals(200, resp.statusCode());
+      return resp.body();
+    })).onComplete(onSuccess(body -> {
+      testComplete();
+    }));
+    await();
+  }
+
+  /*
   @Test
   public void testRequestNPE() {
     String uri = "/some-uri?foo=bar";
