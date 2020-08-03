@@ -139,9 +139,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
     maxEventLoopExTime = options.getMaxEventLoopExecuteTime();
     maxEventLoopExecTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
-    eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, maxEventLoopExTime, maxEventLoopExecTimeUnit);
+    eventLoopThreadFactory = new VertxThreadFactory(options.getEventLoopThreadPrefix(), checker, false, maxEventLoopExTime, maxEventLoopExecTimeUnit);
     eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
-    ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
+    ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory(options.getAcceptorThreadPrefix(), checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
@@ -151,10 +151,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     int workerPoolSize = options.getWorkerPoolSize();
     ExecutorService workerExec = new ThreadPoolExecutor(workerPoolSize, workerPoolSize,
       0L, TimeUnit.MILLISECONDS, new LinkedTransferQueue<>(),
-      new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
+      new VertxThreadFactory(options.getWorkThreadPrefix(), checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
     PoolMetrics workerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
     ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
-        new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
+        new VertxThreadFactory(options.getInternalBlockingThreadPrefix(), checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
     internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();

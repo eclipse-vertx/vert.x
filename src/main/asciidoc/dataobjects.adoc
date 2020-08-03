@@ -2088,6 +2088,9 @@ Set whether Netty pooled buffers are enabled
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
+|[[acceptorThreadPrefix]]`@acceptorThreadPrefix`|`String`|+++
+Set acceptor thread prefix.
++++
 |[[addressResolverOptions]]`@addressResolverOptions`|`link:dataobjects.html#AddressResolverOptions[AddressResolverOptions]`|+++
 Sets the address resolver configuration to configure resolving DNS servers, cache TTL, etc...
 +++
@@ -2130,6 +2133,9 @@ Sets the event bus configuration to configure the host, port, ssl...
 |[[eventLoopPoolSize]]`@eventLoopPoolSize`|`Number (int)`|+++
 Set the number of event loop threads to be used by the Vert.x instance.
 +++
+|[[eventLoopThreadPrefix]]`@eventLoopThreadPrefix`|`String`|+++
+Set the event loop thread prefix.
++++
 |[[fileResolverCachingEnabled]]`@fileResolverCachingEnabled`|`Boolean`|+++
 Set whether the Vert.x file resolver uses caching for classpath resources.
 +++
@@ -2144,6 +2150,9 @@ Set the HA group to be used when HA is enabled.
 +++
 |[[internalBlockingPoolSize]]`@internalBlockingPoolSize`|`Number (int)`|+++
 Set the value of internal blocking pool size
++++
+|[[internalBlockingThreadPrefix]]`@internalBlockingThreadPrefix`|`String`|+++
+Set internal blocking thread prefix.
 +++
 |[[maxEventLoopExecuteTime]]`@maxEventLoopExecuteTime`|`Number (long)`|+++
 Sets the value of max event loop execute time, in link.
@@ -2176,6 +2185,9 @@ Set the threshold value above this, the blocked warning contains a stack trace. 
 +++
 |[[warningExceptionTimeUnit]]`@warningExceptionTimeUnit`|`link:enums.html#TimeUnit[TimeUnit]`|+++
 Set the time unit of <code>warningExceptionTime</code>.
++++
+|[[workThreadPrefix]]`@workThreadPrefix`|`String`|+++
+Set worker thread prefix.
 +++
 |[[workerPoolSize]]`@workerPoolSize`|`Number (int)`|+++
 Set the maximum number of worker threads to be used by the Vert.x instance.

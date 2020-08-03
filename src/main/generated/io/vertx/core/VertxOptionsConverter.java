@@ -14,6 +14,11 @@ import java.time.format.DateTimeFormatter;
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, VertxOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "acceptorThreadPrefix":
+          if (member.getValue() instanceof String) {
+            obj.setAcceptorThreadPrefix((String)member.getValue());
+          }
+          break;
         case "addressResolverOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setAddressResolverOptions(new io.vertx.core.dns.AddressResolverOptions((JsonObject)member.getValue()));
@@ -74,6 +79,11 @@ import java.time.format.DateTimeFormatter;
             obj.setEventLoopPoolSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "eventLoopThreadPrefix":
+          if (member.getValue() instanceof String) {
+            obj.setEventLoopThreadPrefix((String)member.getValue());
+          }
+          break;
         case "fileResolverCachingEnabled":
           if (member.getValue() instanceof Boolean) {
             obj.setFileResolverCachingEnabled((Boolean)member.getValue());
@@ -97,6 +107,11 @@ import java.time.format.DateTimeFormatter;
         case "internalBlockingPoolSize":
           if (member.getValue() instanceof Number) {
             obj.setInternalBlockingPoolSize(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "internalBlockingThreadPrefix":
+          if (member.getValue() instanceof String) {
+            obj.setInternalBlockingThreadPrefix((String)member.getValue());
           }
           break;
         case "maxEventLoopExecuteTime":
@@ -144,6 +159,11 @@ import java.time.format.DateTimeFormatter;
             obj.setWarningExceptionTimeUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
+        case "workThreadPrefix":
+          if (member.getValue() instanceof String) {
+            obj.setWorkThreadPrefix((String)member.getValue());
+          }
+          break;
         case "workerPoolSize":
           if (member.getValue() instanceof Number) {
             obj.setWorkerPoolSize(((Number)member.getValue()).intValue());
@@ -158,6 +178,9 @@ import java.time.format.DateTimeFormatter;
   }
 
    static void toJson(VertxOptions obj, java.util.Map<String, Object> json) {
+    if (obj.getAcceptorThreadPrefix() != null) {
+      json.put("acceptorThreadPrefix", obj.getAcceptorThreadPrefix());
+    }
     if (obj.getAddressResolverOptions() != null) {
       json.put("addressResolverOptions", obj.getAddressResolverOptions().toJson());
     }
@@ -180,6 +203,9 @@ import java.time.format.DateTimeFormatter;
       json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }
     json.put("eventLoopPoolSize", obj.getEventLoopPoolSize());
+    if (obj.getEventLoopThreadPrefix() != null) {
+      json.put("eventLoopThreadPrefix", obj.getEventLoopThreadPrefix());
+    }
     json.put("fileResolverCachingEnabled", obj.isFileResolverCachingEnabled());
     if (obj.getFileSystemOptions() != null) {
       json.put("fileSystemOptions", obj.getFileSystemOptions().toJson());
@@ -189,6 +215,9 @@ import java.time.format.DateTimeFormatter;
       json.put("haGroup", obj.getHAGroup());
     }
     json.put("internalBlockingPoolSize", obj.getInternalBlockingPoolSize());
+    if (obj.getInternalBlockingThreadPrefix() != null) {
+      json.put("internalBlockingThreadPrefix", obj.getInternalBlockingThreadPrefix());
+    }
     json.put("maxEventLoopExecuteTime", obj.getMaxEventLoopExecuteTime());
     if (obj.getMaxEventLoopExecuteTimeUnit() != null) {
       json.put("maxEventLoopExecuteTimeUnit", obj.getMaxEventLoopExecuteTimeUnit().name());
@@ -205,6 +234,9 @@ import java.time.format.DateTimeFormatter;
     json.put("warningExceptionTime", obj.getWarningExceptionTime());
     if (obj.getWarningExceptionTimeUnit() != null) {
       json.put("warningExceptionTimeUnit", obj.getWarningExceptionTimeUnit().name());
+    }
+    if (obj.getWorkThreadPrefix() != null) {
+      json.put("workThreadPrefix", obj.getWorkThreadPrefix());
     }
     json.put("workerPoolSize", obj.getWorkerPoolSize());
   }

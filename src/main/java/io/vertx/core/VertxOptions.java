@@ -44,6 +44,26 @@ public class VertxOptions {
   public static final int DEFAULT_WORKER_POOL_SIZE = 20;
 
   /**
+   * The default event loop thread prefix
+   */
+  public static final String DEFAULT_EVENT_LOOP_THREAD_PREFIX = "vert.x-eventloop-thread-";
+
+  /**
+   * The default acceptor thread prefix
+   */
+  public static final String DEFAULT_ACCEPTOR_THREAD_PREFIX = "vert.x-acceptor-thread-";
+
+  /**
+   * The default worker thread prefix
+   */
+  public static final String DEFAULT_WORKER_THREAD_PREFIX = "vert.x-worker-thread-";
+
+  /**
+   * The default internal blocking thread prefix
+   */
+  public static final String DEFAULT_INTERNAL_BLOCKING_THREAD_PREFIX = "vert.x-internal-blocking-";
+
+  /**
    * The default number of threads in the internal blocking  pool (used by some internal operations) = 20
    */
   public static final int DEFAULT_INTERNAL_BLOCKING_POOL_SIZE = 20;
@@ -168,6 +188,10 @@ public class VertxOptions {
 
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
+  private String eventLoopThreadPrefix = DEFAULT_EVENT_LOOP_THREAD_PREFIX;
+  private String acceptorThreadPrefix = DEFAULT_ACCEPTOR_THREAD_PREFIX;
+  private String workThreadPrefix = DEFAULT_WORKER_THREAD_PREFIX;
+  private String internalBlockingThreadPrefix = DEFAULT_INTERNAL_BLOCKING_THREAD_PREFIX;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
   private long blockedThreadCheckInterval = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL;
   private long maxEventLoopExecuteTime = DEFAULT_MAX_EVENT_LOOP_EXECUTE_TIME;
@@ -201,6 +225,10 @@ public class VertxOptions {
   public VertxOptions(VertxOptions other) {
     this.eventLoopPoolSize = other.getEventLoopPoolSize();
     this.workerPoolSize = other.getWorkerPoolSize();
+    this.eventLoopThreadPrefix = other.getEventLoopThreadPrefix();
+    this.acceptorThreadPrefix = other.getAcceptorThreadPrefix();
+    this.workThreadPrefix = other.getWorkThreadPrefix();
+    this.internalBlockingThreadPrefix = other.getInternalBlockingThreadPrefix();
     this.blockedThreadCheckInterval = other.getBlockedThreadCheckInterval();
     this.maxEventLoopExecuteTime = other.getMaxEventLoopExecuteTime();
     this.maxWorkerExecuteTime = other.getMaxWorkerExecuteTime();
@@ -275,6 +303,90 @@ public class VertxOptions {
       throw new IllegalArgumentException("workerPoolSize must be > 0");
     }
     this.workerPoolSize = workerPoolSize;
+    return this;
+  }
+
+  /**
+   * Get the event loop thread prefix.
+   *
+   * @return the event loop thread prefix
+   */
+  public String getEventLoopThreadPrefix() {
+    return eventLoopThreadPrefix;
+  }
+
+  /**
+   * Set the event loop thread prefix.
+   *
+   * @param eventLoopThreadPrefix the event loop thread prefix
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setEventLoopThreadPrefix(String eventLoopThreadPrefix) {
+    Objects.requireNonNull(eventLoopThreadPrefix, "event loop thread prefix cannot be null");
+    this.eventLoopThreadPrefix = eventLoopThreadPrefix;
+    return this;
+  }
+
+  /**
+   * Get the acceptor thread prefix.
+   *
+   * @return the acceptor thread prefix
+   */
+  public String getAcceptorThreadPrefix() {
+    return acceptorThreadPrefix;
+  }
+
+  /**
+   * Set acceptor thread prefix.
+   *
+   * @param acceptorThreadPrefix the acceptor thread prefix
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setAcceptorThreadPrefix(String acceptorThreadPrefix) {
+    Objects.requireNonNull(acceptorThreadPrefix, "acceptor thread prefix cannot be null");
+    this.acceptorThreadPrefix = acceptorThreadPrefix;
+    return this;
+  }
+
+  /**
+   * Get the worker thread prefix.
+   *
+   * @return the worker thread prefix
+   */
+  public String getWorkThreadPrefix() {
+    return workThreadPrefix;
+  }
+
+  /**
+   * Set worker thread prefix.
+   *
+   * @param workThreadPrefix the worker thread prefix
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setWorkThreadPrefix(String workThreadPrefix) {
+    Objects.requireNonNull(workThreadPrefix, "worker thread prefix cannot be null");
+    this.workThreadPrefix = workThreadPrefix;
+    return this;
+  }
+
+  /**
+   * Get the internal blocking thread prefix.
+   *
+   * @return the internal blocking thread prefix
+   */
+  public String getInternalBlockingThreadPrefix() {
+    return internalBlockingThreadPrefix;
+  }
+
+  /**
+   * Set internal blocking thread prefix.
+   *
+   * @param internalBlockingThreadPrefix the internal blocking thread prefix
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setInternalBlockingThreadPrefix(String internalBlockingThreadPrefix) {
+    Objects.requireNonNull(internalBlockingThreadPrefix, "internal blocking thread prefix cannot be null");
+    this.internalBlockingThreadPrefix = internalBlockingThreadPrefix;
     return this;
   }
 
@@ -904,6 +1016,10 @@ public class VertxOptions {
 
     if (eventLoopPoolSize != that.eventLoopPoolSize) return false;
     if (workerPoolSize != that.workerPoolSize) return false;
+    if (!eventLoopThreadPrefix.equals(that.eventLoopThreadPrefix)) return false;
+    if (!acceptorThreadPrefix.equals(that.acceptorThreadPrefix)) return false;
+    if (!workThreadPrefix.equals(that.workThreadPrefix)) return false;
+    if (!internalBlockingThreadPrefix.equals(that.internalBlockingThreadPrefix)) return false;
     if (internalBlockingPoolSize != that.internalBlockingPoolSize) return false;
     if (blockedThreadCheckInterval != that.blockedThreadCheckInterval) return false;
     if (blockedThreadCheckIntervalUnit != that.blockedThreadCheckIntervalUnit) return false;
@@ -934,6 +1050,10 @@ public class VertxOptions {
     int result = eventLoopPoolSize;
     result = 31 * result + workerPoolSize;
     result = 31 * result + internalBlockingPoolSize;
+    result = 31 * result + eventLoopThreadPrefix.hashCode();
+    result = 31 * result + acceptorThreadPrefix.hashCode();
+    result = 31 * result + workThreadPrefix.hashCode();
+    result = 31 * result + internalBlockingThreadPrefix.hashCode();
     result = 31 * result + (int) (blockedThreadCheckInterval ^ (blockedThreadCheckInterval >>> 32));
     result = 31 * result + (int) (maxEventLoopExecuteTime ^ (maxEventLoopExecuteTime >>> 32));
     result = 31 * result + (int) (maxWorkerExecuteTime ^ (maxWorkerExecuteTime >>> 32));
@@ -959,6 +1079,10 @@ public class VertxOptions {
     return "VertxOptions{" +
         "eventLoopPoolSize=" + eventLoopPoolSize +
         ", workerPoolSize=" + workerPoolSize +
+        ", eventLoopThreadPrefix=" + eventLoopThreadPrefix +
+        ", acceptorThreadPrefix=" + acceptorThreadPrefix +
+        ", workThreadPrefix=" + workThreadPrefix +
+        ", internalBlockingThreadPrefix=" + internalBlockingThreadPrefix +
         ", internalBlockingPoolSize=" + internalBlockingPoolSize +
         ", blockedThreadCheckIntervalUnit=" + blockedThreadCheckIntervalUnit +
         ", blockedThreadCheckInterval=" + blockedThreadCheckInterval +
