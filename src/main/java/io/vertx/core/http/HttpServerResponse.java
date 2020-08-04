@@ -500,16 +500,24 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Reset this HTTP/2 stream with the error code {@code 0}.
    */
-  default void reset() {
-    reset(0L);
+  default boolean reset() {
+    return reset(0L);
   }
 
   /**
-   * Reset this HTTP/2 stream with the error {@code code}.
+   * Reset this response:
+   * <p/>
+   * <ul>
+   *   <li>for HTTP/2, send an HTTP/2 reset frame with the specified error {@code code}</li>
+   *   <li>for HTTP/1.x, close the connection when the current response has not yet been sent</li>
+   * </ul>
+   * <p/>
+   * When the response has already been sent nothing happens and {@code false} is returned as indicator.
    *
    * @param code the error code
+   * @return {@code true} when reset has been performed
    */
-  void reset(long code);
+  boolean reset(long code);
 
   /**
    * Write an HTTP/2 frame to the response, allowing to extend the HTTP/2 protocol.<p>

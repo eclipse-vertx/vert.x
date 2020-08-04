@@ -739,7 +739,14 @@ public class Http1xServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public void reset(long code) {
+  public boolean reset(long code) {
+    synchronized (conn) {
+      if (written) {
+        return false;
+      }
+    }
+    close();
+    return true;
   }
 
   @Override

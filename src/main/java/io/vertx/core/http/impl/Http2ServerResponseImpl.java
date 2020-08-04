@@ -667,15 +667,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void reset(long code) {
-    /*
-    if (!handleEnded(true)) {
-      throw new IllegalStateException("Response has already been written");
+  public boolean reset(long code) {
+    if (ended) {
+      return false;
     }
-    */
-    checkValid();
     stream.writeReset(code);
     ctx.flush();
+    return true;
   }
 
   @Override

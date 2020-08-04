@@ -4974,4 +4974,19 @@ public class Http1xTest extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testServerResponseReset() throws Exception {
+    waitFor(2);
+    server.requestHandler(req -> {
+      req.response().reset();
+    });
+    startServer(testAddress);
+    client.connectionHandler(conn -> conn.closeHandler(v -> complete()));
+    client.request(requestOptions).compose(HttpClientRequest::send)
+      .onComplete(onFailure(err -> {
+        complete();
+    }));
+    await();
+  }
 }

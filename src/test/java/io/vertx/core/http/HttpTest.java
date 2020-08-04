@@ -5671,6 +5671,37 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testResetServerResponseAlreadySent() throws Exception {
+    int num = 3;
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.end();
+      assertFalse(resp.reset());
+    });
+    startServer(testAddress);
+    AtomicInteger received = new AtomicInteger();
+    Set<HttpConnection> connections = Collections.synchronizedSet(new HashSet<>());
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+    client.connectionHandler(connections::add);
+    for (int i = 0;i < num;i++) {
+      client.request(requestOptions)
+        .compose(req -> req
+          .send()
+          .compose(resp -> {
+            assertEquals(200, resp.statusCode());
+            return resp.body();
+          })).onComplete(onSuccess(body1 -> {
+        if (received.incrementAndGet() == num) {
+          assertEquals(1, connections.size());
+          testComplete();
+        }
+      }));
+    }
+    await();
+  }
+
+  @Test
   public void testResetClientRequestBeforeActualSend() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {

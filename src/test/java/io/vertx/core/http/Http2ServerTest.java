@@ -1997,7 +1997,6 @@ public class Http2ServerTest extends Http2TestBase {
       assertIllegalStateException(() -> resp.end("a", "UTF-8"));
       assertIllegalStateException(() -> resp.end(Buffer.buffer("a")));
       assertIllegalStateException(() -> resp.sendFile("the-file.txt"));
-      assertIllegalStateException(() -> resp.reset(0));
       assertIllegalStateException(() -> resp.closeHandler(v -> {}));
       assertIllegalStateException(() -> resp.endHandler(v -> {}));
       assertIllegalStateException(() -> resp.drainHandler(v -> {}));
