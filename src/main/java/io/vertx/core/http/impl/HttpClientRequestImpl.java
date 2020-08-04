@@ -246,19 +246,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   boolean reset(Throwable cause) {
-    HttpClientStream s;
     synchronized (this) {
       if (reset != null) {
         return false;
       }
       reset = cause;
-      s = stream;
     }
-    if (s != null) {
-      s.reset(cause);
-    } else {
-      handleException(cause);
-    }
+    stream.reset(cause);
     return true;
   }
 
@@ -273,14 +267,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) {
-    HttpClientStream s;
     synchronized (this) {
       checkEnded();
-      if ((s = stream) == null) {
-        throw new IllegalStateException("Not yet connected");
-      }
     }
-    s.writeFrame(type, flags, payload.getByteBuf());
+    stream.writeFrame(type, flags, payload.getByteBuf());
     return this;
   }
 
@@ -460,7 +450,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private void doWrite(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> completionHandler) {
     boolean writeHead;
-    HttpClientStream s;
     synchronized (this) {
       if (ended) {
         completionHandler.handle(Future.failedFuture(new IllegalStateException("Request already complete")));
@@ -474,17 +463,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         writeHead = false;
       }
       ended = end;
-      s = stream;
     }
 
     if (writeHead) {
       HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI());
-      s.writeHead(head, chunked, buff, ended, priority, netSocketPromise, completionHandler);
+      stream.writeHead(head, chunked, buff, ended, priority, netSocketPromise, completionHandler);
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();
       }
-      s.writeBuffer(buff, end, completionHandler);
+      stream.writeBuffer(buff, end, completionHandler);
     }
     if (end) {
       tryComplete();
