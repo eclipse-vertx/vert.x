@@ -11,6 +11,7 @@
 package io.vertx.test.fakestream;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class FakeStreamTest extends AsyncTestBase {
 
@@ -45,7 +47,8 @@ public class FakeStreamTest extends AsyncTestBase {
   public void testEmit() {
     assertTrue(stream.emit(0));
     assertEquals(Collections.singletonList(0), emitted);
-    assertTrue(stream.emit(1, 2));
+    assertTrue(stream.emit(1));
+    assertTrue(stream.emit(2));
     assertEquals(Arrays.asList(0, 1, 2), emitted);
   }
 
@@ -104,7 +107,7 @@ public class FakeStreamTest extends AsyncTestBase {
       stream.emit(count.getAndIncrement());
       emitting.set(false);
     });
-    stream.emit(0, 1);
+    stream.emit(Stream.of(0, 1));
     assertEquals(Arrays.asList(0, 1, 2), emitted);
   }
 
@@ -119,7 +122,8 @@ public class FakeStreamTest extends AsyncTestBase {
       stream.emit(count.getAndIncrement());
       emitting.set(false);
     });
-    stream.emit(0, 1);
+    stream.write(0);
+    stream.write(1);
     stream.fetch(3);
     assertEquals(Arrays.asList(0, 1, 2), emitted);
   }
@@ -173,5 +177,38 @@ public class FakeStreamTest extends AsyncTestBase {
     stream.fetch(1);
     assertEquals(1, ended.get());
     assertTrue(endRes.get().succeeded());
+  }
+
+  @Test
+  public void testAck() {
+    stream.pause();
+    Future<Void> ack0 = stream.write(0);
+    Future<Void> ack1 = stream.write(1);
+    Future<Void> ack2 = stream.write(2);
+    assertFalse(ack0.isComplete());
+    assertFalse(ack1.isComplete());
+    assertFalse(ack2.isComplete());
+    stream.fetch(1);
+    assertTrue(ack0.isComplete());
+    assertFalse(ack1.isComplete());
+    assertFalse(ack2.isComplete());
+    stream.fetch(2);
+    assertTrue(ack0.isComplete());
+    assertTrue(ack1.isComplete());
+    assertTrue(ack2.isComplete());
+  }
+
+  @Test
+  public void testAckFailure() {
+    RuntimeException failure = new RuntimeException();
+    stream.pause();
+    stream.handler(item -> {
+      throw failure;
+    });
+    Future<Void> ack = stream.write(0);
+    assertFalse(ack.isComplete());
+    stream.fetch(1);
+    assertTrue(ack.failed());
+    assertEquals(failure, ack.cause());
   }
 }

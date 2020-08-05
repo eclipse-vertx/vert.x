@@ -32,12 +32,27 @@ import java.util.stream.Stream;
  */
 public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
 
+  private static final Object END_SENTINEL = new Object();
+
+  static class Op<T> {
+    final T item;
+    final Promise<Void> ack;
+    Op(T item) {
+      this.item = item;
+      this.ack = Promise.promise();
+    }
+    Op(T item, Promise<Void> ack) {
+      this.item = item;
+      this.ack = ack;
+    }
+  }
+
   private boolean emitting;
   private long highWaterMark = 16L;
   private Handler<Throwable> exceptionHandler;
   private Handler<T> itemHandler;
   private Handler<Void> endHandler;
-  private final Deque<Object> pending = new ArrayDeque<>();
+  private final Deque<Op<T>> pending = new ArrayDeque<>();
   private long demand = Long.MAX_VALUE;
   private boolean ended;
   private Future<Void> end = Future.succeededFuture();
@@ -76,12 +91,19 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
     return exceptionHandler;
   }
 
-  @SafeVarargs
-  public final boolean emit(T... elements) {
-    return emit(Stream.of(elements));
+  public final boolean emit(T elt) {
+    return emit(Stream.of(elt));
   }
 
-  public synchronized boolean emit(Stream<T> stream) {
+  public boolean emit(Stream<T> stream) {
+    return doEmit(stream.map(Op::new));
+  }
+
+  public final boolean doEmit(Op<T> elt) {
+    return doEmit(Stream.of(elt));
+  }
+
+  private synchronized boolean doEmit(Stream<Op<T>> stream) {
     if (ended) {
       throw new IllegalStateException();
     }
@@ -115,7 +137,7 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
           handler.handle(null);
         }
       });
-      pending.add(promise);
+      pending.add(new Op<>((T)END_SENTINEL, promise));
     }
     checkPending();
   }
@@ -149,17 +171,22 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
       return;
     }
     emitting = true;
-    Object elt;
-    while (demand > 0L && (elt = pending.poll()) != null) {
+    Op<T> op;
+    while (demand > 0L && (op = pending.poll()) != null) {
       if (demand != Long.MAX_VALUE) {
         demand--;
       }
-      if (elt instanceof Promise) {
-        end.onComplete((Promise) elt);
+      if (op.item == END_SENTINEL) {
+        end.onComplete(op.ack);
       } else {
         Handler<T> handler = itemHandler;
-        if (handler != null) {
-          handler.handle((T) elt);
+        try {
+          if (handler != null) {
+            handler.handle(op.item);
+          }
+          op.ack.complete();
+        } catch (Exception e) {
+          op.ack.fail(e);
         }
       }
     }
@@ -205,14 +232,18 @@ public class FakeStream<T> implements ReadStream<T>, WriteStream<T> {
 
   @Override
   public Future<Void> write(T data) {
-    Future<Void> fut = Future.failedFuture("Not yet implemented");
-    emit(data);
-    return fut;
+    Promise<Void> ack = Promise.promise();
+    doEmit(new Op<>(data, ack));
+    return ack.future();
   }
 
   @Override
   public void write(T data, Handler<AsyncResult<Void>> handler) {
-    throw new UnsupportedOperationException();
+    Promise<Void> ack = Promise.promise();
+    if (handler != null) {
+      ack.future().onComplete(handler);
+    }
+    doEmit(new Op<>(data, ack));
   }
 
   @Override
