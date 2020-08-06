@@ -2413,16 +2413,8 @@ public class Http1xTest extends HttpTest {
   private void testUnsupported(String rawReq, boolean method) throws Exception {
     server
       .requestHandler(req -> {
-        try {
-          if (method) {
-            req.method();
-          } else {
-            req.version();
-          }
-          fail("Should throw exception");
-        } catch (IllegalStateException e) {
-          // OK
-        }
+        // Should never be called
+        fail();
       })
       .listen(testAddress, onSuccess(s -> {
         NetClient client = vertx.createNetClient();
@@ -2433,7 +2425,7 @@ public class Http1xTest extends HttpTest {
           conn.handler(respBuff::appendBuffer);
           conn.closeHandler(v -> {
             // Server should automatically close it after sending back 501
-            assertTrue(respBuff.toString().contains("501 Not Implemented"));
+            assertTrue("Unexpected response " + respBuff, respBuff.toString().contains("501 Not Implemented"));
             client.close();
             testComplete();
           });

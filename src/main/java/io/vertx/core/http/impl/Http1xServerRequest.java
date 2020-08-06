@@ -194,9 +194,6 @@ public class Http1xServerRequest implements HttpServerRequest {
         version = HttpVersion.HTTP_1_0;
       } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
         version = HttpVersion.HTTP_1_1;
-      } else {
-        sendNotImplementedAndClose();
-        throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
       }
     }
     return version;
@@ -565,11 +562,6 @@ public class Http1xServerRequest implements HttpServerRequest {
     if (tracer != null) {
       tracer.sendResponse(context, null, trace, err, TagExtractor.empty());
     }
-  }
-
-  private void sendNotImplementedAndClose() {
-    response().setStatusCode(501).end();
-    response().close();
   }
 
   private void checkEnded() {

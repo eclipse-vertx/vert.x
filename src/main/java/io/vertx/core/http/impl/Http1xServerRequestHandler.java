@@ -23,16 +23,20 @@ import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
 import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 
 /**
- * An {@code Handler<HttpServerRequest>} decorator that handles {@code ServerWebSocket} dispatch to a WebSocket handler
- * when necessary.
+ * An {@code Handler<HttpServerRequest>} decorator that handles
+ * <ul>
+ *   <li>{@code ServerWebSocket} dispatch to a WebSocket handler when necessary.</li>
+ *   <li>invalid HTTP version sent by the client</li>
+ * </ul>
+ *
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
+public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
 
   private final HttpServerConnectionHandler handlers;
 
-  public WebSocketRequestHandler(HttpServerConnectionHandler handlers) {
+  public Http1xServerRequestHandler(HttpServerConnectionHandler handlers) {
     this.handlers = handlers;
   }
 
@@ -49,6 +53,10 @@ public class WebSocketRequestHandler implements Handler<HttpServerRequest> {
           .setStatusCode(HttpUtils.SC_BAD_GATEWAY)
           .end();
       }
+    } else if (req.version() == null) {
+      // Invalid HTTP version, i.e not HTTP/1.1 or HTTP/1.0
+      req.response().setStatusCode(501).end();
+      req.response().close();
     } else {
       handlers.requestHandler.handle(req);
     }
