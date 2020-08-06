@@ -23,6 +23,8 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
 
+import java.util.Objects;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -31,12 +33,12 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   protected final HttpClientImpl client;
   protected final ContextInternal context;
   protected final HttpClientStream stream;
-  protected final io.vertx.core.http.HttpMethod method;
-  protected final String uri;
-  protected final String host;
-  protected final int port;
   protected final SocketAddress server;
   protected final boolean ssl;
+  private io.vertx.core.http.HttpMethod method;
+  private String host;
+  private int port;
+  private String uri;
   private String path;
   private String query;
   private final PromiseInternal<HttpClientResponse> responsePromise;
@@ -102,17 +104,50 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     return path;
   }
 
-  public String uri() {
+  public synchronized String getURI() {
     return uri;
   }
 
-  public String host() {
-    return server.host();
+  @Override
+  public synchronized HttpClientRequest setURI(String uri) {
+    Objects.requireNonNull(uri);
+    this.uri = uri;
+    this.path = null; // Invalidate
+    return this;
+  }
+
+  public String getHost() {
+    return host;
   }
 
   @Override
-  public HttpMethod method() {
+  public synchronized HttpClientRequest setHost(String host) {
+    Objects.requireNonNull(uri);
+    this.host = host;
+    return this;
+  }
+
+  @Override
+  public int getPort() {
+    return port;
+  }
+
+  @Override
+  public synchronized HttpClientRequest setPort(int port) {
+    this.port = port;
+    return this;
+  }
+
+  @Override
+  public synchronized HttpMethod getMethod() {
     return method;
+  }
+
+  @Override
+  public synchronized HttpClientRequest setMethod(HttpMethod method) {
+    Objects.requireNonNull(uri);
+    this.method = method;
+    return this;
   }
 
   @Override

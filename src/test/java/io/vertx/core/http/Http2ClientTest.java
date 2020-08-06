@@ -817,8 +817,8 @@ public class Http2ClientTest extends Http2TestBase {
             assertSameEventLoop(ctx.get(), current);
           }
           assertOnIOContext(current);
-          assertEquals(HttpMethod.GET, pushedReq.method());
-          assertEquals("/wibble?a=b", pushedReq.uri());
+          assertEquals(HttpMethod.GET, pushedReq.getMethod());
+          assertEquals("/wibble?a=b", pushedReq.getURI());
           assertEquals("/wibble", pushedReq.path());
           assertEquals("a=b", pushedReq.query());
           pushedReq.onComplete(onSuccess(resp -> {

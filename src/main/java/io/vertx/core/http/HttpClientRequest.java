@@ -63,6 +63,39 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   HttpClientRequest drainHandler(Handler<Void> handler);
 
   /**
+   * Set the host value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   * <p>The initial value is the same than the server socket address host.
+   * <p>Keep in mind that changing this value won't change the actual server socket address for this request.
+   *
+   * @param host the host part of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setHost(String host);
+
+  /**
+   * @return the host value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   */
+  String getHost();
+
+  /**
+   * Set the port value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   *
+   * <p> Keep in mind that this won't change the actual server socket address for this request.
+   * <p>The initial value is the same than the server socket address port.
+   *
+   * @param port the port part of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setPort(int port);
+
+  /**
+   * @return the port value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   */
+  int getPort();
+
+  /**
    * Set the request to follow HTTP redirects up to {@link HttpClientOptions#getMaxRedirects()}.
    *
    * @param followRedirects {@code true} to follow HTTP redirects
@@ -98,7 +131,16 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   /**
    * The HTTP method for the request.
    */
-  HttpMethod method();
+  HttpMethod getMethod();
+
+  /**
+   * Set the HTTP method for this request.
+   *
+   * @param method the HTTP method
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setMethod(HttpMethod method);
 
   /**
    * @return the absolute URI corresponding to the the HTTP request
@@ -108,7 +150,16 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   /**
    * @return The URI of the request.
    */
-  String uri();
+  String getURI();
+
+  /**
+   * Set the request uri.
+   *
+   * @param uri the request uri
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setURI(String uri);
 
   /**
    * @return The path part of the uri. For example /somepath/somemorepath/someresource.foo
@@ -396,8 +447,8 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * The handler is called with a <i>read-only</i> {@link HttpClientRequest}, the following methods can be called:<p/>
    *
    * <ul>
-   *   <li>{@link HttpClientRequest#method()}</li>
-   *   <li>{@link HttpClientRequest#uri()}</li>
+   *   <li>{@link HttpClientRequest#getMethod()}</li>
+   *   <li>{@link HttpClientRequest#getURI()}</li>
    *   <li>{@link HttpClientRequest#headers()}</li>
    * </ul>
    *

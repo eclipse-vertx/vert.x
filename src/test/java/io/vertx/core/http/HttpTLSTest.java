@@ -1241,7 +1241,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
                 }
                 if (shouldPass) {
                   response.version();
-                  HttpMethod method = response.request().method();
+                  HttpMethod method = response.request().getMethod();
                   if (method == HttpMethod.GET || method == HttpMethod.HEAD) {
                     complete();
                   } else {

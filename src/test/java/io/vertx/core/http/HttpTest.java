@@ -4362,22 +4362,17 @@ public abstract class HttpTest extends HttpTestBase {
       public Future<Void> write(Buffer data) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setWriteQueueMaxSize(int maxSize) { throw new UnsupportedOperationException(); }
       public HttpClientRequest drainHandler(Handler<Void> handler) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest pause() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest resume() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest fetch(long amount) { throw new UnsupportedOperationException(); }
-      public HttpClientRequest endHandler(Handler<Void> endHandler) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setFollowRedirects(boolean followRedirects) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setMaxRedirects(int maxRedirects) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setChunked(boolean chunked) { throw new UnsupportedOperationException(); }
       public boolean isChunked() { return false; }
-      public HttpMethod method() { return method; }
+      public HttpMethod getMethod() { return method; }
       public String absoluteURI() { return baseURI; }
       public HttpVersion version() { return HttpVersion.HTTP_1_1; }
-      public String uri() { throw new UnsupportedOperationException(); }
+      public String getURI() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setURI(String uri) { throw new UnsupportedOperationException(); }
       public String path() { throw new UnsupportedOperationException(); }
       public String query() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest setAuthority(String authority) { throw new UnsupportedOperationException(); }
-      public String getAuthority() { throw new UnsupportedOperationException(); }
       public MultiMap headers() { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(String name, String value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
@@ -4406,16 +4401,18 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpConnection connection() { throw new UnsupportedOperationException(); }
       public HttpClientRequest writeCustomFrame(int type, int flags, Buffer payload) { throw new UnsupportedOperationException(); }
       public boolean writeQueueFull() { throw new UnsupportedOperationException(); }
-      public HttpClientRequest setStreamPriority(StreamPriority streamPriority) { return this; }
       public StreamPriority getStreamPriority() { return null; }
       public HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public boolean isComplete() { throw new UnsupportedOperationException(); }
-      public boolean tryComplete(HttpClientResponse result) { throw new UnsupportedOperationException(); }
-      public boolean tryFail(Throwable cause) { throw new UnsupportedOperationException(); }
       public HttpClientResponse result() { throw new UnsupportedOperationException(); }
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setHost(String host) { throw new UnsupportedOperationException(); }
+      public String getHost() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setPort(int port) { throw new UnsupportedOperationException(); }
+      public int getPort() { throw new UnsupportedOperationException(); }
+      public HttpClientRequest setMethod(HttpMethod method) { throw new UnsupportedOperationException(); }
     }
     HttpClientRequest req = new MockReq();
     class MockResp implements HttpClientResponse {
