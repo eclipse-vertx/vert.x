@@ -779,7 +779,7 @@ public class VertxOptions {
 
   /**
    * @return whether the file resolver uses caching
-   * @deprecated use {@link FileSystemOptions#setFileCachingEnabled(boolean) getFileSystemOptions().getFileCachingEnabled()} instead
+   * @deprecated use {@link FileSystemOptions#isFileCachingEnabled() getFileSystemOptions().isFileCachingEnabled()} instead
    */
   @Deprecated
   public boolean isFileResolverCachingEnabled() {
