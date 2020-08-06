@@ -1,0 +1,9 @@
+4.1.0 :: OH NOES! If you see this in a pull request to a RELEASE branch you merged in the wrong direction.
+4.1.0 :: *********************************
+4.1.0 :: *** Cancel this pull request. ***
+4.1.0 :: *** Do not modify this file.  ***
+4.1.0 :: *********************************
+4.1.0 :: This generally indicates you are merging a branch from develop in to a RELEASE branch.
+4.1.0 :: Branches merged in to a RELEASE branch need to be created from the same RELEASE branch.
+4.1.0 :: The version string should not change during a pull request.
+4.1.0 :: https://tracelink.jira.com/wiki/spaces/BRE/pages/521764876/Gitflow
