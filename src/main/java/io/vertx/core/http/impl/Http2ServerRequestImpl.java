@@ -24,7 +24,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpConnection;
@@ -71,15 +70,11 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private MultiMap params;
   private String absoluteURI;
   private MultiMap attributes;
-  private Handler<Buffer> dataHandler;
-  private Handler<Void> endHandler;
+  private HttpEventHandler eventHandler;
   private boolean streamEnded;
   private boolean ended;
-  private Buffer body;
-  private Promise<Buffer> bodyPromise;
   private Handler<HttpServerFileUpload> uploadHandler;
   private HttpPostRequestDecoder postRequestDecoder;
-  private Handler<Throwable> exceptionHandler;
   private Handler<HttpFrame> customFrameHandler;
   private Handler<StreamPriority> streamPriorityHandler;
 
@@ -101,6 +96,13 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     this.streamEnded = streamEnded;
     this.scheme = scheme;
     this.headersMap = new Http2HeadersAdaptor(headers);
+  }
+
+  private HttpEventHandler eventHandler(boolean create) {
+    if (eventHandler == null && create) {
+      eventHandler = new HttpEventHandler(context);
+    }
+    return eventHandler;
   }
 
   void dispatch(Handler<HttpServerRequest> handler) {
@@ -132,26 +134,19 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   private void notifyException(Throwable failure) {
-    Promise<Buffer> bodyPromise;
-    Handler<Throwable> handler;
     InterfaceHttpData upload = null;
+    HttpEventHandler handler;
     synchronized (conn) {
-      handler = exceptionHandler;
       if (postRequestDecoder != null) {
         upload = postRequestDecoder.currentPartialHttpData();
       }
-      bodyPromise = this.bodyPromise;
-      this.bodyPromise = null;
-      this.body = null;
+      handler = eventHandler;
     }
     if (handler != null) {
-      context.emit(failure, handler);
+      handler.handleException(failure);
     }
     if (upload instanceof NettyFileUpload) {
       ((NettyFileUpload)upload).handleException(failure);
-    }
-    if (bodyPromise != null) {
-      bodyPromise.tryFail(failure);
     }
   }
 
@@ -200,18 +195,14 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
         handleException(e);
       }
     }
-    if (dataHandler != null) {
-      dataHandler.handle(data);
-    }
-    if (body != null) {
-      body.appendBuffer(data);
+    HttpEventHandler handler = eventHandler;
+    if (handler != null) {
+      handler.handleChunk(data);
     }
   }
 
   void handleEnd(MultiMap trailers) {
-    Promise<Buffer> bodyPromise;
-    Buffer body;
-    Handler<Void> handler;
+    HttpEventHandler handler;
     synchronized (conn) {
       streamEnded = true;
       ended = true;
@@ -238,17 +229,10 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
           postRequestDecoder.destroy();
         }
       }
-      handler = endHandler;
-      body = this.body;
-      bodyPromise = this.bodyPromise;
-      this.body = null;
-      this.bodyPromise = null;
+      handler = eventHandler;
     }
     if (handler != null) {
-      handler.handle(null);
-    }
-    if (body != null) {
-      bodyPromise.tryComplete(body);
+      handler.handleEnd();
     }
   }
 
@@ -274,7 +258,10 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
-      exceptionHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.exceptionHandler(handler);
+      }
     }
     return this;
   }
@@ -285,7 +272,10 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       if (handler != null) {
         checkEnded();
       }
-      dataHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.chunkHandler(handler);
+      }
     }
     return this;
   }
@@ -319,7 +309,10 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       if (handler != null) {
         checkEnded();
       }
-      endHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.endHandler(handler);
+      }
     }
     return this;
   }
@@ -501,11 +494,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
 
   @Override
   public synchronized Future<Buffer> body() {
-    if (bodyPromise == null) {
-      bodyPromise = Promise.promise();
-      body = Buffer.buffer();
-    }
-    return bodyPromise.future();
+    checkEnded();
+    return eventHandler(true).body();
   }
 
   public StreamPriority streamPriority() {

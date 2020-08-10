@@ -222,11 +222,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @Fluent
   default HttpServerRequest bodyHandler(@Nullable Handler<Buffer> bodyHandler) {
-    if (bodyHandler != null) {
-      Buffer body = Buffer.buffer();
-      handler(body::appendBuffer);
-      endHandler(v -> bodyHandler.handle(body));
-    }
+    body().onSuccess(bodyHandler);
     return this;
   }
 

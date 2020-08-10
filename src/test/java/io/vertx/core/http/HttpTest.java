@@ -4435,7 +4435,6 @@ public abstract class HttpTest extends HttpTestBase {
       public NetSocket netSocket() { throw new UnsupportedOperationException(); }
       public HttpClientRequest request() { return req; }
       public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) { return this; }
-      public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) { throw new UnsupportedOperationException(); }
       public Future<Buffer> body() { throw new UnsupportedOperationException(); }
     }
     MockResp resp = new MockResp();

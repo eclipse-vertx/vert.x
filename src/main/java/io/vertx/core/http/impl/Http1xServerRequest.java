@@ -20,7 +20,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
@@ -74,23 +73,18 @@ public class Http1xServerRequest implements HttpServerRequest {
 
   private Http1xServerResponse response;
 
-  private Handler<Buffer> dataHandler;
-  private Handler<Throwable> exceptionHandler;
-
   // Cache this for performance
   private MultiMap params;
   private MultiMap headers;
   private String absoluteURI;
 
+  private HttpEventHandler eventHandler;
   private Handler<HttpServerFileUpload> uploadHandler;
-  private Handler<Void> endHandler;
   private MultiMap attributes;
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
   private InboundBuffer<Object> pending;
-  private Buffer body;
-  private Promise<Buffer> bodyPromise;
 
   Http1xServerRequest(Http1xServerConnection conn, HttpRequest request) {
     this.conn = conn;
@@ -98,10 +92,13 @@ public class Http1xServerRequest implements HttpServerRequest {
     this.request = request;
   }
 
-  /**
-   *
-   * @return
-   */
+  private HttpEventHandler eventHandler(boolean create) {
+    if (eventHandler == null && create) {
+      eventHandler = new HttpEventHandler(context);
+    }
+    return eventHandler;
+  }
+
   HttpRequest nettyRequest() {
     synchronized (conn) {
       return request;
@@ -275,7 +272,10 @@ public class Http1xServerRequest implements HttpServerRequest {
       if (handler != null) {
         checkEnded();
       }
-      dataHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.chunkHandler(handler);
+      }
       return this;
     }
   }
@@ -283,7 +283,10 @@ public class Http1xServerRequest implements HttpServerRequest {
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
-      this.exceptionHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.exceptionHandler(handler);
+      }
       return this;
     }
   }
@@ -315,7 +318,10 @@ public class Http1xServerRequest implements HttpServerRequest {
       if (handler != null) {
         checkEnded();
       }
-      endHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.endHandler(handler);
+      }
       return this;
     }
   }
@@ -431,15 +437,12 @@ public class Http1xServerRequest implements HttpServerRequest {
 
   @Override
   public synchronized Future<Buffer> body() {
-    if (bodyPromise == null) {
-      bodyPromise = Promise.promise();
-      body = Buffer.buffer();
-    }
-    return bodyPromise.future();
+    checkEnded();
+    return eventHandler(true).body();
   }
 
   private void onData(Buffer data) {
-    Handler<Buffer> handler;
+    HttpEventHandler handler;
     synchronized (conn) {
       bytesRead += data.length();
       if (decoder != null) {
@@ -449,15 +452,11 @@ public class Http1xServerRequest implements HttpServerRequest {
           handleException(e);
         }
       }
-      if (body != null) {
-        body.appendBuffer(data);
-      }
-      handler = dataHandler;
-      if (handler == null) {
-        return;
-      }
+      handler = eventHandler;
     }
-    context.emit(data, handler);
+    if (handler != null) {
+      eventHandler.handleChunk(data);
+    }
   }
 
   void handleEnd() {
@@ -474,23 +473,16 @@ public class Http1xServerRequest implements HttpServerRequest {
   }
 
   private void onEnd() {
-    Handler<Void> handler;
-    Promise<Buffer> bodyPromise;
-    Buffer body;
+    HttpEventHandler handler;
     synchronized (conn) {
       if (decoder != null) {
         endDecode();
       }
-      handler = endHandler;
-      bodyPromise = this.bodyPromise;
-      body = this.body;
+      handler = eventHandler;
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
-      context.emit(null, handler);
-    }
-    if (body != null) {
-      bodyPromise.tryComplete(body);
+      handler.handleEnd();
     }
   }
 
@@ -519,13 +511,12 @@ public class Http1xServerRequest implements HttpServerRequest {
   }
 
   void handleException(Throwable t) {
-    Handler<Throwable> handler = null;
+    HttpEventHandler handler = null;
     Http1xServerResponse resp = null;
     InterfaceHttpData upload = null;
-    Promise<Buffer> bodyPromise;
     synchronized (conn) {
       if (!isEnded()) {
-        handler = exceptionHandler;
+        handler = eventHandler;
         if (decoder != null) {
           upload = decoder.currentPartialHttpData();
         }
@@ -536,9 +527,6 @@ public class Http1xServerRequest implements HttpServerRequest {
         }
         resp = response;
       }
-      bodyPromise = this.bodyPromise;
-      this.bodyPromise = null;
-      this.body = null;
     }
     if (resp != null) {
       resp.handleException(t);
@@ -547,10 +535,7 @@ public class Http1xServerRequest implements HttpServerRequest {
       ((NettyFileUpload)upload).handleException(t);
     }
     if (handler != null) {
-      context.emit(t, handler);
-    }
-    if (bodyPromise != null) {
-      bodyPromise.tryFail(t);
+      handler.handleException(t);
     }
   }
 

@@ -120,7 +120,10 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   @Fluent
-  HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler);
+  default HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) {
+    body().onSuccess(bodyHandler);
+    return this;
+  }
 
   /**
    * Same as {@link #body()} but with an {@code handler} called when the operation completes
