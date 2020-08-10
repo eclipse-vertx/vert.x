@@ -4436,6 +4436,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest request() { return req; }
       public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) { return this; }
       public Future<Buffer> body() { throw new UnsupportedOperationException(); }
+      public Future<Void> end() { throw new UnsupportedOperationException(); }
     }
     MockResp resp = new MockResp();
     Function<HttpClientResponse, Future<RequestOptions>> handler = client.redirectHandler();
@@ -6408,6 +6409,81 @@ public abstract class HttpTest extends HttpTestBase {
         testComplete();
       }));
     }));
+    await();
+  }
+
+  @Test
+  public void testHttpServerEndHandlerSuccess() throws Exception {
+    server.requestHandler(req -> {
+      req.end(onSuccess(v -> {
+        req.response().end();
+      }));
+    });
+    startServer(testAddress);
+    client.request(requestOptions).compose(req -> req.send().map(resp -> resp.statusCode()))
+      .onComplete(onSuccess(sc -> {
+        assertEquals(200, (int)sc);
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testHttpServerEndHandlerError() throws Exception {
+    Promise<Void> promise = Promise.promise();
+    server.requestHandler(req -> {
+      promise.complete();
+      req.end(onFailure(err -> {
+        testComplete();
+      }));
+    });
+    startServer(testAddress);
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT), onSuccess(req -> {
+      req
+        .setChunked(true)
+        .sendHead();
+      promise.future().onSuccess(v -> {
+        req.connection().close();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testHttpClientEndHandlerSuccess() throws Exception {
+    server.requestHandler(req -> {
+      req.response().end("hello");
+    });
+    startServer(testAddress);
+    client.request(requestOptions).compose(req -> req
+      .send()
+      .compose(HttpClientResponse::end))
+      .onComplete(onSuccess(v -> {
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testHttpClientEndHandlerFailure() throws Exception {
+    Promise<Void> promise = Promise.promise();
+    server.requestHandler(req -> {
+      req
+        .response()
+        .setChunked(true)
+        .write("hello");
+      promise.future().onSuccess(v -> {
+        req.connection().close();
+      });
+    });
+    startServer(testAddress);
+    client.request(requestOptions).compose(req -> req.send().compose(resp -> {
+      promise.complete();
+      return resp.end();
+    }))
+      .onComplete(onFailure(v -> {
+        testComplete();
+      }));
     await();
   }
 }

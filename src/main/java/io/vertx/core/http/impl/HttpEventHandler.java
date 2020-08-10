@@ -27,6 +27,7 @@ class HttpEventHandler {
   private Handler<Throwable> exceptionHandler;
   private Buffer body;
   private Promise<Buffer> bodyPromise;
+  private Promise<Void> endPromise;
 
   HttpEventHandler(ContextInternal context) {
     this.context = context;
@@ -62,6 +63,13 @@ class HttpEventHandler {
     return bodyPromise.future();
   }
 
+  Future<Void> end() {
+    if (endPromise == null) {
+      endPromise = context.promise();
+    }
+    return endPromise.future();
+  }
+
   void handleEnd() {
     Handler<Void> handler = endHandler;
     if (handler != null) {
@@ -69,6 +77,9 @@ class HttpEventHandler {
     }
     if (bodyPromise != null) {
       bodyPromise.tryComplete(body);
+    }
+    if (endPromise != null) {
+      endPromise.tryComplete();
     }
   }
 
@@ -79,6 +90,9 @@ class HttpEventHandler {
     }
     if (bodyPromise != null) {
       bodyPromise.tryFail(err);
+    }
+    if (endPromise != null) {
+      endPromise.tryFail(err);
     }
   }
 }

@@ -261,6 +261,12 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   @Override
+  public synchronized Future<Void> end() {
+    checkEnded();
+    return eventHandler(true).end();
+  }
+
+  @Override
   public HttpClientResponse streamPriorityHandler(Handler<StreamPriority> handler) {
     synchronized (conn) {
       if (handler != null) {

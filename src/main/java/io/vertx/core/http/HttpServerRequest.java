@@ -245,6 +245,20 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   Future<Buffer> body();
 
   /**
+   * Same as {@link #end()} but with an {@code handler} called when the operation completes
+   */
+  default void end(Handler<AsyncResult<Void>> handler) {
+    end().onComplete(handler);
+  }
+
+  /**
+   * Returns a future signaling when the request has been fully received successfully or failed.
+   *
+   * @return a future completed with the body result
+   */
+  Future<Void> end();
+
+  /**
    * Get a net socket for the underlying connection of this request.
    * <p/>
    * This method must be called before the server response is ended.

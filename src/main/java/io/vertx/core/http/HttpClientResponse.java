@@ -146,6 +146,20 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
   Future<Buffer> body();
 
   /**
+   * Same as {@link #end()} but with an {@code handler} called when the operation completes
+   */
+  default void end(Handler<AsyncResult<Void>> handler) {
+    end().onComplete(handler);
+  }
+
+  /**
+   * Returns a future signaling when the response has been fully received successfully or failed.
+   *
+   * @return a future completed with the body result
+   */
+  Future<Void> end();
+
+  /**
    * Set an custom frame handler. The handler will get notified when the http stream receives an custom HTTP/2
    * frame. HTTP/2 permits extension of the protocol.
    *

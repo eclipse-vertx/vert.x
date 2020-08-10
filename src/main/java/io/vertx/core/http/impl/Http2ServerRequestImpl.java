@@ -498,6 +498,12 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     return eventHandler(true).body();
   }
 
+  @Override
+  public synchronized Future<Void> end() {
+    checkEnded();
+    return eventHandler(true).end();
+  }
+
   public StreamPriority streamPriority() {
     return priority();
   }

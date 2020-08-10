@@ -71,7 +71,7 @@ import java.util.function.Consumer;
  *
  * <h3>Connection eviction</h3>
  * Connection can be evicted from the pool with {@link ConnectionListener#onEvict()}, after this call, the connection
- * is fully managed by the caller. This can be used for signalling a connection close or when the connection has
+ * is fully managed by the caller. This can be used for signaling a connection close or when the connection has
  * been upgraded for an HTTP connection.
  *
  * <h3>Idle closing</h3>

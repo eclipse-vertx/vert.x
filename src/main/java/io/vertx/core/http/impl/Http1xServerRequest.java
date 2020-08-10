@@ -441,6 +441,12 @@ public class Http1xServerRequest implements HttpServerRequest {
     return eventHandler(true).body();
   }
 
+  @Override
+  public synchronized Future<Void> end() {
+    checkEnded();
+    return eventHandler(true).end();
+  }
+
   private void onData(Buffer data) {
     HttpEventHandler handler;
     synchronized (conn) {
