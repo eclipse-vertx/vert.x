@@ -1383,6 +1383,21 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testIdleTimeout() throws InterruptedException {
+    CountDownLatch latch = new CountDownLatch(3);
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setIdleTimeout(3).setIdleTimeoutUnit(TimeUnit.SECONDS)).webSocketHandler(serverWs -> {
+      serverWs.closeHandler(v -> latch.countDown());
+      serverWs.endHandler(v -> latch.countDown());
+    });
+    server.listen(onSuccess(s -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(clientWs -> {
+        latch.countDown();
+      }));
+    }));
+    awaitLatch(latch);
+  }
+
+  @Test
   public void testRequestEntityTooLarge() {
     String path = "/some/path";
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> fail());

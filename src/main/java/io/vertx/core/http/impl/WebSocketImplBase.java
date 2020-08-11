@@ -537,8 +537,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   void handleClosed() {
     unregisterHandlers();
+    Handler<Void> endHandler;
     Handler<Void> closeHandler;
     synchronized (conn) {
+      endHandler = pending.isPaused() ? null : this.endHandler;
       closeHandler = this.closeHandler;
       closed = true;
       binaryHandlerRegistration = null;
@@ -546,6 +548,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
     if (closeHandler != null) {
       closeHandler.handle(null);
+    }
+    if (endHandler != null) {
+      endHandler.handle(null);
     }
   }
 
