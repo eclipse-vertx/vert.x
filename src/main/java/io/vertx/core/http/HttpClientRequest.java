@@ -43,7 +43,7 @@ import io.vertx.core.streams.WriteStream;
  * This class supports both chunked and non-chunked HTTP.
  * <p>
  * It implements {@link io.vertx.core.streams.WriteStream} so it can be used with
- * {@link io.vertx.core.streams.Pump} to pump data with flow control.
+ * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
  * <p>
  * An example of using this class is as follows:
  * <p>

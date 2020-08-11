@@ -28,7 +28,7 @@ import java.util.List;
  * or that was set on the {@link io.vertx.core.http.HttpClientRequest} instance.
  * <p>
  * It implements {@link io.vertx.core.streams.ReadStream} so it can be used with
- * {@link io.vertx.core.streams.Pump} to pump data with flow control.
+ * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */

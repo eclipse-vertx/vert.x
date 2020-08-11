@@ -36,7 +36,7 @@ import java.util.Set;
  * Each instance of this class is associated with a corresponding {@link HttpServerResponse} instance via
  * {@link #response}.<p>
  * It implements {@link io.vertx.core.streams.ReadStream} so it can be used with
- * {@link io.vertx.core.streams.Pump} to pump data with flow control.
+ * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
  * <p>
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
