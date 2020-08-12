@@ -28,6 +28,7 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -578,11 +579,16 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   void handleClosed() {
     unregisterHandlers();
     Handler<Void> closeHandler;
+    Handler<Throwable> exceptionHandler;
     synchronized (conn) {
       closeHandler = this.closeHandler;
+      exceptionHandler = closeStatusCode == null ? this.exceptionHandler : null;
       closed = true;
       binaryHandlerRegistration = null;
       textHandlerRegistration = null;
+    }
+    if (exceptionHandler != null) {
+      context.emit(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (closeHandler != null) {
       context.emit(null, closeHandler);

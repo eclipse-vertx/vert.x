@@ -3249,6 +3249,31 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testAbruptClose() {
+    waitFor(4);
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
+    server = vertx.createHttpServer()
+      .webSocketHandler(ws -> {
+        ws.exceptionHandler(err -> {
+          complete();
+        });
+        ws.closeHandler(v -> {
+          complete();
+        });
+      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
+        client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
+          ws.exceptionHandler(err -> {
+            complete();
+          });
+          ws.closeHandler(v -> {
+            complete();
+          });
+        }));
+      }));
+    await();
+  }
+
+  @Test
   public void testHAProxy() throws Exception {
     waitFor(2);
 
