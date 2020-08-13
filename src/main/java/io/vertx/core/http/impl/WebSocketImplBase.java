@@ -12,9 +12,15 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Promise;
@@ -40,6 +46,8 @@ import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.util.UUID;
 
+import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
+
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
  * <p>
@@ -57,6 +65,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private final int maxWebSocketFrameSize;
   private final int maxWebSocketMessageSize;
   private final InboundBuffer<WebSocketFrameInternal> pending;
+  private ChannelHandlerContext chctx;
   protected final ContextInternal context;
   private MessageConsumer binaryHandlerRegistration;
   private MessageConsumer textHandlerRegistration;
@@ -88,6 +97,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
     this.pending = new InboundBuffer<>(context);
     this.writable = !conn.isNotWritable();
+    this.chctx = conn.channelHandlerContext();
 
     pending.handler(this::receiveFrame);
     pending.drainHandler(v -> conn.doResume());
@@ -102,7 +112,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public ChannelHandlerContext channelHandlerContext() {
-    return conn.channelHandlerContext();
+    return chctx;
   }
 
   @Override
@@ -385,9 +395,32 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   public S writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       checkClosed();
-      conn.writeToChannel(conn.encodeFrame((WebSocketFrameImpl) frame), handler == null ? null : context.promise(handler));
+      conn.writeToChannel(encodeFrame((WebSocketFrameImpl) frame), handler == null ? null : context.promise(handler));
     }
     return (S) this;
+  }
+
+  private io.netty.handler.codec.http.websocketx.WebSocketFrame encodeFrame(WebSocketFrameImpl frame) {
+    ByteBuf buf = frame.getBinaryData();
+    if (buf != Unpooled.EMPTY_BUFFER) {
+      buf = safeBuffer(buf, chctx.alloc());
+    }
+    switch (frame.type()) {
+      case BINARY:
+        return new BinaryWebSocketFrame(frame.isFinal(), 0, buf);
+      case TEXT:
+        return new TextWebSocketFrame(frame.isFinal(), 0, buf);
+      case CLOSE:
+        return new CloseWebSocketFrame(true, 0, buf);
+      case CONTINUATION:
+        return new ContinuationWebSocketFrame(frame.isFinal(), 0, buf);
+      case PONG:
+        return new PongWebSocketFrame(buf);
+      case PING:
+        return new PingWebSocketFrame(buf);
+      default:
+        throw new IllegalStateException("Unsupported WebSocket msg " + frame);
+    }
   }
 
   void checkClosed() {
@@ -404,8 +437,35 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  void handleFrame(WebSocketFrameInternal frame) {
+  private WebSocketFrameInternal decodeFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
+    ByteBuf payload = safeBuffer(msg, chctx.alloc());
+    boolean isFinal = msg.isFinalFragment();
+    FrameType frameType;
+    if (msg instanceof BinaryWebSocketFrame) {
+      frameType = FrameType.BINARY;
+    } else if (msg instanceof CloseWebSocketFrame) {
+      frameType = FrameType.CLOSE;
+    } else if (msg instanceof PingWebSocketFrame) {
+      frameType = FrameType.PING;
+    } else if (msg instanceof PongWebSocketFrame) {
+      frameType = FrameType.PONG;
+    } else if (msg instanceof TextWebSocketFrame) {
+      frameType = FrameType.TEXT;
+    } else if (msg instanceof ContinuationWebSocketFrame) {
+      frameType = FrameType.CONTINUATION;
+    } else {
+      throw new IllegalStateException("Unsupported WebSocket msg " + msg);
+    }
+    return new WebSocketFrameImpl(frameType, payload, isFinal);
+  }
+
+  void handleFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
+    WebSocketFrameInternal frame = decodeFrame(msg);
     switch (frame.type()) {
+      case PING:
+        // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
+        conn.writeToChannel(new PongWebSocketFrame(frame.getBinaryData().copy()));
+        break;
       case PONG:
         Handler<Buffer> pongHandler = pongHandler();
         if (pongHandler != null) {

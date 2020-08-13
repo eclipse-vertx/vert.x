@@ -172,6 +172,11 @@ public class HttpClientOptionsConverter {
             obj.setVerifyHost((Boolean)member.getValue());
           }
           break;
+        case "webSocketClosingTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketClosingTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
         case "webSocketCompressionAllowClientNoContext":
           if (member.getValue() instanceof Boolean) {
             obj.setWebSocketCompressionAllowClientNoContext((Boolean)member.getValue());
@@ -236,6 +241,7 @@ public class HttpClientOptionsConverter {
     json.put("tryUsePerMessageWebSocketCompression", obj.getTryUsePerMessageWebSocketCompression());
     json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());
     json.put("verifyHost", obj.isVerifyHost());
+    json.put("webSocketClosingTimeout", obj.getWebSocketClosingTimeout());
     json.put("webSocketCompressionAllowClientNoContext", obj.getWebSocketCompressionAllowClientNoContext());
     json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
     json.put("webSocketCompressionRequestServerNoContext", obj.getWebSocketCompressionRequestServerNoContext());

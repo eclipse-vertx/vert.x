@@ -833,6 +833,12 @@ Set the ALPN usage.
 |[[verifyHost]]`@verifyHost`|`Boolean`|+++
 Set whether hostname verification is enabled
 +++
+|[[webSocketClosingTimeout]]`@webSocketClosingTimeout`|`Number (int)`|+++
+Set the amount of time a client WebSocket will wait until it closes the TCP connection after receiving a close frame.
+
+ <p> When a WebSocket is closed, the server should close the TCP connection. This timeout will close
+ the TCP connection on the client when it expires.
++++
 |[[webSocketCompressionAllowClientNoContext]]`@webSocketCompressionAllowClientNoContext`|`Boolean`|+++
 Set whether the <code>client_no_context_takeover</code> parameter of the WebSocket per-message
  deflate compression extension will be offered.
