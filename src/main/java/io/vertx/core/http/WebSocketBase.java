@@ -96,12 +96,12 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   String subProtocol();
 
   /**
-   * Returns the status code received when the WebSocket was closed by the other side, otherwise {@code null}.
+   * Returns close the status code received from the remote endpoint or {@code null} when not yet received.
    */
   Short closeStatusCode();
 
   /**
-   * Returns the reason message received when the WebSocket was closed by the other side, otherwise {@code null}.
+   * Returns the close reason message from the remote endpoint or {@code null} when not yet received.
    */
   String closeReason();
 

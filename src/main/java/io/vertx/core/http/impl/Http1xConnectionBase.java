@@ -13,10 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
@@ -35,7 +32,6 @@ import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.ChannelFutureListenerAdapter;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
@@ -46,7 +42,6 @@ import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends ConnectionBase implements io.vertx.core.http.HttpConnection {
 
   protected S ws;
-  private boolean closeFrameSent;
 
   Http1xConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
     super(vertx, chctx, context);
@@ -108,13 +103,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
           break;
         case CLOSE:
           synchronized (this) {
-            if (!closeFrameSent) {
-              // Echo back close frame and close the connection once it was written.
-              // This is specified in the WebSockets RFC 6455 Section  5.4.1
-              CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
-              chctx.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
-              closeFrameSent = true;
-            }
           }
           break;
       }
@@ -128,40 +116,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   @Override
   public void close() {
     close(null);
-  }
-
-  @Override
-  public void close(Handler<AsyncResult<Void>> handler) {
-    closeWithPayload((short) 1000, null, handler);
-  }
-
-  void closeWithPayload(short code, String reason, Handler<AsyncResult<Void>> handler) {
-    if (ws == null) {
-      super.close(handler);
-    } else {
-      // make sure everything is flushed out on close
-      ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(code, reason);
-      CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
-      ChannelPromise promise = chctx.newPromise();
-      flush(promise);
-      // close the WebSocket connection by sending a close frame with specified payload.
-      promise.addListener((ChannelFutureListener) future -> {
-        ChannelFuture fut = chctx.writeAndFlush(frame);
-        boolean server = this instanceof Http1xServerConnection;
-        if (server) {
-          fut.addListener((ChannelFutureListener) f -> {
-            ChannelFuture closeFut = chctx.channel().close();
-            if (handler != null) {
-              closeFut.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
-            }
-          });
-        } else {
-          if (handler != null) {
-            fut.addListener(new ChannelFutureListenerAdapter<>(context, null, handler));
-          }
-        }
-      });
-    }
   }
 
   @Override

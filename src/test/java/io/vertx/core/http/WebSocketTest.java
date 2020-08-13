@@ -28,6 +28,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.FrameType;
+import io.vertx.core.http.impl.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.NetSocketInternal;
@@ -40,6 +41,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.security.cert.X509Certificate;
@@ -1033,16 +1035,14 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(ws -> {
       assertEquals("upgrade", ws.headers().get("Connection"));
       assertEquals("permessage-deflate", ws.headers().get("sec-websocket-extensions"));
-      ws.close();
+      complete();
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(ar -> {
 
       HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", resp -> {
         assertEquals(101, resp.statusCode());
         assertEquals("permessage-deflate", resp.headers().get("sec-websocket-extensions"));
-        resp.endHandler(v1 -> {
-          testComplete();
-        });
+        complete();
       })
         .putHeader("origin", DEFAULT_HTTP_HOST)
         .putHeader("Upgrade", "Websocket")
@@ -2656,8 +2656,8 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(socket -> {
         socket.closeHandler(a -> {
-          assertEquals(null, socket.closeStatusCode());
-          assertEquals(null, socket.closeReason());
+          assertEquals((Short)TEST_STATUS_CODE, socket.closeStatusCode());
+          assertEquals(TEST_REASON, socket.closeReason());
           complete();
         });
         vertx.setTimer(100, (ar) -> closeOp.accept(socket));
@@ -2747,6 +2747,15 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testCleanClientClose() {
+    testCleanClientClose(true);
+  }
+
+  @Test
+  public void testClientInitiatedDelayedClose() {
+    testCleanClientClose(false);
+  }
+
+  private void testCleanClientClose(boolean closeServerNetSocket) {
     waitFor(2);
     server = vertx.createHttpServer();
     server.requestHandler(req -> {
@@ -2755,7 +2764,12 @@ public class WebSocketTest extends VertxTestBase {
         so.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(false));
         so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(true, false, 1000));
         Deque<Object> received = new ArrayDeque<>();
-        so.messageHandler(received::add);
+        so.messageHandler(msg -> {
+          received.add(msg);
+          if (msg instanceof CloseWebSocketFrame && closeServerNetSocket) {
+            so.close();
+          }
+        });
         int status = 4000 + TestUtils.randomPositiveInt() % 100;
         String reason = TestUtils.randomAlphaString(10);
         so.writeMessage(new CloseWebSocketFrame(status, reason));
@@ -2771,11 +2785,49 @@ public class WebSocketTest extends VertxTestBase {
       }
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
-      client = vertx.createHttpClient();
+      HttpClientOptions options = new HttpClientOptions();
+      if (!closeServerNetSocket) {
+        options.setWebSocketClosingTimeout(1);
+      }
+      client = vertx.createHttpClient(options);
       client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat", onSuccess(ws -> {
         ws.closeHandler(v -> {
           complete();
         });
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerInitiatedDelayedClose() {
+    waitFor(2);
+    server = vertx.createHttpServer();
+    server.requestHandler(req -> {
+      NetSocketInternal so = (NetSocketInternal) handshake(req);
+      if (so != null) {
+        so.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(false));
+        so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(true, false, 1000));
+        Deque<Object> received = new ArrayDeque<>();
+        so.messageHandler(msg -> {
+          received.add(msg);
+          if (msg instanceof CloseWebSocketFrame) {
+            CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
+            so.writeMessage(new CloseWebSocketFrame(frame.statusCode(), frame.reasonText()));
+          }
+        });
+        so.closeHandler(v -> {
+          complete();
+        });
+      }
+    });
+    server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
+      client = vertx.createHttpClient(new HttpClientOptions().setWebSocketClosingTimeout(1));
+      client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat", onSuccess(ws -> {
+        ws.closeHandler(v -> {
+          complete();
+        });
+        ws.close();
       }));
     }));
     await();
@@ -3066,14 +3118,9 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testWriteHandlerFailure() {
-    CompletableFuture<Void> close = new CompletableFuture<>();
     server = vertx.createHttpServer()
-      .websocketHandler(ws -> {
-        ws.pause();
-        close.whenComplete((v, err) -> {
-          ws.close();
-        });
-      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
+      .webSocketHandler(ServerWebSocket::pause)
+      .listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
         Buffer buffer = TestUtils.randomBuffer(1024);
         client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
           while (!ws.writeQueueFull()) {
@@ -3082,7 +3129,7 @@ public class WebSocketTest extends VertxTestBase {
           ws.write(buffer, onFailure(err -> {
             testComplete();
           }));
-          close.complete(null);
+          ((WebSocketInternal)ws).connection().close();
         }));
       }));
     await();
