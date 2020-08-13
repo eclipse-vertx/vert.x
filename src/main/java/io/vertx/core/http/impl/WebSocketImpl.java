@@ -11,9 +11,7 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.vertx.core.http.WebSocket;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 /**
@@ -28,12 +26,15 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
 
   private long timerID = -1L;
+  private final long closingTimeoutMS;
 
   public WebSocketImpl(Http1xClientConnection conn,
                        boolean supportsContinuation,
+                       long closingTimeout,
                        int maxWebSocketFrameSize,
                        int maxWebSocketMessageSize) {
     super(conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+    this.closingTimeoutMS = closingTimeout > 0 ? closingTimeout * 1000L : 0L;
   }
 
   @Override
@@ -53,12 +54,14 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   @Override
   protected void doClose() {
     synchronized (conn) {
-      timerID = conn.getContext().owner().setTimer(1000, id -> {
-        synchronized (conn) {
-          timerID = -1L;
-        }
-        conn.channelHandlerContext().close();
-      });
+      if (closingTimeoutMS > 0L) {
+        timerID = conn.getContext().owner().setTimer(closingTimeoutMS, id -> {
+          synchronized (conn) {
+            timerID = -1L;
+          }
+          conn.channelHandlerContext().close();
+        });
+      }
     }
   }
 }

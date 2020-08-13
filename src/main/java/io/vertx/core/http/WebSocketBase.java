@@ -96,7 +96,7 @@ public interface WebSocketBase extends ReadStream<Buffer>, WriteStream<Buffer> {
   String subProtocol();
 
   /**
-   * Returns close the status code received from the remote endpoint or {@code null} when not yet received.
+   * Returns the close status code received from the remote endpoint or {@code null} when not yet received.
    */
   Short closeStatusCode();
 

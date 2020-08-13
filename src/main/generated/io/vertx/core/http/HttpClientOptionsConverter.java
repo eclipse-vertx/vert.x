@@ -193,6 +193,11 @@ import java.time.format.DateTimeFormatter;
             obj.setVerifyHost((Boolean)member.getValue());
           }
           break;
+        case "webSocketClosingTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketClosingTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
         case "webSocketCompressionAllowClientNoContext":
           if (member.getValue() instanceof Boolean) {
             obj.setWebSocketCompressionAllowClientNoContext((Boolean)member.getValue());
@@ -276,6 +281,7 @@ import java.time.format.DateTimeFormatter;
     json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());
     json.put("tryWebsocketDeflateFrameCompression", obj.getTryWebsocketDeflateFrameCompression());
     json.put("verifyHost", obj.isVerifyHost());
+    json.put("webSocketClosingTimeout", obj.getWebSocketClosingTimeout());
     json.put("webSocketCompressionAllowClientNoContext", obj.getWebSocketCompressionAllowClientNoContext());
     json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
     json.put("webSocketCompressionRequestServerNoContext", obj.getWebSocketCompressionRequestServerNoContext());

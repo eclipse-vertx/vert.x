@@ -715,6 +715,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
       WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, ar -> {
         AsyncResult<WebSocket> wsRes = ar.map(v -> {
           WebSocketImpl w = new WebSocketImpl(Http1xClientConnection.this, version != WebSocketVersion.V00,
+            options.getWebSocketClosingTimeout(),
             options.getMaxWebsocketFrameSize(),
             options.getMaxWebsocketMessageSize());
           w.subProtocol(handshaker.actualSubprotocol());
