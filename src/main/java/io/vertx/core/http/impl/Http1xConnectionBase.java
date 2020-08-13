@@ -13,10 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
 import io.netty.channel.FileRegion;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpObject;
@@ -52,7 +49,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
 
   protected S webSocket;
   protected long bytesWritten;
-  private boolean closeFrameSent;
 
   Http1xConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
     super(vertx, chctx, context);
@@ -114,13 +110,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
           break;
         case CLOSE:
           synchronized (this) {
-            if (!closeFrameSent) {
-              // Echo back close frame and close the connection once it was written.
-              // This is specified in the WebSockets RFC 6455 Section  5.4.1
-              CloseWebSocketFrame closeFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
-              chctx.writeAndFlush(closeFrame).addListener(ChannelFutureListener.CLOSE);
-              closeFrameSent = true;
-            }
           }
           break;
       }
@@ -129,37 +118,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
     if (w != null) {
       reportBytesRead(frame.length());
       w.context.schedule(frame, w::handleFrame);
-    }
-  }
-
-  @Override
-  public Future<Void> close() {
-    return closeWithPayload((short) 1000, null);
-  }
-
-  Future<Void> closeWithPayload(short code, String reason) {
-    if (webSocket == null) {
-      return super.close();
-    } else {
-      PromiseInternal<Void> promise = context.promise();
-      // make sure everything is flushed out on close
-      ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(code, reason);
-      CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
-      ChannelPromise channelPromise = chctx.newPromise();
-      flush(channelPromise);
-      // close the WebSocket connection by sending a close frame with specified payload.
-      channelPromise.addListener((ChannelFutureListener) future -> {
-        ChannelFuture fut = chctx.writeAndFlush(frame);
-        boolean server = this instanceof Http1xServerConnection;
-        if (server) {
-          fut.addListener((ChannelFutureListener) f -> {
-            chctx.channel().close().addListener(promise);
-          });
-        } else {
-          fut.addListener(promise);
-        }
-      });
-      return promise.future();
     }
   }
 

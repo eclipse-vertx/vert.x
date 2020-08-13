@@ -30,7 +30,7 @@ import io.vertx.core.spi.tracing.TagExtractor;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -603,7 +603,7 @@ public final class HttpUtils {
     if (reason != null)
       return Unpooled.copiedBuffer(
         Unpooled.copyShort(statusCode), // First two bytes are reserved for status code
-        Unpooled.copiedBuffer(reason, Charset.forName("UTF-8"))
+        Unpooled.copiedBuffer(reason, StandardCharsets.UTF_8)
       );
     else
       return Unpooled.copyShort(statusCode);

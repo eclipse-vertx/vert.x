@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.vertx.core.http.WebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -27,6 +28,8 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  */
 public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
 
+  private long timerID = -1L;
+
   public WebSocketImpl(ContextInternal context,
                        Http1xClientConnection conn, boolean supportsContinuation,
                        int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
@@ -37,11 +40,26 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   void handleClosed() {
     // THAT SHOULD BE CALLED ON EVENT LOOP
     synchronized (conn) {
+      if (timerID != -1L) {
+        context.owner().cancelTimer(timerID);
+      }
       HttpClientMetrics metrics = (HttpClientMetrics)conn.metrics();
       if (metrics != null) {
         metrics.disconnected(getMetric());
       }
     }
     super.handleClosed();
+  }
+
+  @Override
+  protected void doClose() {
+    synchronized (conn) {
+      timerID = context.owner().setTimer(1000, id -> {
+        synchronized (conn) {
+          timerID = -1L;
+        }
+        conn.channelHandlerContext().close();
+      });
+    }
   }
 }
