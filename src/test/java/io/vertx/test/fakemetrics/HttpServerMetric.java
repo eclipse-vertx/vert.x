@@ -26,6 +26,7 @@ public class HttpServerMetric {
   public final SocketMetric socket;
   public final AtomicBoolean failed = new AtomicBoolean();
   public final AtomicReference<HttpServerResponse> response = new AtomicReference<>();
+  public final AtomicReference<String> route = new AtomicReference<>();
 
   public HttpServerMetric(HttpServerRequest request, SocketMetric socket) {
     this.request = request;

@@ -578,4 +578,12 @@ public class Http1xServerRequest implements HttpServerRequest {
   public Map<String, Cookie> cookieMap() {
     return (Map)response.cookies();
   }
+
+  @Override
+  public HttpServerRequest routed(String route) {
+    if (METRICS_ENABLED && conn.metrics != null) {
+      conn.metrics.requestRouted(metric, route);
+    }
+    return this;
+  }
 }
