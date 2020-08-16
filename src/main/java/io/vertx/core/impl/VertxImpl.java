@@ -689,24 +689,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public Future<Void> undeploy(String deploymentID) {
-    Promise<Void> promise = Promise.promise();
-    undeploy(deploymentID, promise);
-    return promise.future();
+    Future<Void> future;
+    HAManager haManager = haManager();
+    if (haManager != null && haManager.isEnabled()) {
+      future = this.executeBlocking(fut -> {
+        haManager.removeFromHA(deploymentID);
+        fut.complete();
+      }, false);
+    } else {
+      future = getOrCreateContext().succeededFuture();
+    }
+    return future.compose(v -> deploymentManager.undeployVerticle(deploymentID));
   }
 
   @Override
   public void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
-    HAManager haManager = haManager();
-    Promise<Void> haFuture = Promise.promise();
-    if (haManager != null && haManager.isEnabled()) {
-      this.executeBlocking(fut -> {
-        haManager.removeFromHA(deploymentID);
-        fut.complete();
-      }, false, haFuture);
-    } else {
-      haFuture.complete();
+    Future<Void> fut = undeploy(deploymentID);
+    if (completionHandler != null) {
+      fut.onComplete(completionHandler);
     }
-    haFuture.future().compose(v -> deploymentManager.undeployVerticle(deploymentID)).onComplete(completionHandler);
   }
 
   @Override

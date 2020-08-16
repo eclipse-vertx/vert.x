@@ -337,7 +337,7 @@ public class DeploymentManager {
           Promise p = Promise.promise();
           undeployFutures.add(p.future());
           context.runOnContext(v -> {
-            Promise<Void> stopPromise = Promise.promise();
+            Promise<Void> stopPromise = undeployingContext.promise();
             Future<Void> stopFuture = stopPromise.future();
             stopFuture.onComplete(ar -> {
               deployments.remove(deploymentID);
@@ -368,8 +368,12 @@ public class DeploymentManager {
         Handler<Void> handler = undeployHandler;
         if (handler != null) {
           undeployHandler = null;
-          fut.onComplete(ar -> {
+          return fut.compose(v -> {
             handler.handle(null);
+            return Future.succeededFuture();
+          }, v -> {
+            handler.handle(null);
+            return Future.succeededFuture();
           });
         }
         return fut;
