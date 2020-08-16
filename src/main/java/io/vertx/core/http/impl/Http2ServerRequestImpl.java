@@ -113,7 +113,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       tags.add(new AbstractMap.SimpleEntry<>("http.method", method.name()));
       trace = tracer.receiveRequest(context, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
-    context.dispatch(this, handler);
+    context.emit(this, handler);
   }
 
   @Override

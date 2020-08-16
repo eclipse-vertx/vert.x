@@ -94,7 +94,7 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
         return this;
       }
     }
-    dispatch(h);
+    emit(h);
     return this;
   }
 
@@ -110,19 +110,19 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
     handlers.add(h);
   }
 
-  protected void dispatch(Handler<AsyncResult<T>> handler) {
+  protected void emit(Handler<AsyncResult<T>> handler) {
     if (handler instanceof Handlers) {
       for (Handler<AsyncResult<T>> h : (Handlers<T>)handler) {
-        doDispatch(h);
+        doEmit(h);
       }
     } else {
-      doDispatch(handler);
+      doEmit(handler);
     }
   }
 
-  private void doDispatch(Handler<AsyncResult<T>> handler) {
+  private void doEmit(Handler<AsyncResult<T>> handler) {
     if (context != null) {
-      context.dispatch(this, handler);
+      context.emit(this, handler);
     } else {
       handler.handle(this);
     }
@@ -141,7 +141,7 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
       handler = null;
     }
     if (h != null) {
-      dispatch(h);
+      emit(h);
     }
     return true;
   }
@@ -159,7 +159,7 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
       handler = null;
     }
     if (h != null) {
-      dispatch(h);
+      emit(h);
     }
     return true;
   }

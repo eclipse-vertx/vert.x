@@ -35,7 +35,7 @@ public class ContextTaskTest extends VertxTestBase {
     }, DISPATCH() {
       @Override
       void exec(ContextInternal ctx, Handler<Void> task) {
-        ctx.dispatch(task);
+        ctx.emit(task);
       }
     };
 
@@ -156,7 +156,7 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testEventLoopDispatchFromAnotherEventLoop() {
-    testOpFromAnotherEventLoop(ContextInternal::dispatch, this::createEventLoopContext, false);
+    testOpFromAnotherEventLoop(ContextInternal::emit, this::createEventLoopContext, false);
   }
 
   @Test
@@ -166,7 +166,7 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testWorkerDispatchFromAnotherEventLoop() {
-    testOpFromAnotherEventLoop(ContextInternal::dispatch, this::createWorkerContext, false);
+    testOpFromAnotherEventLoop(ContextInternal::emit, this::createWorkerContext, false);
   }
 
   @Test
@@ -238,7 +238,7 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testEventLoopDispatchFromAnotherThread() {
-    testOpFromAnotherThread(ContextInternal::dispatch, this::createEventLoopContext, false);
+    testOpFromAnotherThread(ContextInternal::emit, this::createEventLoopContext, false);
   }
 
   @Test
@@ -248,7 +248,7 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testWorkerDispatchFromAnotherThread() {
-    testOpFromAnotherThread(ContextInternal::dispatch, this::createWorkerContext, false);
+    testOpFromAnotherThread(ContextInternal::emit, this::createWorkerContext, false);
   }
 
   @Test

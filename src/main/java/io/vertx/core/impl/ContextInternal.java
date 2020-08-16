@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.FastThreadLocalThread;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.*;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -128,22 +127,22 @@ public interface ContextInternal extends Context, Executor {
   VertxInternal owner();
 
   /**
-   * Dispatch the given {@code argument} to the {@code task} and switch on this context if necessary, this also associates the
+   * Emit the given {@code argument} event to the {@code task} and switch on this context if necessary, this also associates the
    * current thread with the current context so {@link Vertx#currentContext()} returns this context.
    * <br/>
    * Any exception thrown from the {@literal task} will be reported on this context.
    * <br/>
-   * Calling this method is equivalent to {@code schedule(v -> emit(argument, task))}
+   * Calling this method is equivalent to {@code schedule(v -> dispatch(argument, task))}
    *
    * @param argument the {@code task} argument
    * @param task the handler to execute with the {@code event} argument
    */
-  <T> void dispatch(T argument, Handler<T> task);
+  <T> void emit(T argument, Handler<T> task);
 
   /**
-   * @see #dispatch(Object, Handler)
+   * @see #emit(Object, Handler)
    */
-  void dispatch(Handler<Void> task);
+  void emit(Handler<Void> task);
 
   /**
    * @see #schedule(Object, Handler)
@@ -160,17 +159,17 @@ public interface ContextInternal extends Context, Executor {
   <T> void schedule(T argument, Handler<T> task);
 
   /**
-   * @see #emit(Handler)
+   * @see #dispatch(Handler)
    */
-  void emit(Runnable handler);
+  void dispatch(Runnable handler);
 
   /**
-   * @see #emit(Object, Handler)
+   * @see #dispatch(Object, Handler)
    */
-  void emit(Handler<Void> handler);
+  void dispatch(Handler<Void> handler);
 
   /**
-   * Emit an {@code event} to the {@code handler} on this context.
+   * Dispatch an {@code event} to the {@code handler} on this context.
    * <p>
    * The handler is executed directly by the caller thread which must be a {@link VertxThread} or a {@link FastThreadLocalThread}.
    * <p>
@@ -181,7 +180,7 @@ public interface ContextInternal extends Context, Executor {
    * @param event the event for the {@code handler}
    * @param handler the handler to execute with the {@code event}
    */
-  <E> void emit(E event, Handler<E> handler);
+  <E> void dispatch(E event, Handler<E> handler);
 
   /**
    * Begin the execution of a task on this context.
@@ -190,22 +189,22 @@ public interface ContextInternal extends Context, Executor {
    * <p>
    * This context is thread-local associated during the task execution.
    * <p>
-   * You should not use this API directly, instead you should use {@link #emit(Object, Handler)}
+   * You should not use this API directly, instead you should use {@link #dispatch(Object, Handler)}
    *
    * @return the previous context that shall be restored after or {@code null} if there is none
    * @throws IllegalStateException when the current thread of execution cannot execute this task
    */
-  ContextInternal emitBegin();
+  ContextInternal beginDispatch();
 
   /**
-   * End the execution of a task on this context, see {@link #emitBegin()}
+   * End the execution of a task on this context, see {@link #beginDispatch()}
    * <p>
-   * You should not use this API directly, instead you should use {@link #emit(Object, Handler)}
+   * You should not use this API directly, instead you should use {@link #dispatch(Object, Handler)}
    *
    * @param previous the previous context to restore or {@code null} if there is none
    * @throws IllegalStateException when the current thread of execution cannot execute this task
    */
-  void emitEnd(ContextInternal previous);
+  void endDispatch(ContextInternal previous);
 
   /**
    * Report an exception to this context synchronously.

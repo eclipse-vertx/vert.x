@@ -924,7 +924,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     @Override
     public void run() {
-      context.dispatch(this);
+      context.emit(this);
     }
 
     public void handle(Void v) {

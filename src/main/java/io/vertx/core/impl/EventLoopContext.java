@@ -36,12 +36,12 @@ public class EventLoopContext extends ContextImpl {
 
   @Override
   <T> void execute(T argument, Handler<T> task) {
-    nettyEventLoop().execute(() -> emit(argument, task));
+    nettyEventLoop().execute(() -> dispatch(argument, task));
   }
 
   @Override
   public void execute(Runnable task) {
-    nettyEventLoop().execute(() -> emit(task));
+    nettyEventLoop().execute(() -> dispatch(task));
   }
 
   /**
@@ -87,12 +87,12 @@ public class EventLoopContext extends ContextImpl {
 
     @Override
     <T> void execute(T argument, Handler<T> task) {
-      nettyEventLoop().execute(() -> emit(argument, task));
+      nettyEventLoop().execute(() -> dispatch(argument, task));
     }
 
     @Override
     public void execute(Runnable task) {
-      nettyEventLoop().execute(() -> emit(task));
+      nettyEventLoop().execute(() -> dispatch(task));
     }
 
     @Override

@@ -89,7 +89,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
     }
     // Might be called from non vertx thread
-    context.dispatch(t, handler);
+    context.emit(t, handler);
     endPromise.tryFail(t);
   }
 
@@ -282,7 +282,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         return;
       }
     }
-    context.emit(handler);
+    context.dispatch(handler);
   }
 
   private void handleNextRequest(HttpClientRequest next, Handler<AsyncResult<HttpClientResponse>> handler, long timeoutMs) {

@@ -35,7 +35,6 @@ import io.vertx.core.impl.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.net.impl.SocketAddressImpl;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.metrics.*;
@@ -478,7 +477,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         metrics.close();
       }
       if (handler != null) {
-        context.dispatch(null, handler);
+        context.emit(null, handler);
       }
     }
 
@@ -509,7 +508,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         }
       }
       if (handler != null) {
-        context.dispatch(packet, handler);
+        context.emit(packet, handler);
       }
     }
   }

@@ -174,7 +174,7 @@ abstract class ContextImpl extends AbstractContext {
         if (metrics != null) {
           execMetric = metrics.begin(queueMetric);
         }
-        context.emit(promise, f -> {
+        context.dispatch(promise, f -> {
           try {
             blockingCodeHandler.handle(promise);
           } catch (Throwable e) {

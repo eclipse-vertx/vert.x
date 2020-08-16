@@ -323,7 +323,7 @@ public abstract class ConnectionBase {
     if (metrics != null) {
       metrics.exceptionOccurred(metric, remoteAddress(), t);
     }
-    context.dispatch(t, err -> {
+    context.emit(t, err -> {
       Handler<Throwable> handler;
       synchronized (ConnectionBase.this) {
         handler = exceptionHandler;

@@ -325,7 +325,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
           } else {
             res = Future.failedFuture(future.cause());
           }
-          context.dispatch(res, handler);
+          context.emit(res, handler);
         }
       });
       if (remoteAddress != null) {
@@ -346,7 +346,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   protected void handleInterestedOpsChanged() {
-    context.dispatch(null, v -> callDrainHandler());
+    context.emit(null, v -> callDrainHandler());
   }
 
   @Override
@@ -366,7 +366,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
       consumer = registration;
       registration = null;
     }
-    context.dispatch(InboundBuffer.END_SENTINEL, pending::write);
+    context.emit(InboundBuffer.END_SENTINEL, pending::write);
     super.handleClosed();
     if (consumer != null) {
       consumer.unregister();
@@ -377,7 +377,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     if (msg instanceof ByteBuf) {
       reportBytesRead(((ByteBuf)msg).readableBytes());
     }
-    context.dispatch(msg, o -> {
+    context.emit(msg, o -> {
       if (!pending.write(msg)) {
         doPause();
       }

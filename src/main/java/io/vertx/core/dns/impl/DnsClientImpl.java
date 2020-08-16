@@ -347,7 +347,7 @@ public final class DnsClientImpl implements DnsClient {
       });
       channel.writeAndFlush(msg).addListener((ChannelFutureListener) future -> {
         if (!future.isSuccess()) {
-          actualCtx.dispatch(future.cause(), this::fail);
+          actualCtx.emit(future.cause(), this::fail);
         }
       });
     }

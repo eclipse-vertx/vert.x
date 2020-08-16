@@ -179,7 +179,7 @@ public class HttpServerWorker implements Handler<Channel> {
   }
 
   private void handleException(Throwable cause) {
-    context.dispatch(cause, exceptionHandler);
+    context.emit(cause, exceptionHandler);
   }
 
   private void handleHttp1(Channel ch) {

@@ -298,7 +298,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
 
     private void handleException(Throwable cause) {
       if (exceptionHandler != null) {
-        context.dispatch(v -> exceptionHandler.handle(cause));
+        context.emit(v -> exceptionHandler.handle(cause));
       }
     }
 
@@ -311,7 +311,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
           conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
         }
         conn.registerEventBusHandler();
-        context.dispatch(conn, connectionHandler::handle);
+        context.emit(conn, connectionHandler::handle);
       });
       nh.removeHandler(conn -> {
         // Do nothing

@@ -137,7 +137,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       log.error("Could not get the list of active streams", e);
     }
     for (VertxHttp2Stream stream : streams) {
-      stream.context.emit(v -> stream.handleException(cause));
+      stream.context.dispatch(v -> stream.handleException(cause));
     }
     handleException(cause);
   }
@@ -194,7 +194,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
     if (handler != null) {
       Buffer buffer = Buffer.buffer(debugData);
-      context.emit(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
+      context.dispatch(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
     }
     checkShutdownHandler();
     return true;
@@ -238,7 +238,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
     if (handler != null) {
       // No need to run on a particular context it shall be done by the handler instead
-      context.dispatch(handler);
+      context.emit(handler);
     }
   }
 
@@ -265,7 +265,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       handler = remoteSettingsHandler;
     }
     if (handler != null) {
-      context.emit(HttpUtils.toVertxSettings(settings), handler);
+      context.dispatch(HttpUtils.toVertxSettings(settings), handler);
     }
     if (changed) {
       concurrencyChanged(maxConcurrentStreams);
@@ -277,7 +277,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     Handler<Buffer> handler = pingHandler;
     if (handler != null) {
       Buffer buff = Buffer.buffer().appendLong(data);
-      context.emit(v -> handler.handle(buff));
+      context.dispatch(v -> handler.handle(buff));
     }
   }
 
@@ -535,7 +535,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       shutdownHandler = this.shutdownHandler;
     }
     if (shutdownHandler != null) {
-      context.emit(shutdownHandler);
+      context.dispatch(shutdownHandler);
     }
   }
 }

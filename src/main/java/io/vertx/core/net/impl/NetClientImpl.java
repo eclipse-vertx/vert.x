@@ -216,7 +216,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         // FileNotFoundException for domain sockets
         boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
         if (connectError && (remainingAttempts > 0 || remainingAttempts == -1)) {
-          context.dispatch(v -> {
+          context.emit(v -> {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
@@ -248,7 +248,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     if (ch != null) {
       ch.close();
     }
-    context.dispatch(th, connectHandler::tryFail);
+    context.emit(th, connectHandler::tryFail);
   }
 
   @Override

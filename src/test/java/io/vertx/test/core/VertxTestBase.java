@@ -250,7 +250,7 @@ public class VertxTestBase extends AsyncTestBase {
     for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
       String className = elt.getClassName();
       String methodName = elt.getMethodName();
-      if (className.equals("io.vertx.core.impl.AbstractContext") && methodName.equals("emit")) {
+      if (className.equals("io.vertx.core.impl.AbstractContext") && methodName.equals("dispatch")) {
         return;
       }
     }

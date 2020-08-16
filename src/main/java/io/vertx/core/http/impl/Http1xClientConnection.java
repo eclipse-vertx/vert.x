@@ -502,7 +502,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     void handleHead(HttpResponseHead response) {
       Handler<HttpResponseHead> handler = headHandler;
       if (handler != null) {
-        context.dispatch(response, handler);
+        context.emit(response, handler);
       }
     }
 
@@ -813,7 +813,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         if (metrics != null) {
           webSocket.setMetric(metrics.connected(webSocket));
         }
-        getContext().dispatch(wsRes, res -> {
+        getContext().emit(wsRes, res -> {
           if (res.succeeded()) {
             webSocket.headers(ar.result());
           }

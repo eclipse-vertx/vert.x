@@ -116,7 +116,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         fut = Future.failedFuture(e);
       }
     }
-    context.dispatch(fut, handler);
+    context.emit(fut, handler);
   }
 
   private StreamImpl createStream(ContextInternal context) {
@@ -168,7 +168,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           pushStream.metric = metric;
           metrics.requestEnd(metric);
         }
-        stream.context.emit(push, pushHandler);
+        stream.context.dispatch(push, pushHandler);
         return;
       }
     }
@@ -203,7 +203,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     void onContinue() {
-      context.dispatch(null, v -> handleContinue());
+      context.emit(null, v -> handleContinue());
     }
 
     abstract void handleContinue();
@@ -282,7 +282,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         }
 
         if (headHandler != null) {
-          context.dispatch(response, headHandler);
+          context.emit(response, headHandler);
         }
 
         Promise<NetSocket> promise = netSocketPromise;
@@ -460,7 +460,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
       this.netSocketPromise = netSocketPromise;
       priority(priority);
-      conn.context.dispatch(null, v -> {
+      conn.context.emit(null, v -> {
         writeHeaders(request, buf, end, priority, netSocketPromise, handler);
       });
     }
@@ -547,7 +547,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     public void reset(Throwable cause) {
       long code = cause instanceof StreamResetException ? ((StreamResetException)cause).getCode() : 0;
-      conn.context.dispatch(code, this::writeReset);
+      conn.context.emit(code, this::writeReset);
     }
 
     @Override

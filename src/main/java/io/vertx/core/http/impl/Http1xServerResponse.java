@@ -564,7 +564,7 @@ public class Http1xServerResponse implements HttpServerResponse {
           } else {
             res = Future.failedFuture(future.cause());
           }
-          ctx.dispatch(null, v -> resultHandler.handle(res));
+          ctx.emit(null, v -> resultHandler.handle(res));
         }
 
         // signal body end handler
@@ -573,7 +573,7 @@ public class Http1xServerResponse implements HttpServerResponse {
           handler = bodyEndHandler;
         }
         if (handler != null) {
-          context.dispatch(v -> {
+          context.emit(v -> {
             handler.handle(null);
           });
         }
@@ -600,7 +600,7 @@ public class Http1xServerResponse implements HttpServerResponse {
         return;
       }
     }
-    context.emit(null, handler);
+    context.dispatch(null, handler);
   }
 
   void handleException(Throwable t) {
@@ -614,7 +614,7 @@ public class Http1xServerResponse implements HttpServerResponse {
           return;
         }
       }
-      context.emit(t, handler);
+      context.dispatch(t, handler);
     }
   }
 
@@ -632,13 +632,13 @@ public class Http1xServerResponse implements HttpServerResponse {
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      context.emit(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (endHandler != null) {
-      context.emit(null, endHandler);
+      context.dispatch(null, endHandler);
     }
     if (closedHandler != null) {
-      context.emit(null, closedHandler);
+      context.dispatch(null, closedHandler);
     }
   }
 

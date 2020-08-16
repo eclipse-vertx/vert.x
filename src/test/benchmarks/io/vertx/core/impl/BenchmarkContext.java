@@ -38,7 +38,7 @@ public class BenchmarkContext extends ContextImpl {
     if (THREAD_CHECKS) {
       checkEventLoopThread();
     }
-    emit(argument, task);
+    dispatch(argument, task);
   }
 
   @Override
@@ -46,7 +46,7 @@ public class BenchmarkContext extends ContextImpl {
     if (THREAD_CHECKS) {
       checkEventLoopThread();
     }
-    emit(task);
+    dispatch(task);
   }
 
   @Override

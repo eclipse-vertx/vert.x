@@ -38,7 +38,6 @@ import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
-import io.vertx.core.spi.metrics.Metrics;
 
 /**
  * Performs the channel configuration and connection according to the client options and the protocol version.
@@ -105,7 +104,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
   public void init(HttpClientConnection conn) {
     Handler<HttpConnection> handler = client.connectionHandler();
     if (handler != null) {
-      context.dispatch(conn, handler);
+      context.emit(conn, handler);
     }
   }
 
