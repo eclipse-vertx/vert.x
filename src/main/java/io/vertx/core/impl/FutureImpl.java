@@ -146,14 +146,6 @@ class FutureImpl<T> implements PromiseInternal<T>, Future<T> {
     return true;
   }
 
-  public void handle(Future<T> ar) {
-    if (ar.succeeded()) {
-      complete(ar.result());
-    } else {
-      fail(ar.cause());
-    }
-  }
-
   @Override
   public boolean tryFail(Throwable cause) {
     Handler<AsyncResult<T>> h;
