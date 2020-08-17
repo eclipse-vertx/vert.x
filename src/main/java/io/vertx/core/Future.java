@@ -201,6 +201,17 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   * Handles a failure of this Future by returning the result of another Future.
+   * If the mapper fails, then the returned future will be failed with this failure.
+   *
+   * @param mapper A function which takes the exception of a failure and returns a new future.
+   * @return A recovered future
+   */
+  default Future<T> recover(Function<Throwable, Future<T>> mapper) {
+    return compose(Future::succeededFuture, mapper);
+  }
+
+  /**
    * @return the context associated with this future or {@code null} when
    */
   default Context context() {
@@ -346,41 +357,6 @@ public interface Future<T> extends AsyncResult<T> {
   @Override
   default <V> Future<V> mapEmpty() {
     return (Future<V>) AsyncResult.super.mapEmpty();
-  }
-
-  /**
-   * Handles a failure of this Future by returning the result of another Future.
-   * If the mapper fails, then the returned future will be failed with this failure.
-   *
-   * @param mapper A function which takes the exception of a failure and returns a new future.
-   * @return A recovered future
-   */
-  default Future<T> recover(Function<Throwable, Future<T>> mapper) {
-    if (mapper == null) {
-      throw new NullPointerException();
-    }
-    ContextInternal ctx = (ContextInternal) context();
-    Promise<T> ret;
-    if (ctx != null) {
-      ret = ctx.promise();
-    } else {
-      ret = Promise.promise();
-    }
-    onComplete(ar -> {
-      if (ar.succeeded()) {
-        ret.complete(result());
-      } else {
-        Future<T> mapped;
-        try {
-          mapped = mapper.apply(ar.cause());
-        } catch (Throwable e) {
-          ret.fail(e);
-          return;
-        }
-        mapped.onComplete(ret);
-      }
-    });
-    return ret.future();
   }
 
   /**
