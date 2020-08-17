@@ -907,6 +907,12 @@ public class FutureTest extends VertxTestBase {
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<U> map(Function<T, U> mapper) { throw new UnsupportedOperationException(); }
+      public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
+      public Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }
+      public Future<T> otherwise(T value) { throw new UnsupportedOperationException(); }
+
       public void handle(AsyncResult<T> asyncResult) {
         if (asyncResult.succeeded()) {
           complete(asyncResult.result());
@@ -1263,10 +1269,10 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testReleaseHandlerAfterCompletion() throws Exception {
+  public void testReleaseListenerAfterCompletion() throws Exception {
     Promise<String> promise = Promise.promise();
     Future<String> f = promise.future();
-    Field handlerField = f.getClass().getDeclaredField("handler");
+    Field handlerField = f.getClass().getSuperclass().getDeclaredField("listener");
     handlerField.setAccessible(true);
     f.onComplete(ar -> {});
     promise.complete();
@@ -1475,6 +1481,35 @@ public class FutureTest extends VertxTestBase {
       complete();
     });
     promise.fail(failure);
+    await();
+  }
+
+  @Test
+  public void testVoidFuture() {
+    waitFor(2);
+    Promise<Void> promise = Promise.promise();
+    promise.complete();
+    List<Future<Void>> promises = Arrays.asList(promise.future(), Future.succeededFuture());
+    promises.forEach(fut -> {
+      fut
+        .map(v -> "null")
+        .onComplete(onSuccess(s -> {
+        assertEquals("null", s);
+        complete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testPromiseUsedAsHandler() {
+    Promise<Void> promise1 = Promise.promise();
+    Promise<Void> promise2 = Promise.promise();
+    promise1.future().onComplete(promise2);
+    promise2.future().onComplete(onSuccess(v -> {
+      testComplete();
+    }));
+    promise1.complete();
     await();
   }
 

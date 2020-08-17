@@ -16,6 +16,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 
+import java.util.function.Function;
+
 /**
  * An helper class for managing close operations.
  */
@@ -136,5 +138,30 @@ public class CloseFuture implements Future<Void>, Closeable {
   @Override
   public boolean failed() {
     return promise.future().failed();
+  }
+
+  @Override
+  public <U> Future<U> compose(Function<Void, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
+    return promise.future().compose(successMapper, failureMapper);
+  }
+
+  @Override
+  public <U> Future<U> map(Function<Void, U> mapper) {
+    return promise.future().map(mapper);
+  }
+
+  @Override
+  public <V> Future<V> map(V value) {
+    return promise.future().map(value);
+  }
+
+  @Override
+  public Future<Void> otherwise(Function<Throwable, Void> mapper) {
+    return promise.future().otherwise(mapper);
+  }
+
+  @Override
+  public Future<Void> otherwise(Void value) {
+    return promise.future().otherwise(value);
   }
 }

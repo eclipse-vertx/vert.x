@@ -13,6 +13,10 @@ package io.vertx.core.impl;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.*;
+import io.vertx.core.impl.future.FailedFuture;
+import io.vertx.core.impl.future.PromiseImpl;
+import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
 import java.util.List;
@@ -256,7 +260,7 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public <T> PromiseInternal<T> promise() {
-    return Future.factory.promise(this);
+    return new PromiseImpl<>(this);
   }
 
   @Override
@@ -272,22 +276,22 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public <T> Future<T> succeededFuture() {
-    return Future.factory.succeededFuture(this);
+    return new SucceededFuture<>(this, null);
   }
 
   @Override
   public <T> Future<T> succeededFuture(T result) {
-    return Future.factory.succeededFuture(this, result);
+    return new SucceededFuture<>(this, result);
   }
 
   @Override
   public <T> Future<T> failedFuture(Throwable failure) {
-    return Future.factory.failedFuture(this, failure);
+    return new FailedFuture<>(this, failure);
   }
 
   @Override
   public <T> Future<T> failedFuture(String message) {
-    return Future.factory.failedFuture(this, message);
+    return new FailedFuture<T>(this, message);
   }
 
   @SuppressWarnings("unchecked")

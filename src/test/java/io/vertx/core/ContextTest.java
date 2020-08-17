@@ -13,6 +13,7 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

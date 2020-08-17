@@ -31,7 +31,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;

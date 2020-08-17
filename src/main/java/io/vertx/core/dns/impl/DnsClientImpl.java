@@ -24,7 +24,7 @@ import io.vertx.core.dns.*;
 import io.vertx.core.dns.DnsResponseCode;
 import io.vertx.core.dns.impl.decoder.RecordDecoder;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.transport.Transport;

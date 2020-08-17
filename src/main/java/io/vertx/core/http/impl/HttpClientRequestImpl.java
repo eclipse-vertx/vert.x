@@ -23,7 +23,7 @@ import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;

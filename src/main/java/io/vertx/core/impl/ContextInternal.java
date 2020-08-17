@@ -14,6 +14,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.*;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentMap;

@@ -4408,6 +4408,11 @@ public abstract class HttpTest extends HttpTestBase {
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public <U> Future<U> compose(Function<HttpClientResponse, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<U> map(Function<HttpClientResponse, U> mapper) { throw new UnsupportedOperationException(); }
+      public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
+      public Future<HttpClientResponse> otherwise(Function<Throwable, HttpClientResponse> mapper) { throw new UnsupportedOperationException(); }
+      public Future<HttpClientResponse> otherwise(HttpClientResponse value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest setHost(String host) { throw new UnsupportedOperationException(); }
       public String getHost() { throw new UnsupportedOperationException(); }
       public HttpClientRequest setPort(int port) { throw new UnsupportedOperationException(); }

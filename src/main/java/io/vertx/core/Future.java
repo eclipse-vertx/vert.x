@@ -15,7 +15,8 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.spi.FutureFactory;
+import io.vertx.core.impl.future.FailedFuture;
+import io.vertx.core.impl.future.SucceededFuture;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -54,7 +55,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> succeededFuture() {
-    return factory.succeededFuture();
+    return (Future<T>) SucceededFuture.EMPTY;
   }
 
   /**
@@ -66,9 +67,9 @@ public interface Future<T> extends AsyncResult<T> {
    */
   static <T> Future<T> succeededFuture(T result) {
     if (result == null) {
-      return factory.succeededFuture();
+      return succeededFuture();
     } else {
-      return factory.succeededFuture(result);
+      return new SucceededFuture<>(result);
     }
   }
 
@@ -80,7 +81,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> failedFuture(Throwable t) {
-    return factory.failedFuture(t);
+    return new FailedFuture<>(t);
   }
 
   /**
@@ -91,7 +92,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return  the future
    */
   static <T> Future<T> failedFuture(String failureMessage) {
-    return factory.failureFuture(failureMessage);
+    return new FailedFuture<>(failureMessage);
   }
 
   /**
@@ -212,13 +213,6 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
-   * @return the context associated with this future or {@code null} when
-   */
-  default Context context() {
-    return null;
-  }
-
-  /**
    * Compose this future with a {@code successMapper} and {@code failureMapper} functions.<p>
    *
    * When this future (the one on which {@code compose} is called) succeeds, the {@code successMapper} will be called with
@@ -235,43 +229,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param failureMapper the function mapping the failure
    * @return the composed future
    */
-  default <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
-    if (successMapper == null) {
-      throw new NullPointerException();
-    }
-    if (failureMapper == null) {
-      throw new NullPointerException();
-    }
-    ContextInternal ctx = (ContextInternal) context();
-    Promise<U> ret;
-    if (ctx != null) {
-      ret = ctx.promise();
-    } else {
-      ret = Promise.promise();
-    }
-    onComplete(ar -> {
-      if (ar.succeeded()) {
-        Future<U> apply;
-        try {
-          apply = successMapper.apply(ar.result());
-        } catch (Throwable e) {
-          ret.fail(e);
-          return;
-        }
-        apply.onComplete(ret);
-      } else {
-        Future<U> apply;
-        try {
-          apply = failureMapper.apply(ar.cause());
-        } catch (Throwable e) {
-          ret.fail(e);
-          return;
-        }
-        apply.onComplete(ret);
-      }
-    });
-    return ret.future();
-  }
+  <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper);
 
   /**
    * Apply a {@code mapper} function on this future.<p>
@@ -287,33 +245,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param mapper the mapper function
    * @return the mapped future
    */
-  default <U> Future<U> map(Function<T, U> mapper) {
-    if (mapper == null) {
-      throw new NullPointerException();
-    }
-    ContextInternal ctx = (ContextInternal) context();
-    Promise<U> ret;
-    if (ctx != null) {
-      ret = ctx.promise();
-    } else {
-      ret = Promise.promise();
-    }
-    onComplete(ar -> {
-      if (ar.succeeded()) {
-        U mapped;
-        try {
-          mapped = mapper.apply(ar.result());
-        } catch (Throwable e) {
-          ret.fail(e);
-          return;
-        }
-        ret.complete(mapped);
-      } else {
-        ret.fail(ar.cause());
-      }
-    });
-    return ret.future();
-  }
+  <U> Future<U> map(Function<T, U> mapper);
 
   /**
    * Map the result of a future to a specific {@code value}.<p>
@@ -325,23 +257,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param value the value that eventually completes the mapped future
    * @return the mapped future
    */
-  default <V> Future<V> map(V value) {
-    ContextInternal ctx = (ContextInternal) context();
-    Promise<V> ret;
-    if (ctx != null) {
-      ret = ctx.promise();
-    } else {
-      ret = Promise.promise();
-    }
-    onComplete(ar -> {
-      if (ar.succeeded()) {
-        ret.complete(value);
-      } else {
-        ret.fail(ar.cause());
-      }
-    });
-    return ret.future();
-  }
+  <V> Future<V> map(V value);
 
   /**
    * Map the result of a future to {@code null}.<p>
@@ -373,33 +289,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param mapper the mapper function
    * @return the mapped future
    */
-  default Future<T> otherwise(Function<Throwable, T> mapper) {
-    if (mapper == null) {
-      throw new NullPointerException();
-    }
-    ContextInternal ctx = (ContextInternal) context();
-    Promise<T> ret;
-    if (ctx != null) {
-      ret = ctx.promise();
-    } else {
-      ret = Promise.promise();
-    }
-    onComplete(ar -> {
-      if (ar.succeeded()) {
-        ret.complete(result());
-      } else {
-        T value;
-        try {
-          value = mapper.apply(ar.cause());
-        } catch (Throwable e) {
-          ret.fail(e);
-          return;
-        }
-        ret.complete(value);
-      }
-    });
-    return ret.future();
-  }
+  Future<T> otherwise(Function<Throwable, T> mapper);
 
   /**
    * Map the failure of a future to a specific {@code value}.<p>
@@ -411,23 +301,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @param value the value that eventually completes the mapped future
    * @return the mapped future
    */
-  default Future<T> otherwise(T value) {
-    ContextInternal ctx = (ContextInternal) context();
-    Promise<T> ret;
-    if (ctx != null) {
-      ret = ctx.promise();
-    } else {
-      ret = Promise.promise();
-    }
-    onComplete(ar -> {
-      if (ar.succeeded()) {
-        ret.complete(result());
-      } else {
-        ret.complete(value);
-      }
-    });
-    return ret.future();
-  }
+  Future<T> otherwise(T value);
 
   /**
    * Map the failure of a future to {@code null}.<p>
@@ -508,8 +382,4 @@ public interface Future<T> extends AsyncResult<T> {
     });
     return promise.future();
   }
-
-  @GenIgnore
-  FutureFactory factory = ServiceHelper.loadFactory(FutureFactory.class);
-
 }

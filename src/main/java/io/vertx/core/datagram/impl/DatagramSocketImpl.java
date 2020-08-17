@@ -31,7 +31,7 @@ import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;

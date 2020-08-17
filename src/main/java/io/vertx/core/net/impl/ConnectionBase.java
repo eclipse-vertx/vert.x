@@ -20,7 +20,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
