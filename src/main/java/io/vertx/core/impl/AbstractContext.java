@@ -13,6 +13,10 @@ package io.vertx.core.impl;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.*;
+import io.vertx.core.impl.future.FailedFuture;
+import io.vertx.core.impl.future.PromiseImpl;
+import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
 import java.util.List;
@@ -80,13 +84,13 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final <T> void dispatch(T argument, Handler<T> task) {
-    schedule(v -> emit(argument, task));
+  public final <T> void emit(T argument, Handler<T> task) {
+    schedule(v -> dispatch(argument, task));
   }
 
   @Override
-  public void dispatch(Handler<Void> task) {
-    dispatch(null, task);
+  public void emit(Handler<Void> task) {
+    emit(null, task);
   }
 
   @Override
@@ -95,11 +99,11 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final void emit(Handler<Void> handler) {
-    emit(null, handler);
+  public final void dispatch(Handler<Void> handler) {
+    dispatch(null, handler);
   }
 
-  public final ContextInternal emitBegin() {
+  public final ContextInternal beginDispatch() {
     ContextInternal prev;
     Thread th = Thread.currentThread();
     if (th instanceof VertxThread) {
@@ -136,7 +140,7 @@ abstract class AbstractContext implements ContextInternal {
     }
   }
 
-  public final void emitEnd(ContextInternal previous) {
+  public final void endDispatch(ContextInternal previous) {
     Thread th = Thread.currentThread();
     if (!DISABLE_TCCL) {
       th.setContextClassLoader(previous != null ? previous.classLoader() : null);
@@ -175,25 +179,25 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final <T> void emit(T event, Handler<T> handler) {
-    ContextInternal prev = emitBegin();
+  public final <T> void dispatch(T event, Handler<T> handler) {
+    ContextInternal prev = beginDispatch();
     try {
       handler.handle(event);
     } catch (Throwable t) {
       reportException(t);
     } finally {
-      emitEnd(prev);
+      endDispatch(prev);
     }
   }
 
-  public final void emit(Runnable handler) {
-    ContextInternal prev = emitBegin();
+  public final void dispatch(Runnable handler) {
+    ContextInternal prev = beginDispatch();
     try {
       handler.run();
     } catch (Throwable t) {
       reportException(t);
     } finally {
-      emitEnd(prev);
+      endDispatch(prev);
     }
   }
 
@@ -256,7 +260,7 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public <T> PromiseInternal<T> promise() {
-    return Future.factory.promise(this);
+    return new PromiseImpl<>(this);
   }
 
   @Override
@@ -272,22 +276,22 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public <T> Future<T> succeededFuture() {
-    return Future.factory.succeededFuture(this);
+    return new SucceededFuture<>(this, null);
   }
 
   @Override
   public <T> Future<T> succeededFuture(T result) {
-    return Future.factory.succeededFuture(this, result);
+    return new SucceededFuture<>(this, result);
   }
 
   @Override
   public <T> Future<T> failedFuture(Throwable failure) {
-    return Future.factory.failedFuture(this, failure);
+    return new FailedFuture<>(this, failure);
   }
 
   @Override
   public <T> Future<T> failedFuture(String message) {
-    return Future.factory.failedFuture(this, message);
+    return new FailedFuture<T>(this, message);
   }
 
   @SuppressWarnings("unchecked")

@@ -838,6 +838,8 @@ Set the amount of time a client WebSocket will wait until it closes the TCP conn
 
  <p> When a WebSocket is closed, the server should close the TCP connection. This timeout will close
  the TCP connection on the client when it expires.
+
+ <p> Set <code>0L</code> or a negative value to disable.
 +++
 |[[webSocketCompressionAllowClientNoContext]]`@webSocketCompressionAllowClientNoContext`|`Boolean`|+++
 Set whether the <code>client_no_context_takeover</code> parameter of the WebSocket per-message

@@ -115,13 +115,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       closeHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      stream.context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+      stream.context.emit(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (endHandler != null) {
-      stream.context.dispatch(null, endHandler);
+      stream.context.emit(null, endHandler);
     }
     if (closeHandler != null) {
-      stream.context.dispatch(null, closeHandler);
+      stream.context.emit(null, closeHandler);
     }
   }
 

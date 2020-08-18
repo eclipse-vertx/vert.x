@@ -23,7 +23,7 @@ import io.vertx.core.http.RequestOptions;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -89,7 +89,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
     }
     // Might be called from non vertx thread
-    context.dispatch(t, handler);
+    context.emit(t, handler);
     endPromise.tryFail(t);
   }
 
@@ -282,7 +282,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
         return;
       }
     }
-    context.emit(handler);
+    context.dispatch(handler);
   }
 
   private void handleNextRequest(HttpClientRequest next, Handler<AsyncResult<HttpClientResponse>> handler, long timeoutMs) {

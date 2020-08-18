@@ -469,7 +469,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       case PONG:
         Handler<Buffer> pongHandler = pongHandler();
         if (pongHandler != null) {
-          context.emit(frame.binaryData(), pongHandler);
+          context.dispatch(frame.binaryData(), pongHandler);
         }
         break;
       case CLOSE:
@@ -493,13 +493,13 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       frameHandler = this.frameHandler;
     }
     if (frameHandler != null) {
-      context.emit(frame, frameHandler);
+      context.dispatch(frame, frameHandler);
     }
     switch(frame.type()) {
       case CLOSE:
         Handler<Void> endHandler = endHandler();
         if (endHandler != null) {
-          context.emit(endHandler);
+          context.dispatch(endHandler);
         }
         break;
       case TEXT:
@@ -507,7 +507,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       case CONTINUATION:
         Handler<Buffer> handler = handler();
         if (handler != null) {
-          context.emit(frame.binaryData(), handler);
+          context.dispatch(frame.binaryData(), handler);
         }
         break;
     }
@@ -660,7 +660,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         return;
       }
     }
-    context.emit(null, handler);
+    context.dispatch(null, handler);
   }
 
   void handleException(Throwable t) {
@@ -671,7 +671,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         return;
       }
     }
-    context.emit(t, handler);
+    context.dispatch(t, handler);
   }
 
   void handleClosed() {
@@ -686,10 +686,10 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       textHandlerRegistration = null;
     }
     if (exceptionHandler != null) {
-      context.emit(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (closeHandler != null) {
-      context.emit(null, closeHandler);
+      context.dispatch(null, closeHandler);
     }
   }
 

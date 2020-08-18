@@ -13,6 +13,7 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -394,7 +395,7 @@ public class ContextTest extends VertxTestBase {
     RuntimeException failure = new RuntimeException();
     AtomicReference<Throwable> caught = new AtomicReference<>();
     ctx.exceptionHandler(caught::set);
-    ctx.dispatch(new Object(), event -> {
+    ctx.emit(new Object(), event -> {
       throw failure;
     });
     assertWaitUntil(() -> caught.get() == failure);
@@ -406,7 +407,7 @@ public class ContextTest extends VertxTestBase {
     RuntimeException failure = new RuntimeException();
     AtomicReference<Throwable> caught = new AtomicReference<>();
     ctx.exceptionHandler(caught::set);
-    ctx.dispatch(new Object(), event -> {
+    ctx.emit(new Object(), event -> {
       throw failure;
     });
     assertWaitUntil(() -> caught.get() == failure);
@@ -562,7 +563,7 @@ public class ContextTest extends VertxTestBase {
       int[] called = new int[1];
       BlockedThreadChecker.Task thread = (BlockedThreadChecker.Task) Thread.currentThread();
       long start = thread.startTime();
-      ctx.emit(v2 -> {
+      ctx.dispatch(v2 -> {
         called[0]++;
         assertSame(cl, Thread.currentThread().getContextClassLoader());
         try {

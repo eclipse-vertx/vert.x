@@ -60,7 +60,7 @@ public class WorkerContext extends ContextImpl {
         execMetric = metrics.begin(queueMetric);
       }
       try {
-        ctx.emit(task);
+        ctx.dispatch(task);
       } finally {
         if (metrics != null) {
           metrics.end(execMetric, true);
@@ -79,7 +79,7 @@ public class WorkerContext extends ContextImpl {
         execMetric = metrics.begin(queueMetric);
       }
       try {
-        ctx.emit(value, task);
+        ctx.dispatch(value, task);
       } finally {
         if (metrics != null) {
           metrics.end(execMetric, true);

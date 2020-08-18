@@ -13,7 +13,7 @@ package io.vertx.core;
 
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.impl.CompositeFutureImpl;
+import io.vertx.core.impl.future.CompositeFutureImpl;
 
 import java.util.ArrayList;
 import java.util.List;

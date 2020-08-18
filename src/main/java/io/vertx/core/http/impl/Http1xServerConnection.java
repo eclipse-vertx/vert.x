@@ -128,7 +128,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       if (METRICS_ENABLED) {
         reportRequestBegin(req);
       }
-      req.context.dispatch(req, r -> {
+      req.context.emit(req, r -> {
         req.handleBegin();
         requestHandler.handle(r);
       });
@@ -205,7 +205,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void handleNext(Http1xServerRequest next) {
     responseInProgress = next;
-    context.dispatch(next, next_ -> {
+    context.emit(next, next_ -> {
       next_.handleBegin();
       next_.resume();
       requestHandler.handle(next_);

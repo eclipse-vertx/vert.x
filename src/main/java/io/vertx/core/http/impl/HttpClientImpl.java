@@ -24,7 +24,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.net.impl.clientconnection.ConnectionManager;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -273,7 +273,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), addr, addr);
     webSocketCM.getConnection(
-      (ContextInternal) promise.future().context(),
+      promise.context(),
       key,
       ar -> {
         if (ar.succeeded()) {
@@ -575,7 +575,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     long timeout,
     Boolean followRedirects,
     PromiseInternal<HttpClientRequest> requestPromise) {
-    ContextInternal ctx = (ContextInternal) requestPromise.future().context();
+    ContextInternal ctx = requestPromise.context();
     EndpointKey key = new EndpointKey(useSSL, server, peerAddress);
     long timerID;
     if (timeout > 0L) {

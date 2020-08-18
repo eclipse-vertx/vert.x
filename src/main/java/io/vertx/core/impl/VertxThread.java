@@ -76,7 +76,7 @@ public final class VertxThread extends FastThreadLocalThread implements BlockedT
   /**
    * Begin the emission of a context event.
    * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#emit(Object, io.vertx.core.Handler)}
+   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
    * shall be used.
    *
    * @param context the context on which the event is emitted on
@@ -94,7 +94,7 @@ public final class VertxThread extends FastThreadLocalThread implements BlockedT
   /**
    * End the emission of a context task.
    * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#emit(Object, io.vertx.core.Handler)}
+   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
    * shall be used.
    *
    * @param prev the previous context thread to restore, might be {@code null}

@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http2.Http2Error;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientRequest;
@@ -20,15 +21,18 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.FutureInternal;
+import io.vertx.core.impl.future.Listener;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class HttpClientRequestBase implements HttpClientRequest {
+public abstract class HttpClientRequestBase implements HttpClientRequest, FutureInternal<HttpClientResponse> {
 
   protected final HttpClientImpl client;
   protected final ContextInternal context;
@@ -51,7 +55,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.client = client;
     this.stream = stream;
     this.responsePromise = responsePromise;
-    this.context = (ContextInternal) responsePromise.future().context();
+    this.context = responsePromise.context();
     this.uri = uri;
     this.method = method;
     this.server = server;
@@ -77,6 +81,16 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     } else {
       return host + ':' + port;
     }
+  }
+
+  @Override
+  public ContextInternal context() {
+    return context;
+  }
+
+  @Override
+  public void addListener(Listener<HttpClientResponse> listener) {
+    responsePromise.addListener(listener);
   }
 
   @Override
@@ -264,6 +278,31 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   @Override
   public boolean failed() {
     return responsePromise.future().failed();
+  }
+
+  @Override
+  public <U> Future<U> compose(Function<HttpClientResponse, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
+    return responsePromise.future().compose(successMapper, failureMapper);
+  }
+
+  @Override
+  public <U> Future<U> map(Function<HttpClientResponse, U> mapper) {
+    return responsePromise.future().map(mapper);
+  }
+
+  @Override
+  public <V> Future<V> map(V value) {
+    return responsePromise.future().map(value);
+  }
+
+  @Override
+  public Future<HttpClientResponse> otherwise(Function<Throwable, HttpClientResponse> mapper) {
+    return responsePromise.future().otherwise(mapper);
+  }
+
+  @Override
+  public Future<HttpClientResponse> otherwise(HttpClientResponse value) {
+    return responsePromise.future().otherwise(value);
   }
 
   synchronized Handler<HttpClientRequest> pushHandler() {

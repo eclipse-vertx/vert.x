@@ -48,7 +48,7 @@ class HttpEventHandler {
   void handleChunk(Buffer chunk) {
     Handler<Buffer> handler = chunkHandler;
     if (handler != null) {
-      context.emit(chunk, handler);
+      context.dispatch(chunk, handler);
     }
     if (body != null) {
       body.appendBuffer(chunk);
@@ -73,7 +73,7 @@ class HttpEventHandler {
   void handleEnd() {
     Handler<Void> handler = endHandler;
     if (handler != null) {
-      context.emit(handler);
+      context.dispatch(handler);
     }
     if (bodyPromise != null) {
       bodyPromise.tryComplete(body);
@@ -86,7 +86,7 @@ class HttpEventHandler {
   void handleException(Throwable err) {
     Handler<Throwable> handler = exceptionHandler;
     if (handler != null) {
-      context.emit(err, handler);
+      context.dispatch(err, handler);
     }
     if (bodyPromise != null) {
       bodyPromise.tryFail(err);

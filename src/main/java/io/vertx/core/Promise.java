@@ -14,8 +14,7 @@ import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.NoStackTraceThrowable;
-
-import static io.vertx.core.Future.factory;
+import io.vertx.core.impl.future.PromiseImpl;
 
 /**
  * Represents the writable side of an action that may, or may not, have occurred yet.
@@ -37,7 +36,7 @@ public interface Promise<T> extends Handler<AsyncResult<T>> {
    * @return  the promise
    */
   static <T> Promise<T> promise() {
-    return factory.promise();
+    return new PromiseImpl<>();
   }
 
   /**

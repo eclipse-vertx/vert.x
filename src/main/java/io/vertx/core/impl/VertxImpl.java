@@ -40,6 +40,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
@@ -924,7 +925,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     @Override
     public void run() {
-      context.dispatch(this);
+      context.emit(this);
     }
 
     public void handle(Void v) {
