@@ -26,11 +26,10 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class FutureImpl<T> implements FutureInternal<T> {
+class FutureImpl<T> extends FutureBase<T> {
 
   private static final Object NULL_VALUE = new Object();
 
-  private final ContextInternal context;
   private Object value;
   private Listener<T> listener;
 
@@ -38,18 +37,14 @@ class FutureImpl<T> implements FutureInternal<T> {
    * Create a future that hasn't completed yet
    */
   FutureImpl() {
-    this(null);
+    super();
   }
 
   /**
    * Create a future that hasn't completed yet
    */
   FutureImpl(ContextInternal context) {
-    this.context = context;
-  }
-
-  public ContextInternal context() {
-    return context;
+    super(context);
   }
 
   /**

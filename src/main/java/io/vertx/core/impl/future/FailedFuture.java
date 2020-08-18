@@ -25,9 +25,8 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FailedFuture<T> implements FutureInternal<T> {
+public class FailedFuture<T> extends FutureBase<T> {
 
-  private final ContextInternal context;
   private final Throwable cause;
 
   /**
@@ -43,7 +42,7 @@ public class FailedFuture<T> implements FutureInternal<T> {
    * @param t the throwable
    */
   public FailedFuture(ContextInternal context, Throwable t) {
-    this.context = context;
+    super(context);
     this.cause = t != null ? t : new NoStackTraceThrowable(null);
   }
 
@@ -61,11 +60,6 @@ public class FailedFuture<T> implements FutureInternal<T> {
    */
   public FailedFuture(ContextInternal context, String failureMessage) {
     this(context, new NoStackTraceThrowable(failureMessage));
-  }
-
-  @Override
-  public ContextInternal context() {
-    return context;
   }
 
   @Override

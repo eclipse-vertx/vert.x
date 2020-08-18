@@ -24,14 +24,13 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SucceededFuture<T> implements FutureInternal<T> {
+public class SucceededFuture<T> extends FutureBase<T> {
 
   /**
    * Stateless instance of empty results that can be shared safely.
    */
   public static final SucceededFuture EMPTY = new SucceededFuture(null, null);
 
-  private final ContextInternal context;
   private final T result;
 
   /**
@@ -48,13 +47,8 @@ public class SucceededFuture<T> implements FutureInternal<T> {
    * @param result the result
    */
   public SucceededFuture(ContextInternal context, T result) {
-    this.context = context;
+    super(context);
     this.result = result;
-  }
-
-  @Override
-  public ContextInternal context() {
-    return context;
   }
 
   @Override
