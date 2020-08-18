@@ -16,8 +16,6 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.codec.dns.*;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.collection.IntObjectHashMap;
-import io.netty.util.collection.IntObjectMap;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.dns.*;
@@ -35,7 +33,9 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -47,7 +47,7 @@ public final class DnsClientImpl implements DnsClient {
   private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
 
   private final VertxInternal vertx;
-  private final IntObjectMap<Query> inProgressMap = new IntObjectHashMap<>();
+  private final Map<String, Query> inProgressMap = new HashMap<>();
   private final InetSocketAddress dnsServer;
   private final ContextInternal actualCtx;
   private final DatagramChannel channel;
@@ -83,8 +83,8 @@ public final class DnsClientImpl implements DnsClient {
     channel.pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
       @Override
       protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
-        int id = msg.id();
-        Query query = inProgressMap.get(id);
+        DefaultDnsQuestion question = msg.recordAt(DnsSection.QUESTION);
+        Query query = inProgressMap.get(dnsMessageId(msg.id(), question.name()));
         if (query != null) {
           query.handle(msg);
         }
@@ -279,6 +279,14 @@ public final class DnsClientImpl implements DnsClient {
     return promise.future();
   }
 
+  private String dnsMessageId(int id, String query) {
+    query = query.toLowerCase();
+    if (!query.endsWith(".")) {
+      query += ".";
+    }
+    return query + id;
+  }
+
   // Testing purposes
   public void inProgressQueries(Handler<Integer> handler) {
     actualCtx.runOnContext(v -> {
@@ -305,7 +313,7 @@ public final class DnsClientImpl implements DnsClient {
     }
 
     private void fail(Throwable cause) {
-      inProgressMap.remove(msg.id());
+      inProgressMap.remove(dnsMessageId(msg.id(), name));
       if (timerID >= 0) {
         vertx.cancelTimer(timerID);
       }
@@ -315,7 +323,7 @@ public final class DnsClientImpl implements DnsClient {
     void handle(DnsResponse msg) {
       DnsResponseCode code = DnsResponseCode.valueOf(msg.code().intValue());
       if (code == DnsResponseCode.NOERROR) {
-        inProgressMap.remove(msg.id());
+        inProgressMap.remove(dnsMessageId(msg.id(), name));
         if (timerID >= 0) {
           vertx.cancelTimer(timerID);
         }
@@ -338,7 +346,7 @@ public final class DnsClientImpl implements DnsClient {
     }
 
     void run() {
-      inProgressMap.put(msg.id(), this);
+      inProgressMap.put(dnsMessageId(msg.id(), name), this);
       timerID = vertx.setTimer(options.getQueryTimeout(), id -> {
         timerID = -1;
         actualCtx.runOnContext(v -> {
