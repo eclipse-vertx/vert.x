@@ -18,6 +18,7 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
+import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -120,9 +121,11 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public void close() {
+  public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
-      checkClosed();
+      if (closed) {
+        return;
+      }
       if (status == null) {
         if (handshakePromise == null) {
           tryHandshake(101);
@@ -131,7 +134,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
         }
       }
     }
-    super.close();
+    super.close(statusCode, reason, handler);
   }
 
   @Override

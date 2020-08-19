@@ -41,7 +41,6 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.security.cert.X509Certificate;
@@ -1355,16 +1354,41 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testClose() {
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).websocketHandler(WebSocketBase::close);
+  public void testServerClose() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);
     server.listen(onSuccess(s -> {
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(ws -> {
         assertFalse(ws.isClosed());
         ws.closeHandler(v -> {
           assertTrue(ws.isClosed());
+          try {
+            ws.close();
+          } catch (Exception e) {
+            fail();
+          }
           testComplete();
         });
       }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testClientClose() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
+      assertFalse(ws.isClosed());
+      ws.closeHandler(v -> {
+        assertTrue(ws.isClosed());
+        try {
+          ws.close();
+        } catch (Exception e) {
+          fail();
+        }
+        testComplete();
+      });
+    });
+    server.listen(onSuccess(s -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(WebSocketBase::close));
     }));
     await();
   }
