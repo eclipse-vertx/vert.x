@@ -3363,7 +3363,7 @@ public abstract class HttpTest extends HttpTestBase {
       AtomicInteger count = new AtomicInteger();
       req.exceptionHandler(t -> {
         if (count.getAndIncrement() == 0) {
-          assertTrue(t instanceof TimeoutException);
+          assertTrue("Expected " + t.getClass().getName() + " extend or implement TimeoutException", t instanceof TimeoutException);
           assertEquals(expected, received);
           complete();
         }
