@@ -137,26 +137,36 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> close() {
-    Promise<Void> promise = context.promise();
-    close(promise);
-    return promise.future();
+    return close((short) 1000, (String) null);
   }
 
   @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    close((short) 1000, null, handler);
+    Future<Void> future = close();
+    if (handler != null) {
+      future.onComplete(handler);
+    }
   }
 
   @Override
   public Future<Void> close(short statusCode) {
-    Promise<Void> promise = context.promise();
-    close(statusCode, promise);
-    return promise.future();
+    return close(statusCode, (String) null);
   }
 
   @Override
   public void close(short statusCode, Handler<AsyncResult<Void>> handler) {
-    this.close(statusCode, null, handler);
+    Future<Void> future = close(statusCode, (String) null);
+    if (handler != null) {
+      future.onComplete(handler);
+    }
+  }
+
+  @Override
+  public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = close(statusCode, reason);
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
   }
 
   @Override
@@ -174,11 +184,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
     conn.writeToChannel(frame);
     return conn.closeFuture();
-  }
-
-  @Override
-  public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
-    close(statusCode, reason).onComplete(handler);
   }
 
   @Override

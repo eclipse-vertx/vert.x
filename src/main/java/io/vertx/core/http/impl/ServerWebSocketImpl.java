@@ -137,9 +137,11 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public Future<Void> close() {
+  public Future<Void> close(short statusCode, String reason) {
     synchronized (conn) {
-      checkClosed();
+      if (closed) {
+        return context.succeededFuture();
+      }
       if (status == null) {
         if (handshakePromise == null) {
           tryHandshake(101);
@@ -148,7 +150,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
         }
       }
     }
-    return super.close();
+    return super.close(statusCode, reason);
   }
 
   @Override
