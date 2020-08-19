@@ -4028,9 +4028,9 @@ public class Http1xTest extends HttpTest {
     client = vertx.createHttpClient(new HttpClientOptions()
       .setTrustAll(true)
       .setSsl(true));
-    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
       testComplete();
-    });
+    }).end();
     await();
   }
 
