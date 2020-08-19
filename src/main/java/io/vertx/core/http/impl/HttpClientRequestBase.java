@@ -213,6 +213,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest, Future
 
   private void handleTimeout(long timeoutMs) {
     synchronized (this) {
+      currentTimeoutTimerId = -1;
+      currentTimeoutMs = 0;
       if (lastDataReceived > 0) {
         long now = System.currentTimeMillis();
         long timeSinceLastData = now - lastDataReceived;
