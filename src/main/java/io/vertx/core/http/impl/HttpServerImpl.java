@@ -78,7 +78,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
   final VertxInternal vertx;
   private final SSLHelper sslHelper;
   private final ContextInternal creatingContext;
-  private final boolean disableH2c = Boolean.getBoolean(DISABLE_H2C_PROP_NAME);
+  private final boolean disableH2c;
   final Map<Channel, ConnectionBase> connectionMap = new ConcurrentHashMap<>();
   private final VertxEventLoopGroup availableWorkers = new VertxEventLoopGroup();
   private final HandlerManager<HttpHandlers> httpHandlerMgr = new HandlerManager<>(availableWorkers);
@@ -100,6 +100,7 @@ public class HttpServerImpl implements HttpServer, Closeable, MetricsProvider {
     this.options = new HttpServerOptions(options);
     this.vertx = vertx;
     this.creatingContext = vertx.getContext();
+    this.disableH2c = Boolean.getBoolean(DISABLE_H2C_PROP_NAME) || options.isSsl();
     if (creatingContext != null) {
       if (creatingContext.isMultiThreadedWorkerContext()) {
         throw new IllegalStateException("Cannot use HttpServer in a multi-threaded worker verticle");

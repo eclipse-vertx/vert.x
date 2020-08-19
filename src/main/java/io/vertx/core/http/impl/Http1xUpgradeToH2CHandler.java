@@ -22,7 +22,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
-class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
+public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
 
   private final HttpServerChannelInitializer initializer;
   private final HandlerHolder<? extends Handler<HttpServerConnection>> holder;

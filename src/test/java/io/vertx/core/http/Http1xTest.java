@@ -11,10 +11,15 @@
 
 package io.vertx.core.http;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.Http1xOrH2CHandler;
+import io.vertx.core.http.impl.Http1xServerConnection;
+import io.vertx.core.http.impl.Http1xUpgradeToH2CHandler;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -3998,6 +4003,34 @@ public class Http1xTest extends HttpTest {
         testComplete();
       });
     }));
+    await();
+  }
+
+  @Test
+  public void testTLSDisablesH2CHandlers() throws Exception {
+    server.close();
+    SelfSignedCertificate cert = SelfSignedCertificate.create("localhost");
+    server = vertx.createHttpServer(createBaseServerOptions()
+      .setSsl(true)
+      .setKeyCertOptions(cert.keyCertOptions())
+    ).connectionHandler(conn -> {
+      Channel channel = ((Http1xServerConnection) conn).channel();
+      for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : channel.pipeline()) {
+        ChannelHandler handler = stringChannelHandlerEntry.getValue();
+        assertFalse(handler instanceof Http1xUpgradeToH2CHandler);
+        assertFalse(handler instanceof Http1xOrH2CHandler);
+      }
+    }).requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setTrustAll(true)
+      .setSsl(true));
+    client.getNow(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      testComplete();
+    });
     await();
   }
 
