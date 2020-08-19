@@ -113,18 +113,10 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     if (timeoutMs <= 0) {
       throw new IllegalArgumentException("Timeout must be a positive value");
     }
-    currentTimeoutMs = timeoutMs;
-    return this;
-  }
-
-  protected final void startTimeout() {
     cancelTimeout();
-    synchronized (this) {
-      long timeoutMs = currentTimeoutMs;
-      if (timeoutMs > 0) {
-        currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
-      }
-    }
+    currentTimeoutMs = timeoutMs;
+    currentTimeoutTimerId = client.getVertx().setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
+    return this;
   }
 
   public void handleException(Throwable t) {
@@ -185,13 +177,16 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   private void handleTimeout(long timeoutMs) {
     synchronized (this) {
+      currentTimeoutMs = 0L;
+      currentTimeoutTimerId = -1;
       if (lastDataReceived > 0) {
         long now = System.currentTimeMillis();
         long timeSinceLastData = now - lastDataReceived;
-        if (timeSinceLastData < timeoutMs) {
-          // reschedule
+        long delta = timeoutMs - timeSinceLastData;
+        if (delta > 0) {
+          // reschedule , e.g delta = 1
           lastDataReceived = 0;
-          setTimeout(timeoutMs - timeSinceLastData);
+          setTimeout(delta);
           return;
         }
       }

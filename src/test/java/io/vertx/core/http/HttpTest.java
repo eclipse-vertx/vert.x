@@ -3358,7 +3358,16 @@ public abstract class HttpTest extends HttpTestBase {
           }
         });
         resp.request().setTimeout(500);
-        resp.handler(received::appendBuffer);
+        resp.handler(buff -> {
+          received.appendBuffer(buff);
+          // Force the internal timer to be rescheduled with the remaining amount of time
+          // e.g around 100 ms
+          try {
+            Thread.sleep(100);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+          }
+        });
       });
       AtomicInteger count = new AtomicInteger();
       req.exceptionHandler(t -> {

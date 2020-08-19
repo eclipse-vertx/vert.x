@@ -76,6 +76,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private boolean connecting;
   private Handler<HttpClientResponse> respHandler;
   private Handler<Void> endHandler;
+  private long timeoutMs;
 
   HttpClientRequestImpl(HttpClientImpl client, boolean ssl, HttpMethod method, SocketAddress server,
                         String host, int port,
@@ -441,13 +442,13 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       }
       ContextInternal connectCtx = vertx.getOrCreateContext();
 
-
-
       // We defer actual connection until the first part of body is written or end is called
       // This gives the user an opportunity to set an exception handler before connecting so
       // they can capture any exceptions on connection
       connecting = true;
-      startTimeout();
+      if (timeoutMs > 0L) {
+        setTimeout(timeoutMs);
+      }
       client.getConnectionForRequest(connectCtx, peerAddress, ssl, server, ar1 -> {
         if (ar1.succeeded()) {
           HttpClientStream stream = ar1.result();
@@ -516,9 +517,14 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public synchronized HttpClientRequest setTimeout(long timeoutMs) {
-    super.setTimeout(timeoutMs);
+    if (timeoutMs <= 0) {
+      throw new IllegalArgumentException("Timeout must be a positive value");
+    }
     if (connecting || stream != null) {
-      startTimeout();
+      super.setTimeout(timeoutMs);
+    } else {
+      // Delay timeout until we connect
+      this.timeoutMs = timeoutMs;
     }
     return this;
   }

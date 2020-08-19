@@ -65,13 +65,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public synchronized HttpClientRequest setTimeout(long timeoutMs) {
-    super.setTimeout(timeoutMs);
-    startTimeout();
-    return this;
-  }
-
-  @Override
   public synchronized HttpClientRequest handler(Handler<HttpClientResponse> handler) {
     respHandler = handler;
     return this;
