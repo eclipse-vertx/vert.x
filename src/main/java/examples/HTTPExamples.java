@@ -664,18 +664,19 @@ public class HTTPExamples {
     });
   }
 
-  public void exampleClientComposition02(Vertx vertx, HttpClient client) throws Exception {
-
-    vertx.deployVerticle(() -> new AbstractVerticle() {
-      @Override
-      public void start() {
-
-        HttpClient client = vertx.createHttpClient();
-
-        Future<HttpClientRequest> future = client.request(HttpMethod.GET, "some-uri");
-      }
-    }, new DeploymentOptions());
-  }
+  // Seems to fail javac in CI
+//  public void exampleClientComposition02(Vertx vertx, HttpClient client) throws Exception {
+//
+//    vertx.deployVerticle(() -> new AbstractVerticle() {
+//      @Override
+//      public void start() {
+//
+//        HttpClient client = vertx.createHttpClient();
+//
+//        Future<HttpClientRequest> future = client.request(HttpMethod.GET, "some-uri");
+//      }
+//    }, new DeploymentOptions());
+//  }
 
   public void exampleClientComposition03(HttpClient client) throws Exception {
 
