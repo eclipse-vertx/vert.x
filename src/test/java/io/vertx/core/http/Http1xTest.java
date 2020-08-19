@@ -3738,6 +3738,38 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testEmptyHttpVersion() throws Exception {
+    String expectedMessage;
+    try {
+      io.netty.handler.codec.http.HttpVersion.valueOf("");
+      fail();
+      return;
+    } catch (IllegalArgumentException e) {
+      expectedMessage = e.getMessage();
+    }
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    server.connectionHandler(conn -> {
+      conn.exceptionHandler(error -> {
+        assertEquals(expectedMessage, error.getMessage());
+        assertEquals(IllegalArgumentException.class, error.getClass());
+        testComplete();
+      });
+    });
+    startServer(testAddress);
+    NetClient client = vertx.createNetClient();
+    try {
+      client.connect(testAddress, onSuccess(so -> {
+        so.write("GET /\r\n\r\n");
+      }));
+      await();
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
   public void testRequestTimeoutIsNotDelayedAfterResponseIsReceived() throws Exception {
     int n = 6;
     waitFor(n);
