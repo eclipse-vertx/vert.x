@@ -1106,7 +1106,15 @@ will ensure that events are processed sequentially avoiding races.
 
 [source,$lang]
 ----
-{@link examples.HTTPExamples#exampleClientComposition02}
+vertx.deployVerticle(() -> new AbstractVerticle() {
+  @Override
+  public void start() {
+
+    HttpClient client = vertx.createHttpClient();
+
+    Future<HttpClientRequest> future = client.request(HttpMethod.GET, "some-uri");
+  }
+}, new DeploymentOptions());
 ----
 
 When you interacting with the client possibly outside a verticle then you  you can safely perform

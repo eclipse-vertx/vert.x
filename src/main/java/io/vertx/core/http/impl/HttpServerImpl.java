@@ -48,7 +48,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   static final boolean DISABLE_WEBSOCKETS = Boolean.getBoolean(DISABLE_WEBSOCKETS_PROP_NAME);
 
   final HttpServerOptions options;
-  private final boolean disableH2c = Boolean.getBoolean(DISABLE_H2C_PROP_NAME);
+  private final boolean disableH2c;
   private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
   private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
   private Handler<HttpConnection> connectionHandler;
@@ -58,6 +58,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   public HttpServerImpl(VertxInternal vertx, HttpServerOptions options) {
     super(vertx, options);
     this.options = new HttpServerOptions(options);
+    this.disableH2c = Boolean.getBoolean(DISABLE_H2C_PROP_NAME) || options.isSsl();
   }
 
   @Override

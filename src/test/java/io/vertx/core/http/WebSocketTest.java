@@ -1416,22 +1416,6 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testClose() {
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);
-    server.listen(onSuccess(s -> {
-      client = vertx.createHttpClient();
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(ws -> {
-        assertFalse(ws.isClosed());
-        ws.closeHandler(v -> {
-          assertTrue(ws.isClosed());
-          testComplete();
-        });
-      }));
-    }));
-    await();
-  }
-
-  @Test
   public void testCloseBeforeHandshake() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
       req.connection().close();
@@ -3311,6 +3295,11 @@ public class WebSocketTest extends VertxTestBase {
       .webSocketHandler(ws -> {
         ws.exceptionHandler(this::fail);
         ws.closeHandler(v -> {
+          try {
+            ws.close();
+          } catch (Exception e) {
+            fail();
+          }
           complete();
         });
         if (server) {
@@ -3320,6 +3309,11 @@ public class WebSocketTest extends VertxTestBase {
         client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
           ws.exceptionHandler(this::fail);
           ws.closeHandler(v -> {
+            try {
+              ws.close();
+            } catch (Exception e) {
+              fail();
+            }
             complete();
           });
           if (!server) {
