@@ -280,7 +280,6 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   private long dnsMessageId(int id, String query) {
-    query = query.toLowerCase();
     if (!query.endsWith(".")) {
       query += ".";
     }
