@@ -581,7 +581,7 @@ public class Http1xServerRequest implements HttpServerRequest {
 
   @Override
   public HttpServerRequest routed(String route) {
-    if (METRICS_ENABLED && conn.metrics != null) {
+    if (METRICS_ENABLED && !response.ended() && conn.metrics != null) {
       conn.metrics.requestRouted(metric, route);
     }
     return this;

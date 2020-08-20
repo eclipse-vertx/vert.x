@@ -130,7 +130,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
   }
 
   HttpServerRequest routed(String route) {
-    if (METRICS_ENABLED) {
+    if (METRICS_ENABLED && !response.ended()) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
         metrics.requestRouted(metric, route);

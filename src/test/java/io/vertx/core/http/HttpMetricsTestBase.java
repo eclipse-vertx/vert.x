@@ -283,4 +283,20 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::end));
     await();
   }
+
+  @Test
+  public void testRouteMetricsIgnoredAfterResponseEnd() throws Exception {
+    server.requestHandler(req -> {
+      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      HttpServerMetric metric = metrics.getMetric(req);
+      assertNull(metric.route.get());
+      req.response().end();
+      req.routed("Routed after ending");
+      assertNull(metric.route.get());
+      testComplete();
+    });
+    startServer();
+    client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::end));
+    await();
+  }
 }
