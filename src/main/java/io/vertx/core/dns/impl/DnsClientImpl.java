@@ -16,6 +16,8 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.codec.dns.*;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.collection.LongObjectHashMap;
+import io.netty.util.collection.LongObjectMap;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.dns.*;
@@ -33,9 +35,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -47,7 +47,7 @@ public final class DnsClientImpl implements DnsClient {
   private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
 
   private final VertxInternal vertx;
-  private final Map<String, Query> inProgressMap = new HashMap<>();
+  private final LongObjectMap<Query> inProgressMap = new LongObjectHashMap<>();
   private final InetSocketAddress dnsServer;
   private final ContextInternal actualCtx;
   private final DatagramChannel channel;
@@ -279,12 +279,12 @@ public final class DnsClientImpl implements DnsClient {
     return promise.future();
   }
 
-  private String dnsMessageId(int id, String query) {
+  private long dnsMessageId(int id, String query) {
     query = query.toLowerCase();
     if (!query.endsWith(".")) {
       query += ".";
     }
-    return query + id;
+    return ((long) query.hashCode() << 16) + (id & 65535);
   }
 
   // Testing purposes
