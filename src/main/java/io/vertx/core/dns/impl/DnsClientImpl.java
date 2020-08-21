@@ -280,9 +280,6 @@ public final class DnsClientImpl implements DnsClient {
   }
 
   private long dnsMessageId(int id, String query) {
-    if (!query.endsWith(".")) {
-      query += ".";
-    }
     return ((long) query.hashCode() << 16) + (id & 65535);
   }
 
@@ -303,6 +300,9 @@ public final class DnsClientImpl implements DnsClient {
 
     public Query(String name, DnsRecordType[] types) {
       this.msg = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt()).setRecursionDesired(options.isRecursionDesired());
+      if (!name.endsWith(".")) {
+        name += ".";
+      }
       for (DnsRecordType type: types) {
         msg.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
       }
