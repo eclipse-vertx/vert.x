@@ -67,6 +67,9 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       assertNotNull(serverMetric.get().socket);
       assertNull(serverMetric.get().response.get());
       assertTrue(serverMetric.get().socket.connected.get());
+      assertNull(serverMetric.get().route.get());
+      req.routed("/route/:param");
+      assertEquals("/route/:param", serverMetric.get().route.get());
       req.bodyHandler(buff -> {
         assertEquals(contentLength, buff.length());
         HttpServerResponse resp = req.response().setChunked(true);
@@ -257,6 +260,40 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
         assertTrue(metric.failed.get());
         testComplete();
       });
+    });
+    startServer();
+    client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::end));
+    await();
+  }
+
+  @Test
+  public void testRouteMetrics() throws Exception {
+    server.requestHandler(req -> {
+      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      HttpServerMetric metric = metrics.getMetric(req);
+      assertNull(metric.route.get());
+      req.routed("MyRoute");
+      assertEquals("MyRoute", metric.route.get());
+      req.routed("MyRoute - rerouted");
+      assertEquals("MyRoute - rerouted", metric.route.get());
+      req.response().end();
+      testComplete();
+    });
+    startServer();
+    client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::end));
+    await();
+  }
+
+  @Test
+  public void testRouteMetricsIgnoredAfterResponseEnd() throws Exception {
+    server.requestHandler(req -> {
+      FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
+      HttpServerMetric metric = metrics.getMetric(req);
+      assertNull(metric.route.get());
+      req.response().end();
+      req.routed("Routed after ending");
+      assertNull(metric.route.get());
+      testComplete();
     });
     startServer();
     client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::end));

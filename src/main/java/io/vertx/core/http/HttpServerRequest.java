@@ -412,4 +412,15 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   Map<String, Cookie> cookieMap();
 
+	/**
+	 * Marks this request as being routed to the given route. This is purely informational and is
+	 * being provided to metrics.
+	 *
+	 * @param route The route this request has been routed to.
+	 */
+	@Fluent
+	default HttpServerRequest routed(String route) {
+	  return this;
+  }
+
 }

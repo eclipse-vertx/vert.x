@@ -108,4 +108,12 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
    */
   default void disconnected(W serverWebSocketMetric) {
   }
+
+  /**
+   * Called when a routing layer indicates a request has been routed.
+   * @param requestMetric the request metric
+   * @param route the route the request has been routed to
+   */
+  default void requestRouted(R requestMetric, String route) {
+  }
 }

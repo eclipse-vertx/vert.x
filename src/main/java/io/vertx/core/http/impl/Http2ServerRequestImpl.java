@@ -531,4 +531,10 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   public Map<String, Cookie> cookieMap() {
     return (Map) response.cookies();
   }
+
+  @Override
+  public HttpServerRequest routed(String route) {
+    super.routed(route);
+    return this;
+  }
 }
