@@ -16,8 +16,8 @@ import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.codec.dns.*;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.util.collection.IntObjectHashMap;
-import io.netty.util.collection.IntObjectMap;
+import io.netty.util.collection.LongObjectHashMap;
+import io.netty.util.collection.LongObjectMap;
 import io.vertx.core.*;
 import io.vertx.core.dns.*;
 import io.vertx.core.dns.DnsResponseCode;
@@ -45,7 +45,7 @@ public final class DnsClientImpl implements DnsClient {
   private static final char[] HEX_TABLE = "0123456789abcdef".toCharArray();
 
   private final Vertx vertx;
-  private final IntObjectMap<Query> inProgressMap = new IntObjectHashMap<>();
+  private final LongObjectMap<Query> inProgressMap = new LongObjectHashMap<>();
   private final InetSocketAddress dnsServer;
   private final ContextInternal actualCtx;
   private final DatagramChannel channel;
@@ -84,8 +84,8 @@ public final class DnsClientImpl implements DnsClient {
     channel.pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
       @Override
       protected void channelRead0(ChannelHandlerContext ctx, DnsResponse msg) throws Exception {
-        int id = msg.id();
-        Query query = inProgressMap.get(id);
+        DefaultDnsQuestion question = msg.recordAt(DnsSection.QUESTION);
+        Query query = inProgressMap.get(dnsMessageId(msg.id(), question.name()));
         if (query != null) {
           query.handle(msg);
         }
@@ -229,6 +229,10 @@ public final class DnsClientImpl implements DnsClient {
     }
   }
 
+  private long dnsMessageId(int id, String query) {
+    return ((long) query.hashCode() << 16) + (id & 65535);
+  }
+
   // Testing purposes
   public void inProgressQueries(Handler<Integer> handler) {
     actualCtx.runOnContext(v -> {
@@ -248,6 +252,9 @@ public final class DnsClientImpl implements DnsClient {
       Promise<List<T>> promise = Promise.promise();
       promise.future().onComplete(handler);
       this.msg = new DatagramDnsQuery(null, dnsServer, ThreadLocalRandom.current().nextInt()).setRecursionDesired(options.isRecursionDesired());
+      if (!name.endsWith(".")) {
+        name += ".";
+      }
       for (DnsRecordType type: types) {
         msg.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
       }
@@ -257,7 +264,7 @@ public final class DnsClientImpl implements DnsClient {
     }
 
     private void fail(Throwable cause) {
-      inProgressMap.remove(msg.id());
+      inProgressMap.remove(dnsMessageId(msg.id(), name));
       if (timerID >= 0) {
         vertx.cancelTimer(timerID);
       }
@@ -267,7 +274,7 @@ public final class DnsClientImpl implements DnsClient {
     void handle(DnsResponse msg) {
       DnsResponseCode code = DnsResponseCode.valueOf(msg.code().intValue());
       if (code == DnsResponseCode.NOERROR) {
-        inProgressMap.remove(msg.id());
+        inProgressMap.remove(dnsMessageId(msg.id(), name));
         if (timerID >= 0) {
           vertx.cancelTimer(timerID);
         }
@@ -292,7 +299,7 @@ public final class DnsClientImpl implements DnsClient {
     }
 
     void run() {
-      inProgressMap.put(msg.id(), this);
+      inProgressMap.put(dnsMessageId(msg.id(), name), this);
       timerID = vertx.setTimer(options.getQueryTimeout(), id -> {
         timerID = -1;
         actualCtx.runOnContext(v -> {

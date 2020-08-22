@@ -315,7 +315,7 @@ public class DNSTest extends VertxTestBase {
 
     dns.lookup("vertx.io", onFailure(result -> {
       assertEquals(VertxException.class, result.getClass());
-      assertEquals("DNS query timeout for vertx.io", result.getMessage());
+      assertEquals("DNS query timeout for vertx.io.", result.getMessage());
       ((DnsClientImpl) dns).inProgressQueries(num -> {
         assertEquals(0, (int)num);
         testComplete();
