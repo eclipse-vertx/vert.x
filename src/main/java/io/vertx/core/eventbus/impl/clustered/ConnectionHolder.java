@@ -40,11 +40,13 @@ class ConnectionHolder {
   private static final String PING_ADDRESS = "__vertx_ping";
 
   private final ClusteredEventBus eventBus;
-  private final NetClient client;
   private final String remoteNodeId;
   private final VertxInternal vertx;
   private final EventBusMetrics metrics;
+  private final EventBusOptions busOptions;
+  private final CloseFuture clientCloseFuture;
 
+  private NetClient client;
   private Queue<OutboundDeliveryContext<?>> pending;
   private NetSocket socket;
   private boolean connected;
@@ -53,11 +55,11 @@ class ConnectionHolder {
 
   ConnectionHolder(ClusteredEventBus eventBus, String remoteNodeId, EventBusOptions options) {
     this.eventBus = eventBus;
+    this.busOptions = options;
     this.remoteNodeId = remoteNodeId;
     this.vertx = eventBus.vertx();
     this.metrics = eventBus.getMetrics();
-    NetClientOptions clientOptions = getClientOptions(options);
-    this.client = vertx.createNetClient(clientOptions, new CloseFuture());
+    this.clientCloseFuture = new CloseFuture();
   }
 
   private NetClientOptions getClientOptions(EventBusOptions options) {
@@ -66,9 +68,11 @@ class ConnectionHolder {
 
   void connect() {
     synchronized (this) {
-      if (connected) {
-        throw new IllegalStateException("Already connected");
+      if (client != null) {
+        return;
       }
+      NetClientOptions clientOptions = getClientOptions(busOptions);
+      client = vertx.createNetClient(clientOptions, clientCloseFuture);
     }
     Promise<NodeInfo> promise = Promise.promise();
     eventBus.vertx().getClusterManager().getNodeInfo(remoteNodeId, promise);
@@ -122,10 +126,7 @@ class ConnectionHolder {
         }
       }
     }
-    try {
-      client.close();
-    } catch (Exception ignore) {
-    }
+    clientCloseFuture.close(Promise.promise());
     // The holder can be null or different if the target server is restarted with same nodeInfo
     // before the cleanup for the previous one has been processed
     if (eventBus.connections().remove(remoteNodeId, this)) {
