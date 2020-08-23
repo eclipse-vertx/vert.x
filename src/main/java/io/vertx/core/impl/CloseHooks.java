@@ -49,7 +49,7 @@ public class CloseHooks {
     }
     if (hook instanceof CloseFuture) {
       CloseFuture fut = (CloseFuture) hook;
-      hook = fut.register(this);
+      fut.onComplete(ar -> remove(fut));
     }
     closeHooks.put(hook, this);
   }

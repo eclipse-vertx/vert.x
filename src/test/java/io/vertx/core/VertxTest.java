@@ -42,7 +42,7 @@ public class VertxTest extends AsyncTestBase {
   private final org.openjdk.jmh.runner.Runner RUNNER = new Runner(new OptionsBuilder().shouldDoGC(true).build());
 
   @Test
-  public void testCloseHooksCalled() throws Exception {
+  public void testCloseHooksCalled() {
     AtomicInteger closedCount = new AtomicInteger();
     Closeable myCloseable1 = completionHandler -> {
       closedCount.incrementAndGet();
@@ -255,5 +255,39 @@ public class VertxTest extends AsyncTestBase {
       });
     }
     await();
+  }
+
+  @Test
+  public void testCloseFutureDuplicateClose() {
+    AtomicReference<Promise<Void>> ref = new AtomicReference<>();
+    CloseFuture fut = new CloseFuture(completion -> ref.set(completion));
+    Promise<Void> p1 = Promise.promise();
+    fut.close(p1);
+    assertNotNull(ref.get());
+    Promise<Void> p2 = Promise.promise();
+    fut.close(p2);
+    assertFalse(p1.future().isComplete());
+    assertFalse(p2.future().isComplete());
+    ref.get().complete();
+    assertTrue(p1.future().isComplete());
+    assertTrue(p2.future().isComplete());
+  }
+
+  @Test
+  public void testCloseVertxShouldWaitConcurrentCloseHook() throws Exception {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx();
+    AtomicReference<Promise<Void>> ref = new AtomicReference<>();
+    CloseFuture fut = new CloseFuture(completion -> ref.set(completion));
+    vertx.addCloseHook(fut);
+    Promise<Void> p = Promise.promise();
+    fut.close(p);
+    AtomicBoolean closed = new AtomicBoolean();
+    vertx.close(ar -> {
+      closed.set(true);
+    });
+    Thread.sleep(500);
+    assertFalse(closed.get());
+    ref.get().complete();
+    assertWaitUntil(closed::get);
   }
 }

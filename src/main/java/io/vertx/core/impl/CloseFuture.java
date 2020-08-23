@@ -25,8 +25,6 @@ public class CloseFuture implements Future<Void>, Closeable {
 
   private final Promise<Void> promise;
   private Closeable resource;
-  private CloseHooks hooks;
-  private Closeable hook;
   private boolean closed;
 
   public CloseFuture() {
@@ -45,63 +43,24 @@ public class CloseFuture implements Future<Void>, Closeable {
     this.resource = closeable;
   }
 
-  synchronized Closeable register(CloseHooks hooks) {
-    if (closed) {
-      return null;
-    }
-    if (this.hooks != null) {
-      throw new IllegalStateException();
-    }
-    this.hooks = hooks;
-    this.hook = p -> {
-      boolean close;
-      Closeable resource;
-      synchronized (CloseFuture.this) {
-        close = !closed;
-        resource = this.resource;
-        this.closed = true;
-        this.hook = null;
-        this.hooks = null;
-        this.resource = null;
-      }
-      if (close) {
-        resource.close(p);
-        p.future().onComplete(promise);
-      } else {
-        p.complete();
-      }
-    };
-    return hook;
-  }
-
   /**
    * Called by client
    */
   public void close(Promise<Void> promise) {
     boolean close;
-    CloseHooks hooks;
-    Closeable hook;
     Closeable resource;
     synchronized (this) {
       close = !closed;
-      hooks = this.hooks;
-      hook = this.hook;
       resource = this.resource;
       this.closed = true;
-      this.hooks = null;
-      this.hook = null;
-      this.resource = null;
     }
     if (resource == null) {
       promise.fail("Close future not initialized");
     } else if (close) {
-      if (hooks != null) {
-        hooks.remove(hook);
-      }
       resource.close(promise);
       promise.future().onComplete(this.promise);
     } else {
-      promise.complete();
+      this.promise.future().onComplete(promise);
     }
   }
 
