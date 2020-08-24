@@ -426,6 +426,7 @@ public class JsonCodecTest {
     Buffer json = mapper.toBuffer(WebsocketVersion.V13);
     assertNotNull(json);
     assertEquals("\"V13\"", json.toString());
+    mapper.fromBuffer(json, WebsocketVersion.class);
   }
 
   @Test

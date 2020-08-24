@@ -358,8 +358,11 @@ public class JacksonCodec implements JsonCodec {
       }
       return clazz.cast(o);
     } else if (o instanceof String) {
-      if (clazz == Instant.class) {
-        o = Instant.from(ISO_INSTANT.parse((String) o));
+      String str = (String) o;
+      if (clazz.isEnum()) {
+        o = Enum.valueOf((Class<Enum>) clazz, str);
+      } else if (clazz == Instant.class) {
+        o = Instant.from(ISO_INSTANT.parse(str));
       } else if (!clazz.isAssignableFrom(String.class)) {
         throw new DecodeException("Failed to decode");
       }
