@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
+import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -361,6 +362,8 @@ public class JacksonCodec implements JsonCodec {
       String str = (String) o;
       if (clazz.isEnum()) {
         o = Enum.valueOf((Class<Enum>) clazz, str);
+      } else if (clazz == byte[].class) {
+        o = BASE64_DECODER.decode(str);
       } else if (clazz == Instant.class) {
         o = Instant.from(ISO_INSTANT.parse(str));
       } else if (!clazz.isAssignableFrom(String.class)) {

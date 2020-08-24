@@ -386,6 +386,13 @@ public class JsonCodecTest {
   }
 
   @Test
+  public void decodeCustomTypeBinary() {
+    // base64 encoded hello
+    byte[] data = mapper.fromString("\"aGVsbG8\"", byte[].class);
+    assertEquals("hello", new String(data));
+  }
+
+  @Test
   public void encodeNull() {
     String json = mapper.toString(null);
     assertNotNull(json);
