@@ -366,7 +366,14 @@ public class JsonCodecTest {
     // the RFC is one way only
     Instant decoded = Instant.from(ISO_INSTANT.parse(json.substring(1, json.length() - 1)));
     assertEquals(now, decoded);
+  }
 
+  @Test
+  public void decodeCustomTypeInstant() {
+    Instant now = Instant.now();
+    String json = '"' + ISO_INSTANT.format(now) + '"';
+    Instant decoded = mapper.fromString(json, Instant.class);
+    assertEquals(now, decoded);
   }
 
   @Test
