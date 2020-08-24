@@ -364,6 +364,8 @@ public class JacksonCodec implements JsonCodec {
         o = Enum.valueOf((Class<Enum>) clazz, str);
       } else if (clazz == byte[].class) {
         o = BASE64_DECODER.decode(str);
+      } else if (clazz == Buffer.class) {
+        o = Buffer.buffer(BASE64_DECODER.decode(str));
       } else if (clazz == Instant.class) {
         o = Instant.from(ISO_INSTANT.parse(str));
       } else if (!clazz.isAssignableFrom(String.class)) {

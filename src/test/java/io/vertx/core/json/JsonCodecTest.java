@@ -381,7 +381,9 @@ public class JsonCodecTest {
     byte[] data = new byte[] { 'h', 'e', 'l', 'l', 'o'};
     String json = mapper.toString(data);
     assertNotNull(json);
-    // base64 encoded hello
+    assertEquals("\"aGVsbG8\"", json);
+    json = mapper.toString(Buffer.buffer(data));
+    assertNotNull(json);
     assertEquals("\"aGVsbG8\"", json);
   }
 
@@ -390,6 +392,8 @@ public class JsonCodecTest {
     // base64 encoded hello
     byte[] data = mapper.fromString("\"aGVsbG8\"", byte[].class);
     assertEquals("hello", new String(data));
+    Buffer buff = mapper.fromString("\"aGVsbG8\"", Buffer.class);
+    assertEquals("hello", buff.toString());
   }
 
   @Test
