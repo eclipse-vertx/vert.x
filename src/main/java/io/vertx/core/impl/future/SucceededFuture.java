@@ -24,7 +24,7 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class SucceededFuture<T> extends FutureBase<T> {
+public final class SucceededFuture<T> extends FutureBase<T> {
 
   /**
    * Stateless instance of empty results that can be shared safely.
@@ -58,11 +58,7 @@ public class SucceededFuture<T> extends FutureBase<T> {
 
   @Override
   public Future<T> onSuccess(Handler<T> handler) {
-    if (context != null) {
-      context.emit(result, handler);
-    } else {
-      handler.handle(result);
-    }
+    emit(result, handler);
     return this;
   }
 
@@ -73,20 +69,17 @@ public class SucceededFuture<T> extends FutureBase<T> {
 
   @Override
   public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-    if (handler instanceof Listener<?>) {
-      Listener<T> listener = (Listener<T>) handler;
-      listener.onSuccess(result);
-    } else if (context != null) {
-      context.emit(this, handler);
+    if (handler instanceof Listener) {
+      emitSuccess(result ,(Listener<T>) handler);
     } else {
-      handler.handle(this);
+      emit(this, handler);
     }
     return this;
   }
 
   @Override
   public void addListener(Listener<T> listener) {
-    listener.onSuccess(result);
+    emitSuccess(result ,listener);
   }
 
   @Override
@@ -107,31 +100,6 @@ public class SucceededFuture<T> extends FutureBase<T> {
   @Override
   public boolean failed() {
     return false;
-  }
-
-  @Override
-  public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
-    Objects.requireNonNull(successMapper, "No null success mapper accepted");
-    Objects.requireNonNull(failureMapper, "No null failure mapper accepted");
-    Future<U> fut;
-    try {
-      fut = successMapper.apply(result);
-    } catch (Throwable e) {
-      return new FailedFuture<U>(context, e);
-    }
-    return fut;
-  }
-
-  @Override
-  public <U> Future<U> map(Function<T, U> mapper) {
-    Objects.requireNonNull(mapper, "No null mapper accepted");
-    U value;
-    try {
-      value = mapper.apply(result);
-    } catch (Throwable e) {
-      return new FailedFuture<U>(context, e);
-    }
-    return new SucceededFuture<>(context, value);
   }
 
   @Override

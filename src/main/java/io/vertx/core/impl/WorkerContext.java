@@ -16,6 +16,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -46,22 +47,9 @@ public class WorkerContext extends ContextImpl {
     return false;
   }
 
-  private <T> void execute(ContextInternal ctx, TaskQueue queue, Runnable task) {
-    PoolMetrics metrics = workerPool.metrics();
-    Object queueMetric = metrics != null ? metrics.submitted() : null;
-    queue.execute(() -> {
-      Object execMetric = null;
-      if (metrics != null) {
-        execMetric = metrics.begin(queueMetric);
-      }
-      try {
-        ctx.dispatch(task);
-      } finally {
-        if (metrics != null) {
-          metrics.end(execMetric, true);
-        }
-      }
-    }, workerPool.executor());
+  @Override
+  public boolean isRunningOnContext() {
+    return Vertx.currentContext() == this && Context.isOnWorkerThread();
   }
 
   private <T> void execute(ContextInternal ctx, TaskQueue queue, T value, Handler<T> task) {
@@ -105,7 +93,6 @@ public class WorkerContext extends ContextImpl {
     }
   }
 
-
   /**
    * {@inheritDoc}
    *
@@ -117,6 +104,11 @@ public class WorkerContext extends ContextImpl {
   @Override
   public <T> void schedule(T argument, Handler<T> task) {
     schedule(orderedTasks, argument, task);
+  }
+
+  @Override
+  public void schedule(Runnable task) {
+    schedule(task, Runnable::run);
   }
 
   public ContextInternal duplicate() {
@@ -142,6 +134,11 @@ public class WorkerContext extends ContextImpl {
     }
 
     @Override
+    public boolean isRunningOnContext() {
+      return Vertx.currentContext() == this && Context.isOnWorkerThread();
+    }
+
+    @Override
     public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
       return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, delegate.internalOrderedTasks);
     }
@@ -164,6 +161,11 @@ public class WorkerContext extends ContextImpl {
     @Override
     public <T> void schedule(T argument, Handler<T> task) {
       delegate.schedule(orderedTasks, argument, task);
+    }
+
+    @Override
+    public void schedule(Runnable task) {
+      schedule(task, Runnable::run);
     }
 
     @Override

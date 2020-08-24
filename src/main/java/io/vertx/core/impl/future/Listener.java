@@ -10,12 +10,23 @@
  */
 package io.vertx.core.impl.future;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+
 /**
  * Internal listener that signals success or failure when a future completes.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface Listener<T> {
+public interface Listener<T> extends Handler<AsyncResult<T>> {
+
+  default void handle(AsyncResult<T> ar) {
+    if (ar.succeeded()) {
+      onSuccess(ar.result());
+    } else {
+      onFailure(ar.cause());
+    }
+  }
 
   /**
    * Signal the success.

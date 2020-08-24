@@ -11,7 +11,13 @@
 
 package io.vertx.core.impl.future;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
+
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Future base implementation.
@@ -40,4 +46,93 @@ abstract class FutureBase<T> implements FutureInternal<T> {
     return context;
   }
 
+  protected final void emitSuccess(T value, Listener<T> listener) {
+    if (context != null && !context.isRunningOnContext()) {
+      context.schedule(() -> {
+        ContextInternal prev = context.beginDispatch();
+        try {
+          listener.onSuccess(value);
+        } catch (Throwable t) {
+          context.reportException(t);
+        } finally {
+          context.endDispatch(prev);
+        }
+      });
+    } else {
+      listener.onSuccess(value);
+    }
+  }
+
+  protected final void emitFailure(Throwable cause, Listener<T> listener) {
+    if (context != null && !context.isRunningOnContext()) {
+      context.schedule(() -> {
+        ContextInternal prev = context.beginDispatch();
+        try {
+          listener.onFailure(cause);
+        } catch (Throwable t) {
+          context.reportException(t);
+        } finally {
+          context.endDispatch(prev);
+        }
+      });
+    } else {
+      listener.onFailure(cause);
+    }
+  }
+
+  protected final <U> void emit(U value, Handler<U> handler) {
+    if (context != null && !context.isRunningOnContext()) {
+      context.schedule(() -> {
+        ContextInternal prev = context.beginDispatch();
+        try {
+          handler.handle(value);
+        } catch (Throwable t) {
+          context.reportException(t);
+        } finally {
+          context.endDispatch(prev);
+        }
+      });
+    } else {
+      handler.handle(value);
+    }
+  }
+
+  @Override
+  public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
+    Objects.requireNonNull(successMapper, "No null success mapper accepted");
+    Objects.requireNonNull(failureMapper, "No null failure mapper accepted");
+    ComposeTransformation<T, U> transformation = new ComposeTransformation<>(context, successMapper, failureMapper);
+    addListener(transformation);
+    return transformation;
+  }
+
+  @Override
+  public <U> Future<U> map(Function<T, U> mapper) {
+    Objects.requireNonNull(mapper, "No null mapper accepted");
+    MapTransformation<T, U> transformation = new MapTransformation<>(context, mapper);
+    addListener(transformation);
+    return transformation;
+  }
+
+  @Override
+  public <V> Future<V> map(V value) {
+    MapValueTransformation<T, V> transformation = new MapValueTransformation<>(context, value);
+    addListener(transformation);
+    return transformation;
+  }
+
+  @Override
+  public Future<T> otherwise(Function<Throwable, T> mapper) {
+    Objects.requireNonNull(mapper, "No null mapper accepted");
+    OtherwiseTransformation<T> transformation = new OtherwiseTransformation<>(context, mapper);
+    addListener(transformation);
+    return transformation;
+  }
+
+  @Override
+  public Future<T> otherwise(T value) {
+    OtherwiseValueTransformation<T> transformation = new OtherwiseValueTransformation<>(context, value);
+    addListener(transformation);
+    return transformation;
+  }
 }

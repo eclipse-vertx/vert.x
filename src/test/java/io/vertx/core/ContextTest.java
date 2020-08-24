@@ -733,10 +733,13 @@ public class ContextTest extends VertxTestBase {
   public void testComposeContextPropagation1() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     Promise<String> promise = context.promise();
-    Future<String> future = promise.future().compose(res -> Future.succeededFuture("value-2"));
+    Future<String> future = promise.future().compose(res -> {
+      assertEquals(context, Vertx.currentContext());
+      return Future.succeededFuture("value-2");
+    });
     promise.complete("value-1");
     future.onComplete(ar -> {
-      assertSame(context, vertx.getOrCreateContext());
+      assertSame(context, Vertx.currentContext());
       testComplete();
     });
     await();
@@ -746,9 +749,12 @@ public class ContextTest extends VertxTestBase {
   public void testComposeContextPropagation2() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     Promise<String> promise = context.promise();
-    Future<String> future = promise.future().compose(res -> Future.succeededFuture("value-2"));
+    Future<String> future = promise.future().compose(res -> {
+      assertSame(context, Vertx.currentContext());
+      return Future.succeededFuture("value-2");
+    });
     future.onComplete(ar -> {
-      assertSame(context, vertx.getOrCreateContext());
+      assertSame(context, Vertx.currentContext());
       testComplete();
     });
     promise.complete("value-1");
@@ -764,10 +770,63 @@ public class ContextTest extends VertxTestBase {
     Future<String> future = promise.future().compose(res -> anotherPromise.future());
     promise.complete("value-1");
     future.onComplete(ar -> {
-      assertSame(context, vertx.getOrCreateContext());
+      assertSame(context, Vertx.currentContext());
       testComplete();
     });
     anotherPromise.complete("value-2");
+    await();
+  }
+
+  @Test
+  public void testSucceededFutureContextPropagation1() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Future<String> future = context.succeededFuture();
+    future.onComplete(ar -> {
+      assertSame(context, Vertx.currentContext());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testSucceededFutureContextPropagation2() throws Exception {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Future<String> future = context.succeededFuture();
+    future = future.compose(value -> {
+      assertSame(context, Vertx.currentContext());
+      return Future.succeededFuture("value-2");
+    });
+    Thread.sleep(100);
+    future.onComplete(ar -> {
+      assertSame(context, Vertx.currentContext());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testFailedFutureContextPropagation1() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Future<String> future = context.failedFuture("error");
+    future.onComplete(ar -> {
+      assertSame(context, Vertx.currentContext());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testFailedFutureContextPropagation2() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Future<String> future = context.failedFuture("error");
+    future = future.recover(πerr -> {
+      assertSame(context, Vertx.currentContext());
+      return Future.succeededFuture("value-2");
+    });
+    future.onComplete(ar -> {
+      assertSame(context, Vertx.currentContext());
+      testComplete();
+    });
     await();
   }
 

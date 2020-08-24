@@ -62,7 +62,7 @@ class FutureImpl<T> extends FutureBase<T> {
   }
 
   /**
-   * Did it succeeed?
+   * Did it succeed?
    */
   public synchronized boolean succeeded() {
     return value != null && !(value instanceof Throwable);
@@ -88,11 +88,7 @@ class FutureImpl<T> extends FutureBase<T> {
     addListener(new Listener<T>() {
       @Override
       public void onSuccess(T value) {
-        if (context != null) {
-          context.emit(value, handler);
-        } else {
-          handler.handle(value);
-        }
+        handler.handle(value);
       }
       @Override
       public void onFailure(Throwable failure) {
@@ -110,11 +106,7 @@ class FutureImpl<T> extends FutureBase<T> {
       }
       @Override
       public void onFailure(Throwable failure) {
-        if (context != null) {
-          context.emit(failure, handler);
-        } else {
-          handler.handle(failure);
-        }
+        handler.handle(failure);
       }
     });
     return this;
@@ -130,19 +122,11 @@ class FutureImpl<T> extends FutureBase<T> {
       listener = new Listener<T>() {
         @Override
         public void onSuccess(T value) {
-          if (context != null) {
-            context.emit(FutureImpl.this, handler);
-          } else {
-            handler.handle(FutureImpl.this);
-          }
+          handler.handle(FutureImpl.this);
         }
         @Override
         public void onFailure(Throwable failure) {
-          if (context != null) {
-            context.emit(FutureImpl.this, handler);
-          } else {
-            handler.handle(FutureImpl.this);
-          }
+          handler.handle(FutureImpl.this);
         }
       };
     }
@@ -152,10 +136,10 @@ class FutureImpl<T> extends FutureBase<T> {
 
   @Override
   public void addListener(Listener<T> listener) {
-    Object value;
+    Object v;
     synchronized (this) {
-      value = this.value;
-      if (value == null) {
+      v = value;
+      if (v == null) {
         if (this.listener == null) {
           this.listener = listener;
         } else {
@@ -172,41 +156,47 @@ class FutureImpl<T> extends FutureBase<T> {
         return;
       }
     }
-    if (value instanceof Throwable) {
-      listener.onFailure((Throwable) value);
+    if (v instanceof Throwable) {
+      emitFailure((Throwable) v, listener);
     } else {
-      listener.onSuccess(value == NULL_VALUE ? null : (T) value);
+      if (v == NULL_VALUE) {
+        v = null;
+      }
+      emitSuccess((T) v, listener);
     }
   }
 
   public boolean tryComplete(T result) {
-    Listener<T> e;
+    Listener<T> l;
     synchronized (this) {
       if (value != null) {
         return false;
       }
       value = result == null ? NULL_VALUE : result;
-      e = listener;
+      l = listener;
       listener = null;
     }
-    if (e != null) {
-      e.onSuccess(result);
+    if (l != null) {
+      emitSuccess(result, l);
     }
     return true;
   }
 
   public boolean tryFail(Throwable cause) {
-    Listener<T> e;
+    if (cause == null) {
+      cause = new NoStackTraceThrowable(null);
+    }
+    Listener<T> l;
     synchronized (this) {
       if (value != null) {
         return false;
       }
-      value = cause != null ? cause : new NoStackTraceThrowable(null);
-      e = listener;
+      value = cause;
+      l = listener;
       listener = null;
     }
-    if (e != null) {
-      e.onFailure(cause);
+    if (l != null) {
+      emitFailure(cause, l);
     }
     return true;
   }
@@ -237,44 +227,5 @@ class FutureImpl<T> extends FutureBase<T> {
         handler.onFailure(failure);
       }
     }
-  }
-
-  @Override
-  public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
-    Objects.requireNonNull(successMapper, "No null success mapper accepted");
-    Objects.requireNonNull(failureMapper, "No null failure mapper accepted");
-    ComposeTransformation<T, U> transformation = new ComposeTransformation<>(context, successMapper, failureMapper);
-    addListener(transformation);
-    return transformation;
-  }
-
-  @Override
-  public <U> Future<U> map(Function<T, U> mapper) {
-    Objects.requireNonNull(mapper, "No null mapper accepted");
-    MapTransformation<T, U> transformation = new MapTransformation<>(context, mapper);
-    addListener(transformation);
-    return transformation;
-  }
-
-  @Override
-  public <V> Future<V> map(V value) {
-    MapValueTransformation<T, V> transformation = new MapValueTransformation<>(context, value);
-    addListener(transformation);
-    return transformation;
-  }
-
-  @Override
-  public Future<T> otherwise(Function<Throwable, T> mapper) {
-    Objects.requireNonNull(mapper, "No null mapper accepted");
-    OtherwiseTransformation<T> transformation = new OtherwiseTransformation<>(context, mapper);
-    addListener(transformation);
-    return transformation;
-  }
-
-  @Override
-  public Future<T> otherwise(T value) {
-    OtherwiseValueTransformation<T> transformation = new OtherwiseValueTransformation<>(context, value);
-    addListener(transformation);
-    return transformation;
   }
 }

@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 /**
@@ -58,6 +59,21 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
+  public boolean isRunningOnContext() {
+    return Vertx.currentContext() == this && nettyEventLoop().inEventLoop();
+  }
+
+  @Override
+  public void schedule(Runnable task) {
+    EventLoop eventLoop = nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      task.run();
+    } else {
+      eventLoop.execute(task);
+    }
+  }
+
+  @Override
   public boolean isEventLoopContext() {
     return true;
   }
@@ -83,6 +99,11 @@ public class EventLoopContext extends ContextImpl {
     @Override
     <T> void execute(T argument, Handler<T> task) {
       nettyEventLoop().execute(() -> dispatch(argument, task));
+    }
+
+    @Override
+    public boolean isRunningOnContext() {
+      return Vertx.currentContext() == this && nettyEventLoop().inEventLoop();
     }
 
     @Override
@@ -119,6 +140,11 @@ public class EventLoopContext extends ContextImpl {
     @Override
     public <T> void schedule(T argument, Handler<T> task) {
       delegate.schedule(argument, task);
+    }
+
+    @Override
+    public void schedule(Runnable task) {
+      delegate.schedule(task);
     }
 
     @Override

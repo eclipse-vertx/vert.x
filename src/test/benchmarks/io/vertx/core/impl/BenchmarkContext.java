@@ -34,6 +34,11 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
+  public boolean isRunningOnContext() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   <T> void execute(T argument, Handler<T> task) {
     if (THREAD_CHECKS) {
       checkEventLoopThread();
@@ -44,6 +49,11 @@ public class BenchmarkContext extends ContextImpl {
   @Override
   public <T> void schedule(T argument, Handler<T> task) {
     task.handle(argument);
+  }
+
+  @Override
+  public void schedule(Runnable task) {
+    task.run();
   }
 
   @Override

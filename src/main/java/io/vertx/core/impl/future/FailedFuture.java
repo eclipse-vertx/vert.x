@@ -17,7 +17,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
 
-import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -25,7 +24,7 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FailedFuture<T> extends FutureBase<T> {
+public final class FailedFuture<T> extends FutureBase<T> {
 
   private final Throwable cause;
 
@@ -69,13 +68,10 @@ public class FailedFuture<T> extends FutureBase<T> {
 
   @Override
   public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
-    if (handler instanceof Listener<?>) {
-      Listener<T> listener = (Listener<T>) handler;
-      listener.onFailure(cause);
-    } else if (context != null) {
-      context.emit(this, handler);
+    if (handler instanceof Listener) {
+      emitFailure(cause, (Listener<T>) handler);
     } else {
-      handler.handle(this);
+      emit(this, handler);
     }
     return this;
   }
@@ -87,17 +83,13 @@ public class FailedFuture<T> extends FutureBase<T> {
 
   @Override
   public Future<T> onFailure(Handler<Throwable> handler) {
-    if (context != null) {
-      context.emit(cause, handler);
-    } else {
-      handler.handle(cause);
-    }
+    emit(cause, handler);
     return this;
   }
 
   @Override
   public void addListener(Listener<T> listener) {
-    listener.onFailure(cause);
+    emitFailure(cause, listener);
   }
 
   @Override
@@ -121,19 +113,6 @@ public class FailedFuture<T> extends FutureBase<T> {
   }
 
   @Override
-  public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
-    Objects.requireNonNull(successMapper, "No null success mapper accepted");
-    Objects.requireNonNull(failureMapper, "No null failure mapper accepted");
-    Future<U> fut;
-    try {
-      fut = failureMapper.apply(cause);
-    } catch (Throwable e) {
-      return new FailedFuture<U>(context, e);
-    }
-    return fut;
-  }
-
-  @Override
   public <U> Future<U> map(Function<T, U> mapper) {
     return (Future<U>) this;
   }
@@ -141,18 +120,6 @@ public class FailedFuture<T> extends FutureBase<T> {
   @Override
   public <V> Future<V> map(V value) {
     return (Future<V>) this;
-  }
-
-  @Override
-  public Future<T> otherwise(Function<Throwable, T> mapper) {
-    Objects.requireNonNull(mapper, "No null mapper accepted");
-    T value;
-    try {
-      value = mapper.apply(cause);
-    } catch (Throwable e) {
-      return new FailedFuture<T>(context, e);
-    }
-    return new SucceededFuture<>(context, value);
   }
 
   @Override

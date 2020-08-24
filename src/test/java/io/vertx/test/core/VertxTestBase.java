@@ -247,13 +247,5 @@ public class VertxTestBase extends AsyncTestBase {
     Context current = Vertx.currentContext();
     assertNotNull(current);
     assertSameEventLoop(context, current);
-    for (StackTraceElement elt : Thread.currentThread().getStackTrace()) {
-      String className = elt.getClassName();
-      String methodName = elt.getMethodName();
-      if (className.equals("io.vertx.core.impl.AbstractContext") && methodName.equals("dispatch")) {
-        return;
-      }
-    }
-    fail("Not dispatching");
   }
 }

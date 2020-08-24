@@ -144,6 +144,19 @@ public interface ContextInternal extends Context {
    * Schedule a task to be executed on this context, the task will be executed according to the
    * context concurrency model.
    *
+   * @param task the task
+   */
+  void schedule(Runnable task);
+
+  /**
+   * @return whether the current thread is running on this context
+   */
+  boolean isRunningOnContext();
+
+  /**
+   * Schedule a task to be executed on this context, the task will be executed according to the
+   * context concurrency model.
+   *
    * @param argument the {@code task} argument
    * @param task the task
    */
