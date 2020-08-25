@@ -49,7 +49,7 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
       w = webSocket;
     }
     if (w != null) {
-      w.context.schedule(msg, w::handleFrame);
+      w.context.execute(msg, w::handleFrame);
     }
   }
 

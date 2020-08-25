@@ -11,7 +11,6 @@
 
 package io.vertx.core.impl.future;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
@@ -48,7 +47,7 @@ abstract class FutureBase<T> implements FutureInternal<T> {
 
   protected final void emitSuccess(T value, Listener<T> listener) {
     if (context != null && !context.isRunningOnContext()) {
-      context.schedule(() -> {
+      context.execute(() -> {
         ContextInternal prev = context.beginDispatch();
         try {
           listener.onSuccess(value);
@@ -65,7 +64,7 @@ abstract class FutureBase<T> implements FutureInternal<T> {
 
   protected final void emitFailure(Throwable cause, Listener<T> listener) {
     if (context != null && !context.isRunningOnContext()) {
-      context.schedule(() -> {
+      context.execute(() -> {
         ContextInternal prev = context.beginDispatch();
         try {
           listener.onFailure(cause);
@@ -82,7 +81,7 @@ abstract class FutureBase<T> implements FutureInternal<T> {
 
   protected final <U> void emit(U value, Handler<U> handler) {
     if (context != null && !context.isRunningOnContext()) {
-      context.schedule(() -> {
+      context.execute(() -> {
         ContextInternal prev = context.beginDispatch();
         try {
           handler.handle(value);

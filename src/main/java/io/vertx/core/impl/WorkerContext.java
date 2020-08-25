@@ -21,6 +21,7 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.Objects;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -38,8 +39,12 @@ public class WorkerContext extends ContextImpl {
   }
 
   @Override
-  <T> void execute(T argument, Handler<T> task) {
-    execute(this, orderedTasks, argument, task);
+  public void runOnContext(Handler<Void> action) {
+    try {
+      run(this, orderedTasks, null, action);
+    } catch (RejectedExecutionException ignore) {
+      // Pool is already shut down
+    }
   }
 
   @Override
@@ -52,7 +57,7 @@ public class WorkerContext extends ContextImpl {
     return Vertx.currentContext() == this && Context.isOnWorkerThread();
   }
 
-  private <T> void execute(ContextInternal ctx, TaskQueue queue, T value, Handler<T> task) {
+  private <T> void run(ContextInternal ctx, TaskQueue queue, T value, Handler<T> task) {
     Objects.requireNonNull(task, "Task handler must not be null");
     PoolMetrics metrics = workerPool.metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
@@ -71,7 +76,7 @@ public class WorkerContext extends ContextImpl {
     }, workerPool.executor());
   }
 
-  private <T> void schedule(TaskQueue queue, T argument, Handler<T> task) {
+  private <T> void execute(TaskQueue queue, T argument, Handler<T> task) {
     if (Context.isOnWorkerThread()) {
       task.handle(argument);
     } else {
@@ -102,13 +107,13 @@ public class WorkerContext extends ContextImpl {
    * </ul>
    */
   @Override
-  public <T> void schedule(T argument, Handler<T> task) {
-    schedule(orderedTasks, argument, task);
+  public <T> void execute(T argument, Handler<T> task) {
+    execute(orderedTasks, argument, task);
   }
 
   @Override
-  public void schedule(Runnable task) {
-    schedule(task, Runnable::run);
+  public void execute(Runnable task) {
+    execute(task, Runnable::run);
   }
 
   public ContextInternal duplicate() {
@@ -129,8 +134,8 @@ public class WorkerContext extends ContextImpl {
     }
 
     @Override
-    <T> void execute(T argument, Handler<T> task) {
-      delegate.execute(this, orderedTasks, argument, task);
+    public void runOnContext(Handler<Void> action) {
+      delegate.run(this, orderedTasks, null, action);
     }
 
     @Override
@@ -159,13 +164,13 @@ public class WorkerContext extends ContextImpl {
     }
 
     @Override
-    public <T> void schedule(T argument, Handler<T> task) {
-      delegate.schedule(orderedTasks, argument, task);
+    public <T> void execute(T argument, Handler<T> task) {
+      delegate.execute(orderedTasks, argument, task);
     }
 
     @Override
-    public void schedule(Runnable task) {
-      schedule(task, Runnable::run);
+    public void execute(Runnable task) {
+      execute(task, Runnable::run);
     }
 
     @Override

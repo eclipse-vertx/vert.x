@@ -166,7 +166,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
       request = requestInProgress;
     }
-    request.context.schedule(buffer, request::handleContent);
+    request.context.execute(buffer, request::handleContent);
     //TODO chunk trailers
     if (content instanceof LastHttpContent) {
       onEnd();
@@ -182,7 +182,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       request = requestInProgress;
       requestInProgress = null;
     }
-    request.context.schedule(request, Http1xServerRequest::handleEnd);
+    request.context.execute(request, Http1xServerRequest::handleEnd);
   }
 
   void responseComplete() {
@@ -398,7 +398,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
     }
     boolean writable = !isNotWritable();
-    context.schedule(writable, handler);
+    context.execute(writable, handler);
   }
 
   void write100Continue() {
@@ -419,17 +419,17 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
     }
     if (requestInProgress != null) {
-      requestInProgress.context.schedule(v -> {
+      requestInProgress.context.execute(v -> {
         requestInProgress.handleException(CLOSED_EXCEPTION);
       });
     }
     if (responseInProgress != null && responseInProgress != requestInProgress) {
-      responseInProgress.context.schedule(v -> {
+      responseInProgress.context.execute(v -> {
         responseInProgress.handleException(CLOSED_EXCEPTION);
       });
     }
     if (ws != null) {
-      ws.context.schedule(v -> ws.handleClosed());
+      ws.context.execute(v -> ws.handleClosed());
     }
     super.handleClosed();
   }
@@ -455,7 +455,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       responseInProgress.handleException(t);
     }
     if (ws != null) {
-      ws.context.schedule(v -> ws.handleException(t));
+      ws.context.execute(v -> ws.handleException(t));
     }
   }
 

@@ -123,7 +123,7 @@ public interface ContextInternal extends Context {
    * <br/>
    * Any exception thrown from the {@literal task} will be reported on this context.
    * <br/>
-   * Calling this method is equivalent to {@code schedule(v -> dispatch(argument, task))}
+   * Calling this method is equivalent to {@code execute(v -> dispatch(argument, task))}
    *
    * @param argument the {@code task} argument
    * @param task the handler to execute with the {@code event} argument
@@ -136,31 +136,31 @@ public interface ContextInternal extends Context {
   void emit(Handler<Void> task);
 
   /**
-   * @see #schedule(Object, Handler)
+   * @see #execute(Object, Handler)
    */
-  void schedule(Handler<Void> task);
+  void execute(Handler<Void> task);
 
   /**
-   * Schedule a task to be executed on this context, the task will be executed according to the
+   * Execute the {@code task} on this context, it will be executed according to the
    * context concurrency model.
    *
-   * @param task the task
+   * @param task the task to execute
    */
-  void schedule(Runnable task);
+  void execute(Runnable task);
+
+  /**
+   * Execute a {@code task} on this context, the task will be executed according to the
+   * context concurrency model.
+   *
+   * @param argument the {@code task} argument
+   * @param task the task to execute
+   */
+  <T> void execute(T argument, Handler<T> task);
 
   /**
    * @return whether the current thread is running on this context
    */
   boolean isRunningOnContext();
-
-  /**
-   * Schedule a task to be executed on this context, the task will be executed according to the
-   * context concurrency model.
-   *
-   * @param argument the {@code task} argument
-   * @param task the task
-   */
-  <T> void schedule(T argument, Handler<T> task);
 
   /**
    * @see #dispatch(Handler)

@@ -93,7 +93,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   void onClose() {
     conn.reportBytesWritten(bytesWritten);
-    context.schedule(v -> this.handleClose());
+    context.execute(v -> this.handleClose());
   }
 
   void onError(Throwable cause) {

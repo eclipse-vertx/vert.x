@@ -30,7 +30,7 @@ public class ContextTaskTest extends VertxTestBase {
     SCHEDULE() {
       @Override
       void exec(ContextInternal ctx, Handler<Void> task) {
-        ctx.schedule(task);
+        ctx.execute(task);
       }
     }, DISPATCH() {
       @Override
@@ -161,7 +161,7 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testEventLoopScheduleFromAnotherEventLoop() {
-    testOpFromAnotherEventLoop(ContextInternal::schedule, this::createEventLoopContext,true);
+    testOpFromAnotherEventLoop(ContextInternal::execute, this::createEventLoopContext,true);
   }
 
   @Test
@@ -171,7 +171,7 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testWorkerScheduleFromAnotherEventLoop() {
-    testOpFromAnotherEventLoop(ContextInternal::schedule, this::createWorkerContext,true);
+    testOpFromAnotherEventLoop(ContextInternal::execute, this::createWorkerContext,true);
   }
 
   private void testOpFromAnotherEventLoop(BiConsumer<ContextInternal, Handler<Void>> op, Supplier<ContextInternal> contextSupplier, boolean isSchedule) {
@@ -217,7 +217,7 @@ public class ContextTaskTest extends VertxTestBase {
   private void testOpFromSameSchedule(Op op, Supplier<ContextInternal> contextSupplier) {
     waitFor(2);
     ContextInternal ctx = contextSupplier.get();
-    ctx.schedule(v1 -> {
+    ctx.execute(v1 -> {
       Thread thread = Thread.currentThread();
       AtomicBoolean flag = new AtomicBoolean(true);
       op.exec(ctx, v2 -> {
@@ -243,7 +243,7 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testEventLoopScheduleFromAnotherThread() {
-    testOpFromAnotherThread(ContextInternal::schedule, this::createEventLoopContext, true);
+    testOpFromAnotherThread(ContextInternal::execute, this::createEventLoopContext, true);
   }
 
   @Test
@@ -253,7 +253,7 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testWorkerScheduleFromAnotherThread() {
-    testOpFromAnotherThread(ContextInternal::schedule, this::createWorkerContext, true);
+    testOpFromAnotherThread(ContextInternal::execute, this::createWorkerContext, true);
   }
 
   private void testOpFromAnotherThread(BiConsumer<ContextInternal, Handler<Void>> op, Supplier<ContextInternal> contextSupplier, boolean expectNullContext) {

@@ -19,6 +19,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import java.util.concurrent.RejectedExecutionException;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -36,8 +38,12 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  <T> void execute(T argument, Handler<T> task) {
-    nettyEventLoop().execute(() -> dispatch(argument, task));
+  public void runOnContext(Handler<Void> action) {
+    try {
+      nettyEventLoop().execute(() -> dispatch(action));
+    } catch (RejectedExecutionException ignore) {
+      // Pool is already shut down
+    }
   }
 
   /**
@@ -49,7 +55,7 @@ public class EventLoopContext extends ContextImpl {
    * </ul>
    */
   @Override
-  public <T> void schedule(T argument, Handler<T> task) {
+  public <T> void execute(T argument, Handler<T> task) {
     EventLoop eventLoop = nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       task.handle(argument);
@@ -64,7 +70,7 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  public void schedule(Runnable task) {
+  public void execute(Runnable task) {
     EventLoop eventLoop = nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       task.run();
@@ -97,8 +103,12 @@ public class EventLoopContext extends ContextImpl {
     }
 
     @Override
-    <T> void execute(T argument, Handler<T> task) {
-      nettyEventLoop().execute(() -> dispatch(argument, task));
+    public void runOnContext(Handler<Void> action) {
+      try {
+        nettyEventLoop().execute(() -> dispatch(action));
+      } catch (RejectedExecutionException ignore) {
+        // Pool is already shut down
+      }
     }
 
     @Override
@@ -138,13 +148,13 @@ public class EventLoopContext extends ContextImpl {
     }
 
     @Override
-    public <T> void schedule(T argument, Handler<T> task) {
-      delegate.schedule(argument, task);
+    public <T> void execute(T argument, Handler<T> task) {
+      delegate.execute(argument, task);
     }
 
     @Override
-    public void schedule(Runnable task) {
-      delegate.schedule(task);
+    public void execute(Runnable task) {
+      delegate.execute(task);
     }
 
     @Override

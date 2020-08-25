@@ -20,7 +20,6 @@ import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
 import java.util.List;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.impl.VertxThread.DISABLE_TCCL;
@@ -67,14 +66,6 @@ abstract class AbstractContext implements ContextInternal {
     }
   };
 
-  /**
-   * Execute the {@code task} on the context.
-   *
-   * @param argument the argument for the {@code task}
-   * @param task the task to execute with the provided {@code argument}
-   */
-  abstract <T> void execute(T argument, Handler<T> task);
-
   @Override
   public abstract boolean isEventLoopContext();
 
@@ -85,7 +76,7 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public final <T> void emit(T argument, Handler<T> task) {
-    schedule(v -> dispatch(argument, task));
+    execute(v -> dispatch(argument, task));
   }
 
   @Override
@@ -94,8 +85,8 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final void schedule(Handler<Void> task) {
-    schedule(null, task);
+  public final void execute(Handler<Void> task) {
+    execute(null, task);
   }
 
   @Override
@@ -207,16 +198,6 @@ abstract class AbstractContext implements ContextInternal {
       throw new IllegalStateException("Expected to be on Vert.x thread, but actually on: " + current);
     } else if ((current instanceof VertxThread) && ((VertxThread) current).isWorker()) {
       throw new IllegalStateException("Event delivered on unexpected worker thread " + current);
-    }
-  }
-
-  // Run the task asynchronously on this same context
-  @Override
-  public final void runOnContext(Handler<Void> handler) {
-    try {
-      execute(null, handler);
-    } catch (RejectedExecutionException ignore) {
-      // Pool is already shut down
     }
   }
 
