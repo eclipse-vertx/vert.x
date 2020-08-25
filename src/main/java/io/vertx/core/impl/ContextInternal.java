@@ -18,7 +18,6 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -27,7 +26,7 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface ContextInternal extends Context, Executor {
+public interface ContextInternal extends Context {
 
   /**
    * @return the current context
@@ -49,15 +48,6 @@ public interface ContextInternal extends Context, Executor {
    * @return the EventLoop
    */
   EventLoop nettyEventLoop();
-
-  /**
-   * {@inheritDoc}
-   * <br/>
-   * Execution follows the same semantics than {@link #runOnContext(Handler)}, simply put it is equivalent
-   * to {@code runOncontext(v -> command.run())}.
-   */
-  @Override
-  void execute(Runnable command);
 
   /**
    * @return a {@link Promise} associated with this context

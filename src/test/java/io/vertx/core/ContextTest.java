@@ -772,46 +772,6 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testEventLoopExecutor() {
-    waitFor(2);
-    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    context.execute(() -> {
-      assertTrue(Context.isOnEventLoopThread());
-      assertSame(context, Vertx.currentContext());
-      complete();
-    });
-    RuntimeException failure = new RuntimeException();
-    context.exceptionHandler(err -> {
-      assertSame(failure, err);
-      complete();
-    });
-    context.execute(() -> {
-      throw failure;
-    });
-    await();
-  }
-
-  @Test
-  public void testWorkerExecutor() {
-    waitFor(2);
-    ContextInternal context = createWorkerContext();
-    context.execute(() -> {
-      assertTrue(Context.isOnWorkerThread());
-      assertSame(context, Vertx.currentContext());
-      complete();
-    });
-    RuntimeException failure = new RuntimeException();
-    context.exceptionHandler(err -> {
-      assertSame(failure, err);
-      complete();
-    });
-    context.execute(() -> {
-      throw failure;
-    });
-    await();
-  }
-
-  @Test
   public void testSticky() {
     Context ctx = vertx.getOrCreateContext();
     assertSame(ctx, vertx.getOrCreateContext());

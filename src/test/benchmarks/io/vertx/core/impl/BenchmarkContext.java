@@ -42,14 +42,6 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
-  public void execute(Runnable task) {
-    if (THREAD_CHECKS) {
-      checkEventLoopThread();
-    }
-    dispatch(task);
-  }
-
-  @Override
   public <T> void schedule(T argument, Handler<T> task) {
     task.handle(argument);
   }

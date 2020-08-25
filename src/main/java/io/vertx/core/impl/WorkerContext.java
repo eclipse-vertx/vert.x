@@ -42,11 +42,6 @@ public class WorkerContext extends ContextImpl {
   }
 
   @Override
-  public void execute(Runnable task) {
-    execute(this, orderedTasks, task);
-  }
-
-  @Override
   public boolean isEventLoopContext() {
     return false;
   }
@@ -144,11 +139,6 @@ public class WorkerContext extends ContextImpl {
     @Override
     <T> void execute(T argument, Handler<T> task) {
       delegate.execute(this, orderedTasks, argument, task);
-    }
-
-    @Override
-    public void execute(Runnable task) {
-      delegate.execute(this, orderedTasks, task);
     }
 
     @Override
