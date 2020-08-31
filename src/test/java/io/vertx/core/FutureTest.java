@@ -543,6 +543,17 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testCompositeFutureCauses() {
+    CompositeFuture composite = CompositeFuture.all(Future.failedFuture("blabla"), Future.succeededFuture());
+
+    assertEquals(2, composite.causes().size());
+    assertNotNull(composite.causes().get(0));
+    assertEquals("blabla", composite.causes().get(0).getMessage());
+
+    assertNull(composite.causes().get(1));
+  }
+
+  @Test
   public void testCompositeFutureMulti() {
     Promise<String> p1 = Promise.promise();
     Future<String> f1 = p1.future();
