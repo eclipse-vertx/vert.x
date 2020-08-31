@@ -254,8 +254,11 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    */
   @GenIgnore
   default List<Throwable> causes() {
-    return IntStream.range(0, size())
-      .mapToObj(this::cause)
-      .collect(Collectors.toList());
+    int size = size();
+    ArrayList<Throwable> list = new ArrayList<>(size);
+    for (int index = 0; index < size; index++) {
+      list.add(cause(index));
+    }
+    return list;
   }
 }
