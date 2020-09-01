@@ -17,6 +17,8 @@ import io.vertx.core.impl.future.CompositeFutureImpl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * The composite future wraps a list of {@link Future futures}, it is useful when several futures
@@ -243,6 +245,19 @@ public interface CompositeFuture extends Future<CompositeFuture> {
     ArrayList<T> list = new ArrayList<>(size);
     for (int index = 0;index < size;index++) {
       list.add(resultAt(index));
+    }
+    return list;
+  }
+
+  /**
+   * @return a list of all the eventual failure causes. If no future failed, returns a list of null values.
+   */
+  @GenIgnore
+  default List<Throwable> causes() {
+    int size = size();
+    ArrayList<Throwable> list = new ArrayList<>(size);
+    for (int index = 0; index < size; index++) {
+      list.add(cause(index));
     }
     return list;
   }
