@@ -17,6 +17,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -291,6 +292,81 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    */
   @Override
   Future<Void> end();
+
+  /**
+   * Send the request with an empty body.
+   *
+   * @param handler the completion handler
+   */
+  default void send(Handler<AsyncResult<Void>> handler) {
+    end(handler);
+  }
+
+  /**
+   * Like {@link #send(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<Void> send() {
+    return end();
+  }
+
+  /**
+   * Send the request with a string {@code body}.
+   *
+   * @param handler the completion handler
+   */
+  default void send(String body, Handler<AsyncResult<Void>> handler) {
+    end(body, handler);
+  }
+
+  /**
+   * Like {@link #send(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<Void> send(String body) {
+    return end(body);
+  }
+
+  /**
+   * Send the request with a buffer {@code body}.
+   *
+   * @param handler the completion handler
+   */
+  default void send(Buffer body, Handler<AsyncResult<Void>> handler) {
+    end(body, handler);
+  }
+
+  /**
+   * Like {@link #send(Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<Void> send(Buffer body) {
+    return end(body);
+  }
+
+  /**
+   * Send the request with a stream {@code body}.
+   *
+   * <p> If the {@link HttpHeaders#CONTENT_LENGTH} is set then the request assumes this is the
+   * length of the {stream}, otherwise the request will set a chunked {@link HttpHeaders#CONTENT_ENCODING}.
+   *
+   * @param handler the completion handler 
+   */
+  default void send(ReadStream<Buffer> body, Handler<AsyncResult<Void>> handler) {
+    MultiMap headers = headers();
+    if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      setChunked(true);
+    }
+    body.pipeTo(this, handler);
+  }
+
+  /**
+   * Like {@link #send(ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<Void> send(ReadStream<Buffer> body) {
+    MultiMap headers = headers();
+    if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      setChunked(true);
+    }
+    return body.pipeTo(this);
+  }
 
   /**
    * Same as {@link #sendFile(String, long)} using offset @code{0} which means starting from the beginning of the file.

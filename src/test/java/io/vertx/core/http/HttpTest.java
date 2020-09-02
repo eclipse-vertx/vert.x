@@ -6500,4 +6500,60 @@ public abstract class HttpTest extends HttpTestBase {
       }));
     await();
   }
+
+  @Test
+  public void testServerResponseChunkedSend() throws Exception {
+    testServerResponseSend(true);
+  }
+
+  @Test
+  public void testServerResponseSend() throws Exception {
+    testServerResponseSend(false);
+  }
+
+  private void testServerResponseSend(boolean chunked) throws Exception {
+    int num = 16;
+    List<Buffer> chunks = new ArrayList<>();
+    Buffer expected = Buffer.buffer();
+    for (int i = 0;i < num;i++) {
+      Buffer chunk = Buffer.buffer("chunk-" + i);
+      chunks.add(chunk);
+      expected.appendBuffer(chunk);
+    }
+    String contentLength = "" + expected.length();
+    server.requestHandler(req -> {
+      FakeStream<Buffer> stream = new FakeStream<>();
+      stream.pause();
+      stream.emit(chunks.stream());
+      stream.end();
+      HttpServerResponse resp = req.response();
+      if (!chunked) {
+        resp.putHeader(HttpHeaders.CONTENT_LENGTH, contentLength);
+      }
+      resp.send(stream);
+    });
+    startServer(testAddress);
+    client.request(requestOptions).compose(req -> req.send().compose(resp -> {
+      if (!chunked) {
+        assertEquals(contentLength, resp.getHeader(HttpHeaders.CONTENT_LENGTH));
+      }
+      List<Buffer> list = new ArrayList<>();
+      resp.handler(buff -> {
+        if (buff.length() > 0) {
+          list.add(buff); // Last HTTP2/2 buffer is empty
+        }
+      });
+      return resp.end().map(list);
+    }))
+      .onComplete(onSuccess(list -> {
+        if (chunked) {
+          assertEquals(num, list.size());
+        }
+        Buffer result = Buffer.buffer();
+        list.forEach(result::appendBuffer);
+        assertEquals(expected, result);
+        testComplete();
+      }));
+    await();
+  }
 }

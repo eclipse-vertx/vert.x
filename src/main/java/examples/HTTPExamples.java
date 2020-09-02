@@ -305,6 +305,17 @@ public class HTTPExamples {
     }).listen(8080);
   }
 
+  public void sendHttpServerResponse(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      HttpServerResponse response = request.response();
+      if (request.method() == HttpMethod.PUT) {
+        response.send(request);
+      } else {
+        response.setStatusCode(400).end();
+      }
+    }).listen(8080);
+  }
+
   public void example28(Vertx vertx) {
     HttpClient client = vertx.createHttpClient();
   }

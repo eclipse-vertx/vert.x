@@ -590,7 +590,7 @@ case you can just do:
 
 ==== Piping responses
 
-The server response is a {@link io.vertx.core.streams.WriteStream} instance so you can pipe to it from any
+The server response is a {@link io.vertx.core.streams.WriteStream} so you can pipe to it from any
 {@link io.vertx.core.streams.ReadStream}, e.g. {@link io.vertx.core.file.AsyncFile}, {@link io.vertx.core.net.NetSocket},
 {@link io.vertx.core.http.WebSocket} or {@link io.vertx.core.http.HttpServerRequest}.
 
@@ -601,6 +601,16 @@ at any one time:
 [source,$lang]
 ----
 {@link examples.HTTPExamples#example27}
+----
+
+You can also use the {@link io.vertx.core.http.HttpServerResponse#send(io.vertx.core.streams.ReadStream)} method to send a {@link io.vertx.core.streams.ReadStream}.
+
+Sending a stream is a pipe operation, however as this is a method of {@link io.vertx.core.http.HttpServerResponse}, it
+will also take  care of chunking the response when the `content-length` is not set.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#sendHttpServerResponse}
 ----
 
 ==== Writing HTTP/2 frames
