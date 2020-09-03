@@ -11,9 +11,18 @@
 
 package io.vertx.core.http;
 
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -110,13 +119,17 @@ public class Http1xTLSTest extends HttpTLSTest {
       req.response().setStatusCode(303).putHeader("location", "https://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
     });
     startServer(redirectServer);
-    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(DEFAULT_HTTP_PORT);
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
-        .clientSSL(false)
-        .serverSSL(true)
-        .requestOptions(options)
-        .followRedirects(true)
-        .pass();
+    try {
+      RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(DEFAULT_HTTP_PORT);
+      testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.NONE)
+          .clientSSL(false)
+          .serverSSL(true)
+          .requestOptions(options)
+          .followRedirects(true)
+          .pass();
+    } finally {
+      redirectServer.close();
+    }
   }
 
   @Test
@@ -130,12 +143,47 @@ public class Http1xTLSTest extends HttpTLSTest {
       req.response().setStatusCode(303).putHeader("location", "http://" + DEFAULT_HTTP_HOST + ":4043/" + DEFAULT_TEST_URI).end();
     });
     startServer(redirectServer);
-    RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043).setSsl(false);
-    testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.NONE, Trust.NONE)
-        .clientSSL(true)
-        .serverSSL(false)
-        .requestOptions(options)
-        .followRedirects(true)
-        .pass();
+    try {
+      RequestOptions options = new RequestOptions().setHost(DEFAULT_HTTP_HOST).setURI(DEFAULT_TEST_URI).setPort(4043).setSsl(false);
+      testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.NONE, Trust.NONE)
+          .clientSSL(true)
+          .serverSSL(false)
+          .requestOptions(options)
+          .followRedirects(true)
+          .pass();
+    } finally {
+      redirectServer.close();
+    }
+  }
+
+  @Test
+  public void testAppendToHttpChunks() throws Exception {
+    List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setSsl(true)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get())
+      .setHost(DEFAULT_HTTPS_HOST)
+      .setPort(DEFAULT_HTTPS_PORT)
+    ).requestHandler(req -> {
+      HttpServerResponse resp = req.response().setChunked(true);
+      expected.forEach(resp::write);
+      resp.end();
+    });
+    startServer(server);
+    client = vertx.createHttpClient(new HttpClientOptions().setSsl(true).setTrustAll(true));
+    client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI, onSuccess(req -> {
+      req.send(onSuccess(resp -> {
+        List<String> chunks = new ArrayList<>();
+        resp.handler(chunk -> {
+          chunk.appendString("-suffix");
+          chunks.add(chunk.toString());
+        });
+        resp.endHandler(v -> {
+          assertEquals(expected.stream().map(s -> s + "-suffix").collect(Collectors.toList()), chunks);
+          testComplete();
+        });
+      }));
+    }));
+    await();
   }
 }
