@@ -72,11 +72,11 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(int initialSizeHint) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
+    buffer = Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE);
   }
 
   BufferImpl(byte[] bytes) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
+    buffer = Unpooled.buffer(bytes.length, Integer.MAX_VALUE).writeBytes(bytes);
   }
 
   BufferImpl(String str, String enc) {
@@ -92,7 +92,7 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(ByteBuf buffer) {
-    this.buffer = Unpooled.unreleasableBuffer(buffer);
+    this.buffer = buffer;
   }
 
   public String toString() {
@@ -241,12 +241,15 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer appendBuffer(Buffer buff) {
-    buffer.writeBytes(buff.getByteBuf());
+    BufferImpl impl = (BufferImpl) buff;
+    ByteBuf byteBuf = impl.buffer;
+    buffer.writeBytes(impl.buffer, byteBuf.readerIndex(), impl.buffer.readableBytes());
     return this;
   }
 
   public Buffer appendBuffer(Buffer buff, int offset, int len) {
-    ByteBuf byteBuf = buff.getByteBuf();
+    BufferImpl impl = (BufferImpl) buff;
+    ByteBuf byteBuf = impl.buffer;
     int from = byteBuf.readerIndex() + offset;
     buffer.writeBytes(byteBuf, from, len);
     return this;
@@ -446,16 +449,19 @@ public class BufferImpl implements Buffer {
     return this;
   }
 
-  public Buffer setBuffer(int pos, Buffer b) {
-    ensureLength(pos + b.length());
-    buffer.setBytes(pos, b.getByteBuf());
+  public Buffer setBuffer(int pos, Buffer buff) {
+    ensureLength(pos + buff.length());
+    BufferImpl impl = (BufferImpl) buff;
+    ByteBuf byteBuf = impl.buffer;
+    buffer.setBytes(pos, byteBuf, byteBuf.readerIndex(), byteBuf.readableBytes());
     return this;
   }
 
-  public Buffer setBuffer(int pos, Buffer b, int offset, int len) {
+  public Buffer setBuffer(int pos, Buffer buffer, int offset, int len) {
     ensureLength(pos + len);
-    ByteBuf byteBuf = b.getByteBuf();
-    buffer.setBytes(pos, byteBuf, byteBuf.readerIndex() + offset, len);
+    BufferImpl impl = (BufferImpl) buffer;
+    ByteBuf byteBuf = impl.buffer;
+    this.buffer.setBytes(pos, byteBuf, byteBuf.readerIndex() + offset, len);
     return this;
   }
 
@@ -502,9 +508,7 @@ public class BufferImpl implements Buffer {
   }
 
   public ByteBuf getByteBuf() {
-    // Return a duplicate so the Buffer can be written multiple times.
-    // See #648
-    return buffer.duplicate();
+    return Unpooled.unreleasableBuffer(buffer.duplicate());
   }
 
   private Buffer append(String str, Charset charset) {
@@ -557,7 +561,7 @@ public class BufferImpl implements Buffer {
   private void setFullMaxCapacity(int capacity) {
     ByteBuf tmp = buffer.alloc().heapBuffer(capacity, Integer.MAX_VALUE);
     tmp.writeBytes(buffer);
-    buffer = Unpooled.unreleasableBuffer(tmp);
+    buffer = tmp;
   }
 
   @Override
@@ -582,8 +586,8 @@ public class BufferImpl implements Buffer {
   @Override
   public int readFromBuffer(int pos, Buffer buffer) {
     int len = buffer.getInt(pos);
-    Buffer b = buffer.getBuffer(pos + 4, pos + 4 + len);
-    this.buffer = b.getByteBuf();
+    BufferImpl impl = (BufferImpl)buffer.getBuffer(pos + 4, pos + 4 + len);
+    this.buffer = impl.getByteBuf();
     return pos + 4 + len;
   }
 }

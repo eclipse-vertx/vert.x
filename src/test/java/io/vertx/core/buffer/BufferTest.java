@@ -1142,4 +1142,17 @@ public class BufferTest {
     buff.setByte(7, (byte)1);
     assertEquals(8, buff.length());
   }
+
+  @Test
+  public void testGetByteBuf() {
+    ByteBuf byteBuf = Unpooled.buffer();
+    byteBuf.writeCharSequence("Hello World", StandardCharsets.UTF_8);
+    Buffer buff = Buffer.buffer(byteBuf);
+    ByteBuf duplicate = buff.getByteBuf();
+    duplicate.writerIndex(5);
+    assertEquals(11, byteBuf.writerIndex());
+    assertEquals(1, duplicate.refCnt());
+    duplicate.release();
+    assertEquals(1, duplicate.refCnt());
+  }
 }
