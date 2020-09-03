@@ -1116,4 +1116,30 @@ public class BufferTest {
     } catch (IllegalReferenceCountException e) {
     }
   }
+
+  @Test
+  public void testAppendExpandsBufferWhenMaxCapacityReached() {
+    Buffer buff = Buffer.buffer(Unpooled.buffer(0, 8));
+    buff.appendString("Hello World");
+  }
+
+  @Test
+  public void testWriteExpandsBufferWhenMaxCapacityReached() {
+    String s = "Hello World";
+    ByteBuf byteBuf = Unpooled.buffer(0, s.length() - 1);
+    Buffer buff = Buffer.buffer(byteBuf);
+    int idx = 0;
+    for (byte b : s.getBytes()) {
+      buff.setByte(idx++, b);
+    }
+  }
+
+  @Test
+  public void testSetByteAfterCurrentWriterIndexWithoutExpandingCapacity() {
+    ByteBuf byteBuf = Unpooled.buffer(10, Integer.MAX_VALUE);
+    byteBuf.writerIndex(5);
+    Buffer buff = Buffer.buffer(byteBuf);
+    buff.setByte(7, (byte)1);
+    assertEquals(8, buff.length());
+  }
 }
