@@ -76,7 +76,6 @@ public class JsonCodecTest {
   public void testEncodeJsonObject() {
     JsonObject jsonObject = new JsonObject();
     jsonObject.put("mystr", "foo");
-    jsonObject.put("mycharsequence", new StringBuilder("oob"));
     jsonObject.put("myint", 123);
     jsonObject.put("mylong", 1234l);
     jsonObject.put("myfloat", 1.23f);
@@ -92,7 +91,7 @@ public class JsonCodecTest {
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
-    String expected = "{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
+    String expected = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybyte\":255,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
     String json = mapper.toString(jsonObject);
     assertEquals(expected, json);
@@ -124,7 +123,6 @@ public class JsonCodecTest {
   public void testEncodeJsonObjectToBuffer() {
     JsonObject jsonObject = new JsonObject();
     jsonObject.put("mystr", "foo");
-    jsonObject.put("mycharsequence", new StringBuilder("oob"));
     jsonObject.put("myint", 123);
     jsonObject.put("mylong", 1234l);
     jsonObject.put("myfloat", 1.23f);
@@ -140,7 +138,7 @@ public class JsonCodecTest {
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
 
-    Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
+    Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
 
     Buffer json = mapper.toBuffer(jsonObject);
@@ -531,15 +529,13 @@ public class JsonCodecTest {
     assertEquals("[{\"foo\":\"bar\"}]", checkList(new JsonObject().put("foo", "bar")));
     assertEquals("{\"key\":[\"foo\"]}", checkMap(new JsonArray().add("foo")));
     assertEquals("[[\"foo\"]]", checkList(new JsonArray().add("foo")));
-    CharSequence cs = HttpHeaders.ACCEPT;
-    assertFalse(cs instanceof String);
     Locale locale = Locale.FRANCE;
     if (mapper instanceof DatabindCodec) {
-      assertEquals("{\"key\":{\"entireArrayUsed\":true,\"empty\":false}}", checkMap(cs));
-      assertEquals("[{\"entireArrayUsed\":true,\"empty\":false}]", checkList(cs));
       assertEquals("{\"key\":\"fr_FR\"}", checkMap(locale));
       assertEquals("[\"fr_FR\"]", checkList(locale));
     } else {
+      CharSequence cs = HttpHeaders.ACCEPT;
+      assertFalse(cs instanceof String);
       try {
         checkMap(cs);
         fail();
