@@ -493,9 +493,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
-   * Get the unerlying List
+   * Get the underlying {@code List} as is.
    *
-   * @return the underlying List
+   * This list may contain values that are not the types returned by the {@code JsonArray} and
+   * with an unpredictable representation of the value, e.g you might get a JSON object
+   * as a {@link JsonObject} or as a {@link Map}.
+   *
+   * @return the underlying List.
    */
   public List getList() {
     return list;

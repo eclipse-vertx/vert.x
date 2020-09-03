@@ -32,6 +32,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.ParameterizedType;
@@ -284,8 +285,8 @@ public class JacksonCodec implements JsonCodec {
           encodeJson(item, generator);
         }
         generator.writeEndArray();
-      } else if (json instanceof CharSequence) {
-        generator.writeString(((CharSequence) json).toString());
+      } else if (json instanceof String) {
+        generator.writeString((String) json);
       } else if (json instanceof Number) {
         if (json instanceof Short) {
           generator.writeNumber((Short) json);

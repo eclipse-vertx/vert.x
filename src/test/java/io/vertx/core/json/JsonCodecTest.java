@@ -12,6 +12,7 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.jackson.DatabindCodec;
@@ -29,14 +30,18 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -504,4 +509,68 @@ public class JsonCodecTest {
     } catch (DecodeException ignore) {
     }
   }
+
+  @Test
+  public void testEncodeCollectionState() {
+    assertEquals("{\"key\":\"QQ\"}", checkMap(new byte[] { 'A' }));
+    assertEquals("[\"QQ\"]", checkList(new byte[] { 'A' }));
+    assertEquals("{\"key\":\"QQ\"}", checkMap(Buffer.buffer("A")));
+    assertEquals("[\"QQ\"]", checkList(Buffer.buffer("A")));
+    Instant instant = Instant.ofEpochMilli(0);
+    assertEquals("{\"key\":\"1970-01-01T00:00:00Z\"}", checkMap(instant));
+    assertEquals("[\"1970-01-01T00:00:00Z\"]", checkList(instant));
+    assertEquals("{\"key\":\"MICROSECONDS\"}", checkMap(TimeUnit.MICROSECONDS));
+    assertEquals("[\"MICROSECONDS\"]", checkList(TimeUnit.MICROSECONDS));
+    BigInteger bigInt = new BigInteger("123456789");
+    assertEquals("{\"key\":123456789}", checkMap(bigInt));
+    assertEquals("[123456789]", checkList(bigInt));
+    BigDecimal bigDec = new BigDecimal(bigInt).divide(new BigDecimal("100"));
+    assertEquals("{\"key\":1234567.89}", checkMap(bigDec));
+    assertEquals("[1234567.89]", checkList(bigDec));
+    assertEquals("{\"key\":{\"foo\":\"bar\"}}", checkMap(new JsonObject().put("foo", "bar")));
+    assertEquals("[{\"foo\":\"bar\"}]", checkList(new JsonObject().put("foo", "bar")));
+    assertEquals("{\"key\":[\"foo\"]}", checkMap(new JsonArray().add("foo")));
+    assertEquals("[[\"foo\"]]", checkList(new JsonArray().add("foo")));
+    CharSequence cs = HttpHeaders.ACCEPT;
+    assertFalse(cs instanceof String);
+    Locale locale = Locale.FRANCE;
+    if (mapper instanceof DatabindCodec) {
+      assertEquals("{\"key\":{\"entireArrayUsed\":true,\"empty\":false}}", checkMap(cs));
+      assertEquals("[{\"entireArrayUsed\":true,\"empty\":false}]", checkList(cs));
+      assertEquals("{\"key\":\"fr_FR\"}", checkMap(locale));
+      assertEquals("[\"fr_FR\"]", checkList(locale));
+    } else {
+      try {
+        checkMap(cs);
+        fail();
+      } catch (EncodeException ignore) {
+      }
+      try {
+        checkList(cs);
+        fail();
+      } catch (EncodeException ignore) {
+      }
+      try {
+        checkMap(locale);
+        fail();
+      } catch (EncodeException ignore) {
+      }
+      try {
+        checkList(locale);
+        fail();
+      } catch (EncodeException ignore) {
+      }
+    }
+  }
+
+  private String checkMap(Object o) {
+    Map<String, Object> map = new HashMap<>();
+    map.put("key", o);
+    return mapper.toString(map, false);
+  }
+
+  private String checkList(Object o) {
+    return mapper.toString(Collections.singletonList(o), false);
+  }
+
 }

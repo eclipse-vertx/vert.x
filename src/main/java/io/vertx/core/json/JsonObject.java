@@ -769,7 +769,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Get the underlying {@code Map} as is.
    *
-   * This map may contain values that are not the types returned by the {@code JsonObject}.
+   * This map may contain values that are not the types returned by the {@code JsonObject} and
+   * with an unpredictable representation of the value, e.g you might get a JSON object
+   * as a {@link JsonObject} or as a {@link Map}.
    *
    * @return the underlying Map.
    */
