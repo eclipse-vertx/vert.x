@@ -56,19 +56,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
    * - otherwise we increase the ref count
    */
   static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
-    if (buf == Unpooled.EMPTY_BUFFER) {
-      return buf;
-    }
-    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
-      if (buf.isReadable()) {
-        ByteBuf buffer =  allocator.heapBuffer(buf.readableBytes());
-        buffer.writeBytes(buf);
-        return buffer;
-      } else {
-        return Unpooled.EMPTY_BUFFER;
-      }
-    }
-    return buf.retain();
+    ByteBuf buffer = allocator.heapBuffer(buf.readableBytes());
+    buffer.writeBytes(buf);
+    return buffer;
   }
 
   protected final IntObjectMap<VertxHttp2Stream> streams = new IntObjectHashMap<>();

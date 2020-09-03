@@ -32,23 +32,13 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
   }
 
   public static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
-    if (buf == Unpooled.EMPTY_BUFFER) {
-      return buf;
+    try {
+      ByteBuf buffer = allocator.heapBuffer(buf.readableBytes());
+      buffer.writeBytes(buf);
+      return buffer;
+    } finally {
+      buf.release();
     }
-    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
-      try {
-        if (buf.isReadable()) {
-          ByteBuf buffer =  allocator.heapBuffer(buf.readableBytes());
-          buffer.writeBytes(buf);
-          return buffer;
-        } else {
-          return Unpooled.EMPTY_BUFFER;
-        }
-      } finally {
-        buf.release();
-      }
-    }
-    return buf;
   }
 
   private static final Handler<Object> NULL_HANDLER = m -> { };

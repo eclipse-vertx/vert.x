@@ -33,6 +33,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -795,6 +797,31 @@ public class Http2Test extends HttpTest {
 
       }
     });
+    await();
+  }
+
+  @Test
+  public void testAppendToHttpChunks() throws Exception {
+    List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      expected.forEach(resp::write);
+      resp.end(); // Will end an empty chunk
+    });
+    startServer(testAddress);
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI, resp -> {
+      List<String> chunks = new ArrayList<>();
+      resp.handler(chunk -> {
+        chunk.appendString("-suffix");
+        chunks.add(chunk.toString());
+      });
+      resp.endHandler(v -> {
+        assertEquals(Stream.concat(expected.stream(), Stream.of(""))
+          .map(s -> s + "-suffix")
+          .collect(Collectors.toList()), chunks);
+        testComplete();
+      });
+    }).end();
     await();
   }
 }
