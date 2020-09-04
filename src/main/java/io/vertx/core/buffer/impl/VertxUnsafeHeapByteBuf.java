@@ -17,7 +17,7 @@ import io.netty.buffer.UnpooledUnsafeHeapByteBuf;
 /**
  * An un-releasable, un-pooled, un-instrumented, un-safe heap {@code ByteBuf}.
  */
-public final class VertxUnsafeHeapByteBuf extends UnpooledUnsafeHeapByteBuf {
+final class VertxUnsafeHeapByteBuf extends UnpooledUnsafeHeapByteBuf {
 
   public VertxUnsafeHeapByteBuf(ByteBufAllocator alloc, int initialCapacity, int maxCapacity) {
     super(alloc, initialCapacity, maxCapacity);
