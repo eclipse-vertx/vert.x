@@ -63,5 +63,14 @@ public class VertxBufferTest {
     duplicate.readerIndex(3);
     assertEquals(3, duplicate.readerIndex());
     assertEquals(0, byteBuf.readerIndex());
+    ByteBuf duplicateSlice = duplicate.slice(0, 5);
+    duplicateSlice.release();
+    assertEquals(1, duplicateSlice.refCnt());
+    assertEquals(1, duplicate.refCnt());
+    assertEquals(1, byteBuf.refCnt());
+    duplicateSlice.readerIndex(1);
+    assertEquals(1, duplicateSlice.readerIndex());
+    assertEquals(3, duplicate.readerIndex());
+    assertEquals(0, byteBuf.readerIndex());
   }
 }
