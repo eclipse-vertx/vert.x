@@ -61,11 +61,11 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(int initialSizeHint) {
-    buffer = Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE);
+    buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(initialSizeHint, Integer.MAX_VALUE);
   }
 
   BufferImpl(byte[] bytes) {
-    buffer = Unpooled.buffer(bytes.length, Integer.MAX_VALUE).writeBytes(bytes);
+    buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(bytes.length, Integer.MAX_VALUE).writeBytes(bytes);
   }
 
   BufferImpl(String str, String enc) {
@@ -496,8 +496,19 @@ public class BufferImpl implements Buffer {
     return new BufferImpl(buffer.slice(start, end - start));
   }
 
+  /**
+   * @return the buffer as is
+   */
+  public ByteBuf byteBuf() {
+    return buffer;
+  }
+
   public ByteBuf getByteBuf() {
-    return Unpooled.unreleasableBuffer(buffer.duplicate());
+    ByteBuf duplicate = buffer.duplicate();
+    if (buffer.getClass() != VertxHeapByteBuf.class && buffer.getClass() != VertxUnsafeHeapByteBuf.class) {
+      duplicate = Unpooled.unreleasableBuffer(duplicate);
+    }
+    return duplicate;
   }
 
   private Buffer append(String str, Charset charset) {
