@@ -43,6 +43,23 @@ public class EventLoopContext extends ContextImpl {
     }
   }
 
+  @Override
+  <T> void emit(AbstractContext ctx, T argument, Handler<T> task) {
+    EventLoop eventLoop = nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      ContextInternal prev = ctx.beginDispatch();
+      try {
+        task.handle(argument);
+      } catch (Throwable t) {
+        reportException(t);
+      } finally {
+        ctx.endDispatch(prev);
+      }
+    } else {
+      eventLoop.execute(() -> emit(ctx, argument, task));
+    }
+  }
+
   /**
    * <ul>
    *   <li>When the current thread is event-loop thread of this context the implementation will execute the {@code task} directly</li>

@@ -45,11 +45,6 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   @Override
-  public final <T> void emit(T argument, Handler<T> task) {
-    execute(v -> dispatch(argument, task));
-  }
-
-  @Override
   public void emit(Handler<Void> task) {
     emit(null, task);
   }

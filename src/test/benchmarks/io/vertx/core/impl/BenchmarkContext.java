@@ -39,6 +39,11 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
+  <T> void emit(AbstractContext ctx, T argument, Handler<T> task) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   void runOnContext(AbstractContext ctx, Handler<Void> action) {
     ctx.dispatch(null, action);
   }
