@@ -121,9 +121,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       Http1xServerRequest req = new Http1xServerRequest(this, request);
       requestInProgress = req;
       if (responseInProgress != null) {
-        // Deferred until the current response completion
-        responseInProgress.enqueue(req);
-        req.pause();
+        enqueueRequest(req);
         return;
       }
       responseInProgress = requestInProgress;
@@ -133,7 +131,19 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       req.context.emit(req, requestHandler);
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       onEnd();
-    } else if (msg instanceof HttpContent) {
+    } else {
+      handleOther(msg);
+    }
+  }
+
+  private void enqueueRequest(Http1xServerRequest req) {
+    // Deferred until the current response completion
+    responseInProgress.enqueue(req);
+    req.pause();
+  }
+
+  private void handleOther(Object msg) {
+    if (msg instanceof HttpContent) {
       onContent(msg);
     } else if (msg instanceof WebSocketFrame) {
       // TODO
