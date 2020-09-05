@@ -61,7 +61,7 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
       throw new IllegalStateException("Worker executor closed");
     }
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    ContextImpl impl = context instanceof ContextImpl.Duplicated ? ((ContextImpl.Duplicated)context).delegate : (ContextImpl) context;
+    ContextImpl impl = context instanceof DuplicatedContext ? ((DuplicatedContext)context).delegate : (ContextImpl) context;
     return ContextImpl.executeBlocking(context, blockingCodeHandler, pool, ordered ? impl.orderedTasks : null);
   }
 

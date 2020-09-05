@@ -34,21 +34,26 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
-  public boolean isRunningOnContext() {
+  boolean inThread() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public void runOnContext(Handler<Void> action) {
+  void runOnContext(AbstractContext ctx, Handler<Void> action) {
     if (THREAD_CHECKS) {
       checkEventLoopThread();
     }
-    dispatch(null, action);
+    ctx.dispatch(null, action);
   }
 
   @Override
-  public <T> void execute(T argument, Handler<T> task) {
+  <T> void execute(AbstractContext ctx, T argument, Handler<T> task) {
     task.handle(argument);
+  }
+
+  @Override
+  <T> void execute(AbstractContext ctx, Runnable task) {
+    task.run();
   }
 
   @Override
@@ -61,8 +66,4 @@ public class BenchmarkContext extends ContextImpl {
     return false;
   }
 
-  @Override
-  public ContextInternal duplicate() {
-    throw new UnsupportedOperationException();
-  }
 }

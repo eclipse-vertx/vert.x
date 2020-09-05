@@ -11,12 +11,8 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Context;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -39,22 +35,45 @@ public class WorkerContext extends ContextImpl {
   }
 
   @Override
-  public void runOnContext(Handler<Void> action) {
+  void runOnContext(AbstractContext ctx, Handler<Void> action) {
     try {
-      run(this, orderedTasks, null, action);
+      TaskQueue orderedTasks;
+      if (ctx instanceof DuplicatedContext) {
+        orderedTasks = ((DuplicatedContext)ctx).orderedTasks();
+      } else {
+        orderedTasks = this.orderedTasks;
+      }
+      run(ctx, orderedTasks, null, action);
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }
   }
 
+  /**
+   * <ul>
+   *   <li>When the current thread is a worker thread of this context the implementation will execute the {@code task} directly</li>
+   *   <li>Otherwise the task will be scheduled on the worker thread for execution</li>
+   * </ul>
+   */
   @Override
-  public boolean isEventLoopContext() {
-    return false;
+  <T> void execute(AbstractContext ctx, T argument, Handler<T> task) {
+    TaskQueue orderedTasks;
+    if (ctx instanceof DuplicatedContext) {
+      orderedTasks = ((DuplicatedContext)ctx).orderedTasks();
+    } else {
+      orderedTasks = this.orderedTasks;
+    }
+    execute(orderedTasks, argument, task);
   }
 
   @Override
-  public boolean isRunningOnContext() {
-    return Vertx.currentContext() == this && Context.isOnWorkerThread();
+  <T> void execute(AbstractContext ctx, Runnable task) {
+    execute(this, task, Runnable::run);
+  }
+
+  @Override
+  public boolean isEventLoopContext() {
+    return false;
   }
 
   private <T> void run(ContextInternal ctx, TaskQueue queue, T value, Handler<T> task) {
@@ -98,89 +117,8 @@ public class WorkerContext extends ContextImpl {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   *
-   * <ul>
-   *   <li>When the current thread is a worker thread of this context the implementation will execute the {@code task} directly</li>
-   *   <li>Otherwise the task will be scheduled on the worker thread for execution</li>
-   * </ul>
-   */
   @Override
-  public <T> void execute(T argument, Handler<T> task) {
-    execute(orderedTasks, argument, task);
-  }
-
-  @Override
-  public void execute(Runnable task) {
-    execute(task, Runnable::run);
-  }
-
-  public ContextInternal duplicate() {
-    return new Duplicated(this);
-  }
-
-  static class Duplicated extends ContextImpl.Duplicated<WorkerContext> {
-
-    final TaskQueue orderedTasks = new TaskQueue();
-
-    Duplicated(WorkerContext delegate) {
-      super(delegate);
-    }
-
-    @Override
-    public CloseHooks closeHooks() {
-      return delegate.closeHooks();
-    }
-
-    @Override
-    public void runOnContext(Handler<Void> action) {
-      delegate.run(this, orderedTasks, null, action);
-    }
-
-    @Override
-    public boolean isRunningOnContext() {
-      return Vertx.currentContext() == this && Context.isOnWorkerThread();
-    }
-
-    @Override
-    public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
-      return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, delegate.internalOrderedTasks);
-    }
-
-    @Override
-    public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
-      return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, ordered ? delegate.internalOrderedTasks : null);
-    }
-
-    @Override
-    public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-      return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, ordered ? orderedTasks : null);
-    }
-
-    @Override
-    public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
-      return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
-    }
-
-    @Override
-    public <T> void execute(T argument, Handler<T> task) {
-      delegate.execute(orderedTasks, argument, task);
-    }
-
-    @Override
-    public void execute(Runnable task) {
-      execute(task, Runnable::run);
-    }
-
-    @Override
-    public boolean isEventLoopContext() {
-      return false;
-    }
-
-    @Override
-    public ContextInternal duplicate() {
-      return new Duplicated(delegate);
-    }
+  boolean inThread() {
+    return Context.isOnWorkerThread();
   }
 }
