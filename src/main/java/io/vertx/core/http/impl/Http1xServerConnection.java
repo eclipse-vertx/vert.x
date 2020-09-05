@@ -118,7 +118,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         handleError(request);
         return;
       }
-      Http1xServerRequest req = new Http1xServerRequest(this, request);
+      ContextInternal requestCtx = context.duplicate();
+      Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
       requestInProgress = req;
       if (responseInProgress != null) {
         enqueueRequest(req);

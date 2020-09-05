@@ -86,9 +86,9 @@ public class Http1xServerRequest implements HttpServerRequest {
   private long bytesRead;
   private InboundBuffer<Object> pending;
 
-  Http1xServerRequest(Http1xServerConnection conn, HttpRequest request) {
+  Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
     this.conn = conn;
-    this.context = conn.getContext().duplicate();
+    this.context = context;
     this.request = request;
   }
 
