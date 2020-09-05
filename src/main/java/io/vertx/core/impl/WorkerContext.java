@@ -67,6 +67,19 @@ public class WorkerContext extends ContextImpl {
   }
 
   @Override
+  <T> void emit(AbstractContext ctx, T argument, Handler<T> task) {
+    TaskQueue orderedTasks;
+    if (ctx instanceof DuplicatedContext) {
+      orderedTasks = ((DuplicatedContext)ctx).orderedTasks();
+    } else {
+      orderedTasks = this.orderedTasks;
+    }
+    execute(orderedTasks, argument, arg -> {
+      ctx.dispatch(arg, task);
+    });
+  }
+
+  @Override
   <T> void execute(AbstractContext ctx, Runnable task) {
     execute(this, task, Runnable::run);
   }

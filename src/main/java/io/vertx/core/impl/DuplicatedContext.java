@@ -174,6 +174,11 @@ class DuplicatedContext extends AbstractContext {
   }
 
   @Override
+  public <T> void emit(T argument, Handler<T> task) {
+    delegate.emit(this, argument, task);
+  }
+
+  @Override
   public void execute(Runnable task) {
     delegate.execute(this, task);
   }

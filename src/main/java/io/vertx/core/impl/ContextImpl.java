@@ -285,6 +285,13 @@ abstract class ContextImpl extends AbstractContext {
   abstract <T> void execute(AbstractContext ctx, T argument, Handler<T> task);
 
   @Override
+  public <T> void emit(T argument, Handler<T> task) {
+    emit(this, argument, task);
+  }
+
+  abstract <T> void emit(AbstractContext ctx, T argument, Handler<T> task);
+
+  @Override
   public final ContextInternal duplicate() {
     return new DuplicatedContext(this);
   }

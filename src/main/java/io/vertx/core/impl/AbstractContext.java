@@ -81,10 +81,10 @@ abstract class AbstractContext implements ContextInternal {
     return !isEventLoopContext();
   }
 
-  @Override
-  public final <T> void emit(T argument, Handler<T> task) {
-    execute(v -> dispatch(argument, task));
-  }
+//  @Override
+//  public <T> void emit(T argument, Handler<T> task) {
+//    execute(v -> dispatch(argument, task));
+//  }
 
   @Override
   public void emit(Handler<Void> task) {
