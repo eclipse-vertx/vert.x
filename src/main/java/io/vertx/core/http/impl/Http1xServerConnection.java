@@ -89,7 +89,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
                                 ContextInternal context,
                                 String serverOrigin,
                                 HttpServerMetrics metrics) {
-    super(vertx, channel, context);
+    super(context, channel);
     this.serverOrigin = serverOrigin;
     this.options = options;
     this.sslHelper = sslHelper;
@@ -338,7 +338,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
     Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
 
-    NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, sslHelper, metrics) {
+    NetSocketImpl socket = new NetSocketImpl(context, chctx, sslHelper, metrics) {
       @Override
       protected void handleClosed() {
         if (metrics != null) {

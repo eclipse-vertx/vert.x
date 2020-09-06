@@ -100,7 +100,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
                          SocketAddress server,
                          ContextInternal context,
                          ClientMetrics metrics) {
-    super(client.getVertx(), channel, context);
+    super(context, channel);
     this.listener = listener;
     this.client = client;
     this.options = client.getOptions();
@@ -672,7 +672,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
           pipeline.remove("codec");
 
           // replace the old handler with one that handle plain sockets
-          NetSocketImpl socket = new NetSocketImpl(vertx, chctx, context, client.getSslHelper(), metrics()) {
+          NetSocketImpl socket = new NetSocketImpl(context, chctx, client.getSslHelper(), metrics()) {
             @Override
             protected void handleClosed() {
               if (metrics != null) {

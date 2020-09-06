@@ -77,8 +77,8 @@ public abstract class ConnectionBase {
   private boolean needsFlush;
   private boolean closed;
 
-  protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
-    this.vertx = vertx;
+  protected ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
+    this.vertx = context.owner();
     this.chctx = chctx;
     this.context = context;
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);

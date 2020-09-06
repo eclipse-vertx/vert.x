@@ -434,13 +434,13 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   }
 
   private Connection createConnection(ChannelHandlerContext chctx) {
-    return new Connection(context.owner(), chctx, context);
+    return new Connection(context, chctx);
   }
 
   class Connection extends ConnectionBase {
 
-    public Connection(VertxInternal vertx, ChannelHandlerContext channel, ContextInternal context) {
-      super(vertx, channel, context);
+    public Connection(ContextInternal context, ChannelHandlerContext channel) {
+      super(context, channel);
     }
 
     @Override

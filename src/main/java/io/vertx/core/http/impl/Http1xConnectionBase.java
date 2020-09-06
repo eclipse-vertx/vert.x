@@ -27,7 +27,6 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 
 /**
@@ -38,8 +37,8 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   protected S webSocket;
   protected long bytesWritten;
 
-  Http1xConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
-    super(vertx, chctx, context);
+  Http1xConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
+    super(context, chctx);
   }
 
   void handleWsFrame(WebSocketFrame msg) {

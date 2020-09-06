@@ -83,7 +83,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private long maxConcurrentStreams;
 
   public Http2ConnectionBase(ContextInternal context, VertxHttp2ConnectionHandler handler) {
-    super(context.owner(), handler.context(), context);
+    super(context, handler.context());
     this.handler = handler;
     this.handlerContext = chctx;
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
