@@ -130,14 +130,14 @@ public class EventLoopContext extends ContextImpl {
     public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
       TaskQueue queue;
       if (ordered) {
-        queue = null;
-      } else {
         synchronized (this) {
           if (orderedTasks == null) {
             orderedTasks = new TaskQueue();
           }
           queue = orderedTasks;
         }
+      } else {
+        queue = null;
       }
       return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
     }

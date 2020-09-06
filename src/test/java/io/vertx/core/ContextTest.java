@@ -357,10 +357,20 @@ public class ContextTest extends VertxTestBase {
   @Test
   public void testInternalExecuteBlockingWithQueue() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    TaskQueue[] queues = new TaskQueue[] { new TaskQueue(), new TaskQueue()};
-    AtomicReference<Thread>[] current = new AtomicReference[queues.length];
-    waitFor(queues.length);
-    for (int i = 0;i < queues.length;i++) {
+    List<Consumer<Handler<Promise<Object>>>> lst = new ArrayList<>();
+    for (int i = 0;i < 2;i++) {
+      TaskQueue queue = new TaskQueue();
+      lst.add(task -> {
+        context.executeBlocking(task, queue, ar -> {});
+      });
+    }
+    testInternalExecuteBlockingWithQueue(lst);
+  }
+
+  public void testInternalExecuteBlockingWithQueue(List<Consumer<Handler<Promise<Object>>>> lst) {
+    AtomicReference<Thread>[] current = new AtomicReference[lst.size()];
+    waitFor(lst.size());
+    for (int i = 0;i < current.length;i++) {
       current[i] = new AtomicReference<>();
     }
     CyclicBarrier barrier = new CyclicBarrier(2);
@@ -368,9 +378,9 @@ public class ContextTest extends VertxTestBase {
     int numTasks = 10;
     for (int i = 0;i < numTasks;i++) {
       int ival = i;
-      for (int j = 0;j < queues.length;j++) {
+      for (int j = 0;j < lst.size();j++) {
         int jval = j;
-        context.executeBlocking(fut -> {
+        Handler<Promise<Object>> task = fut -> {
           if (ival == 0) {
             current[jval].set(Thread.currentThread());
             latch.countDown();
@@ -390,7 +400,8 @@ public class ContextTest extends VertxTestBase {
           if (ival == numTasks - 1) {
             complete();
           }
-        }, queues[j], ar -> {});
+        };
+        lst.get(j).accept(task);
       }
     }
     latch.countDown();
@@ -560,6 +571,28 @@ public class ContextTest extends VertxTestBase {
     });
     barrier.await(10, TimeUnit.SECONDS);
   }
+
+  @Test
+  public void testDuplicateEventLoopExecuteBlockingOrdering() {
+    testDuplicateExecuteBlockingOrdering((ContextInternal) vertx.getOrCreateContext());
+  }
+
+  @Test
+  public void testDuplicateWorkerExecuteBlockingOrdering() {
+    testDuplicateExecuteBlockingOrdering(createWorkerContext());
+  }
+
+  private void testDuplicateExecuteBlockingOrdering(ContextInternal context) {
+    List<Consumer<Handler<Promise<Object>>>> lst = new ArrayList<>();
+    for (int i = 0;i < 2;i++) {
+      ContextInternal duplicate = context.duplicate();
+      lst.add(task -> {
+        duplicate.executeBlocking(task, ar -> {});
+      });
+    }
+    testInternalExecuteBlockingWithQueue(lst);
+  }
+
   @Test
   public void testReentrantDispatch() {
     ClassLoader cl = new URLClassLoader(new URL[0]);
