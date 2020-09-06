@@ -397,8 +397,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public Future<Void> close() {
     PromiseInternal<Void> promise = context.promise();
-    ChannelPromise channelPromise = chctx.newPromise().addListener(promise);
-    flush(channelPromise);
+    ChannelPromise pr = chctx.newPromise();
+    ChannelPromise channelPromise = pr.addListener(promise);
+    handlerContext.writeAndFlush(Unpooled.EMPTY_BUFFER, pr);
     channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L));
     return promise.future();
   }
@@ -503,10 +504,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   void consumeCredits(Http2Stream stream, int numBytes) {
     this.handler.consume(stream, numBytes);
-  }
-
-  void flush(Http2Stream stream) {
-    handlerContext.flush();
   }
 
   // Private

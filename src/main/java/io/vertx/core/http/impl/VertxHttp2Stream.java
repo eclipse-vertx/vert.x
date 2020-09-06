@@ -194,10 +194,6 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), promise);
   }
 
-  void flush() {
-    conn.flush(stream);
-  }
-
   private void writePriorityFrame(StreamPriority priority) {
     conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
