@@ -363,7 +363,8 @@ public class ContextTest extends VertxTestBase {
     for (int i = 0;i < queues.length;i++) {
       current[i] = new AtomicReference<>();
     }
-    CyclicBarrier barrier = new CyclicBarrier(queues.length);
+    CyclicBarrier barrier = new CyclicBarrier(2);
+    CountDownLatch latch = new CountDownLatch(3);
     int numTasks = 10;
     for (int i = 0;i < numTasks;i++) {
       int ival = i;
@@ -372,13 +373,19 @@ public class ContextTest extends VertxTestBase {
         context.executeBlocking(fut -> {
           if (ival == 0) {
             current[jval].set(Thread.currentThread());
+            latch.countDown();
+            try {
+              latch.await(20, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+              fail(e);
+            }
           } else {
             assertSame(Thread.currentThread(), current[jval].get());
-          }
-          try {
-            barrier.await();
-          } catch (Exception e) {
-            fail(e);
+            try {
+              barrier.await();
+            } catch (Exception e) {
+              fail(e);
+            }
           }
           if (ival == numTasks - 1) {
             complete();
@@ -386,6 +393,7 @@ public class ContextTest extends VertxTestBase {
         }, queues[j], ar -> {});
       }
     }
+    latch.countDown();
     await();
   }
 
