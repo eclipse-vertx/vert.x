@@ -345,15 +345,12 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   NetSocket createNetSocket() {
 
-    Map<Channel, NetSocketImpl> connectionMap = new HashMap<>(1);
-
     NetSocketImpl socket = new NetSocketImpl(context, chctx, sslHelper, metrics) {
       @Override
       protected void handleClosed() {
         if (metrics != null) {
           metrics.responseEnd(responseInProgress.metric(), responseInProgress.response());
         }
-        connectionMap.remove(chctx.channel());
         super.handleClosed();
       }
 
@@ -367,7 +364,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
     };
     socket.metric(metric());
-    connectionMap.put(chctx.channel(), socket);
 
     // Flush out all pending data
     flush();
