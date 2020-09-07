@@ -19,7 +19,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -53,16 +52,6 @@ public class BufferImpl implements Buffer {
 
   public static Buffer buffer(ByteBuf byteBuffer) {
     return new BufferImpl(byteBuffer);
-  }
-
-  public static Buffer directBuffer(String str, String enc) {
-    return directBuffer(str.getBytes(Charset.forName(Objects.requireNonNull(enc))));
-  }
-
-  public static Buffer directBuffer(byte[] bytes) {
-    ByteBuf buff = PartialPooledByteBufAllocator.UNPOOLED.directBuffer(bytes.length);
-    buff.writeBytes(bytes);
-    return new BufferImpl(buff);
   }
 
   private ByteBuf buffer;

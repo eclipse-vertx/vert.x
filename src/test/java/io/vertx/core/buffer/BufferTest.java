@@ -1101,23 +1101,6 @@ public class BufferTest {
   }
 
   @Test
-  public void testDirect() {
-    Buffer buff = BufferImpl.directBuffer("hello world".getBytes());
-    assertEquals("hello world", buff.toString());
-    buff.appendString(" foobar");
-    assertEquals("hello world foobar", buff.toString());
-    ByteBuf bb = buff.getByteBuf().unwrap();
-    assertTrue(bb.isDirect());
-    assertTrue(bb.release());
-    try {
-      // Check it's deallocated
-      buff.toString();
-      fail();
-    } catch (IllegalReferenceCountException e) {
-    }
-  }
-
-  @Test
   public void testAppendExpandsBufferWhenMaxCapacityReached() {
     Buffer buff = Buffer.buffer(Unpooled.buffer(0, 8));
     buff.appendString("Hello World");
