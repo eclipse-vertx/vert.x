@@ -40,9 +40,6 @@ public class BenchmarkContext extends ContextImpl {
 
   @Override
   void runOnContext(AbstractContext ctx, Handler<Void> action) {
-    if (THREAD_CHECKS) {
-      checkEventLoopThread();
-    }
     ctx.dispatch(null, action);
   }
 

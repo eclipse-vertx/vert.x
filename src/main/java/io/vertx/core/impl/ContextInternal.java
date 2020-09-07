@@ -35,8 +35,6 @@ public interface ContextInternal extends Context {
     Thread current = Thread.currentThread();
     if (current instanceof VertxThread) {
       return ((VertxThread) current).context();
-    } else if (current instanceof FastThreadLocalThread) {
-      return AbstractContext.holderLocal.get().ctx;
     }
     return null;
   }
