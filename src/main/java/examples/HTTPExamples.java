@@ -20,7 +20,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.*;
-import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.streams.Pump;
@@ -711,8 +710,12 @@ public class HTTPExamples {
     server.requestHandler(request -> {
       if (request.path().equals("/myapi")) {
 
-        ServerWebSocket webSocket = request.upgrade();
-        // Do something
+        request.toWebSocket(ar -> {
+          if (ar.succeeded()) {
+            ServerWebSocket webSocket = ar.result();
+            // Do something
+          }
+        });
 
       } else {
         // Reject

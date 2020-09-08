@@ -305,11 +305,38 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * This is an alternative way of handling WebSockets and can only be used if no WebSocket handler is set on the
    * {@code HttpServer}, and can only be used during the upgrade request during the WebSocket handshake.
    *
+   * @deprecated instead use {@link #toWebSocket}
    * @return the WebSocket
    * @throws IllegalStateException if the current request cannot be upgraded, when it happens an appropriate response
    *                               is sent
    */
+  @Deprecated
   ServerWebSocket upgrade();
+
+  /**
+   * Upgrade the connection of the current request to a WebSocket.
+   * <p>
+   * This is an alternative way of handling WebSockets and can only be used if no WebSocket handler is set on the
+   * {@code HttpServer}, and can only be used during the upgrade request during the WebSocket handshake.
+   *
+   * <p> Both {@link #handler(Handler)} and {@link #endHandler(Handler)} will be set to get the full body of the
+   * request that is necessary to perform the WebSocket handshake.
+   *
+   * <p> If you need to do an asynchronous upgrade, i.e not performed immediately in your request handler,
+   * you need to {@link #pause()} the request in order to not lose HTTP events necessary to upgrade the
+   * request.
+   *
+   * @param handler the completion handler
+   */
+  default void toWebSocket(Handler<AsyncResult<ServerWebSocket>> handler) {
+    Future<ServerWebSocket> fut;
+    try {
+      fut = Future.succeededFuture(upgrade());
+    } catch (Exception e) {
+      fut = Future.failedFuture(e);
+    }
+    handler.handle(fut);
+  }
 
   /**
    * Has the request ended? I.e. has the entire request, including the body been read?
