@@ -11,7 +11,6 @@
 
 package io.vertx.core.http;
 
-import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -26,7 +25,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents a server-side HTTP request.
@@ -340,16 +338,31 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   String getFormAttribute(String attributeName);
 
   /**
-   * Upgrade the connection to a WebSocket connection.
+   * Upgrade the connection of the current request to a WebSocket.
    * <p>
    * This is an alternative way of handling WebSockets and can only be used if no WebSocket handler is set on the
    * {@code HttpServer}, and can only be used during the upgrade request during the WebSocket handshake.
    *
-   * @return the WebSocket
-   * @throws IllegalStateException if the current request cannot be upgraded, when it happens an appropriate response
-   *                               is sent
+   * <p> Both {@link #handler(Handler)} and {@link #endHandler(Handler)} will be set to get the full body of the
+   * request that is necessary to perform the WebSocket handshake.
+   *
+   * <p> If you need to do an asynchronous upgrade, i.e not performed immediately in your request handler,
+   * you need to {@link #pause()} the request in order to not lose HTTP events necessary to upgrade the
+   * request.
+   *
+   * @param handler the completion handler
    */
-  ServerWebSocket upgrade();
+  default void toWebSocket(Handler<AsyncResult<ServerWebSocket>> handler) {
+    Future<ServerWebSocket> fut = toWebSocket();
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
+
+  /**
+   * Like {@link #toWebSocket(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<ServerWebSocket> toWebSocket();
 
   /**
    * Has the request ended? I.e. has the entire request, including the body been read?

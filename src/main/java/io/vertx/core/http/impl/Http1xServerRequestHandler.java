@@ -10,16 +10,12 @@
  */
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.EmptyHttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.ServerWebSocket;
 
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
-import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 
 /**
  * An {@code Handler<HttpServerRequest>} decorator that handles
@@ -41,76 +37,32 @@ public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
 
   @Override
   public void handle(HttpServerRequest req) {
-    if (req.headers()
-      .contains(UPGRADE, WEBSOCKET, true)
-      || handlers.requestHandler == null) {
-      if (handlers.server.wsAccept()) {
+    Handler<ServerWebSocket> wsHandler = handlers.wsHandler;
+    Handler<HttpServerRequest> reqHandler = handlers.requestHandler;
+    if (wsHandler != null ) {
+      if (req.headers().contains(UPGRADE, WEBSOCKET, true) && handlers.server.wsAccept()) {
         // Missing upgrade header + null request handler will be handled when creating the handshake by sending a 400 error
-        handle((Http1xServerRequest) req);
+        // handle((Http1xServerRequest) req, wsHandler);
+        ((Http1xServerRequest)req).webSocket().onComplete(ar -> {
+          if (ar.succeeded()) {
+            ServerWebSocketImpl ws = (ServerWebSocketImpl) ar.result();
+            wsHandler.handle(ws);
+            ws.tryHandshake(101);
+          }
+        });
       } else {
-        req.response()
-          .setStatusCode(HttpUtils.SC_BAD_GATEWAY)
-          .end();
+        if (reqHandler != null) {
+          reqHandler.handle(req);
+        } else {
+          req.response().setStatusCode(400).end();
+        }
       }
     } else if (req.version() == null) {
       // Invalid HTTP version, i.e not HTTP/1.1 or HTTP/1.0
       req.response().setStatusCode(501).end();
       req.response().close();
     } else {
-      handlers.requestHandler.handle(req);
-    }
-  }
-
-  /**
-   * Handle the request when a WebSocket upgrade header is present.
-   */
-  private void handle(Http1xServerRequest req) {
-    Buffer body = Buffer.buffer();
-    boolean[] failed = new boolean[1];
-    req.handler(buff -> {
-      if (!failed[0]) {
-        body.appendBuffer(buff);
-        if (body.length() > 8192) {
-          failed[0] = true;
-          // Request Entity Too Large
-          Http1xServerResponse resp = req.response();
-          resp.setStatusCode(413).end();
-          resp.close();
-        }
-      }
-    });
-    req.endHandler(v -> {
-      if (!failed[0]) {
-        handle(req, body);
-      }
-    });
-  }
-
-  /**
-   * Handle the request once we have the full body.
-   */
-  private void handle(Http1xServerRequest req, Buffer body) {
-    HttpRequest nettyReq = req.nettyRequest();
-    nettyReq = new DefaultFullHttpRequest(
-      nettyReq.protocolVersion(),
-      nettyReq.method(),
-      nettyReq.uri(),
-      body.getByteBuf(),
-      nettyReq.headers(),
-      EmptyHttpHeaders.INSTANCE
-    );
-    req.setRequest(nettyReq);
-    if (handlers.wsHandler != null) {
-      ServerWebSocketImpl ws = req.createWebSocket();
-      if (ws == null) {
-        // Response is already sent
-        return;
-      }
-      handlers.wsHandler.handle(ws);
-      // Attempt to handshake
-      ws.tryHandshake(SC_SWITCHING_PROTOCOLS);
-    } else {
-      handlers.requestHandler.handle(req);
+      reqHandler.handle(req);
     }
   }
 }

@@ -18,10 +18,12 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -273,42 +275,48 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return vertx;
   }
 
-  ServerWebSocketImpl createWebSocket(Http1xServerRequest request) {
-    if (webSocket != null) {
-      return webSocket;
-    }
-    if (!(request.nettyRequest() instanceof FullHttpRequest)) {
-      throw new IllegalStateException();
-    }
-    WebSocketServerHandshaker handshaker = createHandshaker(request);
-    if (handshaker == null) {
-      return null;
-    }
-    webSocket = new ServerWebSocketImpl(vertx.getOrCreateContext(), this, handshaker.version() != WebSocketVersion.V00,
-      request, handshaker, options.getMaxWebSocketFrameSize(), options.getMaxWebSocketMessageSize());
-    if (METRICS_ENABLED && metrics != null) {
-      webSocket.setMetric(metrics.connected(metric(), request.metric(), webSocket));
-    }
-    return webSocket;
+  void createWebSocket(Http1xServerRequest request, Promise<ServerWebSocket> promise) {
+    context.execute(() -> {
+      if (request != responseInProgress) {
+        promise.fail("Invalid request");
+      } else if (webSocket != null) {
+        promise.complete(webSocket);
+      } else if (!(request.nettyRequest() instanceof FullHttpRequest)) {
+        promise.fail(new IllegalStateException());
+      } else {
+        WebSocketServerHandshaker handshaker;
+        try {
+          handshaker = createHandshaker(request);
+        } catch (WebSocketHandshakeException e) {
+          promise.fail(e);
+          return;
+        }
+        webSocket = new ServerWebSocketImpl(vertx.getOrCreateContext(), this, handshaker.version() != WebSocketVersion.V00,
+          request, handshaker, options.getMaxWebSocketFrameSize(), options.getMaxWebSocketMessageSize());
+        if (METRICS_ENABLED && metrics != null) {
+          webSocket.setMetric(metrics.connected(metric(), request.metric(), webSocket));
+        }
+        promise.complete(webSocket);
+      }
+    });
   }
 
-  private WebSocketServerHandshaker createHandshaker(Http1xServerRequest request) {
+  private WebSocketServerHandshaker createHandshaker(Http1xServerRequest request) throws WebSocketHandshakeException {
     // As a fun part, Firefox 6.0.2 supports Websockets protocol '7'. But,
     // it doesn't send a normal 'Connection: Upgrade' header. Instead it
     // sends: 'Connection: keep-alive, Upgrade'. Brilliant.
-    Channel ch = channel();
     String connectionHeader = request.getHeader(io.vertx.core.http.HttpHeaders.CONNECTION);
     if (connectionHeader == null || !connectionHeader.toLowerCase().contains("upgrade")) {
       request.response()
         .setStatusCode(BAD_REQUEST.code())
         .end("\"Connection\" header must be \"Upgrade\".");
-      return null;
+      throw new WebSocketHandshakeException("Invalid connection header");
     }
     if (request.method() != io.vertx.core.http.HttpMethod.GET) {
       request.response()
         .setStatusCode(METHOD_NOT_ALLOWED.code())
         .end();
-      return null;
+      throw new WebSocketHandshakeException("Invalid HTTP method");
     }
     String wsURL;
     try {
@@ -317,14 +325,12 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       request.response()
         .setStatusCode(BAD_REQUEST.code())
         .end("Invalid request URI");
-      return null;
+      throw new WebSocketHandshakeException("Invalid WebSocket location", e);
     }
-
     String subp = null;
     if (options.getWebSocketSubProtocols() != null) {
       subp = String.join(",", options.getWebSocketSubProtocols());
     }
-
     WebSocketServerHandshakerFactory factory =
       new WebSocketServerHandshakerFactory(wsURL,
         subp,

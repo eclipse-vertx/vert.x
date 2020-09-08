@@ -1305,7 +1305,7 @@ public class WebSocketTest extends VertxTestBase {
       server = vertx.createHttpServer().requestHandler(req -> {
         if (first.compareAndSet(false, true)) {
           try {
-            req.upgrade();
+            req.toWebSocket();
           } catch (Exception e) {
             // Expected
           }
@@ -1851,15 +1851,17 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     server.requestHandler(request -> {
       Runnable runner = () -> {
-        ServerWebSocket ws = request.upgrade();
-        ws.handler(buff -> {
-          ws.write(Buffer.buffer("helloworld"));
-          ws.close();
-        });
+        request.toWebSocket().onComplete(onSuccess(ws -> {
+          ws.handler(buff -> {
+            ws.write(Buffer.buffer("helloworld"));
+            ws.close();
+          });
+        }));
       };
       if (delayed) {
         // This tests the case where the last http content comes of the request (its not full) comes in
         // before the upgrade has happened and before HttpServerImpl.expectWebsockets is true
+        request.pause();
         vertx.runOnContext(v -> {
           runner.run();
         });
@@ -1879,6 +1881,26 @@ public class WebSocketTest extends VertxTestBase {
         });
         ws.write(Buffer.buffer("foo"));
       }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testUpgradeFailure() {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+    server.requestHandler(request -> {
+      request.toWebSocket(onFailure(err -> {
+        testComplete();
+      }));
+    });
+    server.listen(onSuccess(s -> {
+      client = vertx.createHttpClient();
+      handshake(client, req -> {
+        req.putHeader(HttpHeaders.CONTENT_LENGTH, "100");
+        req.sendHead(onSuccess(v -> {
+          req.connection().close();
+        }));
+      });
     }));
     await();
   }
@@ -1940,14 +1962,12 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testUpgradeInvalidRequest() {
+    waitFor(2);
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     server.requestHandler(request -> {
-      try {
-        request.upgrade();
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        // OK
-      }
+      request.toWebSocket().onComplete(onFailure(err -> {
+        complete();
+      }));
       request.response().end();
     });
     server.listen(onSuccess(s -> {
@@ -1955,7 +1975,7 @@ public class WebSocketTest extends VertxTestBase {
       client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/")
         .compose(HttpClientRequest::send)
         .onComplete(onSuccess(resp -> {
-          testComplete();
+          complete();
         }));
     }));
     await();
@@ -2030,25 +2050,20 @@ public class WebSocketTest extends VertxTestBase {
     }
   }
 
-  private void handshake(HttpClient client, Handler<NetSocket> handler) {
+  private void handshake(HttpClient client, Handler<HttpClientRequest> handler) {
     client.request(new RequestOptions()
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
       .setURI("/")
     ).onComplete(onSuccess(req -> {
       req
-        .onComplete(onSuccess(resp -> {
-            assertEquals(101, resp.statusCode());
-          })
-        )
-        .netSocket(onSuccess(handler::handle))
         .putHeader("Upgrade", "websocket")
         .putHeader("Connection", "Upgrade")
         .putHeader("Sec-WebSocket-Key", "dGhlIHNhbXBsZSBub25jZQ==")
         .putHeader("Sec-WebSocket-Protocol", "chat")
         .putHeader("Sec-WebSocket-Version", "13")
-        .putHeader("Origin", "http://example.com")
-        .end();
+        .putHeader("Origin", "http://example.com");
+        handler.handle(req);
     }));
   }
 
@@ -2560,7 +2575,9 @@ public class WebSocketTest extends VertxTestBase {
     client = vertx.createHttpClient(clientOptions);
     server = vertx.createHttpServer(serverOptions).requestHandler(request -> {
       if ("/test".equals(request.path())) {
-        request.upgrade().close();
+        request
+          .toWebSocket()
+          .onComplete(onSuccess(ServerWebSocket::close));
       } else {
         request.response().end();
       }
@@ -2749,29 +2766,34 @@ public class WebSocketTest extends VertxTestBase {
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
       client = vertx.createHttpClient();
-      handshake(client, res -> {
-        NetSocketInternal so = (NetSocketInternal) res;
-        so.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
-        so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
-        String reason = TestUtils.randomAlphaString(10);
-        so.writeMessage(new CloseWebSocketFrame(status, reason));
-        AtomicBoolean closeFrameReceived = new AtomicBoolean();
-        so.messageHandler(msg -> {
-          if (msg instanceof CloseWebSocketFrame) {
-            CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
-            assertEquals(status, frame.statusCode());
-            assertEquals(reason, frame.reasonText());
-            closeFrameReceived.set(true);
-          }
-          if (msg instanceof ReferenceCounted) {
-            // release to avoid leaks
-            ((ReferenceCounted)msg).release();
-          }
-        });
-        so.closeHandler(v2 -> {
-          assertTrue(closeFrameReceived.get());
-          complete();
-        });
+      handshake(client, req -> {
+        req.netSocket(onSuccess(so -> {
+          NetSocketInternal soi = (NetSocketInternal) so;
+          soi.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
+          soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
+          String reason = TestUtils.randomAlphaString(10);
+          soi.writeMessage(new CloseWebSocketFrame(status, reason));
+          AtomicBoolean closeFrameReceived = new AtomicBoolean();
+          soi.messageHandler(msg -> {
+            if (msg instanceof CloseWebSocketFrame) {
+              CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
+              assertEquals(status, frame.statusCode());
+              assertEquals(reason, frame.reasonText());
+              closeFrameReceived.set(true);
+            }
+            if (msg instanceof ReferenceCounted) {
+              // release to avoid leaks
+              ((ReferenceCounted)msg).release();
+            }
+          });
+          soi.closeHandler(v2 -> {
+            assertTrue(closeFrameReceived.get());
+            complete();
+          });
+        }));
+        req.send(onSuccess(resp -> {
+          assertEquals(101, resp.statusCode());
+        }));
       });
     }));
     await();
@@ -2905,11 +2927,16 @@ public class WebSocketTest extends VertxTestBase {
     });
     server.listen(onSuccess(s -> {
       client = vertx.createHttpClient();
-      handshake(client, sock -> {
-        // Let's write an invalid frame
-        Buffer buff = Buffer.buffer();
-        buff.appendByte((byte)(0x8)).appendByte((byte)0); // Violates protocol with V13 (final control frame)
-        sock.write(buff);
+      handshake(client, req -> {
+        req.netSocket(onSuccess(sock -> {
+          // Let's write an invalid frame
+          Buffer buff = Buffer.buffer();
+          buff.appendByte((byte)(0x8)).appendByte((byte)0); // Violates protocol with V13 (final control frame)
+          sock.write(buff);
+        }));
+        req.send(onSuccess(resp -> {
+          assertEquals(101, resp.statusCode());
+        }));
       });
     }));
     await();

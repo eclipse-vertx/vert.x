@@ -20,6 +20,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
@@ -377,17 +378,56 @@ public class Http1xServerRequest implements HttpServerRequest {
   }
 
   @Override
-  public ServerWebSocket upgrade() {
-    ServerWebSocketImpl ws = createWebSocket();
-    if (ws == null) {
-      throw new IllegalStateException("Can't upgrade this request");
-    }
-    ws.accept();
-    return ws;
+  public Future<ServerWebSocket> toWebSocket() {
+    return webSocket().map(ws -> {
+      ws.accept();
+      return ws;
+    });
   }
 
-  ServerWebSocketImpl createWebSocket() {
-    return conn.createWebSocket(this);
+  /**
+   * @return a future of the un-accepted WebSocket
+   */
+  Future<ServerWebSocket> webSocket() {
+    Promise<ServerWebSocket> promise = context.promise();
+    webSocket(promise);
+    return promise.future();
+  }
+
+  /**
+   * Handle the request when a WebSocket upgrade header is present.
+   */
+  private void webSocket(Promise<ServerWebSocket> promise) {
+    Buffer body = Buffer.buffer();
+    boolean[] failed = new boolean[1];
+    handler(buff -> {
+      if (!failed[0]) {
+        body.appendBuffer(buff);
+        if (body.length() > 8192) {
+          failed[0] = true;
+          // Request Entity Too Large
+          response.setStatusCode(413).end();
+          response.close();
+        }
+      }
+    });
+    exceptionHandler(promise::tryFail);
+    endHandler(v -> {
+      if (!failed[0]) {
+        // Handle the request once we have the full body.
+        request = new DefaultFullHttpRequest(
+          request.protocolVersion(),
+          request.method(),
+          request.uri(),
+          body.getByteBuf(),
+          request.headers(),
+          EmptyHttpHeaders.INSTANCE
+        );
+        conn.createWebSocket(this, promise);
+      }
+    });
+    // In case we were paused
+    resume();
   }
 
   @Override

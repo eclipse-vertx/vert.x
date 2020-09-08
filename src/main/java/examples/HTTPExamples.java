@@ -11,9 +11,7 @@
 
 package examples;
 
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -934,8 +932,10 @@ public class HTTPExamples {
     server.requestHandler(request -> {
       if (request.path().equals("/myapi")) {
 
-        ServerWebSocket webSocket = request.upgrade();
-        // Do something
+        Future<ServerWebSocket> fut = request.toWebSocket();
+        fut.onSuccess(ws -> {
+          // Do something
+        });
 
       } else {
         // Reject

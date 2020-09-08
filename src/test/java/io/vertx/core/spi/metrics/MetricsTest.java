@@ -24,7 +24,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -557,16 +556,17 @@ public class MetricsTest extends VertxTestBase {
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       assertNotNull(metrics.getMetric(req));
-      ServerWebSocket ws = req.upgrade();
-      assertNull(metrics.getMetric(req));
-      WebSocketMetric metric = metrics.getMetric(ws);
-      assertNotNull(metric);
-      ws.handler(buffer -> ws.write(buffer));
-      ws.closeHandler(closed -> {
-        WebSocketMetric a = metrics.getMetric(ws);
-        assertNull(a);
-        testComplete();
-      });
+      req.toWebSocket().onComplete(onSuccess(ws -> {
+        assertNull(metrics.getMetric(req));
+        WebSocketMetric metric = metrics.getMetric(ws);
+        assertNotNull(metric);
+        ws.handler(buffer -> ws.write(buffer));
+        ws.closeHandler(closed -> {
+          WebSocketMetric a = metrics.getMetric(ws);
+          assertNull(a);
+          testComplete();
+        });
+      }));
     });
     server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, ar -> {
       assertTrue(ar.succeeded());
