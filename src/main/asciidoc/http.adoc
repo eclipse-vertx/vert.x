@@ -1683,7 +1683,7 @@ NOTE: the WebSocket will be automatically accepted after the handler is called u
 ===== Upgrading to WebSocket
 
 The second way of handling WebSockets is to handle the HTTP Upgrade request that was sent from the client, and
-call {@link io.vertx.core.http.HttpServerRequest#upgrade()} on the server request.
+call {@link io.vertx.core.http.HttpServerRequest#toWebSocket()} on the server request.
 
 [source,$lang]
 ----

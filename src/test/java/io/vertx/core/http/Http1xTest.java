@@ -1761,12 +1761,13 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testIncorrectHttpVersion() throws Exception {
-    server.requestHandler(req -> {
-      NetSocket so = req.netSocket();
+    NetServer server = vertx.createNetServer();
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.connectHandler(so -> {
       so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
       so.close();
-    });
-    startServer(testAddress);
+    }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
     AtomicBoolean a = new AtomicBoolean();
     client.connectionHandler(conn -> conn.closeHandler(v -> testComplete()));
     client.request(requestOptions)
@@ -2923,11 +2924,12 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testClientConnectionExceptionHandler() throws Exception {
-    server.requestHandler(req -> {
-      NetSocket so = req.netSocket();
+    NetServer server = vertx.createNetServer();
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.connectHandler(so -> {
       so.write(Buffer.buffer(TestUtils.randomAlphaString(40) + "\r\n"));
-    });
-    startServer(testAddress);
+    }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
     client.connectionHandler(conn -> {
       conn.exceptionHandler(err -> {
         testComplete();
@@ -3627,13 +3629,15 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testInvalidChunkInHttpClientResponse() throws Exception {
-    server.requestHandler(req -> {
-      NetSocket so = req.netSocket();
+    NetServer server = vertx.createNetServer();
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.connectHandler(so -> {
       so.write("HTTP/1.1 200 OK\r\n");
       so.write("Transfer-Encoding: chunked\r\n");
       so.write("\r\n");
       so.write("invalid\r\n"); // Empty chunk
-    });
+    }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
     AtomicInteger status = new AtomicInteger();
     testHttpClientResponseDecodeError(err -> {
       switch (status.incrementAndGet()) {
@@ -3651,8 +3655,9 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testInvalidTrailersInHttpClientResponse() throws Exception {
-    server.requestHandler(req -> {
-      NetSocket so = req.netSocket();
+    NetServer server = vertx.createNetServer();
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.connectHandler(so -> {
       so.write("HTTP/1.1 200 OK\r\n");
       so.write("Transfer-Encoding: chunked\r\n");
       so.write("\r\n");
@@ -3661,7 +3666,8 @@ public class Http1xTest extends HttpTest {
       for (int i = 0;i < 2000;i++) {
         so.write("01234567");
       }
-    });
+    }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
     AtomicInteger status = new AtomicInteger();
     testHttpClientResponseDecodeError(err -> {
       switch (status.incrementAndGet()) {
@@ -3678,7 +3684,6 @@ public class Http1xTest extends HttpTest {
   }
 
   private void testHttpClientResponseDecodeError(Handler<Throwable> errorHandler) throws Exception {
-    startServer(testAddress);
     client.request(requestOptions)
       .onComplete(onSuccess(req -> {
         req.send(onSuccess(resp -> {
@@ -5008,10 +5013,11 @@ public class Http1xTest extends HttpTest {
     int num = 6;
     waitFor(num);
     server.requestHandler(req -> {
-      NetSocket so = req.netSocket();
-      vertx.setTimer(200, id -> {
-        so.close();
-      });
+      req.toNetSocket(onSuccess(so -> {
+        vertx.setTimer(200, id -> {
+          so.close();
+        });
+      }));
     });
     server.listen(onSuccess(s -> {
       AtomicInteger count = new AtomicInteger();

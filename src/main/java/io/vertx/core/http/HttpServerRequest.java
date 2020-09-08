@@ -11,7 +11,6 @@
 
 package io.vertx.core.http;
 
-import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -26,7 +25,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents a server-side HTTP request.
@@ -259,13 +257,14 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   Future<Void> end();
 
   /**
-   * Get a net socket for the underlying connection of this request.
-   * <p/>
-   * This method must be called before the server response is ended.
-   * <p/>
-   * With {@code CONNECT} requests, a {@code 200} response is sent with no {@code content-length} header set
-   * before returning the socket.
-   * <p/>
+   * Establish a TCP <a href="https://tools.ietf.org/html/rfc7231#section-4.3.6">tunnel<a/> with the client.
+   *
+   * <p> This must be called only for {@code CONNECT} HTTP method and before any response is sent.
+   *
+   * <p> Calling this sends a {@code 200} response with no {@code content-length} header set and
+   * then provides the {@code NetSocket} for handling the created tunnel. Any HTTP header set on the
+   * response before calling this method will be sent.
+   *
    * <pre>
    * server.requestHandler(req -> {
    *   if (req.method() == HttpMethod.CONNECT) {
@@ -278,20 +277,20 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    *   ...
    * });
    * </pre>
-   * <p/>
-   * For other HTTP/1 requests once you have called this method, you must handle writing to the connection yourself using
-   * the net socket, the server request instance will no longer be usable as normal. USE THIS WITH CAUTION! Writing to the socket directly if you don't know what you're
-   * doing can easily break the HTTP protocol.
-   * <p/>
-   * With HTTP/2, a {@code 200} response is always sent with no {@code content-length} header set before returning the socket
-   * like in the {@code CONNECT} case above.
-   * <p/>
    *
-   * @return the net socket
-   * @throws IllegalStateException when the socket can't be created
+   * @param handler the completion handler
    */
-  @CacheReturn
-  NetSocket netSocket();
+  default void toNetSocket(Handler<AsyncResult<NetSocket>> handler) {
+    Future<NetSocket> fut = toNetSocket();
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
+
+  /**
+   * Like {@link #toNetSocket(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<NetSocket> toNetSocket();
 
   /**
    * Call this with true if you are expecting a multi-part body to be submitted in the request.
@@ -340,16 +339,31 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   String getFormAttribute(String attributeName);
 
   /**
-   * Upgrade the connection to a WebSocket connection.
+   * Upgrade the connection of the current request to a WebSocket.
    * <p>
    * This is an alternative way of handling WebSockets and can only be used if no WebSocket handler is set on the
    * {@code HttpServer}, and can only be used during the upgrade request during the WebSocket handshake.
    *
-   * @return the WebSocket
-   * @throws IllegalStateException if the current request cannot be upgraded, when it happens an appropriate response
-   *                               is sent
+   * <p> Both {@link #handler(Handler)} and {@link #endHandler(Handler)} will be set to get the full body of the
+   * request that is necessary to perform the WebSocket handshake.
+   *
+   * <p> If you need to do an asynchronous upgrade, i.e not performed immediately in your request handler,
+   * you need to {@link #pause()} the request in order to not lose HTTP events necessary to upgrade the
+   * request.
+   *
+   * @param handler the completion handler
    */
-  ServerWebSocket upgrade();
+  default void toWebSocket(Handler<AsyncResult<ServerWebSocket>> handler) {
+    Future<ServerWebSocket> fut = toWebSocket();
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
+
+  /**
+   * Like {@link #toWebSocket(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<ServerWebSocket> toWebSocket();
 
   /**
    * Has the request ended? I.e. has the entire request, including the body been read?

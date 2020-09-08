@@ -24,7 +24,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -557,16 +556,17 @@ public class MetricsTest extends VertxTestBase {
     server.requestHandler(req -> {
       FakeHttpServerMetrics metrics = FakeMetricsBase.getMetrics(server);
       assertNotNull(metrics.getMetric(req));
-      ServerWebSocket ws = req.upgrade();
-      assertNull(metrics.getMetric(req));
-      WebSocketMetric metric = metrics.getMetric(ws);
-      assertNotNull(metric);
-      ws.handler(buffer -> ws.write(buffer));
-      ws.closeHandler(closed -> {
-        WebSocketMetric a = metrics.getMetric(ws);
-        assertNull(a);
-        testComplete();
-      });
+      req.toWebSocket().onComplete(onSuccess(ws -> {
+        assertNull(metrics.getMetric(req));
+        WebSocketMetric metric = metrics.getMetric(ws);
+        assertNotNull(metric);
+        ws.handler(buffer -> ws.write(buffer));
+        ws.closeHandler(closed -> {
+          WebSocketMetric a = metrics.getMetric(ws);
+          assertNull(a);
+          testComplete();
+        });
+      }));
     });
     server.listen(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, ar -> {
       assertTrue(ar.succeeded());
@@ -807,20 +807,21 @@ public class MetricsTest extends VertxTestBase {
       assertNotNull(serverMetric);
       req.response().setStatusCode(200);
       req.response().setStatusMessage("Connection established");
-      NetSocket so = req.netSocket();
-      so.handler(so::write);
-      so.closeHandler(v -> {
-        assertNull(metrics.getMetric(req));
-        assertFalse(serverMetric.socket.connected.get());
-        assertEquals(5, serverMetric.socket.bytesRead.get());
-        assertEquals(5, serverMetric.socket.bytesWritten.get());
-        assertEquals(serverMetric.socket.remoteAddress.host(), serverMetric.socket.remoteName);
-        assertFalse(serverMetric.socket.connected.get());
-        assertEquals(5, serverMetric.socket.bytesRead.get());
-        assertEquals(5, serverMetric.socket.bytesWritten.get());
-        checker.accept(serverMetric.socket);
-        complete();
-      });
+      req.toNetSocket().onComplete(onSuccess(so -> {
+        so.handler(so::write);
+        so.closeHandler(v -> {
+          assertNull(metrics.getMetric(req));
+          assertFalse(serverMetric.socket.connected.get());
+          assertEquals(5, serverMetric.socket.bytesRead.get());
+          assertEquals(5, serverMetric.socket.bytesWritten.get());
+          assertEquals(serverMetric.socket.remoteAddress.host(), serverMetric.socket.remoteName);
+          assertFalse(serverMetric.socket.connected.get());
+          assertEquals(5, serverMetric.socket.bytesRead.get());
+          assertEquals(5, serverMetric.socket.bytesWritten.get());
+          checker.accept(serverMetric.socket);
+          complete();
+        });
+      }));
     }).listen(8080, onSuccess(s -> {
       client = vertx.createHttpClient();
       client.request(new RequestOptions()

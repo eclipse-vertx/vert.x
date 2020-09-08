@@ -111,14 +111,20 @@ public class HttpProxy extends TestProxyBase {
           }
           NetClientOptions netOptions = new NetClientOptions();
           NetClient netClient = vertx.createNetClient(netOptions);
-          netClient.connect(port, host, result -> {
-            if (result.succeeded()) {
-              NetSocket serverSocket = request.netSocket();
-              NetSocket clientSocket = result.result();
-              serverSocket.closeHandler(v -> clientSocket.close());
-              clientSocket.closeHandler(v -> serverSocket.close());
-              Pump.pump(serverSocket, clientSocket).start();
-              Pump.pump(clientSocket, serverSocket).start();
+          netClient.connect(port, host, ar1 -> {
+            if (ar1.succeeded()) {
+              request.toNetSocket().onComplete(ar2 -> {
+                if (ar2.succeeded()) {
+                  NetSocket serverSocket = ar2.result();
+                  NetSocket clientSocket = ar1.result();
+                  serverSocket.closeHandler(v -> clientSocket.close());
+                  clientSocket.closeHandler(v -> serverSocket.close());
+                  Pump.pump(serverSocket, clientSocket).start();
+                  Pump.pump(clientSocket, serverSocket).start();
+                } else {
+                  // Not handled
+                }
+              });
             } else {
               request.response().setStatusCode(403).end("request failed");
             }

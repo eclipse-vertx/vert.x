@@ -70,7 +70,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> bodyEndHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
-  private NetSocket netSocket;
+  private Future<NetSocket> netSocket;
 
   public Http2ServerResponseImpl(Http2ServerConnection conn,
                                  Http2ServerStream stream,
@@ -406,18 +406,17 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     end((ByteBuf) null, handler);
   }
 
-  NetSocket netSocket() {
-    checkValid();
+  Future<NetSocket> netSocket() {
     synchronized (conn) {
-      if (netSocket != null) {
-        return netSocket;
+      if (netSocket == null) {
+        status = HttpResponseStatus.OK;
+        if (!checkSendHeaders(false)) {
+          netSocket = stream.context.failedFuture("Response for CONNECT already sent");
+        } else {
+          ctx.flush();
+          netSocket = Future.succeededFuture(conn.toNetSocket(stream));
+        }
       }
-      status = HttpResponseStatus.OK;
-      if (!checkSendHeaders(false)) {
-        throw new IllegalStateException("Response for CONNECT already sent");
-      }
-      ctx.flush();
-      netSocket = conn.toNetSocket(stream);
     }
     return netSocket;
   }

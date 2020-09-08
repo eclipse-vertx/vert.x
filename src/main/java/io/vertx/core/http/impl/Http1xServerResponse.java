@@ -95,7 +95,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
   private long bytesWritten;
-  private NetSocket netSocket;
+  private Future<NetSocket> netSocket;
 
   Http1xServerResponse(final VertxInternal vertx, ContextInternal context, Http1xServerConnection conn, HttpRequest request, Object requestMetric) {
     this.vertx = vertx;
@@ -716,19 +716,20 @@ public class Http1xServerResponse implements HttpServerResponse {
     }
   }
 
-  NetSocket netSocket(boolean isConnect) {
-    checkValid();
-    if (netSocket == null) {
-      if (isConnect) {
+  Future<NetSocket> netSocket() {
+    synchronized (conn) {
+      if (netSocket == null) {
         if (headWritten) {
-          throw new IllegalStateException("Response for CONNECT already sent");
+          return context.failedFuture("Response for CONNECT already sent");
         }
         status = HttpResponseStatus.OK;
         prepareHeaders(-1);
         conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
+        written = true;
+        Promise<NetSocket> promise = context.promise();
+        netSocket = promise.future();
+        conn.netSocket(promise);
       }
-      written = true;
-      netSocket = conn.createNetSocket();
     }
     return netSocket;
   }
