@@ -76,7 +76,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
   private boolean channelPaused;
-  private Handler<Http1xServerRequest> requestHandler;
+  private Handler<HttpServerRequest> requestHandler;
 
   final HttpServerMetrics metrics;
   final boolean handle100ContinueAutomatically;
@@ -99,10 +99,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   @Override
   public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
-    requestHandler = req -> {
-      req.handleBegin();
-      handler.handle(req);
-    };
+    requestHandler = handler;
     return this;
   }
 
@@ -128,6 +125,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       if (METRICS_ENABLED) {
         reportRequestBegin(req);
       }
+      req.handleBegin();
       req.context.emit(req, requestHandler);
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       onEnd();
@@ -214,8 +212,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void handleNext(Http1xServerRequest next) {
     responseInProgress = next;
+    next.handleBegin();
     context.emit(next, next_ -> {
-      next_.handleBegin();
       next_.resume();
       requestHandler.handle(next_);
     });
