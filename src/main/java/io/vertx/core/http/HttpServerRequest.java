@@ -13,6 +13,8 @@ package io.vertx.core.http;
 
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.codegen.annotations.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
@@ -249,9 +251,50 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    *
    * @return the net socket
    * @throws IllegalStateException when the socket can't be created
+   * @deprecated instead use {@link #toNetSocket}
    */
+  @Deprecated
   @CacheReturn
   NetSocket netSocket();
+
+
+  /**
+   * Establish a TCP <a href="https://tools.ietf.org/html/rfc7231#section-4.3.6">tunnel<a/> with the client.
+   *
+   * <p> This must be called only for {@code CONNECT} HTTP method and before any response is sent.
+   *
+   * <p> Calling this sends a {@code 200} response with no {@code content-length} header set and
+   * then provides the {@code NetSocket} for handling the created tunnel. Any HTTP header set on the
+   * response before calling this method will be sent.
+   *
+   * <pre>
+   * server.requestHandler(req -> {
+   *   if (req.method() == HttpMethod.CONNECT) {
+   *     // Send a 200 response to accept the connect
+   *     NetSocket socket = req.netSocket();
+   *     socket.handler(buff -> {
+   *       socket.write(buff);
+   *     });
+   *   }
+   *   ...
+   * });
+   * </pre>
+   *
+   * @param handler the completion handler
+   */
+  default void toNetSocket(Handler<AsyncResult<NetSocket>> handler) {
+    Future<NetSocket> fut;
+    if (method() != HttpMethod.CONNECT) {
+      fut = Future.failedFuture("");
+    } else {
+      try {
+        fut = Future.succeededFuture(netSocket());
+      } catch (Exception e) {
+        fut = Future.failedFuture(e);
+      }
+    }
+    handler.handle(fut);
+  }
 
   /**
    * Call this with true if you are expecting a multi-part body to be submitted in the request.
@@ -371,7 +414,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * Set an handler for stream priority changes
    * <p>
    * This is not implemented for HTTP/1.x.
-   * 
+   *
    * @param handler the handler to be called when stream priority changes
    */
   @Fluent
