@@ -378,12 +378,16 @@ public class Http1xServerRequest implements HttpServerRequest {
 
   @Override
   public ServerWebSocket upgrade() {
-    ServerWebSocketImpl ws = conn.createWebSocket(this);
+    ServerWebSocketImpl ws = createWebSocket();
     if (ws == null) {
       throw new IllegalStateException("Can't upgrade this request");
     }
     ws.accept();
     return ws;
+  }
+
+  ServerWebSocketImpl createWebSocket() {
+    return conn.createWebSocket(this);
   }
 
   @Override

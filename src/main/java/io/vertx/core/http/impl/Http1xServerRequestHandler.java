@@ -16,7 +16,6 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import static io.vertx.core.http.HttpHeaders.UPGRADE;
 import static io.vertx.core.http.HttpHeaders.WEBSOCKET;
@@ -102,7 +101,7 @@ public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
     );
     req.setRequest(nettyReq);
     if (handlers.wsHandler != null) {
-      ServerWebSocketImpl ws = ((Http1xServerConnection)req.connection()).createWebSocket(req);
+      ServerWebSocketImpl ws = req.createWebSocket();
       if (ws == null) {
         // Response is already sent
         return;
