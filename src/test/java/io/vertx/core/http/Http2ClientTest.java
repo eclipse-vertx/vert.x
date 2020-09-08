@@ -40,7 +40,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.test.core.AsyncTestBase;
@@ -1411,31 +1410,32 @@ public class Http2ClientTest extends Http2TestBase {
     };
 
     server.requestHandler(req -> {
-      NetSocket socket = req.netSocket();
-      AtomicInteger status = new AtomicInteger();
-      socket.handler(buff -> {
-        switch (status.getAndIncrement()) {
-          case 0:
-            assertEquals(Buffer.buffer("some-data"), buff);
-            socket.write(buff, writeHandler);
-            break;
-          case 1:
-            assertEquals(Buffer.buffer("last-data"), buff);
-            break;
-          default:
-            fail();
-            break;
-        }
-      });
-      socket.endHandler(v -> {
-        assertEquals(2, status.getAndIncrement());
-        socket.write(Buffer.buffer("last-data"), writeHandler);
-      });
-      socket.closeHandler(v -> {
-        assertEquals(3, status.getAndIncrement());
-        complete();
-        assertEquals(2, writeHandlerCounter.get());
-      });
+      req.toNetSocket(onSuccess(socket -> {
+        AtomicInteger status = new AtomicInteger();
+        socket.handler(buff -> {
+          switch (status.getAndIncrement()) {
+            case 0:
+              assertEquals(Buffer.buffer("some-data"), buff);
+              socket.write(buff, writeHandler);
+              break;
+            case 1:
+              assertEquals(Buffer.buffer("last-data"), buff);
+              break;
+            default:
+              fail();
+              break;
+          }
+        });
+        socket.endHandler(v -> {
+          assertEquals(2, status.getAndIncrement());
+          socket.write(Buffer.buffer("last-data"), writeHandler);
+        });
+        socket.closeHandler(v -> {
+          assertEquals(3, status.getAndIncrement());
+          complete();
+          assertEquals(2, writeHandlerCounter.get());
+        });
+      }));
     });
     startServer(testAddress);
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
@@ -1477,28 +1477,29 @@ public class Http2ClientTest extends Http2TestBase {
     waitFor(3);
     AtomicInteger status = new AtomicInteger();
     server.requestHandler(req -> {
-      NetSocket socket = req.netSocket();
-      socket.handler(buff -> {
-        switch (status.getAndIncrement()) {
-          case 0:
-            assertEquals(Buffer.buffer("some-data"), buff);
-            socket.end(buff);
-            break;
-          case 1:
-            assertEquals(Buffer.buffer("last-data"), buff);
-            break;
-          default:
-            fail();
-            break;
-        }
-      });
-      socket.endHandler(v -> {
-        assertEquals(2, status.getAndIncrement());
-      });
-      socket.closeHandler(v -> {
-        assertEquals(3, status.getAndIncrement());
-        complete();
-      });
+      req.toNetSocket(onSuccess(socket -> {
+        socket.handler(buff -> {
+          switch (status.getAndIncrement()) {
+            case 0:
+              assertEquals(Buffer.buffer("some-data"), buff);
+              socket.end(buff);
+              break;
+            case 1:
+              assertEquals(Buffer.buffer("last-data"), buff);
+              break;
+            default:
+              fail();
+              break;
+          }
+        });
+        socket.endHandler(v -> {
+          assertEquals(2, status.getAndIncrement());
+        });
+        socket.closeHandler(v -> {
+          assertEquals(3, status.getAndIncrement());
+          complete();
+        });
+      }));
     });
 
     startServer(testAddress);

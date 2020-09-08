@@ -399,7 +399,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
-  public NetSocket netSocket() {
+  public Future<NetSocket> toNetSocket() {
     return response.netSocket();
   }
 

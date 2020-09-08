@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -24,6 +25,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
@@ -350,10 +352,11 @@ public class Http1xServerRequest implements HttpServerRequest {
   }
 
   @Override
-  public NetSocket netSocket() {
-    synchronized (conn) {
-      return response.netSocket(method() == io.vertx.core.http.HttpMethod.CONNECT);
+  public Future<NetSocket> toNetSocket() {
+    if (method() != HttpMethod.CONNECT) {
+      return context.failedFuture("HTTP method must be CONNECT to upgrade the connection to a net socket");
     }
+    return response.netSocket();
   }
 
   @Override

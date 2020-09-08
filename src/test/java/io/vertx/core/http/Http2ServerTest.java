@@ -46,6 +46,7 @@ import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -54,7 +55,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
@@ -735,33 +735,35 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testServerRequestPauseResume() throws Exception {
-    testStreamPauseResume(req -> req);
+    testStreamPauseResume(req -> Future.succeededFuture(req));
   }
 
-  private void testStreamPauseResume(Function<HttpServerRequest, ReadStream<Buffer>> streamProvider) throws Exception {
+  private void testStreamPauseResume(Function<HttpServerRequest, Future<ReadStream<Buffer>>> streamProvider) throws Exception {
     Buffer expected = Buffer.buffer();
     String chunk = TestUtils.randomAlphaString(1000);
     AtomicBoolean done = new AtomicBoolean();
     AtomicBoolean paused = new AtomicBoolean();
     Buffer received = Buffer.buffer();
     server.requestHandler(req -> {
-      ReadStream<Buffer> stream = streamProvider.apply(req);
-      vertx.setPeriodic(1, timerID -> {
-        if (paused.get()) {
-          vertx.cancelTimer(timerID);
-          done.set(true);
-          // Let some time to accumulate some more buffers
-          vertx.setTimer(100, id -> {
-            stream.resume();
-          });
-        }
-      });
-      stream.handler(received::appendBuffer);
-      stream.endHandler(v -> {
-        assertEquals(expected, received);
-        testComplete();
-      });
-      stream.pause();
+      Future<ReadStream<Buffer>> fut = streamProvider.apply(req);
+      fut.onComplete(onSuccess(stream -> {
+        vertx.setPeriodic(1, timerID -> {
+          if (paused.get()) {
+            vertx.cancelTimer(timerID);
+            done.set(true);
+            // Let some time to accumulate some more buffers
+            vertx.setTimer(100, id -> {
+              stream.resume();
+            });
+          }
+        });
+        stream.handler(received::appendBuffer);
+        stream.endHandler(v -> {
+          assertEquals(expected, received);
+          testComplete();
+        });
+        stream.pause();
+      }));
     });
     startServer();
 
@@ -799,34 +801,36 @@ public class Http2ServerTest extends Http2TestBase {
       HttpServerResponse resp = req.response();
       resp.putHeader("content-type", "text/plain");
       resp.setChunked(true);
-      return resp;
+      return Future.succeededFuture(resp);
     });
   }
 
-  private void testStreamWritability(Function<HttpServerRequest, WriteStream<Buffer>> streamProvider) throws Exception {
+  private void testStreamWritability(Function<HttpServerRequest, Future<WriteStream<Buffer>>> streamProvider) throws Exception {
     Context ctx = vertx.getOrCreateContext();
     String content = TestUtils.randomAlphaString(1024);
     StringBuilder expected = new StringBuilder();
     Promise<Void> whenFull = Promise.promise();
     AtomicBoolean drain = new AtomicBoolean();
     server.requestHandler(req -> {
-      WriteStream<Buffer> stream = streamProvider.apply(req);
-      vertx.setPeriodic(1, timerID -> {
-        if (stream.writeQueueFull()) {
-          stream.drainHandler(v -> {
-            assertOnIOContext(ctx);
-            expected.append("last");
-            stream.end(Buffer.buffer("last"));
-          });
-          vertx.cancelTimer(timerID);
-          drain.set(true);
-          whenFull.complete();
-        } else {
-          expected.append(content);
-          Buffer buf = Buffer.buffer(content);
-          stream.write(buf);
-        }
-      });
+      Future<WriteStream<Buffer>> fut = streamProvider.apply(req);
+      fut.onComplete(onSuccess(stream -> {
+        vertx.setPeriodic(1, timerID -> {
+          if (stream.writeQueueFull()) {
+            stream.drainHandler(v -> {
+              assertOnIOContext(ctx);
+              expected.append("last");
+              stream.end(Buffer.buffer("last"));
+            });
+            vertx.cancelTimer(timerID);
+            drain.set(true);
+            whenFull.complete();
+          } else {
+            expected.append(content);
+            Buffer buf = Buffer.buffer(content);
+            stream.write(buf);
+          }
+        });
+      }));
     });
     startServer(ctx);
 
@@ -2252,31 +2256,32 @@ public class Http2ServerTest extends Http2TestBase {
     List<Integer> callbacks = Collections.synchronizedList(new ArrayList<>());
 
     server.requestHandler(req -> {
-      NetSocket socket = req.netSocket();
-      AtomicInteger status = new AtomicInteger();
-      socket.handler(buff -> {
-        switch (status.getAndIncrement()) {
-          case 0:
-            assertEquals(Buffer.buffer("some-data"), buff);
-            socket.write(buff, onSuccess(v2 -> callbacks.add(0)));
-            break;
-          case 1:
-            assertEquals(Buffer.buffer("last-data"), buff);
-            break;
-          default:
-            fail();
-            break;
-        }
-      });
-      socket.endHandler(v1 -> {
-        assertEquals(2, status.getAndIncrement());
-        socket.write(Buffer.buffer("last-data"), onSuccess(v2 -> callbacks.add(1)));
-      });
-      socket.closeHandler(v -> {
-        assertEquals(2, callbacks.size());
-        assertEquals(Arrays.asList(0, 1), callbacks);
-        complete();
-      });
+      req.toNetSocket().onComplete(onSuccess(socket -> {
+        AtomicInteger status = new AtomicInteger();
+        socket.handler(buff -> {
+          switch (status.getAndIncrement()) {
+            case 0:
+              assertEquals(Buffer.buffer("some-data"), buff);
+              socket.write(buff, onSuccess(v2 -> callbacks.add(0)));
+              break;
+            case 1:
+              assertEquals(Buffer.buffer("last-data"), buff);
+              break;
+            default:
+              fail();
+              break;
+          }
+        });
+        socket.endHandler(v1 -> {
+          assertEquals(2, status.getAndIncrement());
+          socket.write(Buffer.buffer("last-data"), onSuccess(v2 -> callbacks.add(1)));
+        });
+        socket.closeHandler(v -> {
+          assertEquals(2, callbacks.size());
+          assertEquals(Arrays.asList(0, 1), callbacks);
+          complete();
+        });
+      }));
     });
 
     startServer();
@@ -2340,11 +2345,12 @@ public class Http2ServerTest extends Http2TestBase {
 
   private void testNetSocketSendFile(Buffer expected, String path, long offset, long length) throws Exception {
     server.requestHandler(req -> {
-      NetSocket socket = req.netSocket();
-      socket.sendFile(path, offset, length, ar -> {
-        assertTrue(ar.succeeded());
-        socket.end();
-      });
+      req.toNetSocket().onComplete(onSuccess(socket -> {
+        socket.sendFile(path, offset, length, ar -> {
+          assertTrue(ar.succeeded());
+          socket.end();
+        });
+      }));
     });
     startServer();
     TestClient client = new TestClient();
@@ -2384,30 +2390,31 @@ public class Http2ServerTest extends Http2TestBase {
     final AtomicInteger writeAcks = new AtomicInteger(0);
     AtomicInteger status = new AtomicInteger();
     server.requestHandler(req -> {
-      NetSocket socket = req.netSocket();
-      socket.handler(buff -> {
-        switch (status.getAndIncrement()) {
-          case 0:
-            assertEquals(Buffer.buffer("some-data"), buff);
-            socket.write(buff, onSuccess(v -> writeAcks.incrementAndGet()));
-            socket.close();
-            break;
-          case 1:
-            assertEquals(Buffer.buffer("last-data"), buff);
-            break;
-          default:
-            fail();
-            break;
-        }
-      });
-      socket.endHandler(v -> {
-        assertEquals(2, status.getAndIncrement());
-      });
-      socket.closeHandler(v -> {
-        assertEquals(3, status.getAndIncrement());
-        complete();
-        assertEquals(1, writeAcks.get());
-      });
+      req.toNetSocket().onComplete(onSuccess(socket -> {
+        socket.handler(buff -> {
+          switch (status.getAndIncrement()) {
+            case 0:
+              assertEquals(Buffer.buffer("some-data"), buff);
+              socket.write(buff, onSuccess(v -> writeAcks.incrementAndGet()));
+              socket.close();
+              break;
+            case 1:
+              assertEquals(Buffer.buffer("last-data"), buff);
+              break;
+            default:
+              fail();
+              break;
+          }
+        });
+        socket.endHandler(v -> {
+          assertEquals(2, status.getAndIncrement());
+        });
+        socket.closeHandler(v -> {
+          assertEquals(3, status.getAndIncrement());
+          complete();
+          assertEquals(1, writeAcks.get());
+        });
+      }));
     });
 
     startServer();
@@ -2450,21 +2457,22 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testNetSocketHandleReset() throws Exception {
     server.requestHandler(req -> {
-      NetSocket socket = req.netSocket();
-      AtomicInteger status = new AtomicInteger();
-      socket.exceptionHandler(err -> {
-        assertTrue(err instanceof StreamResetException);
-        StreamResetException ex = (StreamResetException) err;
-        assertEquals(0, ex.getCode());
-        assertEquals(0, status.getAndIncrement());
-      });
-      socket.endHandler(v -> {
-        fail();
-      });
-      socket.closeHandler(v  -> {
-        assertEquals(1, status.getAndIncrement());
-        testComplete();
-      });
+      req.toNetSocket().onComplete(onSuccess(socket -> {
+        AtomicInteger status = new AtomicInteger();
+        socket.exceptionHandler(err -> {
+          assertTrue(err instanceof StreamResetException);
+          StreamResetException ex = (StreamResetException) err;
+          assertEquals(0, ex.getCode());
+          assertEquals(0, status.getAndIncrement());
+        });
+        socket.endHandler(v -> {
+          fail();
+        });
+        socket.closeHandler(v  -> {
+          assertEquals(1, status.getAndIncrement());
+          testComplete();
+        });
+      }));
     });
     startServer();
     TestClient client = new TestClient();
@@ -2491,12 +2499,12 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testNetSocketPauseResume() throws Exception {
-    testStreamPauseResume(HttpServerRequest::netSocket);
+    testStreamPauseResume(req -> req.toNetSocket().map(so -> so));
   }
 
   @Test
   public void testNetSocketWritability() throws Exception {
-    testStreamWritability(HttpServerRequest::netSocket);
+    testStreamWritability(req -> req.toNetSocket().map(so -> so));
   }
 
   @Test

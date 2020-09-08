@@ -5196,16 +5196,16 @@ public abstract class HttpTest extends HttpTestBase {
           req.response().setStatusMessage("Connection established");
 
           // Now create a NetSocket
-          NetSocket src = req.netSocket();
-
-          // Create pumps which echo stuff
-          Pump pump1 = Pump.pump(src, dst).start();
-          Pump pump2 = Pump.pump(dst, src).start();
-          dst.closeHandler(v -> {
-            pump1.stop();
-            pump2.stop();
-            src.close();
-          });
+          req.toNetSocket().onComplete(onSuccess(src -> {
+            // Create pumps which echo stuff
+            Pump pump1 = Pump.pump(src, dst).start();
+            Pump pump2 = Pump.pump(dst, src).start();
+            dst.closeHandler(v -> {
+              pump1.stop();
+              pump2.stop();
+              src.close();
+            });
+          }));
         }));
       });
       server.listen(testAddress, onSuccess(s -> {
@@ -5240,15 +5240,16 @@ public abstract class HttpTest extends HttpTestBase {
 
     server.requestHandler(req -> {
       req.response().headers().set("HTTP/1.1", "101 Upgrade");
-      NetSocket so = req.netSocket();
-      so.handler(buff -> {
-        if (buff.toString().equals("ping")) {
-          so.end(Buffer.buffer("pong"));
-        }
-      });
-      so.endHandler(v -> {
-        complete();
-      });
+      req.toNetSocket().onComplete(onSuccess(so -> {
+        so.handler(buff -> {
+          if (buff.toString().equals("ping")) {
+            so.end(Buffer.buffer("pong"));
+          }
+        });
+        so.endHandler(v -> {
+          complete();
+        });
+      }));
     });
 
     server.listen(testAddress, onSuccess(s -> {
@@ -5334,8 +5335,9 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testAccessNetSocketPendingResponseData(boolean pause) {
     server.requestHandler(req -> {
-      NetSocket so = req.netSocket();
-      so.write("hello");
+      req.toNetSocket().onComplete(onSuccess(so -> {
+        so.write("hello");
+      }));
     });
     client.close();
     server.listen(testAddress, onSuccess(s -> {
@@ -5365,9 +5367,10 @@ public abstract class HttpTest extends HttpTestBase {
   public void testServerNetSocketCloseWithHandler() {
     waitFor(3);
     server.requestHandler(req -> {
-      NetSocket so = req.netSocket();
-      so.close(onSuccess(v -> {
-        complete();
+      req.toNetSocket().onComplete(onSuccess(so -> {
+        so.close(onSuccess(v -> {
+          complete();
+        }));
       }));
     });
     client.close();
@@ -5391,10 +5394,11 @@ public abstract class HttpTest extends HttpTestBase {
   public void testClientNetSocketCloseWithHandler() {
     waitFor(3);
     server.requestHandler(req -> {
-      NetSocket so = req.netSocket();
-      so.closeHandler(v -> {
-        complete();
-      });
+      req.toNetSocket().onComplete(onSuccess(so -> {
+        so.closeHandler(v -> {
+          complete();
+        });
+      }));
     });
     server.listen(testAddress, onSuccess(s -> {
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
@@ -5416,12 +5420,9 @@ public abstract class HttpTest extends HttpTestBase {
     waitFor(2);
     server.requestHandler(req -> {
       req.response().end();
-      try {
-        req.netSocket();
-        fail();
-      } catch (IllegalStateException e) {
+      req.toNetSocket(onFailure(err -> {
         complete();
-      }
+      }));
     });
     server.listen(testAddress, onSuccess(s -> {
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT))
@@ -5440,12 +5441,9 @@ public abstract class HttpTest extends HttpTestBase {
     waitFor(2);
     server.requestHandler(req -> {
       req.response().setChunked(true).write("some-chunk");
-      try {
-        req.netSocket();
-        fail();
-      } catch (IllegalStateException e) {
+      req.toNetSocket(onFailure(err -> {
         complete();
-      }
+      }));
     });
     server.listen(testAddress, onSuccess(s -> {
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT))

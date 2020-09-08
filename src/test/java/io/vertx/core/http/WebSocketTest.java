@@ -28,6 +28,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.FrameType;
+import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -491,13 +492,14 @@ public class WebSocketTest extends VertxTestBase {
     String message = "here is some text data";
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
-      NetSocket sock = getUpgradedNetSocket(req, path);
-      // Let's write a Text frame raw
-      Buffer buff = Buffer.buffer();
-      buff.appendByte((byte)129); // Text frame
-      buff.appendByte((byte)message.length());
-      buff.appendString(message);
-      sock.write(buff);
+      getUpgradedNetSocket(req, path).onComplete(onSuccess(sock -> {
+        // Let's write a Text frame raw
+        Buffer buff = Buffer.buffer();
+        buff.appendByte((byte)129); // Text frame
+        buff.appendByte((byte)message.length());
+        buff.appendString(message);
+        sock.write(buff);
+      }));
     });
     server.listen(onSuccess(s -> {
       client = vertx.createHttpClient();
@@ -640,19 +642,19 @@ public class WebSocketTest extends VertxTestBase {
   }
 
 
-  private NetSocket getUpgradedNetSocket(HttpServerRequest req, String path) {
+  private Future<NetSocket> getUpgradedNetSocket(HttpServerRequest req, String path) {
     assertEquals(path, req.path());
     assertEquals("upgrade", req.headers().get("Connection"));
-    NetSocket sock = req.netSocket();
     String secHeader = req.headers().get("Sec-WebSocket-Key");
     String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     String encoded = sha1(tmp);
-    sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
+    return ((Http1xServerConnection)req.connection()).netSocket().onSuccess(sock -> {
+      sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
         "Upgrade: WebSocket\r\n" +
         "Connection: upgrade\r\n" +
         "Sec-WebSocket-Accept: " + encoded + "\r\n" +
         "\r\n");
-    return sock;
+    });
   }
 
   private void testWSWriteStream(WebsocketVersion version) throws Exception {
@@ -895,20 +897,20 @@ public class WebSocketTest extends VertxTestBase {
     String continuationFrame = "BBB";
 
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
-      NetSocket sock = getUpgradedNetSocket(req, path);
+      getUpgradedNetSocket(req, path).onComplete(onSuccess(sock -> {
+        // Let's write a Text frame raw
+        Buffer buff = Buffer.buffer();
+        buff.appendByte((byte) 0x01); // Incomplete Text frame
+        buff.appendByte((byte) firstFrame.length());
+        buff.appendString(firstFrame);
+        sock.write(buff);
 
-      // Let's write a Text frame raw
-      Buffer buff = Buffer.buffer();
-      buff.appendByte((byte) 0x01); // Incomplete Text frame
-      buff.appendByte((byte) firstFrame.length());
-      buff.appendString(firstFrame);
-      sock.write(buff);
-
-      buff = Buffer.buffer();
-      buff.appendByte((byte) (0x00 | 0x80)); // Complete continuation frame
-      buff.appendByte((byte) continuationFrame.length());
-      buff.appendString(continuationFrame);
-      sock.write(buff);
+        buff = Buffer.buffer();
+        buff.appendByte((byte) (0x00 | 0x80)); // Complete continuation frame
+        buff.appendByte((byte) continuationFrame.length());
+        buff.appendString(continuationFrame);
+        sock.write(buff);
+      }));
     });
 
     server.listen(onSuccess(s -> {
@@ -2002,52 +2004,52 @@ public class WebSocketTest extends VertxTestBase {
     testRaceConditionWithWebSocketClient(fut.get());
   }
 
-  private NetSocket handshakeWithCookie(HttpServerRequest req) {
-    NetSocket so = req.netSocket();
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-1");
-      byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
-      digest.update(inputBytes);
-      byte[] hashedBytes = digest.digest();
-      byte[] accept = Base64.getEncoder().encode(hashedBytes);
-      Buffer data = Buffer.buffer();
-      data.appendString("HTTP/1.1 101 Switching Protocols\r\n");
-      data.appendString("Upgrade: websocket\r\n");
-      data.appendString("Connection: upgrade\r\n");
-      data.appendString("Sec-WebSocket-Accept: " + new String(accept) + "\r\n");
-      data.appendString("Set-Cookie: SERVERID=test-server-id\r\n");
-      data.appendString("Set-Cookie: JSONID=test-json-id\r\n");
-      data.appendString("\r\n");
-      so.write(data);
-      return so;
-    } catch (NoSuchAlgorithmException e) {
-      req.response().setStatusCode(500).end();
-      fail(e.getMessage());
-      return null;
-    }
+  private Future<NetSocket> handshakeWithCookie(HttpServerRequest req) {
+    return ((Http1xServerConnection)req.connection()).netSocket().compose(so -> {
+      try {
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
+        digest.update(inputBytes);
+        byte[] hashedBytes = digest.digest();
+        byte[] accept = Base64.getEncoder().encode(hashedBytes);
+        Buffer data = Buffer.buffer();
+        data.appendString("HTTP/1.1 101 Switching Protocols\r\n");
+        data.appendString("Upgrade: websocket\r\n");
+        data.appendString("Connection: upgrade\r\n");
+        data.appendString("Sec-WebSocket-Accept: " + new String(accept) + "\r\n");
+        data.appendString("Set-Cookie: SERVERID=test-server-id\r\n");
+        data.appendString("Set-Cookie: JSONID=test-json-id\r\n");
+        data.appendString("\r\n");
+        so.write(data);
+        return Future.succeededFuture(so);
+      } catch (NoSuchAlgorithmException e) {
+        req.response().setStatusCode(500).end();
+        return Future.failedFuture(e);
+      }
+    });
   }
 
-  private NetSocket handshake(HttpServerRequest req) {
-    NetSocket so = req.netSocket();
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-1");
-      byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
-      digest.update(inputBytes);
-      byte[] hashedBytes = digest.digest();
-      byte[] accept = Base64.getEncoder().encode(hashedBytes);
-      Buffer data = Buffer.buffer();
-      data.appendString("HTTP/1.1 101 Switching Protocols\r\n");
-      data.appendString("Upgrade: websocket\r\n");
-      data.appendString("Connection: upgrade\r\n");
-      data.appendString("Sec-WebSocket-Accept: " + new String(accept) + "\r\n");
-      data.appendString("\r\n");
-      so.write(data);
-      return so;
-    } catch (NoSuchAlgorithmException e) {
-      req.response().setStatusCode(500).end();
-      fail(e.getMessage());
-      return null;
-    }
+  private Future<NetSocket> handshake(HttpServerRequest req) {
+    return ((Http1xServerConnection)req.connection()).netSocket().flatMap(so -> {
+      try {
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        byte[] inputBytes = (req.getHeader("Sec-WebSocket-Key") + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").getBytes();
+        digest.update(inputBytes);
+        byte[] hashedBytes = digest.digest();
+        byte[] accept = Base64.getEncoder().encode(hashedBytes);
+        Buffer data = Buffer.buffer();
+        data.appendString("HTTP/1.1 101 Switching Protocols\r\n");
+        data.appendString("Upgrade: websocket\r\n");
+        data.appendString("Connection: upgrade\r\n");
+        data.appendString("Sec-WebSocket-Accept: " + new String(accept) + "\r\n");
+        data.appendString("\r\n");
+        so.write(data);
+        return Future.succeededFuture(so);
+      } catch (NoSuchAlgorithmException e) {
+        req.response().setStatusCode(500).end();
+        return Future.failedFuture(e);
+      }
+    });
   }
 
   private void handshake(HttpClient client, Handler<HttpClientRequest> handler) {
@@ -2071,8 +2073,7 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     // Handcrafted websocket handshake for sending a frame immediately after the handshake
     server.requestHandler(req -> {
-      NetSocket so = handshake(req);
-      if (so != null) {
+      handshake(req).onComplete(onSuccess(so -> {
         so.write(Buffer.buffer(new byte[]{
           (byte) 0x82,
           0x05,
@@ -2082,7 +2083,7 @@ public class WebSocketTest extends VertxTestBase {
           0x6c,
           0x6f,
         }));
-      }
+      }));
     });
     server.listen(onSuccess(s -> {
       context.runOnContext(v -> {
@@ -2813,12 +2814,12 @@ public class WebSocketTest extends VertxTestBase {
     waitFor(2);
     server = vertx.createHttpServer();
     server.requestHandler(req -> {
-      NetSocketInternal so = (NetSocketInternal) handshake(req);
-      if (so != null) {
-        so.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(false));
-        so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(true, false, 1000));
+      handshake(req).onComplete(onSuccess(so -> {
+        NetSocketInternal soi = (NetSocketInternal) so;
+        soi.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(false));
+        soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(true, false, 1000));
         Deque<Object> received = new ArrayDeque<>();
-        so.messageHandler(msg -> {
+        soi.messageHandler(msg -> {
           received.add(msg);
           if (msg instanceof CloseWebSocketFrame && closeServerNetSocket) {
             so.close();
@@ -2826,8 +2827,8 @@ public class WebSocketTest extends VertxTestBase {
         });
         int status = 4000 + TestUtils.randomPositiveInt() % 100;
         String reason = TestUtils.randomAlphaString(10);
-        so.writeMessage(new CloseWebSocketFrame(status, reason));
-        so.closeHandler(v -> {
+        soi.writeMessage(new CloseWebSocketFrame(status, reason));
+        soi.closeHandler(v -> {
           assertEquals(1, received.size());
           Object msg = received.getFirst();
           assertEquals(msg.getClass(), CloseWebSocketFrame.class);
@@ -2836,7 +2837,7 @@ public class WebSocketTest extends VertxTestBase {
           assertEquals(reason, frame.reasonText());
           complete();
         });
-      }
+      }));
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
       HttpClientOptions options = new HttpClientOptions();
@@ -2858,22 +2859,22 @@ public class WebSocketTest extends VertxTestBase {
     waitFor(2);
     server = vertx.createHttpServer();
     server.requestHandler(req -> {
-      NetSocketInternal so = (NetSocketInternal) handshake(req);
-      if (so != null) {
-        so.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(false));
-        so.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(true, false, 1000));
+      handshake(req).onComplete(onSuccess(so -> {
+        NetSocketInternal soi = (NetSocketInternal) so;
+        soi.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(false));
+        soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(true, false, 1000));
         Deque<Object> received = new ArrayDeque<>();
-        so.messageHandler(msg -> {
+        soi.messageHandler(msg -> {
           received.add(msg);
           if (msg instanceof CloseWebSocketFrame) {
             CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
-            so.writeMessage(new CloseWebSocketFrame(frame.statusCode(), frame.reasonText()));
+            soi.writeMessage(new CloseWebSocketFrame(frame.statusCode(), frame.reasonText()));
           }
         });
-        so.closeHandler(v -> {
+        soi.closeHandler(v -> {
           complete();
         });
-      }
+      }));
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
       client = vertx.createHttpClient(new HttpClientOptions().setWebSocketClosingTimeout(1));
@@ -2890,11 +2891,12 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testReportProtocolViolationOnClient() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
-      NetSocket sock = getUpgradedNetSocket(req, "/some/path");
-      // Let's write an invalid frame
-      Buffer buff = Buffer.buffer();
-      buff.appendByte((byte)(0x8)).appendByte((byte)0); // Violates protocol with V13 (final control frame)
-      sock.write(buff);
+      getUpgradedNetSocket(req, "/some/path").onComplete(onSuccess(sock -> {
+        // Let's write an invalid frame
+        Buffer buff = Buffer.buffer();
+        buff.appendByte((byte)(0x8)).appendByte((byte)0); // Violates protocol with V13 (final control frame)
+        sock.write(buff);
+      }));
     });
     server.listen(onSuccess(s -> {
       WebSocketConnectOptions options = new WebSocketConnectOptions()

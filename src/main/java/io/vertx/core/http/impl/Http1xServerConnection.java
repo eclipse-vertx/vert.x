@@ -17,6 +17,8 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -34,8 +36,6 @@ import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
-
-import java.util.*;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
@@ -347,48 +347,63 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return shake;
   }
 
-  NetSocket createNetSocket() {
+  public void netSocket(Handler<AsyncResult<NetSocket>> handler) {
+    Future<NetSocket> fut = netSocket();
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
 
-    NetSocketImpl socket = new NetSocketImpl(context, chctx, sslHelper, metrics) {
-      @Override
-      protected void handleClosed() {
-        if (metrics != null) {
-          metrics.responseEnd(responseInProgress.metric(), responseInProgress.response());
+  public Future<NetSocket> netSocket() {
+    Promise<NetSocket> promise = context.promise();
+    netSocket(promise);
+    return promise.future();
+  }
+
+  void netSocket(Promise<NetSocket> promise) {
+    context.execute(() -> {
+      NetSocketImpl socket = new NetSocketImpl(context, chctx, sslHelper, metrics) {
+        @Override
+        protected void handleClosed() {
+          if (metrics != null) {
+            metrics.responseEnd(responseInProgress.metric(), responseInProgress.response());
+          }
+          super.handleClosed();
         }
-        super.handleClosed();
+        @Override
+        public synchronized void handleMessage(Object msg) {
+          if (msg instanceof HttpContent) {
+            ReferenceCountUtil.release(msg);
+            return;
+          }
+          super.handleMessage(msg);
+        }
+      };
+      socket.metric(metric());
+
+      // Flush out all pending data
+      flush();
+
+      // remove old http handlers and replace the old handler with one that handle plain sockets
+      ChannelPipeline pipeline = chctx.pipeline();
+      ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);
+      if (compressor != null) {
+        pipeline.remove(compressor);
       }
 
-      @Override
-      public synchronized void handleMessage(Object msg) {
-        if (msg instanceof HttpContent) {
-          ReferenceCountUtil.release(msg);
-          return;
-        }
-        super.handleMessage(msg);
+      pipeline.remove("httpDecoder");
+      if (pipeline.get("chunkedWriter") != null) {
+        pipeline.remove("chunkedWriter");
       }
-    };
-    socket.metric(metric());
 
-    // Flush out all pending data
-    flush();
+      chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));
 
-    // remove old http handlers and replace the old handler with one that handle plain sockets
-    ChannelPipeline pipeline = chctx.pipeline();
-    ChannelHandler compressor = pipeline.get(HttpChunkContentCompressor.class);
-    if (compressor != null) {
-      pipeline.remove(compressor);
-    }
+      // check if the encoder can be removed yet or not.
+      chctx.pipeline().remove("httpEncoder");
 
-    pipeline.remove("httpDecoder");
-    if (pipeline.get("chunkedWriter") != null) {
-      pipeline.remove("chunkedWriter");
-    }
-
-    chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));
-
-    // check if the encoder can be removed yet or not.
-    chctx.pipeline().remove("httpEncoder");
-    return socket;
+      //
+      promise.complete(socket);
+    });
   }
 
   @Override
