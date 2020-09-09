@@ -1661,7 +1661,27 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testUseAfterServerResponseEnd() throws Exception {
+  public void testUseAfterServerResponseHeadSent() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.putHeader(HttpHeaders.CONTENT_LENGTH, "" + 128);
+      resp.write("01234567");
+      assertTrue(resp.headWritten());
+      assertIllegalStateException(() -> resp.setChunked(false));
+      assertIllegalStateException(() -> resp.setStatusCode(200));
+      assertIllegalStateException(() -> resp.setStatusMessage("OK"));
+      assertIllegalStateException(() -> resp.putHeader("foo", "bar"));
+      assertIllegalStateException(() -> resp.addCookie(Cookie.cookie("the_cookie", "wibble")));
+      assertIllegalStateException(() -> resp.removeCookie("the_cookie"));
+      testComplete();
+    });
+    startServer(testAddress);
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, noOpHandler()).end();
+    await();
+  }
+
+  @Test
+  public void testUseAfterServerResponseSent() throws Exception {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       assertFalse(resp.ended());

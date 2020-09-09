@@ -140,7 +140,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   private void checkHeadWritten() {
     if (headWritten) {
-      throw new IllegalStateException("Header already sent");
+      throw new IllegalStateException("Response head already sent");
     }
   }
 
@@ -739,12 +739,18 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse addCookie(Cookie cookie) {
-    cookies().put(cookie.getName(), (ServerCookie) cookie);
+    synchronized (conn) {
+      checkHeadWritten();
+      cookies().put(cookie.getName(), (ServerCookie) cookie);
+    }
     return this;
   }
 
   @Override
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
-    return CookieImpl.removeCookie(cookies(), name, invalidate);
+    synchronized (conn) {
+      checkHeadWritten();
+      return CookieImpl.removeCookie(cookies(), name, invalidate);
+    }
   }
 }
