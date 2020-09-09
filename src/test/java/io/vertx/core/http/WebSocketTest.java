@@ -66,8 +66,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_HOST;
+import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
+import static io.vertx.core.http.HttpTestBase.DEFAULT_TEST_URI;
 import static io.vertx.test.core.TestUtils.*;
 
 /**
@@ -2245,7 +2247,7 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testClearClientSslOptions() {
     SelfSignedCertificate certificate = SelfSignedCertificate.create();
-    HttpServerOptions serverOptions = new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTPS_PORT)
+    HttpServerOptions serverOptions = new HttpServerOptions().setPort(DEFAULT_HTTPS_PORT)
       .setSsl(true)
       .setKeyCertOptions(certificate.keyCertOptions());
     HttpClientOptions clientOptions = new HttpClientOptions()
@@ -2253,7 +2255,7 @@ public class WebSocketTest extends VertxTestBase {
       .setVerifyHost(false);
     client = vertx.createHttpClient(clientOptions);
     server = vertx.createHttpServer(serverOptions).webSocketHandler(WebSocketBase::close).listen(onSuccess(server -> {
-      WebSocketConnectOptions options = new WebSocketConnectOptions().setPort(HttpTestBase.DEFAULT_HTTPS_PORT).setSsl(true);
+      WebSocketConnectOptions options = new WebSocketConnectOptions().setPort(DEFAULT_HTTPS_PORT).setSsl(true);
       client.webSocket(options, onSuccess(ws -> {
         ws.closeHandler(v -> {
           testComplete();
@@ -2567,7 +2569,7 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testWebSocketAbs() {
     SelfSignedCertificate certificate = SelfSignedCertificate.create();
-    HttpServerOptions serverOptions = new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTPS_PORT)
+    HttpServerOptions serverOptions = new HttpServerOptions().setPort(DEFAULT_HTTPS_PORT)
       .setSsl(true)
       .setKeyCertOptions(certificate.keyCertOptions());
     HttpClientOptions clientOptions = new HttpClientOptions()
@@ -2583,7 +2585,7 @@ public class WebSocketTest extends VertxTestBase {
         request.response().end();
       }
     }).listen(onSuccess(server -> {
-      String url = "wss://" + clientOptions.getDefaultHost() + ":" + HttpTestBase.DEFAULT_HTTPS_PORT + "/test";
+      String url = "wss://" + clientOptions.getDefaultHost() + ":" + DEFAULT_HTTPS_PORT + "/test";
       client.webSocketAbs(url, null, null, null, onSuccess(ws -> {
         ws.closeHandler(v -> {
           testComplete();
@@ -3408,5 +3410,42 @@ public class WebSocketTest extends VertxTestBase {
     }finally {
       proxy.stop();
     }
+  }
+
+  @Test
+  public void testWebSocketDisablesALPN() {
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setProtocolVersion(HttpVersion.HTTP_2)
+      .setUseAlpn(true)
+      .setSsl(true)
+      .setTrustAll(true));
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setSsl(true)
+      .setUseAlpn(true)
+      .setSni(true)
+      .setKeyCertOptions(Cert.SERVER_PEM.get()))
+      .requestHandler(req -> req.response().end())
+      .webSocketHandler(ws -> {
+        ws.handler(msg -> {
+          assertEquals("hello", msg.toString());
+          ws.close();
+        });
+      });
+    server.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTP_HOST, onSuccess(server -> {
+      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI, onSuccess(req -> {
+        req.send(onSuccess(resp -> {
+          assertEquals(HttpVersion.HTTP_2, resp.version());
+          client.webSocket(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/",
+            onSuccess(ws -> {
+              assertTrue(ws.isSsl());
+              ws.write(Buffer.buffer("hello"));
+              ws.closeHandler(v -> {
+                testComplete();
+              });
+            }));
+        }));
+      }));
+    }));
+    await();
   }
 }

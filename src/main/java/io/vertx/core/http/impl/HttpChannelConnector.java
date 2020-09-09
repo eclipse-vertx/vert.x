@@ -57,7 +57,6 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
   private final long http1Weight;
   private final long http2Weight;
   private final long http1MaxConcurrency;
-  private final boolean ssl;
   private final SocketAddress peerAddress;
   private final SocketAddress server;
 
@@ -66,7 +65,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
                               ContextInternal context,
                               ClientMetrics metrics,
                               HttpVersion version,
-                              boolean ssl,
+                              SSLHelper sslHelper,
                               SocketAddress peerAddress,
                               SocketAddress server) {
     this.client = client;
@@ -74,7 +73,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
     this.context = context;
     this.metrics = metrics;
     this.options = client.getOptions();
-    this.sslHelper = client.getSslHelper();
+    this.sslHelper = sslHelper;
     this.version = version;
     // this is actually normal (although it sounds weird)
     // the pool uses a weight mechanism to keep track of the max number of connections
@@ -86,7 +85,6 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
     this.http2Weight = options.getMaxPoolSize();
     this.weight = version == HttpVersion.HTTP_2 ? http2Weight : http1Weight;
     this.http1MaxConcurrency = options.isPipelining() ? options.getPipeliningLimit() : 1;
-    this.ssl = ssl;
     this.peerAddress = peerAddress;
     this.server = server;
   }
@@ -130,7 +128,6 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
     Promise<ConnectResult<HttpClientConnection>> future) {
 
     boolean domainSocket = server.path() != null;
-    boolean useAlpn = options.isUseAlpn();
 
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
@@ -138,21 +135,21 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
     applyConnectionOptions(domainSocket, bootstrap);
 
     ProxyOptions options = this.options.getProxyOptions();
-    if (options != null && !ssl && options.getType()== ProxyType.HTTP) {
+    if (options != null && sslHelper == null && options.getType()== ProxyType.HTTP) {
       // http proxy requests are handled in HttpClientImpl, everything else can use netty proxy handler
       options = null;
     }
     ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options);
     // SocketAddress.inetSocketAddress(server.port(), peerHost)
-    Future<Channel> fut = channelProvider.connect(server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl);
+    Future<Channel> fut = channelProvider.connect(server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, sslHelper != null);
 
     fut.addListener((GenericFutureListener<Future<Channel>>) res -> {
       if (res.isSuccess()) {
         Channel ch = res.getNow();
         channelGroup.add(ch);
-        if (ssl) {
+        if (sslHelper != null) {
           String protocol = channelProvider.applicationProtocol();
-          if (useAlpn) {
+          if (sslHelper.isUseAlpn()) {
             if ("h2".equals(protocol)) {
               applyHttp2ConnectionOptions(ch.pipeline());
               http2Connected(listener, context, ch, future);
