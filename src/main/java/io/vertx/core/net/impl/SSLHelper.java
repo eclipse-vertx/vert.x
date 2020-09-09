@@ -208,6 +208,39 @@ public class SSLHelper {
     this.sni = options.isSni();
   }
 
+  /**
+   * Copy constructor, only configuration field are copied.
+   */
+  public SSLHelper(SSLHelper that) {
+    this.ssl = that.ssl;
+    this.sni = that.sni;
+    this.sslHandshakeTimeout = that.sslHandshakeTimeout;
+    this.sslHandshakeTimeoutUnit = that.sslHandshakeTimeoutUnit;
+    this.keyCertOptions = that.keyCertOptions;
+    this.trustOptions = that.trustOptions;
+    this.trustAll = that.trustAll;
+    this.crlPaths = that.crlPaths;
+    this.crlValues = that.crlValues;
+    this.clientAuth = that.clientAuth;
+    this.enabledCipherSuites = that.enabledCipherSuites;
+    this.openSsl = that.openSsl;
+    this.client = that.client;
+    this.useAlpn = that.useAlpn;
+    this.applicationProtocols = that.applicationProtocols;
+    this.enabledProtocols = that.enabledProtocols;
+    this.endpointIdentificationAlgorithm = that.endpointIdentificationAlgorithm;
+    this.openSslSessionCacheEnabled = that.openSslSessionCacheEnabled;
+  }
+
+  public boolean isUseAlpn() {
+    return useAlpn;
+  }
+
+  public SSLHelper setUseAlpn(boolean useAlpn) {
+    this.useAlpn = useAlpn;
+    return this;
+  }
+
   public boolean isSSL() {
     return ssl;
   }

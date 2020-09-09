@@ -63,6 +63,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_HOST;
+import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_TEST_URI;
@@ -3181,6 +3183,41 @@ public class WebSocketTest extends VertxTestBase {
           });
         }));
       }));
+    await();
+  }
+
+  @Test
+  public void testWebSocketDisablesALPN() {
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setProtocolVersion(HttpVersion.HTTP_2)
+      .setUseAlpn(true)
+      .setSsl(true)
+      .setTrustAll(true));
+    server = vertx.createHttpServer(new HttpServerOptions()
+      .setSsl(true)
+      .setUseAlpn(true)
+      .setSni(true)
+      .setKeyCertOptions(Cert.SERVER_PEM.get()))
+      .requestHandler(req -> req.response().end())
+      .webSocketHandler(ws -> {
+        assertTrue(ws.isSsl());
+        ws.handler(msg -> {
+          assertEquals("hello", msg.toString());
+          ws.close();
+        });
+      });
+    server.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTP_HOST, onSuccess(server -> {
+      client.getNow(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI, resp -> {
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+        client.webSocket(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, "/",
+          onSuccess(ws -> {
+            ws.write(Buffer.buffer("hello"));
+            ws.closeHandler(v -> {
+              testComplete();
+            });
+          }));
+      });
+    }));
     await();
   }
 }

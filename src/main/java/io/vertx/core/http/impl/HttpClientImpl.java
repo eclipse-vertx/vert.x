@@ -104,6 +104,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   private final Closeable closeHook;
   private final ProxyType proxyType;
   private final SSLHelper sslHelper;
+  private final SSLHelper webSocketSSLHelper;
   private final HttpClientMetrics metrics;
   private final boolean keepAlive;
   private final boolean pipelining;
@@ -131,6 +132,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).
         setApplicationProtocols(alpnVersions);
     sslHelper.validate(vertx);
+    this.webSocketSSLHelper = new SSLHelper(sslHelper).setUseAlpn(false);
     this.creatingContext = vertx.getContext();
     closeHook = completionHandler -> {
       HttpClientImpl.this.close();
@@ -346,10 +348,11 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   public void webSocket(WebSocketConnectOptions connectOptions, Handler<AsyncResult<WebSocket>> handler) {
     ContextInternal ctx = vertx.getOrCreateContext();
     SocketAddress addr = SocketAddress.inetSocketAddress(connectOptions.getPort(), connectOptions.getHost());
+    boolean ssl = connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl();
     websocketCM.getConnection(
       ctx,
       addr,
-      connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(),
+      ssl ? webSocketSSLHelper : null,
       addr, ar -> {
         if (ar.succeeded()) {
           Http1xClientConnection conn = (Http1xClientConnection) ar.result();
@@ -1036,7 +1039,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
                                boolean ssl,
                                SocketAddress server,
                                Handler<AsyncResult<HttpClientStream>> handler) {
-    httpCM.getConnection(ctx, peerAddress, ssl, server, ar -> {
+    httpCM.getConnection(ctx, peerAddress, ssl ? sslHelper : null, server, ar -> {
       if (ar.succeeded()) {
         ar.result().createStream(handler);
       } else {

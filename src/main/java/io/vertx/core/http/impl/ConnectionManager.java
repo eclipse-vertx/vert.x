@@ -20,6 +20,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.Pool;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.*;
@@ -116,8 +117,8 @@ class ConnectionManager {
     }
   }
 
-  void getConnection(ContextInternal ctx, SocketAddress peerAddress, boolean ssl, SocketAddress server, Handler<AsyncResult<HttpClientConnection>> handler) {
-    EndpointKey key = new EndpointKey(ssl, server, peerAddress);
+  void getConnection(ContextInternal ctx, SocketAddress peerAddress, SSLHelper sslHelper, SocketAddress server, Handler<AsyncResult<HttpClientConnection>> handler) {
+    EndpointKey key = new EndpointKey(sslHelper != null, server, peerAddress);
     while (true) {
       Endpoint endpoint = endpointMap.computeIfAbsent(key, targetAddress -> {
         int maxPoolSize = Math.max(client.getOptions().getMaxPoolSize(), client.getOptions().getHttp2MaxPoolSize());
@@ -131,7 +132,7 @@ class ConnectionManager {
           port = 0;
         }
         Object metric = metrics != null ? metrics.createEndpoint(host, port, maxPoolSize) : null;
-        HttpChannelConnector connector = new HttpChannelConnector(client, metric, version, ssl, peerAddress, server);
+        HttpChannelConnector connector = new HttpChannelConnector(client, metric, version, sslHelper, peerAddress, server);
         Pool<HttpClientConnection> pool = new Pool<>(ctx, connector, maxWaitQueueSize, connector.weight(), maxSize,
           v -> {
             if (metrics != null) {
