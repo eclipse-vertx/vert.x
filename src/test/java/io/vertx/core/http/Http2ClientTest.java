@@ -1029,14 +1029,14 @@ public class Http2ClientTest extends Http2TestBase {
     client.connectionHandler(conn -> {
       AtomicInteger gaCount = new AtomicInteger();
       conn.goAwayHandler(ga -> {
-        if (gaCount.getAndIncrement() == 0) {
+        vertx.runOnContext(v -> {
           client.request(new RequestOptions(requestOptions).setTimeout(5000))
             .compose(HttpClientRequest::send)
             .onComplete(onSuccess(resp2 -> {
               assertEquals(2, connections.size());
               testComplete();
             }));
-        }
+        });
       });
     });
     client.request(requestOptions).onComplete(onSuccess(req -> {

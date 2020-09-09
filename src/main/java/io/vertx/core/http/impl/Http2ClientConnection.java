@@ -46,6 +46,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private final HttpClientImpl client;
   private final ClientMetrics metrics;
   private long expirationTimestamp;
+  private boolean evicted;
 
   Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
                                HttpClientImpl client,
@@ -62,7 +63,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   synchronized boolean onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
     boolean goneAway = super.onGoAwaySent(lastStreamId, errorCode, debugData);
     if (goneAway) {
-      listener.onEvict();
+      // Eagerly evict from the pool
+      tryEvict();
     }
     return goneAway;
   }
@@ -71,9 +73,22 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   synchronized boolean onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
     boolean goneAway = super.onGoAwayReceived(lastStreamId, errorCode, debugData);
     if (goneAway) {
-      listener.onEvict();
+      // Eagerly evict from the pool
+      tryEvict();
     }
     return goneAway;
+  }
+
+  /**
+   * Try to evict the connection from the pool. This can be called multiple times since
+   * the connection can be eagerly removed from the pool on emission or reception of a {@code GOAWAY}
+   * frame.
+   */
+  private void tryEvict() {
+    if (!evicted) {
+      evicted = true;
+      listener.onEvict();
+    }
   }
 
   @Override
@@ -586,7 +601,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (metrics != null) {
         met.endpointDisconnected(metrics);
       }
-      listener.onEvict();
+      conn.tryEvict();
     });
     return handler;
   }

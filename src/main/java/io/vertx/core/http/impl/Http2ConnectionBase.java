@@ -157,7 +157,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (stream != null) {
       stream.onClose();
     }
-    checkShutdownHandler();
+    checkShutdown();
   }
 
   boolean onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
@@ -167,7 +167,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       }
       goneAway = true;
     }
-    checkShutdownHandler();
+    checkShutdown();
     return true;
   }
 
@@ -184,7 +184,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       Buffer buffer = Buffer.buffer(debugData);
       context.dispatch(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
     }
-    checkShutdownHandler();
+    checkShutdown();
     return true;
   }
 
@@ -506,7 +506,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   // Private
 
-  private void checkShutdownHandler() {
+  private void checkShutdown() {
     Handler<Void> shutdownHandler;
     synchronized (this) {
       if (shutdown) {
@@ -519,6 +519,10 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       shutdown  = true;
       shutdownHandler = this.shutdownHandler;
     }
+    doShutdown(shutdownHandler);
+  }
+
+  protected void doShutdown(Handler<Void> shutdownHandler) {
     if (shutdownHandler != null) {
       context.dispatch(shutdownHandler);
     }
