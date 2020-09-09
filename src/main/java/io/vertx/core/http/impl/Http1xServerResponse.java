@@ -134,7 +134,10 @@ public class Http1xServerResponse implements HttpServerResponse {
 
   @Override
   public HttpServerResponse setStatusCode(int statusCode) {
-    status = statusMessage != null ? new HttpResponseStatus(statusCode, statusMessage) : HttpResponseStatus.valueOf(statusCode);
+    synchronized (conn) {
+      checkHeadWritten();
+      status = statusMessage != null ? new HttpResponseStatus(statusCode, statusMessage) : HttpResponseStatus.valueOf(statusCode);
+    }
     return this;
   }
 
@@ -146,6 +149,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
     synchronized (conn) {
+      checkHeadWritten();
       this.statusMessage = statusMessage;
       this.status = new HttpResponseStatus(status.code(), statusMessage);
       return this;
@@ -155,7 +159,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public Http1xServerResponse setChunked(boolean chunked) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
       if (version != HttpVersion.HTTP_1_0) {
         headers.set(HttpHeaders.TRANSFER_ENCODING, chunked ? "chunked" : null);
@@ -174,7 +178,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public Http1xServerResponse putHeader(String key, String value) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       headers.set(key, value);
       return this;
     }
@@ -183,7 +187,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public Http1xServerResponse putHeader(String key, Iterable<String> values) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       headers.set(key, values);
       return this;
     }
@@ -210,7 +214,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       headers.set(name, value);
       return this;
     }
@@ -219,7 +223,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       headers.set(name, values);
       return this;
     }
@@ -648,6 +652,12 @@ public class Http1xServerResponse implements HttpServerResponse {
     }
   }
 
+  private void checkHeadWritten() {
+    if (headWritten) {
+      throw new IllegalStateException("Response head already sent");
+    }
+  }
+
   private void prepareHeaders(long contentLength) {
     if (version == HttpVersion.HTTP_1_0 && keepAlive) {
       headers.set(HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE);
@@ -769,12 +779,18 @@ public class Http1xServerResponse implements HttpServerResponse {
 
   @Override
   public HttpServerResponse addCookie(Cookie cookie) {
-    cookies().put(cookie.getName(), (ServerCookie) cookie);
+    synchronized (conn) {
+      checkHeadWritten();
+      cookies().put(cookie.getName(), (ServerCookie) cookie);
+    }
     return this;
   }
 
   @Override
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
-    return CookieImpl.removeCookie(cookies(), name, invalidate);
+    synchronized (conn) {
+      checkHeadWritten();
+      return CookieImpl.removeCookie(cookies(), name, invalidate);
+    }
   }
 }
