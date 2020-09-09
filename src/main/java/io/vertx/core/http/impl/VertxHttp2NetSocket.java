@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.CharsetUtil;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
@@ -45,8 +46,8 @@ class VertxHttp2NetSocket<C extends Http2ConnectionBase> extends VertxHttp2Strea
   private Handler<Buffer> dataHandler;
   private Handler<Void> drainHandler;
 
-  public VertxHttp2NetSocket(C conn, ContextInternal context) {
-    super(conn, context);
+  public VertxHttp2NetSocket(C conn, Http2Stream stream, ContextInternal context) {
+    super(conn, stream, context);
   }
 
   // Stream impl

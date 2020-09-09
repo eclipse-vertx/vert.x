@@ -156,7 +156,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
           // Now we need to upgrade this to an HTTP2
           ConnectionListener<HttpClientConnection> listener = conn.listener();
           VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, conn.metrics, listener, conn.getContext(), current.metric(), (conn, concurrency) -> {
-            conn.upgradeStream(stream.metric(), netSocketPromise, stream.getContext(), ar -> {
+            conn.upgradeStream(stream.metric(), stream.getContext(), ar -> {
               UpgradingStream.this.conn.closeHandler(null);
               UpgradingStream.this.conn.exceptionHandler(null);
               if (ar.succeeded()) {

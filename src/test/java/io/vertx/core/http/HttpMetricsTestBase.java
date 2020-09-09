@@ -105,7 +105,11 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
               socketMetric.set(metrics.getSocket(SocketAddress.inetSocketAddress(8080, "localhost")));
               assertNotNull(socketMetric.get());
               assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
-              clientMetric.set(metrics.getMetric(resp.request()));
+              HttpClientMetric metric = metrics.getMetric(resp.request());
+              if (metric == null) {
+                metrics.getMetric(resp.request());
+              }
+              clientMetric.set(metric);
               assertNotNull(clientMetric.get());
               // assertNotNull(clientMetric.get().socket);
               // assertTrue(clientMetric.get().socket.connected.get());

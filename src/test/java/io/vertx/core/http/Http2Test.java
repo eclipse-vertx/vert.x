@@ -323,9 +323,8 @@ public class Http2Test extends HttpTest {
               complete();
             })
             .setChunked(true);
-          assertFalse(req2.writeQueueFull());
+          assertTrue(req2.writeQueueFull());
           req2.sendHead();
-          waitUntil(req2::writeQueueFull);
           resumeLatch.complete(null);
           waitUntil(() -> !req2.writeQueueFull(), () -> {
             req1.end();
