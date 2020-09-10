@@ -11,10 +11,8 @@
 
 package io.vertx.core.shareddata.impl;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.shareddata.Lock;
@@ -49,12 +47,28 @@ public class LocalAsyncLocks {
       timerId = timeout != Long.MAX_VALUE ? context.owner().setTimer(timeout, tid -> timeout()) : null;
     }
 
-    boolean isWaiting() {
-      return status.get() == Status.WAITING;
-    }
-
     void timeout() {
       if (status.compareAndSet(Status.WAITING, Status.TIMED_OUT)) {
+        // Cleanup
+        waitersMap.compute(lockName, (s, list) -> {
+          int idx;
+          if (list == null || (idx = list.indexOf(LockWaiter.this)) == -1) {
+            // Already removed by release()
+            return list;
+          } else if (list.size() == 1) {
+            return null;
+          } else {
+            int size = list.size();
+            List<LockWaiter> n = new ArrayList<>(size - 1);
+            if (idx > 0) {
+              n.addAll(list.subList(0, idx));
+            }
+            if (idx + 1 < size) {
+              n.addAll(list.subList(idx + 1, size));
+            }
+            return n;
+          }
+        });
         promise.fail("Timed out waiting to get lock");
       }
     }
@@ -71,7 +85,8 @@ public class LocalAsyncLocks {
     }
   }
 
-  private class AsyncLock implements Lock {
+  private class AsyncLock implements LockInternal {
+
     final String lockName;
     final AtomicBoolean invoked = new AtomicBoolean();
 
@@ -84,6 +99,12 @@ public class LocalAsyncLocks {
       if (invoked.compareAndSet(false, true)) {
         nextWaiter(lockName);
       }
+    }
+
+    @Override
+    public int waiters() {
+      List<LockWaiter> waiters = waitersMap.get(lockName);
+      return waiters == null ? 0 : waiters.size() - 1;
     }
   }
 
