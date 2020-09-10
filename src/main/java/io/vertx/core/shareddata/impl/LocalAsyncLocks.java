@@ -30,16 +30,16 @@ public class LocalAsyncLocks {
 
   private class LockWaiter {
 
-    final Context context;
+    final ContextInternal context;
     final String lockName;
     final Promise<Lock> promise;
     final Long timerId;
 
-    LockWaiter(Context context, String lockName, long timeout, Promise<Lock> promise) {
-      this.context = context;
+    LockWaiter(ContextInternal context, String lockName, long timeout, Promise<Lock> promise) {
       this.lockName = lockName;
       this.promise = promise;
-      timerId = timeout != Long.MAX_VALUE ? context.owner().setTimer(timeout, tid -> timeout()) : null;
+      this.context = context;
+      timerId = timeout != Long.MAX_VALUE ? context.setTimer(timeout, tid -> timeout()) : null;
     }
 
     void timeout() {
@@ -70,7 +70,7 @@ public class LocalAsyncLocks {
       if (timerId == null || context.owner().cancelTimer(timerId)) {
         promise.complete(new AsyncLock(lockName));
       } else {
-        context.runOnContext(v -> nextWaiter(lockName));
+        nextWaiter(lockName);
       }
     }
   }
