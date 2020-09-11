@@ -48,6 +48,8 @@ public class Http1xServerRequestHandler implements Handler<HttpServerRequest> {
             ServerWebSocketImpl ws = (ServerWebSocketImpl) ar.result();
             wsHandler.handle(ws);
             ws.tryHandshake(101);
+          } else {
+            // ????
           }
         });
       } else {

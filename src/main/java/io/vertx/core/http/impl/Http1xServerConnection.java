@@ -26,6 +26,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -327,24 +328,25 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         .end("Invalid request URI");
       throw new WebSocketHandshakeException("Invalid WebSocket location", e);
     }
-    String subp = null;
+    String subProtocols = null;
     if (options.getWebSocketSubProtocols() != null) {
-      subp = String.join(",", options.getWebSocketSubProtocols());
+      subProtocols = String.join(",", options.getWebSocketSubProtocols());
     }
     WebSocketServerHandshakerFactory factory =
       new WebSocketServerHandshakerFactory(wsURL,
-        subp,
+        subProtocols,
         options.getPerMessageWebSocketCompressionSupported() || options.getPerFrameWebSocketCompressionSupported(),
         options.getMaxWebSocketFrameSize(), options.isAcceptUnmaskedFrames());
     WebSocketServerHandshaker shake = factory.newHandshaker(request.nettyRequest());
-    if (shake == null) {
-      // See WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
-      request.response()
-        .putHeader(HttpHeaderNames.SEC_WEBSOCKET_VERSION, WebSocketVersion.V13.toHttpHeaderValue())
-        .setStatusCode(UPGRADE_REQUIRED.code())
-        .end();
+    if (shake != null) {
+      return shake;
     }
-    return shake;
+    // See WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ch);
+    request.response()
+      .putHeader(HttpHeaderNames.SEC_WEBSOCKET_VERSION, WebSocketVersion.V13.toHttpHeaderValue())
+      .setStatusCode(UPGRADE_REQUIRED.code())
+      .end();
+    throw new WebSocketHandshakeException("Invalid WebSocket version");
   }
 
   public void netSocket(Handler<AsyncResult<NetSocket>> handler) {

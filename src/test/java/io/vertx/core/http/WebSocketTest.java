@@ -1947,6 +1947,8 @@ public class WebSocketTest extends VertxTestBase {
     server.webSocketHandler(ws -> {
 
       ws.exceptionHandler(exception -> {
+        // Will receive decode error and close error
+        ws.exceptionHandler(null);
         testComplete();
       });
 
