@@ -48,7 +48,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final C conn;
   protected final VertxInternal vertx;
   protected final ContextInternal context;
-  protected final Http2Stream stream;
+  protected Http2Stream stream;
 
   // Event loop
   private long bytesRead;
@@ -59,14 +59,13 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private final InboundBuffer<Object> pending;
   private boolean writable;
 
-  VertxHttp2Stream(C conn, Http2Stream stream, ContextInternal context) {
+  VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.context = context;
     this.pending = new InboundBuffer<>(context, 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
-    this.stream = stream;
-    this.writable = this.conn.handler.encoder().flowController().isWritable(stream);
+    this.writable = true;
 
     pending.handler(item -> {
       if (item instanceof MultiMap) {
@@ -82,7 +81,13 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     });
     pending.exceptionHandler(context::reportException);
     pending.resume();
+  }
 
+  void init(Http2Stream stream) {
+    synchronized (this) {
+      this.stream = stream;
+      this.writable = this.conn.handler.encoder().flowController().isWritable(stream);
+    }
     stream.setProperty(conn.streamKey, this);
   }
 
@@ -227,12 +232,14 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private void doWriteReset(long code) {
     int streamId;
     synchronized (this) {
-      streamId = stream.id();
+      streamId = stream != null ? stream.id() : -1;
     }
-    if (stream.state() == Http2Stream.State.OPEN) {
+    if (streamId != -1) {
+      conn.handler.writeReset(streamId, code);
+    } else {
+      // Reset happening before stream allocation
       handleReset(code);
     }
-    conn.handler.writeReset(streamId, code);
   }
 
   void handleWritabilityChanged(boolean writable) {

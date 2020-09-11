@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpMethod;
@@ -35,12 +34,11 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
   private Object metric;
 
   Http2ServerStream(Http2ServerConnection conn,
-                    Http2Stream stream,
                     ContextInternal context,
                     String contentEncoding,
                     HttpMethod method,
                     String uri) {
-    super(conn, stream, context);
+    super(conn, context);
 
     this.headers = null;
     this.method = method;
@@ -49,8 +47,8 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     this.response = new Http2ServerResponseImpl(conn, this, true, contentEncoding, null);
   }
 
-  Http2ServerStream(Http2ServerConnection conn, Http2Stream stream, ContextInternal context, Http2Headers headers, String contentEncoding, String serverOrigin) {
-    super(conn, stream, context);
+  Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Headers headers, String contentEncoding, String serverOrigin) {
+    super(conn, context);
 
     String host = headers.get(":authority") != null ? headers.get(":authority").toString() : null;
     if (host == null) {

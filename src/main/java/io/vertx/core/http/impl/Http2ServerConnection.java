@@ -98,7 +98,9 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   private Http2ServerRequestImpl createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-    return new Http2ServerRequestImpl(this, stream, context.duplicate(), serverOrigin, headers, contentEncoding, streamEnded);
+    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, context.duplicate(), serverOrigin, headers, contentEncoding, streamEnded);
+    request.init(stream);
+    return request;
   }
 
   @Override
@@ -147,8 +149,9 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
             int promisedStreamId = ar.result();
             String contentEncoding = HttpUtils.determineContentEncoding(headers_);
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-            Push push = new Push(promisedStream, context, contentEncoding, method, path, promise);
+            Push push = new Push(context, contentEncoding, method, path, promise);
             push.priority(streamPriority);
+            push.init(promisedStream);
             int maxConcurrentStreams = handler.maxConcurrentStreams();
             if (concurrentStreams < maxConcurrentStreams) {
               concurrentStreams++;
@@ -173,13 +176,12 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
 
     private final Promise<HttpServerResponse> promise;
 
-    public Push(Http2Stream stream,
-                ContextInternal context,
+    public Push(ContextInternal context,
                 String contentEncoding,
                 HttpMethod method,
                 String uri,
                 Promise<HttpServerResponse> promise) {
-      super(Http2ServerConnection.this, stream, context, contentEncoding, method, uri);
+      super(Http2ServerConnection.this, context, contentEncoding, method, uri);
       this.promise = promise;
     }
 

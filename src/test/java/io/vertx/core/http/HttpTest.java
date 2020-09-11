@@ -5735,14 +5735,13 @@ public abstract class HttpTest extends HttpTestBase {
     });
     startServer(testAddress);
     client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.onComplete(onFailure(err -> {
-        assertEquals(StreamResetException.class, err.getClass());
+        req.onComplete(onFailure(err -> {
+        assertTrue(err instanceof StreamResetException);
         complete();
       })).exceptionHandler(err -> {
-        assertEquals(StreamResetException.class, err.getClass());
-        complete();
-      })
-        .reset();
+          assertTrue(err instanceof StreamResetException);
+          complete();
+        }).reset();
     }));
     await();
   }

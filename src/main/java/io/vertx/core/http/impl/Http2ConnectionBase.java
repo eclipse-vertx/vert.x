@@ -96,7 +96,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   NetSocket toNetSocket(VertxHttp2Stream stream) {
-    return new VertxHttp2NetSocket<>(this, stream.stream, stream.context);
+    VertxHttp2NetSocket<Http2ConnectionBase> socketStream = new VertxHttp2NetSocket<>(this, stream.context);
+    socketStream.init(stream.stream);
+    return socketStream;
   }
 
   @Override

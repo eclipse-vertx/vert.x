@@ -20,7 +20,6 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Headers;
-import io.netty.handler.codec.http2.Http2Stream;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -80,13 +79,12 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private Handler<StreamPriority> streamPriorityHandler;
 
   Http2ServerRequestImpl(Http2ServerConnection conn,
-                         Http2Stream stream,
                          ContextInternal context,
                          String serverOrigin,
                          Http2Headers headers,
                          String contentEncoding,
                          boolean streamEnded) {
-    super(conn, stream, context, headers, contentEncoding, serverOrigin);
+    super(conn, context, headers, contentEncoding, serverOrigin);
 
     String scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
     headers.remove(":method");
