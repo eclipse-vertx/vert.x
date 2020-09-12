@@ -53,6 +53,8 @@ public class CookieImpl implements ServerCookie {
         // we need to expire it and sent it back to it can be
         // invalidated
         cookie.setMaxAge(0L);
+        // void the value for user-agents that still read the cookie
+        cookie.setValue("");
       } else {
         // this was a temporary cookie so we can safely remove it
         cookieMap.remove(name);
