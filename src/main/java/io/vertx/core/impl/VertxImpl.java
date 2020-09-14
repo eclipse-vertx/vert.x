@@ -502,10 +502,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public long scheduleTimeout(ContextInternal context, Handler<Long> handler, long delay, boolean periodic) {
-    if (delay < 1) {
-      throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
-    }
     long timerId = timeoutCounter.getAndIncrement();
+    if (delay < 1) {
+      handler.handle(timerId);
+      return timerId;
+    }
     InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, delay, context);
     timeouts.put(timerId, task);
     if (context.isDeployment()) {
