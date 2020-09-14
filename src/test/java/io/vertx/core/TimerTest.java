@@ -33,6 +33,11 @@ public class TimerTest extends VertxTestBase {
   }
 
   @Test
+  public void testTimer0() {
+    timer(0);
+  }
+
+  @Test
   public void testPeriodic() {
     periodic(10);
   }
