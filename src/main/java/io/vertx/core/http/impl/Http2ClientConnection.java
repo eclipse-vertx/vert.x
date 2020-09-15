@@ -282,16 +282,12 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     @Override
     void handleClose() {
       super.handleClose();
-      // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
-      // boolean disposable = conn.streams.isEmpty();
-      if (request == null || request instanceof HttpClientRequestImpl) {
+      if (!(request instanceof HttpClientRequestPushPromise)) {
         conn.recycle();
-      } /* else {
-        conn.listener.onRecycle(0, dispable);
-      } */
+      }
       if (!responseEnded) {
         responseEnded = true;
-        if (conn.metrics != null) {
+        if (request != null && conn.metrics != null) {
           conn.metrics.requestReset(metric);
         }
         handleException(CLOSED_EXCEPTION);
@@ -468,7 +464,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     public void reset(Throwable cause) {
       long code = cause instanceof StreamResetException ? ((StreamResetException)cause).getCode() : 0;
       if (request == null) {
-        // Not sure this is possible in practice
+        // Request not yet sent
         writeReset(code);
       } else {
         if (!(requestEnded && responseEnded)) {

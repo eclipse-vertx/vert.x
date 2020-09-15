@@ -17,8 +17,12 @@ import io.vertx.core.http.WebSocket;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import junit.framework.AssertionFailedError;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -29,6 +33,8 @@ import static org.junit.Assert.assertNotNull;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric, EndpointMetric, Void> {
+
+  private static volatile Throwable unexpectedError;
 
   private final String name;
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
@@ -143,6 +149,10 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
 
   @Override
   public void requestReset(HttpClientMetric requestMetric) {
+    if (requestMetric == null) {
+      unexpectedError = new RuntimeException("Unexpected null request metric");
+      return;
+    }
     requestMetric.endpoint.requests.decrementAndGet();
     requestMetric.failed.set(true);
     requests.remove(requestMetric.request);
@@ -181,4 +191,12 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
     return true;
   }
 
+  public static void sanityCheck() {
+    Throwable err = unexpectedError;
+    if (err != null) {
+      AssertionFailedError afe = new AssertionFailedError();
+      afe.initCause(err);
+      throw afe;
+    }
+  }
 }

@@ -42,6 +42,12 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     this.protocol = protocol;
   }
 
+  @Override
+  protected void tearDown() throws Exception {
+    FakeHttpClientMetrics.sanityCheck();
+    super.tearDown();
+  }
+
   protected HttpServerOptions createBaseServerOptions() {
     return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
   }
@@ -248,6 +254,25 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     HttpClientRequest req = client.get(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath");
     req.handler(resp -> {
     }).end();
+    await();
+  }
+
+  @Test
+  public void testResetImmediately() throws Exception {
+    FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+    server.requestHandler(req -> {
+      fail();
+    }).listen(testAddress, onSuccess(v -> {
+      HttpClientRequest request = client.get(8080, "localhost", "/somepath", resp -> {
+
+      });
+      request.sendHead().reset(0);
+      assertNull(metrics.getMetric(request));
+      // Give enough time to allow the stream close
+      vertx.setTimer(250, id -> {
+        testComplete();
+      });
+    }));
     await();
   }
 }
