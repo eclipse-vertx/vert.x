@@ -19,6 +19,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
+import junit.framework.AssertionFailedError;
 
 import java.util.Map;
 import java.util.Set;
@@ -26,12 +27,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertNotNull;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric, Void> {
+
+  static volatile Throwable unexpectedError;
 
   private final String name;
   private final ConcurrentMap<SocketAddress, SocketMetric> sockets = new ConcurrentHashMap<>();
@@ -147,4 +148,12 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   public void exceptionOccurred(SocketMetric socketMetric, SocketAddress remoteAddress, Throwable t) {
   }
 
+  public static void sanityCheck() {
+    Throwable err = unexpectedError;
+    if (err != null) {
+      AssertionFailedError afe = new AssertionFailedError();
+      afe.initCause(err);
+      throw afe;
+    }
+  }
 }

@@ -342,7 +342,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (!push) {
         conn.recycle();
       } /* else {
-        conn.listener.onRecycle(0, dispable);
+        conn.listener.onRecycle(0, disposable);
       } */
     }
   }

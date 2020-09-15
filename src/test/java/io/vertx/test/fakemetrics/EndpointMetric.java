@@ -55,17 +55,32 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
 
   @Override
   public void requestEnd(HttpClientMetric requestMetric) {
+    if (requestMetric == null) {
+      FakeHttpClientMetrics.unexpectedError = new RuntimeException("Unexpected null request metric");
+      return;
+    }
     requestMetric.requestEnded.incrementAndGet();
   }
 
   @Override
   public void responseBegin(HttpClientMetric requestMetric, HttpResponse response) {
-    assertNotNull(response);
+    if (requestMetric == null) {
+      FakeHttpClientMetrics.unexpectedError = new RuntimeException("Unexpected null request metric");
+      return;
+    }
+    if (response == null) {
+      FakeHttpClientMetrics.unexpectedError = new RuntimeException("Unexpected null response");
+      return;
+    }
     requestMetric.responseBegin.incrementAndGet();
   }
 
   @Override
   public void requestReset(HttpClientMetric requestMetric) {
+    if (requestMetric == null) {
+      FakeHttpClientMetrics.unexpectedError = new RuntimeException("Unexpected null request metric");
+      return;
+    }
     requestCount.decrementAndGet();
     requestMetric.failed.set(true);
     requests.remove(requestMetric.request);

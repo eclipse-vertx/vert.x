@@ -46,6 +46,12 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
   }
 
   @Override
+  protected void tearDown() throws Exception {
+    FakeHttpClientMetrics.sanityCheck();
+    super.tearDown();
+  }
+
+  @Override
   protected VertxOptions getOptions() {
     VertxOptions options = super.getOptions();
     options.setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new FakeMetricsFactory()));
@@ -297,6 +303,22 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     });
     startServer();
     client.request(requestOptions).onComplete(onSuccess(HttpClientRequest::end));
+    await();
+  }
+
+  @Test
+  public void testResetImmediately() {
+    FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+    server.requestHandler(req -> {
+    }).listen(testAddress, onSuccess(v -> {
+      client.request(HttpMethod.GET, 8080, "localhost", "/somepath", onSuccess(request -> {
+        assertNull(metrics.getMetric(request));
+        request.reset(0);
+        vertx.setTimer(10, id -> {
+          testComplete();
+        });
+      }));
+    }));
     await();
   }
 }
