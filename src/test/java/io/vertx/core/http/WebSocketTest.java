@@ -1474,7 +1474,7 @@ public class WebSocketTest extends VertxTestBase {
     };
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
       test.accept(ws);
-      if (closeClient) {
+      if (closeServer) {
         ws.close();
       }
     });
@@ -1482,7 +1482,7 @@ public class WebSocketTest extends VertxTestBase {
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path",
         onSuccess(ws -> {
           test.accept(ws);
-          if (closeServer) {
+          if (closeClient) {
             ws.close();
           }
         }));

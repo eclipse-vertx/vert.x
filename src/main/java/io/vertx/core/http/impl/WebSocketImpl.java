@@ -58,7 +58,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   protected void doClose() {
     if (closingTimeoutMS > 0L) {
       synchronized (conn) {
-        timerID = context.owner().setTimer(1000, id -> {
+        timerID = context.owner().setTimer(closingTimeoutMS, id -> {
           synchronized (conn) {
             timerID = -1L;
           }
