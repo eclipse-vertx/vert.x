@@ -21,13 +21,28 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.tracing.TagExtractor;
+import io.vertx.core.streams.WriteStream;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -868,5 +883,30 @@ public final class HttpUtils {
   public static boolean isValidMultipartMethod(HttpMethod method) {
     return method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
       || method.equals(HttpMethod.DELETE);
+  }
+
+  public static void resolveFile(VertxInternal vertx, String filename, long offset, long length, Handler<AsyncResult<AsyncFile>> resultHandler) {
+    File file_ = vertx.resolveFile(filename);
+    if (!file_.exists()) {
+      resultHandler.handle(Future.failedFuture(new FileNotFoundException()));
+      return;
+    }
+
+    //We open the fileName using a RandomAccessFile to make sure that this is an actual file that can be read.
+    //i.e is not a directory
+    try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
+      FileSystem fs = vertx.fileSystem();
+      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
+        if (ar.succeeded()) {
+          AsyncFile file = ar.result();
+          long contentLength = Math.min(length, file_.length() - offset);
+          file.setReadPos(offset);
+          file.setReadLength(contentLength);
+        }
+        resultHandler.handle(ar);
+      });
+    } catch (IOException e) {
+      resultHandler.handle(Future.failedFuture(e));
+    }
   }
 }

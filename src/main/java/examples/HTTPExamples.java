@@ -877,9 +877,10 @@ public class HTTPExamples {
           }
         });
 
-        request.netSocket(ar -> {
+        request.connect(ar -> {
           if (ar.succeeded()) {
-            NetSocket socket = ar.result();
+            HttpClientResponse response = ar.result();
+            NetSocket socket = response.netSocket();
             // Perform tunneling now
           }
         });

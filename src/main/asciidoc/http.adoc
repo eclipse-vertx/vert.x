@@ -1248,7 +1248,7 @@ cannot be a logical protocol constraint):
 
 ==== Creating HTTP tunnels
 
-HTTP tunnels can be created with {@link io.vertx.core.http.HttpClientRequest#netSocket}:
+HTTP tunnels can be created with {@link io.vertx.core.http.HttpClientRequest#connect}:
 
 [source,$lang]
 ----

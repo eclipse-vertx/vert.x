@@ -24,6 +24,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
@@ -830,7 +831,11 @@ public class MetricsTest extends VertxTestBase {
         .setHost(host)
         .setURI("/")).onComplete(onSuccess(req -> {
         FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-        req.netSocket(onSuccess(socket -> {
+        req.connect(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          clientMetric.set(metrics.getMetric(req));
+          assertNotNull(clientMetric.get());
+          NetSocket socket = resp.netSocket();
           socket.write(Buffer.buffer("hello"));
           socket.handler(buf -> {
             assertEquals("hello", buf.toString());
@@ -842,11 +847,6 @@ public class MetricsTest extends VertxTestBase {
             complete();
           });
         }));
-        req.onComplete(onSuccess(resp -> {
-          assertEquals(200, resp.statusCode());
-          clientMetric.set(metrics.getMetric(req));
-          assertNotNull(clientMetric.get());
-        })).end();
       }));
     }));
     await();

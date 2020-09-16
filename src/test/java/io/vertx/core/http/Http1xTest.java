@@ -5028,14 +5028,15 @@ public class Http1xTest extends HttpTest {
           .setHost(DEFAULT_HTTP_HOST)
           .setURI(DEFAULT_TEST_URI)
         ).onComplete(onSuccess(req -> {
-          req.netSocket(onSuccess(so -> {
+          req.connect(onSuccess(resp -> {
+            NetSocket sock = resp.netSocket();
             int val = count.incrementAndGet();
             assertTrue("Expected " + val + " <= " + maxPoolSize, val <= maxPoolSize);
-            so.closeHandler(v -> {
+            sock.closeHandler(v -> {
               count.decrementAndGet();
               complete();
             });
-          })).end();
+          }));
         }));
       }
     }));

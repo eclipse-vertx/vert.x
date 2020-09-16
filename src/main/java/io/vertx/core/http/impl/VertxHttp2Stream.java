@@ -58,6 +58,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   private StreamPriority priority;
   private final InboundBuffer<Object> pending;
   private boolean writable;
+  protected boolean isConnect;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
@@ -66,6 +67,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.pending = new InboundBuffer<>(context, 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.writable = true;
+    this.isConnect = false;
 
     pending.handler(item -> {
       if (item instanceof MultiMap) {
@@ -141,6 +143,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   void onEnd(MultiMap trailers) {
     context.emit(trailers, pending::write);
+    if (isConnect) {
+      doWriteData(Unpooled.EMPTY_BUFFER, true, null);
+    }
   }
 
   public int id() {
