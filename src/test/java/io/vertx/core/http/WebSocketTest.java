@@ -1420,6 +1420,77 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testServerClose() {
+    client = vertx.createHttpClient();
+    testClose(false, true, true);
+  }
+
+  @Test
+  public void testClientClose() {
+    client = vertx.createHttpClient();
+    testClose(true, false, true);
+  }
+
+  @Test
+  public void testClientAndServerClose() {
+    client = vertx.createHttpClient();
+    testClose(true, false, true);
+  }
+
+  @Test
+  public void testConnectionClose() {
+    client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
+    testClose(false, false, false);
+  }
+
+  public void testClose(boolean closeClient, boolean closeServer, boolean regularClose) {
+    waitFor(4);
+    Consumer<WebSocketBase> test = ws -> {
+      assertFalse(ws.isClosed());
+      AtomicInteger cnt = new AtomicInteger();
+      ws.exceptionHandler(err -> {
+        if (regularClose) {
+          fail();
+        } else if (cnt.getAndIncrement() == 0) {
+          complete();
+        }
+      });
+      ws.endHandler(v -> {
+        if (regularClose) {
+          complete();
+        } else {
+          fail();
+        }
+      });
+      ws.closeHandler(v -> {
+        assertTrue(ws.isClosed());
+        try {
+          ws.close();
+        } catch (Exception e) {
+          fail();
+        }
+        complete();
+      });
+    };
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
+      test.accept(ws);
+      if (closeClient) {
+        ws.close();
+      }
+    });
+    server.listen(onSuccess(s -> {
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path",
+        onSuccess(ws -> {
+          test.accept(ws);
+          if (closeServer) {
+            ws.close();
+          }
+        }));
+    }));
+    await();
+  }
+
+  @Test
   public void testCloseBeforeHandshake() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
       req.connection().close();
@@ -3307,77 +3378,6 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
         client.close();
-      }));
-    await();
-  }
-
-  @Test
-  public void testClientClose() {
-    testClose(false);
-  }
-
-  @Test
-  public void testServerClose() {
-    testClose(true);
-  }
-
-  private void testClose(boolean server) {
-    waitFor(2);
-    HttpClient client = vertx.createHttpClient();
-    vertx.createHttpServer()
-      .webSocketHandler(ws -> {
-        ws.exceptionHandler(this::fail);
-        ws.closeHandler(v -> {
-          try {
-            ws.close();
-          } catch (Exception e) {
-            fail();
-          }
-          complete();
-        });
-        if (server) {
-          ws.close();
-        }
-      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
-        client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
-          ws.exceptionHandler(this::fail);
-          ws.closeHandler(v -> {
-            try {
-              ws.close();
-            } catch (Exception e) {
-              fail();
-            }
-            complete();
-          });
-          if (!server) {
-            ws.close();
-          }
-        }));
-      }));
-    await();
-  }
-
-  @Test
-  public void testAbruptClose() {
-    waitFor(4);
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
-    server = vertx.createHttpServer()
-      .webSocketHandler(ws -> {
-        ws.exceptionHandler(err -> {
-          complete();
-        });
-        ws.closeHandler(v -> {
-          complete();
-        });
-      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
-        client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
-          ws.exceptionHandler(err -> {
-            complete();
-          });
-          ws.closeHandler(v -> {
-            complete();
-          });
-        }));
       }));
     await();
   }
