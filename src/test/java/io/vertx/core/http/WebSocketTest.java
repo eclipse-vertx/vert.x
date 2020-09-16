@@ -1357,28 +1357,47 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testServerClose() {
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);
-    server.listen(onSuccess(s -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(ws -> {
-        assertFalse(ws.isClosed());
-        ws.closeHandler(v -> {
-          assertTrue(ws.isClosed());
-          try {
-            ws.close();
-          } catch (Exception e) {
-            fail();
-          }
-          testComplete();
-        });
-      }));
-    }));
-    await();
+    client = vertx.createHttpClient();
+    testClose(false, true, true);
   }
 
   @Test
   public void testClientClose() {
-    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
+    client = vertx.createHttpClient();
+    testClose(true, false, true);
+  }
+
+  @Test
+  public void testClientAndServerClose() {
+    client = vertx.createHttpClient();
+    testClose(true, false, true);
+  }
+
+  @Test
+  public void testConnectionClose() {
+    client = vertx.createHttpClient(new HttpClientOptions().setIdleTimeout(1));
+    testClose(false, false, false);
+  }
+
+  private void testClose(boolean closeClient, boolean closeServer, boolean regularClose) {
+    waitFor(4);
+    Consumer<WebSocketBase> test = ws -> {
       assertFalse(ws.isClosed());
+      AtomicInteger cnt = new AtomicInteger();
+      ws.exceptionHandler(err -> {
+        if (regularClose) {
+          fail();
+        } else if (cnt.getAndIncrement() == 0) {
+          complete();
+        }
+      });
+      ws.endHandler(v -> {
+        if (regularClose) {
+          complete();
+        } else {
+          fail();
+        }
+      });
       ws.closeHandler(v -> {
         assertTrue(ws.isClosed());
         try {
@@ -1386,11 +1405,23 @@ public class WebSocketTest extends VertxTestBase {
         } catch (Exception e) {
           fail();
         }
-        testComplete();
+        complete();
       });
+    };
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(ws -> {
+      test.accept(ws);
+      if (closeClient) {
+        ws.close();
+      }
     });
     server.listen(onSuccess(s -> {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path", onSuccess(WebSocketBase::close));
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/some/path",
+        onSuccess(ws -> {
+          test.accept(ws);
+          if (closeServer) {
+            ws.close();
+          }
+        }));
     }));
     await();
   }
