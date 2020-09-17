@@ -28,6 +28,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.FrameType;
+import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.WebSocketInternal;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
@@ -2843,8 +2844,10 @@ public class WebSocketTest extends VertxTestBase {
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
       client = vertx.createHttpClient();
       handshake(client, req -> {
-        req.netSocket(onSuccess(so -> {
-          NetSocketInternal soi = (NetSocketInternal) so;
+        req.send(onSuccess(resp -> {
+          assertEquals(101, resp.statusCode());
+          Http1xClientConnection conn = (Http1xClientConnection) req.connection();
+          NetSocketInternal soi = conn.toNetSocket();
           soi.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
           soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
           String reason = TestUtils.randomAlphaString(10);
@@ -2866,9 +2869,6 @@ public class WebSocketTest extends VertxTestBase {
             assertTrue(closeFrameReceived.get());
             complete();
           });
-        }));
-        req.send(onSuccess(resp -> {
-          assertEquals(101, resp.statusCode());
         }));
       });
     }));
@@ -2996,14 +2996,13 @@ public class WebSocketTest extends VertxTestBase {
     server.listen(onSuccess(s -> {
       client = vertx.createHttpClient();
       handshake(client, req -> {
-        req.netSocket(onSuccess(sock -> {
+        req.connect(onSuccess(resp -> {
+          assertEquals(101, resp.statusCode());
+          NetSocket sock = resp.netSocket();
           // Let's write an invalid frame
           Buffer buff = Buffer.buffer();
           buff.appendByte((byte)(0x8)).appendByte((byte)0); // Violates protocol with V13 (final control frame)
           sock.write(buff);
-        }));
-        req.send(onSuccess(resp -> {
-          assertEquals(101, resp.statusCode());
         }));
       });
     }));

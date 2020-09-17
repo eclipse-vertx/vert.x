@@ -4413,6 +4413,8 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest continueHandler(@Nullable Handler<Void> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> sendHead() { throw new UnsupportedOperationException(); }
       public HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler) { throw new UnsupportedOperationException(); }
+      public Future<HttpClientResponse> connect() { throw new UnsupportedOperationException(); }
+      public void connect(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public Future<Void> end(String chunk) { throw new UnsupportedOperationException(); }
       public Future<Void> end(String chunk, String enc) { throw new UnsupportedOperationException(); }
       public void end(String chunk, Handler<AsyncResult<Void>> handler) { throw new UnsupportedOperationException(); }
@@ -5229,22 +5231,21 @@ public abstract class HttpTest extends HttpTestBase {
       server.listen(testAddress, onSuccess(s -> {
         client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
           req
-            .onComplete(onSuccess(resp -> {
+            .connect(onSuccess(resp -> {
               assertEquals(200, resp.statusCode());
-            })).netSocket(onSuccess(socket -> {
-            socket.handler(buff -> {
-              received.appendBuffer(buff);
-              if (received.length() == buffer.length()) {
-                closeSocket.complete(null);
-              }
-            });
-            socket.closeHandler(v -> {
-              assertEquals(buffer, received);
-              testComplete();
-            });
-            socket.write(buffer);
-          }))
-            .end();
+              NetSocket socket = resp.netSocket();
+              socket.handler(buff -> {
+                received.appendBuffer(buff);
+                if (received.length() == buffer.length()) {
+                  closeSocket.complete(null);
+                }
+              });
+              socket.closeHandler(v -> {
+                assertEquals(buffer, received);
+                testComplete();
+              });
+              socket.write(buffer);
+            }));
         }));
       }));
     }));
@@ -5253,39 +5254,100 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testClientNetSocketConnectSuccess() {
-    waitFor(3);
+  public void testNetSocketConnectSuccessClientInitiatesCloseImmediately() {
+    testNetSocketConnectSuccess(so -> {
+      Buffer received = Buffer.buffer();
+      so.handler(received::appendBuffer);
+      so.endHandler(v -> {
+        assertEquals("hello", received.toString());
+        complete();
+      });
+    }, so -> {
+      Buffer received = Buffer.buffer();
+      so.handler(received::appendBuffer);
+      so.endHandler(v -> {
+        assertEquals("", received.toString());
+        complete();
+      });
+      so.end(Buffer.buffer("hello"));
+    });
+  }
+
+  @Test
+  public void testNetSocketConnectSuccessServerInitiatesCloseImmediately() {
+    testNetSocketConnectSuccess(so -> {
+      Buffer received = Buffer.buffer();
+      so.handler(received::appendBuffer);
+      so.endHandler(v -> {
+        assertEquals("", received.toString());
+        complete();
+      });
+      so.end(Buffer.buffer("hello"));
+    }, so -> {
+      Buffer received = Buffer.buffer();
+      so.handler(received::appendBuffer);
+      so.endHandler(v -> {
+        assertEquals("hello", received.toString());
+        complete();
+      });
+    });
+  }
+
+  @Test
+  public void testNetSocketConnectSuccessServerInitiatesCloseOnReply() {
+    testNetSocketConnectSuccess(so -> {
+      Buffer received = Buffer.buffer();
+      so.handler(received::appendBuffer);
+      so.endHandler(v -> {
+        assertEquals("pong", received.toString());
+        complete();
+      });
+      so.write(Buffer.buffer("ping"));
+      }, so -> {
+      so.handler(buff -> {
+        if (buff.toString().equals("ping")) {
+          so.end(Buffer.buffer("pong"));
+        }
+      });
+      so.endHandler(v -> {
+        complete();
+      });
+    });
+  }
+
+  @Test
+  public void testNetSocketConnectSuccessClientInitiatesCloseOnReply() {
+    testNetSocketConnectSuccess(so -> {
+      so.handler(buff -> {
+        if (buff.toString().equals("ping")) {
+          so.end(Buffer.buffer("pong"));
+        }
+      });
+      so.endHandler(v -> {
+        complete();
+      });
+    }, so -> {
+      Buffer received = Buffer.buffer();
+      so.handler(received::appendBuffer);
+      so.endHandler(v -> {
+        assertEquals("pong", received.toString());
+        complete();
+      });
+      so.write(Buffer.buffer("ping"));
+    });
+  }
+
+  public void testNetSocketConnectSuccess(Handler<NetSocket> clientHandler, Handler<NetSocket> serverHandler) {
+    waitFor(2);
 
     server.requestHandler(req -> {
       req.response().headers().set("HTTP/1.1", "101 Upgrade");
-      req.toNetSocket().onComplete(onSuccess(so -> {
-        so.handler(buff -> {
-          if (buff.toString().equals("ping")) {
-            so.end(Buffer.buffer("pong"));
-          }
-        });
-        so.endHandler(v -> {
-          complete();
-        });
-      }));
+      req.toNetSocket().onComplete(onSuccess(serverHandler::handle));
     });
 
     server.listen(testAddress, onSuccess(s -> {
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
-        req
-          .onComplete(onSuccess(resp -> {
-            complete();
-          }));
-        req.netSocket(onSuccess(so -> {
-          Buffer received = Buffer.buffer();
-          so.handler(received::appendBuffer);
-          so.endHandler(v -> {
-            assertEquals("pong", received.toString());
-            complete();
-          });
-          so.write(Buffer.buffer("ping"));
-        }));
-        req.end();
+        req.connect(onSuccess(resp -> clientHandler.handle(resp.netSocket())));
       }));
     }));
 
@@ -5294,23 +5356,16 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientNetSocketConnectReject() {
-    waitFor(2);
-
     server.requestHandler(req -> {
       req.response().setStatusCode(404).end();
     });
 
     server.listen(testAddress, onSuccess(s -> {
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
-        req
-          .onComplete(onSuccess(resp -> {
-            assertEquals(404, resp.statusCode());
-            complete();
-          }));
-        req.netSocket(onFailure(err -> {
-          complete();
+        req.connect(onSuccess(resp -> {
+          assertEquals(404, resp.statusCode());
+          testComplete();
         }));
-        req.end();
       }));
     }));
 
@@ -5319,8 +5374,6 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientNetSocketConnectFailure() {
-    waitFor(2);
-
     server.requestHandler(req -> {
       req.connection().close();
     });
@@ -5329,11 +5382,8 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
         req
           .onComplete(onFailure(err -> {
-            complete();
+            testComplete();
           }));
-        req.netSocket(onFailure(err -> {
-          complete();
-        }));
         req.end();
       }));
     }));
@@ -5361,7 +5411,7 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(testAddress, onSuccess(s -> {
       client = vertx.createHttpClient(createBaseClientOptions());
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
-        req.netSocket(onSuccess(so -> {
+        req.connect(onSuccess(so -> {
           assertNotNull(so);
           so.handler(buff -> {
             // With HTTP/1.1 the buffer is received immediately but delivered asynchronously
@@ -5374,7 +5424,7 @@ public abstract class HttpTest extends HttpTestBase {
               so.resume();
             });
           }
-        })).end();
+        }));
       }));
     }));
 
@@ -5383,7 +5433,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testServerNetSocketCloseWithHandler() {
-    waitFor(3);
+    waitFor(2);
     server.requestHandler(req -> {
       req.toNetSocket().onComplete(onSuccess(so -> {
         so.close(onSuccess(v -> {
@@ -5395,14 +5445,12 @@ public abstract class HttpTest extends HttpTestBase {
     server.listen(testAddress, onSuccess(s -> {
       client = vertx.createHttpClient(createBaseClientOptions());
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
-        req.onComplete(onSuccess(resp -> {
-          complete();
-        }));
-        req.netSocket(onSuccess(so -> {
+        req.connect(onSuccess(resp -> {
+          NetSocket so = resp.netSocket();
           so.closeHandler(v -> {
             complete();
           });
-        })).end();
+        }));
       }));
     }));
     await();
@@ -5410,7 +5458,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientNetSocketCloseWithHandler() {
-    waitFor(3);
+    waitFor(2);
     server.requestHandler(req -> {
       req.toNetSocket().onComplete(onSuccess(so -> {
         so.closeHandler(v -> {
@@ -5420,14 +5468,12 @@ public abstract class HttpTest extends HttpTestBase {
     });
     server.listen(testAddress, onSuccess(s -> {
       client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
-        req.onComplete(onSuccess(resp -> {
-          complete();
-        }));
-        req.netSocket(onSuccess(so -> {
+        req.connect(onSuccess(resp -> {
+          NetSocket so = resp.netSocket();
           so.close(onSuccess(v -> {
             complete();
           }));
-        })).end();
+        }));
       }));
     }));
     await();

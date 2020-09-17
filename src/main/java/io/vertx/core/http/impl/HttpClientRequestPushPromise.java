@@ -170,6 +170,16 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
+  public Future<HttpClientResponse> connect() {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public void connect(Handler<AsyncResult<HttpClientResponse>> handler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
   public Future<Void> end(String chunk) {
     throw new IllegalStateException();
   }

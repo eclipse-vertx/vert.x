@@ -20,6 +20,8 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +54,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private MultiMap headers;
   private MultiMap trailers;
   private List<String> cookies;
+  private NetSocket netSocket;
 
   HttpClientResponseImpl(HttpClientRequestBase request, HttpVersion version, HttpClientStream stream, int statusCode, String statusMessage, MultiMap headers) {
     this.version = version;
@@ -73,6 +76,14 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public HttpClientRequestBase request() {
     return request;
+  }
+
+  @Override
+  public NetSocket netSocket() {
+    if (netSocket == null) {
+      netSocket = HttpNetSocket.netSocket((ConnectionBase) conn, request.context, this, request);
+    }
+    return netSocket;
   }
 
   @Override

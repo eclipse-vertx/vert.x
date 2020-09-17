@@ -26,7 +26,6 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
@@ -61,7 +60,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private HeadersMultiMap headers;
   private StreamPriority priority;
   private boolean headWritten;
-  private Promise<NetSocket> netSocketPromise;
+  private boolean isConnect;
 
   HttpClientRequestImpl(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method,
                         SocketAddress server, String host, int port, String requestURI) {
@@ -91,17 +90,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     // Might be called from non vertx thread
     context.emit(t, handler);
     endPromise.tryFail(t);
-  }
-
-  @Override
-  public synchronized Future<NetSocket> netSocket() {
-    if (client.getOptions().isPipelining()) {
-      return Future.failedFuture("Cannot upgrade a pipe-lined request");
-    }
-    if (netSocketPromise == null) {
-      netSocketPromise = context.promise();
-    }
-    return netSocketPromise.future();
   }
 
   @Override
@@ -226,8 +214,25 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   public HttpClientRequest sendHead(Handler<AsyncResult<Void>> headersHandler) {
     checkEnded();
-    doWrite(null, false, headersHandler);
+    doWrite(null, false, false, headersHandler);
     return this;
+  }
+
+  @Override
+  public Future<HttpClientResponse> connect() {
+    if (client.getOptions().isPipelining()) {
+      return context.failedFuture("Cannot upgrade a pipe-lined request");
+    }
+    doWrite(null, false, true, ar -> {});
+    return this;
+  }
+
+  @Override
+  public void connect(Handler<AsyncResult<HttpClientResponse>> handler) {
+    Future<HttpClientResponse> fut = connect();
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
   }
 
   @Override
@@ -433,7 +438,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private boolean requiresContentLength() {
-    return !chunked && (headers == null || !headers.contains(CONTENT_LENGTH));
+    return !chunked && (headers == null || !headers.contains(CONTENT_LENGTH)) && !isConnect;
   }
 
   private void write(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> completionHandler) {
@@ -445,10 +450,10 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       throw new IllegalStateException("You must set the Content-Length header to be the total size of the message "
         + "body BEFORE sending any data if you are not using HTTP chunked encoding.");
     }
-    doWrite(buff, end, completionHandler);
+    doWrite(buff, end, false, completionHandler);
   }
 
-  private void doWrite(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> completionHandler) {
+  private void doWrite(ByteBuf buff, boolean end, boolean connect, Handler<AsyncResult<Void>> completionHandler) {
     boolean writeHead;
     synchronized (this) {
       if (ended) {
@@ -458,6 +463,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       checkResponseHandler();
       if (!headWritten) {
         headWritten = true;
+        isConnect = connect;
         writeHead = true;
       } else {
         writeHead = false;
@@ -469,7 +475,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       HttpMethod method = getMethod();
       String uri = getURI();
       HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI());
-      stream.writeHead(head, chunked, buff, ended, priority, netSocketPromise, completionHandler);
+      stream.writeHead(head, chunked, buff, ended, priority, connect, completionHandler);
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();

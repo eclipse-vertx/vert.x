@@ -279,6 +279,33 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler);
 
   /**
+   * Create an HTTP tunnel to the server.
+   *
+   * <p> Send an HTTP request to the server, then configures the transport to exchange
+   * raw buffers when the server replies with an appropriate response:
+   *
+   * <ul>
+   *   <li>{@code 200} for HTTP {@code CONNECT} method</li>
+   *   <li>{@code 101} for HTTP/1.1 {@code GET} with {@code Upgrade} {@code connection} header</li>
+   * </ul>
+   *
+   * <p> The {@code handler} is called after response headers are received.
+   *
+   * <p> Use {@link HttpClientResponse#netSocket} to get a {@link NetSocket} for the interacting
+   * more conveniently with the server.
+   *
+   * <p> HTTP/1.1 pipe-lined requests are not supported.
+   *
+   * @param handler the response completion handler
+   */
+  void connect(Handler<AsyncResult<HttpClientResponse>> handler);
+
+  /**
+   * Like {@link #connect(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> connect();
+
+  /**
    * Send the request with an empty body.
    *
    * @param handler the completion handler for the {@link HttpClientResponse}
@@ -460,36 +487,6 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    */
   @Fluent
   HttpClientRequest pushHandler(Handler<HttpClientRequest> handler);
-
-  /**
-   * Get a {@link NetSocket} for the underlying connection of this request.
-   * <p>
-   * The {@code handler} is called after the response headers are received.
-   * <p>
-   * This shall be used when using a {@link HttpMethod#CONNECT} method.
-   * <p>
-   * HTTP/1.1 pipe-lined requests cannot support net socket upgrade.
-   * <p>
-   * Pooled connection is removed from the pool.
-   *
-   * @param handler the handler
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  default HttpClientRequest netSocket(Handler<AsyncResult<NetSocket>> handler) {
-    Future<NetSocket> fut = netSocket();
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return this;
-  }
-
-  /**
-   * Like {@link #netSocket(Handler)} but returns a {@code Future} of the asynchronous result
-   */
-  default Future<NetSocket> netSocket() {
-    return Future.failedFuture("Cannot use socket connect");
-  }
 
   /**
    * Reset this stream with the error code {@code 0}.

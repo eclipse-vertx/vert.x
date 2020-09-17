@@ -37,6 +37,7 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.Map;
 
@@ -414,7 +415,8 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
           netSocket = stream.context.failedFuture("Response for CONNECT already sent");
         } else {
           ctx.flush();
-          netSocket = Future.succeededFuture(conn.toNetSocket(stream));
+          HttpNetSocket ns = HttpNetSocket.netSocket(conn, stream.context, (ReadStream<Buffer>) stream, this);
+          netSocket = Future.succeededFuture(ns);
         }
       }
     }
@@ -585,7 +587,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     } else {
       h = ar -> {};
     }
-    stream.resolveFile(filename, offset, length, ar -> {
+    HttpUtils.resolveFile(stream.vertx, filename, offset, length, ar -> {
       if (ar.succeeded()) {
         AsyncFile file = ar.result();
         long contentLength = Math.min(length, file.getReadLength());

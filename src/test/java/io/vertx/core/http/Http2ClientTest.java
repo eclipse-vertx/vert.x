@@ -40,6 +40,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.test.core.AsyncTestBase;
@@ -1399,7 +1400,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   @Test
   public void testNetSocketConnect() throws Exception {
-    waitFor(3);
+    waitFor(2);
     final AtomicInteger writeHandlerCounter = new AtomicInteger(0);
     Handler<AsyncResult<Void>> writeHandler = (result) -> {
       if(result.succeeded()) {
@@ -1440,11 +1441,9 @@ public class Http2ClientTest extends Http2TestBase {
     startServer(testAddress);
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
       req
-        .onComplete(onSuccess(resp -> {
+        .connect(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
-          complete();
-        }))
-        .netSocket(onSuccess(socket -> {
+          NetSocket socket = resp.netSocket();
           StringBuilder received = new StringBuilder();
           AtomicInteger count = new AtomicInteger();
           socket.handler(buff -> {
@@ -1466,15 +1465,14 @@ public class Http2ClientTest extends Http2TestBase {
             complete();
           });
           socket.write(Buffer.buffer("some-data"));
-        }))
-        .end();
+        }));
     }));
     await();
   }
 
   @Test
   public void testServerCloseNetSocket() throws Exception {
-    waitFor(3);
+    waitFor(2);
     AtomicInteger status = new AtomicInteger();
     server.requestHandler(req -> {
       req.toNetSocket(onSuccess(socket -> {
@@ -1505,11 +1503,9 @@ public class Http2ClientTest extends Http2TestBase {
     startServer(testAddress);
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
       req
-        .onComplete(onSuccess(resp -> {
+        .connect(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
-          complete();
-        }))
-        .netSocket(onSuccess(socket -> {
+          NetSocket socket = resp.netSocket();
           AtomicInteger count = new AtomicInteger();
           socket.handler(buff -> {
             switch (count.getAndIncrement()) {
@@ -1530,8 +1526,7 @@ public class Http2ClientTest extends Http2TestBase {
             complete();
           });
           socket.write(Buffer.buffer("some-data"));
-        }))
-        .end();
+        }));
     }));
     await();
   }

@@ -105,7 +105,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     return client.metrics();
   }
 
-  void upgradeStream(Object metric, Promise<NetSocket> netSocketPromise, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
+  void upgradeStream(Object metric, ContextInternal context, Handler<AsyncResult<HttpClientStream>> completionHandler) {
     Future<HttpClientStream> fut;
     synchronized (this) {
       try {
@@ -195,7 +195,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   static abstract class Stream extends VertxHttp2Stream<Http2ClientConnection> {
 
     private final boolean push;
-    protected Promise<NetSocket> netSocketPromise;
     private HttpResponseHead response;
     protected Object metric;
     protected Object trace;
@@ -237,6 +236,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     @Override
     void doWriteHeaders(Http2Headers headers, boolean end, Handler<AsyncResult<Void>> handler) {
+      isConnect = "CONNECT".contentEquals(headers.method());
       super.doWriteHeaders(headers, end, handler);
       if (end) {
         endRequest();
@@ -299,25 +299,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (headHandler != null) {
           context.emit(response, headHandler);
         }
-
-        Promise<NetSocket> promise = netSocketPromise;
-        netSocketPromise = null;
-        if (promise != null) {
-          if (response.statusCode == 200) {
-            NetSocket ns = conn.toNetSocket(this);
-            promise.complete(ns);
-          } else {
-            promise.fail("Server responded with " + response.statusCode + " code instead of 200");
-          }
-        }
       }
     }
 
     @Override
     void onClose() {
-      if (netSocketPromise != null) {
-        netSocketPromise.fail(ConnectionBase.CLOSED_EXCEPTION);
-      }
       if (conn.metrics != null) {
         if (!requestEnded || !responseEnded) {
           conn.metrics.requestReset(metric);
@@ -472,15 +458,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
-      this.netSocketPromise = netSocketPromise;
+    public void writeHead(HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Handler<AsyncResult<Void>> handler) {
       priority(priority);
       conn.context.emit(null, v -> {
-        writeHeaders(request, buf, end, priority, netSocketPromise, handler);
+        writeHeaders(request, buf, end, priority, connect, handler);
       });
     }
 
-    private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, Promise<NetSocket> netSocketPromise, Handler<AsyncResult<Void>> handler) {
+    private void writeHeaders(HttpRequestHead request, ByteBuf buf, boolean end, StreamPriority priority, boolean connect, Handler<AsyncResult<Void>> handler) {
       Http2Headers headers = new DefaultHttp2Headers();
       headers.method(request.method.name());
       boolean e;

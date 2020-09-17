@@ -99,6 +99,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
     Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, context.duplicate(), serverOrigin, headers, contentEncoding, streamEnded);
+    request.isConnect = request.method() == HttpMethod.CONNECT;
     request.init(stream);
     return request;
   }

@@ -49,7 +49,7 @@ public interface HttpClientStream {
                  ByteBuf buf,
                  boolean end,
                  StreamPriority priority,
-                 Promise<NetSocket> netSocketPromise,
+                 boolean connect,
                  Handler<AsyncResult<Void>> handler);
   void writeBuffer(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> listener);
   void writeFrame(int type, int flags, ByteBuf payload);

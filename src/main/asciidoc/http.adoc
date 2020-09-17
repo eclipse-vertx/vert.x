@@ -1248,7 +1248,7 @@ cannot be a logical protocol constraint):
 
 ==== Creating HTTP tunnels
 
-HTTP tunnels can be created with {@link io.vertx.core.http.HttpClientRequest#netSocket}:
+HTTP tunnels can be created with {@link io.vertx.core.http.HttpClientRequest#connect}:
 
 [source,$lang]
 ----
@@ -1257,6 +1257,9 @@ HTTP tunnels can be created with {@link io.vertx.core.http.HttpClientRequest#net
 
 The handler will be called after the HTTP response header is received, the socket will be ready for tunneling
 and will send and receive buffers.
+
+`connect` works like `send`, but it reconfigures the transport to exchange
+raw buffers.
 
 ==== Client push
 

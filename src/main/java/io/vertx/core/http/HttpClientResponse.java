@@ -11,12 +11,14 @@
 
 package io.vertx.core.http;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
@@ -52,6 +54,12 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
 
   @Override
   HttpClientResponse endHandler(Handler<Void> endHandler);
+
+  /**
+   * @return a {@code NetSocket} facade to interact with the HTTP client response.
+   */
+  @CacheReturn
+  NetSocket netSocket();
 
   /**
    * @return the version of the response
