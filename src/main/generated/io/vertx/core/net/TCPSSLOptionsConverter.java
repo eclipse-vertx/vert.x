@@ -2,6 +2,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
@@ -27,7 +28,7 @@ public class TCPSSLOptionsConverter {
           if (member.getValue() instanceof JsonArray) {
             ((Iterable<Object>)member.getValue()).forEach( item -> {
               if (item instanceof String)
-                obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+                obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)item)));
             });
           }
           break;
@@ -165,7 +166,7 @@ public class TCPSSLOptionsConverter {
     }
     if (obj.getCrlValues() != null) {
       JsonArray array = new JsonArray();
-      obj.getCrlValues().forEach(item -> array.add(java.util.Base64.getEncoder().encodeToString(item.getBytes())));
+      obj.getCrlValues().forEach(item -> array.add(JsonUtil.BASE64_ENCODER.encodeToString(item.getBytes())));
       json.put("crlValues", array);
     }
     if (obj.getEnabledCipherSuites() != null) {
