@@ -420,12 +420,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         if (conn.isConnect) {
           msg = buff != null ? buff : Unpooled.EMPTY_BUFFER;
           if (end) {
-            ChannelPromise fut = conn.channelFuture();
-            conn.writeToChannel(msg, fut);
-            fut.addListener(listener);
-            fut.addListener(v -> {
-              conn.close();
-            });
+            conn.writeToChannel(msg, conn
+              .channelFuture()
+              .addListener(listener)
+              .addListener(v -> conn.close())
+            );
           } else {
             conn.writeToChannel(msg);
           }
@@ -440,7 +439,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
             msg = new DefaultHttpContent(buff);
           }
           conn.writeToChannel(msg, listener);
-          if (msg instanceof LastHttpContent) {
+          if (end) {
             conn.endRequest(this);
           }
         }
@@ -595,16 +594,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (error != null) {
       fail(error);
     } else if (msg instanceof HttpObject) {
-      HttpObject obj = (HttpObject) msg;
-      handleHttpMessage(obj);
+      handleHttpMessage((HttpObject) msg);
+    } else if (msg instanceof ByteBuf && isConnect) {
+      handleChunk((ByteBuf) msg);
     } else if (msg instanceof WebSocketFrame) {
       handleWsFrame((WebSocketFrame) msg);
-    } else if (msg instanceof ByteBuf) {
-      if (isConnect) {
-        handleHttpMessage(new DefaultHttpContent((ByteBuf) msg));
-      } else {
-        invalidMessageHandler.handle(msg);
-      }
     } else {
       invalidMessageHandler.handle(msg);
     }
@@ -640,6 +634,20 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       if (!isConnect && chunk instanceof LastHttpContent) {
         handleResponseEnd(stream, (LastHttpContent) chunk);
       }
+    }
+  }
+
+  private void handleChunk(ByteBuf chunk) {
+    Stream stream;
+    synchronized (this) {
+      stream = responses.peekFirst();
+      if (stream == null) {
+        return;
+      }
+    }
+    if (chunk.isReadable()) {
+      Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk, chctx.alloc()));
+      handleResponseChunk(stream, buff);
     }
   }
 
