@@ -19,24 +19,15 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.AsyncFile;
-import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.impl.InboundBuffer;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -286,30 +277,5 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void handlePriorityChange(StreamPriority newPriority) {
-  }
-
-  void resolveFile(String filename, long offset, long length, Handler<AsyncResult<AsyncFile>> resultHandler) {
-    File file_ = vertx.resolveFile(filename);
-    if (!file_.exists()) {
-      resultHandler.handle(Future.failedFuture(new FileNotFoundException()));
-      return;
-    }
-
-    //We open the fileName using a RandomAccessFile to make sure that this is an actual file that can be read.
-    //i.e is not a directory
-    try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
-      FileSystem fs = conn.vertx().fileSystem();
-      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
-        if (ar.succeeded()) {
-          AsyncFile file = ar.result();
-          long contentLength = Math.min(length, file_.length() - offset);
-          file.setReadPos(offset);
-          file.setReadLength(contentLength);
-        }
-        resultHandler.handle(ar);
-      });
-    } catch (IOException e) {
-      resultHandler.handle(Future.failedFuture(e));
-    }
   }
 }

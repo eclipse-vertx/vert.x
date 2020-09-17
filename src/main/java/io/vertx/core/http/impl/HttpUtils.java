@@ -885,7 +885,7 @@ public final class HttpUtils {
       || method.equals(HttpMethod.DELETE);
   }
 
-  public static void resolveFile(VertxInternal vertx, String filename, long offset, long length, Handler<AsyncResult<AsyncFile>> resultHandler) {
+  static void resolveFile(VertxInternal vertx, String filename, long offset, long length, Handler<AsyncResult<AsyncFile>> resultHandler) {
     File file_ = vertx.resolveFile(filename);
     if (!file_.exists()) {
       resultHandler.handle(Future.failedFuture(new FileNotFoundException()));

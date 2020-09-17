@@ -587,7 +587,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     } else {
       h = ar -> {};
     }
-    stream.resolveFile(filename, offset, length, ar -> {
+    HttpUtils.resolveFile(stream.vertx, filename, offset, length, ar -> {
       if (ar.succeeded()) {
         AsyncFile file = ar.result();
         long contentLength = Math.min(length, file.getReadLength());
