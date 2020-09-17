@@ -871,21 +871,20 @@ public class HTTPExamples {
 
     client.request(HttpMethod.CONNECT, "some-uri")
       .onSuccess(request -> {
-        request.onSuccess(response -> {
-          if (response.statusCode() != 200) {
-            // Connect failed for some reason
-          }
-        });
 
+        // Connect to the server
         request.connect(ar -> {
           if (ar.succeeded()) {
             HttpClientResponse response = ar.result();
-            NetSocket socket = response.netSocket();
-            // Perform tunneling now
+
+            if (response.statusCode() != 200) {
+              // Connect failed for some reason
+            } else {
+              // Tunnel created, raw buffers are transmitted on the wire
+              NetSocket socket = response.netSocket();
+            }
           }
         });
-
-        request.end();
     });
   }
 
