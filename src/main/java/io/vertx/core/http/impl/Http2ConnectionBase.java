@@ -38,7 +38,6 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.ArrayDeque;
@@ -93,12 +92,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   VertxInternal vertx() {
     return vertx;
-  }
-
-  NetSocket toNetSocket(VertxHttp2Stream stream) {
-    VertxHttp2NetSocket<Http2ConnectionBase> socketStream = new VertxHttp2NetSocket<>(this, stream.context);
-    socketStream.init(stream.stream);
-    return socketStream;
   }
 
   @Override
