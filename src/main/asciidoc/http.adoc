@@ -1258,6 +1258,9 @@ HTTP tunnels can be created with {@link io.vertx.core.http.HttpClientRequest#con
 The handler will be called after the HTTP response header is received, the socket will be ready for tunneling
 and will send and receive buffers.
 
+`connect` works like `send`, but it reconfigures the transport to exchange
+raw buffers.
+
 ==== Client push
 
 Server push is a new feature of HTTP/2 that enables sending multiple responses in parallel for a single client request.
