@@ -279,27 +279,29 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler);
 
   /**
-   * Send an HTTP request to the server and configures the connection to read and write
-   * buffers when the server replies with an appropriate response.
+   * Create an HTTP tunnel to the server.
+   *
+   * <p> Send an HTTP request to the server, then configures the transport to exchange
+   * raw buffers when the server replies with an appropriate response:
    *
    * <ul>
    *   <li>{@code 200} for HTTP {@code CONNECT} method</li>
    *   <li>{@code 101} for HTTP/1.1 {@code GET} with {@code Upgrade} {@code connection} header</li>
    * </ul>
-   * <p>
-   * The {@code handler} is called after the response headers are received.
-   * <p>
-   * Use {@link HttpClientResponse#netSocket} to get a {@link NetSocket} for the interacting
-   * more conveniently with the buffers.
-   * <p>
-   * HTTP/1.1 pipe-lined requests cannot support net socket upgrade.
+   *
+   * <p> The {@code handler} is called after response headers are received.
+   *
+   * <p> Use {@link HttpClientResponse#netSocket} to get a {@link NetSocket} for the interacting
+   * more conveniently with the server.
+   *
+   * <p> HTTP/1.1 pipe-lined requests are not supported.
    *
    * @param handler the response completion handler
    */
   void connect(Handler<AsyncResult<HttpClientResponse>> handler);
 
   /**
-   * Like {@link #send(Handler)} but returns a {@code Future} of the asynchronous result
+   * Like {@link #connect(Handler)} but returns a {@code Future} of the asynchronous result
    */
   Future<HttpClientResponse> connect();
 
