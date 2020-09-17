@@ -33,7 +33,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.clientconnection.ConnectionListener;
@@ -407,13 +406,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     @Override
     public void writeBuffer(ByteBuf buff, boolean end, Handler<AsyncResult<Void>> handler) {
-      if (buff == null && !end) {
-        return;
+      if (buff != null || end) {
+        FutureListener<Void> listener = handler == null ? null : context.promise(handler);
+        writeBuffer(buff, end, listener);
       }
-      writeBuffer2(buff, end, handler == null ? null : context.promise(handler));
     }
 
-    private void writeBuffer2(ByteBuf buff, boolean end, FutureListener<Void> listener) {
+    private void writeBuffer(ByteBuf buff, boolean end, FutureListener<Void> listener) {
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
         Object msg;
@@ -444,7 +443,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
           }
         }
       } else {
-        eventLoop.execute(() -> writeBuffer2(buff, end, listener));
+        eventLoop.execute(() -> writeBuffer(buff, end, listener));
       }
     }
 
