@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
@@ -88,11 +87,10 @@ public class FileResolver {
   private static final Pattern JAR_URL_SEP_PATTERN = Pattern.compile(JAR_URL_SEP);
 
   private final File cwd;
-  private File cacheDir;
+  private final File cacheDir;
   private Thread shutdownHook;
   private final boolean enableCaching;
   private final boolean enableCpResolving;
-  private final String fileCacheDir;
 
   public FileResolver() {
     this(new FileSystemOptions());
@@ -101,7 +99,6 @@ public class FileResolver {
   public FileResolver(FileSystemOptions fileSystemOptions) {
     this.enableCaching = fileSystemOptions.isFileCachingEnabled();
     this.enableCpResolving = fileSystemOptions.isClassPathResolvingEnabled();
-    this.fileCacheDir = fileSystemOptions.getFileCacheDir();
 
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
@@ -109,9 +106,7 @@ public class FileResolver {
     } else {
       cwd = null;
     }
-    if (this.enableCpResolving) {
-      setupCacheDir(UUID.randomUUID().toString());
-    }
+    cacheDir = setupCacheDir(fileSystemOptions.getFileCacheDir());
   }
 
   /**
@@ -375,9 +370,23 @@ public class FileResolver {
     return cl;
   }
 
-  private synchronized void setupCacheDir(String id) {
-    String cacheDirName = fileCacheDir + "/file-cache-" + id;
-    cacheDir = new File(cacheDirName);
+  /**
+   * Will prepare the cache directory to be used in the application or return null if classpath resolving is disabled.
+   */
+  private synchronized File setupCacheDir(String fileCacheDir) {
+    if (!this.enableCpResolving) {
+      return null;
+    }
+
+    // ensure that the argument doesn't end with separator
+    if (fileCacheDir.endsWith(File.separator)) {
+      fileCacheDir = fileCacheDir.substring(0, fileCacheDir.length() - File.separator.length());
+    }
+
+    // the cachedir will be prefixed a unique id to avoid eavesdroping from other processes
+    String cacheDirName = fileCacheDir + "-" + UUID.randomUUID().toString();
+    File cacheDir = new File(cacheDirName);
+
     if (!cacheDir.mkdirs()) {
       throw new IllegalStateException("Failed to create cache dir: " + cacheDirName);
     }
@@ -398,18 +407,20 @@ public class FileResolver {
       }
     });
     Runtime.getRuntime().addShutdownHook(shutdownHook);
+    return cacheDir;
   }
 
   private void deleteCacheDir() throws IOException {
-    Path path;
-    synchronized (this) {
-      if (cacheDir == null || !cacheDir.exists()) {
-        return;
-      }
-      path = cacheDir.toPath();
-      cacheDir = null;
+    if (cacheDir == null || !cacheDir.exists()) {
+      return;
     }
-    FileSystemImpl.delete(path, true);
+    synchronized (this) {
+      // if a previous run was already deleting
+      // after entering the monitor we can quickly abort of the
+      // directory doesn't exist anymore
+      if (cacheDir.exists()) {
+        FileSystemImpl.delete(cacheDir.toPath(), true);
+      }
+    }
   }
 }
-
