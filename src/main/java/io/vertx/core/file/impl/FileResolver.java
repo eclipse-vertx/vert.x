@@ -384,6 +384,7 @@ public class FileResolver {
     }
 
     // the cachedir will be prefixed a unique id to avoid eavesdroping from other processes
+    // also this ensures that if process A deletes cacheDir, it won't affect process B
     String cacheDirName = fileCacheDir + "-" + UUID.randomUUID().toString();
     File cacheDir = new File(cacheDirName);
 
