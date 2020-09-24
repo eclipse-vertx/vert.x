@@ -6011,13 +6011,13 @@ public abstract class HttpTest extends HttpTestBase {
       Cookie removed = req.response().removeCookie("foo");
       assertNotNull(removed);
       assertEquals("foo", removed.getName());
-      assertEquals("bar", removed.getValue());
+      assertEquals("", removed.getValue());
       req.response().end();
     }, resp -> {
       List<String> cookies = resp.headers().getAll("set-cookie");
       // the expired cookie must be sent back
       assertEquals(1, cookies.size());
-      assertTrue(cookies.get(0).contains("foo=bar"));
+      assertTrue(cookies.get(0).contains("foo="));
       assertTrue(cookies.get(0).contains("Max-Age=0"));
       assertTrue(cookies.get(0).contains("Expires="));
     });
