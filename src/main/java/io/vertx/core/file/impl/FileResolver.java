@@ -87,10 +87,11 @@ public class FileResolver {
   private static final Pattern JAR_URL_SEP_PATTERN = Pattern.compile(JAR_URL_SEP);
 
   private final File cwd;
-  private final File cacheDir;
-  private Thread shutdownHook;
-  private final boolean enableCaching;
   private final boolean enableCpResolving;
+  private final boolean enableCaching;
+  // mutable state
+  private File cacheDir;
+  private Thread shutdownHook;
 
   public FileResolver() {
     this(new FileSystemOptions());
@@ -113,12 +114,18 @@ public class FileResolver {
    * Close this file resolver, this is a blocking operation.
    */
   public void close() throws IOException {
-    synchronized (this) {
-      if (shutdownHook != null) {
-        // May throw IllegalStateException if called from other shutdown hook so ignore that
-        try {
-          Runtime.getRuntime().removeShutdownHook(shutdownHook);
-        } catch (IllegalStateException ignore) {
+    // avoid monitor, if already disabled
+    if (shutdownHook != null) {
+      synchronized (this) {
+        if (shutdownHook != null) {
+          // May throw IllegalStateException if called from other shutdown hook so ignore that
+          try {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+          } catch (IllegalStateException ignore) {
+            // ignore
+          } finally {
+            shutdownHook = null;
+          }
         }
       }
     }
@@ -133,6 +140,10 @@ public class FileResolver {
     }
     if (!this.enableCpResolving) {
       return file;
+    }
+    // if cacheDir is null, the delete cache dir was already called.
+    if (cacheDir == null) {
+      throw new IllegalStateException("cacheDir is null");
     }
     // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
     // corrupting the content.
@@ -231,10 +242,15 @@ public class FileResolver {
     } else {
       cacheFile.mkdirs();
       String[] listing = resource.list();
-      for (String file: listing) {
-        String subResource = fileName + "/" + file;
-        URL url2 = getValidClassLoaderResource(cl, subResource);
-        unpackFromFileURL(url2, subResource, cl);
+      if (listing != null) {
+        for (String file: listing) {
+          String subResource = fileName + "/" + file;
+          URL url2 = getValidClassLoaderResource(cl, subResource);
+          if (url2 == null) {
+            throw new VertxException("Invalid resource: " + subResource);
+          }
+          unpackFromFileURL(url2, subResource, cl);
+        }
       }
     }
     return cacheFile;
@@ -373,7 +389,7 @@ public class FileResolver {
   /**
    * Will prepare the cache directory to be used in the application or return null if classpath resolving is disabled.
    */
-  private synchronized File setupCacheDir(String fileCacheDir) {
+  private File setupCacheDir(String fileCacheDir) {
     if (!this.enableCpResolving) {
       return null;
     }
@@ -393,6 +409,11 @@ public class FileResolver {
     }
     // Add shutdown hook to delete on exit
     shutdownHook = new Thread(() -> {
+      // no-op if cache dir has been set to null
+      if (this.cacheDir == null) {
+        return;
+      }
+
       final Thread deleteCacheDirThread = new Thread(() -> {
         try {
           deleteCacheDir();
@@ -415,13 +436,19 @@ public class FileResolver {
     if (cacheDir == null || !cacheDir.exists()) {
       return;
     }
+    // save the state before we force a flip
+    final File dir;
     synchronized (this) {
-      // if a previous run was already deleting
-      // after entering the monitor we can quickly abort of the
-      // directory doesn't exist anymore
-      if (cacheDir.exists()) {
-        FileSystemImpl.delete(cacheDir.toPath(), true);
+      if (cacheDir == null) {
+        return;
       }
+      // disable the cache dir
+      dir = cacheDir;
+      cacheDir = null;
+    }
+    // threads will only enter here once, as the resolving flag is flipped above
+    if (dir.exists()) {
+      FileSystemImpl.delete(dir.toPath(), true);
     }
   }
 }
