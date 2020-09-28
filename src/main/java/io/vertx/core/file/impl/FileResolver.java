@@ -399,7 +399,7 @@ public class FileResolver {
       fileCacheDir = fileCacheDir.substring(0, fileCacheDir.length() - File.separator.length());
     }
 
-    // the cachedir will be prefixed a unique id to avoid eavesdroping from other processes
+    // the cacheDir will be suffixed a unique id to avoid eavesdropping from other processes/users
     // also this ensures that if process A deletes cacheDir, it won't affect process B
     String cacheDirName = fileCacheDir + "-" + UUID.randomUUID().toString();
     File cacheDir = new File(cacheDirName);
@@ -409,9 +409,11 @@ public class FileResolver {
     }
     // Add shutdown hook to delete on exit
     shutdownHook = new Thread(() -> {
-      // no-op if cache dir has been set to null
-      if (this.cacheDir == null) {
-        return;
+      synchronized (this) {
+        // no-op if cache dir has been set to null
+        if (this.cacheDir == null) {
+          return;
+        }
       }
 
       final Thread deleteCacheDirThread = new Thread(() -> {
@@ -433,17 +435,14 @@ public class FileResolver {
   }
 
   private void deleteCacheDir() throws IOException {
-    if (cacheDir == null || !cacheDir.exists()) {
-      return;
-    }
-    // save the state before we force a flip
     final File dir;
     synchronized (this) {
       if (cacheDir == null) {
         return;
       }
-      // disable the cache dir
+      // save the state before we force a flip
       dir = cacheDir;
+      // disable the cache dir
       cacheDir = null;
     }
     // threads will only enter here once, as the resolving flag is flipped above
