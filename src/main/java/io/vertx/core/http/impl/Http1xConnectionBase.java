@@ -15,7 +15,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
 import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.stream.ChunkedFile;
 import io.vertx.codegen.annotations.Nullable;
@@ -35,14 +34,12 @@ import io.vertx.core.net.impl.ConnectionBase;
 abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends ConnectionBase implements io.vertx.core.http.HttpConnection {
 
   protected S webSocket;
-  protected long bytesWritten;
 
   Http1xConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
     super(context, chctx);
   }
 
   void handleWsFrame(WebSocketFrame msg) {
-    reportBytesRead(getBytes(msg));
     WebSocketImplBase<?> w;
     synchronized (this) {
       w = webSocket;
@@ -129,36 +126,36 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
 
   @Override
   protected void reportsBytesWritten(Object msg) {
-    if (msg instanceof HttpObject || msg instanceof FileRegion || msg instanceof ChunkedFile) {
-      bytesWritten += getBytes(msg);
-    } else if (msg instanceof WebSocketFrame) {
-      // Only report WebSocket messages since HttpMessage are reported by streams
-      reportBytesWritten(getBytes(msg));
-    }
+    long size = sizeOf(msg);
+    reportBytesWritten(size);
   }
 
-  static long getBytes(WebSocketFrame obj) {
+  @Override
+  protected void reportBytesRead(Object msg) {
+    long size = sizeOf(msg);
+    reportBytesRead(size);
+  }
+
+  static long sizeOf(WebSocketFrame obj) {
     return obj.content().readableBytes();
   }
 
-  static long getBytes(Object obj) {
-    if (obj == null) {
-      return 0;
-    } else if (obj instanceof Buffer) {
+  static long sizeOf(Object obj) {
+    if (obj instanceof Buffer) {
       return ((Buffer) obj).length();
     } else if (obj instanceof ByteBuf) {
       return ((ByteBuf) obj).readableBytes();
     } else if (obj instanceof HttpContent) {
       return ((HttpContent) obj).content().readableBytes();
     } else if (obj instanceof WebSocketFrame) {
-      return getBytes((WebSocketFrame) obj);
+      return sizeOf((WebSocketFrame) obj);
     } else if (obj instanceof FileRegion) {
       return ((FileRegion) obj).count();
     } else if (obj instanceof ChunkedFile) {
       ChunkedFile file = (ChunkedFile) obj;
       return file.endOffset() - file.startOffset();
     } else {
-      return -1;
+      return 0L;
     }
   }
 }

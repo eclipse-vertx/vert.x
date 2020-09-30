@@ -41,14 +41,12 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final ContextInternal context;
   protected Http2Stream stream;
 
-  // Event loop
-  private long bytesRead;
-  private long bytesWritten;
-
   // Client context
   private StreamPriority priority;
   private final InboundBuffer<Object> pending;
   private boolean writable;
+  private long bytesRead;
+  private long bytesWritten;
   protected boolean isConnect;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
@@ -59,16 +57,14 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.writable = true;
     this.isConnect = false;
-
     pending.handler(item -> {
       if (item instanceof MultiMap) {
-        conn.reportBytesRead(bytesRead);
         handleEnd((MultiMap) item);
       } else {
         Buffer data = (Buffer) item;
         int len = data.length();
         conn.getContext().emit(null, v -> conn.consumeCredits(this.stream, len));
-        bytesRead += len;
+        bytesRead += data.length();
         handleData(data);
       }
     });
@@ -85,7 +81,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onClose() {
-    conn.reportBytesWritten(bytesWritten);
+    conn.flushBytesWritten();
     context.execute(v -> this.handleClose());
   }
 
@@ -114,6 +110,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onData(Buffer data) {
+    conn.reportBytesRead(data.length());
     context.emit(data, pending::write);
   }
 
@@ -133,6 +130,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onEnd(MultiMap trailers) {
+    conn.flushBytesRead();
     context.emit(trailers, pending::write);
     if (isConnect) {
       doWriteData(Unpooled.EMPTY_BUFFER, true, null);
@@ -211,7 +209,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     } else {
       chunk = buf;
     }
-    bytesWritten += chunk.readableBytes();
+    int numOfBytes = chunk.readableBytes();
+    bytesWritten += numOfBytes;
+    conn.reportBytesWritten(numOfBytes);
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
     conn.handler.writeData(stream, chunk, end, promise);
   }

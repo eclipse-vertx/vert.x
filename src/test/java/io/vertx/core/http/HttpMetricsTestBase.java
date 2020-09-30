@@ -28,7 +28,9 @@ import io.vertx.test.fakemetrics.HttpServerMetric;
 import io.vertx.test.fakemetrics.SocketMetric;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -96,7 +98,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     startServer();
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
-    AtomicReference<SocketMetric> socketMetric = new AtomicReference<>();
+    AtomicReference<SocketMetric> clientSocketMetric = new AtomicReference<>();
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
@@ -108,8 +110,8 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
         .onComplete(onSuccess(req -> {
           req
             .onComplete(onSuccess(resp -> {
-              socketMetric.set(metrics.getSocket(SocketAddress.inetSocketAddress(8080, "localhost")));
-              assertNotNull(socketMetric.get());
+              clientSocketMetric.set(metrics.getSocket(SocketAddress.inetSocketAddress(8080, "localhost")));
+              assertNotNull(clientSocketMetric.get());
               assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
               clientMetric.set(metrics.getMetric(resp.request()));
               assertNotNull(clientMetric.get());
@@ -136,16 +138,21 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     AsyncTestBase.assertWaitUntil(() -> metrics.endpoints().isEmpty());
     assertEquals(null, metrics.connectionCount("localhost:8080"));
     AsyncTestBase.assertWaitUntil(() -> !serverMetric.get().socket.connected.get());
-    try {
-      AsyncTestBase.assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
-    } catch (Exception e) {
-      System.out.println(contentLength + " == " + serverMetric.get().socket.bytesRead.get());
-      throw e;
-    }
+    AsyncTestBase.assertWaitUntil(() -> contentLength == serverMetric.get().socket.bytesRead.get());
     AsyncTestBase.assertWaitUntil(() -> contentLength  == serverMetric.get().socket.bytesWritten.get());
-    AsyncTestBase.assertWaitUntil(() -> !socketMetric.get().connected.get());
-    assertEquals(contentLength, socketMetric.get().bytesRead.get());
-    assertEquals(contentLength, socketMetric.get().bytesWritten.get());
+    AsyncTestBase.assertWaitUntil(() -> !clientSocketMetric.get().connected.get());
+    assertEquals(contentLength, clientSocketMetric.get().bytesRead.get());
+    assertEquals(contentLength, clientSocketMetric.get().bytesWritten.get());
+    for (Iterator<Long> it : Arrays.asList(clientSocketMetric.get().bytesReadEvents.iterator(), serverMetric.get().socket.bytesWrittenEvents.iterator())) {
+      while (it.hasNext()) {
+        long val = it.next();
+        if (it.hasNext()) {
+          assertEquals(4096, val);
+        } else {
+          assertTrue(val < 4096);
+        }
+      }
+    }
   }
 
   @Test

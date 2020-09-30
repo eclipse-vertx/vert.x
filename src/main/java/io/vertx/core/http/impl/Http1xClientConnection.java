@@ -91,7 +91,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private int keepAliveTimeout;
   private long expirationTimestamp;
   private int seq = 1;
-  private long bytesRead;
 
   Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
                          HttpVersion version,
@@ -208,8 +207,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         metrics.requestEnd(s.metric);
       }
     }
-    reportBytesWritten(bytesWritten);
-    bytesWritten = 0L;
+    flushBytesWritten();
     if (next != null) {
       next.promise.complete((HttpClientStream) next);
     }
@@ -627,8 +625,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     } else if (obj instanceof HttpContent) {
       HttpContent chunk = (HttpContent) obj;
       if (chunk.content().isReadable()) {
-        Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk.content(), chctx.alloc()));
-        handleResponseChunk(stream, buff);
+        handleResponseChunk(stream, chunk.content());
       }
       if (!isConnect && chunk instanceof LastHttpContent) {
         handleResponseEnd(stream, (LastHttpContent) chunk);
@@ -645,8 +642,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
     }
     if (chunk.isReadable()) {
-      Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk, chctx.alloc()));
-      handleResponseChunk(stream, buff);
+      handleResponseChunk(stream, chunk);
     }
   }
 
@@ -726,24 +722,19 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return pending;
   }
 
-  private void handleResponseChunk(Stream stream, Buffer buff) {
-    synchronized (this) {
-      bytesRead += buff.length();
-    }
+  private void handleResponseChunk(Stream stream, ByteBuf chunk) {
+    Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk, chctx.alloc()));
     stream.context.execute(buff, stream::handleChunk);
   }
 
   private void handleResponseEnd(Stream stream, LastHttpContent trailer) {
     boolean check;
-    long bytesRead;
     synchronized (this) {
       if (stream.response == null) {
         // 100-continue
         return;
       }
       responses.pop();
-      bytesRead = this.bytesRead;
-      this.bytesRead = 0L;
       close |= !options.isKeepAlive();
       stream.responseEnded = true;
       check = requests.peek() != stream;
@@ -757,7 +748,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
     stream.context.execute(trailer, stream::handleEnd);
     this.doResume();
-    reportBytesRead(bytesRead);
+    flushBytesRead();
     if (check) {
       checkLifecycle();
     }

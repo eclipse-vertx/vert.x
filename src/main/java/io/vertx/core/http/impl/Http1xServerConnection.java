@@ -26,7 +26,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -74,7 +73,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private final String serverOrigin;
   private final SSLHelper sslHelper;
   private boolean requestFailed;
-  private long bytesRead;
 
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
@@ -171,9 +169,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content(), chctx.alloc()));
     Http1xServerRequest request;
     synchronized (this) {
-      if (METRICS_ENABLED) {
-        reportBytesRead(buffer);
-      }
       request = requestInProgress;
     }
     request.context.execute(buffer, request::handleContent);
@@ -238,23 +233,15 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
   }
 
-  private void reportBytesRead(Buffer buffer) {
-    if (metrics != null) {
-      bytesRead += buffer.length();
-    }
-  }
-
   private void reportRequestComplete() {
     if (metrics != null) {
-      reportBytesRead(bytesRead);
-      bytesRead = 0;
+      flushBytesRead();
     }
   }
 
   private void reportResponseComplete() {
     if (metrics != null) {
-      reportBytesWritten(bytesWritten);
-      bytesWritten = 0L;
+      flushBytesWritten();
       if (requestFailed) {
         metrics.requestReset(responseInProgress.metric());
         requestFailed = false;

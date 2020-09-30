@@ -419,11 +419,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void handleClose() {
-      super.handleClose();
-    }
-
-    @Override
     void handleWritabilityChanged(boolean writable) {
       if (writable && drainHandler != null) {
         drainHandler.handle(null);
