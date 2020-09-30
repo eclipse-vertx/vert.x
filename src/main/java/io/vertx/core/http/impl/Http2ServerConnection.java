@@ -192,18 +192,6 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
 
     @Override
-    void handleEnd(MultiMap trailers) {
-    }
-
-    @Override
-    void handleData(Buffer buf) {
-    }
-
-    @Override
-    void handlePriorityChange(StreamPriority newPriority) {
-    }
-
-    @Override
     void handleWritabilityChanged(boolean writable) {
       response.handlerWritabilityChanged(writable);
     }

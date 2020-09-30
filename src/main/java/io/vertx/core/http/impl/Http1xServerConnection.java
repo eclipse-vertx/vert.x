@@ -74,7 +74,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private final String serverOrigin;
   private final SSLHelper sslHelper;
   private boolean requestFailed;
-  private long bytesRead;
 
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
@@ -239,22 +238,18 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   private void reportBytesRead(Buffer buffer) {
-    if (metrics != null) {
-      bytesRead += buffer.length();
-    }
+    reportBytesRead(buffer.length());
   }
 
   private void reportRequestComplete() {
     if (metrics != null) {
-      reportBytesRead(bytesRead);
-      bytesRead = 0;
+      flushBytesRead();
     }
   }
 
   private void reportResponseComplete() {
     if (metrics != null) {
-      reportBytesWritten(bytesWritten);
-      bytesWritten = 0L;
+      flushBytesWritten();
       if (requestFailed) {
         metrics.requestReset(responseInProgress.metric());
         requestFailed = false;

@@ -137,11 +137,13 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   @Override
   public void bytesRead(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     socketMetric.bytesRead.addAndGet(numberOfBytes);
+    socketMetric.bytesReadEvents.add(numberOfBytes);
   }
 
   @Override
   public void bytesWritten(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
     socketMetric.bytesWritten.addAndGet(numberOfBytes);
+    socketMetric.bytesWrittenEvents.add(numberOfBytes);
   }
 
   @Override
