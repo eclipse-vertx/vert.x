@@ -47,11 +47,19 @@ public interface ClientMetrics<M, T, Req, Resp> extends Metrics {
   }
 
   /**
+   * Calls {@link #requestEnd(Object, long)} with {@code -1L}
+   */
+  default void requestEnd(M requestMetric) {
+    requestEnd(requestMetric, -1L);
+  }
+
+  /**
    * Called when the client request ends.
    *
    * @param requestMetric the request metric
+   * @param bytesWritten the number of bytes written or {@code -1} when it is not known
    */
-  default void requestEnd(M requestMetric) {
+  default void requestEnd(M requestMetric, long bytesWritten) {
   }
 
   /**
@@ -75,10 +83,18 @@ public interface ClientMetrics<M, T, Req, Resp> extends Metrics {
   }
 
   /**
+   * Calls {@link #responseEnd(Object, long)} with {@code -1L}
+   */
+  default void responseEnd(M requestMetric) {
+    responseEnd(requestMetric, -1L);
+  }
+
+  /**
    * Called when the client response has ended
    *
    * @param requestMetric the request metric
+   * @param bytesRead the number of bytes read or {@code -1} when it is not known
    */
-  default void responseEnd(M requestMetric) {
+  default void responseEnd(M requestMetric, long bytesRead) {
   }
 }

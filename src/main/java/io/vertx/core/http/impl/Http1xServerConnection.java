@@ -181,11 +181,11 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private void onEnd() {
     Http1xServerRequest request;
     synchronized (this) {
-      if (METRICS_ENABLED) {
-        reportRequestComplete();
-      }
       request = requestInProgress;
       requestInProgress = null;
+    }
+    if (METRICS_ENABLED) {
+      reportRequestComplete(request);
     }
     request.context.execute(request, Http1xServerRequest::handleEnd);
   }
@@ -233,25 +233,27 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
   }
 
-  private void reportRequestComplete() {
+  private void reportRequestComplete(Http1xServerRequest request) {
     if (metrics != null) {
+      metrics.requestEnd(request.metric(), request.bytesRead());
       flushBytesRead();
     }
   }
 
   private void reportResponseComplete() {
+    Http1xServerRequest request = responseInProgress;
     if (metrics != null) {
       flushBytesWritten();
       if (requestFailed) {
-        metrics.requestReset(responseInProgress.metric());
+        metrics.requestReset(request.metric());
         requestFailed = false;
       } else {
-        metrics.responseEnd(responseInProgress.metric(), responseInProgress.response());
+        metrics.responseEnd(request.metric(), request.response().bytesWritten());
       }
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      tracer.sendResponse(responseInProgress.context, responseInProgress.response(), responseInProgress.trace(), null, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+      tracer.sendResponse(request.context, request.response(), request.trace(), null, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
   }
 
@@ -355,7 +357,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         @Override
         protected void handleClosed() {
           if (metrics != null) {
-            metrics.responseEnd(responseInProgress.metric(), responseInProgress.response());
+            Http1xServerRequest request = Http1xServerConnection.this.responseInProgress;
+            metrics.responseEnd(request.metric(), request.response().bytesWritten());
           }
           super.handleClosed();
         }

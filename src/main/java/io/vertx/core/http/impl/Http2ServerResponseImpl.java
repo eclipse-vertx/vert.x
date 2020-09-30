@@ -37,6 +37,7 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.Map;
@@ -46,7 +47,7 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerResponseImpl implements HttpServerResponse {
+public class Http2ServerResponseImpl implements HttpServerResponse, HttpResponse {
 
   private final Http2ServerStream stream;
   private final ChannelHandlerContext ctx;
@@ -141,6 +142,11 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       exceptionHandler = handler;
       return this;
     }
+  }
+
+  @Override
+  public int statusCode() {
+    return getStatusCode();
   }
 
   @Override

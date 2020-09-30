@@ -64,14 +64,14 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
       req.response().push(HttpMethod.GET, "/wibble", ar -> {
         HttpServerResponse pushedResp = ar.result();
         FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
-        HttpServerMetric serverMetric = serverMetrics.getMetric(pushedResp);
+        HttpServerMetric serverMetric = serverMetrics.getResponseMetric("/wibble");
         assertNotNull(serverMetric);
         pushedResp.putHeader("content-length", "" + contentLength);
         AtomicInteger numBuffer = new AtomicInteger(numBuffers);
         vertx.setPeriodic(1, timerID -> {
           if (numBuffer.getAndDecrement() == 0) {
             pushedResp.end();
-            assertNull(serverMetrics.getMetric(pushedResp));
+            assertNull(serverMetrics.getResponseMetric("/wibble"));
             vertx.cancelTimer(timerID);
             complete();
           } else {

@@ -42,6 +42,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.observability.HttpResponse;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -63,7 +64,7 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerResponse implements HttpServerResponse {
+public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   private static final Buffer EMPTY_BUFFER = Buffer.buffer(Unpooled.EMPTY_BUFFER);
   private static final Logger log = LoggerFactory.getLogger(Http1xServerResponse.class);
@@ -125,6 +126,11 @@ public class Http1xServerResponse implements HttpServerResponse {
       trailingHeaders = v;
     }
     return trailers;
+  }
+
+  @Override
+  public int statusCode() {
+    return status.code();
   }
 
   @Override

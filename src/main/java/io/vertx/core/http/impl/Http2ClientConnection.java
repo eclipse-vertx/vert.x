@@ -26,7 +26,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -164,7 +163,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private void metricsEnd(Stream stream) {
     if (metrics != null) {
-      metrics.responseEnd(stream.metric);
+      metrics.responseEnd(stream.metric, stream.bytesRead());
     }
   }
 
@@ -181,7 +180,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (metrics != null) {
           Object metric = metrics.requestBegin(headers.path().toString(), push);
           pushStream.metric = metric;
-          metrics.requestEnd(metric);
+          metrics.requestEnd(metric, 0L);
         }
         stream.context.dispatch(push, pushHandler);
         return;
@@ -246,7 +245,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     protected void endRequest() {
       requestEnded = true;
       if (conn.metrics != null) {
-        conn.metrics.requestEnd(metric);
+        conn.metrics.requestEnd(metric, bytesWritten());
       }
     }
 
