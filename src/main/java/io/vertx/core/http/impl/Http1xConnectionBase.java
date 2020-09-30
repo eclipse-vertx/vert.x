@@ -15,7 +15,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
 import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpObject;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.stream.ChunkedFile;
 import io.vertx.codegen.annotations.Nullable;
@@ -41,7 +40,6 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   void handleWsFrame(WebSocketFrame msg) {
-    reportBytesRead(sizeOf(msg));
     WebSocketImplBase<?> w;
     synchronized (this) {
       w = webSocket;
@@ -130,6 +128,12 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   protected void reportsBytesWritten(Object msg) {
     long size = sizeOf(msg);
     reportBytesWritten(size);
+  }
+
+  @Override
+  protected void reportBytesRead(Object msg) {
+    long size = sizeOf(msg);
+    reportBytesRead(size);
   }
 
   static long sizeOf(WebSocketFrame obj) {

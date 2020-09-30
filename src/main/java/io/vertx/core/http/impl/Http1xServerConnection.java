@@ -26,7 +26,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
-import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -170,9 +169,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content(), chctx.alloc()));
     Http1xServerRequest request;
     synchronized (this) {
-      if (METRICS_ENABLED) {
-        reportBytesRead(buffer);
-      }
       request = requestInProgress;
     }
     request.context.execute(buffer, request::handleContent);
@@ -235,10 +231,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       channelPaused = false;
       super.doResume();
     }
-  }
-
-  private void reportBytesRead(Buffer buffer) {
-    reportBytesRead(buffer.length());
   }
 
   private void reportRequestComplete() {

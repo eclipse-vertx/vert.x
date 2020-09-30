@@ -136,6 +136,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
+  protected void reportBytesRead(Object msg) {
+    if (msg instanceof ByteBuf) {
+      reportBytesRead(((ByteBuf)msg).readableBytes());
+    }
+  }
+
+  @Override
   public Future<Void> write(Buffer data) {
     return writeMessage(data.getByteBuf());
   }
@@ -371,9 +378,6 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   public void handleMessage(Object msg) {
-    if (msg instanceof ByteBuf) {
-      reportBytesRead(((ByteBuf)msg).readableBytes());
-    }
     context.emit(msg, o -> {
       if (!pending.write(msg)) {
         doPause();

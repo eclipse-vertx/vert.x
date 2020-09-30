@@ -129,6 +129,9 @@ public abstract class ConnectionBase {
   final void read(Object msg) {
     read = true;
     if (!closed) {
+      if (METRICS_ENABLED) {
+        reportBytesRead(msg);
+      }
       handleMessage(msg);
     }
   }
@@ -176,9 +179,6 @@ public abstract class ConnectionBase {
         chctx.channel().close().addListener(promise);
       });
     writeToChannel(Unpooled.EMPTY_BUFFER, true, channelPromise);
-  }
-
-  protected void reportsBytesWritten(Object msg) {
   }
 
   private ChannelPromise wrap(FutureListener<Void> handler) {
@@ -385,6 +385,9 @@ public abstract class ConnectionBase {
     return !isSsl();
   }
 
+  protected void reportBytesRead(Object msg) {
+  }
+
   public void reportBytesRead(long numberOfBytes) {
     if (numberOfBytes < 0L) {
       throw new IllegalArgumentException();
@@ -398,6 +401,9 @@ public abstract class ConnectionBase {
       metrics.bytesRead(metric(), remoteAddress(), val);
     }
     remainingBytesRead = bytes;
+  }
+
+  protected void reportsBytesWritten(Object msg) {
   }
 
   public void reportBytesWritten(long numberOfBytes) {

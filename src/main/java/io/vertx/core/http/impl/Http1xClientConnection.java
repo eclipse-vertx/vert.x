@@ -724,7 +724,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
     Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk, chctx.alloc()));
-    reportBytesRead(buff.length());
     stream.context.execute(buff, stream::handleChunk);
   }
 
