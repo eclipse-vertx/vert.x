@@ -194,10 +194,10 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       request.response().setStatusCode(BAD_REQUEST.code()).end();
       throw e;
     } finally {
+      if (conn.metrics != null) {
+        conn.metrics.responseBegin(request.metric, new HttpResponseHead(HttpVersion.HTTP_1_1, 101, "Switching Protocol", MultiMap.caseInsensitiveMultiMap()));
+      }
       request = null;
-    }
-    if (conn.metrics != null) {
-      conn.metrics.responseBegin(request.metric, new HttpResponseHead(HttpVersion.HTTP_1_1, 101, "Switching Protocol", MultiMap.caseInsensitiveMultiMap()));
     }
     conn.responseComplete();
     status = SWITCHING_PROTOCOLS.code();
