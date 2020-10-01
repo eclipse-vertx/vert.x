@@ -21,7 +21,9 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
@@ -193,6 +195,9 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       throw e;
     } finally {
       request = null;
+    }
+    if (conn.metrics != null) {
+      conn.metrics.responseBegin(null, new HttpResponseHead(HttpVersion.HTTP_1_1, 101, "Switching Protocol", MultiMap.caseInsensitiveMultiMap()));
     }
     conn.responseComplete();
     status = SWITCHING_PROTOCOLS.code();

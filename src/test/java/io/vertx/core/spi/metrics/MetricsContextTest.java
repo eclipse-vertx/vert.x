@@ -30,6 +30,7 @@ import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -196,19 +197,37 @@ public class MetricsContextTest extends VertxTestBase {
     AtomicBoolean bytesReadCalled = new AtomicBoolean();
     AtomicBoolean bytesWrittenCalled = new AtomicBoolean();
     AtomicBoolean closeCalled = new AtomicBoolean();
+    AtomicInteger httpLifecycle = new AtomicInteger();
     VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
       @Override
       public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
         return new DummyHttpServerMetrics() {
           @Override
+          public Void requestBegin(Void socketMetric, HttpRequest request) {
+            assertEquals(0, httpLifecycle.getAndIncrement());
+            return null;
+          }
+          @Override
+          public void requestEnd(Void requestMetric, long bytesRead) {
+            assertEquals(1, httpLifecycle.getAndIncrement());
+          }
+          @Override
+          public void responseBegin(Void requestMetric, HttpResponse response) {
+            assertEquals(2, httpLifecycle.getAndIncrement());
+          }
+          @Override
+          public void responseEnd(Void requestMetric, long bytesWritten) {
+            assertEquals(3, httpLifecycle.getAndIncrement());
+          }
+          @Override
           public Void connected(Void socketMetric, Void requestMetric, ServerWebSocket serverWebSocket) {
+            assertEquals(2, httpLifecycle.get());
             webSocketConnected.set(true);
-            // FIXME
-            // assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
           public void disconnected(Void serverWebSocketMetric) {
+            assertEquals(4, httpLifecycle.get());
             webSocketDisconnected.set(true);
             assertTrue(Context.isOnEventLoopThread());
           }
