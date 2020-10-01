@@ -188,8 +188,10 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
 
   private void doHandshake() {
     Channel channel = conn.channel();
+    Object metric;
     try {
       handshaker.handshake(channel, request.nettyRequest());
+      metric = request.metric;
     } catch (Exception e) {
       request.response().setStatusCode(BAD_REQUEST.code()).end();
       throw e;
@@ -197,7 +199,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       request = null;
     }
     if (conn.metrics != null) {
-      conn.metrics.responseBegin(request.metric, new HttpResponseHead(HttpVersion.HTTP_1_1, 101, "Switching Protocol", MultiMap.caseInsensitiveMultiMap()));
+      conn.metrics.responseBegin(metric, new HttpResponseHead(HttpVersion.HTTP_1_1, 101, "Switching Protocol", MultiMap.caseInsensitiveMultiMap()));
     }
     conn.responseComplete();
     status = SWITCHING_PROTOCOLS.code();
