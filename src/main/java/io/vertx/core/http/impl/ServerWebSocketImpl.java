@@ -197,7 +197,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       request = null;
     }
     if (conn.metrics != null) {
-      conn.metrics.responseBegin(null, new HttpResponseHead(HttpVersion.HTTP_1_1, 101, "Switching Protocol", MultiMap.caseInsensitiveMultiMap()));
+      conn.metrics.responseBegin(request.metric, new HttpResponseHead(HttpVersion.HTTP_1_1, 101, "Switching Protocol", MultiMap.caseInsensitiveMultiMap()));
     }
     conn.responseComplete();
     status = SWITCHING_PROTOCOLS.code();
