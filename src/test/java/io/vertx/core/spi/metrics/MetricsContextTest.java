@@ -99,13 +99,13 @@ public class MetricsContextTest extends VertxTestBase {
       public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
         return new DummyHttpServerMetrics() {
           @Override
-          public Void requestBegin(Void socketMetric, HttpServerRequest request) {
+          public Void requestBegin(Void socketMetric, HttpRequest request) {
             requestBeginCalled.set(true);
             assertTrue(Context.isOnEventLoopThread());
             return null;
           }
           @Override
-          public void responseEnd(Void requestMetric, HttpServerResponse response) {
+          public void responseEnd(Void requestMetric, long bytesWritten) {
             responseEndCalled.set(true);
             assertTrue(Context.isOnEventLoopThread());
           }
@@ -311,7 +311,7 @@ public class MetricsContextTest extends VertxTestBase {
                 return null;
               }
               @Override
-              public void responseEnd(Void requestMetric) {
+              public void responseEnd(Void requestMetric, long bytesRead) {
                 responseEndCalled.set(true);
               }
             };

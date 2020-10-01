@@ -174,6 +174,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Handler<AsyncResult<Void>> handler) {
     request.id = stream.id;
     request.remoteAddress = remoteAddress();
+    stream.bytesWritten += buf != null ? buf.readableBytes() : 0L;
     HttpRequest nettyRequest = createRequest(request.method, request.uri, request.headers, request.authority, chunked, buf, end);
     synchronized (this) {
       responses.add(stream);
@@ -196,6 +197,36 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
   }
 
+  private void writeBuffer(Stream s, ByteBuf buff, boolean end, FutureListener<Void> listener) {
+    s.bytesWritten += buff != null ? buff.readableBytes() : 0L;
+    Object msg;
+    if (isConnect) {
+      msg = buff != null ? buff : Unpooled.EMPTY_BUFFER;
+      if (end) {
+        writeToChannel(msg, channelFuture()
+          .addListener(listener)
+          .addListener(v -> close())
+        );
+      } else {
+        writeToChannel(msg);
+      }
+    } else {
+      if (end) {
+        if (buff != null && buff.isReadable()) {
+          msg = new DefaultLastHttpContent(buff, false);
+        } else {
+          msg = LastHttpContent.EMPTY_LAST_CONTENT;
+        }
+      } else {
+        msg = new DefaultHttpContent(buff);
+      }
+      writeToChannel(msg, listener);
+      if (end) {
+        endRequest(s);
+      }
+    }
+  }
+
   private void endRequest(Stream s) {
     Stream next;
     boolean recycle;
@@ -204,7 +235,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       next = requests.peek();
       recycle = s.responseEnded;
       if (metrics != null) {
-        metrics.requestEnd(s.metric);
+        metrics.requestEnd(s.metric, s.bytesWritten);
       }
     }
     flushBytesWritten();
@@ -247,6 +278,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Object metric;
     private HttpResponseHead response;
     private boolean responseEnded;
+    private long bytesRead;
+    private long bytesWritten;
 
     Stream(ContextInternal context, int id) {
       this.context = context;
@@ -413,33 +446,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private void writeBuffer(ByteBuf buff, boolean end, FutureListener<Void> listener) {
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        Object msg;
-        if (conn.isConnect) {
-          msg = buff != null ? buff : Unpooled.EMPTY_BUFFER;
-          if (end) {
-            conn.writeToChannel(msg, conn
-              .channelFuture()
-              .addListener(listener)
-              .addListener(v -> conn.close())
-            );
-          } else {
-            conn.writeToChannel(msg);
-          }
-        } else {
-          if (end) {
-            if (buff != null && buff.isReadable()) {
-              msg = new DefaultLastHttpContent(buff, false);
-            } else {
-              msg = LastHttpContent.EMPTY_LAST_CONTENT;
-            }
-          } else {
-            msg = new DefaultHttpContent(buff);
-          }
-          conn.writeToChannel(msg, listener);
-          if (end) {
-            conn.endRequest(this);
-          }
-        }
+        conn.writeBuffer(this, buff, end, listener);
       } else {
         eventLoop.execute(() -> writeBuffer(buff, end, listener));
       }
@@ -724,6 +731,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
     Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk, chctx.alloc()));
+    stream.bytesRead += buff.length();
     stream.context.execute(buff, stream::handleChunk);
   }
 
@@ -744,7 +752,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       tracer.receiveResponse(stream.context, stream.response, stream.trace, null, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
     }
     if (metrics != null) {
-      metrics.responseEnd(stream.metric);
+      metrics.responseEnd(stream.metric, stream.bytesRead);
     }
     stream.context.execute(trailer, stream::handleEnd);
     this.doResume();

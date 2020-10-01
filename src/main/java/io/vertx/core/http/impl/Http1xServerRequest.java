@@ -17,7 +17,6 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -33,6 +32,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -55,7 +55,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerRequest implements HttpServerRequest {
+public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi.observability.HttpRequest {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 
@@ -184,6 +184,11 @@ public class Http1xServerRequest implements HttpServerRequest {
 
   Object trace() {
     return trace;
+  }
+
+  @Override
+  public int id() {
+    return 0;
   }
 
   @Override
@@ -344,6 +349,11 @@ public class Http1xServerRequest implements HttpServerRequest {
       }
     }
     return absoluteURI;
+  }
+
+  @Override
+  public SocketAddress remoteAddress() {
+    return conn.remoteAddress();
   }
 
   @Override

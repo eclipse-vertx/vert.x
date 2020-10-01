@@ -40,6 +40,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -55,7 +56,7 @@ import java.util.AbstractMap;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequestImpl extends Http2ServerStream implements HttpServerRequest {
+public class Http2ServerRequestImpl extends Http2ServerStream implements HttpServerRequest, io.vertx.core.spi.observability.HttpRequest {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 
@@ -379,6 +380,11 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     return conn.peerCertificateChain();
+  }
+
+  @Override
+  public SocketAddress remoteAddress() {
+    return conn.remoteAddress();
   }
 
   @Override
