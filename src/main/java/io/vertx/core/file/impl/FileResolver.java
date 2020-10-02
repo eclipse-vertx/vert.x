@@ -114,19 +114,18 @@ public class FileResolver {
    * Close this file resolver, this is a blocking operation.
    */
   public void close() throws IOException {
-    // avoid monitor, if already disabled
-    if (shutdownHook != null) {
-      synchronized (this) {
-        if (shutdownHook != null) {
-          // May throw IllegalStateException if called from other shutdown hook so ignore that
-          try {
-            Runtime.getRuntime().removeShutdownHook(shutdownHook);
-          } catch (IllegalStateException ignore) {
-            // ignore
-          } finally {
-            shutdownHook = null;
-          }
-        }
+    final Thread hook;
+    synchronized (this) {
+      hook = shutdownHook;
+      // disable the shutdown hook thread
+      shutdownHook = null;
+    }
+    if (hook != null) {
+      // May throw IllegalStateException if called from other shutdown hook so ignore that
+      try {
+        Runtime.getRuntime().removeShutdownHook(hook);
+      } catch (IllegalStateException ignore) {
+        // ignore
       }
     }
     deleteCacheDir();
