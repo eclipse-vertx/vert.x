@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.UUID;
@@ -88,11 +87,11 @@ public class FileResolver {
   private static final Pattern JAR_URL_SEP_PATTERN = Pattern.compile(JAR_URL_SEP);
 
   private final File cwd;
+  private final boolean enableCpResolving;
+  private final boolean enableCaching;
+  // mutable state
   private File cacheDir;
   private Thread shutdownHook;
-  private final boolean enableCaching;
-  private final boolean enableCpResolving;
-  private final String fileCacheDir;
 
   public FileResolver() {
     this(new FileSystemOptions());
@@ -101,7 +100,6 @@ public class FileResolver {
   public FileResolver(FileSystemOptions fileSystemOptions) {
     this.enableCaching = fileSystemOptions.isFileCachingEnabled();
     this.enableCpResolving = fileSystemOptions.isClassPathResolvingEnabled();
-    this.fileCacheDir = fileSystemOptions.getFileCacheDir();
 
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
@@ -109,22 +107,25 @@ public class FileResolver {
     } else {
       cwd = null;
     }
-    if (this.enableCpResolving) {
-      setupCacheDir(UUID.randomUUID().toString());
-    }
+    cacheDir = setupCacheDir(fileSystemOptions.getFileCacheDir());
   }
 
   /**
    * Close this file resolver, this is a blocking operation.
    */
   public void close() throws IOException {
+    final Thread hook;
     synchronized (this) {
-      if (shutdownHook != null) {
-        // May throw IllegalStateException if called from other shutdown hook so ignore that
-        try {
-          Runtime.getRuntime().removeShutdownHook(shutdownHook);
-        } catch (IllegalStateException ignore) {
-        }
+      hook = shutdownHook;
+      // disable the shutdown hook thread
+      shutdownHook = null;
+    }
+    if (hook != null) {
+      // May throw IllegalStateException if called from other shutdown hook so ignore that
+      try {
+        Runtime.getRuntime().removeShutdownHook(hook);
+      } catch (IllegalStateException ignore) {
+        // ignore
       }
     }
     deleteCacheDir();
@@ -138,6 +139,10 @@ public class FileResolver {
     }
     if (!this.enableCpResolving) {
       return file;
+    }
+    // if cacheDir is null, the delete cache dir was already called.
+    if (cacheDir == null) {
+      throw new IllegalStateException("cacheDir is null");
     }
     // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
     // corrupting the content.
@@ -236,10 +241,15 @@ public class FileResolver {
     } else {
       cacheFile.mkdirs();
       String[] listing = resource.list();
-      for (String file: listing) {
-        String subResource = fileName + "/" + file;
-        URL url2 = getValidClassLoaderResource(cl, subResource);
-        unpackFromFileURL(url2, subResource, cl);
+      if (listing != null) {
+        for (String file: listing) {
+          String subResource = fileName + "/" + file;
+          URL url2 = getValidClassLoaderResource(cl, subResource);
+          if (url2 == null) {
+            throw new VertxException("Invalid resource: " + subResource);
+          }
+          unpackFromFileURL(url2, subResource, cl);
+        }
       }
     }
     return cacheFile;
@@ -375,14 +385,36 @@ public class FileResolver {
     return cl;
   }
 
-  private synchronized void setupCacheDir(String id) {
-    String cacheDirName = fileCacheDir + "/file-cache-" + id;
-    cacheDir = new File(cacheDirName);
+  /**
+   * Will prepare the cache directory to be used in the application or return null if classpath resolving is disabled.
+   */
+  private File setupCacheDir(String fileCacheDir) {
+    if (!this.enableCpResolving) {
+      return null;
+    }
+
+    // ensure that the argument doesn't end with separator
+    if (fileCacheDir.endsWith(File.separator)) {
+      fileCacheDir = fileCacheDir.substring(0, fileCacheDir.length() - File.separator.length());
+    }
+
+    // the cacheDir will be suffixed a unique id to avoid eavesdropping from other processes/users
+    // also this ensures that if process A deletes cacheDir, it won't affect process B
+    String cacheDirName = fileCacheDir + "-" + UUID.randomUUID().toString();
+    File cacheDir = new File(cacheDirName);
+
     if (!cacheDir.mkdirs()) {
       throw new IllegalStateException("Failed to create cache dir: " + cacheDirName);
     }
     // Add shutdown hook to delete on exit
     shutdownHook = new Thread(() -> {
+      synchronized (this) {
+        // no-op if cache dir has been set to null
+        if (this.cacheDir == null) {
+          return;
+        }
+      }
+
       final Thread deleteCacheDirThread = new Thread(() -> {
         try {
           deleteCacheDir();
@@ -398,18 +430,23 @@ public class FileResolver {
       }
     });
     Runtime.getRuntime().addShutdownHook(shutdownHook);
+    return cacheDir;
   }
 
   private void deleteCacheDir() throws IOException {
-    Path path;
+    final File dir;
     synchronized (this) {
-      if (cacheDir == null || !cacheDir.exists()) {
+      if (cacheDir == null) {
         return;
       }
-      path = cacheDir.toPath();
+      // save the state before we force a flip
+      dir = cacheDir;
+      // disable the cache dir
       cacheDir = null;
     }
-    FileSystemImpl.delete(path, true);
+    // threads will only enter here once, as the resolving flag is flipped above
+    if (dir.exists()) {
+      FileSystemImpl.delete(dir.toPath(), true);
+    }
   }
 }
-
