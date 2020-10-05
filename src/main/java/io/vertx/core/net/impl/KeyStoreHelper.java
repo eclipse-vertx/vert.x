@@ -15,11 +15,10 @@ import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.JksOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
 
@@ -71,28 +70,17 @@ public class KeyStoreHelper {
   private static final Pattern END_PATTERN = Pattern.compile("-----END ([A-Z ]+)-----");
 
   public static KeyStoreHelper create(VertxInternal vertx, KeyCertOptions options) throws Exception {
-    if (options instanceof JksOptions) {
-      JksOptions jks = (JksOptions) options;
+    if (options instanceof KeyStoreOptions) {
+      KeyStoreOptions ksOptions = (KeyStoreOptions) options;
       Supplier<Buffer> value;
-      if (jks.getPath() != null) {
-        value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(jks.getPath()).getAbsolutePath());
-      } else if (jks.getValue() != null) {
-        value = jks::getValue;
+      if (ksOptions.getPath() != null) {
+        value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(ksOptions.getPath()).getAbsolutePath());
+      } else if (ksOptions.getValue() != null) {
+        value = ksOptions::getValue;
       } else {
         return null;
       }
-      return new KeyStoreHelper(loadJKSOrPKCS12("JKS", jks.getPassword(), value), jks.getPassword());
-    } else if (options instanceof PfxOptions) {
-      PfxOptions pkcs12 = (PfxOptions) options;
-      Supplier<Buffer> value;
-      if (pkcs12.getPath() != null) {
-        value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(pkcs12.getPath()).getAbsolutePath());
-      } else if (pkcs12.getValue() != null) {
-        value = pkcs12::getValue;
-      } else {
-        return null;
-      }
-      return new KeyStoreHelper(loadJKSOrPKCS12("PKCS12", pkcs12.getPassword(), value), pkcs12.getPassword());
+      return new KeyStoreHelper(loadKeyStoreOptions(ksOptions.getType(), ksOptions.getPassword(), value), ksOptions.getPassword());
     } else if (options instanceof PemKeyCertOptions) {
       PemKeyCertOptions keyCert = (PemKeyCertOptions) options;
       List<Buffer> keys = new ArrayList<>();
@@ -278,7 +266,7 @@ public class KeyStoreHelper {
     return names;
   }
 
-  private static KeyStore loadJKSOrPKCS12(String type, String password, Supplier<Buffer> value) throws Exception {
+  private static KeyStore loadKeyStoreOptions(String type, String password, Supplier<Buffer> value) throws Exception {
     KeyStore ks = KeyStore.getInstance(type);
     try (InputStream in = new ByteArrayInputStream(value.get().getBytes())) {
       ks.load(in, password != null ? password.toCharArray() : null);

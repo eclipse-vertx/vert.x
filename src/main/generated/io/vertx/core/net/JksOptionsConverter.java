@@ -26,6 +26,11 @@ public class JksOptionsConverter {
             obj.setPath((String)member.getValue());
           }
           break;
+        case "type":
+          if (member.getValue() instanceof String) {
+            obj.setType((String)member.getValue());
+          }
+          break;
         case "value":
           if (member.getValue() instanceof String) {
             obj.setValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)member.getValue())));

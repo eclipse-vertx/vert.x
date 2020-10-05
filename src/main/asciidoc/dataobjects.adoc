@@ -1113,6 +1113,7 @@ Set the password for the key store
 |[[path]]`@path`|`String`|+++
 Set the path to the key store
 +++
+|[[type]]`@type`|`String`|-
 |[[value]]`@value`|`Buffer`|+++
 Set the key store as a buffer
 +++
@@ -1690,13 +1691,14 @@ Add a certificate value
 |===
 ^|Name | Type ^| Description
 |[[password]]`@password`|`String`|+++
-Set the password
+Set the password for the key store
 +++
 |[[path]]`@path`|`String`|+++
-Set the path
+Set the path to the key store
 +++
+|[[type]]`@type`|`String`|-
 |[[value]]`@value`|`Buffer`|+++
-Set the store as a buffer
+Set the key store as a buffer
 +++
 |===
 

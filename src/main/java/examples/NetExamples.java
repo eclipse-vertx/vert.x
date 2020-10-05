@@ -263,6 +263,16 @@ public class NetExamples {
     NetServer server = vertx.createNetServer(options);
   }
 
+  public void exampleBKS(Vertx vertx) {
+    NetServerOptions options = new NetServerOptions().setSsl(true).setKeyCertOptions(
+      new KeyStoreOptions().
+        setType("BKS").
+        setPath("/path/to/your/server-keystore.jks").
+        setPassword("password-of-your-keystore")
+    );
+    NetServer server = vertx.createNetServer(options);
+  }
+
   // SSL/TLS server trust
 
   public void example23(Vertx vertx) {
