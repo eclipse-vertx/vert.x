@@ -267,7 +267,7 @@ public class NetExamples {
     NetServerOptions options = new NetServerOptions().setSsl(true).setKeyCertOptions(
       new KeyStoreOptions().
         setType("BKS").
-        setPath("/path/to/your/server-keystore.jks").
+        setPath("/path/to/your/server-keystore.bks").
         setPassword("password-of-your-keystore")
     );
     NetServer server = vertx.createNetServer(options);
