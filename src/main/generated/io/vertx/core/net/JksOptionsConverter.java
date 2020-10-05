@@ -27,9 +27,6 @@ public class JksOptionsConverter {
           }
           break;
         case "type":
-          if (member.getValue() instanceof String) {
-            obj.setType((String)member.getValue());
-          }
           break;
         case "value":
           if (member.getValue() instanceof String) {
@@ -50,6 +47,9 @@ public class JksOptionsConverter {
     }
     if (obj.getPath() != null) {
       json.put("path", obj.getPath());
+    }
+    if (obj.getType() != null) {
+      json.put("type", obj.getType());
     }
     if (obj.getValue() != null) {
       json.put("value", JsonUtil.BASE64_ENCODER.encodeToString(obj.getValue().getBytes()));

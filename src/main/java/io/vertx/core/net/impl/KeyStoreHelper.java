@@ -267,6 +267,9 @@ public class KeyStoreHelper {
   }
 
   private static KeyStore loadKeyStoreOptions(String type, String password, Supplier<Buffer> value) throws Exception {
+    if (type == null) {
+      throw new NullPointerException();
+    }
     KeyStore ks = KeyStore.getInstance(type);
     try (InputStream in = new ByteArrayInputStream(value.get().getBytes())) {
       ks.load(in, password != null ? password.toCharArray() : null);

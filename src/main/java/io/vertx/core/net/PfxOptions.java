@@ -12,6 +12,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
@@ -29,7 +30,6 @@ public class PfxOptions extends KeyStoreOptions {
    */
   public PfxOptions() {
     super();
-    setType("PKCS12");
   }
 
   /**
@@ -39,7 +39,6 @@ public class PfxOptions extends KeyStoreOptions {
    */
   public PfxOptions(PfxOptions other) {
     super(other);
-    setType("PKCS12");
   }
 
   /**
@@ -64,8 +63,14 @@ public class PfxOptions extends KeyStoreOptions {
   }
 
   @Override
+  public String getType() {
+    return "PKCS12";
+  }
+
+  @GenIgnore
+  @Override
   public PfxOptions setType(String type) {
-    return (PfxOptions) super.setType(type);
+    throw new UnsupportedOperationException("Cannot change type of a PKCS12 key store");
   }
 
   @Override

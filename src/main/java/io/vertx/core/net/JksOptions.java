@@ -12,6 +12,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
@@ -29,7 +30,6 @@ public class JksOptions extends KeyStoreOptions {
    */
   public JksOptions() {
     super();
-    setType("JKS");
   }
 
   /**
@@ -39,7 +39,6 @@ public class JksOptions extends KeyStoreOptions {
    */
   public JksOptions(JksOptions other) {
     super(other);
-    setType("JKS");
   }
 
   /**
@@ -53,8 +52,14 @@ public class JksOptions extends KeyStoreOptions {
   }
 
   @Override
+  public String getType() {
+    return "JKS";
+  }
+
+  @GenIgnore
+  @Override
   public JksOptions setType(String type) {
-    return (JksOptions) super.setType(type);
+    throw new UnsupportedOperationException("Cannot change type of a JKS key store");
   }
 
   @Override
