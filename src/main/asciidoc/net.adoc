@@ -380,6 +380,14 @@ WARNING: Keep in mind that the keys contained in an unencrypted PKCS8 or a PKCS1
 anybody who can read the file. Thus, make sure to put proper access restrictions on such PEM files in order to
 prevent misuse.
 
+Finally you can also load generic Java keystore, it is useful for using other KeyStore implementations
+like Bouncy Castle:
+
+[source,$lang]
+----
+{@link examples.NetExamples#exampleBKS}
+----
+
 ==== Specifying trust for the server
 
 SSL/TLS servers can use a certificate authority in order to verify the identity of the clients.
