@@ -530,7 +530,12 @@ public class Http1xTest extends HttpTest {
     if (copy.getTrustOptions() instanceof PemTrustOptions) {
       assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
     } else {
-      assertEquals(options.getTrustOptions().toJson(), copy.getTrustOptions().toJson());
+      KeyStoreOptions a = (KeyStoreOptions) options.getTrustOptions();
+      KeyStoreOptions b = (KeyStoreOptions) copy.getTrustOptions();
+      assertEquals(a.getPath(), b.getPath());
+      assertEquals(a.getPassword(), b.getPassword());
+      assertEquals(a.getType(), b.getType());
+      assertEquals(a.getValue(), b.getValue());
     }
   }
 
@@ -828,7 +833,12 @@ public class Http1xTest extends HttpTest {
     if (copy.getTrustOptions() instanceof PemTrustOptions) {
       assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
     } else {
-      assertEquals(options.getTrustOptions().toJson(), copy.getTrustOptions().toJson());
+      KeyStoreOptions a = (KeyStoreOptions) options.getTrustOptions();
+      KeyStoreOptions b = (KeyStoreOptions) copy.getTrustOptions();
+      assertEquals(a.getPath(), b.getPath());
+      assertEquals(a.getPassword(), b.getPassword());
+      assertEquals(a.getType(), b.getType());
+      assertEquals(a.getValue(), b.getValue());
     }
   }
 

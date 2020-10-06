@@ -12,39 +12,18 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on PKCS#12 files.
- * <p>
- * When used as a key store, it should point to a store containing a private key and its certificate.
- * When used as a trust store, it should point to a store containing a list of accepted certificates.
- * <p>
- *
- * The store can either be loaded by Vert.x from the filesystem:
- * <p>
- * <pre>
- * HttpServerOptions options = new HttpServerOptions();
- * options.setPfxKeyCertOptions(new PfxOptions().setPath("/mykeystore.p12").setPassword("foo"));
- * </pre>
- *
- * Or directly provided as a buffer:<p>
- *
- * <pre>
- * Buffer store = vertx.fileSystem().readFileBlocking("/mykeystore.p12");
- * options.setPfxKeyCertOptions(new PfxOptions().setValue(store).setPassword("foo"));
- * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true, publicConverter = false)
-public class PfxOptions implements KeyCertOptions, TrustOptions {
-
-  private String password;
-  private String path;
-  private Buffer value;
+public class PfxOptions extends KeyStoreOptions {
 
   /**
    * Default constructor
@@ -59,10 +38,7 @@ public class PfxOptions implements KeyCertOptions, TrustOptions {
    * @param other  the options to copy
    */
   public PfxOptions(PfxOptions other) {
-    super();
-    this.password = other.getPassword();
-    this.path = other.getPath();
-    this.value = other.getValue();
+    super(other);
   }
 
   /**
@@ -86,64 +62,30 @@ public class PfxOptions implements KeyCertOptions, TrustOptions {
     return json;
   }
 
-  /**
-   * Get the password
-   *
-   * @return  the password
-   */
-  public String getPassword() {
-    return password;
+  @Override
+  public String getType() {
+    return "PKCS12";
   }
 
-  /**
-   * Set the password
-   *
-   * @param password  the password
-   * @return a reference to this, so the API can be used fluently
-   */
+  @GenIgnore
+  @Override
+  public PfxOptions setType(String type) {
+    throw new UnsupportedOperationException("Cannot change type of a PKCS12 key store");
+  }
+
+  @Override
   public PfxOptions setPassword(String password) {
-    this.password = password;
-    return this;
+    return (PfxOptions) super.setPassword(password);
   }
 
-  /**
-   * Get the path
-   *
-   * @return the path
-   */
-  public String getPath() {
-    return path;
-  }
-
-  /**
-   * Set the path
-   *
-   * @param path  the path
-   * @return a reference to this, so the API can be used fluently
-   */
-  public PfxOptions setPath(String path) {
-    this.path = path;
-    return this;
-  }
-
-  /**
-   * Get the store as a buffer
-   *
-   * @return store as buffer
-   */
-  public Buffer getValue() {
-    return value;
-  }
-
-  /**
-   * Set the store as a buffer
-   *
-   * @param value  the store as a buffer
-   * @return a reference to this, so the API can be used fluently
-   */
+  @Override
   public PfxOptions setValue(Buffer value) {
-    this.value = value;
-    return this;
+    return (PfxOptions) super.setValue(value);
+  }
+
+  @Override
+  public PfxOptions setPath(String path) {
+    return (PfxOptions) super.setPath(path);
   }
 
   @Override

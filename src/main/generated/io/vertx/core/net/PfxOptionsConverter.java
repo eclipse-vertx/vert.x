@@ -26,6 +26,8 @@ public class PfxOptionsConverter {
             obj.setPath((String)member.getValue());
           }
           break;
+        case "type":
+          break;
         case "value":
           if (member.getValue() instanceof String) {
             obj.setValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)member.getValue())));
@@ -45,6 +47,9 @@ public class PfxOptionsConverter {
     }
     if (obj.getPath() != null) {
       json.put("path", obj.getPath());
+    }
+    if (obj.getType() != null) {
+      json.put("type", obj.getType());
     }
     if (obj.getValue() != null) {
       json.put("value", JsonUtil.BASE64_ENCODER.encodeToString(obj.getValue().getBytes()));
