@@ -140,14 +140,15 @@ public class FileResolver {
     if (!this.enableCpResolving) {
       return file;
     }
-    // if cacheDir is null, the delete cache dir was already called.
-    if (cacheDir == null) {
-      throw new IllegalStateException("cacheDir is null");
-    }
     // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
     // corrupting the content.
     synchronized (this) {
       if (!file.exists()) {
+        // if cacheDir is null, the delete cache dir was already called.
+        // only in this case the resolver is working in an unexpected state
+        if (cacheDir == null) {
+          throw new IllegalStateException("cacheDir is null");
+        }
         // Look for it in local file cache
         File cacheFile = new File(cacheDir, fileName);
         if (this.enableCaching && cacheFile.exists()) {

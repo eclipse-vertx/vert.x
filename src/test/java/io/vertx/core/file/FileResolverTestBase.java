@@ -331,4 +331,21 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     return vertx.fileSystem().readFileBlocking(file.getAbsolutePath()).toString();
   }
 
+
+  @Test
+  public void testResolveAfterCloseThrowsISE() throws Exception {
+    FileResolver resolver2 = new FileResolver();
+    File file = resolver2.resolveFile(webRoot + "/somefile.html");
+    assertTrue(file.exists());
+    File cacheDir = file.getParentFile().getParentFile();
+    assertTrue(cacheDir.exists());
+    resolver2.close();
+    assertFalse(cacheDir.exists());
+    try {
+      resolver2.resolveFile(webRoot + "/somefile.html");
+      fail("Should fail");
+    } catch (IllegalStateException e) {
+      // OK
+    }
+  }
 }
