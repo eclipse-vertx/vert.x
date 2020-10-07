@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -17,6 +17,8 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.MessageCodec;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.eventbus.impl.CodecManager;
 import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.MessageImpl;
@@ -41,6 +43,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   private int bodyPos;
   private int headersPos;
   private boolean fromWire;
+  private String failure;
 
   public ClusteredMessage() {
   }
@@ -127,8 +130,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     // Overall Length already read when passed in here
     byte protocolVersion = buffer.getByte(pos);
     if (protocolVersion > WIRE_PROTOCOL_VERSION) {
-      throw new IllegalStateException("Invalid wire protocol version " + protocolVersion +
-                                      " should be <= " + WIRE_PROTOCOL_VERSION);
+      setFailure("Invalid wire protocol version " + protocolVersion + " should be <= " + WIRE_PROTOCOL_VERSION);
     }
     pos++;
     byte systemCodecCode = buffer.getByte(pos);
@@ -141,7 +143,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
       String codecName = new String(bytes, CharsetUtil.UTF_8);
       messageCodec = codecManager.getCodec(codecName);
       if (messageCodec == null) {
-        throw new IllegalStateException("No message codec registered with name " + codecName);
+        setFailure("No message codec registered with name " + codecName);
       }
       pos += length;
     } else {
@@ -176,6 +178,12 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     sender = new ServerID(senderPort, senderHost);
     wireBuffer = buffer;
     fromWire = true;
+  }
+
+  private void setFailure(String s) {
+    if (failure == null) {
+      failure = s;
+    }
   }
 
   private void decodeBody() {
@@ -244,5 +252,17 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
   protected boolean isLocal() {
     return !isFromWire();
+  }
+
+  boolean hasFailure() {
+    return failure != null;
+  }
+
+  void internalError() {
+    if (replyAddress != null) {
+      reply(new ReplyException(ReplyFailure.ERROR, failure));
+    } else {
+      log.trace(failure);
+    }
   }
 }

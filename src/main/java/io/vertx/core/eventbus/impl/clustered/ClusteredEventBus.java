@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2018 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -315,7 +315,9 @@ public class ClusteredEventBus extends EventBusImpl {
             }
             parser.fixedSizeMode(4);
             size = -1;
-            if (received.codec() == CodecManager.PING_MESSAGE_CODEC) {
+            if (received.hasFailure()) {
+              received.internalError();
+            } else if (received.codec() == CodecManager.PING_MESSAGE_CODEC) {
               // Just send back pong directly on connection
               socket.write(PONG);
             } else {
