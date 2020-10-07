@@ -45,7 +45,8 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
   private boolean fromWire;
   private String failure;
 
-  public ClusteredMessage() {
+  public ClusteredMessage(EventBusImpl bus) {
+    super(bus);
   }
 
   public ClusteredMessage(ServerID sender, String address, String replyAddress, MultiMap headers, U sentBody,

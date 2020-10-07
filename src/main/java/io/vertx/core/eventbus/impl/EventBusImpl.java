@@ -11,12 +11,7 @@
 
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Context;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
@@ -374,7 +369,6 @@ public class EventBusImpl implements EventBus, MetricsProvider {
   }
 
   protected ReplyException deliverMessageLocally(MessageImpl msg) {
-    msg.setBus(this);
     ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
     if (handlers != null) {
       if (msg.isSend()) {
