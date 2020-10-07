@@ -18,7 +18,7 @@ import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 
-public class InternalErrorTest extends VertxTestBase {
+public class ReplyFailureErrorTest extends VertxTestBase {
 
   @Override
   public void setUp() throws Exception {
@@ -37,7 +37,7 @@ public class InternalErrorTest extends VertxTestBase {
       vertices[0].eventBus().request("foo", new MyPOJO("bar"), options, onFailure(t -> {
         assertThat(t, instanceOf(ReplyException.class));
         ReplyException e = (ReplyException) t;
-        assertSame(ReplyFailure.INTERNAL_ERROR, e.failureType());
+        assertSame(ReplyFailure.ERROR, e.failureType());
         testComplete();
       }));
     }));

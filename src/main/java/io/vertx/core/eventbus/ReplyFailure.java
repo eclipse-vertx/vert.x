@@ -39,7 +39,7 @@ public enum ReplyFailure {
   /**
    * A fatal error occured while delivering the message. Do not retry to send.
    */
-  INTERNAL_ERROR;
+  ERROR;
 
   public static ReplyFailure fromInt(int i) {
     switch (i) {
@@ -50,7 +50,7 @@ public enum ReplyFailure {
       case 2:
         return RECIPIENT_FAILURE;
       case 3:
-        return INTERNAL_ERROR;
+        return ERROR;
       default:
         throw new IllegalStateException("Invalid index " + i);
     }
@@ -64,7 +64,7 @@ public enum ReplyFailure {
         return 1;
       case RECIPIENT_FAILURE:
         return 2;
-      case INTERNAL_ERROR:
+      case ERROR:
         return 3;
       default:
         throw new IllegalStateException("How did we get here?");

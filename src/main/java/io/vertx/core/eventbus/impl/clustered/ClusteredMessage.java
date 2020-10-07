@@ -273,7 +273,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
   void internalError() {
     if (replyAddress != null) {
-      reply(new ReplyException(ReplyFailure.INTERNAL_ERROR, failure));
+      reply(new ReplyException(ReplyFailure.ERROR, failure));
     } else {
       log.trace(failure);
     }
