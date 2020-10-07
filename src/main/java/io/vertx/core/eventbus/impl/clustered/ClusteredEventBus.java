@@ -250,7 +250,9 @@ public class ClusteredEventBus extends EventBusImpl {
             }
             parser.fixedSizeMode(4);
             size = -1;
-            if (received.codec() == CodecManager.PING_MESSAGE_CODEC) {
+            if (received.hasFailure()) {
+              received.internalError();
+            } else if (received.codec() == CodecManager.PING_MESSAGE_CODEC) {
               // Just send back pong directly on connection
               socket.write(PONG);
             } else {
