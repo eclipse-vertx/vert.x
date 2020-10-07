@@ -34,7 +34,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
 
   private static final Logger log = LoggerFactory.getLogger(ClusteredMessage.class);
 
-  private static final byte WIRE_PROTOCOL_VERSION = 1;
+  private static final byte WIRE_PROTOCOL_VERSION = 2;
 
   private String sender;
   private String repliedTo;
