@@ -86,11 +86,11 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   public Http1xServerConnection(VertxInternal vertx,
                                 SSLHelper sslHelper,
                                 HttpServerOptions options,
-                                ChannelHandlerContext channel,
+                                ChannelHandlerContext chctx,
                                 ContextInternal context,
                                 String serverOrigin,
                                 HttpServerMetrics metrics) {
-    super(context, channel);
+    super(context, chctx);
     this.serverOrigin = serverOrigin;
     this.options = options;
     this.sslHelper = sslHelper;
@@ -353,25 +353,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   void netSocket(Promise<NetSocket> promise) {
     context.execute(() -> {
-      NetSocketImpl socket = new NetSocketImpl(context, chctx, sslHelper, metrics) {
-        @Override
-        protected void handleClosed() {
-          if (metrics != null) {
-            Http1xServerRequest request = Http1xServerConnection.this.responseInProgress;
-            metrics.responseEnd(request.metric(), request.response().bytesWritten());
-          }
-          super.handleClosed();
-        }
-        @Override
-        public synchronized void handleMessage(Object msg) {
-          if (msg instanceof HttpContent) {
-            ReferenceCountUtil.release(msg);
-            return;
-          }
-          super.handleMessage(msg);
-        }
-      };
-      socket.metric(metric());
 
       // Flush out all pending data
       flush();
@@ -388,13 +369,35 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         pipeline.remove("chunkedWriter");
       }
 
-      chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));
+      pipeline.replace("handler", "handler", VertxHandler.create(ctx -> {
+        NetSocketImpl socket = new NetSocketImpl(context, ctx, sslHelper, metrics) {
+          @Override
+          protected void handleClosed() {
+            if (metrics != null) {
+              Http1xServerRequest request = Http1xServerConnection.this.responseInProgress;
+              metrics.responseEnd(request.metric(), request.response().bytesWritten());
+            }
+            super.handleClosed();
+          }
+          @Override
+          public synchronized void handleMessage(Object msg) {
+            if (msg instanceof HttpContent) {
+              ReferenceCountUtil.release(msg);
+              return;
+            }
+            super.handleMessage(msg);
+          }
+        };
+        socket.metric(metric());
+        return socket;
+      }));
 
       // check if the encoder can be removed yet or not.
-      chctx.pipeline().remove("httpEncoder");
+      pipeline.remove("httpEncoder");
 
       //
-      promise.complete(socket);
+      VertxHandler<NetSocketImpl> handler = (VertxHandler<NetSocketImpl>) pipeline.get("handler");
+      promise.complete(handler.getConnection());
     });
   }
 

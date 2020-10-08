@@ -115,6 +115,17 @@ public abstract class ConnectionBase {
     chctx.pipeline().fireExceptionCaught(error);
   }
 
+  void close(ChannelPromise promise) {
+    closePromise.addListener(l -> {
+      if (l.isSuccess()) {
+        promise.setSuccess();
+      } else {
+        promise.setFailure(l.cause());
+      }
+    });
+    close();
+  }
+
   /**
    * This method is exclusively called by {@code VertxHandler} to signal read completion on the event-loop thread.
    */
@@ -181,7 +192,7 @@ public abstract class ConnectionBase {
     ChannelPromise channelPromise = chctx
       .newPromise()
       .addListener((ChannelFutureListener) f -> {
-        chctx.channel().close().addListener(promise);
+        chctx.close().addListener(promise);
       });
     writeToChannel(Unpooled.EMPTY_BUFFER, true, channelPromise);
   }

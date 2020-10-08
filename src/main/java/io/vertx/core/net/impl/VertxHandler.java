@@ -19,6 +19,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.Handler;
@@ -144,6 +145,11 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
   @Override
   public void channelRead(ChannelHandlerContext chctx, Object msg) {
     conn.read(msg);
+  }
+
+  @Override
+  public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
+    conn.close(promise);
   }
 
   @Override
