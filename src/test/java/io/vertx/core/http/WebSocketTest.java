@@ -2955,6 +2955,57 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testCloseServer() {
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
+      .webSocketHandler(socket -> {
+        socket.textMessageHandler(msg -> {
+          server.close();
+        });
+      })
+      .listen(onSuccess(s -> {
+        client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
+          ws.writeTextMessage("ping");
+          AtomicBoolean closeFrameReceived = new AtomicBoolean();
+          ws.frameHandler(frame -> {
+            if (frame.isClose()) {
+              closeFrameReceived.set(true);
+            }
+          });
+          ws.closeHandler(v -> {
+            assertTrue(closeFrameReceived.get());
+            testComplete();
+          });
+        }));
+      }));
+    await();
+  }
+
+  @Test
+  public void testCloseClient() {
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
+      .webSocketHandler(ws -> {
+        AtomicBoolean closeFrameReceived = new AtomicBoolean();
+        ws.frameHandler(frame -> {
+          if (frame.isClose()) {
+            closeFrameReceived.set(true);
+          }
+        });
+        ws.closeHandler(v -> {
+          assertTrue(closeFrameReceived.get());
+          testComplete();
+        });
+      })
+      .listen(onSuccess(s -> {
+        client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
+          client.close();
+        }));
+      }));
+    await();
+  }
+
+  @Test
   public void testReportProtocolViolationOnClient() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
       getUpgradedNetSocket(req, "/some/path").onComplete(onSuccess(sock -> {
@@ -3320,32 +3371,6 @@ public class WebSocketTest extends VertxTestBase {
           ((WebSocketInternal)ws).channelHandlerContext().close();
         }));
       }));
-    await();
-  }
-
-  @Test
-  public void testCloseClient() throws Exception {
-    int num = 5;
-    CountDownLatch latch = new CountDownLatch(num);
-    waitFor(num + 1);
-    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(num));
-    server = vertx.createHttpServer()
-      .webSocketHandler(ws -> {
-      }).listen(DEFAULT_HTTP_PORT, onSuccess(v1 -> {
-        for (int i = 0;i < num;i++) {
-          client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
-            ws.closeHandler(v -> {
-              complete();
-            });
-            latch.countDown();
-          }));
-        }
-        client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/someuri", onFailure(err -> {
-          complete();
-        }));
-      }));
-    awaitLatch(latch);
-    client.close();
     await();
   }
 
