@@ -16,23 +16,6 @@ public class JksOptionsConverter {
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, JksOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "password":
-          if (member.getValue() instanceof String) {
-            obj.setPassword((String)member.getValue());
-          }
-          break;
-        case "path":
-          if (member.getValue() instanceof String) {
-            obj.setPath((String)member.getValue());
-          }
-          break;
-        case "type":
-          break;
-        case "value":
-          if (member.getValue() instanceof String) {
-            obj.setValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)member.getValue())));
-          }
-          break;
       }
     }
   }
@@ -42,17 +25,5 @@ public class JksOptionsConverter {
   }
 
   public static void toJson(JksOptions obj, java.util.Map<String, Object> json) {
-    if (obj.getPassword() != null) {
-      json.put("password", obj.getPassword());
-    }
-    if (obj.getPath() != null) {
-      json.put("path", obj.getPath());
-    }
-    if (obj.getType() != null) {
-      json.put("type", obj.getType());
-    }
-    if (obj.getValue() != null) {
-      json.put("value", JsonUtil.BASE64_ENCODER.encodeToString(obj.getValue().getBytes()));
-    }
   }
 }
