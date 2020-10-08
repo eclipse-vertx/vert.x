@@ -14,16 +14,17 @@ package io.vertx.core.file.impl;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.file.FileSystemOptions;
+import io.vertx.core.impl.Utils;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Enumeration;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
@@ -403,9 +404,18 @@ public class FileResolver {
     // also this ensures that if process A deletes cacheDir, it won't affect process B
     String cacheDirName = fileCacheDir + "-" + UUID.randomUUID().toString();
     File cacheDir = new File(cacheDirName);
-
-    if (!cacheDir.mkdirs()) {
-      throw new IllegalStateException("Failed to create cache dir: " + cacheDirName);
+    // Create the cache directory
+    try {
+      if (Utils.isWindows()) {
+        Files.createDirectories(cacheDir.toPath());
+      } else {
+        // for security reasons, cache directory should not be readable/writable from other users
+        // just like "POSIX mkdtemp(3)", the created directory should have 0700 permission
+        Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwx------");
+        Files.createDirectories(cacheDir.toPath(), PosixFilePermissions.asFileAttribute(perms));
+      }
+    } catch (IOException e) {
+      throw new IllegalStateException("Failed to create cache dir: " + cacheDirName, e);
     }
     // Add shutdown hook to delete on exit
     shutdownHook = new Thread(() -> {

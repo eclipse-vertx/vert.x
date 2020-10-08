@@ -201,7 +201,10 @@ The message send failed because no reply was received before the timeout time.
 The message send failed because no handlers were available to handle the message.
 +++
 |[[RECIPIENT_FAILURE]]`RECIPIENT_FAILURE`|+++
-The message send failed because the recipient actively sent back a failure (rejected the message)
+The message send failed because the recipient actively sent back a failure (rejected the message).
++++
+|[[ERROR]]`ERROR`|+++
+A fatal error occured while delivering the message. Do not retry to send.
 +++
 |===
 
