@@ -23,6 +23,7 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.File;
@@ -134,15 +135,15 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testCacheDirIsPosix0700() throws Exception {
-    if (!Utils.isWindows()) {
-      File file = resolver.resolveFile("afile with spaces.html");
-      assertTrue(file.exists());
-      assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
-      File parent = file.getParentFile(); // this should be the cache directory
-      assertEquals(
-        "rwx------",
-        PosixFilePermissions.toString(Files.getPosixFilePermissions(parent.toPath())));
-    }
+    Assume.assumeFalse(Utils.isWindows());
+
+    File file = resolver.resolveFile("afile with spaces.html");
+    assertTrue(file.exists());
+    assertTrue(file.getPath().startsWith(cacheBaseDir + "-"));
+    File parent = file.getParentFile(); // this should be the cache directory
+    assertEquals(
+      "rwx------",
+      PosixFilePermissions.toString(Files.getPosixFilePermissions(parent.toPath())));
   }
 
   @Test
