@@ -11,9 +11,7 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.buffer.Buffer;
 
 /**
@@ -49,7 +47,6 @@ import io.vertx.core.buffer.Buffer;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@DataObject(generateConverter = true)
 public class KeyStoreOptions implements KeyCertOptions, TrustOptions {
 
   private String type;
