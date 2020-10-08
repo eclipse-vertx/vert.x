@@ -73,7 +73,8 @@ public abstract class ConnectionBase {
   private Object metric;
   private SocketAddress remoteAddress;
   private SocketAddress localAddress;
-  private Promise<Void> closePromise;
+  private ChannelPromise closePromise;
+  private Future<Void> closeFuture;
   private long remainingBytesRead;
   private long remainingBytesWritten;
 
@@ -87,17 +88,21 @@ public abstract class ConnectionBase {
     this.chctx = chctx;
     this.context = context;
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
-    this.closePromise = context.promise();
+    this.closePromise = chctx.newPromise();
+
+    PromiseInternal<Void> p = context.promise();
+    closePromise.addListener(p);
+    closeFuture = p.future();
 
     // Add close handler callback
-    closePromise.future().onComplete(this::checkCloseHandler);
+    closeFuture.onComplete(this::checkCloseHandler);
   }
 
   /**
    * @return a promise that will be completed when the connection becomes closed
    */
   public Future<Void> closeFuture() {
-    return closePromise.future();
+    return closeFuture;
   }
 
   /**
@@ -355,7 +360,7 @@ public abstract class ConnectionBase {
         ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
       }
     }
-    closePromise.complete();
+    closePromise.setSuccess();
   }
 
   private void checkCloseHandler(AsyncResult<Void> ar) {
