@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -526,6 +526,22 @@ public class FutureTest extends VertxTestBase {
   public void testJoinWithEmptyList() {
     CompositeFuture composite = CompositeFuture.join(Collections.emptyList());
     assertTrue(composite.isComplete());
+  }
+
+  @Test
+  public void testGenerics() {
+    List<Future<String>> successSuccess = Arrays.asList(Future.succeededFuture(), Future.succeededFuture());
+    List<Future<String>> successFailure = Arrays.asList(Future.succeededFuture(), Future.failedFuture(""));
+    assertTrue(CompositeFuture.allOf(successSuccess).succeeded());
+    assertTrue(CompositeFuture.allOf(successFailure).failed());
+    assertTrue(CompositeFuture.anyOf(successSuccess).succeeded());
+    assertTrue(CompositeFuture.anyOf(successFailure).succeeded());
+    assertTrue(CompositeFuture.joinOf(successSuccess).succeeded());
+    assertTrue(CompositeFuture.joinOf(successFailure).failed());
+
+    List<Future<String>> failureAndUnknown = Arrays.asList(Future.failedFuture(""), Promise.<String>promise().future());
+    assertTrue(CompositeFuture.allOf(failureAndUnknown).isComplete());
+    assertFalse(CompositeFuture.joinOf(failureAndUnknown).isComplete());
   }
 
   @Test

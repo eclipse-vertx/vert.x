@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -17,8 +17,6 @@ import io.vertx.core.impl.future.CompositeFutureImpl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * The composite future wraps a list of {@link Future futures}, it is useful when several futures
@@ -72,11 +70,25 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Like {@link #all(Future, Future)} but with a list of futures.<p>
-   *
-   * When the list is empty, the returned future will be already completed.
+   * Return a composite future, succeeded when all futures are succeeded,
+   * failed as soon as one of the futures is failed.
+   * <p/>
+   * When the list is empty, the returned future will be already succeeded.
    */
   static CompositeFuture all(List<Future> futures) {
+    return CompositeFutureImpl.all(futures.toArray(new Future[futures.size()]));
+  }
+
+  /**
+   * Return a composite future, succeeded when all futures are succeeded,
+   * failed as soon as one of the futures is failed.
+   * <p/>
+   * When the list is empty, the returned future will be already succeeded.
+   * <p/>
+   * This is the same as {@link #all(List)} but with generic type declaration.
+   */
+  @GenIgnore
+  static <T extends Future<?>> CompositeFuture allOf(List<T> futures) {
     return CompositeFutureImpl.all(futures.toArray(new Future[futures.size()]));
   }
 
@@ -122,11 +134,25 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Like {@link #any(Future, Future)} but with a list of futures.<p>
-   *
-   * When the list is empty, the returned future will be already completed.
+   * Return a composite future, succeeded as soon as one future is succeeded,
+   * failed when all futures are failed.
+   * <p/>
+   * When the list is empty, the returned future will be already succeeded.
    */
   static CompositeFuture any(List<Future> futures) {
+    return CompositeFutureImpl.any(futures.toArray(new Future[futures.size()]));
+  }
+
+  /**
+   * Return a composite future, succeeded as soon as one future is succeeded,
+   * failed when all futures are failed.
+   * <p/>
+   * When the list is empty, the returned future will be already succeeded.
+   * <p/>
+   * This is the same as {@link #any(List)} but with generic type declaration.
+   */
+  @GenIgnore
+  static <T extends Future<?>> CompositeFuture anyOf(List<T> futures) {
     return CompositeFutureImpl.any(futures.toArray(new Future[futures.size()]));
   }
 
@@ -172,11 +198,31 @@ public interface CompositeFuture extends Future<CompositeFuture> {
   }
 
   /**
-   * Like {@link #join(Future, Future)} but with a list of futures.<p>
-   *
-   * When the list is empty, the returned future will be already completed.
+   * Return a composite future, succeeded when all {@code futures} are succeeded,
+   * failed when any of the {@code futures} is failed.
+   * <p/>
+   * It always waits until all its {@code futures} are completed and will not fail
+   * as soon as one of the {@code futures} fails.
+   * <p/>
+   * When the list is empty, the returned future will be already succeeded.
    */
   static CompositeFuture join(List<Future> futures) {
+    return CompositeFutureImpl.join(futures.toArray(new Future[futures.size()]));
+  }
+
+  /**
+   * Return a composite future, succeeded when all {@code futures} are succeeded,
+   * failed when any of the {@code futures} is failed.
+   * <p/>
+   * It always waits until all its {@code futures} are completed and will not fail
+   * as soon as one of the {@code futures} fails.
+   * <p/>
+   * When the list is empty, the returned future will be already succeeded.
+   * <p/>
+   * This is the same as {@link #join(List)} but with generic type declaration.
+   */
+  @GenIgnore
+  static <T extends Future<?>> CompositeFuture joinOf(List<T> futures) {
     return CompositeFutureImpl.join(futures.toArray(new Future[futures.size()]));
   }
 
