@@ -2882,6 +2882,58 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testCloseServer() {
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
+      .websocketHandler(socket -> {
+        socket.textMessageHandler(msg -> {
+          server.close();
+        });
+      })
+      .listen(onSuccess(s -> {
+        client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
+          ws.writeTextMessage("ping");
+          AtomicBoolean closeFrameReceived = new AtomicBoolean();
+          ws.frameHandler(frame -> {
+            if (frame.isClose()) {
+              closeFrameReceived.set(true);
+            }
+          });
+          ws.closeHandler(v -> {
+            assertTrue(closeFrameReceived.get());
+            testComplete();
+          });
+        }));
+      }));
+    await();
+  }
+
+  @Test
+  public void testCloseClient() {
+    waitFor(3);
+    client = vertx.createHttpClient();
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
+      .websocketHandler(ws -> {
+        AtomicBoolean closeFrameReceived = new AtomicBoolean();
+        ws.frameHandler(frame -> {
+          if (frame.isClose()) {
+            closeFrameReceived.set(true);
+          }
+        });
+        ws.closeHandler(v -> {
+          assertTrue(closeFrameReceived.get());
+          testComplete();
+        });
+      })
+      .listen(onSuccess(s -> {
+        client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
+          client.close();
+        }));
+      }));
+    await();
+  }
+
+  @Test
   public void testReportProtocolViolationOnClient() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
       NetSocket sock = getUpgradedNetSocket(req, "/some/path");

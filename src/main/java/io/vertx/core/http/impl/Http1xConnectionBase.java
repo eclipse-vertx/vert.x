@@ -28,6 +28,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
@@ -116,6 +117,19 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   @Override
   public void close() {
     close(null);
+  }
+
+  @Override
+  public void close(Handler<AsyncResult<Void>> handler) {
+    WebSocketBase socket;
+    synchronized (this) {
+      socket = ws;
+    }
+    if (socket != null) {
+      socket.close();
+    } else {
+      super.close(handler);
+    }
   }
 
   @Override
