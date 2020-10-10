@@ -115,7 +115,7 @@ public final class SucceededFuture<T> extends FutureBase<T> {
 
   @Override
   public Future<T> otherwise(T value) {
-    return new SucceededFuture<>(context, value);
+    return this;
   }
 
   @Override
