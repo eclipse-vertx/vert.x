@@ -35,6 +35,7 @@ import io.vertx.core.impl.NetSocketInternal;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SelfSignedCertificate;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
@@ -2910,7 +2911,6 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testCloseClient() {
-    waitFor(3);
     client = vertx.createHttpClient();
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT))
       .websocketHandler(ws -> {
@@ -3229,7 +3229,7 @@ public class WebSocketTest extends VertxTestBase {
           ws.write(buffer, onFailure(err -> {
             testComplete();
           }));
-          ((WebSocketInternal)ws).connection().close();
+          ((ConnectionBase)((WebSocketInternal)ws).connection()).channelHandlerContext().close();
         }));
       }));
     await();

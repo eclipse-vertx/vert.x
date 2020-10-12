@@ -983,7 +983,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider {
   @Override
   public void close() {
     synchronized (this) {
-      checkClosed();
+      if (closed) {
+        return;
+      }
       closed = true;
     }
     if (creatingContext != null) {
