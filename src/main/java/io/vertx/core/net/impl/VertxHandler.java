@@ -119,14 +119,11 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
 
   @Override
   public void exceptionCaught(ChannelHandlerContext chctx, final Throwable t) {
-    Channel ch = chctx.channel();
-    ch.close();
     C connection = getConnection();
     if (connection != null) {
       connection.handleException(t);
-    } else {
-      ch.close();
     }
+    chctx.close();
   }
 
   @Override
