@@ -14,24 +14,19 @@ package io.vertx.core.file.impl;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.file.FileSystemOptions;
-import io.vertx.core.impl.Utils;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Enumeration;
-import java.util.Set;
-import java.util.UUID;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static io.vertx.core.net.impl.URIDecoder.*;
+import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
@@ -48,6 +43,10 @@ import static io.vertx.core.net.impl.URIDecoder.*;
  * @author <a href="https://github.com/rworsnop/">Rob Worsnop</a>
  */
 public class FileResolver {
+
+  public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
+  public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
+  public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
 
   /**
    * Predicate for checking validity of cache path.
@@ -79,28 +78,31 @@ public class FileResolver {
     }
   }
 
-  public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
-  public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
-  public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
   private static final String JAR_URL_SEP = "!/";
   private static final Pattern JAR_URL_SEP_PATTERN = Pattern.compile(JAR_URL_SEP);
 
   private final File cwd;
-  private final boolean enableCpResolving;
   private final boolean enableCaching;
-  // mutable state
-  private File cacheDir;
-  private Thread shutdownHook;
+  private final boolean closeCache;
+  private final FileCache cache;
 
   public FileResolver() {
     this(new FileSystemOptions());
   }
 
   public FileResolver(FileSystemOptions fileSystemOptions) {
-    this.enableCaching = fileSystemOptions.isFileCachingEnabled();
-    this.enableCpResolving = fileSystemOptions.isClassPathResolvingEnabled();
+    this(
+      fileSystemOptions.isFileCachingEnabled(),
+      fileSystemOptions.isClassPathResolvingEnabled() ? FileCache.setupCache(fileSystemOptions.getFileCacheDir()) : null,
+      fileSystemOptions.isClassPathResolvingEnabled());
+  }
+
+  public FileResolver(boolean enableCaching, FileCache cache, boolean closeCache) {
+    this.enableCaching = enableCaching;
+    this.cache = cache;
+    this.closeCache = closeCache;
 
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
@@ -108,28 +110,15 @@ public class FileResolver {
     } else {
       cwd = null;
     }
-    cacheDir = setupCacheDir(fileSystemOptions.getFileCacheDir());
   }
 
   /**
    * Close this file resolver, this is a blocking operation.
    */
   public void close() throws IOException {
-    final Thread hook;
-    synchronized (this) {
-      hook = shutdownHook;
-      // disable the shutdown hook thread
-      shutdownHook = null;
+    if (closeCache) {
+      cache.close();
     }
-    if (hook != null) {
-      // May throw IllegalStateException if called from other shutdown hook so ignore that
-      try {
-        Runtime.getRuntime().removeShutdownHook(hook);
-      } catch (IllegalStateException ignore) {
-        // ignore
-      }
-    }
-    deleteCacheDir();
   }
 
   public File resolveFile(String fileName) {
@@ -138,20 +127,15 @@ public class FileResolver {
     if (cwd != null && !file.isAbsolute()) {
       file = new File(cwd, fileName);
     }
-    if (!this.enableCpResolving) {
+    if (this.cache == null) {
       return file;
     }
     // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
     // corrupting the content.
-    synchronized (this) {
+    synchronized (cache) {
       if (!file.exists()) {
-        // if cacheDir is null, the delete cache dir was already called.
-        // only in this case the resolver is working in an unexpected state
-        if (cacheDir == null) {
-          throw new IllegalStateException("cacheDir is null");
-        }
         // Look for it in local file cache
-        File cacheFile = new File(cacheDir, fileName);
+        File cacheFile = cache.getFile(fileName);
         if (this.enableCaching && cacheFile.exists()) {
           return cacheFile;
         }
@@ -224,24 +208,16 @@ public class FileResolver {
   }
 
 
-  private synchronized File unpackFromFileURL(URL url, String fileName, ClassLoader cl) {
+  private File unpackFromFileURL(URL url, String fileName, ClassLoader cl) {
     final File resource = new File(decodeURIComponent(url.getPath(), false));
     boolean isDirectory = resource.isDirectory();
-    File cacheFile = new File(cacheDir, fileName);
-    if (!isDirectory) {
-      cacheFile.getParentFile().mkdirs();
-      try {
-        if (this.enableCaching) {
-          Files.copy(resource.toPath(), cacheFile.toPath());
-        } else {
-          Files.copy(resource.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        }
-      } catch (FileAlreadyExistsException ignore) {
-      } catch (IOException e) {
-        throw new VertxException(e);
-      }
-    } else {
-      cacheFile.mkdirs();
+    File cacheFile;
+    try {
+      cacheFile = cache.cache(fileName, resource, !enableCaching);
+    } catch (IOException e) {
+      throw new VertxException(e);
+    }
+    if (isDirectory) {
       String[] listing = resource.list();
       if (listing != null) {
         for (String file: listing) {
@@ -257,7 +233,7 @@ public class FileResolver {
     return cacheFile;
   }
 
-  private synchronized File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
+  private File unpackFromJarURL(URL url, String fileName, ClassLoader cl) {
     ZipFile zip = null;
     try {
       String path = url.getPath();
@@ -291,21 +267,16 @@ public class FileResolver {
         ZipEntry entry = entries.nextElement();
         String name = entry.getName();
         if (name.startsWith(prefix.isEmpty() ? fileName : prefix + fileName)) {
-          File file = new File(cacheDir, prefix.isEmpty() ? name : name.substring(prefix.length()));
+          String p = prefix.isEmpty() ? name : name.substring(prefix.length());
           if (name.endsWith("/")) {
             // Directory
-            file.mkdirs();
+            cache.cacheDir(p);
           } else {
-            file.getParentFile().mkdirs();
             try (InputStream is = zip.getInputStream(entry)) {
-              if (this.enableCaching) {
-                Files.copy(is, file.toPath());
-              } else {
-                Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-              }
-            } catch (FileAlreadyExistsException ignore) {
+              cache.cacheFile(p, is, !enableCaching);
             }
           }
+
         }
       }
     } catch (IOException e) {
@@ -314,7 +285,7 @@ public class FileResolver {
       closeQuietly(zip);
     }
 
-    return new File(cacheDir, fileName);
+    return cache.getFile(fileName);
   }
 
   private void closeQuietly(Closeable zip) {
@@ -347,28 +318,21 @@ public class FileResolver {
    * @param url      the url
    * @return the extracted file
    */
-  private synchronized File unpackFromBundleURL(URL url, boolean isDir) {
+  private File unpackFromBundleURL(URL url, boolean isDir) {
+    String file = url.getHost() + File.separator + url.getFile();
     try {
-      File file = new File(cacheDir, url.getHost() + File.separator + url.getFile());
-      file.getParentFile().mkdirs();
       if ((getClassLoader() != null && isBundleUrlDirectory(url))  || isDir) {
         // Directory
-        file.mkdirs();
+        cache.cacheDir(file);
       } else {
-        file.getParentFile().mkdirs();
         try (InputStream is = url.openStream()) {
-          if (this.enableCaching) {
-            Files.copy(is, file.toPath());
-          } else {
-            Files.copy(is, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-          }
-        } catch (FileAlreadyExistsException ignore) {
+          cache.cacheFile(file, is, !enableCaching);
         }
       }
     } catch (IOException e) {
       throw new VertxException(e);
     }
-    return new File(cacheDir, url.getHost() + File.separator + url.getFile());
+    return cache.getFile(file);
   }
 
 
@@ -385,79 +349,5 @@ public class FileResolver {
       cl = Object.class.getClassLoader();
     }
     return cl;
-  }
-
-  /**
-   * Will prepare the cache directory to be used in the application or return null if classpath resolving is disabled.
-   */
-  private File setupCacheDir(String fileCacheDir) {
-    if (!this.enableCpResolving) {
-      return null;
-    }
-
-    // ensure that the argument doesn't end with separator
-    if (fileCacheDir.endsWith(File.separator)) {
-      fileCacheDir = fileCacheDir.substring(0, fileCacheDir.length() - File.separator.length());
-    }
-
-    // the cacheDir will be suffixed a unique id to avoid eavesdropping from other processes/users
-    // also this ensures that if process A deletes cacheDir, it won't affect process B
-    String cacheDirName = fileCacheDir + "-" + UUID.randomUUID().toString();
-    File cacheDir = new File(cacheDirName);
-    // Create the cache directory
-    try {
-      if (Utils.isWindows()) {
-        Files.createDirectories(cacheDir.toPath());
-      } else {
-        // for security reasons, cache directory should not be readable/writable from other users
-        // just like "POSIX mkdtemp(3)", the created directory should have 0700 permission
-        Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwx------");
-        Files.createDirectories(cacheDir.toPath(), PosixFilePermissions.asFileAttribute(perms));
-      }
-    } catch (IOException e) {
-      throw new IllegalStateException("Failed to create cache dir: " + cacheDirName, e);
-    }
-    // Add shutdown hook to delete on exit
-    shutdownHook = new Thread(() -> {
-      synchronized (this) {
-        // no-op if cache dir has been set to null
-        if (this.cacheDir == null) {
-          return;
-        }
-      }
-
-      final Thread deleteCacheDirThread = new Thread(() -> {
-        try {
-          deleteCacheDir();
-        } catch (IOException ignore) {
-        }
-      });
-      // start the thread
-      deleteCacheDirThread.start();
-      try {
-        deleteCacheDirThread.join(10 * 1000);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    });
-    Runtime.getRuntime().addShutdownHook(shutdownHook);
-    return cacheDir;
-  }
-
-  private void deleteCacheDir() throws IOException {
-    final File dir;
-    synchronized (this) {
-      if (cacheDir == null) {
-        return;
-      }
-      // save the state before we force a flip
-      dir = cacheDir;
-      // disable the cache dir
-      cacheDir = null;
-    }
-    // threads will only enter here once, as the resolving flag is flipped above
-    if (dir.exists()) {
-      FileSystemImpl.delete(dir.toPath(), true);
-    }
   }
 }
