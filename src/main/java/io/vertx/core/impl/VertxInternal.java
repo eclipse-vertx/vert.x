@@ -27,6 +27,7 @@ import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.io.File;
@@ -143,7 +144,11 @@ public interface VertxInternal extends Vertx {
 
   void failDuringFailover(boolean fail);
 
-  File resolveFile(String fileName);
+  FileResolver fileResolver();
+
+  default File resolveFile(String fileName) {
+    return fileResolver().resolveFile(fileName);
+  }
 
   /**
    * Like {@link #executeBlocking(Handler, Handler)} but using the internal worker thread pool.

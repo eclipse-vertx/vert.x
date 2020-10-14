@@ -92,7 +92,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
 
-  private final FileSystem fileSystem = getFileSystem();
+  private final FileSystem fileSystem;
   private final SharedData sharedData;
   private final VertxMetrics metrics;
   private final ConcurrentMap<Long, InternalTimerHandler> timeouts = new ConcurrentHashMap<>();
@@ -161,6 +161,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.metrics = metrics;
     this.transport = transport;
     this.fileResolver = fileResolver;
+    this.fileSystem = createFileSystem(fileResolver);
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.tracer = tracer;
@@ -170,6 +171,10 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.sharedData = new SharedDataImpl(this, clusterManager);
     this.deploymentManager = new DeploymentManager(this);
     this.verticleManager = new VerticleManager(this, deploymentManager);
+  }
+
+  private FileSystem createFileSystem(FileResolver fileResolver) {
+    return Utils.isWindows() ? new WindowsFileSystem(this, fileResolver) : new FileSystemImpl(this, fileResolver);
   }
 
   void init() {
@@ -240,13 +245,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       haManager.init();
       fut.complete();
     }, false, initPromise);
-  }
-
-  /**
-   * @return The FileSystem implementation for the OS
-   */
-  protected FileSystem getFileSystem() {
-    return Utils.isWindows() ? new WindowsFileSystem(this) : new FileSystemImpl(this);
   }
 
   @Override
@@ -816,8 +814,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public File resolveFile(String fileName) {
-    return fileResolver.resolveFile(fileName);
+  public FileResolver fileResolver() {
+    return fileResolver;
   }
 
   @Override

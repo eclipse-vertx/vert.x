@@ -18,6 +18,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.spi.file.FileResolver;
 
 import java.util.Objects;
 
@@ -29,8 +30,8 @@ public class WindowsFileSystem extends FileSystemImpl {
 
   private static final Logger log = LoggerFactory.getLogger(WindowsFileSystem.class);
 
-  public WindowsFileSystem(final VertxInternal vertx) {
-    super(vertx);
+  public WindowsFileSystem(VertxInternal vertx, FileResolver fileResolver) {
+    super(vertx, fileResolver);
   }
 
   private static void logInternal(final String perms) {
