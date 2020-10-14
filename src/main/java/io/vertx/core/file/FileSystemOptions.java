@@ -17,7 +17,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.File;
 
-import static io.vertx.core.file.impl.FileResolver.*;
+import static io.vertx.core.spi.file.FileResolver.*;
 
 /**
  * Vert.x file system base configuration, this class can be extended by provider implementations to configure

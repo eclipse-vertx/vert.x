@@ -31,7 +31,7 @@ import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.impl.FileResolver;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
 import io.vertx.core.http.HttpClient;

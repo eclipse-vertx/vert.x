@@ -12,7 +12,8 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.*;
-import io.vertx.core.file.impl.FileResolver;
+import io.vertx.core.spi.file.FileResolver;
+import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxTracerFactory;
@@ -161,7 +162,7 @@ public class VertxFactory {
 
   private FileResolver createFileResolver() {
     if (fileResolver == null) {
-      fileResolver = new FileResolver(options.getFileSystemOptions());
+      fileResolver = new FileResolverImpl(options.getFileSystemOptions());
     }
     return fileResolver;
   }

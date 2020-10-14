@@ -13,10 +13,14 @@ package io.vertx.core.file.impl;
 
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.FileSystemOptions;
 import io.vertx.core.impl.Utils;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
@@ -31,7 +35,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static io.vertx.core.net.impl.URIDecoder.*;
+import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
 
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
@@ -47,7 +51,7 @@ import static io.vertx.core.net.impl.URIDecoder.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="https://github.com/rworsnop/">Rob Worsnop</a>
  */
-public class FileResolver {
+public class FileResolverImpl implements FileResolver {
 
   /**
    * Predicate for checking validity of cache path.
@@ -79,9 +83,6 @@ public class FileResolver {
     }
   }
 
-  public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
-  public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
-  public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
   private static final String JAR_URL_SEP = "!/";
@@ -94,11 +95,11 @@ public class FileResolver {
   private File cacheDir;
   private Thread shutdownHook;
 
-  public FileResolver() {
+  public FileResolverImpl() {
     this(new FileSystemOptions());
   }
 
-  public FileResolver(FileSystemOptions fileSystemOptions) {
+  public FileResolverImpl(FileSystemOptions fileSystemOptions) {
     this.enableCaching = fileSystemOptions.isFileCachingEnabled();
     this.enableCpResolving = fileSystemOptions.isClassPathResolvingEnabled();
 

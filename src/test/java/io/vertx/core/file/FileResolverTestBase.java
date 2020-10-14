@@ -14,13 +14,14 @@ package io.vertx.core.file;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.file.impl.FileResolver;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -54,7 +55,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    resolver = new FileResolver();
+    resolver = new FileResolverImpl();
   }
 
   @Override
@@ -208,7 +209,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testDeleteCacheDir() throws Exception {
-    FileResolver resolver2 = new FileResolver();
+    FileResolver resolver2 = new FileResolverImpl();
     File file = resolver2.resolveFile(webRoot + "/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
@@ -350,7 +351,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testResolveAfterCloseThrowsISE() throws Exception {
-    FileResolver resolver2 = new FileResolver();
+    FileResolver resolver2 = new FileResolverImpl();
     File file = resolver2.resolveFile(webRoot + "/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
