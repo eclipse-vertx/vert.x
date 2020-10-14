@@ -17,6 +17,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.impl.AsyncFileImpl;
 import io.vertx.core.impl.Utils;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
@@ -31,6 +32,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.EnumSet;
@@ -2310,5 +2312,25 @@ public class FileSystemTest extends VertxTestBase {
     assertTrue(Files.exists(path));
     String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(path));
     assertEquals(perms, DEFAULT_FILE_PERMS);
+  }
+
+  @Test
+  public void testResolveFromClassLoader() throws Exception {
+    URL url2 = new URL("jar:" + Thread.currentThread().getContextClassLoader().getResource("webroot2.jar") + "!/webroot2/somefile.html");
+    ClassLoader loader = new ClassLoader(Thread.currentThread().getContextClassLoader()) {
+      @Override
+      public URL getResource(String name) {
+        if (name.equals("webroot2/someotherfile.html")) {
+          return url2;
+        }
+        return super.getResource(name);
+      }
+    };
+    FileSystem fs = ((VertxInternal) this.vertx).fileSystem(loader);
+    fs.props("webroot2/someotherfile.html", onSuccess(props -> {
+      assertEquals(32, props.size());
+      testComplete();
+    }));
+    await();
   }
 }

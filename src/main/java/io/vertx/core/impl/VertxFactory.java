@@ -39,7 +39,7 @@ public class VertxFactory {
   private NodeSelector clusterNodeSelector;
   private VertxTracer tracer;
   private VertxMetrics metrics;
-  private FileResolver fileResolver;
+  private FileResolverImpl fileResolver;
 
   public VertxFactory(VertxOptions options) {
     this.options = options;
@@ -160,7 +160,7 @@ public class VertxFactory {
     return tracer;
   }
 
-  private FileResolver createFileResolver() {
+  private FileResolverImpl createFileResolver() {
     if (fileResolver == null) {
       fileResolver = new FileResolverImpl(options.getFileSystemOptions());
     }

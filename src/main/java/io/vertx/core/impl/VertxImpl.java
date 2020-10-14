@@ -31,6 +31,7 @@ import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
@@ -101,7 +102,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final NodeSelector nodeSelector;
   private final DeploymentManager deploymentManager;
   private final VerticleManager verticleManager;
-  private final FileResolver fileResolver;
+  private final FileResolverImpl fileResolver;
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
   final WorkerPool workerPool;
@@ -127,7 +128,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<AbstractContext>> stickyContext = new ThreadLocal<>();
 
-  VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver) {
+  VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolverImpl fileResolver) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -811,6 +812,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public VertxMetrics metricsSPI() {
     return metrics;
+  }
+
+  @Override
+  public FileSystem fileSystem(ClassLoader classLoader) {
+    FileResolver resolver = new FileResolverImpl(fileResolver, classLoader);
+    return createFileSystem(resolver);
   }
 
   @Override

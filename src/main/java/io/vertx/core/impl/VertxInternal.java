@@ -15,7 +15,9 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
+import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.core.*;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.impl.HttpServerImpl;
@@ -143,6 +145,13 @@ public interface VertxInternal extends Vertx {
   boolean isKilled();
 
   void failDuringFailover(boolean fail);
+
+  /**
+   * Get a filesystem object that will resolve resources using the specified {@code classLoader}
+   *
+   * @return a filesystem object
+   */
+  FileSystem fileSystem(ClassLoader classLoader);
 
   FileResolver fileResolver();
 

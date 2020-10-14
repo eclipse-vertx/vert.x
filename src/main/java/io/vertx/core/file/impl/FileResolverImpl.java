@@ -341,7 +341,7 @@ public class FileResolverImpl implements FileResolver {
   }
 
   private ClassLoader getClassLoader() {
-    if (classLoader == null) {
+    if (classLoader != null) {
       return classLoader;
     }
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
