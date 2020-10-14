@@ -81,10 +81,15 @@ public class FileResolverImpl implements FileResolver {
   private static final Pattern JAR_URL_SEP_PATTERN = Pattern.compile(JAR_URL_SEP);
 
   private final File cwd;
+  private final ClassLoader classLoader;
   private final boolean enableCaching;
   private final boolean closeCache;
   private final FileCache cache;
   // mutable state
+
+  public FileResolverImpl(FileResolverImpl that, ClassLoader classLoader) {
+    this(that.enableCaching, that.cache, false, classLoader);
+  }
 
   public FileResolverImpl() {
     this(new FileSystemOptions());
@@ -94,13 +99,15 @@ public class FileResolverImpl implements FileResolver {
     this(
       fileSystemOptions.isFileCachingEnabled(),
       fileSystemOptions.isClassPathResolvingEnabled() ? FileCache.setupCache(fileSystemOptions.getFileCacheDir()) : null,
-      fileSystemOptions.isClassPathResolvingEnabled());
+      fileSystemOptions.isClassPathResolvingEnabled(),
+      null);
   }
 
-  public FileResolverImpl(boolean enableCaching, FileCache cache, boolean closeCache) {
+  public FileResolverImpl(boolean enableCaching, FileCache cache, boolean closeCache, ClassLoader classLoader) {
     this.enableCaching = enableCaching;
     this.cache = cache;
     this.closeCache = closeCache;
+    this.classLoader = classLoader;
 
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
@@ -199,7 +206,7 @@ public class FileResolverImpl implements FileResolver {
       case "bundleentry": // Equinox
       case "bundleresource": // Equinox
       case "resource":  // substratevm (graal native image)
-        return unpackFromBundleURL(url, isDir);
+        return unpackFromBundleURL(cl, url, isDir);
       default:
         throw new IllegalStateException("Invalid url protocol: " + prot);
     }
@@ -303,9 +310,9 @@ public class FileResolverImpl implements FileResolver {
    * @param url      the url
    * @return if the bundle resource represented by the bundle URL is a directory
    */
-  private boolean isBundleUrlDirectory(URL url) {
+  private boolean isBundleUrlDirectory(ClassLoader cl, URL url) {
     return url.toExternalForm().endsWith("/") ||
-      getValidClassLoaderResource(getClassLoader(), url.getPath().substring(1) + "/") != null;
+      getValidClassLoaderResource(cl, url.getPath().substring(1) + "/") != null;
   }
 
   /**
@@ -316,10 +323,10 @@ public class FileResolverImpl implements FileResolver {
    * @param url      the url
    * @return the extracted file
    */
-  private File unpackFromBundleURL(URL url, boolean isDir) {
+  private File unpackFromBundleURL(ClassLoader cl, URL url, boolean isDir) {
     String file = url.getHost() + File.separator + url.getFile();
     try {
-      if ((getClassLoader() != null && isBundleUrlDirectory(url))  || isDir) {
+      if ((cl != null && isBundleUrlDirectory(cl, url))  || isDir) {
         // Directory
         cache.cacheDir(file);
       } else {
@@ -333,8 +340,10 @@ public class FileResolverImpl implements FileResolver {
     return cache.getFile(file);
   }
 
-
   private ClassLoader getClassLoader() {
+    if (classLoader == null) {
+      return classLoader;
+    }
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl == null) {
       cl = getClass().getClassLoader();
