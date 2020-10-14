@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -12,13 +12,16 @@
 package io.vertx.core;
 
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.impl.*;
+import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.Deployment;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.verticle.CompilingClassLoader;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.test.core.*;
-import io.vertx.test.verticles.sourceverticle.SourceVerticle;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.verticles.*;
+import io.vertx.test.verticles.sourceverticle.SourceVerticle;
 import org.junit.Test;
 
 import java.io.File;
@@ -1595,6 +1598,44 @@ public class DeploymentTest extends VertxTestBase {
       });
 
     });
+    await();
+  }
+
+  @Test
+  public void testUndeployParentDuringChildDeployment() throws Exception {
+    CountDownLatch deployLatch = new CountDownLatch(2);
+    CountDownLatch undeployLatch = new CountDownLatch(1);
+
+    MyAsyncVerticle childVerticle = new MyAsyncVerticle(startPromise -> {
+      deployLatch.countDown();
+      Vertx.currentContext().<Void>executeBlocking(prom -> {
+        try {
+          undeployLatch.await();
+          prom.complete();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          prom.fail(e.getMessage());
+        }
+      }, startPromise);
+    }, Promise::complete);
+
+    MyAsyncVerticle verticle = new MyAsyncVerticle(startPromise -> {
+      Context parentVerticleContext = Vertx.currentContext();
+      parentVerticleContext.owner().deployVerticle(childVerticle, onFailure(t -> {
+        assertSame(parentVerticleContext, Vertx.currentContext());
+        testComplete();
+      }));
+      startPromise.complete();
+    }, stopPromise -> {
+      undeployLatch.countDown();
+    });
+    AtomicReference<String> deploymentID = new AtomicReference<>();
+    vertx.deployVerticle(verticle, onSuccess(id -> {
+      deploymentID.set(id);
+      deployLatch.countDown();
+    }));
+    awaitLatch(deployLatch);
+    vertx.undeploy(deploymentID.get());
     await();
   }
 
