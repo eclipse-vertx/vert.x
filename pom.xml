@@ -20,7 +20,7 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>3.9.4</version>
+  <version>3.9.5-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -51,7 +51,7 @@
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>3.9.4</stack.version>
+    <stack.version>3.9.5-SNAPSHOT</stack.version>
     <jetty.alpnAgent.argLine/>
     <jmh.version>1.19</jmh.version>
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
