@@ -1590,6 +1590,41 @@ public class DeploymentTest extends VertxTestBase {
     }
   }
 
+  @Test
+  public void testContextClassLoader() throws Exception {
+    File tmp = File.createTempFile("vertx-", ".txt");
+    tmp.deleteOnExit();
+    Files.write(tmp.toPath(), "hello".getBytes());
+    URL url = tmp.toURI().toURL();
+    AtomicBoolean used = new AtomicBoolean();
+    ClassLoader cl = new ClassLoader(Thread.currentThread().getContextClassLoader()) {
+      @Override
+      public URL getResource(String name) {
+        if (name.equals("/foo.txt")) {
+          used.set(true);
+          return url;
+        }
+        return super.getResource(name);
+      }
+    };
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() {
+        assertSame(cl, Thread.currentThread().getContextClassLoader());
+        assertSame(cl, ((ContextInternal)context).classLoader());
+        vertx.fileSystem().props("/foo.txt", onSuccess(props -> {
+          assertEquals(5, props.size());
+          assertTrue(used.get());
+          vertx.undeploy(context.deploymentID(), onSuccess(v -> {
+              testComplete();
+          }));
+        }));
+      }
+    }, new DeploymentOptions().setClassLoader(cl), onSuccess(id -> {
+    }));
+    await();
+  }
+
   private void assertDeployment(int instances, MyVerticle verticle, JsonObject config, AsyncResult<String> ar) {
     assertTrue(ar.succeeded());
     assertEquals(vertx, verticle.getVertx());

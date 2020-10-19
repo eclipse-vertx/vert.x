@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class VerticleManager {
-  
+
   private final VertxInternal vertx;
   private final DeploymentManager deploymentManager;
   private final LoaderManager loaderManager = new LoaderManager();
@@ -145,8 +145,14 @@ public class VerticleManager {
   public Future<Deployment> deployVerticle(String identifier,
                                        DeploymentOptions options) {
     ContextInternal callingContext = vertx.getOrCreateContext();
-    ClassLoaderHolder holder = loaderManager.getClassLoader(options);
-    ClassLoader loader = holder != null ? holder.loader : getCurrentClassLoader();
+    ClassLoaderHolder holder;
+    ClassLoader loader = options.getClassLoader();
+    if (loader == null) {
+      holder = loaderManager.getClassLoader(options);
+      loader = holder != null ? holder.loader : getCurrentClassLoader();
+    } else {
+      holder = null;
+    }
     Future<Deployment> deployment = doDeployVerticle(identifier, options, callingContext, callingContext, loader);
     if (holder != null) {
       deployment.onComplete(ar -> {

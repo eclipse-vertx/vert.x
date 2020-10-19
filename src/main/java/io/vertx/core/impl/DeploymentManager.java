@@ -62,7 +62,13 @@ public class DeploymentManager {
     }
     options.checkIsolationNotDefined();
     ContextInternal currentContext = vertx.getOrCreateContext();
-    ClassLoader cl = getCurrentClassLoader();
+    ClassLoader cl = options.getClassLoader();
+    if (cl == null) {
+      cl = Thread.currentThread().getContextClassLoader();
+      if (cl == null) {
+        cl = getClass().getClassLoader();
+      }
+    }
     return doDeploy(options, v -> "java:" + v.getClass().getName(), currentContext, currentContext, cl, verticleSupplier)
       .map(Deployment::deploymentID);
   }
@@ -114,14 +120,6 @@ public class DeploymentManager {
     } else {
       return vertx.getOrCreateContext().succeededFuture();
     }
-  }
-
-  private ClassLoader getCurrentClassLoader() {
-    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-    if (cl == null) {
-      cl = getClass().getClassLoader();
-    }
-    return cl;
   }
 
   private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> completionHandler) {

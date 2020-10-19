@@ -16,6 +16,7 @@ import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -385,4 +386,28 @@ public class VerticleFactoryTest extends VertxTestBase {
 
     }
   }
-}
+
+  @Test
+  public void testClassLoader() {
+    ClassLoader loader = new ClassLoader(Thread.currentThread().getContextClassLoader()) {
+    };
+    AtomicReference<ClassLoader> createClassLoader = new AtomicReference<>();
+    VerticleFactory factory = new VerticleFactory() {
+      @Override
+      public String prefix() {
+        return "test";
+      }
+      @Override
+      public void createVerticle(String verticleName, ClassLoader classLoader, Promise<Callable<Verticle>> promise) {
+        createClassLoader.set(classLoader);
+        promise.complete(() -> new AbstractVerticle() {
+        });
+      }
+    };
+    vertx.registerVerticleFactory(factory);
+    vertx.deployVerticle("test:foo", new DeploymentOptions().setClassLoader(loader), onSuccess(id -> {
+      assertSame(loader, createClassLoader.get());
+      testComplete();
+    }));
+    await();
+  }}
