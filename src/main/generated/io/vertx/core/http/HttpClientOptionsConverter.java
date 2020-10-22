@@ -2,9 +2,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.impl.JsonUtil;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
+import io.vertx.core.tracing.TracingPolicy;
 
 /**
  * Converter and mapper for {@link io.vertx.core.http.HttpClientOptions}.
@@ -151,6 +149,11 @@ public class HttpClientOptionsConverter {
             obj.setSendUnmaskedFrames((Boolean)member.getValue());
           }
           break;
+        case "tracingPolicy":
+          if (member.getValue() instanceof String) {
+            obj.setTracingPolicy(TracingPolicy.valueOf((String)member.getValue()));
+          }
+          break;
         case "tryUseCompression":
           if (member.getValue() instanceof Boolean) {
             obj.setTryUseCompression((Boolean)member.getValue());
@@ -238,6 +241,9 @@ public class HttpClientOptionsConverter {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
+    if (obj.getTracingPolicy() != null) {
+      json.put("tracingPolicy", obj.getTracingPolicy().name());
+    }
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("tryUsePerMessageWebSocketCompression", obj.getTryUsePerMessageWebSocketCompression());
     json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());

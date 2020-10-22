@@ -22,7 +22,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
@@ -98,7 +97,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   private Http2ServerRequestImpl createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, context.duplicate(), serverOrigin, headers, contentEncoding, streamEnded);
+    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, options.getTracingPolicy(), context.duplicate(), serverOrigin, headers, contentEncoding, streamEnded);
     request.isConnect = request.method() == HttpMethod.CONNECT;
     request.init(stream);
     return request;

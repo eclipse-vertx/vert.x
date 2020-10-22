@@ -11,6 +11,7 @@
 package io.vertx.core.spi.tracing;
 
 import io.vertx.core.Context;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -26,13 +27,19 @@ public interface VertxTracer<I, O> {
    * Signal a request has been received and will be processed.
    *
    * @param context the context data attached to the request
+   * @param policy the policy to apply
    * @param request the request object
    * @param operation the request operation
    * @param headers a read-only view of the request headers
    * @param tagExtractor the request tag extractor
    * @return the request trace
    */
-  default <R> I receiveRequest(Context context, R request, String operation, Iterable<Map.Entry<String, String>> headers, TagExtractor<R> tagExtractor) {
+  default <R> I receiveRequest(Context context,
+                               TracingPolicy policy,
+                               R request,
+                               String operation,
+                               Iterable<Map.Entry<String, String>> headers,
+                               TagExtractor<R> tagExtractor) {
     return null;
   }
 
@@ -55,13 +62,14 @@ public interface VertxTracer<I, O> {
    * shall not call {@link #receiveResponse}.
    *
    * @param context the context data attached to the request
+   * @param policy the policy to apply
    * @param request the request object
    * @param operation the request operation
    * @param headers a write only-view of the request headers
    * @param tagExtractor the request tag extractor
    * @return the request trace
    */
-  default <R> O sendRequest(Context context, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
+  default <R> O sendRequest(Context context, TracingPolicy policy, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
     return null;
   }
 

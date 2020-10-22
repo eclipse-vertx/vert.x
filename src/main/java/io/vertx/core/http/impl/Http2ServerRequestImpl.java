@@ -43,6 +43,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
@@ -63,6 +64,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private final String serverOrigin;
   private final MultiMap headersMap;
   private final String scheme;
+  private final TracingPolicy tracingPolicy;
 
   // Accessed on event loop
   private Object trace;
@@ -80,6 +82,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private Handler<StreamPriority> streamPriorityHandler;
 
   Http2ServerRequestImpl(Http2ServerConnection conn,
+                         TracingPolicy tracingPolicy,
                          ContextInternal context,
                          String serverOrigin,
                          Http2Headers headers,
@@ -97,6 +100,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     this.streamEnded = streamEnded;
     this.scheme = scheme;
     this.headersMap = new Http2HeadersAdaptor(headers);
+    this.tracingPolicy = tracingPolicy;
   }
 
   private HttpEventHandler eventHandler(boolean create) {
@@ -112,7 +116,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       List<Map.Entry<String, String>> tags = new ArrayList<>();
       tags.add(new AbstractMap.SimpleEntry<>("http.url", absoluteURI()));
       tags.add(new AbstractMap.SimpleEntry<>("http.method", method.name()));
-      trace = tracer.receiveRequest(context, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, tracingPolicy, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     context.emit(this, handler);
   }
@@ -154,7 +158,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   @Override
   void onClose() {
     VertxTracer tracer = context.tracer();
-    if (tracer != null) {
+    Object trace = this.trace;
+    if (tracer != null && trace != null) {
       Throwable failure;
       synchronized (conn) {
         if (!streamEnded && (!ended || !response.ended())) {

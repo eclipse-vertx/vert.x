@@ -309,7 +309,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         }
       }
       VertxTracer tracer = context.tracer();
-      if (tracer != null) {
+      if (tracer != null && trace != null) {
         VertxException err;
         if (responseEnded && requestEnded) {
           err = null;
@@ -520,7 +520,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers_ = headers::add;
-        trace = tracer.sendRequest(context, head, headers.method().toString(), headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        trace = tracer.sendRequest(context, conn.client.getOptions().getTracingPolicy(), head, headers.method().toString(), headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
 

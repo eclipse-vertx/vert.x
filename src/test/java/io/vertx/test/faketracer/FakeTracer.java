@@ -15,6 +15,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Collections;
 import java.util.List;
@@ -106,7 +107,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   }
 
   @Override
-  public <R> Span receiveRequest(Context context, R request, String operation, Iterable<Map.Entry<String, String>> headers, TagExtractor<R> tagExtractor) {
+  public <R> Span receiveRequest(Context context, TracingPolicy policy, R request, String operation, Iterable<Map.Entry<String, String>> headers, TagExtractor<R> tagExtractor) {
     Span serverSpan = getServerSpan(operation, headers);
     serverSpan.addTag("span_kind", "server");
     addTags(serverSpan, request, tagExtractor);
@@ -123,7 +124,7 @@ public class FakeTracer implements VertxTracer<Span, Span> {
   }
 
   @Override
-  public <R> Span sendRequest(Context context, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
+  public <R> Span sendRequest(Context context, TracingPolicy policy, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
     Span span = activeSpan(context);
     if (span == null) {
       span = newTrace(operation);

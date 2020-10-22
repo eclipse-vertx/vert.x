@@ -2,9 +2,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.impl.JsonUtil;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
+import io.vertx.core.tracing.TracingPolicy;
 
 /**
  * Converter and mapper for {@link io.vertx.core.http.HttpServerOptions}.
@@ -101,6 +99,11 @@ public class HttpServerOptionsConverter {
             obj.setPerMessageWebSocketCompressionSupported((Boolean)member.getValue());
           }
           break;
+        case "tracingPolicy":
+          if (member.getValue() instanceof String) {
+            obj.setTracingPolicy(TracingPolicy.valueOf((String)member.getValue()));
+          }
+          break;
         case "webSocketAllowServerNoContext":
           if (member.getValue() instanceof Boolean) {
             obj.setWebSocketAllowServerNoContext((Boolean)member.getValue());
@@ -157,6 +160,9 @@ public class HttpServerOptionsConverter {
     json.put("maxWebSocketMessageSize", obj.getMaxWebSocketMessageSize());
     json.put("perFrameWebSocketCompressionSupported", obj.getPerFrameWebSocketCompressionSupported());
     json.put("perMessageWebSocketCompressionSupported", obj.getPerMessageWebSocketCompressionSupported());
+    if (obj.getTracingPolicy() != null) {
+      json.put("tracingPolicy", obj.getTracingPolicy().name());
+    }
     json.put("webSocketAllowServerNoContext", obj.getWebSocketAllowServerNoContext());
     json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
     json.put("webSocketPreferredClientNoContext", obj.getWebSocketPreferredClientNoContext());
