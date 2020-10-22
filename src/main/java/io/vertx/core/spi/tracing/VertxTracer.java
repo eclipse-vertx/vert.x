@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 /**
+ * The tracer SPI used by Vert.x components to report activities.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface VertxTracer<I, O> {
@@ -48,6 +50,9 @@ public interface VertxTracer<I, O> {
 
   /**
    * Signal a request is sent.
+   *
+   * <p> When the method returns {@code null}, no propagation happens and the client
+   * shall not call {@link #receiveResponse}.
    *
    * @param context the context data attached to the request
    * @param request the request object
