@@ -30,6 +30,6 @@ public enum TracingPolicy {
   /**
    * Reuse an existing trace or create a new trace when no one exist.
    */
-  REQUIRED
+  ALWAYS
 
 }

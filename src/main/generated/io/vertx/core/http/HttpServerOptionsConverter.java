@@ -2,7 +2,9 @@ package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
-import io.vertx.core.tracing.TracingPolicy;
+import io.vertx.core.json.impl.JsonUtil;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Converter and mapper for {@link io.vertx.core.http.HttpServerOptions}.
@@ -101,7 +103,7 @@ public class HttpServerOptionsConverter {
           break;
         case "tracingPolicy":
           if (member.getValue() instanceof String) {
-            obj.setTracingPolicy(TracingPolicy.valueOf((String)member.getValue()));
+            obj.setTracingPolicy(io.vertx.core.tracing.TracingPolicy.valueOf((String)member.getValue()));
           }
           break;
         case "webSocketAllowServerNoContext":
