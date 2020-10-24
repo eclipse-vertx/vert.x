@@ -134,7 +134,7 @@ public class HttpServerOptions extends NetServerOptions {
   /**
    * Default tracing control = {@link TracingPolicy#PROPAGATE}
    */
-  public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.PROPAGATE;
+  public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.ALWAYS;
 
   private boolean compressionSupported;
   private int compressionLevel;
