@@ -36,6 +36,7 @@ import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
@@ -72,6 +73,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private final String serverOrigin;
   private final SSLHelper sslHelper;
+  private final TracingPolicy tracingPolicy;
   private boolean requestFailed;
 
   private Http1xServerRequest requestInProgress;
@@ -96,6 +98,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     this.sslHelper = sslHelper;
     this.metrics = metrics;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
+    this.tracingPolicy = options.getTracingPolicy();
   }
 
   @Override
@@ -156,7 +159,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      request.trace = tracer.receiveRequest(request.context, request, request.method().name(), request.headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      request.trace = tracer.receiveRequest(request.context, tracingPolicy, request, request.method().name(), request.headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
   }
 
@@ -252,8 +255,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
     }
     VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      tracer.sendResponse(request.context, request.response(), request.trace(), null, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
+    Object trace = request.trace();
+    if (tracer != null && trace != null) {
+      tracer.sendResponse(request.context, request.response(), trace, null, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
   }
 

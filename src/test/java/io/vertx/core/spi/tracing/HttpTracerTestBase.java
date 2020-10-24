@@ -16,6 +16,7 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
+import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -32,16 +33,16 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
   protected VertxTracer getTracer() {
     return tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
-        return tracer.receiveRequest(context, request, operation, headers, tagExtractor);
+      public Object receiveRequest(Context context, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
+        return tracer.receiveRequest(context, policy, request, operation, headers, tagExtractor);
       }
       @Override
       public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         tracer.sendResponse(context, response, payload, failure, tagExtractor);
       }
       @Override
-      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
-        return tracer.sendRequest(context, request, operation, headers, tagExtractor);
+      public Object sendRequest(Context context, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
+        return tracer.sendRequest(context, policy, request, operation, headers, tagExtractor);
       }
       @Override
       public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
@@ -57,7 +58,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
+      public Object receiveRequest(Context context, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
         assertNull(context.getLocal(key));
         context.putLocal(key, val);
         assertTrue(seq.compareAndSet(0, 1));
@@ -103,7 +104,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
+      public Object receiveRequest(Context context, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
         assertNull(context.getLocal(key));
         context.putLocal(key, val);
         assertTrue(seq.compareAndSet(0, 1));
@@ -154,7 +155,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
+      public Object sendRequest(Context context, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("header-key","header-value");
@@ -207,7 +208,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
+      public Object sendRequest(Context context, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("header-key","header-value");

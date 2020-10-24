@@ -151,6 +151,11 @@ public class HttpClientOptionsConverter {
             obj.setSendUnmaskedFrames((Boolean)member.getValue());
           }
           break;
+        case "tracingPolicy":
+          if (member.getValue() instanceof String) {
+            obj.setTracingPolicy(io.vertx.core.tracing.TracingPolicy.valueOf((String)member.getValue()));
+          }
+          break;
         case "tryUseCompression":
           if (member.getValue() instanceof Boolean) {
             obj.setTryUseCompression((Boolean)member.getValue());
@@ -238,6 +243,9 @@ public class HttpClientOptionsConverter {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
+    if (obj.getTracingPolicy() != null) {
+      json.put("tracingPolicy", obj.getTracingPolicy().name());
+    }
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("tryUsePerMessageWebSocketCompression", obj.getTryUsePerMessageWebSocketCompression());
     json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());

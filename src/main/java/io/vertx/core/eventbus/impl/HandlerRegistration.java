@@ -22,6 +22,7 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Iterator;
 
@@ -155,10 +156,11 @@ public abstract class HandlerRegistration<T> implements Closeable {
           bus.metrics.messageDelivered(m, message.isLocal());
         }
         if (tracer != null && !src) {
-          message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
+          message.trace = tracer.receiveRequest(context, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
           HandlerRegistration.this.dispatch(message, context, handler);
-          if (message.replyAddress == null) {
-            tracer.sendResponse(context, null, message.trace, null, TagExtractor.empty());
+          Object trace = message.trace;
+          if (message.replyAddress == null && trace != null) {
+            tracer.sendResponse(context, null, trace, null, TagExtractor.empty());
           }
         } else {
           HandlerRegistration.this.dispatch(message, context, handler);
