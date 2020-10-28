@@ -44,6 +44,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -188,7 +189,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         tags.add(new AbstractMap.SimpleEntry<>("http.url", "todo"));
         tags.add(new AbstractMap.SimpleEntry<>("http.method", request.method.name()));
         BiConsumer<String, String> headers = (key, val) -> nettyRequest.headers().add(key, val);
-        stream.trace = tracer.sendRequest(stream.context, options.getTracingPolicy(), request, request.method.name(), headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, request.method.name(), headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
     writeToChannel(nettyRequest, handler == null ? null : context.promise(handler));

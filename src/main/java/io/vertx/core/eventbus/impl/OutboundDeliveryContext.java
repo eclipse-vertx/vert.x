@@ -20,6 +20,7 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
@@ -117,7 +118,7 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
         if (message.trace == null) {
           src = true;
           BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
-          message.trace = tracer.sendRequest(ctx, TracingPolicy.PROPAGATE, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
+          message.trace = tracer.sendRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
         } else {
           // Handle failure here
           tracer.sendResponse(ctx, null, message.trace, null, TagExtractor.empty());

@@ -29,6 +29,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
+import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.*;
@@ -520,7 +521,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers_ = headers::add;
-        trace = tracer.sendRequest(context, conn.client.getOptions().getTracingPolicy(), head, headers.method().toString(), headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        trace = tracer.sendRequest(context, SpanKind.RPC, conn.client.getOptions().getTracingPolicy(), head, headers.method().toString(), headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
 

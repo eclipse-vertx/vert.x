@@ -27,6 +27,7 @@ public interface VertxTracer<I, O> {
    * Signal a request has been received and will be processed.
    *
    * @param context the context data attached to the request
+   * @param kind the span kind
    * @param policy the policy to apply
    * @param request the request object
    * @param operation the request operation
@@ -35,6 +36,7 @@ public interface VertxTracer<I, O> {
    * @return the request trace
    */
   default <R> I receiveRequest(Context context,
+                               SpanKind kind,
                                TracingPolicy policy,
                                R request,
                                String operation,
@@ -52,7 +54,11 @@ public interface VertxTracer<I, O> {
    * @param failure the failure when not {@code null}
    * @param tagExtractor the response tag extractor
    */
-  default <R> void sendResponse(Context context, R response, I payload, Throwable failure, TagExtractor<R> tagExtractor) {
+  default <R> void sendResponse(Context context,
+                                R response,
+                                I payload,
+                                Throwable failure,
+                                TagExtractor<R> tagExtractor) {
   }
 
   /**
@@ -62,6 +68,7 @@ public interface VertxTracer<I, O> {
    * shall not call {@link #receiveResponse}.
    *
    * @param context the context data attached to the request
+   * @param kind the span kind
    * @param policy the policy to apply
    * @param request the request object
    * @param operation the request operation
@@ -69,7 +76,13 @@ public interface VertxTracer<I, O> {
    * @param tagExtractor the request tag extractor
    * @return the request trace
    */
-  default <R> O sendRequest(Context context, TracingPolicy policy, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
+  default <R> O sendRequest(Context context,
+                            SpanKind kind,
+                            TracingPolicy policy,
+                            R request,
+                            String operation,
+                            BiConsumer<String, String> headers,
+                            TagExtractor<R> tagExtractor) {
     return null;
   }
 
@@ -82,7 +95,11 @@ public interface VertxTracer<I, O> {
    * @param failure the failure when not {@code null}
    * @param tagExtractor the response tag extractor
    */
-  default <R> void receiveResponse(Context context, R response, O payload, Throwable failure, TagExtractor<R> tagExtractor) {
+  default <R> void receiveResponse(Context context,
+                                   R response,
+                                   O payload,
+                                   Throwable failure,
+                                   TagExtractor<R> tagExtractor) {
   }
 
   /**

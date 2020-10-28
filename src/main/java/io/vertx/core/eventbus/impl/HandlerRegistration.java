@@ -20,6 +20,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
@@ -156,7 +157,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
           bus.metrics.messageDelivered(m, message.isLocal());
         }
         if (tracer != null && !src) {
-          message.trace = tracer.receiveRequest(context, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
+          message.trace = tracer.receiveRequest(context, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
           HandlerRegistration.this.dispatch(message, context, handler);
           Object trace = message.trace;
           if (message.replyAddress == null && trace != null) {
