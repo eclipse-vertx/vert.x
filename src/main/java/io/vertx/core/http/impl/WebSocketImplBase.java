@@ -80,7 +80,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Handler<Void> endHandler;
   protected final Http1xConnectionBase conn;
   private boolean writable;
-  protected boolean closed;
+  private boolean closed;
   private Short closeStatusCode;
   private String closeReason;
   private MultiMap headers;
