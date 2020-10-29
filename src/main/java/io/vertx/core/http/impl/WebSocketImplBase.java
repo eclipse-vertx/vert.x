@@ -433,16 +433,14 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void checkClosed() {
-    synchronized (conn) {
-      if (closed || closeStatusCode != null) {
-        throw new IllegalStateException("WebSocket is closed");
-      }
+    if (isClosed()) {
+      throw new IllegalStateException("WebSocket is closed");
     }
   }
 
   public boolean isClosed() {
     synchronized (conn) {
-      return closed;
+      return closed || closeStatusCode != null;
     }
   }
 
