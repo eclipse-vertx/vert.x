@@ -37,6 +37,7 @@ import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -84,7 +85,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private Short closeStatusCode;
   private String closeReason;
   private MultiMap headers;
-  private boolean closeFrameSent;
 
   WebSocketImplBase(ContextInternal context, Http1xConnectionBase conn, boolean supportsContinuation,
                               int maxWebSocketFrameSize, int maxWebSocketMessageSize) {
@@ -171,18 +171,23 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> close(short statusCode, String reason) {
+    boolean sendCloseFrame;
     synchronized (conn) {
-      if (closed) {
-        return context.succeededFuture();
+      if (sendCloseFrame = closeStatusCode == null) {
+        closeStatusCode = statusCode;
+        closeReason = reason;
       }
-      closed = true;
-      closeFrameSent = true;
     }
-    // Close the WebSocket by sending a close frame with specified payload
-    ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
-    CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
-    conn.writeToChannel(frame);
-    return conn.closeFuture();
+    if (sendCloseFrame) {
+      // Close the WebSocket by sending a close frame with specified payload
+      ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
+      CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
+      PromiseInternal<Void> promise = context.promise();
+      conn.writeToChannel(frame, promise);
+      return promise;
+    } else {
+      return context.succeededFuture();
+    }
   }
 
   @Override
@@ -429,7 +434,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   void checkClosed() {
     synchronized (conn) {
-      if (closed) {
+      if (closed || closeStatusCode != null) {
         throw new IllegalStateException("WebSocket is closed");
       }
     }
@@ -477,13 +482,23 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         }
         break;
       case CLOSE:
-        boolean echo;
+        CloseWebSocketFrame echoFrame;
         synchronized (conn) {
+          if (closeStatusCode == null) {
+            echoFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
+          } else {
+            echoFrame = null;
+          }
           closeStatusCode = frame.closeStatusCode();
           closeReason = frame.closeReason();
-          echo = !closeFrameSent;
         }
-        handleCloseFrame(echo, frame.closeStatusCode(), frame.closeReason());
+        if (echoFrame != null) {
+          ChannelPromise fut = conn.channelFuture();
+          conn.writeToChannel(echoFrame, fut);
+          fut.addListener(v -> closeConnection());
+        } else {
+          closeConnection();
+        }
         break;
     }
     if (!pending.write(frame)) {
@@ -517,19 +532,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  protected void handleCloseFrame(boolean echo, short statusCode, String reason) {
-    if (echo) {
-      ChannelPromise fut = conn.channelFuture();
-      conn.writeToChannel(new CloseWebSocketFrame(statusCode, reason), fut);
-      fut.addListener(v -> {
-        doClose();
-      });
-    } else {
-      doClose();
-    }
-  }
-
-  protected abstract void doClose();
+  protected abstract void closeConnection();
 
   private class FrameAggregator implements Handler<WebSocketFrameInternal> {
     private Handler<String> textMessageHandler;
@@ -678,7 +681,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     context.dispatch(t, handler);
   }
 
-  void handleClosed() {
+  void handleConnectionClosed() {
     MessageConsumer<?> binaryConsumer;
     MessageConsumer<?> textConsumer;
     Handler<Void> closeHandler;
@@ -688,7 +691,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       exceptionHandler = closeStatusCode == null ? this.exceptionHandler : null;
       binaryConsumer = this.binaryHandlerRegistration;
       textConsumer = this.textHandlerRegistration;
-      closed = true;
+      this.closed = true;
       this.binaryHandlerRegistration = null;
       this.textHandlerRegistration = null;
       this.closeHandler = null;

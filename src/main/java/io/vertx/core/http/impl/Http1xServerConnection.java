@@ -455,7 +455,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       });
     }
     if (ws != null) {
-      ws.context.execute(v -> ws.handleClosed());
+      ws.context.execute(v -> ws.handleConnectionClosed());
     }
     super.handleClosed();
   }

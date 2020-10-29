@@ -40,7 +40,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   }
 
   @Override
-  void handleClosed() {
+  void handleConnectionClosed() {
     // THAT SHOULD BE CALLED ON EVENT LOOP
     synchronized (conn) {
       if (timerID != -1L) {
@@ -51,11 +51,11 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
         metrics.disconnected(getMetric());
       }
     }
-    super.handleClosed();
+    super.handleConnectionClosed();
   }
 
   @Override
-  protected void doClose() {
+  protected void closeConnection() {
     if (closingTimeoutMS > 0L) {
       synchronized (conn) {
         timerID = context.owner().setTimer(closingTimeoutMS, id -> {

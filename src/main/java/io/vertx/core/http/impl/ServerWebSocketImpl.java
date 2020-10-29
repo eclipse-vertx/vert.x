@@ -252,7 +252,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  protected void doClose() {
+  protected void closeConnection() {
     conn.channelHandlerContext().close();
   }
 }

@@ -921,7 +921,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       streams = pendingStreams();
     }
     if (ws != null) {
-      ws.handleClosed();
+      ws.handleConnectionClosed();
     }
     for (Stream stream : streams) {
       if (metrics != null) {
