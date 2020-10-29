@@ -468,6 +468,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   void handleFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
     WebSocketFrameInternal frame = decodeFrame(msg);
+    if (!pending.write(frame)) {
+      conn.doPause();
+    }
     switch (frame.type()) {
       case PING:
         // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
@@ -480,27 +483,55 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         }
         break;
       case CLOSE:
-        CloseWebSocketFrame echoFrame;
-        synchronized (conn) {
-          if (closeStatusCode == null) {
-            echoFrame = new CloseWebSocketFrame(frame.closeStatusCode(), frame.closeReason());
-          } else {
-            echoFrame = null;
-          }
-          closeStatusCode = frame.closeStatusCode();
-          closeReason = frame.closeReason();
-        }
-        if (echoFrame != null) {
-          ChannelPromise fut = conn.channelFuture();
-          conn.writeToChannel(echoFrame, fut);
-          fut.addListener(v -> closeConnection());
-        } else {
-          closeConnection();
-        }
+        handleCloseFrame((CloseWebSocketFrame) msg);
         break;
     }
-    if (!pending.write(frame)) {
-      conn.doPause();
+  }
+
+  private void handleCloseFrame(CloseWebSocketFrame closeFrame) {
+    boolean echo;
+    synchronized (conn) {
+      echo = closeStatusCode == null;
+      closed = true;
+      closeStatusCode = (short)closeFrame.statusCode();
+      closeReason = closeFrame.reasonText();
+    }
+    handleClose(true);
+    if (echo) {
+      ChannelPromise fut = conn.channelFuture();
+      conn.writeToChannel(closeFrame.retainedDuplicate(), fut);
+      fut.addListener(v -> closeConnection());
+    } else {
+      closeConnection();
+    }
+  }
+
+  private void handleClose(boolean graceful) {
+    MessageConsumer<?> binaryConsumer;
+    MessageConsumer<?> textConsumer;
+    Handler<Void> closeHandler;
+    Handler<Throwable> exceptionHandler;
+    synchronized (conn) {
+      closeHandler = this.closeHandler;
+      exceptionHandler = this.exceptionHandler;
+      binaryConsumer = this.binaryHandlerRegistration;
+      textConsumer = this.textHandlerRegistration;
+      this.binaryHandlerRegistration = null;
+      this.textHandlerRegistration = null;
+      this.closeHandler = null;
+      this.exceptionHandler = null;
+    }
+    if (binaryConsumer != null) {
+      binaryConsumer.unregister();
+    }
+    if (textConsumer != null) {
+      textConsumer.unregister();
+    }
+    if (exceptionHandler != null && !graceful) {
+      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+    }
+    if (closeHandler != null) {
+      context.dispatch(null, closeHandler);
     }
   }
 
@@ -680,33 +711,13 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void handleConnectionClosed() {
-    MessageConsumer<?> binaryConsumer;
-    MessageConsumer<?> textConsumer;
-    Handler<Void> closeHandler;
-    Handler<Throwable> exceptionHandler;
     synchronized (conn) {
-      closeHandler = this.closeHandler;
-      exceptionHandler = closeStatusCode == null ? this.exceptionHandler : null;
-      binaryConsumer = this.binaryHandlerRegistration;
-      textConsumer = this.textHandlerRegistration;
-      this.closed = true;
-      this.binaryHandlerRegistration = null;
-      this.textHandlerRegistration = null;
-      this.closeHandler = null;
-      this.exceptionHandler = null;
+      if (closed) {
+        return;
+      }
+      closed = true;
     }
-    if (binaryConsumer != null) {
-      binaryConsumer.unregister();
-    }
-    if (textConsumer != null) {
-      textConsumer.unregister();
-    }
-    if (exceptionHandler != null) {
-      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
-    }
-    if (closeHandler != null) {
-      context.dispatch(null, closeHandler);
-    }
+    handleClose(false);
   }
 
   synchronized void setMetric(Object metric) {
