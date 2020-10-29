@@ -804,16 +804,14 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       if (subProtocols != null) {
         subp = String.join(",", subProtocols);
       }
-      WebSocketClientHandshaker handshaker = WebSocketClientHandshakerFactory.newHandshaker(
+      WebSocketClientHandshaker handshaker = WebSocketHandshakeInboundHandler.newHandshaker(
         wsuri,
         version,
         subp,
         !extensionHandshakers.isEmpty(),
         nettyHeaders,
         maxWebSocketFrameSize,
-        !options.isSendUnmaskedFrames(),
-        false,
-        -1);
+        !options.isSendUnmaskedFrames());
 
       WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, ar -> {
         AsyncResult<WebSocket> wsRes = ar.map(v -> {

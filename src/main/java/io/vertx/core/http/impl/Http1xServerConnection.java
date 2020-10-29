@@ -326,11 +326,13 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     if (options.getWebSocketSubProtocols() != null) {
       subProtocols = String.join(",", options.getWebSocketSubProtocols());
     }
-    WebSocketServerHandshakerFactory factory =
-      new WebSocketServerHandshakerFactory(wsURL,
-        subProtocols,
-        options.getPerMessageWebSocketCompressionSupported() || options.getPerFrameWebSocketCompressionSupported(),
-        options.getMaxWebSocketFrameSize(), options.isAcceptUnmaskedFrames());
+    WebSocketDecoderConfig config = WebSocketDecoderConfig.newBuilder()
+      .allowExtensions(options.getPerMessageWebSocketCompressionSupported() || options.getPerFrameWebSocketCompressionSupported())
+      .maxFramePayloadLength(options.getMaxWebSocketFrameSize())
+      .allowMaskMismatch(options.isAcceptUnmaskedFrames())
+      .closeOnProtocolViolation(false)
+      .build();
+    WebSocketServerHandshakerFactory factory = new WebSocketServerHandshakerFactory(wsURL, subProtocols, config);
     WebSocketServerHandshaker shake = factory.newHandshaker(request.nettyRequest());
     if (shake != null) {
       return shake;
