@@ -178,7 +178,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       closed = true;
       closeFrameSent = true;
     }
-    unregisterHandlers();
     // Close the WebSocket by sending a close frame with specified payload
     ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
     CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
@@ -680,41 +679,32 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   void handleClosed() {
-    unregisterHandlers();
+    MessageConsumer<?> binaryConsumer;
+    MessageConsumer<?> textConsumer;
     Handler<Void> closeHandler;
     Handler<Throwable> exceptionHandler;
     synchronized (conn) {
       closeHandler = this.closeHandler;
       exceptionHandler = closeStatusCode == null ? this.exceptionHandler : null;
-      closed = true;
-      binaryHandlerRegistration = null;
-      textHandlerRegistration = null;
-    }
-    if (exceptionHandler != null) {
-      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
-    }
-    if (closeHandler != null) {
-      context.dispatch(null, closeHandler);
-    }
-  }
-
-  /**
-   * Unregister handlers if they when they are present
-   */
-  private void unregisterHandlers() {
-    MessageConsumer binaryConsumer;
-    MessageConsumer textConsumer;
-    synchronized (conn) {
       binaryConsumer = this.binaryHandlerRegistration;
       textConsumer = this.textHandlerRegistration;
-      binaryHandlerRegistration = null;
-      textHandlerRegistration = null;
+      closed = true;
+      this.binaryHandlerRegistration = null;
+      this.textHandlerRegistration = null;
+      this.closeHandler = null;
+      this.exceptionHandler = null;
     }
     if (binaryConsumer != null) {
       binaryConsumer.unregister();
     }
     if (textConsumer != null) {
       textConsumer.unregister();
+    }
+    if (exceptionHandler != null) {
+      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+    }
+    if (closeHandler != null) {
+      context.dispatch(null, closeHandler);
     }
   }
 
