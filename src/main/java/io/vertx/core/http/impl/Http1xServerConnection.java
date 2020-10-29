@@ -439,10 +439,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       ws = this.webSocket;
       requestInProgress = this.requestInProgress;
       responseInProgress = this.responseInProgress;
-      if (METRICS_ENABLED && metrics != null && ws != null) {
-        metrics.disconnected(ws.getMetric());
-        ws.setMetric(null);
-      }
     }
     if (requestInProgress != null) {
       requestInProgress.context.execute(v -> {

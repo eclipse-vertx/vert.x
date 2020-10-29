@@ -506,7 +506,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  private void handleClose(boolean graceful) {
+  protected void handleClose(boolean graceful) {
     MessageConsumer<?> binaryConsumer;
     MessageConsumer<?> textConsumer;
     Handler<Void> closeHandler;

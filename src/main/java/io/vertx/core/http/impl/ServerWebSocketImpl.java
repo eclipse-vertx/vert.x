@@ -28,6 +28,7 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -38,6 +39,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 import static io.vertx.core.http.impl.HttpUtils.SC_BAD_GATEWAY;
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -254,5 +256,15 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   @Override
   protected void closeConnection() {
     conn.channelHandlerContext().close();
+  }
+
+  @Override
+  protected void handleClose(boolean graceful) {
+    HttpServerMetrics metrics = conn.metrics;
+    if (METRICS_ENABLED && metrics != null) {
+      metrics.disconnected(getMetric());
+      setMetric(null);
+    }
+    super.handleClose(graceful);
   }
 }

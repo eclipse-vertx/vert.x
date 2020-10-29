@@ -15,6 +15,8 @@ import io.vertx.core.http.WebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
+
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
  *
@@ -26,6 +28,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  */
 public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
 
+  private final Http1xClientConnection conn;
   private long timerID = -1L;
   private final long closingTimeoutMS;
 
@@ -36,6 +39,7 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
                        int maxWebSocketFrameSize,
                        int maxWebSocketMessageSize) {
     super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
+    this.conn = conn;
     this.closingTimeoutMS = closingTimeout > 0 ? closingTimeout * 1000L : 0L;
   }
 
@@ -45,10 +49,6 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
     synchronized (conn) {
       if (timerID != -1L) {
         context.owner().cancelTimer(timerID);
-      }
-      HttpClientMetrics metrics = (HttpClientMetrics)conn.metrics();
-      if (metrics != null) {
-        metrics.disconnected(getMetric());
       }
     }
     super.handleConnectionClosed();
@@ -66,5 +66,15 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
         });
       }
     }
+  }
+
+  @Override
+  protected void handleClose(boolean graceful) {
+    HttpClientMetrics metrics = conn.metrics();
+    if (METRICS_ENABLED && metrics != null) {
+      metrics.disconnected(getMetric());
+      setMetric(null);
+    }
+    super.handleClose(graceful);
   }
 }
