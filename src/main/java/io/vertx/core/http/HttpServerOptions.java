@@ -132,7 +132,7 @@ public class HttpServerOptions extends NetServerOptions {
   public static final boolean DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT = false;
 
   /**
-   * Default tracing control = {@link TracingPolicy#PROPAGATE}
+   * Default tracing control = {@link TracingPolicy#ALWAYS}
    */
   public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.ALWAYS;
 
