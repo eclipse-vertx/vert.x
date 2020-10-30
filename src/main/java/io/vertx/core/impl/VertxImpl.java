@@ -86,8 +86,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
 
   static {
-    // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
-    ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
+    // Disable Netty's resource leak detection to reduce the performance overhead if not set by user
+    if (System.getProperty("io.netty.leakDetection.level") != null ||
+        System.getProperty("io.netty.leakDetectionLevel") != null) {
+      ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
+    }
+
     // Use the JDK deflater/inflater by default
     System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
