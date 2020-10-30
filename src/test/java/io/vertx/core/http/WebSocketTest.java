@@ -65,6 +65,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_HOST;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_PORT;
@@ -2364,58 +2367,37 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testServerWebSocketPingExceeds125Bytes() {
-    testServerWebSocketPingPongCheck(255, ws -> {
-      try {
-        ws.writePing(Buffer.buffer(randomAlphaString(126)));
-        fail();
-      } catch(Throwable expected) {
-        assertEquals("Ping cannot exceed maxWebSocketFrameSize or 125 bytes", expected.getMessage());
-      }
-    });
+    testServerWebSocketPingPongCheck(255, ws -> ws.writePing(Buffer.buffer(randomAlphaString(126))));
   }
 
   @Test
   public void testServerWebSocketPongExceeds125Bytes() {
-    testServerWebSocketPingPongCheck(255, ws -> {
-      try {
-        ws.writePong(Buffer.buffer(randomAlphaString(126)));
-        fail();
-      } catch(Throwable expected) {
-        assertEquals("Pong cannot exceed maxWebSocketFrameSize or 125 bytes", expected.getMessage());
-      }
-    });
+    testServerWebSocketPingPongCheck(255, ws -> ws.writePong(Buffer.buffer(randomAlphaString(126))));
   }
 
   @Test
   public void testServerWebSocketPingExceedsMaxFrameSize() {
-    testServerWebSocketPingPongCheck(100, ws -> {
-      try {
-        ws.writePing(Buffer.buffer(randomAlphaString(101)));
-        fail();
-      } catch(Throwable expected) {
-        assertEquals("Ping cannot exceed maxWebSocketFrameSize or 125 bytes", expected.getMessage());
-      }
-    });
+    testServerWebSocketPingPongCheck(100, ws -> ws.writePing(Buffer.buffer(randomAlphaString(101))));
   }
 
   @Test
   public void testServerWebSocketPongExceedsMaxFrameSize() {
-    testServerWebSocketPingPongCheck(100, ws -> {
-      try {
-        ws.writePong(Buffer.buffer(randomAlphaString(101)));
-        fail();
-      } catch(Throwable expected) {
-        assertEquals("Pong cannot exceed maxWebSocketFrameSize or 125 bytes", expected.getMessage());
-      }
-    });
+    testServerWebSocketPingPongCheck(100, ws -> ws.writePong(Buffer.buffer(randomAlphaString(101))));
   }
 
-  private void testServerWebSocketPingPongCheck(int maxFrameSize, Consumer<ServerWebSocket> check) {
+  private void testServerWebSocketPingPongCheck(int maxFrameSize, Function<ServerWebSocket, Future<Void>> check) {
+    Pattern pattern = Pattern.compile("^P[io]ng cannot exceed maxWebSocketFrameSize or 125 bytes$");
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
     server.webSocketHandler(ws -> {
       ws.pongHandler(buff -> fail());
-      check.accept(ws);
-      ws.close();
+      check.apply(ws).onComplete(onFailure(err -> {
+        Matcher matcher = pattern.matcher(err.getMessage());
+        if (matcher.matches()) {
+          ws.close();
+        } else {
+          fail("Unexpected error message" + err.getMessage());
+        }
+      }));
     }).listen(onSuccess(v -> {
       client = vertx.createHttpClient();
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {

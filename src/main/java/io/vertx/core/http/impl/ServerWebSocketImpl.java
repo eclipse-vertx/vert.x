@@ -155,7 +155,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public ServerWebSocketImpl writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
+  public Future<Void> writeFrame(WebSocketFrame frame) {
     synchronized (conn) {
       Boolean check = checkAccept();
       if (check == null) {
@@ -164,7 +164,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       if (!check) {
         throw new IllegalStateException("Cannot write to WebSocket, it has been rejected");
       }
-      return super.writeFrame(frame, handler);
+      return super.writeFrame(frame);
     }
   }
 
