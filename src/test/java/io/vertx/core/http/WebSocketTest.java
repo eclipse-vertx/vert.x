@@ -1888,6 +1888,23 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testWriteOnEnd() {
+    String path = "/some/path";
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).webSocketHandler(WebSocketBase::close);
+    server.listen(onSuccess(v -> {
+      client = vertx.createHttpClient();
+      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, path, onSuccess(ws -> {
+        ws.endHandler(v2 -> {
+          ws.write(Buffer.buffer("test"), onFailure(err -> {
+            testComplete();
+          }));
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testReceiveHttpResponseHeadersOnClient() {
     server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT)).requestHandler(req -> {
       handshakeWithCookie(req);
@@ -2954,7 +2971,7 @@ public class WebSocketTest extends VertxTestBase {
               closeFrameReceived.set(true);
             }
           });
-          ws.closeHandler(v -> {
+          ws.endHandler(v -> {
             assertTrue(closeFrameReceived.get());
             testComplete();
           });
@@ -2974,7 +2991,7 @@ public class WebSocketTest extends VertxTestBase {
             closeFrameReceived.set(true);
           }
         });
-        ws.closeHandler(v -> {
+        ws.endHandler(v -> {
           assertTrue(closeFrameReceived.get());
           testComplete();
         });

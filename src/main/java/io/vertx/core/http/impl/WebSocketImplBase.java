@@ -470,9 +470,6 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   void handleFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
     WebSocketFrameInternal frame = decodeFrame(msg);
-    if (!pending.write(frame)) {
-      conn.doPause();
-    }
     switch (frame.type()) {
       case PING:
         // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
@@ -487,6 +484,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       case CLOSE:
         handleCloseFrame((CloseWebSocketFrame) msg);
         break;
+    }
+    if (!pending.write(frame)) {
+      conn.doPause();
     }
   }
 
