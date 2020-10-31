@@ -13,6 +13,7 @@ package io.vertx.core.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.file.impl.FileResolver;
+import io.vertx.core.impl.context.ContextManagerImpl;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxTracerFactory;
@@ -21,6 +22,7 @@ import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.spi.context.ContextManager;
 
 import java.util.Collection;
 import java.util.Objects;
@@ -75,13 +77,13 @@ public class VertxFactory {
   }
 
   public Vertx vertx() {
-    VertxImpl vertx = new VertxImpl(options, null, null, createMetrics(), createTracer(), createTransport(), createFileResolver());
+    VertxImpl vertx = new VertxImpl(options, null, null, createMetrics(), createTracer(), createTransport(), createFileResolver(), createContextManager());
     vertx.init();
     return vertx;
   }
 
   public void clusteredVertx(Handler<AsyncResult<Vertx>> handler) {
-    VertxImpl vertx = new VertxImpl(options, createClusterManager(), createNodeSelector(), createMetrics(), createTracer(), createTransport(), createFileResolver());
+    VertxImpl vertx = new VertxImpl(options, createClusterManager(), createNodeSelector(), createMetrics(), createTracer(), createTransport(), createFileResolver(), createContextManager());
     vertx.initClustered(options, handler);
   }
 
@@ -157,6 +159,14 @@ public class VertxFactory {
       }
     }
     return tracer;
+  }
+
+  private ContextManager createContextManager() {
+    ContextManager contextManager = ServiceHelper.loadFactoryOrNull(ContextManager.class);
+    if (contextManager == null) {
+      contextManager = new ContextManagerImpl();
+    }
+    return contextManager;
   }
 
   private FileResolver createFileResolver() {

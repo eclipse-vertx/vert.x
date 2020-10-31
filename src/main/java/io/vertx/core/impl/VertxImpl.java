@@ -63,10 +63,10 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.spi.context.ContextManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -125,9 +125,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final CloseHooks closeHooks;
   private final Transport transport;
   private final VertxTracer tracer;
-  private final ThreadLocal<WeakReference<AbstractContext>> stickyContext = new ThreadLocal<>();
+  private final ContextManager contextManager;
 
-  VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver) {
+  VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, ContextManager contextManager) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -165,6 +165,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
     this.tracer = tracer;
     this.clusterManager = clusterManager;
+    this.contextManager = contextManager;
     this.nodeSelector = nodeSelector;
     this.eventBus = clusterManager != null ? new ClusteredEventBus(this, options, clusterManager, nodeSelector) : new EventBusImpl(this);
     this.sharedData = new SharedDataImpl(this, clusterManager);
@@ -403,11 +404,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public ContextInternal getOrCreateContext() {
-    AbstractContext ctx = getContext();
+    ContextInternal ctx = (ContextInternal) contextManager.getContext(this);
     if (ctx == null) {
       // We are running embedded - Create a context
       ctx = createEventLoopContext();
-      stickyContext.set(new WeakReference<>(ctx));
+      contextManager.setContext(ctx);
     }
     return ctx;
   }
@@ -515,13 +516,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public AbstractContext getContext() {
-    AbstractContext context = (AbstractContext) ContextInternal.current();
-    if (context != null && context.owner() == this) {
-      return context;
-    } else {
-      WeakReference<AbstractContext> ref = stickyContext.get();
-      return ref != null ? ref.get() : null;
-    }
+    return (AbstractContext) contextManager.getContext(this);
   }
 
   public ClusterManager getClusterManager() {
