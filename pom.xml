@@ -489,6 +489,23 @@
             </configuration>
           </execution>
           <execution>
+            <id>slf4j-no-impl</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/SLF4JNoImplTest.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <classpathDependencyExclude>org.slf4j:slf4j-simple</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
             <id>jul</id>
             <goals>
               <goal>integration-test</goal>
