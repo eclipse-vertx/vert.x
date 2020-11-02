@@ -87,6 +87,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   static {
     // Disable Netty's resource leak detection to reduce the performance overhead if not set by user
+    // Supports both the default netty leak detection system property and the deprecated one
     if (System.getProperty("io.netty.leakDetection.level") != null ||
         System.getProperty("io.netty.leakDetectionLevel") != null) {
       ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
