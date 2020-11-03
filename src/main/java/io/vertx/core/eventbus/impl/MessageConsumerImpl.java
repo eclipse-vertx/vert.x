@@ -37,7 +37,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   private final Vertx vertx;
   private final ContextInternal context;
-  private final EventBusImpl eventBus;
   private final String address;
   private final boolean localOnly;
   private Handler<Message<T>> handler;
@@ -53,7 +52,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
     super(context, eventBus, address, false);
     this.vertx = vertx;
     this.context = context;
-    this.eventBus = eventBus;
     this.address = address;
     this.localOnly = localOnly;
   }
@@ -214,24 +212,22 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   @Override
   public synchronized MessageConsumer<T> handler(Handler<Message<T>> h) {
     if (h != null) {
-      synchronized (this) {
-        handler = h;
-        if (result == null) {
-          Promise<Void> p = context.promise();
-          if (completionHandler != null) {
-            p.future().onComplete(completionHandler);
-          }
-          result = p;
-          Promise<Void> reg = context.promise();
-          register(null, localOnly, reg);
-          reg.future().onComplete(ar -> {
-            if (ar.succeeded()) {
-              p.tryComplete();
-            } else {
-              p.tryFail(ar.cause());
-            }
-          });
+      handler = h;
+      if (result == null) {
+        Promise<Void> p = context.promise();
+        if (completionHandler != null) {
+          p.future().onComplete(completionHandler);
         }
+        result = p;
+        Promise<Void> reg = context.promise();
+        register(null, localOnly, reg);
+        reg.future().onComplete(ar -> {
+          if (ar.succeeded()) {
+            p.tryComplete();
+          } else {
+            p.tryFail(ar.cause());
+          }
+        });
       }
     } else {
       unregister();
