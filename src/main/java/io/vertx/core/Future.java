@@ -13,7 +13,6 @@ package io.vertx.core;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.SucceededFuture;
@@ -28,7 +27,6 @@ import java.util.function.Function;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@VertxGen
 public interface Future<T> extends AsyncResult<T> {
 
   /**

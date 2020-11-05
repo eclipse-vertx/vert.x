@@ -12,13 +12,10 @@
 package io.vertx.core;
 
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.future.CompositeFutureImpl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * The composite future wraps a list of {@link Future futures}, it is useful when several futures
@@ -27,7 +24,6 @@ import java.util.stream.IntStream;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-@VertxGen
 public interface CompositeFuture extends Future<CompositeFuture> {
 
   /**
