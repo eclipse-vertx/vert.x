@@ -137,13 +137,13 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       .setHost("localhost")
       .setURI("/")).onComplete(onSuccess(req -> {
       req
-        .onComplete(onFailure(err -> {
+        .response(onFailure(err -> {
           complete();
         }))
-        .setChunked(true);
-      req.sendHead(v -> {
-        req.connection().close();
-      });
+        .setChunked(true)
+        .sendHead(v -> {
+          req.connection().close();
+        });
     }));
     await();
   }

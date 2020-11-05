@@ -453,7 +453,7 @@ public class HTTPExamples {
 
     client.request(HttpMethod.POST, "some-uri")
       .onSuccess(request -> {
-        request.onSuccess(response -> {
+        request.response().onSuccess(response -> {
           System.out.println("Received response with status code " + response.statusCode());
         });
 
@@ -471,8 +471,11 @@ public class HTTPExamples {
     client.request(HttpMethod.POST, "some-uri")
       .onSuccess(request -> {
         request
-          .onSuccess(response -> {
-            System.out.println("Received response with status code " + response.statusCode());
+          .response(ar -> {
+            if (ar.succeeded()) {
+              HttpClientResponse response = ar.result();
+              System.out.println("Received response with status code " + response.statusCode());
+            }
           })
           .putHeader("content-length", "1000")
           .putHeader("content-type", "text/plain")
@@ -570,7 +573,7 @@ public class HTTPExamples {
 
     // Similar to above, set a completion handler and end the request
     request
-      .onComplete(ar2 -> {
+      .response(ar2 -> {
         if (ar2.succeeded()) {
 
           HttpClientResponse response = ar2.result();
@@ -803,7 +806,7 @@ public class HTTPExamples {
 
     client.request(HttpMethod.PUT, "some-uri")
       .onSuccess(request -> {
-        request.onSuccess(response -> {
+        request.response().onSuccess(response -> {
           System.out.println("Received response with status code " + response.statusCode());
         });
 

@@ -21,18 +21,15 @@ import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.FutureInternal;
-import io.vertx.core.impl.future.Listener;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public abstract class HttpClientRequestBase implements HttpClientRequest, FutureInternal<HttpClientResponse> {
+public abstract class HttpClientRequestBase implements HttpClientRequest {
 
   protected final HttpClientImpl client;
   protected final ContextInternal context;
@@ -81,16 +78,6 @@ public abstract class HttpClientRequestBase implements HttpClientRequest, Future
     } else {
       return host + ':' + port;
     }
-  }
-
-  @Override
-  public ContextInternal context() {
-    return context;
-  }
-
-  @Override
-  public void addListener(Listener<HttpClientResponse> listener) {
-    responsePromise.addListener(listener);
   }
 
   @Override
@@ -252,59 +239,14 @@ public abstract class HttpClientRequestBase implements HttpClientRequest, Future
   abstract boolean reset(Throwable cause);
 
   @Override
-  public HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler) {
+  public HttpClientRequest response(Handler<AsyncResult<HttpClientResponse>> handler) {
     responsePromise.future().onComplete(handler);
     return this;
   }
 
   @Override
-  public boolean isComplete() {
-    return responsePromise.future().isComplete();
-  }
-
-  @Override
-  public HttpClientResponse result() {
-    return responsePromise.future().result();
-  }
-
-  @Override
-  public Throwable cause() {
-    return responsePromise.future().cause();
-  }
-
-  @Override
-  public boolean succeeded() {
-    return responsePromise.future().succeeded();
-  }
-
-  @Override
-  public boolean failed() {
-    return responsePromise.future().failed();
-  }
-
-  @Override
-  public <U> Future<U> compose(Function<HttpClientResponse, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
-    return responsePromise.future().compose(successMapper, failureMapper);
-  }
-
-  @Override
-  public <U> Future<U> map(Function<HttpClientResponse, U> mapper) {
-    return responsePromise.future().map(mapper);
-  }
-
-  @Override
-  public <V> Future<V> map(V value) {
-    return responsePromise.future().map(value);
-  }
-
-  @Override
-  public Future<HttpClientResponse> otherwise(Function<Throwable, HttpClientResponse> mapper) {
-    return responsePromise.future().otherwise(mapper);
-  }
-
-  @Override
-  public Future<HttpClientResponse> otherwise(HttpClientResponse value) {
-    return responsePromise.future().otherwise(value);
+  public Future<HttpClientResponse> response() {
+    return responsePromise.future();
   }
 
   synchronized Handler<HttpClientRequest> pushHandler() {

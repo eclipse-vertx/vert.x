@@ -1228,7 +1228,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
           if (ar_.succeeded()) {
             HttpClientRequest req = ar_.result();
             req.setFollowRedirects(followRedirects);
-            req.onComplete(ar2 -> {
+            req.send("foo", ar2 -> {
               if (ar2.succeeded()) {
                 HttpClientResponse response = ar2.result();
                 HttpConnection conn = response.request().connection();
@@ -1256,7 +1256,6 @@ public abstract class HttpTLSTest extends HttpTestBase {
                 System.out.println("HANDLE ME");
               }
             });
-            req.end("foo");
           } else {
             Throwable t = ar_.cause();
             if (shouldPass) {

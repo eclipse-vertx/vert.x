@@ -32,10 +32,8 @@ public class Http1xProxyTest extends HttpTestBase {
         .setHost(DEFAULT_HTTP_HOST)
         .setPort(DEFAULT_HTTP_PORT)
         .setURI("/")
-      ).compose(req -> {
-        req.end();
-        return req;
-      }).onComplete(handler);
+      ).compose(HttpClientRequest::send)
+        .onComplete(handler);
     });
   }
 
@@ -47,10 +45,8 @@ public class Http1xProxyTest extends HttpTestBase {
       .setSsl(true).setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setHost("localhost").setPort(proxy.getPort())));
     testHttpProxyRequest2(handler -> {
       client.request(new RequestOptions().setSsl(false).setHost("localhost").setPort(8080))
-        .compose(req -> {
-          req.end();
-          return req;
-        }).onComplete(handler);
+        .compose(HttpClientRequest::send)
+        .onComplete(handler);
     });
   }
 
@@ -89,12 +85,12 @@ public class Http1xProxyTest extends HttpTestBase {
         .setPort(DEFAULT_HTTP_PORT)
         .setURI("/")
       ).onComplete(onSuccess(req -> {
-        req.onComplete(onSuccess(resp -> {
+        req.send(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           assertNotNull("request did not go through proxy", proxy.getLastUri());
           assertEquals("Host header doesn't contain target host", "localhost:8080", proxy.getLastRequestHeaders().get("Host"));
           testComplete();
-        })).end();
+        }));
       }));
     }));
     await();
@@ -115,11 +111,11 @@ public class Http1xProxyTest extends HttpTestBase {
     server.listen(onSuccess(s -> {
       client.request(new RequestOptions().setURI(url))
         .onComplete(onSuccess(req -> {
-        req.onComplete(onSuccess(resp -> {
+        req.send(onSuccess(resp -> {
           assertEquals(200, resp.statusCode());
           assertEquals("request did sent the expected url", url, proxy.getLastUri());
           testComplete();
-        })).end();
+        }));
       }));
     }));
     await();
@@ -141,11 +137,11 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
       .setURI("/")).onComplete(onSuccess(req -> {
-      req.onComplete(onSuccess(resp -> {
+      req.send(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         testComplete();
-      })).end();
+      }));
     }));
     await();
   }
@@ -169,11 +165,11 @@ public class Http1xProxyTest extends HttpTestBase {
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
       .setURI("/")).onComplete(onSuccess(req -> {
-      req.onComplete(onSuccess(resp -> {
+      req.send(onSuccess(resp -> {
         assertEquals(200, resp.statusCode());
         assertNotNull("request did not go through proxy", proxy.getLastUri());
         testComplete();
-      })).end();
+      }));
     }));
     await();
   }

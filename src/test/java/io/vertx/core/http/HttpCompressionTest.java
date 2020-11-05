@@ -115,14 +115,14 @@ public class HttpCompressionTest extends HttpTestBase {
   private void testMinCompression() {
     client.request(new RequestOptions().setPort(DEFAULT_HTTP_PORT - 1).setHost(DEFAULT_HTTP_HOST))
       .onComplete(onSuccess(req -> {
-        req.onComplete(onSuccess(resp -> {
-          resp.bodyHandler(responseBuffer -> {
-            String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
+        req.send()
+          .flatMap(HttpClientResponse::body)
+          .onComplete(onSuccess(body -> {
+            String responseBody = body.toString(CharsetUtil.UTF_8);
             assertEquals(COMPRESS_TEST_STRING, responseBody);
             minCompressionTestPassed = true;
             terminateTestWhenAllPassed();
-          });
-        })).end();
+          }));
       }));
   }
 

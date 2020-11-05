@@ -90,10 +90,10 @@ public class HttpRequestStreamTest extends VertxTestBase {
             .setURI(path)
           )
             .onComplete(onSuccess(req -> {
-              req.onComplete(onSuccess(resp -> {
+              req.send(onSuccess(resp -> {
                 assertEquals(200, resp.statusCode());
                 testComplete();
-              })).end();
+              }));
             }));
         });
       });

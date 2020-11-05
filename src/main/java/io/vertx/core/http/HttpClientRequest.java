@@ -51,7 +51,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClientResponse> {
+public interface HttpClientRequest extends WriteStream<Buffer> {
 
   @Override
   HttpClientRequest exceptionHandler(Handler<Throwable> handler);
@@ -306,12 +306,28 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   Future<HttpClientResponse> connect();
 
   /**
+   * Set a callback for the associated {@link HttpClientResponse}.
+   *
+   * <p> This method does not modify the current request being sent.
+   *
+   * @param handler the completion handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest response(Handler<AsyncResult<HttpClientResponse>> handler);
+
+  /**
+   * @return a future of the {@link HttpClientResponse}, see {@link #response(Handler)}
+   */
+  Future<HttpClientResponse> response();
+
+  /**
    * Send the request with an empty body.
    *
    * @param handler the completion handler for the {@link HttpClientResponse}
    */
   default void send(Handler<AsyncResult<HttpClientResponse>> handler) {
-    onComplete(handler);
+    response(handler);
     end();
   }
 
@@ -320,7 +336,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    */
   default Future<HttpClientResponse> send() {
     end();
-    return this;
+    return response();
   }
 
   /**
@@ -329,7 +345,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * @param handler the completion handler for the {@link HttpClientResponse}
    */
   default void send(String body, Handler<AsyncResult<HttpClientResponse>> handler) {
-    onComplete(handler);
+    response(handler);
     end(body);
   }
 
@@ -338,7 +354,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    */
   default Future<HttpClientResponse> send(String body) {
     end(body);
-    return this;
+    return response();
   }
 
   /**
@@ -347,7 +363,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * @param handler the completion handler for the {@link HttpClientResponse}
    */
   default void send(Buffer body, Handler<AsyncResult<HttpClientResponse>> handler) {
-    onComplete(handler);
+    response(handler);
     end(body);
   }
 
@@ -356,7 +372,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    */
   default Future<HttpClientResponse> send(Buffer body) {
     end(body);
-    return this;
+    return response();
   }
 
   /**
@@ -368,7 +384,6 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * @param handler the completion handler for the {@link HttpClientResponse}
    */
   default void send(ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> handler) {
-    onComplete(handler);
     MultiMap headers = headers();
     if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       setChunked(true);
@@ -385,7 +400,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
       setChunked(true);
     }
     body.pipeTo(this);
-    return this;
+    return response();
   }
 
   /**
@@ -479,7 +494,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    *   <li>{@link HttpClientRequest#headers()}</li>
    * </ul>
    *
-   * In addition the handler should call the {@link HttpClientRequest#onComplete(Handler)} method to set an handler to
+   * In addition the handler should call the {@link HttpClientRequest#response(Handler)} method to set an handler to
    * process the response.<p/>
    *
    * @param handler the handler
@@ -587,16 +602,4 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    */
   StreamPriority getStreamPriority();
 
-  @Override
-  HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler);
-
-  @Override
-  default HttpClientRequest onSuccess(Handler<HttpClientResponse> handler) {
-    return (HttpClientRequest) Future.super.onSuccess(handler);
-  }
-
-  @Override
-  default HttpClientRequest onFailure(Handler<Throwable> handler) {
-    return (HttpClientRequest) Future.super.onFailure(handler);
-  }
 }

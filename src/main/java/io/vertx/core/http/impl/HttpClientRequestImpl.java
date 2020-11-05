@@ -224,7 +224,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       return context.failedFuture("Cannot upgrade a pipe-lined request");
     }
     doWrite(null, false, true, ar -> {});
-    return this;
+    return response();
   }
 
   @Override
@@ -291,7 +291,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   }
 
   private void handleNextRequest(HttpClientRequest next, Handler<AsyncResult<HttpClientResponse>> handler, long timeoutMs) {
-    next.onComplete(handler);
+    next.response(handler);
     next.exceptionHandler(exceptionHandler());
     exceptionHandler(null);
     next.pushHandler(pushHandler());

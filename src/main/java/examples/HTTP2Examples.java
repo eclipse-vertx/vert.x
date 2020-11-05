@@ -164,7 +164,7 @@ public class HTTP2Examples {
       .onSuccess(request -> {
 
         request
-          .onComplete(response -> {
+          .response().onComplete(response -> {
             // Process index.html response
           });
 
@@ -175,7 +175,7 @@ public class HTTP2Examples {
           System.out.println("Server pushed " + pushedRequest.path());
 
           // Set an handler for the response
-          pushedRequest.onComplete(pushedResponse -> {
+          pushedRequest.response().onComplete(pushedResponse -> {
             System.out.println("The response for the pushed request");
           });
         });

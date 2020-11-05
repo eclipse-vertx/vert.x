@@ -2629,7 +2629,7 @@ public class Http2ServerTest extends Http2TestBase {
     }
     client.request(new RequestOptions(requestOptions).setMethod(method)).onComplete(onSuccess(req -> {
       req
-        .onComplete(onSuccess(resp -> {
+        .response(onSuccess(resp -> {
           assertEquals(HttpVersion.HTTP_2, resp.version());
           // assertEquals(20000, req.connection().remoteSettings().getMaxConcurrentStreams());
           // assertEquals(1, serverConnectionCount.get());
@@ -2664,17 +2664,17 @@ public class Http2ServerTest extends Http2TestBase {
     client.close();
     client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false));
     client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.onComplete(onSuccess(resp -> {
-        assertEquals(HttpVersion.HTTP_2, resp.version());
-        complete();
-      })).exceptionHandler(this::fail).pushHandler(pushedReq -> {
-        pushedReq.onComplete(onSuccess(pushResp -> {
+      req.exceptionHandler(this::fail).pushHandler(pushedReq -> {
+        pushedReq.response(onSuccess(pushResp -> {
           pushResp.bodyHandler(buff -> {
             assertEquals("the-pushed-response", buff.toString());
             complete();
           });
         }));
-      }).end();
+      }).send(onSuccess(resp -> {
+        assertEquals(HttpVersion.HTTP_2, resp.version());
+        complete();
+      }));
     }));
     await();
   }
@@ -2797,7 +2797,7 @@ public class Http2ServerTest extends Http2TestBase {
     client = vertx.createHttpClient(clientOptions.setProtocolVersion(HttpVersion.HTTP_1_1).setUseAlpn(false).setSsl(false));
     client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.PUT)).onComplete(onSuccess(req -> {
       req
-        .onComplete(resp -> {
+        .response(resp -> {
         }).putHeader("Upgrade", "h2c")
         .putHeader("Connection", "Upgrade,HTTP2-Settings")
         .putHeader("HTTP2-Settings", HttpUtils.encodeSettings(new io.vertx.core.http.Http2Settings()))

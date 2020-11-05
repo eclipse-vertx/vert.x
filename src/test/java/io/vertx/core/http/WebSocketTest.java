@@ -1201,7 +1201,7 @@ public class WebSocketTest extends VertxTestBase {
       .setURI("/some/path")).onComplete(onSuccess(req -> {
         req.putHeader("Upgrade", "Websocket")
           .putHeader("Connection", "Upgrade");
-        req.onComplete(handler).end();
+        req.send(handler);
     }));
   };
 
@@ -1225,7 +1225,7 @@ public class WebSocketTest extends VertxTestBase {
         req
           .putHeader("Upgrade", "Websocket")
           .putHeader("Connection", "Upgrade");
-        req.onComplete(handler).end();
+        req.send(handler);
     }));
   };
 
@@ -1330,11 +1330,11 @@ public class WebSocketTest extends VertxTestBase {
           client.request(new RequestOptions()
             .setPort(DEFAULT_HTTP_PORT)
             .setHost(DEFAULT_HTTP_HOST)).onComplete(onSuccess(req2 -> {
-              req2.onComplete(onSuccess(resp2 -> {
+              req2.send(onSuccess(resp2 -> {
                 resp2.endHandler(v2 -> {
                   testComplete();
                 });
-              })).end();
+              }));
           }));
         });
       }));
@@ -2240,14 +2240,14 @@ public class WebSocketTest extends VertxTestBase {
     server.listen(onSuccess(server -> {
       client.request(new RequestOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST))
         .onComplete(onSuccess(req -> {
-          req.onComplete(onSuccess(resp -> {
+          req.send(onSuccess(resp -> {
             client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
               ws.handler(buff -> {
                 assertEquals("ok", buff.toString());
                 testComplete();
               });
             }));
-          })).end();
+          }));
         }));
     }));
     await();
@@ -3160,12 +3160,12 @@ public class WebSocketTest extends VertxTestBase {
     client.request(new RequestOptions()
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)).onComplete(onSuccess(req -> {
-        req.onComplete(onSuccess(resp -> {
+        req.send(onSuccess(resp -> {
           resp.endHandler(v -> {
             assertEquals(400, resp.statusCode());
             testComplete();
           });
-        })).end();
+        }));
     }));
     await();
   }

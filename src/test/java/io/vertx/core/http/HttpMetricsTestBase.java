@@ -113,7 +113,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
         .setURI(TestUtils.randomAlphaString(16)))
         .onComplete(onSuccess(req -> {
           req
-            .onComplete(onSuccess(resp -> {
+            .response(onSuccess(resp -> {
               clientSocketMetric.set(metrics.getSocket(SocketAddress.inetSocketAddress(8080, "localhost")));
               assertNotNull(clientSocketMetric.get());
               assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
@@ -210,7 +210,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       .setHost("localhost")
       .setURI("/somepath")).onComplete(onSuccess(req -> {
       req
-        .onComplete(onSuccess(resp -> {
+        .response(onSuccess(resp -> {
           responseBeginLatch.countDown();
           resp.endHandler(v -> {
             responseEndLatch.countDown();
@@ -251,7 +251,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(2));
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
     client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.onComplete(onSuccess(resp -> {
+      req.send(onSuccess(resp -> {
         HttpClientMetric metric = metrics.getMetric(resp.request());
         assertNotNull(metric);
         assertFalse(metric.failed.get());
@@ -260,7 +260,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
           assertTrue(metric.failed.get());
           testComplete();
         });
-      })).end();
+      }));
     }));
     await();
   }
@@ -281,7 +281,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       });
     });
     startServer();
-    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(HttpClientRequest::end));
+    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(HttpClientRequest::send));
     await();
   }
 
@@ -299,7 +299,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       testComplete();
     });
     startServer();
-    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(HttpClientRequest::end));
+    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(HttpClientRequest::send));
     await();
   }
 
@@ -315,7 +315,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       testComplete();
     });
     startServer();
-    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(HttpClientRequest::end));
+    client.request(new RequestOptions(requestOptions).setURI(TestUtils.randomAlphaString(16))).onComplete(onSuccess(HttpClientRequest::send));
     await();
   }
 

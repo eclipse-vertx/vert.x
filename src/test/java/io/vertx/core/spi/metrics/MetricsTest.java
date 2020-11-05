@@ -702,7 +702,7 @@ public class MetricsTest extends VertxTestBase {
     for (int i = 0;i < 5;i++) {
       client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
         .compose(HttpClientRequest::end)
-        .onComplete(onSuccess(resp -> {
+        .onComplete(onSuccess(v -> {
       }));
     }
     assertWaitUntil(() -> requests.size() == 5);
