@@ -2678,7 +2678,6 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  @Ignore
   public void testListenInvalidPort() throws Exception {
     server.close();
     ServerSocket occupied = null;

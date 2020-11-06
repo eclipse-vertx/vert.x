@@ -17,15 +17,12 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.datagram.DatagramSocket;
-import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -318,7 +315,6 @@ public class DatagramTest extends VertxTestBase {
   }
 
   @Test
-  @Ignore
   public void testBroadcast() {
     if (USE_NATIVE_TRANSPORT) {
       return;

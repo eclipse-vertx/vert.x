@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
-<!--
-  ~ Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
-  ~
-  ~ This program and the accompanying materials are made available under the
-  ~ terms of the Eclipse Public License 2.0 which is available at
-  ~
-  ~ http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
-  ~ which is available at https://www.apache.org/licenses/LICENSE-2.0.
-  ~
-  ~ SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
-  ~
-  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <!--
+    ~ Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+    ~
+    ~ This program and the accompanying materials are made available under the
+    ~ terms of the Eclipse Public License 2.0 which is available at
+    ~
+    ~ http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+    ~ which is available at https://www.apache.org/licenses/LICENSE-2.0.
+    ~
+    ~ SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+    ~
+    --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -50,13 +50,12 @@
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>4.0.0-milestone5</stack.version>
+    <stack.version>4.0.0-SNAPSHOT</stack.version>
     <jetty.alpnAgent.argLine/>
     <jmh.version>1.19</jmh.version>
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
-    <git.hash>none</git.hash>
   </properties>
 
   <dependencyManagement>
@@ -219,7 +218,6 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven.surefire.plugin.version}</version>
           <configuration>
-            <skipTests>true</skipTests>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <additionalClasspathElements>
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
@@ -290,7 +288,6 @@
                 <archive>
                   <manifestEntries>
                     <Multi-Release>true</Multi-Release>
-                    <Git-Hash>${git.hash}</Git-Hash>
                   </manifestEntries>
                 </archive>
               </configuration>
