@@ -17,8 +17,6 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.datagram.DatagramSocket;
-import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.streams.WriteStream;
