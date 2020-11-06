@@ -174,7 +174,7 @@ abstract class ContextImpl extends AbstractContext {
         if (metrics != null) {
           execMetric = metrics.begin(queueMetric);
         }
-        context.emit(promise, f -> {
+        context.dispatch(promise, f -> {
           try {
             blockingCodeHandler.handle(promise);
           } catch (Throwable e) {
@@ -209,6 +209,11 @@ abstract class ContextImpl extends AbstractContext {
   @Override
   public ClassLoader classLoader() {
     return tccl;
+  }
+
+  @Override
+  public WorkerPool workerPool() {
+    return workerPool;
   }
 
   @Override
@@ -263,99 +268,36 @@ abstract class ContextImpl extends AbstractContext {
     return deployment.deploymentOptions().getInstances();
   }
 
-  static abstract class Duplicated<C extends ContextImpl> extends AbstractContext {
+  @Override
+  public final void runOnContext(Handler<Void> action) {
+    runOnContext(this, action);
+  }
 
-    protected final C delegate;
-    private ConcurrentMap<Object, Object> localData;
+  abstract void runOnContext(AbstractContext ctx, Handler<Void> action);
 
-    Duplicated(C delegate) {
-      this.delegate = delegate;
-    }
+  @Override
+  public void execute(Runnable task) {
+    execute(this, task);
+  }
 
-    @Override
-    public boolean isDeployment() {
-      return delegate.isDeployment();
-    }
+  abstract <T> void execute(AbstractContext ctx, Runnable task);
 
-    @Override
-    public VertxTracer tracer() {
-      return delegate.tracer();
-    }
+  @Override
+  public final <T> void execute(T argument, Handler<T> task) {
+    execute(this, argument, task);
+  }
 
-    @Override
-    public final String deploymentID() {
-      return delegate.deploymentID();
-    }
+  abstract <T> void execute(AbstractContext ctx, T argument, Handler<T> task);
 
-    @Override
-    public final JsonObject config() {
-      return delegate.config();
-    }
+  @Override
+  public <T> void emit(T argument, Handler<T> task) {
+    emit(this, argument, task);
+  }
 
-    @Override
-    public final int getInstanceCount() {
-      return delegate.getInstanceCount();
-    }
+  abstract <T> void emit(AbstractContext ctx, T argument, Handler<T> task);
 
-    @Override
-    public final Context exceptionHandler(Handler<Throwable> handler) {
-      delegate.exceptionHandler(handler);
-      return this;
-    }
-
-    @Override
-    public final Handler<Throwable> exceptionHandler() {
-      return delegate.exceptionHandler();
-    }
-
-    @Override
-    public final void addCloseHook(Closeable hook) {
-      delegate.addCloseHook(hook);
-    }
-
-    @Override
-    public final void removeCloseHook(Closeable hook) {
-      delegate.removeCloseHook(hook);
-    }
-
-    @Override
-    public final EventLoop nettyEventLoop() {
-      return delegate.nettyEventLoop();
-    }
-
-    @Override
-    public final Deployment getDeployment() {
-      return delegate.getDeployment();
-    }
-
-    @Override
-    public final VertxInternal owner() {
-      return delegate.owner();
-    }
-
-    @Override
-    public final ClassLoader classLoader() {
-      return delegate.classLoader();
-    }
-
-    @Override
-    public final void reportException(Throwable t) {
-      delegate.reportException(t);
-    }
-
-    @Override
-    public final ConcurrentMap<Object, Object> contextData() {
-      return delegate.contextData();
-    }
-
-    @Override
-    public final ConcurrentMap<Object, Object> localContextData() {
-      synchronized (this) {
-        if (localData == null) {
-          localData = new ConcurrentHashMap<>();
-        }
-        return localData;
-      }
-    }
+  @Override
+  public final ContextInternal duplicate() {
+    return new DuplicatedContext(this);
   }
 }

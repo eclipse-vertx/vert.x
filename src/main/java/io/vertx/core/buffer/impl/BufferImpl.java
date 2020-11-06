@@ -19,7 +19,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -55,16 +54,6 @@ public class BufferImpl implements Buffer {
     return new BufferImpl(byteBuffer);
   }
 
-  public static Buffer directBuffer(String str, String enc) {
-    return directBuffer(str.getBytes(Charset.forName(Objects.requireNonNull(enc))));
-  }
-
-  public static Buffer directBuffer(byte[] bytes) {
-    ByteBuf buff = PartialPooledByteBufAllocator.UNPOOLED.directBuffer(bytes.length);
-    buff.writeBytes(bytes);
-    return new BufferImpl(buff);
-  }
-
   private ByteBuf buffer;
 
   public BufferImpl() {
@@ -72,11 +61,11 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(int initialSizeHint) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(initialSizeHint, Integer.MAX_VALUE));
+    buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(initialSizeHint, Integer.MAX_VALUE);
   }
 
   BufferImpl(byte[] bytes) {
-    buffer = Unpooled.unreleasableBuffer(Unpooled.buffer(bytes.length, Integer.MAX_VALUE)).writeBytes(bytes);
+    buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(bytes.length, Integer.MAX_VALUE).writeBytes(bytes);
   }
 
   BufferImpl(String str, String enc) {
@@ -92,7 +81,7 @@ public class BufferImpl implements Buffer {
   }
 
   BufferImpl(ByteBuf buffer) {
-    this.buffer = Unpooled.unreleasableBuffer(buffer);
+    this.buffer = buffer;
   }
 
   public String toString() {
@@ -241,12 +230,15 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer appendBuffer(Buffer buff) {
-    buffer.writeBytes(buff.getByteBuf());
+    BufferImpl impl = (BufferImpl) buff;
+    ByteBuf byteBuf = impl.buffer;
+    buffer.writeBytes(impl.buffer, byteBuf.readerIndex(), impl.buffer.readableBytes());
     return this;
   }
 
   public Buffer appendBuffer(Buffer buff, int offset, int len) {
-    ByteBuf byteBuf = buff.getByteBuf();
+    BufferImpl impl = (BufferImpl) buff;
+    ByteBuf byteBuf = impl.buffer;
     int from = byteBuf.readerIndex() + offset;
     buffer.writeBytes(byteBuf, from, len);
     return this;
@@ -351,128 +343,131 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer setByte(int pos, byte b) {
-    ensureWritable(pos, 1);
+    ensureLength(pos + 1);
     buffer.setByte(pos, b);
     return this;
   }
 
   public Buffer setUnsignedByte(int pos, short b) {
-    ensureWritable(pos, 1);
+    ensureLength(pos + 1);
     buffer.setByte(pos, b);
     return this;
   }
 
   public Buffer setInt(int pos, int i) {
-    ensureWritable(pos, 4);
+    ensureLength(pos + 4);
     buffer.setInt(pos, i);
     return this;
   }
 
   public Buffer setIntLE(int pos, int i) {
-    ensureWritable(pos, 4);
+    ensureLength(pos + 4);
     buffer.setIntLE(pos, i);
     return this;
   }
 
   public Buffer setUnsignedInt(int pos, long i) {
-    ensureWritable(pos, 4);
+    ensureLength(pos + 4);
     buffer.setInt(pos, (int) i);
     return this;
   }
 
   public Buffer setUnsignedIntLE(int pos, long i) {
-    ensureWritable(pos, 4);
+    ensureLength(pos + 4);
     buffer.setIntLE(pos, (int) i);
     return this;
   }
 
   public Buffer setMedium(int pos, int i) {
-    ensureWritable(pos, 3);
+    ensureLength(pos + 3);
     buffer.setMedium(pos, i);
     return this;
   }
 
   public Buffer setMediumLE(int pos, int i) {
-    ensureWritable(pos, 3);
+    ensureLength(pos + 3);
     buffer.setMediumLE(pos, i);
     return this;
   }
 
   public Buffer setLong(int pos, long l) {
-    ensureWritable(pos, 8);
+    ensureLength(pos + 8);
     buffer.setLong(pos, l);
     return this;
   }
 
   public Buffer setLongLE(int pos, long l) {
-    ensureWritable(pos, 8);
+    ensureLength(pos + 8);
     buffer.setLongLE(pos, l);
     return this;
   }
 
   public Buffer setDouble(int pos, double d) {
-    ensureWritable(pos, 8);
+    ensureLength(pos + 8);
     buffer.setDouble(pos, d);
     return this;
   }
 
   public Buffer setFloat(int pos, float f) {
-    ensureWritable(pos, 4);
+    ensureLength(pos + 4);
     buffer.setFloat(pos, f);
     return this;
   }
 
   public Buffer setShort(int pos, short s) {
-    ensureWritable(pos, 2);
+    ensureLength(pos + 2);
     buffer.setShort(pos, s);
     return this;
   }
 
   public Buffer setShortLE(int pos, short s) {
-    ensureWritable(pos, 2);
+    ensureLength(pos + 2);
     buffer.setShortLE(pos, s);
     return this;
   }
 
   public Buffer setUnsignedShort(int pos, int s) {
-    ensureWritable(pos, 2);
+    ensureLength(pos + 2);
     buffer.setShort(pos, s);
     return this;
   }
 
   public Buffer setUnsignedShortLE(int pos, int s) {
-    ensureWritable(pos, 2);
+    ensureLength(pos + 2);
     buffer.setShortLE(pos, s);
     return this;
   }
 
-  public Buffer setBuffer(int pos, Buffer b) {
-    ensureWritable(pos, b.length());
-    buffer.setBytes(pos, b.getByteBuf());
+  public Buffer setBuffer(int pos, Buffer buff) {
+    ensureLength(pos + buff.length());
+    BufferImpl impl = (BufferImpl) buff;
+    ByteBuf byteBuf = impl.buffer;
+    buffer.setBytes(pos, byteBuf, byteBuf.readerIndex(), byteBuf.readableBytes());
     return this;
   }
 
-  public Buffer setBuffer(int pos, Buffer b, int offset, int len) {
-    ensureWritable(pos, len);
-    ByteBuf byteBuf = b.getByteBuf();
-    buffer.setBytes(pos, byteBuf, byteBuf.readerIndex() + offset, len);
+  public Buffer setBuffer(int pos, Buffer buffer, int offset, int len) {
+    ensureLength(pos + len);
+    BufferImpl impl = (BufferImpl) buffer;
+    ByteBuf byteBuf = impl.buffer;
+    this.buffer.setBytes(pos, byteBuf, byteBuf.readerIndex() + offset, len);
     return this;
   }
 
   public BufferImpl setBytes(int pos, ByteBuffer b) {
-    ensureWritable(pos, b.limit());
+    ensureLength(pos + b.limit());
     buffer.setBytes(pos, b);
     return this;
   }
 
   public Buffer setBytes(int pos, byte[] b) {
-    ensureWritable(pos, b.length);
+    ensureLength(pos + b.length);
     buffer.setBytes(pos, b);
     return this;
   }
 
   public Buffer setBytes(int pos, byte[] b, int offset, int len) {
-    ensureWritable(pos, len);
+    ensureLength(pos + len);
     buffer.setBytes(pos, b, offset, len);
     return this;
   }
@@ -501,37 +496,72 @@ public class BufferImpl implements Buffer {
     return new BufferImpl(buffer.slice(start, end - start));
   }
 
+  /**
+   * @return the buffer as is
+   */
+  public ByteBuf byteBuf() {
+    return buffer;
+  }
+
   public ByteBuf getByteBuf() {
-    // Return a duplicate so the Buffer can be written multiple times.
-    // See #648
-    return buffer.duplicate();
+    ByteBuf duplicate = buffer.duplicate();
+    if (buffer.getClass() != VertxHeapByteBuf.class && buffer.getClass() != VertxUnsafeHeapByteBuf.class) {
+      duplicate = Unpooled.unreleasableBuffer(duplicate);
+    }
+    return duplicate;
   }
 
   private Buffer append(String str, Charset charset) {
     byte[] bytes = str.getBytes(charset);
+    ensureExpandableBy(bytes.length);
     buffer.writeBytes(bytes);
     return this;
   }
 
   private Buffer setBytes(int pos, String str, Charset charset) {
     byte[] bytes = str.getBytes(charset);
-    ensureWritable(pos, bytes.length);
+    ensureLength(pos + bytes.length);
     buffer.setBytes(pos, bytes);
     return this;
   }
 
-  private void ensureWritable(int pos, int len) {
-    int ni = pos + len;
-    int cap = buffer.capacity();
-    int over = ni - cap;
+  /**
+   * Ensure buffer length is at least the provided {@code newLength}.
+   */
+  private void ensureLength(int newLength) {
+    int capacity = buffer.capacity();
+    int over = newLength - capacity;
+    int writerIndex = buffer.writerIndex();
+    // Resize the buffer
     if (over > 0) {
-      buffer.writerIndex(cap);
-      buffer.ensureWritable(over);
+      // Expand if we reach max capacity
+      int maxCapacity = buffer.maxCapacity();
+      if (capacity + over > maxCapacity) {
+        setFullMaxCapacity(capacity + over);
+      }
+      // Allocate extra space
+      buffer.ensureWritable(newLength - writerIndex);
     }
-    //We have to make sure that the writerindex is always positioned on the last bit of data set in the buffer
-    if (ni > buffer.writerIndex()) {
-      buffer.writerIndex(ni);
+    // Set new length
+    if (newLength > writerIndex) {
+      buffer.writerIndex(newLength);
     }
+  }
+
+  /**
+   * Make sure that the underlying buffer can be expanded by {@code amount} bytes.
+   */
+  private void ensureExpandableBy(int amount) {
+    int minMaxCapa = buffer.writerIndex() + amount;
+    if (minMaxCapa > buffer.maxCapacity()) {
+      setFullMaxCapacity(minMaxCapa);
+    }
+  }
+
+  private void setFullMaxCapacity(int capacity) {
+    ByteBuf tmp = buffer.alloc().heapBuffer(capacity, Integer.MAX_VALUE);
+    tmp.writeBytes(buffer);
+    buffer = tmp;
   }
 
   @Override
@@ -556,8 +586,8 @@ public class BufferImpl implements Buffer {
   @Override
   public int readFromBuffer(int pos, Buffer buffer) {
     int len = buffer.getInt(pos);
-    Buffer b = buffer.getBuffer(pos + 4, pos + 4 + len);
-    this.buffer = b.getByteBuf();
+    BufferImpl impl = (BufferImpl)buffer.getBuffer(pos + 4, pos + 4 + len);
+    this.buffer = impl.getByteBuf();
     return pos + 4 + len;
   }
 }

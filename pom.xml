@@ -16,7 +16,7 @@
   <parent>
     <groupId>io.vertx</groupId>
     <artifactId>vertx-parent</artifactId>
-    <version>15</version>
+    <version>17</version>
   </parent>
 
   <groupId>com.tracelink</groupId>
@@ -45,10 +45,9 @@
   </scm>
 
   <properties>
-    <log4j.version>1.2.17</log4j.version>
     <slf4j.version>1.7.21</slf4j.version>
-    <log4j2.version>2.8.2</log4j2.version>
-    <junit.version>4.12</junit.version>
+    <log4j2.version>2.13.3</log4j2.version>
+    <junit.version>4.13.1</junit.version>
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
@@ -140,12 +139,6 @@
     </dependency>
 
     <!-- Loggers -->
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>${log4j.version}</version>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-api</artifactId>
@@ -497,6 +490,23 @@
               <includes>
                 <include>io/vertx/it/SLF4JLogDelegateTest.java</include>
               </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>slf4j-no-impl</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/SLF4JNoImplTest.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <classpathDependencyExclude>org.slf4j:slf4j-simple</classpathDependencyExclude>
+              </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>

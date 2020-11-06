@@ -20,8 +20,10 @@ import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.EventBusMetrics;
+import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Iterator;
 import java.util.function.BiConsumer;
@@ -63,11 +65,14 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
     // Tracing
     VertxTracer tracer = ctx.tracer();
     if (tracer != null) {
-      if (src) {
-        if (replyHandler != null) {
-          replyHandler.trace = message.trace;
-        } else {
-          tracer.receiveResponse(ctx, null, message.trace, failure, TagExtractor.empty());
+      Object trace = message.trace;
+      if (trace != null) {
+        if (src) {
+          if (replyHandler != null) {
+            replyHandler.trace = message.trace;
+          } else {
+            tracer.receiveResponse(ctx, null, trace, failure, TagExtractor.empty());
+          }
         }
       }
     }
@@ -113,7 +118,7 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
         if (message.trace == null) {
           src = true;
           BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
-          message.trace = tracer.sendRequest(ctx, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
+          message.trace = tracer.sendRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
         } else {
           // Handle failure here
           tracer.sendResponse(ctx, null, message.trace, null, TagExtractor.empty());

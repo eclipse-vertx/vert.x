@@ -2,6 +2,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
@@ -17,7 +18,7 @@ public class GoAwayConverter {
       switch (member.getKey()) {
         case "debugData":
           if (member.getValue() instanceof String) {
-            obj.setDebugData(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
+            obj.setDebugData(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)member.getValue())));
           }
           break;
         case "errorCode":
@@ -40,7 +41,7 @@ public class GoAwayConverter {
 
    static void toJson(GoAway obj, java.util.Map<String, Object> json) {
     if (obj.getDebugData() != null) {
-      json.put("debugData", java.util.Base64.getEncoder().encodeToString(obj.getDebugData().getBytes()));
+      json.put("debugData", JsonUtil.BASE64_ENCODER.encodeToString(obj.getDebugData().getBytes()));
     }
     json.put("errorCode", obj.getErrorCode());
     json.put("lastStreamId", obj.getLastStreamId());

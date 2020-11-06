@@ -17,7 +17,7 @@ import io.netty.util.AsciiString;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.headers.CaseInsensitiveHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 
 /**
  * Contains a bunch of useful HTTP headers stuff:
@@ -404,6 +404,12 @@ public interface HttpHeaders {
   CharSequence GET = createOptimized("GET");
 
   /**
+   * Vary header name
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence VARY = createOptimized("vary");
+
+  /**
    * Create an optimized {@link CharSequence} which can be used as header name or value.
    * This should be used if you expect to use it multiple times liked for example adding the same header name or value
    * for multiple responses or requests.
@@ -414,15 +420,15 @@ public interface HttpHeaders {
   }
 
   static MultiMap headers() {
-    return new CaseInsensitiveHeaders();
+    return HeadersMultiMap.httpHeaders();
   }
 
   static MultiMap set(String name, String value) {
-    return new CaseInsensitiveHeaders().set(name, value);
+    return HeadersMultiMap.httpHeaders().set(name, value);
   }
 
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static MultiMap set(CharSequence name, CharSequence value) {
-    return new CaseInsensitiveHeaders().set(name, value);
+    return HeadersMultiMap.httpHeaders().set(name, value);
   }
 }

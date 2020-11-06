@@ -17,6 +17,9 @@ import java.util.function.BiConsumer;
 /**
  * This provides an utility for extracting request/response tags, potentially allocation-free.
  *
+ * <p> Tag should follow the <a href="https://github.com/opentracing/specification/blob/master/semantic_conventions.md">OpenTracing</a> tag
+ * names. This might change in the future if a new spec with a superset (semantically wise) of this list.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface TagExtractor<T> {

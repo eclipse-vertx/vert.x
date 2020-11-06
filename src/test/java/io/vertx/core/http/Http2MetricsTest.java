@@ -12,14 +12,11 @@ package io.vertx.core.http;
 
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakemetrics.*;
-import io.vertx.test.tls.Cert;
-import io.vertx.test.tls.Trust;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -67,14 +64,14 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
       req.response().push(HttpMethod.GET, "/wibble", ar -> {
         HttpServerResponse pushedResp = ar.result();
         FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
-        HttpServerMetric serverMetric = serverMetrics.getMetric(pushedResp);
+        HttpServerMetric serverMetric = serverMetrics.getResponseMetric("/wibble");
         assertNotNull(serverMetric);
         pushedResp.putHeader("content-length", "" + contentLength);
         AtomicInteger numBuffer = new AtomicInteger(numBuffers);
         vertx.setPeriodic(1, timerID -> {
           if (numBuffer.getAndDecrement() == 0) {
             pushedResp.end();
-            assertNull(serverMetrics.getMetric(pushedResp));
+            assertNull(serverMetrics.getResponseMetric("/wibble"));
             vertx.cancelTimer(timerID);
             complete();
           } else {
@@ -86,21 +83,19 @@ public class Http2MetricsTest extends HttpMetricsTestBase {
     startServer();
     client = vertx.createHttpClient(createBaseClientOptions());
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
-    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath")
-      .onComplete(resp -> {
-      })
-      .pushHandler(pushedReq -> {
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.pushHandler(pushedReq -> {
         HttpClientMetric metric = metrics.getMetric(pushedReq);
         assertNotNull(metric);
-        assertSame(pushedReq, metric.request);
-        pushedReq.onComplete(onSuccess(resp -> {
+        pushedReq.response(onSuccess(resp -> {
           resp.endHandler(v -> {
             assertNull(metrics.getMetric(pushedReq));
             complete();
           });
         }));
       })
-      .end();
+        .end();
+    }));
     await();
   }
 }

@@ -12,9 +12,9 @@
 package io.vertx.core.spi.metrics;
 
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
 
 /**
  * The http server metrics SPI that Vert.x will use to call when each http server event occurs.<p/>
@@ -45,8 +45,17 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
    * @param request the http server reuqest
    * @return the request metric
    */
-  default R requestBegin(S socketMetric, HttpServerRequest request) {
+  default R requestBegin(S socketMetric, HttpRequest request) {
     return null;
+  }
+
+  /**
+   * Called when an http server request has ended.
+   *
+   * @param requestMetric the request metric
+   * @param bytesRead the total number of bytes read
+   */
+  default void requestEnd(R requestMetric, long bytesRead) {
   }
 
   /**
@@ -56,7 +65,6 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
    * @param requestMetric the request metric
    */
   default void requestReset(R requestMetric) {
-
   }
 
   /**
@@ -65,7 +73,7 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
    * @param requestMetric the request metric
    * @param response the http server request
    */
-  default void responseBegin(R requestMetric, HttpServerResponse response) {
+  default void responseBegin(R requestMetric, HttpResponse response) {
   }
 
   /**
@@ -76,7 +84,7 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
    * @param uri the pushed response uri
    * @param response the http server response  @return the request metric
    */
-  default R responsePushed(S socketMetric, HttpMethod method, String uri, HttpServerResponse response) {
+  default R responsePushed(S socketMetric, HttpMethod method, String uri, HttpResponse response) {
     return null;
   }
 
@@ -84,9 +92,9 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
    * Called when an http server response has ended.
    *
    * @param requestMetric the request metric
-   * @param response the http server request
+   * @param bytesWritten the total number of bytes written
    */
-  default void responseEnd(R requestMetric, HttpServerResponse response) {
+  default void responseEnd(R requestMetric, long bytesWritten) {
   }
 
   /**
@@ -107,5 +115,13 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
    * @param serverWebSocketMetric the server web socket metric
    */
   default void disconnected(W serverWebSocketMetric) {
+  }
+
+  /**
+   * Called when a routing layer indicates a request has been routed.
+   * @param requestMetric the request metric
+   * @param route the route the request has been routed to
+   */
+  default void requestRouted(R requestMetric, String route) {
   }
 }

@@ -45,6 +45,7 @@ public class DeploymentOptions {
   private int instances;
   private List<String> isolatedClasses;
   private TimeUnit maxWorkerExecuteTimeUnit;
+  private ClassLoader classLoader;
 
   /**
    * Default constructor
@@ -357,6 +358,31 @@ public class DeploymentOptions {
    */
   public DeploymentOptions setMaxWorkerExecuteTimeUnit(TimeUnit maxWorkerExecuteTimeUnit) {
     this.maxWorkerExecuteTimeUnit = maxWorkerExecuteTimeUnit;
+    return this;
+  }
+
+  /**
+   * @return the classloader used for deploying the Verticle
+   */
+  public ClassLoader getClassLoader() {
+    return classLoader;
+  }
+
+  /**
+   * Set the classloader to use for deploying the Verticle.
+   *
+   * <p> The {@code VerticleFactory} will use this classloader for creating the Verticle
+   * and the Verticle {@link io.vertx.core.Context} will set this classloader as context
+   * classloader for the tasks execution on context.
+   *
+   * <p> By default no classloader is required and the deployment will use the current thread context
+   * classloader.
+   *
+   * @param classLoader the loader to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeploymentOptions setClassLoader(ClassLoader classLoader) {
+    this.classLoader = classLoader;
     return this;
   }
 

@@ -40,6 +40,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
@@ -85,8 +86,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private static final int NETTY_IO_RATIO = Integer.getInteger(NETTY_IO_RATIO_PROPERTY_NAME, 50);
 
   static {
-    // Netty resource leak detection has a performance overhead and we do not need it in Vert.x
-    ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
+    // Disable Netty's resource leak detection to reduce the performance overhead if not set by user
+    // Supports both the default netty leak detection system property and the deprecated one
+    if (System.getProperty("io.netty.leakDetection.level") != null ||
+        System.getProperty("io.netty.leakDetectionLevel") != null) {
+      ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
+    }
+
     // Use the JDK deflater/inflater by default
     System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
@@ -466,12 +472,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public ContextInternal createWorkerContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
+  public WorkerContext createWorkerContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
     return new WorkerContext(this, tracer, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
-  public ContextInternal createWorkerContext() {
+  public WorkerContext createWorkerContext() {
     return createWorkerContext(null, null, null, null);
   }
 
@@ -689,24 +695,25 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public Future<Void> undeploy(String deploymentID) {
-    Promise<Void> promise = Promise.promise();
-    undeploy(deploymentID, promise);
-    return promise.future();
+    Future<Void> future;
+    HAManager haManager = haManager();
+    if (haManager != null && haManager.isEnabled()) {
+      future = this.executeBlocking(fut -> {
+        haManager.removeFromHA(deploymentID);
+        fut.complete();
+      }, false);
+    } else {
+      future = getOrCreateContext().succeededFuture();
+    }
+    return future.compose(v -> deploymentManager.undeployVerticle(deploymentID));
   }
 
   @Override
   public void undeploy(String deploymentID, Handler<AsyncResult<Void>> completionHandler) {
-    HAManager haManager = haManager();
-    Promise<Void> haFuture = Promise.promise();
-    if (haManager != null && haManager.isEnabled()) {
-      this.executeBlocking(fut -> {
-        haManager.removeFromHA(deploymentID);
-        fut.complete();
-      }, false, haFuture);
-    } else {
-      haFuture.complete();
+    Future<Void> fut = undeploy(deploymentID);
+    if (completionHandler != null) {
+      fut.onComplete(completionHandler);
     }
-    haFuture.future().compose(v -> deploymentManager.undeployVerticle(deploymentID)).onComplete(completionHandler);
   }
 
   @Override
@@ -923,7 +930,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     @Override
     public void run() {
-      context.dispatch(this);
+      context.emit(this);
     }
 
     public void handle(Void v) {
@@ -1092,11 +1099,23 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime) {
-    return createSharedWorkerExecutor(name, poolSize, maxExecuteTime, TimeUnit.NANOSECONDS);
+    return createSharedWorkerExecutor(name, poolSize, maxExecuteTime, maxWorkerExecTimeUnit);
   }
 
   @Override
   public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+    SharedWorkerPool sharedWorkerPool = createSharedWorkerPool(name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+    AbstractContext ctx = getContext();
+    CloseHooks hooks = ctx != null ? ctx.closeHooks() : null;
+    if (hooks == null) {
+      hooks = closeHooks;
+    }
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, closeHooks, sharedWorkerPool);
+    hooks.add(namedExec);
+    return namedExec;
+  }
+
+  public synchronized SharedWorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     if (poolSize < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }
@@ -1111,14 +1130,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       sharedWorkerPool.refCount++;
     }
-    AbstractContext ctx = getContext();
-    CloseHooks hooks = ctx != null ? ctx.closeHooks() : null;
-    if (hooks == null) {
-      hooks = closeHooks;
-    }
-    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, closeHooks, sharedWorkerPool);
-    hooks.add(namedExec);
-    return namedExec;
+    return sharedWorkerPool;
   }
 
   @Override

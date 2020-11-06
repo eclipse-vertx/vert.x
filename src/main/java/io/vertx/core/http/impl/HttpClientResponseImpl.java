@@ -15,12 +15,13 @@ import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,16 +46,15 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   private final HttpConnection conn;
   private final HttpClientStream stream;
 
-  private Handler<Buffer> dataHandler;
+  private HttpEventHandler eventHandler;
   private Handler<HttpFrame> customFrameHandler;
-  private Handler<Void> endHandler;
-  private Handler<Throwable> exceptionHandler;
   private Handler<StreamPriority> priorityHandler;
 
   // Cache these for performance
   private MultiMap headers;
   private MultiMap trailers;
   private List<String> cookies;
+  private NetSocket netSocket;
 
   HttpClientResponseImpl(HttpClientRequestBase request, HttpVersion version, HttpClientStream stream, int statusCode, String statusMessage, MultiMap headers) {
     this.version = version;
@@ -66,9 +66,24 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     this.headers = headers;
   }
 
+  private HttpEventHandler eventHandler(boolean create) {
+    if (eventHandler == null && create) {
+      eventHandler = new HttpEventHandler(request.context);
+    }
+    return eventHandler;
+  }
+
   @Override
   public HttpClientRequestBase request() {
     return request;
+  }
+
+  @Override
+  public NetSocket netSocket() {
+    if (netSocket == null) {
+      netSocket = HttpNetSocket.netSocket((ConnectionBase) conn, request.context, this, request);
+    }
+    return netSocket;
   }
 
   @Override
@@ -142,7 +157,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       if (handler != null) {
         checkEnded();
       }
-      dataHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.chunkHandler(handler);
+      }
       return this;
     }
   }
@@ -153,7 +171,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       if (handler != null) {
         checkEnded();
       }
-      endHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.endHandler(handler);
+      }
       return this;
     }
   }
@@ -164,7 +185,10 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       if (handler != null) {
         checkEnded();
       }
-      exceptionHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.exceptionHandler(handler);
+      }
       return this;
     }
   }
@@ -189,7 +213,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public HttpClientResponse customFrameHandler(Handler<HttpFrame> handler) {
     synchronized (conn) {
-      if (endHandler != null) {
+      if (handler != null) {
         checkEnded();
       }
       customFrameHandler = handler;
@@ -207,82 +231,50 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
 
   void handleChunk(Buffer data) {
     request.dataReceived();
-    Handler<Buffer> handler;
+    HttpEventHandler handler;
     synchronized (conn) {
-      handler = dataHandler;
-      if (handler == null) {
-        return;
-      }
+      handler = eventHandler;
     }
-    request.context.emit(data, handler);
+    if (handler != null) {
+      handler.handleChunk(data);
+    }
   }
 
   void handleEnd(MultiMap trailers) {
-    Handler<Void> handler;
+    HttpEventHandler handler;
     synchronized (conn) {
       this.trailers = trailers;
-      handler = endHandler;
-      endHandler = null;
-      if (handler == null) {
-        return;
-      }
+      handler = eventHandler;
     }
-    request.context.emit(handler);
+    if (handler != null) {
+      handler.handleEnd();
+    }
   }
 
   void handleException(Throwable e) {
-    Handler<Throwable> handler;
+    HttpEventHandler handler;
     synchronized (conn) {
       if (trailers != null) {
         return;
       }
-      handler = exceptionHandler;
-      if (handler == null) {
-        handler = log::error;
-      }
+      handler = eventHandler;
     }
-    handler.handle(e);
-  }
-
-  @Override
-  public HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) {
-    BodyHandler handler = new BodyHandler();
-    handler(handler);
-    endHandler(handler::handleEnd);
-    handler.promise.future().onComplete(ar -> {
-      if (ar.succeeded()) {
-        bodyHandler.handle(ar.result());
-      }
-    });
-    return this;
+    if (handler != null) {
+      handler.handleException(e);
+    } else {
+      log.error(e);
+    }
   }
 
   @Override
   public Future<Buffer> body() {
-    BodyHandler handler = new BodyHandler();
-    handler(handler);
-    exceptionHandler(handler::handleException);
-    endHandler(handler::handleEnd);
-    return handler.promise.future();
+    return eventHandler(true).body();
   }
 
-  private static final class BodyHandler implements Handler<Buffer> {
-
-    private Promise<Buffer> promise = Promise.promise();
-    private Buffer body = Buffer.buffer();
-
-    @Override
-    public void handle(Buffer event) {
-      body.appendBuffer(event);
-    }
-
-    void handleEnd(Void v) {
-      promise.tryComplete(body);
-    }
-
-    void handleException(Throwable err) {
-      promise.tryFail(err);
-    }
+  @Override
+  public synchronized Future<Void> end() {
+    checkEnded();
+    return eventHandler(true).end();
   }
 
   @Override

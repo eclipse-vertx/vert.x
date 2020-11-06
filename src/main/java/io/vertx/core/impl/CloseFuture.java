@@ -16,6 +16,8 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 
+import java.util.function.Function;
+
 /**
  * An helper class for managing close operations.
  */
@@ -23,8 +25,6 @@ public class CloseFuture implements Future<Void>, Closeable {
 
   private final Promise<Void> promise;
   private Closeable resource;
-  private CloseHooks hooks;
-  private Closeable hook;
   private boolean closed;
 
   public CloseFuture() {
@@ -43,63 +43,24 @@ public class CloseFuture implements Future<Void>, Closeable {
     this.resource = closeable;
   }
 
-  synchronized Closeable register(CloseHooks hooks) {
-    if (closed) {
-      return null;
-    }
-    if (this.hooks != null) {
-      throw new IllegalStateException();
-    }
-    this.hooks = hooks;
-    this.hook = p -> {
-      boolean close;
-      Closeable resource;
-      synchronized (CloseFuture.this) {
-        close = !closed;
-        resource = this.resource;
-        this.closed = true;
-        this.hook = null;
-        this.hooks = null;
-        this.resource = null;
-      }
-      if (close) {
-        resource.close(p);
-        p.future().onComplete(promise);
-      } else {
-        p.complete();
-      }
-    };
-    return hook;
-  }
-
   /**
    * Called by client
    */
   public void close(Promise<Void> promise) {
     boolean close;
-    CloseHooks hooks;
-    Closeable hook;
     Closeable resource;
     synchronized (this) {
       close = !closed;
-      hooks = this.hooks;
-      hook = this.hook;
       resource = this.resource;
       this.closed = true;
-      this.hooks = null;
-      this.hook = null;
-      this.resource = null;
     }
     if (resource == null) {
       promise.fail("Close future not initialized");
     } else if (close) {
-      if (hooks != null) {
-        hooks.remove(hook);
-      }
       resource.close(promise);
       promise.future().onComplete(this.promise);
     } else {
-      promise.complete();
+      this.promise.future().onComplete(promise);
     }
   }
 
@@ -136,5 +97,30 @@ public class CloseFuture implements Future<Void>, Closeable {
   @Override
   public boolean failed() {
     return promise.future().failed();
+  }
+
+  @Override
+  public <U> Future<U> compose(Function<Void, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
+    return promise.future().compose(successMapper, failureMapper);
+  }
+
+  @Override
+  public <U> Future<U> map(Function<Void, U> mapper) {
+    return promise.future().map(mapper);
+  }
+
+  @Override
+  public <V> Future<V> map(V value) {
+    return promise.future().map(value);
+  }
+
+  @Override
+  public Future<Void> otherwise(Function<Throwable, Void> mapper) {
+    return promise.future().otherwise(mapper);
+  }
+
+  @Override
+  public Future<Void> otherwise(Void value) {
+    return promise.future().otherwise(value);
   }
 }

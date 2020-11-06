@@ -24,6 +24,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
+import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -55,7 +58,7 @@ public class HttpRequestStreamTest extends VertxTestBase {
   @Test
   public void testReadStreamPauseResume() {
     String path = "/some/path";
-    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(10).setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    this.server = vertx.createHttpServer(new HttpServerOptions().setAcceptBacklog(10).setPort(DEFAULT_HTTP_PORT));
     ReadStream<HttpServerRequest> httpStream = server.requestStream();
     AtomicBoolean paused = new AtomicBoolean();
     httpStream.handler(req -> {
@@ -70,7 +73,7 @@ public class HttpRequestStreamTest extends VertxTestBase {
       httpStream.pause();
 
       netClient = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1000));
-      netClient.connect(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", socketAR -> {
+      netClient.connect(DEFAULT_HTTP_PORT, "localhost", socketAR -> {
         assertTrue(socketAR.succeeded());
         NetSocket socket = socketAR.result();
         socket.write("GET / HTTP/1.1\r\n\r\n");
@@ -81,10 +84,17 @@ public class HttpRequestStreamTest extends VertxTestBase {
           paused.set(false);
           httpStream.resume();
           client = vertx.createHttpClient(new HttpClientOptions());
-          client.get(HttpTestBase.DEFAULT_HTTP_PORT, "localhost", path, onSuccess(resp -> {
-            assertEquals(200, resp.statusCode());
-            testComplete();
-          }));
+          client.request(new RequestOptions()
+            .setPort(DEFAULT_HTTP_PORT)
+            .setHost(DEFAULT_HTTP_HOST)
+            .setURI(path)
+          )
+            .onComplete(onSuccess(req -> {
+              req.send(onSuccess(resp -> {
+                assertEquals(200, resp.statusCode());
+                testComplete();
+              }));
+            }));
         });
       });
     });
@@ -94,7 +104,7 @@ public class HttpRequestStreamTest extends VertxTestBase {
   @Test
   public void testClosingServerClosesRequestStreamEndHandler() {
     waitFor(2);
-    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     ReadStream<HttpServerRequest> stream = server.requestStream();
     stream.endHandler(v -> complete());
     stream.handler(req -> {});
@@ -110,7 +120,7 @@ public class HttpRequestStreamTest extends VertxTestBase {
 
   @Test
   public void testCloseServerAsynchronously() {
-    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(HttpTestBase.DEFAULT_HTTP_PORT));
+    this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     AtomicInteger done = new AtomicInteger();
     ReadStream<HttpServerRequest> stream = server.requestStream();
     stream.handler(req -> {});

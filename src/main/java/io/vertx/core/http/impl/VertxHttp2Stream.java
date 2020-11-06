@@ -12,30 +12,22 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.http2.EmptyHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.AsyncFile;
-import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.impl.InboundBuffer;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -49,14 +41,13 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   protected final ContextInternal context;
   protected Http2Stream stream;
 
-  // Event loop
-  private long bytesRead;
-  private long bytesWritten;
-
   // Client context
   private StreamPriority priority;
   private final InboundBuffer<Object> pending;
   private boolean writable;
+  private long bytesRead;
+  private long bytesWritten;
+  protected boolean isConnect;
 
   VertxHttp2Stream(C conn, ContextInternal context) {
     this.conn = conn;
@@ -64,16 +55,16 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.context = context;
     this.pending = new InboundBuffer<>(context, 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
-
+    this.writable = true;
+    this.isConnect = false;
     pending.handler(item -> {
       if (item instanceof MultiMap) {
-        conn.reportBytesRead(bytesRead);
         handleEnd((MultiMap) item);
       } else {
         Buffer data = (Buffer) item;
         int len = data.length();
-        conn.getContext().dispatch(null, v -> conn.consumeCredits(this.stream, len));
-        bytesRead += len;
+        conn.getContext().emit(null, v -> conn.consumeCredits(this.stream, len));
+        bytesRead += data.length();
         handleData(data);
       }
     });
@@ -90,20 +81,20 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onClose() {
-    conn.reportBytesWritten(bytesWritten);
-    context.schedule(v -> this.handleClose());
+    conn.flushBytesWritten();
+    context.execute(v -> this.handleClose());
   }
 
   void onError(Throwable cause) {
-    context.dispatch(cause, this::handleException);
+    context.emit(cause, this::handleException);
   }
 
   void onReset(long code) {
-    context.dispatch(code, this::handleReset);
+    context.emit(code, this::handleReset);
   }
 
   void onPriorityChange(StreamPriority newPriority) {
-    context.dispatch(newPriority, priority -> {
+    context.emit(newPriority, priority -> {
       if (!this.priority.equals(priority)) {
         this.priority = priority;
         handlePriorityChange(priority);
@@ -112,18 +103,19 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onCustomFrame(HttpFrame frame) {
-    context.dispatch(frame, this::handleCustomFrame);
+    context.emit(frame, this::handleCustomFrame);
   }
 
   void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
   }
 
   void onData(Buffer data) {
-    context.dispatch(data, pending::write);
+    conn.reportBytesRead(data.length());
+    context.emit(data, pending::write);
   }
 
   void onWritabilityChanged() {
-    context.dispatch(null, v -> {
+    context.emit(null, v -> {
       boolean w;
       synchronized (VertxHttp2Stream.this) {
         writable = !writable;
@@ -138,7 +130,11 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onEnd(MultiMap trailers) {
-    context.dispatch(trailers, pending::write);
+    conn.flushBytesRead();
+    context.emit(trailers, pending::write);
+    if (isConnect) {
+      doWriteData(Unpooled.EMPTY_BUFFER, true, null);
+    }
   }
 
   public int id() {
@@ -192,10 +188,6 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     conn.handler.writeHeaders(stream, headers, end, priority.getDependency(), priority.getWeight(), priority.isExclusive(), promise);
   }
 
-  void flush() {
-    conn.flush(stream);
-  }
-
   private void writePriorityFrame(StreamPriority priority) {
     conn.handler.writePriority(stream, priority.getDependency(), priority.getWeight(), priority.isExclusive());
   }
@@ -210,8 +202,16 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     }
   }
 
-  void doWriteData(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
-    bytesWritten += chunk.readableBytes();
+  void doWriteData(ByteBuf buf, boolean end, Handler<AsyncResult<Void>> handler) {
+    ByteBuf chunk;
+    if (buf == null && end) {
+      chunk = Unpooled.EMPTY_BUFFER;
+    } else {
+      chunk = buf;
+    }
+    int numOfBytes = chunk.readableBytes();
+    bytesWritten += numOfBytes;
+    conn.reportBytesWritten(numOfBytes);
     FutureListener<Void> promise = handler == null ? null : context.promise(handler);
     conn.handler.writeData(stream, chunk, end, promise);
   }
@@ -277,30 +277,5 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void handlePriorityChange(StreamPriority newPriority) {
-  }
-
-  void resolveFile(String filename, long offset, long length, Handler<AsyncResult<AsyncFile>> resultHandler) {
-    File file_ = vertx.resolveFile(filename);
-    if (!file_.exists()) {
-      resultHandler.handle(Future.failedFuture(new FileNotFoundException()));
-      return;
-    }
-
-    //We open the fileName using a RandomAccessFile to make sure that this is an actual file that can be read.
-    //i.e is not a directory
-    try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
-      FileSystem fs = conn.vertx().fileSystem();
-      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
-        if (ar.succeeded()) {
-          AsyncFile file = ar.result();
-          long contentLength = Math.min(length, file_.length() - offset);
-          file.setReadPos(offset);
-          file.setReadLength(contentLength);
-        }
-        resultHandler.handle(ar);
-      });
-    } catch (IOException e) {
-      resultHandler.handle(Future.failedFuture(e));
-    }
   }
 }

@@ -18,11 +18,12 @@ import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -49,6 +50,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   private static final Logger log = LoggerFactory.getLogger(NetServerImpl.class);
 
+  protected final Context creatingContext;
   protected final VertxInternal vertx;
   protected final NetServerOptions options;
   protected final SSLHelper sslHelper;
@@ -61,25 +63,23 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   private ServerID id;
   private TCPServerBase actualServer;
 
-  // Copied
-  private volatile int actualPort;
-
-  // Master
+  // Main
   private ServerChannelLoadBalancer channelBalancer;
   private io.netty.util.concurrent.Future<Channel> bindFuture;
   private Set<TCPServerBase> servers;
   private TCPMetrics<?> metrics;
+  private volatile int actualPort;
 
   public TCPServerBase(VertxInternal vertx, NetServerOptions options) {
-
-
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
+    this.creatingContext = vertx.getContext();
   }
 
   public int actualPort() {
-    return actualPort;
+    TCPServerBase server = actualServer;
+    return server != null ? server.actualPort : actualPort;
   }
 
   public synchronized io.netty.util.concurrent.Future<Channel> listen(SocketAddress localAddress, ContextInternal context, Handler<Channel> worker) {
@@ -94,11 +94,26 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
     Map<ServerID, TCPServerBase> sharedNetServers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
     synchronized (sharedNetServers) {
-      this.actualPort = localAddress.port(); // Will be updated on bind for a wildcard port
+      actualPort = localAddress.port();
       String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
-      id = new ServerID(actualPort, hostOrPath);
-      TCPServerBase shared = sharedNetServers.get(id);
-      if (shared == null || actualPort == 0) { // Wildcard port will imply a new actual server each time
+      TCPServerBase main;
+      boolean shared;
+      if (actualPort != 0) {
+        id = new ServerID(actualPort, hostOrPath);
+        main = sharedNetServers.get(id);
+        shared = true;
+      } else {
+        if (creatingContext != null && creatingContext.deploymentID() != null) {
+          id = new ServerID(actualPort, hostOrPath + "/" + creatingContext.deploymentID());
+          main = sharedNetServers.get(id);
+          shared = true;
+        } else {
+          id = new ServerID(actualPort, hostOrPath);
+          main = null;
+          shared = false;
+        }
+      }
+      if (main == null) {
         servers = new HashSet<>();
         servers.add(this);
         channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
@@ -116,7 +131,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
             if (res.isSuccess()) {
               Channel ch = res.getNow();
-              log.trace("Net server listening on " + (hostOrPath) + ":" + ch.localAddress());
+              log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
               // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
               if (actualPort != -1) {
                 actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
@@ -124,13 +139,11 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
               id = new ServerID(TCPServerBase.this.actualPort, id.host);
               listenContext.addCloseHook(this);
               metrics = createMetrics(localAddress);
-              // We will overwrite the server in most case but not if the port was randomly chosen
-              synchronized (sharedNetServers) {
-                sharedNetServers.put(id, TCPServerBase.this);
-              }
             } else {
-              synchronized (sharedNetServers) {
-                sharedNetServers.remove(id);
+              if (shared) {
+                synchronized (sharedNetServers) {
+                  sharedNetServers.remove(id);
+                }
               }
               listening  = false;
             }
@@ -139,17 +152,16 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
           listening = false;
           return vertx.getAcceptorEventLoopGroup().next().newFailedFuture(t);
         }
-        if (actualPort != 0) {
+        if (shared) {
           sharedNetServers.put(id, this);
         }
         actualServer = this;
       } else {
         // Server already exists with that host/port - we will use that
-        actualServer = shared;
+        actualServer = main;
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
-        actualPort = shared.actualPort;
-        metrics = shared.metrics;
+        metrics = main.metrics;
         listenContext.addCloseHook(this);
       }
     }

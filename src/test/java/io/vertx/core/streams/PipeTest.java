@@ -117,7 +117,7 @@ public class PipeTest extends AsyncTestBase {
 
   @Test
   public void testEndWriteStreamOnWriteStreamFailure() {
-    Throwable expected = new Throwable();
+    RuntimeException expected = new RuntimeException();
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     dst.pause();
@@ -130,7 +130,10 @@ public class PipeTest extends AsyncTestBase {
     while (!src.isPaused()) {
       src.write(o1);
     }
-    dst.fail(expected);
+    dst.handler(item -> {
+      throw expected;
+    });
+    dst.fetch(1);
     await();
   }
 

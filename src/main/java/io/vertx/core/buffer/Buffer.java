@@ -25,6 +25,7 @@ import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 /**
  * Most data is shuffled around inside Vert.x using buffers.
@@ -112,6 +113,7 @@ public interface Buffer extends ClusterSerializable, Shareable {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static Buffer buffer(ByteBuf byteBuf) {
+    Objects.requireNonNull(byteBuf);
     return BufferImpl.buffer(byteBuf);
   }
 
@@ -700,10 +702,9 @@ public interface Buffer extends ClusterSerializable, Shareable {
   Buffer slice(int start, int end);
 
   /**
-   * Returns the Buffer as a Netty {@code ByteBuf}.<p>
-   * The returned buffer is a duplicate.<p>
-   * The returned {@code ByteBuf} might have its {@code readerIndex > 0}
-   * This method is meant for internal use only.<p>
+   * Returns the Buffer as a Netty {@code ByteBuf}.
+   *
+   * <p> The returned buffer is a duplicate that maintain its own indices.
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   ByteBuf getByteBuf();

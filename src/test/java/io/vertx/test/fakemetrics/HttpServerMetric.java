@@ -11,10 +11,11 @@
 
 package io.vertx.test.fakemetrics;
 
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -22,12 +23,25 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class HttpServerMetric {
 
-  public final HttpServerRequest request;
+  public final String uri;
   public final SocketMetric socket;
   public final AtomicBoolean failed = new AtomicBoolean();
-  public final AtomicReference<HttpServerResponse> response = new AtomicReference<>();
+  public final AtomicReference<String> route = new AtomicReference<>();
+  public final HttpRequest request;
+  public final AtomicBoolean requestEnded = new AtomicBoolean();
+  public final AtomicLong bytesRead = new AtomicLong();
+  public final AtomicReference<HttpResponse> response = new AtomicReference<>();
+  public final AtomicBoolean responseEnded = new AtomicBoolean();
+  public final AtomicLong bytesWritten = new AtomicLong();
 
-  public HttpServerMetric(HttpServerRequest request, SocketMetric socket) {
+  public HttpServerMetric(String uri, SocketMetric socket) {
+    this.uri = uri;
+    this.request = null;
+    this.socket = socket;
+  }
+
+  public HttpServerMetric(HttpRequest request, SocketMetric socket) {
+    this.uri = request.uri();
     this.request = request;
     this.socket = socket;
   }

@@ -48,10 +48,12 @@ public abstract class Endpoint<C> {
         pendingRequestCount--;
         dispose = checkDispose();
       }
-      handler.handle(ar);
+      // Dispose before callback otherwise we can have the callback handler retrying the same
+      // endpoint and never get the callback it expects to creating an infinite loop
       if (dispose) {
         disposeInternal();
       }
+      handler.handle(ar);
     });
     return true;
   }

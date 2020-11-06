@@ -53,6 +53,8 @@ public class CookieImpl implements ServerCookie {
         // we need to expire it and sent it back to it can be
         // invalidated
         cookie.setMaxAge(0L);
+        // void the value for user-agents that still read the cookie
+        cookie.setValue("");
       } else {
         // this was a temporary cookie so we can safely remove it
         cookieMap.remove(name);
@@ -133,6 +135,11 @@ public class CookieImpl implements ServerCookie {
   }
 
   @Override
+  public boolean isSecure() {
+    return nettyCookie.isSecure();
+  }
+
+  @Override
   public Cookie setHttpOnly(final boolean httpOnly) {
     nettyCookie.setHttpOnly(httpOnly);
     this.changed = true;
@@ -140,10 +147,20 @@ public class CookieImpl implements ServerCookie {
   }
 
   @Override
+  public boolean isHttpOnly() {
+    return nettyCookie.isHttpOnly();
+  }
+
+  @Override
   public Cookie setSameSite(final CookieSameSite sameSite) {
     this.sameSite = sameSite;
     this.changed = true;
     return this;
+  }
+
+  @Override
+  public CookieSameSite getSameSite() {
+    return this.sameSite;
   }
 
   @Override

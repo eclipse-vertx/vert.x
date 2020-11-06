@@ -55,6 +55,12 @@ public class PipeImpl<T> implements Pipe<T> {
     return this;
   }
 
+  private void handleWriteResult(AsyncResult<Void> ack) {
+    if (ack.failed()) {
+      result.tryFail(new WriteException(ack.cause()));
+    }
+  }
+
   @Override
   public void to(WriteStream<T> ws, Handler<AsyncResult<Void>> completionHandler) {
     if (ws == null) {
@@ -72,13 +78,12 @@ public class PipeImpl<T> implements Pipe<T> {
     }
     Handler<Void> drainHandler = v -> src.resume();
     src.handler(item -> {
-      ws.write(item);
+      ws.write(item, this::handleWriteResult);
       if (ws.writeQueueFull()) {
         src.pause();
         ws.drainHandler(drainHandler);
       }
     });
-    ws.exceptionHandler(err -> result.tryFail(new WriteException(err)));
     src.resume();
     result.future().onComplete(ar -> {
       try {

@@ -13,8 +13,10 @@ package io.vertx.core.spi.tracing;
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
-import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.spi.observability.HttpRequest;
+import io.vertx.core.spi.observability.HttpResponse;
+import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
@@ -31,16 +33,16 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
   protected VertxTracer getTracer() {
     return tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
-        return tracer.receiveRequest(context, request, operation, headers, tagExtractor);
+      public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
+        return tracer.receiveRequest(context, kind, policy, request, operation, headers, tagExtractor);
       }
       @Override
       public void sendResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
         tracer.sendResponse(context, response, payload, failure, tagExtractor);
       }
       @Override
-      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
-        return tracer.sendRequest(context, request, operation, headers, tagExtractor);
+      public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
+        return tracer.sendRequest(context, kind, policy, request, operation, headers, tagExtractor);
       }
       @Override
       public void receiveResponse(Context context, Object response, Object payload, Throwable failure, TagExtractor tagExtractor) {
@@ -56,7 +58,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
+      public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
         assertNull(context.getLocal(key));
         context.putLocal(key, val);
         assertTrue(seq.compareAndSet(0, 1));
@@ -86,8 +88,10 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
-    client.get(8080, "localhost", "/", onSuccess(resp -> {
-      testComplete();
+    client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+      req.send(onSuccess(resp -> {
+        testComplete();
+      }));
     }));
     await();
   }
@@ -100,7 +104,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object receiveRequest(Context context, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
+      public Object receiveRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, Iterable headers, TagExtractor tagExtractor) {
         assertNull(context.getLocal(key));
         context.putLocal(key, val);
         assertTrue(seq.compareAndSet(0, 1));
@@ -128,14 +132,19 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       latch.countDown();
     }));
     awaitLatch(latch);
-    HttpClientRequest req = client.request(HttpMethod.GET, 8080, "localhost", "/")
-      .onComplete(onFailure(err -> {
-        complete();
-      }))
-      .setChunked(true);
-    req.sendHead(v -> {
-      req.connection().close();
-    });
+    client.request(new RequestOptions()
+      .setPort(8080)
+      .setHost("localhost")
+      .setURI("/")).onComplete(onSuccess(req -> {
+      req
+        .response(onFailure(err -> {
+          complete();
+        }))
+        .setChunked(true)
+        .sendHead(v -> {
+          req.connection().close();
+        });
+    }));
     await();
   }
 
@@ -146,10 +155,12 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
+      public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("header-key","header-value");
+        assertNotNull(request);
+        assertTrue(request instanceof HttpRequest);
         return request;
       }
       @Override
@@ -157,7 +168,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         assertSame(val, context.getLocal(key));
         assertTrue(context.removeLocal(key));
         assertNotNull(response);
-        assertTrue(response instanceof HttpClientResponse);
+        assertTrue(response instanceof HttpResponse);
         assertNull(failure);
         assertTrue(seq.compareAndSet(1, 2));
       }
@@ -174,15 +185,17 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.get(8080, "localhost", "/", onSuccess(resp -> {
-        resp.endHandler(v2 -> {
-          // Updates are done on the HTTP client context, so we need to run task on this context
-          // to avoid data race
-          ctx.runOnContext(v -> {
-            assertNull(tracerMap.get(key));
-            testComplete();
+      client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+        req.send(onSuccess(resp -> {
+          resp.endHandler(v2 -> {
+            // Updates are done on the HTTP client context, so we need to run task on this context
+            // to avoid data race
+            ctx.runOnContext(v -> {
+              assertNull(tracerMap.get(key));
+              testComplete();
+            });
           });
-        });
+        }));
       }));
     });
     await();
@@ -195,7 +208,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     AtomicInteger seq = new AtomicInteger();
     tracer = new VertxTracer() {
       @Override
-      public Object sendRequest(Context context, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
+      public Object sendRequest(Context context, SpanKind kind, TracingPolicy policy, Object request, String operation, BiConsumer headers, TagExtractor tagExtractor) {
         assertSame(val, context.getLocal(key));
         assertTrue(seq.compareAndSet(0, 1));
         headers.accept("header-key","header-value");
@@ -222,11 +235,13 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.get(8080, "localhost", "/", onFailure(err -> {
-        assertEquals(2, seq.get());
-        assertEquals(2, seq.get());
-        assertNull(tracerMap.get(key));
-        testComplete();
+      client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+        req.send(onFailure(err -> {
+          assertEquals(2, seq.get());
+          assertEquals(2, seq.get());
+          assertNull(tracerMap.get(key));
+          testComplete();
+        }));
       }));
     });
     await();

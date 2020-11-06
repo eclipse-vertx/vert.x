@@ -22,7 +22,6 @@ import io.vertx.core.Verticle;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,7 +62,13 @@ public class DeploymentManager {
     }
     options.checkIsolationNotDefined();
     ContextInternal currentContext = vertx.getOrCreateContext();
-    ClassLoader cl = getCurrentClassLoader();
+    ClassLoader cl = options.getClassLoader();
+    if (cl == null) {
+      cl = Thread.currentThread().getContextClassLoader();
+      if (cl == null) {
+        cl = getClass().getClassLoader();
+      }
+    }
     return doDeploy(options, v -> "java:" + v.getClass().getName(), currentContext, currentContext, cl, verticleSupplier)
       .map(Deployment::deploymentID);
   }
@@ -115,14 +120,6 @@ public class DeploymentManager {
     } else {
       return vertx.getOrCreateContext().succeededFuture();
     }
-  }
-
-  private ClassLoader getCurrentClassLoader() {
-    ClassLoader cl = Thread.currentThread().getContextClassLoader();
-    if (cl == null) {
-      cl = getClass().getClassLoader();
-    }
-    return cl;
   }
 
   private <T> void reportFailure(Throwable t, Context context, Handler<AsyncResult<T>> completionHandler) {
@@ -186,14 +183,10 @@ public class DeploymentManager {
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
       CloseHooks closeHooks = new CloseHooks(log);
-      WorkerExecutorInternal workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
-      WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
-      ContextImpl context = (ContextImpl) (options.isWorker() ? vertx.createWorkerContext(deployment, closeHooks, pool, tccl) :
-        vertx.createEventLoopContext(deployment, closeHooks, pool, tccl));
-      if (workerExec != null) {
-        closeHooks.add(workerExec);
-      }
-      VerticleHolder holder = new VerticleHolder(verticle, context, closeHooks);
+      WorkerPool workerPool = poolName != null ? vertx.createSharedWorkerPool(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
+      ContextImpl context = (ContextImpl) (options.isWorker() ? vertx.createWorkerContext(deployment, closeHooks, workerPool, tccl) :
+        vertx.createEventLoopContext(deployment, closeHooks, workerPool, tccl));
+      VerticleHolder holder = new VerticleHolder(verticle, context, workerPool, closeHooks);
       deployment.addVerticle(holder);
       context.runOnContext(v -> {
         try {
@@ -217,12 +210,12 @@ public class DeploymentManager {
                 promise.complete(deployment);
               }
             } else if (failureReported.compareAndSet(false, true)) {
-              deployment.rollback(callingContext, promise, context, holder.closeHooks, ar.cause());
+              deployment.rollback(callingContext, promise, context, holder, ar.cause());
             }
           });
         } catch (Throwable t) {
           if (failureReported.compareAndSet(false, true))
-            deployment.rollback(callingContext, promise, context, holder.closeHooks, t);
+            deployment.rollback(callingContext, promise, context, holder, t);
         }
       });
     }
@@ -234,12 +227,23 @@ public class DeploymentManager {
 
     final Verticle verticle;
     final ContextImpl context;
+    final WorkerPool workerPool;
     final CloseHooks closeHooks;
 
-    VerticleHolder(Verticle verticle, ContextImpl context, CloseHooks closeHooks) {
+    VerticleHolder(Verticle verticle, ContextImpl context, WorkerPool workerPool, CloseHooks closeHooks) {
       this.verticle = verticle;
       this.context = context;
+      this.workerPool = workerPool;
       this.closeHooks = closeHooks;
+    }
+
+    void close(Handler<AsyncResult<Void>> completionHandler) {
+      closeHooks.run(ar -> {
+        if (workerPool != null) {
+          workerPool.close();
+        }
+        completionHandler.handle(ar);
+      });
     }
   }
 
@@ -270,7 +274,7 @@ public class DeploymentManager {
       verticles.add(holder);
     }
 
-    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextImpl context, CloseHooks closeHooks, Throwable cause) {
+    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextImpl context, VerticleHolder closeHooks, Throwable cause) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext).onComplete(childrenResult -> {
@@ -290,7 +294,7 @@ public class DeploymentManager {
           if (childrenResult.failed()) {
             reportFailure(cause, callingContext, completionHandler);
           } else {
-            closeHooks.run(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
+            closeHooks.close(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
           }
         });
       }
@@ -337,11 +341,11 @@ public class DeploymentManager {
           Promise p = Promise.promise();
           undeployFutures.add(p.future());
           context.runOnContext(v -> {
-            Promise<Void> stopPromise = Promise.promise();
+            Promise<Void> stopPromise = undeployingContext.promise();
             Future<Void> stopFuture = stopPromise.future();
             stopFuture.onComplete(ar -> {
               deployments.remove(deploymentID);
-              verticleHolder.closeHooks.run(ar2 -> {
+              verticleHolder.close(ar2 -> {
                 if (ar2.failed()) {
                   // Log error but we report success anyway
                   log.error("Failed to run close hook", ar2.cause());
@@ -368,8 +372,12 @@ public class DeploymentManager {
         Handler<Void> handler = undeployHandler;
         if (handler != null) {
           undeployHandler = null;
-          fut.onComplete(ar -> {
+          return fut.compose(v -> {
             handler.handle(null);
+            return Future.succeededFuture();
+          }, v -> {
+            handler.handle(null);
+            return Future.succeededFuture();
           });
         }
         return fut;

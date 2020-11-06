@@ -11,12 +11,14 @@
 
 package io.vertx.core.http;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
@@ -28,7 +30,7 @@ import java.util.List;
  * or that was set on the {@link io.vertx.core.http.HttpClientRequest} instance.
  * <p>
  * It implements {@link io.vertx.core.streams.ReadStream} so it can be used with
- * {@link io.vertx.core.streams.Pump} to pump data with flow control.
+ * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -52,6 +54,12 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
 
   @Override
   HttpClientResponse endHandler(Handler<Void> endHandler);
+
+  /**
+   * @return a {@code NetSocket} facade to interact with the HTTP client response.
+   */
+  @CacheReturn
+  NetSocket netSocket();
 
   /**
    * @return the version of the response
@@ -120,7 +128,10 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    * @param bodyHandler This handler will be called after all the body has been received
    */
   @Fluent
-  HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler);
+  default HttpClientResponse bodyHandler(Handler<Buffer> bodyHandler) {
+    body().onSuccess(bodyHandler);
+    return this;
+  }
 
   /**
    * Same as {@link #body()} but with an {@code handler} called when the operation completes
@@ -141,6 +152,20 @@ public interface HttpClientResponse extends ReadStream<Buffer> {
    * @return a future completed with the body result
    */
   Future<Buffer> body();
+
+  /**
+   * Same as {@link #end()} but with an {@code handler} called when the operation completes
+   */
+  default void end(Handler<AsyncResult<Void>> handler) {
+    end().onComplete(handler);
+  }
+
+  /**
+   * Returns a future signaling when the response has been fully received successfully or failed.
+   *
+   * @return a future completed with the body result
+   */
+  Future<Void> end();
 
   /**
    * Set an custom frame handler. The handler will get notified when the http stream receives an custom HTTP/2

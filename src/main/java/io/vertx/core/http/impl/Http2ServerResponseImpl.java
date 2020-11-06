@@ -37,6 +37,8 @@ import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
+import io.vertx.core.spi.observability.HttpResponse;
+import io.vertx.core.streams.ReadStream;
 
 import java.util.Map;
 
@@ -45,7 +47,7 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerResponseImpl implements HttpServerResponse {
+public class Http2ServerResponseImpl implements HttpServerResponse, HttpResponse {
 
   private final Http2ServerStream stream;
   private final ChannelHandlerContext ctx;
@@ -70,7 +72,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   private Handler<Void> bodyEndHandler;
   private Handler<Void> closeHandler;
   private Handler<Void> endHandler;
-  private NetSocket netSocket;
+  private Future<NetSocket> netSocket;
 
   public Http2ServerResponseImpl(Http2ServerConnection conn,
                                  Http2ServerStream stream,
@@ -115,19 +117,19 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       closeHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      stream.context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+      stream.context.emit(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (endHandler != null) {
-      stream.context.dispatch(null, endHandler);
+      stream.context.emit(null, endHandler);
     }
     if (closeHandler != null) {
-      stream.context.dispatch(null, closeHandler);
+      stream.context.emit(null, closeHandler);
     }
   }
 
   private void checkHeadWritten() {
     if (headWritten) {
-      throw new IllegalStateException("Header already sent");
+      throw new IllegalStateException("Response head already sent");
     }
   }
 
@@ -140,6 +142,11 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
       exceptionHandler = handler;
       return this;
     }
+  }
+
+  @Override
+  public int statusCode() {
+    return getStatusCode();
   }
 
   @Override
@@ -406,18 +413,18 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     end((ByteBuf) null, handler);
   }
 
-  NetSocket netSocket() {
-    checkValid();
+  Future<NetSocket> netSocket() {
     synchronized (conn) {
-      if (netSocket != null) {
-        return netSocket;
+      if (netSocket == null) {
+        status = HttpResponseStatus.OK;
+        if (!checkSendHeaders(false)) {
+          netSocket = stream.context.failedFuture("Response for CONNECT already sent");
+        } else {
+          ctx.flush();
+          HttpNetSocket ns = HttpNetSocket.netSocket(conn, stream.context, (ReadStream<Buffer>) stream, this);
+          netSocket = Future.succeededFuture(ns);
+        }
       }
-      status = HttpResponseStatus.OK;
-      if (!checkSendHeaders(false)) {
-        throw new IllegalStateException("Response for CONNECT already sent");
-      }
-      ctx.flush();
-      netSocket = conn.toNetSocket(stream);
     }
     return netSocket;
   }
@@ -586,7 +593,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
     } else {
       h = ar -> {};
     }
-    stream.resolveFile(filename, offset, length, ar -> {
+    HttpUtils.resolveFile(stream.vertx, filename, offset, length, ar -> {
       if (ar.succeeded()) {
         AsyncFile file = ar.result();
         long contentLength = Math.min(length, file.getReadLength());
@@ -667,15 +674,13 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
   }
 
   @Override
-  public void reset(long code) {
-    /*
-    if (!handleEnded(true)) {
-      throw new IllegalStateException("Response has already been written");
+  public boolean reset(long code) {
+    if (ended) {
+      return false;
     }
-    */
-    checkValid();
     stream.writeReset(code);
     ctx.flush();
+    return true;
   }
 
   @Override
@@ -709,12 +714,18 @@ public class Http2ServerResponseImpl implements HttpServerResponse {
 
   @Override
   public HttpServerResponse addCookie(Cookie cookie) {
-    cookies().put(cookie.getName(), (ServerCookie) cookie);
+    synchronized (conn) {
+      checkHeadWritten();
+      cookies().put(cookie.getName(), (ServerCookie) cookie);
+    }
     return this;
   }
 
   @Override
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
-    return CookieImpl.removeCookie(cookies(), name, invalidate);
+    synchronized (conn) {
+      checkHeadWritten();
+      return CookieImpl.removeCookie(cookies(), name, invalidate);
+    }
   }
 }

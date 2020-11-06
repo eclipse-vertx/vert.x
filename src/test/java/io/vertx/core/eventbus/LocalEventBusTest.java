@@ -133,7 +133,7 @@ public class LocalEventBusTest extends EventBusTestBase {
     vertx.deployVerticle(new AbstractVerticle() {
       MessageConsumer consumer;
       @Override
-      public void start() throws Exception {
+      public void start() {
         context.exceptionHandler(err -> {
           fail("Unexpected exception");
         });

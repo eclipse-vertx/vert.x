@@ -18,6 +18,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 /**
@@ -42,7 +43,7 @@ import io.vertx.core.streams.WriteStream;
  * This class supports both chunked and non-chunked HTTP.
  * <p>
  * It implements {@link io.vertx.core.streams.WriteStream} so it can be used with
- * {@link io.vertx.core.streams.Pump} to pump data with flow control.
+ * {@link io.vertx.core.streams.Pipe} to pipe data with flow control.
  * <p>
  * An example of using this class is as follows:
  * <p>
@@ -50,7 +51,7 @@ import io.vertx.core.streams.WriteStream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @VertxGen
-public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClientResponse> {
+public interface HttpClientRequest extends WriteStream<Buffer> {
 
   @Override
   HttpClientRequest exceptionHandler(Handler<Throwable> handler);
@@ -60,6 +61,39 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
 
   @Override
   HttpClientRequest drainHandler(Handler<Void> handler);
+
+  /**
+   * Set the host value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   * <p>The initial value is the same than the server socket address host.
+   * <p>Keep in mind that changing this value won't change the actual server socket address for this request.
+   *
+   * @param host the host part of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setHost(String host);
+
+  /**
+   * @return the host value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   */
+  String getHost();
+
+  /**
+   * Set the port value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   *
+   * <p> Keep in mind that this won't change the actual server socket address for this request.
+   * <p>The initial value is the same than the server socket address port.
+   *
+   * @param port the port part of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setPort(int port);
+
+  /**
+   * @return the port value of the HTTP/1.1 {@code host} header or HTTP/2 {@code authority} pseudo header
+   */
+  int getPort();
 
   /**
    * Set the request to follow HTTP redirects up to {@link HttpClientOptions#getMaxRedirects()}.
@@ -97,7 +131,16 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   /**
    * The HTTP method for the request.
    */
-  HttpMethod method();
+  HttpMethod getMethod();
+
+  /**
+   * Set the HTTP method for this request.
+   *
+   * @param method the HTTP method
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setMethod(HttpMethod method);
 
   /**
    * @return the absolute URI corresponding to the the HTTP request
@@ -107,7 +150,16 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   /**
    * @return The URI of the request.
    */
-  String uri();
+  String getURI();
+
+  /**
+   * Set the request uri.
+   *
+   * @param uri the request uri
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setURI(String uri);
 
   /**
    * @return The path part of the uri. For example /somepath/somemorepath/someresource.foo
@@ -118,17 +170,6 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * @return the query part of the uri. For example someparam=32&amp;someotherparam=x
    */
   String query();
-
-  /**
-   * For HTTP/2 it sets the {@literal :authority} pseudo header otherwise it sets the {@literal Host} header
-   */
-  @Fluent
-  HttpClientRequest setAuthority(String authority);
-
-  /**
-   * @return the request host. For HTTP/2 it returns the {@literal :authority} pseudo header otherwise it returns the {@literal Host} header
-   */
-  String getAuthority();
 
   /**
    * @return The HTTP headers
@@ -170,6 +211,11 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   @Fluent
   HttpClientRequest putHeader(CharSequence name, Iterable<CharSequence> values);
+
+  /**
+   * @return the HTTP version for this request
+   */
+  HttpVersion version();
 
   /**
    * Write a {@link String} to the request body, encoded as UTF-8.
@@ -223,14 +269,139 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * @return a reference to this, so the API can be used fluently
    * @throws java.lang.IllegalStateException when no response handler is set
    */
-  Future<HttpVersion> sendHead();
+  Future<Void> sendHead();
 
   /**
    * Like {@link #sendHead()} but with an handler after headers have been sent. The handler will be called with
    * the {@link HttpVersion} if it can be determined or null otherwise.<p>
    */
   @Fluent
-  HttpClientRequest sendHead(Handler<AsyncResult<HttpVersion>> completionHandler);
+  HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler);
+
+  /**
+   * Create an HTTP tunnel to the server.
+   *
+   * <p> Send an HTTP request to the server, then configures the transport to exchange
+   * raw buffers when the server replies with an appropriate response:
+   *
+   * <ul>
+   *   <li>{@code 200} for HTTP {@code CONNECT} method</li>
+   *   <li>{@code 101} for HTTP/1.1 {@code GET} with {@code Upgrade} {@code connection} header</li>
+   * </ul>
+   *
+   * <p> The {@code handler} is called after response headers are received.
+   *
+   * <p> Use {@link HttpClientResponse#netSocket} to get a {@link NetSocket} for the interacting
+   * more conveniently with the server.
+   *
+   * <p> HTTP/1.1 pipe-lined requests are not supported.
+   *
+   * @param handler the response completion handler
+   */
+  void connect(Handler<AsyncResult<HttpClientResponse>> handler);
+
+  /**
+   * Like {@link #connect(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<HttpClientResponse> connect();
+
+  /**
+   * Set a callback for the associated {@link HttpClientResponse}.
+   *
+   * <p> This method does not modify the current request being sent.
+   *
+   * @param handler the completion handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest response(Handler<AsyncResult<HttpClientResponse>> handler);
+
+  /**
+   * @return a future of the {@link HttpClientResponse}, see {@link #response(Handler)}
+   */
+  Future<HttpClientResponse> response();
+
+  /**
+   * Send the request with an empty body.
+   *
+   * @param handler the completion handler for the {@link HttpClientResponse}
+   */
+  default void send(Handler<AsyncResult<HttpClientResponse>> handler) {
+    response(handler);
+    end();
+  }
+
+  /**
+   * Like {@link #send(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> send() {
+    end();
+    return response();
+  }
+
+  /**
+   * Send the request with a string {@code body}.
+   *
+   * @param handler the completion handler for the {@link HttpClientResponse}
+   */
+  default void send(String body, Handler<AsyncResult<HttpClientResponse>> handler) {
+    response(handler);
+    end(body);
+  }
+
+  /**
+   * Like {@link #send(String, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> send(String body) {
+    end(body);
+    return response();
+  }
+
+  /**
+   * Send the request with a buffer {@code body}.
+   *
+   * @param handler the completion handler for the {@link HttpClientResponse}
+   */
+  default void send(Buffer body, Handler<AsyncResult<HttpClientResponse>> handler) {
+    response(handler);
+    end(body);
+  }
+
+  /**
+   * Like {@link #send(Buffer, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> send(Buffer body) {
+    end(body);
+    return response();
+  }
+
+  /**
+   * Send the request with a stream {@code body}.
+   *
+   * <p> If the {@link HttpHeaders#CONTENT_LENGTH} is set then the request assumes this is the
+   * length of the {stream}, otherwise the request will set a chunked {@link HttpHeaders#CONTENT_ENCODING}.
+   *
+   * @param handler the completion handler for the {@link HttpClientResponse}
+   */
+  default void send(ReadStream<Buffer> body, Handler<AsyncResult<HttpClientResponse>> handler) {
+    MultiMap headers = headers();
+    if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      setChunked(true);
+    }
+    body.pipeTo(this);
+  }
+
+  /**
+   * Like {@link #send(ReadStream, Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  default Future<HttpClientResponse> send(ReadStream<Buffer> body) {
+    MultiMap headers = headers();
+    if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
+      setChunked(true);
+    }
+    body.pipeTo(this);
+    return response();
+  }
 
   /**
    * Same as {@link #end(Buffer)} but writes a String in UTF-8 encoding
@@ -318,13 +489,12 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * The handler is called with a <i>read-only</i> {@link HttpClientRequest}, the following methods can be called:<p/>
    *
    * <ul>
-   *   <li>{@link HttpClientRequest#method()}</li>
-   *   <li>{@link HttpClientRequest#uri()}</li>
+   *   <li>{@link HttpClientRequest#getMethod()}</li>
+   *   <li>{@link HttpClientRequest#getURI()}</li>
    *   <li>{@link HttpClientRequest#headers()}</li>
-   *   <li>{@link HttpClientRequest#getAuthority()}</li>
    * </ul>
    *
-   * In addition the handler should call the {@link HttpClientRequest#setHandler} method to set an handler to
+   * In addition the handler should call the {@link HttpClientRequest#response(Handler)} method to set an handler to
    * process the response.<p/>
    *
    * @param handler the handler
@@ -332,36 +502,6 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    */
   @Fluent
   HttpClientRequest pushHandler(Handler<HttpClientRequest> handler);
-
-  /**
-   * Get a {@link NetSocket} for the underlying connection of this request.
-   * <p>
-   * The {@code handler} is called after the response headers are received.
-   * <p>
-   * This shall be used when using a {@link HttpMethod#CONNECT} method.
-   * <p>
-   * HTTP/1.1 pipe-lined requests cannot support net socket upgrade.
-   * <p>
-   * Pooled connection is removed from the pool.
-   *
-   * @param handler the handler
-   * @return a reference to this, so the API can be used fluently
-   */
-  @Fluent
-  default HttpClientRequest netSocket(Handler<AsyncResult<NetSocket>> handler) {
-    Future<NetSocket> fut = netSocket();
-    if (handler != null) {
-      fut.onComplete(handler);
-    }
-    return this;
-  }
-
-  /**
-   * Like {@link #netSocket(Handler)} but returns a {@code Future} of the asynchronous result
-   */
-  default Future<NetSocket> netSocket() {
-    return Future.failedFuture("Cannot use socket connect");
-  }
 
   /**
    * Reset this stream with the error code {@code 0}.
@@ -384,7 +524,7 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * <p/>
    *
    * @param code the error code
-   * @return true when reset has been performed
+   * @return {@code true} when reset has been performed
    */
   boolean reset(long code);
 
@@ -392,11 +532,11 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    * Reset this request:
    * <p/>
    * <ul>
-   *   <li>for HTTP/2, this performs send an HTTP/2 reset frame with the specified error {@code code}</li>
-   *   <li>for HTTP/1.x, this closes the connection when the current request is inflight</li>
+   *   <li>for HTTP/2, send an HTTP/2 reset frame with the specified error {@code code}</li>
+   *   <li>for HTTP/1.x, close the connection when the current request is inflight</li>
    * </ul>
    * <p/>
-   * When the request has not yet been sent, the request will be aborted and false is returned as indicator.
+   * When the request has not yet been sent, the request will be aborted and {@code false} is returned as indicator.
    * <p/>
    *
    * @param code the error code
@@ -462,16 +602,4 @@ public interface HttpClientRequest extends WriteStream<Buffer>, Future<HttpClien
    */
   StreamPriority getStreamPriority();
 
-  @Override
-  HttpClientRequest onComplete(Handler<AsyncResult<HttpClientResponse>> handler);
-
-  @Override
-  default HttpClientRequest onSuccess(Handler<HttpClientResponse> handler) {
-    return (HttpClientRequest) Future.super.onSuccess(handler);
-  }
-
-  @Override
-  default HttpClientRequest onFailure(Handler<Throwable> handler) {
-    return (HttpClientRequest) Future.super.onFailure(handler);
-  }
 }

@@ -111,14 +111,20 @@ public class HttpProxy extends TestProxyBase {
           }
           NetClientOptions netOptions = new NetClientOptions();
           NetClient netClient = vertx.createNetClient(netOptions);
-          netClient.connect(port, host, result -> {
-            if (result.succeeded()) {
-              NetSocket serverSocket = request.netSocket();
-              NetSocket clientSocket = result.result();
-              serverSocket.closeHandler(v -> clientSocket.close());
-              clientSocket.closeHandler(v -> serverSocket.close());
-              Pump.pump(serverSocket, clientSocket).start();
-              Pump.pump(clientSocket, serverSocket).start();
+          netClient.connect(port, host, ar1 -> {
+            if (ar1.succeeded()) {
+              request.toNetSocket().onComplete(ar2 -> {
+                if (ar2.succeeded()) {
+                  NetSocket serverSocket = ar2.result();
+                  NetSocket clientSocket = ar1.result();
+                  serverSocket.closeHandler(v -> clientSocket.close());
+                  clientSocket.closeHandler(v -> serverSocket.close());
+                  Pump.pump(serverSocket, clientSocket).start();
+                  Pump.pump(clientSocket, serverSocket).start();
+                } else {
+                  // Not handled
+                }
+              });
             } else {
               request.response().setStatusCode(403).end("request failed");
             }
@@ -133,22 +139,28 @@ public class HttpProxy extends TestProxyBase {
         HttpClient client = vertx.createHttpClient();
         RequestOptions opts = new RequestOptions();
         opts.setAbsoluteURI(uri);
-        for (String name : request.headers().names()) {
-          if (!name.equals("Proxy-Authorization")) {
-            opts.addHeader(name, request.headers().get(name));
+        client.request(opts).compose(req -> {
+          for (String name : request.headers().names()) {
+            if (!name.equals("Proxy-Authorization")) {
+              req.putHeader(name, request.headers().get(name));
+            }
           }
-        }
-        client.get(opts, ar -> {
-          if (ar.succeeded()) {
-            HttpClientResponse resp = ar.result();
+          return req.send();
+        }).onComplete(ar1 -> {
+          if (ar1.succeeded()) {
+            HttpClientResponse resp = ar1.result();
             for (String name : resp.headers().names()) {
               request.response().putHeader(name, resp.headers().getAll(name));
             }
-            resp.bodyHandler(body -> {
-              request.response().end(body);
+            resp.body(ar2 -> {
+              if (ar2.succeeded()) {
+                request.response().end(ar2.result());
+              } else {
+                request.response().setStatusCode(500).end(ar2.cause().toString() + " on client request");
+              }
             });
           } else {
-            Throwable e = ar.cause();
+            Throwable e = ar1.cause();
             log.debug("exception", e);
             int status;
             if (e instanceof UnknownHostException) {

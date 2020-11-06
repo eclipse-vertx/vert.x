@@ -118,6 +118,17 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
+   * Get the Number at position {@code pos} in the array,
+   *
+   * @param pos the position in the array
+   * @return the Number, or null if a null value present
+   * @throws java.lang.ClassCastException if the value is not a Number
+   */
+  public Number getNumber(int pos) {
+    return (Number) list.get(pos);
+  }
+
+  /**
    * Get the Integer at position {@code pos} in the array,
    *
    * @param pos the position in the array
@@ -482,9 +493,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
-   * Get the unerlying List
+   * Get the underlying {@code List} as is.
    *
-   * @return the underlying List
+   * This list may contain values that are not the types returned by the {@code JsonArray} and
+   * with an unpredictable representation of the value, e.g you might get a JSON object
+   * as a {@link JsonObject} or as a {@link Map}.
+   *
+   * @return the underlying List.
    */
   public List getList() {
     return list;
@@ -635,18 +650,17 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
 
   @Override
   public void writeToBuffer(Buffer buffer) {
-    String encoded = encode();
-    byte[] bytes = encoded.getBytes();
-    buffer.appendInt(bytes.length);
-    buffer.appendBytes(bytes);
+    Buffer buf = toBuffer();
+    buffer.appendInt(buf.length());
+    buffer.appendBuffer(buf);
   }
 
   @Override
   public int readFromBuffer(int pos, Buffer buffer) {
     int length = buffer.getInt(pos);
     int start = pos + 4;
-    String encoded = buffer.getString(start, start + length);
-    fromJson(encoded);
+    Buffer buf = buffer.getBuffer(start, start + length);
+    fromBuffer(buf);
     return pos + length + 4;
   }
 

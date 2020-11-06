@@ -14,6 +14,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.net.impl.clientconnection.Pool;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 /**
@@ -23,7 +24,7 @@ class ClientHttpStreamEndpoint extends ClientHttpEndpointBase {
 
   private final Pool<HttpClientConnection> pool;
 
-  public ClientHttpStreamEndpoint(HttpClientMetrics metrics,
+  public ClientHttpStreamEndpoint(ClientMetrics metrics,
                                   Object metric,
                                   int queueMaxSize,
                                   long maxSize,

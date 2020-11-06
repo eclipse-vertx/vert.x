@@ -14,15 +14,21 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -33,6 +39,7 @@ import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.SWITCHING_PROTOCOLS;
 import static io.vertx.core.http.impl.HttpUtils.SC_SWITCHING_PROTOCOLS;
 import static io.vertx.core.http.impl.HttpUtils.SC_BAD_GATEWAY;
+import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  * This class is optimised for performance when used on the same event loop. However it can be used safely from other threads.
@@ -134,9 +141,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public Future<Void> close() {
+  public Future<Void> close(short statusCode, String reason) {
     synchronized (conn) {
-      checkClosed();
       if (status == null) {
         if (handshakePromise == null) {
           tryHandshake(101);
@@ -145,11 +151,11 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
         }
       }
     }
-    return super.close();
+    return super.close(statusCode, reason);
   }
 
   @Override
-  public ServerWebSocketImpl writeFrame(WebSocketFrame frame, Handler<AsyncResult<Void>> handler) {
+  public Future<Void> writeFrame(WebSocketFrame frame) {
     synchronized (conn) {
       Boolean check = checkAccept();
       if (check == null) {
@@ -158,7 +164,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       if (!check) {
         throw new IllegalStateException("Cannot write to WebSocket, it has been rejected");
       }
-      return super.writeFrame(frame, handler);
+      return super.writeFrame(frame);
     }
   }
 
@@ -181,13 +187,18 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
 
   private void doHandshake() {
     Channel channel = conn.channel();
+    Object metric;
     try {
       handshaker.handshake(channel, request.nettyRequest());
+      metric = request.metric;
     } catch (Exception e) {
       request.response().setStatusCode(BAD_REQUEST.code()).end();
       throw e;
     } finally {
       request = null;
+    }
+    if (conn.metrics != null) {
+      conn.metrics.responseBegin(metric, new HttpResponseHead(HttpVersion.HTTP_1_1, 101, "Switching Protocol", MultiMap.caseInsensitiveMultiMap()));
     }
     conn.responseComplete();
     status = SWITCHING_PROTOCOLS.code();
@@ -240,5 +251,20 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
       p2.handle(ar);
     });
     return p2.future();
+  }
+
+  @Override
+  protected void closeConnection() {
+    conn.channelHandlerContext().close();
+  }
+
+  @Override
+  protected void handleClose(boolean graceful) {
+    HttpServerMetrics metrics = conn.metrics;
+    if (METRICS_ENABLED && metrics != null) {
+      metrics.disconnected(getMetric());
+      setMetric(null);
+    }
+    super.handleClose(graceful);
   }
 }

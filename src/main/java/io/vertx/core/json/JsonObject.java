@@ -14,7 +14,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
@@ -143,6 +142,18 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     } else {
       return val.toString();
     }
+  }
+
+  /**
+   * Get the Number value with the specified key
+   *
+   * @param key the key to return the value for
+   * @return the value or null if no value for that key
+   * @throws java.lang.ClassCastException if the value is not a Number
+   */
+  public Number getNumber(String key) {
+    Objects.requireNonNull(key);
+    return (Number) map.get(key);
   }
 
   /**
@@ -389,6 +400,22 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     Objects.requireNonNull(key);
     if (map.containsKey(key)) {
       return getString(key);
+    } else {
+      return def;
+    }
+  }
+
+  /**
+   * Like {@link #getNumber(String)} but specifying a default value to return if there is no entry.
+   *
+   * @param key the key to lookup
+   * @param def the default value to use if the entry is not present
+   * @return the value or {@code def} if no entry present
+   */
+  public Number getNumber(String key, Number def) {
+    Objects.requireNonNull(key);
+    if (map.containsKey(key)) {
+      return getNumber(key);
     } else {
       return def;
     }
@@ -742,7 +769,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Get the underlying {@code Map} as is.
    *
-   * This map may contain values that are not the types returned by the {@code JsonObject}.
+   * This map may contain values that are not the types returned by the {@code JsonObject} and
+   * with an unpredictable representation of the value, e.g you might get a JSON object
+   * as a {@link JsonObject} or as a {@link Map}.
    *
    * @return the underlying Map.
    */
@@ -874,18 +903,17 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
 
   @Override
   public void writeToBuffer(Buffer buffer) {
-    String encoded = encode();
-    byte[] bytes = encoded.getBytes(StandardCharsets.UTF_8);
-    buffer.appendInt(bytes.length);
-    buffer.appendBytes(bytes);
+    Buffer buf = toBuffer();
+    buffer.appendInt(buf.length());
+    buffer.appendBuffer(buf);
   }
 
   @Override
   public int readFromBuffer(int pos, Buffer buffer) {
     int length = buffer.getInt(pos);
     int start = pos + 4;
-    String encoded = buffer.getString(start, start + length);
-    fromJson(encoded);
+    Buffer buf = buffer.getBuffer(start, start + length);
+    fromBuffer(buf);
     return pos + length + 4;
   }
 

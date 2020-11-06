@@ -18,11 +18,9 @@ import io.vertx.core.http.WebSocketBase;
  */
 public class WebSocketMetric {
 
-  public final SocketMetric soMetric;
   public final WebSocketBase ws;
 
-  public WebSocketMetric(SocketMetric soMetric, WebSocketBase ws) {
-    this.soMetric = soMetric;
+  public WebSocketMetric(WebSocketBase ws) {
     this.ws = ws;
   }
 }

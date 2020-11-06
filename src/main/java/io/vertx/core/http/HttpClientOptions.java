@@ -16,6 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -192,6 +193,16 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final int DEFAULT_POOL_CLEANER_PERIOD = 1000;
 
+  /**
+   * Default WebSocket closing timeout = 10000 ms (10 second)
+   */
+  public static final int DEFAULT_WEBSOCKET_CLOSING_TIMEOUT = 10_000;
+
+  /**
+   * Default tracing control = {@link TracingPolicy#PROPAGATE}
+   */
+  public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.PROPAGATE;
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -227,7 +238,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int webSocketCompressionLevel;
   private boolean webSocketAllowClientNoContext;
   private boolean webSocketRequestServerNoContext;
+  private int webSocketClosingTimeout;
 
+  private TracingPolicy tracingPolicy;
 
   /**
    * Default constructor
@@ -277,6 +290,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.webSocketAllowClientNoContext = other.webSocketAllowClientNoContext;
     this.webSocketCompressionLevel = other.webSocketCompressionLevel;
     this.webSocketRequestServerNoContext = other.webSocketRequestServerNoContext;
+    this.webSocketClosingTimeout = other.webSocketClosingTimeout;
+    this.tracingPolicy = other.tracingPolicy;
   }
 
   /**
@@ -334,7 +349,9 @@ public class HttpClientOptions extends ClientOptionsBase {
     webSocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
     webSocketAllowClientNoContext = DEFAULT_WEBSOCKET_ALLOW_CLIENT_NO_CONTEXT;
     webSocketRequestServerNoContext = DEFAULT_WEBSOCKET_REQUEST_SERVER_NO_CONTEXT;
+    webSocketClosingTimeout = DEFAULT_WEBSOCKET_CLOSING_TIMEOUT;
     poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
+    tracingPolicy = DEFAULT_TRACING_POLICY;
   }
 
   @Override
@@ -1195,6 +1212,29 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * @return the amount of time (in seconds) a client WebSocket will wait until it closes TCP connection after receiving a close frame
+   */
+  public int getWebSocketClosingTimeout() {
+    return webSocketClosingTimeout;
+  }
+
+  /**
+   * Set the amount of time a client WebSocket will wait until it closes the TCP connection after receiving a close frame.
+   *
+   * <p> When a WebSocket is closed, the server should close the TCP connection. This timeout will close
+   * the TCP connection on the client when it expires.
+   *
+   * <p> Set {@code 0L} or a negative value to disable.
+   *
+   * @param webSocketClosingTimeout the timeout is seconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setWebSocketClosingTimeout(int webSocketClosingTimeout) {
+    this.webSocketClosingTimeout = webSocketClosingTimeout;
+    return this;
+  }
+
+  /**
    * @return the initial buffer size for the HTTP decoder
    */
   public int getDecoderInitialBufferSize() { return decoderInitialBufferSize; }
@@ -1227,6 +1267,24 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setPoolCleanerPeriod(int poolCleanerPeriod) {
     this.poolCleanerPeriod = poolCleanerPeriod;
+    return this;
+  }
+
+  /**
+   * @return the tracing policy
+   */
+  public TracingPolicy getTracingPolicy() {
+    return tracingPolicy;
+  }
+
+  /**
+   * Set the tracing policy for the client behavior when Vert.x has tracing enabled.
+   *
+   * @param tracingPolicy the tracing policy
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setTracingPolicy(TracingPolicy tracingPolicy) {
+    this.tracingPolicy = tracingPolicy;
     return this;
   }
 }

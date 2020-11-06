@@ -326,11 +326,11 @@ public class RecordParserTest {
     assertFalse(stream.isPaused());
     parser.pause();
     parser.resume();
-    stream.emit(Buffer.buffer("first\r\nsecond\r\nthird"));
+    stream.write(Buffer.buffer("first\r\nsecond\r\nthird"));
     assertEquals("first", records.poll());
     assertEquals("second", records.poll());
     assertNull(records.poll());
-    stream.emit(Buffer.buffer("\r\n"));
+    stream.write(Buffer.buffer("\r\n"));
     assertEquals("third", records.poll());
     assertNull(records.poll());
     assertEquals(0, ends.get());
@@ -346,7 +346,7 @@ public class RecordParserTest {
     assertFalse(stream.isPaused());
     int count = 0;
     do {
-      stream.emit(Buffer.buffer("item-" + count++ + "\r\n"));
+      stream.write(Buffer.buffer("item-" + count++ + "\r\n"));
     } while (!stream.isPaused());
     assertNull(records.poll());
     parser.resume();
@@ -366,7 +366,7 @@ public class RecordParserTest {
     RecordParser parser = RecordParser.newDelimited("\r\n", stream);
     parser.handler(event -> {});
     parser.pause().fetch(1);
-    stream.emit(Buffer.buffer("abc"));
+    stream.write(Buffer.buffer("abc"));
     assertFalse(stream.isPaused());
   }
 
@@ -377,7 +377,7 @@ public class RecordParserTest {
     List<Buffer> emitted = new ArrayList<>();
     parser.handler(emitted::add);
     parser.pause().fetch(1);
-    stream.emit(Buffer.buffer("abc\r\ndef\r\n"));
+    stream.write(Buffer.buffer("abc\r\ndef\r\n"));
     parser.fetch(1);
     assertEquals(Arrays.asList(Buffer.buffer("abc"), Buffer.buffer("def")), emitted);
   }
@@ -389,7 +389,7 @@ public class RecordParserTest {
     List<Buffer> emitted = new ArrayList<>();
     parser.handler(emitted::add);
     parser.pause();
-    stream.emit(Buffer.buffer("abc\r\n\r\n"));
+    stream.write(Buffer.buffer("abc\r\n\r\n"));
     parser.fetch(1);
     assertEquals(Collections.singletonList(Buffer.buffer("abc")), emitted);
     parser.fetch(1);
@@ -403,7 +403,7 @@ public class RecordParserTest {
     List<Buffer> emitted = new ArrayList<>();
     parser.handler(emitted::add);
     parser.pause();
-    stream.emit(Buffer.buffer("3\r\nabc\r\n"));
+    stream.write(Buffer.buffer("3\r\nabc\r\n"));
     parser.fetch(1);
     assertEquals(Collections.singletonList(Buffer.buffer("3")), emitted);
     parser.fixedSizeMode(5);
@@ -444,8 +444,8 @@ public class RecordParserTest {
     if (pauseParser) {
       parser.pause();
     }
-    stream.emit(Buffer.buffer("toto\ntit"));
-    stream.emit(Buffer.buffer(finalDelimiter ? "i\n" : "i"));
+    stream.write(Buffer.buffer("toto\ntit"));
+    stream.write(Buffer.buffer(finalDelimiter ? "i\n" : "i"));
     stream.end();
     if (pauseParser) {
       parser.fetch(1);

@@ -543,6 +543,17 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testCompositeFutureCauses() {
+    CompositeFuture composite = CompositeFuture.all(Future.failedFuture("blabla"), Future.succeededFuture());
+
+    assertEquals(2, composite.causes().size());
+    assertNotNull(composite.causes().get(0));
+    assertEquals("blabla", composite.causes().get(0).getMessage());
+
+    assertNull(composite.causes().get(1));
+  }
+
+  @Test
   public void testCompositeFutureMulti() {
     Promise<String> p1 = Promise.promise();
     Future<String> f1 = p1.future();
@@ -644,6 +655,25 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapValueSuccess() {
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> f = p.future();
+    Future<String> mapped = f.map("5");
+    Checker<String> checker = new Checker<>(mapped);
+    checker.assertNotCompleted();
+    p.complete(3);
+    checker.assertSucceeded("5");
+  }
+
+  @Test
+  public void testMapValueAlreadySuccess() {
+    Future<Integer> f = Future.succeededFuture(3);
+    Future<String> mapped = f.map("5");
+    Checker<String> checker = new Checker<>(mapped);
+    checker.assertSucceeded("5");
+  }
+
+  @Test
   public void testMapFailure() {
     Throwable cause = new Throwable();
     Promise<String> p = Promise.promise();
@@ -652,6 +682,36 @@ public class FutureTest extends VertxTestBase {
     Checker<String> checker = new Checker<>(mapped);
     checker.assertNotCompleted();
     p.fail(cause);
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testMapAlreadyFailure() {
+    Throwable cause = new Throwable();
+    Future<String> f = Future.failedFuture(cause);
+    Future<String> mapped = f.map(Object::toString);
+    Checker<String> checker = new Checker<>(mapped);
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testMapValueFailure() {
+    Throwable cause = new Throwable();
+    Promise<String> p = Promise.promise();
+    Future<String> f = p.future();
+    Future<String> mapped = f.map("5");
+    Checker<String> checker = new Checker<>(mapped);
+    checker.assertNotCompleted();
+    p.fail(cause);
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testMapValueAlreadyFailure() {
+    Throwable cause = new Throwable();
+    Future<String> f = Future.failedFuture(cause);
+    Future<String> mapped = f.map("5");
+    Checker<String> checker = new Checker<>(mapped);
     checker.assertFailed(cause);
   }
 
@@ -778,6 +838,45 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testOtherwiseAlreadySuccessWithSuccess() {
+    AtomicBoolean called = new AtomicBoolean();
+    Future<String> f = Future.succeededFuture("yeah");
+    Future<String> r = f.otherwise(t -> {
+      called.set(true);
+      throw new AssertionError();
+    });
+    Checker<String> checker = new Checker<>(r);
+    assertTrue(r.succeeded());
+    checker.assertSucceeded("yeah");
+    assertFalse(called.get());
+  }
+
+  @Test
+  public void testOtherwiseValueSuccessWithSuccess() {
+    AtomicBoolean called = new AtomicBoolean();
+    Promise<String> p = Promise.promise();
+    Future<String> f = p.future();
+    Future<String> r = f.otherwise("other");
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    p.complete("yeah");
+    assertTrue(r.succeeded());
+    checker.assertSucceeded("yeah");
+    assertFalse(called.get());
+  }
+
+  @Test
+  public void testOtherwiseValueAlreadySuccessWithSuccess() {
+    AtomicBoolean called = new AtomicBoolean();
+    Future<String> f = Future.succeededFuture("yeah");
+    Future<String> r = f.otherwise("other");
+    Checker<String> checker = new Checker<>(r);
+    assertTrue(r.succeeded());
+    checker.assertSucceeded("yeah");
+    assertFalse(called.get());
+  }
+
+  @Test
   public void testOtherwiseFailureWithSuccess() {
     Promise<String> p = Promise.promise();
     Future<String> f = p.future();
@@ -786,6 +885,25 @@ public class FutureTest extends VertxTestBase {
     checker.assertNotCompleted();
     p.fail("recovered");
     checker.assertSucceeded("recovered");
+  }
+
+  @Test
+  public void testOtherwiseValueFailureWithSuccess() {
+    Promise<String> p = Promise.promise();
+    Future<String> f = p.future();
+    Future<String> r = f.otherwise("other");
+    Checker<String> checker = new Checker<>(r);
+    checker.assertNotCompleted();
+    p.fail("recovered");
+    checker.assertSucceeded("other");
+  }
+
+  @Test
+  public void testOtherwiseValueAlreadyFailureWithSuccess() {
+    Future<String> f = Future.failedFuture("recovered");
+    Future<String> r = f.otherwise("other");
+    Checker<String> checker = new Checker<>(r);
+    checker.assertSucceeded("other");
   }
 
   @Test
@@ -907,6 +1025,12 @@ public class FutureTest extends VertxTestBase {
       public Throwable cause() { throw new UnsupportedOperationException(); }
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
+      public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<U> map(Function<T, U> mapper) { throw new UnsupportedOperationException(); }
+      public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
+      public Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }
+      public Future<T> otherwise(T value) { throw new UnsupportedOperationException(); }
+
       public void handle(AsyncResult<T> asyncResult) {
         if (asyncResult.succeeded()) {
           complete(asyncResult.result());
@@ -1263,10 +1387,10 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
-  public void testReleaseHandlerAfterCompletion() throws Exception {
+  public void testReleaseListenerAfterCompletion() throws Exception {
     Promise<String> promise = Promise.promise();
     Future<String> f = promise.future();
-    Field handlerField = f.getClass().getDeclaredField("handler");
+    Field handlerField = f.getClass().getSuperclass().getDeclaredField("listener");
     handlerField.setAccessible(true);
     f.onComplete(ar -> {});
     promise.complete();
@@ -1475,6 +1599,35 @@ public class FutureTest extends VertxTestBase {
       complete();
     });
     promise.fail(failure);
+    await();
+  }
+
+  @Test
+  public void testVoidFuture() {
+    waitFor(2);
+    Promise<Void> promise = Promise.promise();
+    promise.complete();
+    List<Future<Void>> promises = Arrays.asList(promise.future(), Future.succeededFuture());
+    promises.forEach(fut -> {
+      fut
+        .map(v -> "null")
+        .onComplete(onSuccess(s -> {
+        assertEquals("null", s);
+        complete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testPromiseUsedAsHandler() {
+    Promise<Void> promise1 = Promise.promise();
+    Promise<Void> promise2 = Promise.promise();
+    promise1.future().onComplete(promise2);
+    promise2.future().onComplete(onSuccess(v -> {
+      testComplete();
+    }));
+    promise1.complete();
     await();
   }
 

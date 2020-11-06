@@ -13,6 +13,7 @@ package io.vertx.core;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.impl.*;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -356,35 +357,54 @@ public class ContextTest extends VertxTestBase {
   @Test
   public void testInternalExecuteBlockingWithQueue() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    TaskQueue[] queues = new TaskQueue[] { new TaskQueue(), new TaskQueue()};
-    AtomicReference<Thread>[] current = new AtomicReference[queues.length];
-    waitFor(queues.length);
-    for (int i = 0;i < queues.length;i++) {
+    List<Consumer<Handler<Promise<Object>>>> lst = new ArrayList<>();
+    for (int i = 0;i < 2;i++) {
+      TaskQueue queue = new TaskQueue();
+      lst.add(task -> {
+        context.executeBlocking(task, queue, ar -> {});
+      });
+    }
+    testInternalExecuteBlockingWithQueue(lst);
+  }
+
+  public void testInternalExecuteBlockingWithQueue(List<Consumer<Handler<Promise<Object>>>> lst) {
+    AtomicReference<Thread>[] current = new AtomicReference[lst.size()];
+    waitFor(lst.size());
+    for (int i = 0;i < current.length;i++) {
       current[i] = new AtomicReference<>();
     }
-    CyclicBarrier barrier = new CyclicBarrier(queues.length);
+    CyclicBarrier barrier = new CyclicBarrier(2);
+    CountDownLatch latch = new CountDownLatch(3);
     int numTasks = 10;
     for (int i = 0;i < numTasks;i++) {
       int ival = i;
-      for (int j = 0;j < queues.length;j++) {
+      for (int j = 0;j < lst.size();j++) {
         int jval = j;
-        context.executeBlocking(fut -> {
+        Handler<Promise<Object>> task = fut -> {
           if (ival == 0) {
             current[jval].set(Thread.currentThread());
+            latch.countDown();
+            try {
+              latch.await(20, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+              fail(e);
+            }
           } else {
             assertSame(Thread.currentThread(), current[jval].get());
-          }
-          try {
-            barrier.await();
-          } catch (Exception e) {
-            fail(e);
+            try {
+              barrier.await();
+            } catch (Exception e) {
+              fail(e);
+            }
           }
           if (ival == numTasks - 1) {
             complete();
           }
-        }, queues[j], ar -> {});
+        };
+        lst.get(j).accept(task);
       }
     }
+    latch.countDown();
     await();
   }
 
@@ -394,7 +414,7 @@ public class ContextTest extends VertxTestBase {
     RuntimeException failure = new RuntimeException();
     AtomicReference<Throwable> caught = new AtomicReference<>();
     ctx.exceptionHandler(caught::set);
-    ctx.dispatch(new Object(), event -> {
+    ctx.emit(new Object(), event -> {
       throw failure;
     });
     assertWaitUntil(() -> caught.get() == failure);
@@ -406,7 +426,7 @@ public class ContextTest extends VertxTestBase {
     RuntimeException failure = new RuntimeException();
     AtomicReference<Throwable> caught = new AtomicReference<>();
     ctx.exceptionHandler(caught::set);
-    ctx.dispatch(new Object(), event -> {
+    ctx.emit(new Object(), event -> {
       throw failure;
     });
     assertWaitUntil(() -> caught.get() == failure);
@@ -551,6 +571,28 @@ public class ContextTest extends VertxTestBase {
     });
     barrier.await(10, TimeUnit.SECONDS);
   }
+
+  @Test
+  public void testDuplicateEventLoopExecuteBlockingOrdering() {
+    testDuplicateExecuteBlockingOrdering((ContextInternal) vertx.getOrCreateContext());
+  }
+
+  @Test
+  public void testDuplicateWorkerExecuteBlockingOrdering() {
+    testDuplicateExecuteBlockingOrdering(createWorkerContext());
+  }
+
+  private void testDuplicateExecuteBlockingOrdering(ContextInternal context) {
+    List<Consumer<Handler<Promise<Object>>>> lst = new ArrayList<>();
+    for (int i = 0;i < 2;i++) {
+      ContextInternal duplicate = context.duplicate();
+      lst.add(task -> {
+        duplicate.executeBlocking(task, ar -> {});
+      });
+    }
+    testInternalExecuteBlockingWithQueue(lst);
+  }
+
   @Test
   public void testReentrantDispatch() {
     ClassLoader cl = new URLClassLoader(new URL[0]);
@@ -562,7 +604,7 @@ public class ContextTest extends VertxTestBase {
       int[] called = new int[1];
       BlockedThreadChecker.Task thread = (BlockedThreadChecker.Task) Thread.currentThread();
       long start = thread.startTime();
-      ctx.emit(v2 -> {
+      ctx.dispatch(v2 -> {
         called[0]++;
         assertSame(cl, Thread.currentThread().getContextClassLoader());
         try {
@@ -732,10 +774,13 @@ public class ContextTest extends VertxTestBase {
   public void testComposeContextPropagation1() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     Promise<String> promise = context.promise();
-    Future<String> future = promise.future().compose(res -> Future.succeededFuture("value-2"));
+    Future<String> future = promise.future().compose(res -> {
+      assertEquals(context, Vertx.currentContext());
+      return Future.succeededFuture("value-2");
+    });
     promise.complete("value-1");
     future.onComplete(ar -> {
-      assertSame(context, vertx.getOrCreateContext());
+      assertSame(context, Vertx.currentContext());
       testComplete();
     });
     await();
@@ -745,9 +790,12 @@ public class ContextTest extends VertxTestBase {
   public void testComposeContextPropagation2() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     Promise<String> promise = context.promise();
-    Future<String> future = promise.future().compose(res -> Future.succeededFuture("value-2"));
+    Future<String> future = promise.future().compose(res -> {
+      assertSame(context, Vertx.currentContext());
+      return Future.succeededFuture("value-2");
+    });
     future.onComplete(ar -> {
-      assertSame(context, vertx.getOrCreateContext());
+      assertSame(context, Vertx.currentContext());
       testComplete();
     });
     promise.complete("value-1");
@@ -763,7 +811,7 @@ public class ContextTest extends VertxTestBase {
     Future<String> future = promise.future().compose(res -> anotherPromise.future());
     promise.complete("value-1");
     future.onComplete(ar -> {
-      assertSame(context, vertx.getOrCreateContext());
+      assertSame(context, Vertx.currentContext());
       testComplete();
     });
     anotherPromise.complete("value-2");
@@ -771,41 +819,54 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testEventLoopExecutor() {
-    waitFor(2);
+  public void testSucceededFutureContextPropagation1() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
-    context.execute(() -> {
-      assertTrue(Context.isOnEventLoopThread());
+    Future<String> future = context.succeededFuture();
+    future.onComplete(ar -> {
       assertSame(context, Vertx.currentContext());
-      complete();
-    });
-    RuntimeException failure = new RuntimeException();
-    context.exceptionHandler(err -> {
-      assertSame(failure, err);
-      complete();
-    });
-    context.execute(() -> {
-      throw failure;
+      testComplete();
     });
     await();
   }
 
   @Test
-  public void testWorkerExecutor() {
-    waitFor(2);
-    ContextInternal context = createWorkerContext();
-    context.execute(() -> {
-      assertTrue(Context.isOnWorkerThread());
+  public void testSucceededFutureContextPropagation2() throws Exception {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Future<String> future = context.succeededFuture();
+    future = future.compose(value -> {
       assertSame(context, Vertx.currentContext());
-      complete();
+      return Future.succeededFuture("value-2");
     });
-    RuntimeException failure = new RuntimeException();
-    context.exceptionHandler(err -> {
-      assertSame(failure, err);
-      complete();
+    Thread.sleep(100);
+    future.onComplete(ar -> {
+      assertSame(context, Vertx.currentContext());
+      testComplete();
     });
-    context.execute(() -> {
-      throw failure;
+    await();
+  }
+
+  @Test
+  public void testFailedFutureContextPropagation1() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Future<String> future = context.failedFuture("error");
+    future.onComplete(ar -> {
+      assertSame(context, Vertx.currentContext());
+      testComplete();
+    });
+    await();
+  }
+
+  @Test
+  public void testFailedFutureContextPropagation2() {
+    ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
+    Future<String> future = context.failedFuture("error");
+    future = future.recover(πerr -> {
+      assertSame(context, Vertx.currentContext());
+      return Future.succeededFuture("value-2");
+    });
+    future.onComplete(ar -> {
+      assertSame(context, Vertx.currentContext());
+      testComplete();
     });
     await();
   }

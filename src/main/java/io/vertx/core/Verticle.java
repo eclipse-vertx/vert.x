@@ -26,7 +26,6 @@ package io.vertx.core;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-@SuppressWarnings( "deprecation" )
 public interface Verticle {
 
   /**

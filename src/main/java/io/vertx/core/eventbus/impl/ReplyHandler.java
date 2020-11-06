@@ -45,7 +45,8 @@ class ReplyHandler<T> extends HandlerRegistration<T> {
 
   private void trace(Object reply, Throwable failure) {
     VertxTracer tracer = context.tracer();
-    if (tracer != null && src) {
+    Object trace = this.trace;
+    if (tracer != null && src && trace != null) {
       tracer.receiveResponse(context, reply, trace, failure, TagExtractor.empty());
     }
   }

@@ -15,11 +15,11 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.impl.NetServerImpl;
@@ -106,18 +106,18 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
-  ContextInternal createEventLoopContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl);
+  EventLoopContext createEventLoopContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl);
 
-  ContextInternal createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+  EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
 
-  ContextInternal createEventLoopContext();
+  EventLoopContext createEventLoopContext();
 
   /**
    * @return worker loop context
    */
-  ContextInternal createWorkerContext(Deployment deployment, CloseHooks closeHooks, WorkerPool pool, ClassLoader tccl);
+  WorkerContext createWorkerContext(Deployment deployment, CloseHooks closeHooks, WorkerPool pool, ClassLoader tccl);
 
-  ContextInternal createWorkerContext();
+  WorkerContext createWorkerContext();
 
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name);
@@ -130,6 +130,8 @@ public interface VertxInternal extends Vertx {
 
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit);
+
+  WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit);
 
   void simulateKill();
 

@@ -15,7 +15,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;

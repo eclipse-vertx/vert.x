@@ -21,18 +21,31 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.spi.tracing.TagExtractor;
+import io.vertx.core.streams.WriteStream;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -102,13 +115,13 @@ public final class HttpUtils {
     }
   };
 
-  static final TagExtractor<HttpClientRequest> CLIENT_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpClientRequest>() {
+  static final TagExtractor<HttpRequestHead> CLIENT_HTTP_REQUEST_TAG_EXTRACTOR = new TagExtractor<HttpRequestHead>() {
     @Override
-    public int len(HttpClientRequest req) {
+    public int len(HttpRequestHead req) {
       return 2;
     }
     @Override
-    public String name(HttpClientRequest req, int index) {
+    public String name(HttpRequestHead req, int index) {
       switch (index) {
         case 0:
           return "http.url";
@@ -118,33 +131,33 @@ public final class HttpUtils {
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
     @Override
-    public String value(HttpClientRequest req, int index) {
+    public String value(HttpRequestHead req, int index) {
       switch (index) {
         case 0:
-          return req.absoluteURI();
+          return req.absoluteURI;
         case 1:
-          return req.method().name();
+          return req.method.name();
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
   };
 
-  static final TagExtractor<HttpClientResponse> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpClientResponse>() {
+  static final TagExtractor<HttpResponseHead> CLIENT_RESPONSE_TAG_EXTRACTOR = new TagExtractor<HttpResponseHead>() {
     @Override
-    public int len(HttpClientResponse resp) {
+    public int len(HttpResponseHead resp) {
       return 1;
     }
     @Override
-    public String name(HttpClientResponse resp, int index) {
+    public String name(HttpResponseHead resp, int index) {
       if (index == 0) {
         return "http.status_code";
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
     @Override
-    public String value(HttpClientResponse resp, int index) {
+    public String value(HttpResponseHead resp, int index) {
       if (index == 0) {
-        return "" + resp.statusCode();
+        return "" + resp.statusCode;
       }
       throw new IndexOutOfBoundsException("Invalid tag index " + index);
     }
@@ -379,36 +392,36 @@ public final class HttpUtils {
     if (_ref.getScheme() != null) {
       scheme = _ref.getScheme();
       authority = _ref.getAuthority();
-      path = removeDots(_ref.getPath());
+      path = removeDots(_ref.getRawPath());
       query = _ref.getRawQuery();
     } else {
       if (_ref.getAuthority() != null) {
         authority = _ref.getAuthority();
-        path = _ref.getPath();
+        path = _ref.getRawPath();
         query = _ref.getRawQuery();
       } else {
-        if (_ref.getPath().length() == 0) {
-          path = base.getPath();
+        if (_ref.getRawPath().length() == 0) {
+          path = base.getRawPath();
           if (_ref.getRawQuery() != null) {
             query = _ref.getRawQuery();
           } else {
             query = base.getRawQuery();
           }
         } else {
-          if (_ref.getPath().startsWith("/")) {
-            path = removeDots(_ref.getPath());
+          if (_ref.getRawPath().startsWith("/")) {
+            path = removeDots(_ref.getRawPath());
           } else {
             // Merge paths
             String mergedPath;
-            String basePath = base.getPath();
+            String basePath = base.getRawPath();
             if (base.getAuthority() != null && basePath.length() == 0) {
-              mergedPath = "/" + _ref.getPath();
+              mergedPath = "/" + _ref.getRawPath();
             } else {
               int index = basePath.lastIndexOf('/');
               if (index > -1) {
-                mergedPath = basePath.substring(0, index + 1) + _ref.getPath();
+                mergedPath = basePath.substring(0, index + 1) + _ref.getRawPath();
               } else {
-                mergedPath = _ref.getPath();
+                mergedPath = _ref.getRawPath();
               }
             }
             path = removeDots(mergedPath);
@@ -426,6 +439,9 @@ public final class HttpUtils {
    * Extract the path out of the uri.
    */
   static String parsePath(String uri) {
+    if (uri.length() == 0) {
+      return "";
+    }
     int i;
     if (uri.charAt(0) == '/') {
       i = 0;
@@ -602,7 +618,7 @@ public final class HttpUtils {
     if (reason != null)
       return Unpooled.copiedBuffer(
         Unpooled.copyShort(statusCode), // First two bytes are reserved for status code
-        Unpooled.copiedBuffer(reason, Charset.forName("UTF-8"))
+        Unpooled.copiedBuffer(reason, StandardCharsets.UTF_8)
       );
     else
       return Unpooled.copyShort(statusCode);
@@ -867,5 +883,30 @@ public final class HttpUtils {
   public static boolean isValidMultipartMethod(HttpMethod method) {
     return method.equals(HttpMethod.POST) || method.equals(HttpMethod.PUT) || method.equals(HttpMethod.PATCH)
       || method.equals(HttpMethod.DELETE);
+  }
+
+  static void resolveFile(VertxInternal vertx, String filename, long offset, long length, Handler<AsyncResult<AsyncFile>> resultHandler) {
+    File file_ = vertx.resolveFile(filename);
+    if (!file_.exists()) {
+      resultHandler.handle(Future.failedFuture(new FileNotFoundException()));
+      return;
+    }
+
+    //We open the fileName using a RandomAccessFile to make sure that this is an actual file that can be read.
+    //i.e is not a directory
+    try(RandomAccessFile raf = new RandomAccessFile(file_, "r")) {
+      FileSystem fs = vertx.fileSystem();
+      fs.open(filename, new OpenOptions().setCreate(false).setWrite(false), ar -> {
+        if (ar.succeeded()) {
+          AsyncFile file = ar.result();
+          long contentLength = Math.min(length, file_.length() - offset);
+          file.setReadPos(offset);
+          file.setReadLength(contentLength);
+        }
+        resultHandler.handle(ar);
+      });
+    } catch (IOException e) {
+      resultHandler.handle(Future.failedFuture(e));
+    }
   }
 }

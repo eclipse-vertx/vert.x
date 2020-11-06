@@ -34,11 +34,11 @@ import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.ArrayDeque;
@@ -61,19 +61,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
    * - otherwise we increase the ref count
    */
   static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
-    if (buf == Unpooled.EMPTY_BUFFER) {
-      return buf;
-    }
-    if (buf.isDirect() || buf instanceof CompositeByteBuf) {
-      if (buf.isReadable()) {
-        ByteBuf buffer =  allocator.heapBuffer(buf.readableBytes());
-        buffer.writeBytes(buf);
-        return buffer;
-      } else {
-        return Unpooled.EMPTY_BUFFER;
-      }
-    }
-    return buf.retain();
+    ByteBuf buffer = allocator.heapBuffer(buf.readableBytes());
+    buffer.writeBytes(buf);
+    return buffer;
   }
 
   protected final ChannelHandlerContext handlerContext;
@@ -92,8 +82,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private int windowSize;
   private long maxConcurrentStreams;
 
-  public Http2ConnectionBase(ContextInternal context, VertxHttp2ConnectionHandler handler) {
-    super(context.owner(), handler.context(), context);
+  public Http2ConnectionBase(EventLoopContext context, VertxHttp2ConnectionHandler handler) {
+    super(context, handler.context());
     this.handler = handler;
     this.handlerContext = chctx;
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
@@ -103,12 +93,6 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   VertxInternal vertx() {
     return vertx;
-  }
-
-  NetSocket toNetSocket(VertxHttp2Stream stream) {
-    VertxHttp2NetSocket<Http2ConnectionBase> socketStream = new VertxHttp2NetSocket<>(this, stream.context);
-    socketStream.init(stream.stream);
-    return socketStream;
   }
 
   @Override
@@ -137,7 +121,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       log.error("Could not get the list of active streams", e);
     }
     for (VertxHttp2Stream stream : streams) {
-      stream.context.emit(v -> stream.handleException(cause));
+      stream.context.dispatch(v -> stream.handleException(cause));
     }
     handleException(cause);
   }
@@ -169,7 +153,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     if (stream != null) {
       stream.onClose();
     }
-    checkShutdownHandler();
+    checkShutdown();
   }
 
   boolean onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
@@ -179,7 +163,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       }
       goneAway = true;
     }
-    checkShutdownHandler();
+    checkShutdown();
     return true;
   }
 
@@ -194,9 +178,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
     if (handler != null) {
       Buffer buffer = Buffer.buffer(debugData);
-      context.emit(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
+      context.dispatch(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
     }
-    checkShutdownHandler();
+    checkShutdown();
     return true;
   }
 
@@ -238,7 +222,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     }
     if (handler != null) {
       // No need to run on a particular context it shall be done by the handler instead
-      context.dispatch(handler);
+      context.emit(handler);
     }
   }
 
@@ -265,7 +249,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       handler = remoteSettingsHandler;
     }
     if (handler != null) {
-      context.emit(HttpUtils.toVertxSettings(settings), handler);
+      context.dispatch(HttpUtils.toVertxSettings(settings), handler);
     }
     if (changed) {
       concurrencyChanged(maxConcurrentStreams);
@@ -277,7 +261,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     Handler<Buffer> handler = pingHandler;
     if (handler != null) {
       Buffer buff = Buffer.buffer().appendLong(data);
-      context.emit(v -> handler.handle(buff));
+      context.dispatch(v -> handler.handle(buff));
     }
   }
 
@@ -407,8 +391,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   @Override
   public Future<Void> close() {
     PromiseInternal<Void> promise = context.promise();
-    ChannelPromise channelPromise = chctx.newPromise().addListener(promise);
-    flush(channelPromise);
+    ChannelPromise pr = chctx.newPromise();
+    ChannelPromise channelPromise = pr.addListener(promise);
+    handlerContext.writeAndFlush(Unpooled.EMPTY_BUFFER, pr);
     channelPromise.addListener((ChannelFutureListener) future -> shutdown(0L));
     return promise.future();
   }
@@ -515,13 +500,9 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     this.handler.consume(stream, numBytes);
   }
 
-  void flush(Http2Stream stream) {
-    handlerContext.flush();
-  }
-
   // Private
 
-  private void checkShutdownHandler() {
+  private void checkShutdown() {
     Handler<Void> shutdownHandler;
     synchronized (this) {
       if (shutdown) {
@@ -534,8 +515,12 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
       shutdown  = true;
       shutdownHandler = this.shutdownHandler;
     }
+    doShutdown(shutdownHandler);
+  }
+
+  protected void doShutdown(Handler<Void> shutdownHandler) {
     if (shutdownHandler != null) {
-      context.emit(shutdownHandler);
+      context.dispatch(shutdownHandler);
     }
   }
 }

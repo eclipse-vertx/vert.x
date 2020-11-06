@@ -2,6 +2,7 @@ package io.vertx.core.net;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
@@ -32,7 +33,7 @@ public class PemKeyCertOptionsConverter {
           break;
         case "certValue":
           if (member.getValue() instanceof String) {
-            obj.setCertValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
+            obj.setCertValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)member.getValue())));
           }
           break;
         case "certValues":
@@ -40,7 +41,7 @@ public class PemKeyCertOptionsConverter {
             java.util.ArrayList<io.vertx.core.buffer.Buffer> list =  new java.util.ArrayList<>();
             ((Iterable<Object>)member.getValue()).forEach( item -> {
               if (item instanceof String)
-                list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+                list.add(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)item)));
             });
             obj.setCertValues(list);
           }
@@ -62,7 +63,7 @@ public class PemKeyCertOptionsConverter {
           break;
         case "keyValue":
           if (member.getValue() instanceof String) {
-            obj.setKeyValue(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)member.getValue())));
+            obj.setKeyValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)member.getValue())));
           }
           break;
         case "keyValues":
@@ -70,7 +71,7 @@ public class PemKeyCertOptionsConverter {
             java.util.ArrayList<io.vertx.core.buffer.Buffer> list =  new java.util.ArrayList<>();
             ((Iterable<Object>)member.getValue()).forEach( item -> {
               if (item instanceof String)
-                list.add(io.vertx.core.buffer.Buffer.buffer(java.util.Base64.getDecoder().decode((String)item)));
+                list.add(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)item)));
             });
             obj.setKeyValues(list);
           }
@@ -91,7 +92,7 @@ public class PemKeyCertOptionsConverter {
     }
     if (obj.getCertValues() != null) {
       JsonArray array = new JsonArray();
-      obj.getCertValues().forEach(item -> array.add(java.util.Base64.getEncoder().encodeToString(item.getBytes())));
+      obj.getCertValues().forEach(item -> array.add(JsonUtil.BASE64_ENCODER.encodeToString(item.getBytes())));
       json.put("certValues", array);
     }
     if (obj.getKeyPaths() != null) {
@@ -101,7 +102,7 @@ public class PemKeyCertOptionsConverter {
     }
     if (obj.getKeyValues() != null) {
       JsonArray array = new JsonArray();
-      obj.getKeyValues().forEach(item -> array.add(java.util.Base64.getEncoder().encodeToString(item.getBytes())));
+      obj.getKeyValues().forEach(item -> array.add(JsonUtil.BASE64_ENCODER.encodeToString(item.getBytes())));
       json.put("keyValues", array);
     }
   }

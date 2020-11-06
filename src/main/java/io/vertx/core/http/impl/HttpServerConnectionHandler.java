@@ -22,7 +22,6 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.util.ArrayList;
 
@@ -60,7 +59,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
       // some casting and a header check
     } else {
       if (conn instanceof Http1xServerConnection) {
-        requestHandler =  new WebSocketRequestHandler(this);
+        requestHandler =  new Http1xServerRequestHandler(this);
         Http1xServerConnection c = (Http1xServerConnection) conn;
         initializeWebSocketExtensions(c.channelHandlerContext().pipeline());
       }
@@ -70,13 +69,13 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
     if (connectionHandler != null) {
       // We hand roll event-loop execution in case of a worker context
       ContextInternal ctx = conn.getContext();
-      ContextInternal prev = ctx.emitBegin();
+      ContextInternal prev = ctx.beginDispatch();
       try {
         connectionHandler.handle(conn);
       } catch (Exception e) {
         ctx.reportException(e);
       } finally {
-        ctx.emitEnd(prev);
+        ctx.endDispatch(prev);
       }
     }
   }

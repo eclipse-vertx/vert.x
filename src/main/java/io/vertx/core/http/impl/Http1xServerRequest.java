@@ -24,6 +24,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
@@ -31,6 +32,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -53,7 +55,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerRequest implements HttpServerRequest {
+public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi.observability.HttpRequest {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 
@@ -74,34 +76,32 @@ public class Http1xServerRequest implements HttpServerRequest {
 
   private Http1xServerResponse response;
 
-  private Handler<Buffer> dataHandler;
-  private Handler<Throwable> exceptionHandler;
-
   // Cache this for performance
   private MultiMap params;
   private MultiMap headers;
   private String absoluteURI;
 
+  private HttpEventHandler eventHandler;
   private Handler<HttpServerFileUpload> uploadHandler;
-  private Handler<Void> endHandler;
   private MultiMap attributes;
   private HttpPostRequestDecoder decoder;
   private boolean ended;
   private long bytesRead;
   private InboundBuffer<Object> pending;
-  private Buffer body;
-  private Promise<Buffer> bodyPromise;
 
-  Http1xServerRequest(Http1xServerConnection conn, HttpRequest request) {
+  Http1xServerRequest(Http1xServerConnection conn, HttpRequest request, ContextInternal context) {
     this.conn = conn;
-    this.context = conn.getContext().duplicate();
+    this.context = context;
     this.request = request;
   }
 
-  /**
-   *
-   * @return
-   */
+  private HttpEventHandler eventHandler(boolean create) {
+    if (eventHandler == null && create) {
+      eventHandler = new HttpEventHandler(context);
+    }
+    return eventHandler;
+  }
+
   HttpRequest nettyRequest() {
     synchronized (conn) {
       return request;
@@ -187,6 +187,11 @@ public class Http1xServerRequest implements HttpServerRequest {
   }
 
   @Override
+  public int id() {
+    return 0;
+  }
+
+  @Override
   public io.vertx.core.http.HttpVersion version() {
     if (version == null) {
       io.netty.handler.codec.http.HttpVersion nettyVersion = request.protocolVersion();
@@ -194,9 +199,6 @@ public class Http1xServerRequest implements HttpServerRequest {
         version = HttpVersion.HTTP_1_0;
       } else if (nettyVersion == io.netty.handler.codec.http.HttpVersion.HTTP_1_1) {
         version = HttpVersion.HTTP_1_1;
-      } else {
-        sendNotImplementedAndClose();
-        throw new IllegalStateException("Unsupported HTTP version: " + nettyVersion);
       }
     }
     return version;
@@ -278,7 +280,10 @@ public class Http1xServerRequest implements HttpServerRequest {
       if (handler != null) {
         checkEnded();
       }
-      dataHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.chunkHandler(handler);
+      }
       return this;
     }
   }
@@ -286,7 +291,10 @@ public class Http1xServerRequest implements HttpServerRequest {
   @Override
   public HttpServerRequest exceptionHandler(Handler<Throwable> handler) {
     synchronized (conn) {
-      this.exceptionHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.exceptionHandler(handler);
+      }
       return this;
     }
   }
@@ -318,7 +326,10 @@ public class Http1xServerRequest implements HttpServerRequest {
       if (handler != null) {
         checkEnded();
       }
-      endHandler = handler;
+      HttpEventHandler eventHandler = eventHandler(handler != null);
+      if (eventHandler != null) {
+        eventHandler.endHandler(handler);
+      }
       return this;
     }
   }
@@ -341,15 +352,21 @@ public class Http1xServerRequest implements HttpServerRequest {
   }
 
   @Override
+  public SocketAddress remoteAddress() {
+    return conn.remoteAddress();
+  }
+
+  @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     return conn.peerCertificateChain();
   }
 
   @Override
-  public NetSocket netSocket() {
-    synchronized (conn) {
-      return response.netSocket(method() == io.vertx.core.http.HttpMethod.CONNECT);
+  public Future<NetSocket> toNetSocket() {
+    if (method() != HttpMethod.CONNECT) {
+      return context.failedFuture("HTTP method must be CONNECT to upgrade the connection to a net socket");
     }
+    return response.netSocket();
   }
 
   @Override
@@ -374,13 +391,56 @@ public class Http1xServerRequest implements HttpServerRequest {
   }
 
   @Override
-  public ServerWebSocket upgrade() {
-    ServerWebSocketImpl ws = conn.createWebSocket(this);
-    if (ws == null) {
-      throw new IllegalStateException("Can't upgrade this request");
-    }
-    ws.accept();
-    return ws;
+  public Future<ServerWebSocket> toWebSocket() {
+    return webSocket().map(ws -> {
+      ws.accept();
+      return ws;
+    });
+  }
+
+  /**
+   * @return a future of the un-accepted WebSocket
+   */
+  Future<ServerWebSocket> webSocket() {
+    Promise<ServerWebSocket> promise = context.promise();
+    webSocket(promise);
+    return promise.future();
+  }
+
+  /**
+   * Handle the request when a WebSocket upgrade header is present.
+   */
+  private void webSocket(Promise<ServerWebSocket> promise) {
+    Buffer body = Buffer.buffer();
+    boolean[] failed = new boolean[1];
+    handler(buff -> {
+      if (!failed[0]) {
+        body.appendBuffer(buff);
+        if (body.length() > 8192) {
+          failed[0] = true;
+          // Request Entity Too Large
+          response.setStatusCode(413).end();
+          response.close();
+        }
+      }
+    });
+    exceptionHandler(promise::tryFail);
+    endHandler(v -> {
+      if (!failed[0]) {
+        // Handle the request once we have the full body.
+        request = new DefaultFullHttpRequest(
+          request.protocolVersion(),
+          request.method(),
+          request.uri(),
+          body.getByteBuf(),
+          request.headers(),
+          EmptyHttpHeaders.INSTANCE
+        );
+        conn.createWebSocket(this, promise);
+      }
+    });
+    // In case we were paused
+    resume();
   }
 
   @Override
@@ -434,15 +494,18 @@ public class Http1xServerRequest implements HttpServerRequest {
 
   @Override
   public synchronized Future<Buffer> body() {
-    if (bodyPromise == null) {
-      bodyPromise = Promise.promise();
-      body = Buffer.buffer();
-    }
-    return bodyPromise.future();
+    checkEnded();
+    return eventHandler(true).body();
+  }
+
+  @Override
+  public synchronized Future<Void> end() {
+    checkEnded();
+    return eventHandler(true).end();
   }
 
   private void onData(Buffer data) {
-    Handler<Buffer> handler;
+    HttpEventHandler handler;
     synchronized (conn) {
       bytesRead += data.length();
       if (decoder != null) {
@@ -452,15 +515,11 @@ public class Http1xServerRequest implements HttpServerRequest {
           handleException(e);
         }
       }
-      if (body != null) {
-        body.appendBuffer(data);
-      }
-      handler = dataHandler;
-      if (handler == null) {
-        return;
-      }
+      handler = eventHandler;
     }
-    context.emit(data, handler);
+    if (handler != null) {
+      eventHandler.handleChunk(data);
+    }
   }
 
   void handleEnd() {
@@ -477,23 +536,16 @@ public class Http1xServerRequest implements HttpServerRequest {
   }
 
   private void onEnd() {
-    Handler<Void> handler;
-    Promise<Buffer> bodyPromise;
-    Buffer body;
+    HttpEventHandler handler;
     synchronized (conn) {
       if (decoder != null) {
         endDecode();
       }
-      handler = endHandler;
-      bodyPromise = this.bodyPromise;
-      body = this.body;
+      handler = eventHandler;
     }
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
-      context.emit(null, handler);
-    }
-    if (body != null) {
-      bodyPromise.tryComplete(body);
+      handler.handleEnd();
     }
   }
 
@@ -522,13 +574,12 @@ public class Http1xServerRequest implements HttpServerRequest {
   }
 
   void handleException(Throwable t) {
-    Handler<Throwable> handler = null;
+    HttpEventHandler handler = null;
     Http1xServerResponse resp = null;
     InterfaceHttpData upload = null;
-    Promise<Buffer> bodyPromise;
     synchronized (conn) {
       if (!isEnded()) {
-        handler = exceptionHandler;
+        handler = eventHandler;
         if (decoder != null) {
           upload = decoder.currentPartialHttpData();
         }
@@ -539,9 +590,6 @@ public class Http1xServerRequest implements HttpServerRequest {
         }
         resp = response;
       }
-      bodyPromise = this.bodyPromise;
-      this.bodyPromise = null;
-      this.body = null;
     }
     if (resp != null) {
       resp.handleException(t);
@@ -550,10 +598,7 @@ public class Http1xServerRequest implements HttpServerRequest {
       ((NettyFileUpload)upload).handleException(t);
     }
     if (handler != null) {
-      context.emit(t, handler);
-    }
-    if (bodyPromise != null) {
-      bodyPromise.tryFail(t);
+      handler.handleException(t);
     }
   }
 
@@ -565,11 +610,6 @@ public class Http1xServerRequest implements HttpServerRequest {
     if (tracer != null) {
       tracer.sendResponse(context, null, trace, err, TagExtractor.empty());
     }
-  }
-
-  private void sendNotImplementedAndClose() {
-    response().setStatusCode(501).end();
-    response().close();
   }
 
   private void checkEnded() {
@@ -594,5 +634,13 @@ public class Http1xServerRequest implements HttpServerRequest {
   @Override
   public Map<String, Cookie> cookieMap() {
     return (Map)response.cookies();
+  }
+
+  @Override
+  public HttpServerRequest routed(String route) {
+    if (METRICS_ENABLED && !response.ended() && conn.metrics != null) {
+      conn.metrics.requestRouted(metric, route);
+    }
+    return this;
   }
 }

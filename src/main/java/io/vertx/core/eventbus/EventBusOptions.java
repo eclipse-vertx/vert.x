@@ -30,22 +30,22 @@ import java.util.concurrent.TimeUnit;
 public class EventBusOptions extends TCPSSLOptions {
 
   /**
-   * The default hostname to use when clustering = "localhost"
+   * The default cluster host = null which means use the same as the cluster manager, if possible.
    */
-  public static final String DEFAULT_CLUSTER_HOST = "localhost";
+  public static final String DEFAULT_CLUSTER_HOST = null;
 
   /**
-   * The default port to use when clustering = 0 (meaning assign a random port)
+   * The default cluster port = 0 which means assign a random port.
    */
   public static final int DEFAULT_CLUSTER_PORT = 0;
 
   /**
-   * The default cluster public host to use = null which means use the same as the cluster host
+   * The default cluster public host = null which means use the same as the cluster host.
    */
   public static final String DEFAULT_CLUSTER_PUBLIC_HOST = null;
 
   /**
-   * The default cluster public port to use = -1 which means use the same as the cluster port
+   * The default cluster public port = -1 which means use the same as the cluster port.
    */
   public static final int DEFAULT_CLUSTER_PUBLIC_PORT = -1;
 
@@ -66,16 +66,6 @@ public class EventBusOptions extends TCPSSLOptions {
   private JsonObject clusterNodeMetadata;
 
   // Attributes used to configure the server of the event bus when the event bus is clustered.
-
-  /**
-   * The default port to listen on = 0 (meaning a random ephemeral free port will be chosen)
-   */
-  public static final int DEFAULT_PORT = DEFAULT_CLUSTER_PORT;
-
-  /**
-   * The default host to listen on = "0.0.0.0" (meaning listen on all available interfaces).
-   */
-  public static final String DEFAULT_HOST = DEFAULT_CLUSTER_HOST;
 
   /**
    * The default accept backlog = 1024
@@ -126,8 +116,8 @@ public class EventBusOptions extends TCPSSLOptions {
   public EventBusOptions() {
     super();
 
-    port = DEFAULT_PORT;
-    host = DEFAULT_HOST;
+    port = DEFAULT_CLUSTER_PORT;
+    host = DEFAULT_CLUSTER_HOST;
     acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
     clientAuth = DEFAULT_CLIENT_AUTH;
 
@@ -229,14 +219,18 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   /**
-   * @return the host
+   * @return the host or {@code null} if the clustered eventbus should try to pick one automatically
    */
   public String getHost() {
     return host;
   }
 
   /**
-   * Sets the host.
+   * Sets the host. Defaults to {@code null}.
+   * <p>
+   * When the clustered eventbus starts, it tries to bind to the provided {@code host}.
+   * If {@code host} is {@code null}, then it tries to bind to the same host as the underlying cluster manager.
+   * As a last resort, an address will be picked among the available network interfaces.
    *
    * @param host the host
    * @return a reference to this, so the API can be used fluently

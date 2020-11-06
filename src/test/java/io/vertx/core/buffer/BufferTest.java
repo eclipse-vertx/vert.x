@@ -1101,19 +1101,41 @@ public class BufferTest {
   }
 
   @Test
-  public void testDirect() {
-    Buffer buff = BufferImpl.directBuffer("hello world".getBytes());
-    assertEquals("hello world", buff.toString());
-    buff.appendString(" foobar");
-    assertEquals("hello world foobar", buff.toString());
-    ByteBuf bb = buff.getByteBuf().unwrap();
-    assertTrue(bb.isDirect());
-    assertTrue(bb.release());
-    try {
-      // Check it's deallocated
-      buff.toString();
-      fail();
-    } catch (IllegalReferenceCountException e) {
+  public void testAppendExpandsBufferWhenMaxCapacityReached() {
+    Buffer buff = Buffer.buffer(Unpooled.buffer(0, 8));
+    buff.appendString("Hello World");
+  }
+
+  @Test
+  public void testWriteExpandsBufferWhenMaxCapacityReached() {
+    String s = "Hello World";
+    ByteBuf byteBuf = Unpooled.buffer(0, s.length() - 1);
+    Buffer buff = Buffer.buffer(byteBuf);
+    int idx = 0;
+    for (byte b : s.getBytes()) {
+      buff.setByte(idx++, b);
     }
+  }
+
+  @Test
+  public void testSetByteAfterCurrentWriterIndexWithoutExpandingCapacity() {
+    ByteBuf byteBuf = Unpooled.buffer(10, Integer.MAX_VALUE);
+    byteBuf.writerIndex(5);
+    Buffer buff = Buffer.buffer(byteBuf);
+    buff.setByte(7, (byte)1);
+    assertEquals(8, buff.length());
+  }
+
+  @Test
+  public void testGetByteBuf() {
+    ByteBuf byteBuf = Unpooled.buffer();
+    byteBuf.writeCharSequence("Hello World", StandardCharsets.UTF_8);
+    Buffer buff = Buffer.buffer(byteBuf);
+    ByteBuf duplicate = buff.getByteBuf();
+    duplicate.writerIndex(5);
+    assertEquals(11, byteBuf.writerIndex());
+    assertEquals(1, duplicate.refCnt());
+    duplicate.release();
+    assertEquals(1, duplicate.refCnt());
   }
 }

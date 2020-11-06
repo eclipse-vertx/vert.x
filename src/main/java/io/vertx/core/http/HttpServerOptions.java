@@ -17,6 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -130,6 +131,11 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public static final boolean DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT = false;
 
+  /**
+   * Default tracing control = {@link TracingPolicy#ALWAYS}
+   */
+  public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.ALWAYS;
+
   private boolean compressionSupported;
   private int compressionLevel;
   private int maxWebSocketFrameSize;
@@ -150,6 +156,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int webSocketCompressionLevel;
   private boolean webSocketAllowServerNoContext;
   private boolean webSocketPreferredClientNoContext;
+  private TracingPolicy tracingPolicy;
 
   /**
    * Default constructor
@@ -187,6 +194,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.webSocketCompressionLevel = other.webSocketCompressionLevel;
     this.webSocketPreferredClientNoContext = other.webSocketPreferredClientNoContext;
     this.webSocketAllowServerNoContext = other.webSocketAllowServerNoContext;
+    this.tracingPolicy = other.tracingPolicy;
   }
 
   /**
@@ -232,6 +240,7 @@ public class HttpServerOptions extends NetServerOptions {
     webSocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
     webSocketPreferredClientNoContext = DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT;
     webSocketAllowServerNoContext = DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT;
+    tracingPolicy = DEFAULT_TRACING_POLICY;
   }
 
   @Override
@@ -875,5 +884,23 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public boolean getWebSocketPreferredClientNoContext() {
     return this.webSocketPreferredClientNoContext;
+  }
+
+  /**
+   * @return the tracing policy
+   */
+  public TracingPolicy getTracingPolicy() {
+    return tracingPolicy;
+  }
+
+  /**
+   * Set the tracing policy for the server behavior when Vert.x has tracing enabled.
+   *
+   * @param tracingPolicy the tracing policy
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setTracingPolicy(TracingPolicy tracingPolicy) {
+    this.tracingPolicy = tracingPolicy;
+    return this;
   }
 }

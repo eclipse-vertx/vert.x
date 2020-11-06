@@ -578,4 +578,20 @@ public abstract class HeadersTestBase {
     assertEquals("value1", mmap.get("header"));
     assertEquals(Arrays.asList("value1", "value2", "value3"), mmap.getAll("header"));
   }
+
+  @Test
+  public void testIterableArgument() {
+    MultiMap mmap = newMultiMap();
+    mmap.add("header", Arrays.<String>asList("value1", "value2"));
+    assertEquals(Arrays.asList("value1", "value2"), mmap.getAll("header"));
+    mmap = newMultiMap();
+    mmap.add("header", Arrays.asList(HttpHeaders.createOptimized("value1"), HttpHeaders.createOptimized("value2")));
+    assertEquals(Arrays.asList("value1", "value2"), mmap.getAll("header"));
+    mmap = newMultiMap();
+    mmap.set("header", Arrays.<CharSequence>asList("value1", "value2"));
+    assertEquals(Arrays.asList("value1", "value2"), mmap.getAll("header"));
+    mmap = newMultiMap();
+    mmap.set("header", Arrays.asList(HttpHeaders.createOptimized("value1"), HttpHeaders.createOptimized("value2")));
+    assertEquals(Arrays.asList("value1", "value2"), mmap.getAll("header"));
+  }
 }

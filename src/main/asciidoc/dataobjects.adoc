@@ -449,7 +449,11 @@ Add an enabled cipher suite, appended to the ordered suites.
 Sets the list of enabled SSL/TLS protocols.
 +++
 |[[host]]`@host`|`String`|+++
-Sets the host.
+Sets the host. Defaults to <code>null</code>.
+ <p>
+ When the clustered eventbus starts, it tries to bind to the provided <code>host</code>.
+ If <code>host</code> is <code>null</code>, then it tries to bind to the same host as the underlying cluster manager.
+ As a last resort, an address will be picked among the available network interfaces.
 +++
 |[[idleTimeout]]`@idleTimeout`|`Number (int)`|+++
 Set the idle timeout, default time unit is seconds. Zero means don't timeout.
@@ -805,6 +809,9 @@ Set whether TCP no delay is enabled
 |[[tcpQuickAck]]`@tcpQuickAck`|`Boolean`|+++
 Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
+|[[tracingPolicy]]`@tracingPolicy`|`link:enums.html#TracingPolicy[TracingPolicy]`|+++
+Set the tracing policy for the client behavior when Vert.x has tracing enabled.
++++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
 +++
@@ -828,6 +835,14 @@ Set the ALPN usage.
 +++
 |[[verifyHost]]`@verifyHost`|`Boolean`|+++
 Set whether hostname verification is enabled
++++
+|[[webSocketClosingTimeout]]`@webSocketClosingTimeout`|`Number (int)`|+++
+Set the amount of time a client WebSocket will wait until it closes the TCP connection after receiving a close frame.
+
+ <p> When a WebSocket is closed, the server should close the TCP connection. This timeout will close
+ the TCP connection on the client when it expires.
+
+ <p> Set <code>0L</code> or a negative value to disable.
 +++
 |[[webSocketCompressionAllowClientNoContext]]`@webSocketCompressionAllowClientNoContext`|`Boolean`|+++
 Set whether the <code>client_no_context_takeover</code> parameter of the WebSocket per-message
@@ -1026,6 +1041,9 @@ Set whether TCP no delay is enabled
 |[[tcpQuickAck]]`@tcpQuickAck`|`Boolean`|+++
 Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
+|[[tracingPolicy]]`@tracingPolicy`|`link:enums.html#TracingPolicy[TracingPolicy]`|+++
+Set the tracing policy for the server behavior when Vert.x has tracing enabled.
++++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
 +++
@@ -1070,24 +1088,6 @@ Set the WebSocket list of sub-protocol supported by the server.
 
 ++++
  Key or trust store options configuring private key and/or certificates based on Java Keystore files.
- <p>
- When used as a key store, it should point to a store containing a private key and its certificate.
- When used as a trust store, it should point to a store containing a list of trusted certificates.
- <p>
- The store can either be loaded by Vert.x from the filesystem:
- <p>
- <pre>
- HttpServerOptions options = HttpServerOptions.httpServerOptions();
- options.setKeyStore(new JKSOptions().setPath("/mykeystore.jks").setPassword("foo"));
- </pre>
-
- Or directly provided as a buffer:
- <p>
-
- <pre>
- Buffer store = vertx.fileSystem().readFileBlocking("/mykeystore.jks");
- options.setKeyStore(new JKSOptions().setValue(store).setPassword("foo"));
- </pre>
 ++++
 '''
 
@@ -1101,6 +1101,7 @@ Set the password for the key store
 |[[path]]`@path`|`String`|+++
 Set the path to the key store
 +++
+|[[type]]`@type`|`String`|-
 |[[value]]`@value`|`Buffer`|+++
 Set the key store as a buffer
 +++
@@ -1652,24 +1653,6 @@ Add a certificate value
 
 ++++
  Key or trust store options configuring private key and/or certificates based on PKCS#12 files.
- <p>
- When used as a key store, it should point to a store containing a private key and its certificate.
- When used as a trust store, it should point to a store containing a list of accepted certificates.
- <p>
-
- The store can either be loaded by Vert.x from the filesystem:
- <p>
- <pre>
- HttpServerOptions options = new HttpServerOptions();
- options.setPfxKeyCertOptions(new PfxOptions().setPath("/mykeystore.p12").setPassword("foo"));
- </pre>
-
- Or directly provided as a buffer:<p>
-
- <pre>
- Buffer store = vertx.fileSystem().readFileBlocking("/mykeystore.p12");
- options.setPfxKeyCertOptions(new PfxOptions().setValue(store).setPassword("foo"));
- </pre>
 ++++
 '''
 
@@ -1678,13 +1661,14 @@ Add a certificate value
 |===
 ^|Name | Type ^| Description
 |[[password]]`@password`|`String`|+++
-Set the password
+Set the password for the key store
 +++
 |[[path]]`@path`|`String`|+++
-Set the path
+Set the path to the key store
 +++
+|[[type]]`@type`|`String`|-
 |[[value]]`@value`|`Buffer`|+++
-Set the store as a buffer
+Set the key store as a buffer
 +++
 |===
 
@@ -1748,7 +1732,7 @@ Set the host name to be used by the client request.
 Set the port to be used by the client request.
 +++
 |[[ssl]]`@ssl`|`Boolean`|+++
-Set whether SSL/TLS is enabled
+Set whether SSL/TLS is enabled.
 +++
 |[[timeout]]`@timeout`|`Number (long)`|+++
 Sets the amount of time after which if the request does not return any data within the timeout period an
@@ -1756,7 +1740,7 @@ Sets the amount of time after which if the request does not return any data with
  the request will be closed.
 +++
 |[[uri]]`@uri`|`String`|+++
-Set the request relative URI
+Set the request relative URI.
 +++
 |===
 
@@ -1978,7 +1962,7 @@ Set the host name to be used by the client request.
 Set the port to be used by the client request.
 +++
 |[[ssl]]`@ssl`|`Boolean`|+++
-Set whether SSL/TLS is enabled
+Set whether SSL/TLS is enabled.
 +++
 |[[subProtocols]]`@subProtocols`|`Array of String`|+++
 Set the WebSocket sub protocols to use.
@@ -1989,7 +1973,7 @@ Sets the amount of time after which if the request does not return any data with
  the request will be closed.
 +++
 |[[uri]]`@uri`|`String`|+++
-Set the request relative URI
+Set the request relative URI.
 +++
 |[[version]]`@version`|`link:enums.html#WebsocketVersion[WebsocketVersion]`|+++
 Set the WebSocket version.

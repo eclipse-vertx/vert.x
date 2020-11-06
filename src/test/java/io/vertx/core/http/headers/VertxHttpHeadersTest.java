@@ -13,8 +13,7 @@ package io.vertx.core.http.headers;
 
 import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.headers.HeadersTestBase;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
 
   @Override
   protected MultiMap newMultiMap() {
-    return new VertxHttpHeaders();
+    return HeadersMultiMap.httpHeaders();
   }
 
   @Test
@@ -208,5 +207,18 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     mm.remove(name1);
     mm.remove(name2);
     assertTrue("not empty", mm.isEmpty());
+  }
+
+  @Test
+  public void testRemovalNext() {
+    MultiMap mmap = newMultiMap();
+    String name1 = this.sameHash1;
+    String name2 = this.sameHash2;
+    mmap.add(name1, "v");
+    mmap.add(name1, "v");
+    mmap.add(name2, "q");
+    mmap.remove(name1);
+    mmap.set(name1, "w");
+    assertEquals("w", mmap.get(name1));
   }
 }

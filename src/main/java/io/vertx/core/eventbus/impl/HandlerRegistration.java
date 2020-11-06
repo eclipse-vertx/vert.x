@@ -11,6 +11,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -19,12 +20,14 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Iterator;
 
-public abstract class HandlerRegistration<T> {
+public abstract class HandlerRegistration<T> implements Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(HandlerRegistration.class);
 
@@ -154,10 +157,11 @@ public abstract class HandlerRegistration<T> {
           bus.metrics.messageDelivered(m, message.isLocal());
         }
         if (tracer != null && !src) {
-          message.trace = tracer.receiveRequest(context, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
+          message.trace = tracer.receiveRequest(context, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
           HandlerRegistration.this.dispatch(message, context, handler);
-          if (message.replyAddress == null) {
-            tracer.sendResponse(context, null, message.trace, null, TagExtractor.empty());
+          Object trace = message.trace;
+          if (message.replyAddress == null && trace != null) {
+            tracer.sendResponse(context, null, trace, null, TagExtractor.empty());
           }
         } else {
           HandlerRegistration.this.dispatch(message, context, handler);
@@ -174,5 +178,10 @@ public abstract class HandlerRegistration<T> {
     public Object body() {
       return message.receivedBody;
     }
+  }
+
+  @Override
+  public void close(Promise<Void> completion) {
+    unregister(completion);
   }
 }

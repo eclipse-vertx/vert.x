@@ -2,6 +2,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
@@ -150,6 +151,11 @@ public class HttpClientOptionsConverter {
             obj.setSendUnmaskedFrames((Boolean)member.getValue());
           }
           break;
+        case "tracingPolicy":
+          if (member.getValue() instanceof String) {
+            obj.setTracingPolicy(io.vertx.core.tracing.TracingPolicy.valueOf((String)member.getValue()));
+          }
+          break;
         case "tryUseCompression":
           if (member.getValue() instanceof Boolean) {
             obj.setTryUseCompression((Boolean)member.getValue());
@@ -170,6 +176,11 @@ public class HttpClientOptionsConverter {
         case "verifyHost":
           if (member.getValue() instanceof Boolean) {
             obj.setVerifyHost((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketClosingTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketClosingTimeout(((Number)member.getValue()).intValue());
           }
           break;
         case "webSocketCompressionAllowClientNoContext":
@@ -232,10 +243,14 @@ public class HttpClientOptionsConverter {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
+    if (obj.getTracingPolicy() != null) {
+      json.put("tracingPolicy", obj.getTracingPolicy().name());
+    }
     json.put("tryUseCompression", obj.isTryUseCompression());
     json.put("tryUsePerMessageWebSocketCompression", obj.getTryUsePerMessageWebSocketCompression());
     json.put("tryWebSocketDeflateFrameCompression", obj.getTryWebSocketDeflateFrameCompression());
     json.put("verifyHost", obj.isVerifyHost());
+    json.put("webSocketClosingTimeout", obj.getWebSocketClosingTimeout());
     json.put("webSocketCompressionAllowClientNoContext", obj.getWebSocketCompressionAllowClientNoContext());
     json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
     json.put("webSocketCompressionRequestServerNoContext", obj.getWebSocketCompressionRequestServerNoContext());

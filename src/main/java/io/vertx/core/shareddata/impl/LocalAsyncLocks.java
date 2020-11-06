@@ -11,10 +11,8 @@
 
 package io.vertx.core.shareddata.impl;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.shareddata.Lock;
@@ -24,54 +22,61 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Thomas Segismont
  */
 public class LocalAsyncLocks {
 
-  private enum Status {WAITING, ACQUIRED, TIMED_OUT}
-
   private class LockWaiter {
 
-    final Context context;
+    final ContextInternal context;
     final String lockName;
     final Promise<Lock> promise;
-    final AtomicReference<Status> status;
     final Long timerId;
 
-    LockWaiter(Context context, String lockName, long timeout, Promise<Lock> promise) {
-      this.context = context;
+    LockWaiter(ContextInternal context, String lockName, long timeout, Promise<Lock> promise) {
       this.lockName = lockName;
       this.promise = promise;
-      status = new AtomicReference<>(Status.WAITING);
-      timerId = timeout != Long.MAX_VALUE ? context.owner().setTimer(timeout, tid -> timeout()) : null;
-    }
-
-    boolean isWaiting() {
-      return status.get() == Status.WAITING;
+      this.context = context;
+      timerId = timeout != Long.MAX_VALUE ? context.setTimer(timeout, tid -> timeout()) : null;
     }
 
     void timeout() {
-      if (status.compareAndSet(Status.WAITING, Status.TIMED_OUT)) {
-        promise.fail("Timed out waiting to get lock");
-      }
+      // Cleanup
+      waitersMap.compute(lockName, (s, list) -> {
+        int idx;
+        if (list == null || (idx = list.indexOf(LockWaiter.this)) == -1) {
+          // Already removed by release()
+          return list;
+        } else if (list.size() == 1) {
+          return null;
+        } else {
+          int size = list.size();
+          List<LockWaiter> n = new ArrayList<>(size - 1);
+          if (idx > 0) {
+            n.addAll(list.subList(0, idx));
+          }
+          if (idx + 1 < size) {
+            n.addAll(list.subList(idx + 1, size));
+          }
+          return n;
+        }
+      });
+      promise.fail("Timed out waiting to get lock");
     }
 
     void acquireLock() {
-      if (status.compareAndSet(Status.WAITING, Status.ACQUIRED)) {
-        if (timerId != null) {
-          context.owner().cancelTimer(timerId);
-        }
+      if (timerId == null || context.owner().cancelTimer(timerId)) {
         promise.complete(new AsyncLock(lockName));
       } else {
-        context.runOnContext(v -> nextWaiter(lockName));
+        nextWaiter(lockName);
       }
     }
   }
 
-  private class AsyncLock implements Lock {
+  private class AsyncLock implements LockInternal {
+
     final String lockName;
     final AtomicBoolean invoked = new AtomicBoolean();
 
@@ -84,6 +89,12 @@ public class LocalAsyncLocks {
       if (invoked.compareAndSet(false, true)) {
         nextWaiter(lockName);
       }
+    }
+
+    @Override
+    public int waiters() {
+      List<LockWaiter> waiters = waitersMap.get(lockName);
+      return waiters == null ? 0 : waiters.size() - 1;
     }
   }
 

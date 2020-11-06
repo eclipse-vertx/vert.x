@@ -33,15 +33,16 @@ import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.Metrics;
+import io.vertx.core.spi.observability.HttpResponse;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -63,7 +64,7 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerResponse implements HttpServerResponse {
+public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   private static final Buffer EMPTY_BUFFER = Buffer.buffer(Unpooled.EMPTY_BUFFER);
   private static final Logger log = LoggerFactory.getLogger(Http1xServerResponse.class);
@@ -89,20 +90,20 @@ public class Http1xServerResponse implements HttpServerResponse {
   private Handler<Void> bodyEndHandler;
   private boolean writable;
   private boolean closed;
-  private final VertxHttpHeaders headers;
+  private final HeadersMultiMap headers;
   private Map<String, ServerCookie> cookies;
   private MultiMap trailers;
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
   private long bytesWritten;
-  private NetSocket netSocket;
+  private Future<NetSocket> netSocket;
 
   Http1xServerResponse(final VertxInternal vertx, ContextInternal context, Http1xServerConnection conn, HttpRequest request, Object requestMetric) {
     this.vertx = vertx;
     this.conn = conn;
     this.context = context;
     this.version = request.protocolVersion();
-    this.headers = new VertxHttpHeaders();
+    this.headers = HeadersMultiMap.httpHeaders();
     this.request = request;
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
@@ -120,11 +121,16 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public MultiMap trailers() {
     if (trailers == null) {
-      VertxHttpHeaders v = new VertxHttpHeaders();
+      HeadersMultiMap v = HeadersMultiMap.httpHeaders();
       trailers = v;
       trailingHeaders = v;
     }
     return trailers;
+  }
+
+  @Override
+  public int statusCode() {
+    return status.code();
   }
 
   @Override
@@ -134,7 +140,10 @@ public class Http1xServerResponse implements HttpServerResponse {
 
   @Override
   public HttpServerResponse setStatusCode(int statusCode) {
-    status = statusMessage != null ? new HttpResponseStatus(statusCode, statusMessage) : HttpResponseStatus.valueOf(statusCode);
+    synchronized (conn) {
+      checkHeadWritten();
+      status = statusMessage != null ? new HttpResponseStatus(statusCode, statusMessage) : HttpResponseStatus.valueOf(statusCode);
+    }
     return this;
   }
 
@@ -146,6 +155,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public HttpServerResponse setStatusMessage(String statusMessage) {
     synchronized (conn) {
+      checkHeadWritten();
       this.statusMessage = statusMessage;
       this.status = new HttpResponseStatus(status.code(), statusMessage);
       return this;
@@ -155,7 +165,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public Http1xServerResponse setChunked(boolean chunked) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
       if (version != HttpVersion.HTTP_1_0) {
         headers.set(HttpHeaders.TRANSFER_ENCODING, chunked ? "chunked" : null);
@@ -174,7 +184,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public Http1xServerResponse putHeader(String key, String value) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       headers.set(key, value);
       return this;
     }
@@ -183,7 +193,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public Http1xServerResponse putHeader(String key, Iterable<String> values) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       headers.set(key, values);
       return this;
     }
@@ -210,7 +220,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public HttpServerResponse putHeader(CharSequence name, CharSequence value) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       headers.set(name, value);
       return this;
     }
@@ -219,7 +229,7 @@ public class Http1xServerResponse implements HttpServerResponse {
   @Override
   public HttpServerResponse putHeader(CharSequence name, Iterable<CharSequence> values) {
     synchronized (conn) {
-      checkValid();
+      checkHeadWritten();
       headers.set(name, values);
       return this;
     }
@@ -564,7 +574,7 @@ public class Http1xServerResponse implements HttpServerResponse {
           } else {
             res = Future.failedFuture(future.cause());
           }
-          ctx.dispatch(null, v -> resultHandler.handle(res));
+          ctx.emit(null, v -> resultHandler.handle(res));
         }
 
         // signal body end handler
@@ -573,7 +583,7 @@ public class Http1xServerResponse implements HttpServerResponse {
           handler = bodyEndHandler;
         }
         if (handler != null) {
-          context.dispatch(v -> {
+          context.emit(v -> {
             handler.handle(null);
           });
         }
@@ -600,7 +610,7 @@ public class Http1xServerResponse implements HttpServerResponse {
         return;
       }
     }
-    context.emit(null, handler);
+    context.dispatch(null, handler);
   }
 
   void handleException(Throwable t) {
@@ -614,7 +624,7 @@ public class Http1xServerResponse implements HttpServerResponse {
           return;
         }
       }
-      context.emit(t, handler);
+      context.dispatch(t, handler);
     }
   }
 
@@ -632,19 +642,25 @@ public class Http1xServerResponse implements HttpServerResponse {
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      context.emit(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (endHandler != null) {
-      context.emit(null, endHandler);
+      context.dispatch(null, endHandler);
     }
     if (closedHandler != null) {
-      context.emit(null, closedHandler);
+      context.dispatch(null, closedHandler);
     }
   }
 
   private void checkValid() {
     if (written) {
       throw new IllegalStateException(RESPONSE_WRITTEN);
+    }
+  }
+
+  private void checkHeadWritten() {
+    if (headWritten) {
+      throw new IllegalStateException("Response head already sent");
     }
   }
 
@@ -716,19 +732,20 @@ public class Http1xServerResponse implements HttpServerResponse {
     }
   }
 
-  NetSocket netSocket(boolean isConnect) {
-    checkValid();
-    if (netSocket == null) {
-      if (isConnect) {
+  Future<NetSocket> netSocket() {
+    synchronized (conn) {
+      if (netSocket == null) {
         if (headWritten) {
-          throw new IllegalStateException("Response for CONNECT already sent");
+          return context.failedFuture("Response for CONNECT already sent");
         }
         status = HttpResponseStatus.OK;
         prepareHeaders(-1);
         conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
+        written = true;
+        Promise<NetSocket> promise = context.promise();
+        netSocket = promise.future();
+        conn.netSocket(promise);
       }
-      written = true;
-      netSocket = conn.createNetSocket();
     }
     return netSocket;
   }
@@ -739,7 +756,14 @@ public class Http1xServerResponse implements HttpServerResponse {
   }
 
   @Override
-  public void reset(long code) {
+  public boolean reset(long code) {
+    synchronized (conn) {
+      if (written) {
+        return false;
+      }
+    }
+    close();
+    return true;
   }
 
   @Override
@@ -761,12 +785,18 @@ public class Http1xServerResponse implements HttpServerResponse {
 
   @Override
   public HttpServerResponse addCookie(Cookie cookie) {
-    cookies().put(cookie.getName(), (ServerCookie) cookie);
+    synchronized (conn) {
+      checkHeadWritten();
+      cookies().put(cookie.getName(), (ServerCookie) cookie);
+    }
     return this;
   }
 
   @Override
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
-    return CookieImpl.removeCookie(cookies(), name, invalidate);
+    synchronized (conn) {
+      checkHeadWritten();
+      return CookieImpl.removeCookie(cookies(), name, invalidate);
+    }
   }
 }

@@ -12,6 +12,7 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.WebsocketVersion;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.json.jackson.DatabindCodec;
@@ -29,14 +30,18 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -71,7 +76,6 @@ public class JsonCodecTest {
   public void testEncodeJsonObject() {
     JsonObject jsonObject = new JsonObject();
     jsonObject.put("mystr", "foo");
-    jsonObject.put("mycharsequence", new StringBuilder("oob"));
     jsonObject.put("myint", 123);
     jsonObject.put("mylong", 1234l);
     jsonObject.put("myfloat", 1.23f);
@@ -87,7 +91,7 @@ public class JsonCodecTest {
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
-    String expected = "{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
+    String expected = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybyte\":255,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
     String json = mapper.toString(jsonObject);
     assertEquals(expected, json);
@@ -119,7 +123,6 @@ public class JsonCodecTest {
   public void testEncodeJsonObjectToBuffer() {
     JsonObject jsonObject = new JsonObject();
     jsonObject.put("mystr", "foo");
-    jsonObject.put("mycharsequence", new StringBuilder("oob"));
     jsonObject.put("myint", 123);
     jsonObject.put("mylong", 1234l);
     jsonObject.put("myfloat", 1.23f);
@@ -135,7 +138,7 @@ public class JsonCodecTest {
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
 
-    Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"mycharsequence\":\"oob\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
+    Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
 
     Buffer json = mapper.toBuffer(jsonObject);
@@ -366,7 +369,14 @@ public class JsonCodecTest {
     // the RFC is one way only
     Instant decoded = Instant.from(ISO_INSTANT.parse(json.substring(1, json.length() - 1)));
     assertEquals(now, decoded);
+  }
 
+  @Test
+  public void decodeCustomTypeInstant() {
+    Instant now = Instant.now();
+    String json = '"' + ISO_INSTANT.format(now) + '"';
+    Instant decoded = mapper.fromString(json, Instant.class);
+    assertEquals(now, decoded);
   }
 
   @Test
@@ -374,8 +384,19 @@ public class JsonCodecTest {
     byte[] data = new byte[] { 'h', 'e', 'l', 'l', 'o'};
     String json = mapper.toString(data);
     assertNotNull(json);
-    // base64 encoded hello
     assertEquals("\"aGVsbG8\"", json);
+    json = mapper.toString(Buffer.buffer(data));
+    assertNotNull(json);
+    assertEquals("\"aGVsbG8\"", json);
+  }
+
+  @Test
+  public void decodeCustomTypeBinary() {
+    // base64 encoded hello
+    byte[] data = mapper.fromString("\"aGVsbG8\"", byte[].class);
+    assertEquals("hello", new String(data));
+    Buffer buff = mapper.fromString("\"aGVsbG8\"", Buffer.class);
+    assertEquals("hello", buff.toString());
   }
 
   @Test
@@ -419,6 +440,7 @@ public class JsonCodecTest {
     Buffer json = mapper.toBuffer(WebsocketVersion.V13);
     assertNotNull(json);
     assertEquals("\"V13\"", json.toString());
+    mapper.fromBuffer(json, WebsocketVersion.class);
   }
 
   @Test
@@ -485,4 +507,66 @@ public class JsonCodecTest {
     } catch (DecodeException ignore) {
     }
   }
+
+  @Test
+  public void testEncodeCollectionState() {
+    assertEquals("{\"key\":\"QQ\"}", checkMap(new byte[] { 'A' }));
+    assertEquals("[\"QQ\"]", checkList(new byte[] { 'A' }));
+    assertEquals("{\"key\":\"QQ\"}", checkMap(Buffer.buffer("A")));
+    assertEquals("[\"QQ\"]", checkList(Buffer.buffer("A")));
+    Instant instant = Instant.ofEpochMilli(0);
+    assertEquals("{\"key\":\"1970-01-01T00:00:00Z\"}", checkMap(instant));
+    assertEquals("[\"1970-01-01T00:00:00Z\"]", checkList(instant));
+    assertEquals("{\"key\":\"MICROSECONDS\"}", checkMap(TimeUnit.MICROSECONDS));
+    assertEquals("[\"MICROSECONDS\"]", checkList(TimeUnit.MICROSECONDS));
+    BigInteger bigInt = new BigInteger("123456789");
+    assertEquals("{\"key\":123456789}", checkMap(bigInt));
+    assertEquals("[123456789]", checkList(bigInt));
+    BigDecimal bigDec = new BigDecimal(bigInt).divide(new BigDecimal("100"));
+    assertEquals("{\"key\":1234567.89}", checkMap(bigDec));
+    assertEquals("[1234567.89]", checkList(bigDec));
+    assertEquals("{\"key\":{\"foo\":\"bar\"}}", checkMap(new JsonObject().put("foo", "bar")));
+    assertEquals("[{\"foo\":\"bar\"}]", checkList(new JsonObject().put("foo", "bar")));
+    assertEquals("{\"key\":[\"foo\"]}", checkMap(new JsonArray().add("foo")));
+    assertEquals("[[\"foo\"]]", checkList(new JsonArray().add("foo")));
+    Locale locale = Locale.FRANCE;
+    if (mapper instanceof DatabindCodec) {
+      assertEquals("{\"key\":\"fr_FR\"}", checkMap(locale));
+      assertEquals("[\"fr_FR\"]", checkList(locale));
+    } else {
+      CharSequence cs = HttpHeaders.ACCEPT;
+      assertFalse(cs instanceof String);
+      try {
+        checkMap(cs);
+        fail();
+      } catch (EncodeException ignore) {
+      }
+      try {
+        checkList(cs);
+        fail();
+      } catch (EncodeException ignore) {
+      }
+      try {
+        checkMap(locale);
+        fail();
+      } catch (EncodeException ignore) {
+      }
+      try {
+        checkList(locale);
+        fail();
+      } catch (EncodeException ignore) {
+      }
+    }
+  }
+
+  private String checkMap(Object o) {
+    Map<String, Object> map = new HashMap<>();
+    map.put("key", o);
+    return mapper.toString(map, false);
+  }
+
+  private String checkList(Object o) {
+    return mapper.toString(Collections.singletonList(o), false);
+  }
+
 }

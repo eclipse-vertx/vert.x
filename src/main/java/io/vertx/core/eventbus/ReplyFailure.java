@@ -32,25 +32,42 @@ public enum ReplyFailure {
   NO_HANDLERS,
 
   /**
-   * The message send failed because the recipient actively sent back a failure (rejected the message)
+   * The message send failed because the recipient actively sent back a failure (rejected the message).
    */
-  RECIPIENT_FAILURE;
+  RECIPIENT_FAILURE,
+
+  /**
+   * A fatal error occured while delivering the message. Do not retry to send.
+   */
+  ERROR;
 
   public static ReplyFailure fromInt(int i) {
     switch (i) {
-      case 0: return TIMEOUT;
-      case 1: return NO_HANDLERS;
-      case 2: return RECIPIENT_FAILURE;
-      default: throw new IllegalStateException("Invalid index " + i);
+      case 0:
+        return TIMEOUT;
+      case 1:
+        return NO_HANDLERS;
+      case 2:
+        return RECIPIENT_FAILURE;
+      case 3:
+        return ERROR;
+      default:
+        throw new IllegalStateException("Invalid index " + i);
     }
   }
 
   public int toInt() {
     switch (this) {
-      case TIMEOUT: return 0;
-      case NO_HANDLERS: return 1;
-      case RECIPIENT_FAILURE: return 2;
-      default: throw new IllegalStateException("How did we get here?");
+      case TIMEOUT:
+        return 0;
+      case NO_HANDLERS:
+        return 1;
+      case RECIPIENT_FAILURE:
+        return 2;
+      case ERROR:
+        return 3;
+      default:
+        throw new IllegalStateException("How did we get here?");
     }
   }
 }

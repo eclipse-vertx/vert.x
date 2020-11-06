@@ -9,20 +9,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.impl;
+package io.vertx.core.impl.future;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 
 import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class CompositeFutureImpl implements CompositeFuture {
+public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements CompositeFuture {
 
   public static CompositeFuture all(Future<?>... results) {
     CompositeFutureImpl composite = new CompositeFutureImpl(results);
@@ -118,18 +117,9 @@ public class CompositeFutureImpl implements CompositeFuture {
 
   private final Future[] results;
   private int count;
-  private Object result;
-  private Promise<CompositeFuture> promise;
 
   private CompositeFutureImpl(Future<?>... results) {
     this.results = results;
-    this.promise = Promise.promise();
-  }
-
-  @Override
-  public CompositeFuture onComplete(Handler<AsyncResult<CompositeFuture>> handler) {
-    promise.future().onComplete(handler);
-    return this;
   }
 
   @Override
@@ -169,31 +159,6 @@ public class CompositeFutureImpl implements CompositeFuture {
     return results.length;
   }
 
-  @Override
-  public synchronized boolean isComplete() {
-    return result != null;
-  }
-
-  @Override
-  public synchronized boolean succeeded() {
-    return result == this;
-  }
-
-  @Override
-  public synchronized boolean failed() {
-    return result instanceof Throwable;
-  }
-
-  @Override
-  public synchronized Throwable cause() {
-    return result instanceof Throwable ? (Throwable) result : null;
-  }
-
-  @Override
-  public synchronized CompositeFuture result() {
-    return result == this ? this : null;
-  }
-
   private void succeed() {
     complete(this);
   }
@@ -203,9 +168,25 @@ public class CompositeFutureImpl implements CompositeFuture {
   }
 
   private void complete(Object result) {
-    synchronized (this) {
-      this.result = result;
+    if (result == this) {
+      tryComplete(this);
+    } else if (result instanceof Throwable) {
+      tryFail((Throwable) result);
     }
-    promise.handle(this);
+  }
+
+  @Override
+  public CompositeFuture onComplete(Handler<AsyncResult<CompositeFuture>> handler) {
+    return (CompositeFuture)super.onComplete(handler);
+  }
+
+  @Override
+  public CompositeFuture onSuccess(Handler<CompositeFuture> handler) {
+    return (CompositeFuture)super.onSuccess(handler);
+  }
+
+  @Override
+  public CompositeFuture onFailure(Handler<Throwable> handler) {
+    return (CompositeFuture)super.onFailure(handler);
   }
 }

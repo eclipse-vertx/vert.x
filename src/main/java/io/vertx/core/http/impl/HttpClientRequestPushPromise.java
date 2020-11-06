@@ -26,12 +26,11 @@ import io.vertx.core.net.SocketAddress;
  */
 class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
-  private final Http2ClientConnection conn;
-  private final Http2ClientConnection.StreamImpl stream;
+  private final HttpClientStream stream;
   private final MultiMap headers;
 
   public HttpClientRequestPushPromise(
-    Http2ClientConnection conn,
+    HttpClientStream stream,
     HttpClientImpl client,
     boolean ssl,
     HttpMethod method,
@@ -39,14 +38,14 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
     String host,
     int port,
     MultiMap headers) {
-    super(client, conn.getContext().promise(), ssl, method, SocketAddress.inetSocketAddress(port, host), host, port, uri);
-    this.conn = conn;
-    this.stream = new Http2ClientConnection.StreamImpl(conn, conn.getContext(), this, null);
+    super(client, stream, stream.connection().getContext().promise(), ssl, method, SocketAddress.inetSocketAddress(port, host), host, port, uri);
+    this.stream = stream;
     this.headers = headers;
   }
 
-  Http2ClientConnection.StreamImpl getStream() {
-    return stream;
+  @Override
+  public HttpVersion version() {
+    return stream.version();
   }
 
   @Override
@@ -61,7 +60,7 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public HttpConnection connection() {
-    return conn;
+    return stream.connection();
   }
 
   @Override
@@ -73,12 +72,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   @Override
   public boolean isChunked() {
     return false;
-  }
-
-
-  @Override
-  public String getAuthority() {
-    return server.host();
   }
 
   @Override
@@ -113,11 +106,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public HttpClientRequest setChunked(boolean chunked) {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public HttpClientRequest setAuthority(String authority) {
     throw new IllegalStateException();
   }
 
@@ -172,12 +160,22 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
   }
 
   @Override
-  public Future<HttpVersion> sendHead() {
+  public Future<Void> sendHead() {
     throw new IllegalStateException();
   }
 
   @Override
-  public HttpClientRequest sendHead(Handler<AsyncResult<HttpVersion>> completionHandler) {
+  public HttpClientRequest sendHead(Handler<AsyncResult<Void>> completionHandler) {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public Future<HttpClientResponse> connect() {
+    throw new IllegalStateException();
+  }
+
+  @Override
+  public void connect(Handler<AsyncResult<HttpClientResponse>> handler) {
     throw new IllegalStateException();
   }
 
@@ -208,11 +206,6 @@ class HttpClientRequestPushPromise extends HttpClientRequestBase {
 
   @Override
   public void end(Buffer chunk, Handler<AsyncResult<Void>> handler) {
-    throw new IllegalStateException();
-  }
-
-  @Override
-  public HttpClientRequest pushHandler(Handler<HttpClientRequest> handler) {
     throw new IllegalStateException();
   }
 

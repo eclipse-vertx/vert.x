@@ -12,7 +12,7 @@
 package io.vertx.core.http.headers;
 
 import io.vertx.core.MultiMap;
-import io.vertx.core.http.impl.headers.CaseInsensitiveHeaders;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -28,7 +28,7 @@ public class CaseInsensitiveHeadersTest extends VertxHttpHeadersTest {
   }
 
   protected MultiMap newMultiMap() {
-    return new CaseInsensitiveHeaders();
+    return new HeadersMultiMap();
   }
 
   @Test

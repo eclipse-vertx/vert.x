@@ -297,4 +297,5 @@ public interface HttpConnection {
    * @return the indicated server name
    */
   String indicatedServerName();
+
 }

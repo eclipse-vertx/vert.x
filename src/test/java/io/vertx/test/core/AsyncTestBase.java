@@ -180,7 +180,7 @@ public class AsyncTestBase {
   private void handleThrowable(Throwable t) {
     if (testCompleteCalled) {
       lateFailure = true;
-      throw new IllegalStateException("assert or failure occurred after test has completed");
+      throw new IllegalStateException("assert or failure occurred after test has completed", t);
     }
     throwable = t;
     t.printStackTrace();

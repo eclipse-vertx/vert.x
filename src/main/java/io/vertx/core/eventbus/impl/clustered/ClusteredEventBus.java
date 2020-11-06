@@ -16,6 +16,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.AddressHelper;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.impl.*;
@@ -23,7 +24,9 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.*;
+import io.vertx.core.net.NetServer;
+import io.vertx.core.net.NetServerOptions;
+import io.vertx.core.net.NetSocket;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
@@ -44,9 +47,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ClusteredEventBus extends EventBusImpl {
 
   private static final Logger log = LoggerFactory.getLogger(ClusteredEventBus.class);
-
-  public static final String CLUSTER_PUBLIC_HOST_PROP_NAME = "vertx.cluster.public.host";
-  public static final String CLUSTER_PUBLIC_PORT_PROP_NAME = "vertx.cluster.public.port";
 
   private static final Buffer PONG = Buffer.buffer(new byte[]{(byte) 1});
 
@@ -69,48 +69,20 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   private NetServerOptions getServerOptions() {
-    NetServerOptions serverOptions = new NetServerOptions(this.options.toJson());
-    setCertOptions(serverOptions, options.getKeyCertOptions());
-    setTrustOptions(serverOptions, options.getTrustOptions());
-
-    return serverOptions;
-  }
-
-  static void setCertOptions(TCPSSLOptions options, KeyCertOptions keyCertOptions) {
-    if (keyCertOptions == null) {
-      return;
-    }
-    if (keyCertOptions instanceof JksOptions) {
-      options.setKeyStoreOptions((JksOptions) keyCertOptions);
-    } else if (keyCertOptions instanceof PfxOptions) {
-      options.setPfxKeyCertOptions((PfxOptions) keyCertOptions);
-    } else {
-      options.setPemKeyCertOptions((PemKeyCertOptions) keyCertOptions);
-    }
-  }
-
-  static void setTrustOptions(TCPSSLOptions sslOptions, TrustOptions options) {
-    if (options == null) {
-      return;
-    }
-
-    if (options instanceof JksOptions) {
-      sslOptions.setTrustStoreOptions((JksOptions) options);
-    } else if (options instanceof PfxOptions) {
-      sslOptions.setPfxTrustOptions((PfxOptions) options);
-    } else {
-      sslOptions.setPemTrustOptions((PemTrustOptions) options);
-    }
+    return new NetServerOptions(this.options.toJson());
   }
 
   @Override
   public void start(Promise<Void> promise) {
-    server = vertx.createNetServer(getServerOptions());
+    NetServerOptions serverOptions = getServerOptions();
+    server = vertx.createNetServer(serverOptions);
     server.connectHandler(getServerHandler());
-    server.listen().flatMap(v -> {
-      int serverPort = getClusterPublicPort(options, server.actualPort());
-      String serverHost = getClusterPublicHost(options);
-      nodeInfo = new NodeInfo(serverHost, serverPort, options.getClusterNodeMetadata());
+    int port = getClusterPort();
+    String host = getClusterHost();
+    server.listen(port, host).flatMap(v -> {
+      int publicPort = getClusterPublicPort(server.actualPort());
+      String publicHost = getClusterPublicHost(host);
+      nodeInfo = new NodeInfo(publicHost, publicPort, options.getClusterNodeMetadata());
       nodeId = clusterManager.getNodeId();
       Promise<Void> setPromise = Promise.promise();
       clusterManager.setNodeInfo(nodeInfo, setPromise);
@@ -226,23 +198,38 @@ public class ClusteredEventBus extends EventBusImpl {
     return !clusteredMessage.isFromWire();
   }
 
-  private int getClusterPublicPort(EventBusOptions options, int actualPort) {
-    // We retain the old system property for backwards compat
-    int publicPort = Integer.getInteger(CLUSTER_PUBLIC_PORT_PROP_NAME, options.getClusterPublicPort());
-    if (publicPort < 1) {
-      // Get the actual port, wildcard port of zero might have been specified
-      publicPort = actualPort;
-    }
-    return publicPort;
+  private int getClusterPort() {
+    return options.getPort();
   }
 
-  private String getClusterPublicHost(EventBusOptions options) {
-    // We retain the old system property for backwards compat
-    String publicHost = System.getProperty(CLUSTER_PUBLIC_HOST_PROP_NAME, options.getClusterPublicHost());
-    if (publicHost == null) {
-      publicHost = options.getHost();
+  private String getClusterHost() {
+    String host;
+    if ((host = options.getHost()) != null) {
+      return host;
     }
-    return publicHost;
+    if ((host = clusterManager.clusterHost()) != null) {
+      return host;
+    }
+    return AddressHelper.defaultAddress();
+  }
+
+  private int getClusterPublicPort(int actualPort) {
+    int publicPort = options.getClusterPublicPort();
+    return publicPort > 0 ? publicPort : actualPort;
+  }
+
+  private String getClusterPublicHost(String host) {
+    String publicHost;
+    if ((publicHost = options.getClusterPublicHost()) != null) {
+      return publicHost;
+    }
+    if ((publicHost = options.getHost()) != null) {
+      return publicHost;
+    }
+    if ((publicHost = clusterManager.clusterPublicHost()) != null) {
+      return publicHost;
+    }
+    return host;
   }
 
   private Handler<NetSocket> getServerHandler() {
@@ -263,7 +250,9 @@ public class ClusteredEventBus extends EventBusImpl {
             }
             parser.fixedSizeMode(4);
             size = -1;
-            if (received.codec() == CodecManager.PING_MESSAGE_CODEC) {
+            if (received.hasFailure()) {
+              received.internalError();
+            } else if (received.codec() == CodecManager.PING_MESSAGE_CODEC) {
               // Just send back pong directly on connection
               socket.write(PONG);
             } else {

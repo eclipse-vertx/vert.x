@@ -20,7 +20,7 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.PromiseInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -49,6 +49,9 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  */
 public abstract class ConnectionBase {
 
+  private static final long METRICS_REPORTED_BYTES_LOW_MASK = 0xFFF; // 4K
+  private static final long METRICS_REPORTED_BYTES_HIGH_MASK = ~METRICS_REPORTED_BYTES_LOW_MASK; // 4K
+
   /**
    * An exception used to signal a closed connection to an exception handler. Exception are
    * expensive to create, this instance can be used for this purpose. It does not capture a stack
@@ -70,29 +73,36 @@ public abstract class ConnectionBase {
   private Object metric;
   private SocketAddress remoteAddress;
   private SocketAddress localAddress;
-  private Promise<Void> closePromise;
+  private ChannelPromise closePromise;
+  private Future<Void> closeFuture;
+  private long remainingBytesRead;
+  private long remainingBytesWritten;
 
   // State accessed exclusively from the event loop thread
   private boolean read;
   private boolean needsFlush;
   private boolean closed;
 
-  protected ConnectionBase(VertxInternal vertx, ChannelHandlerContext chctx, ContextInternal context) {
-    this.vertx = vertx;
+  protected ConnectionBase(ContextInternal context, ChannelHandlerContext chctx) {
+    this.vertx = context.owner();
     this.chctx = chctx;
     this.context = context;
     this.voidPromise = new VoidChannelPromise(chctx.channel(), false);
-    this.closePromise = context.promise();
+    this.closePromise = chctx.newPromise();
+
+    PromiseInternal<Void> p = context.promise();
+    closePromise.addListener(p);
+    closeFuture = p.future();
 
     // Add close handler callback
-    closePromise.future().onComplete(this::checkCloseHandler);
+    closeFuture.onComplete(this::checkCloseHandler);
   }
 
   /**
    * @return a promise that will be completed when the connection becomes closed
    */
   public Future<Void> closeFuture() {
-    return closePromise.future();
+    return closeFuture;
   }
 
   /**
@@ -103,6 +113,17 @@ public abstract class ConnectionBase {
    */
   public void fail(Throwable error) {
     chctx.pipeline().fireExceptionCaught(error);
+  }
+
+  void close(ChannelPromise promise) {
+    closePromise.addListener(l -> {
+      if (l.isSuccess()) {
+        promise.setSuccess();
+      } else {
+        promise.setFailure(l.cause());
+      }
+    });
+    close();
   }
 
   /**
@@ -124,6 +145,9 @@ public abstract class ConnectionBase {
   final void read(Object msg) {
     read = true;
     if (!closed) {
+      if (METRICS_ENABLED) {
+        reportBytesRead(msg);
+      }
       handleMessage(msg);
     }
   }
@@ -168,12 +192,9 @@ public abstract class ConnectionBase {
     ChannelPromise channelPromise = chctx
       .newPromise()
       .addListener((ChannelFutureListener) f -> {
-        chctx.channel().close().addListener(promise);
+        chctx.close().addListener(promise);
       });
     writeToChannel(Unpooled.EMPTY_BUFFER, true, channelPromise);
-  }
-
-  protected void reportsBytesWritten(Object msg) {
   }
 
   private ChannelPromise wrap(FutureListener<Void> handler) {
@@ -323,7 +344,7 @@ public abstract class ConnectionBase {
     if (metrics != null) {
       metrics.exceptionOccurred(metric, remoteAddress(), t);
     }
-    context.dispatch(t, err -> {
+    context.emit(t, err -> {
       Handler<Throwable> handler;
       synchronized (ConnectionBase.this) {
         handler = exceptionHandler;
@@ -343,10 +364,14 @@ public abstract class ConnectionBase {
   protected void handleClosed() {
     closed = true;
     NetworkMetrics metrics = metrics();
-    if (metrics instanceof TCPMetrics) {
-      ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+    if (metrics != null) {
+      flushBytesRead();
+      flushBytesWritten();
+      if (metrics instanceof TCPMetrics) {
+        ((TCPMetrics) metrics).disconnected(metric(), remoteAddress());
+      }
     }
-    closePromise.complete();
+    closePromise.setSuccess();
   }
 
   private void checkCloseHandler(AsyncResult<Void> ar) {
@@ -376,17 +401,59 @@ public abstract class ConnectionBase {
     return !isSsl();
   }
 
+  protected void reportBytesRead(Object msg) {
+  }
+
   public void reportBytesRead(long numberOfBytes) {
-    NetworkMetrics metrics = metrics();
-    if (metrics != null) {
-      metrics.bytesRead(metric(), remoteAddress(), numberOfBytes);
+    if (numberOfBytes < 0L) {
+      throw new IllegalArgumentException();
     }
+    long bytes = remainingBytesRead;
+    bytes += numberOfBytes;
+    NetworkMetrics metrics = metrics();
+    long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
+    if (metrics != null && val > 0) {
+      bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
+      metrics.bytesRead(metric(), remoteAddress(), val);
+    }
+    remainingBytesRead = bytes;
+  }
+
+  protected void reportsBytesWritten(Object msg) {
   }
 
   public void reportBytesWritten(long numberOfBytes) {
+    if (numberOfBytes < 0L) {
+      throw new IllegalArgumentException();
+    }
+    long bytes = remainingBytesWritten;
+    bytes += numberOfBytes;
     NetworkMetrics metrics = metrics();
-    if (metrics != null && numberOfBytes > 0) {
-      metrics.bytesWritten(metric, remoteAddress(), numberOfBytes);
+    long val = bytes & METRICS_REPORTED_BYTES_HIGH_MASK;
+    if (metrics != null && val > 0) {
+      bytes &= METRICS_REPORTED_BYTES_LOW_MASK;
+      metrics.bytesWritten(metric, remoteAddress(), val);
+    }
+    remainingBytesWritten = bytes;
+  }
+
+  public void flushBytesRead() {
+    long val = remainingBytesRead;
+    if (val > 0L) {
+      NetworkMetrics metrics = metrics();
+      remainingBytesRead = 0L;
+      if (metrics != null)
+        metrics.bytesRead(metric(), remoteAddress(), val);
+    }
+  }
+
+  public void flushBytesWritten() {
+    long val = remainingBytesWritten;
+    if (val > 0L) {
+      NetworkMetrics metrics = metrics();
+      remainingBytesWritten = 0L;
+      if (metrics != null)
+        metrics.bytesWritten(metric(), remoteAddress(), val);
     }
   }
 

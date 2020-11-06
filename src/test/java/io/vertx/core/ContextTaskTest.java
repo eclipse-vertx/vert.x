@@ -30,12 +30,12 @@ public class ContextTaskTest extends VertxTestBase {
     SCHEDULE() {
       @Override
       void exec(ContextInternal ctx, Handler<Void> task) {
-        ctx.schedule(task);
+        ctx.execute(task);
       }
     }, DISPATCH() {
       @Override
       void exec(ContextInternal ctx, Handler<Void> task) {
-        ctx.dispatch(task);
+        ctx.emit(task);
       }
     };
 
@@ -156,22 +156,22 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testEventLoopDispatchFromAnotherEventLoop() {
-    testOpFromAnotherEventLoop(ContextInternal::dispatch, this::createEventLoopContext, false);
+    testOpFromAnotherEventLoop(ContextInternal::emit, this::createEventLoopContext, false);
   }
 
   @Test
   public void testEventLoopScheduleFromAnotherEventLoop() {
-    testOpFromAnotherEventLoop(ContextInternal::schedule, this::createEventLoopContext,true);
+    testOpFromAnotherEventLoop(ContextInternal::execute, this::createEventLoopContext,true);
   }
 
   @Test
   public void testWorkerDispatchFromAnotherEventLoop() {
-    testOpFromAnotherEventLoop(ContextInternal::dispatch, this::createWorkerContext, false);
+    testOpFromAnotherEventLoop(ContextInternal::emit, this::createWorkerContext, false);
   }
 
   @Test
   public void testWorkerScheduleFromAnotherEventLoop() {
-    testOpFromAnotherEventLoop(ContextInternal::schedule, this::createWorkerContext,true);
+    testOpFromAnotherEventLoop(ContextInternal::execute, this::createWorkerContext,true);
   }
 
   private void testOpFromAnotherEventLoop(BiConsumer<ContextInternal, Handler<Void>> op, Supplier<ContextInternal> contextSupplier, boolean isSchedule) {
@@ -217,7 +217,7 @@ public class ContextTaskTest extends VertxTestBase {
   private void testOpFromSameSchedule(Op op, Supplier<ContextInternal> contextSupplier) {
     waitFor(2);
     ContextInternal ctx = contextSupplier.get();
-    ctx.schedule(v1 -> {
+    ctx.execute(v1 -> {
       Thread thread = Thread.currentThread();
       AtomicBoolean flag = new AtomicBoolean(true);
       op.exec(ctx, v2 -> {
@@ -238,22 +238,22 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Test
   public void testEventLoopDispatchFromAnotherThread() {
-    testOpFromAnotherThread(ContextInternal::dispatch, this::createEventLoopContext, false);
+    testOpFromAnotherThread(ContextInternal::emit, this::createEventLoopContext, false);
   }
 
   @Test
   public void testEventLoopScheduleFromAnotherThread() {
-    testOpFromAnotherThread(ContextInternal::schedule, this::createEventLoopContext, true);
+    testOpFromAnotherThread(ContextInternal::execute, this::createEventLoopContext, true);
   }
 
   @Test
   public void testWorkerDispatchFromAnotherThread() {
-    testOpFromAnotherThread(ContextInternal::dispatch, this::createWorkerContext, false);
+    testOpFromAnotherThread(ContextInternal::emit, this::createWorkerContext, false);
   }
 
   @Test
   public void testWorkerScheduleFromAnotherThread() {
-    testOpFromAnotherThread(ContextInternal::schedule, this::createWorkerContext, true);
+    testOpFromAnotherThread(ContextInternal::execute, this::createWorkerContext, true);
   }
 
   private void testOpFromAnotherThread(BiConsumer<ContextInternal, Handler<Void>> op, Supplier<ContextInternal> contextSupplier, boolean expectNullContext) {
