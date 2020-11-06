@@ -1956,39 +1956,6 @@ public class Http2ClientTest extends Http2TestBase {
     await();
   }
 */
-  @Test
-  public void testWorkerVerticleException() throws Exception {
-    Verticle workerVerticle = new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        try {
-          vertx.createHttpClient(createHttp2ClientOptions());
-          fail("HttpClient should not work with HTTP_2");
-        } catch(Exception ex) {
-          assertEquals("Cannot use HttpClient with HTTP_2 in a worker", ex.getMessage());
-          complete();
-        }
-      }
-    };
-    vertx.deployVerticle(workerVerticle, new DeploymentOptions().setWorker(true));
-    await();
-  }
-
-  @Test
-  public void testExecuteBlockingException() throws Exception {
-
-    vertx.executeBlocking(fut -> {
-      try {
-        vertx.createHttpClient(createHttp2ClientOptions());
-        fail("HttpClient should not work with HTTP_2 inside executeBlocking");
-      } catch(Exception ex) {
-        assertEquals("Cannot use HttpClient with HTTP_2 in a worker", ex.getMessage());
-        complete();
-      }
-    }, null);
-
-    await();
-  }
 
   @Test
   public void testStreamPriority() throws Exception {

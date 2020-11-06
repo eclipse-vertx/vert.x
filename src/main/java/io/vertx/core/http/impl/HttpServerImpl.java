@@ -16,6 +16,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -28,6 +29,7 @@ import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * This class is thread-safe
@@ -163,13 +165,15 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     return this;
   }
 
-  private Handler<Channel> childHandler(ContextInternal context,
-                                      HttpServerConnectionHandler handlers,
-                                      Handler<Throwable> exceptionHandler,
-                                      SocketAddress address,
-                                      String serverOrigin) {
+  private Handler<Channel> childHandler(EventLoopContext context,
+                                        Supplier<ContextInternal> streamContextSupplier,
+                                        HttpServerConnectionHandler handlers,
+                                        Handler<Throwable> exceptionHandler,
+                                        SocketAddress address,
+                                        String serverOrigin) {
     return new HttpServerWorker(
       context,
+      streamContextSupplier,
       this,
       vertx,
       sslHelper,
@@ -186,6 +190,12 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
       throw new IllegalStateException("Set request or WebSocket handler first");
     }
     ContextInternal listenContext = vertx.getOrCreateContext();
+    EventLoopContext connContext;
+    if (listenContext instanceof EventLoopContext) {
+      connContext = (EventLoopContext) listenContext;
+    } else {
+      connContext = vertx.createEventLoopContext(listenContext.nettyEventLoop(), listenContext.workerPool(), listenContext.classLoader());
+    }
     String host = address.isInetSocket() ? address.host() : "localhost";
     int port = address.port();
     List<HttpVersion> applicationProtocols = options.getAlpnVersions();
@@ -194,7 +204,8 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
 
     HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestStream.handler, wsStream.handler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
-    Handler<Channel> channelHandler = childHandler(listenContext, hello, exceptionHandler, address, serverOrigin);
+    Supplier<ContextInternal> streamContextSupplier = listenContext::duplicate;
+    Handler<Channel> channelHandler = childHandler(connContext, streamContextSupplier, hello, exceptionHandler, address, serverOrigin);
     io.netty.util.concurrent.Future<Channel> bindFuture = listen(address, listenContext, channelHandler);
 
     Promise<HttpServer> promise = listenContext.promise();

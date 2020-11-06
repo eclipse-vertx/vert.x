@@ -129,6 +129,11 @@ class DuplicatedContext extends AbstractContext {
   }
 
   @Override
+  public WorkerPool workerPool() {
+    return delegate.workerPool();
+  }
+
+  @Override
   public final void reportException(Throwable t) {
     delegate.reportException(t);
   }

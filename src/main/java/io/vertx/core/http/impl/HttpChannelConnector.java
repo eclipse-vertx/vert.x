@@ -26,6 +26,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.impl.clientconnection.ConnectResult;
 import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.net.impl.clientconnection.ConnectionProvider;
@@ -116,7 +117,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
     Promise<ConnectResult<HttpClientConnection>> promise = Promise.promise();
     promise.future().onComplete(handler);
     try {
-      doConnect(listener, context, promise);
+      doConnect(listener, (EventLoopContext) context, promise);
     } catch(Exception e) {
       promise.tryFail(e);
     }
@@ -124,7 +125,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
 
   private void doConnect(
     ConnectionListener<HttpClientConnection> listener,
-    ContextInternal context,
+    EventLoopContext context,
     Promise<ConnectResult<HttpClientConnection>> future) {
 
     boolean domainSocket = server.path() != null;
@@ -245,7 +246,7 @@ public class HttpChannelConnector implements ConnectionProvider<HttpClientConnec
   }
 
   private void http2Connected(ConnectionListener<HttpClientConnection> listener,
-                              ContextInternal context,
+                              EventLoopContext context,
                               Channel ch,
                               Promise<ConnectResult<HttpClientConnection>> future) {
     try {

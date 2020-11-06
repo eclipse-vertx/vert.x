@@ -24,11 +24,13 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -38,21 +40,24 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   final HttpServerOptions options;
   private final String serverOrigin;
   private final HttpServerMetrics metrics;
+  private final Supplier<ContextInternal> streamContextSupplier;
 
   Handler<HttpServerRequest> requestHandler;
   private int concurrentStreams;
   private final ArrayDeque<Push> pendingPushes = new ArrayDeque<>(8);
 
   Http2ServerConnection(
-    ContextInternal context,
-      String serverOrigin,
-      VertxHttp2ConnectionHandler connHandler,
-      HttpServerOptions options,
-      HttpServerMetrics metrics) {
+    EventLoopContext context,
+    Supplier<ContextInternal> streamContextSupplier,
+    String serverOrigin,
+    VertxHttp2ConnectionHandler connHandler,
+    HttpServerOptions options,
+    HttpServerMetrics metrics) {
     super(context, connHandler);
 
     this.options = options;
     this.serverOrigin = serverOrigin;
+    this.streamContextSupplier = streamContextSupplier;
     this.metrics = metrics;
   }
 
@@ -97,7 +102,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   private Http2ServerRequestImpl createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, options.getTracingPolicy(), context.duplicate(), serverOrigin, headers, contentEncoding, streamEnded);
+    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, options.getTracingPolicy(), streamContextSupplier.get(), serverOrigin, headers, contentEncoding, streamEnded);
     request.isConnect = request.method() == HttpMethod.CONNECT;
     request.init(stream);
     return request;

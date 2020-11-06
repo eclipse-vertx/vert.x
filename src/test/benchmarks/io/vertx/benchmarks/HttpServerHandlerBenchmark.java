@@ -229,7 +229,7 @@ public class HttpServerHandlerBenchmark extends BenchmarkBase {
     };
     VertxHandler<Http1xServerConnection> handler = VertxHandler.create(chctx -> {
       Http1xServerConnection conn = new Http1xServerConnection(
-        context.owner(),
+        () -> context,
         null,
         new HttpServerOptions(),
         chctx,

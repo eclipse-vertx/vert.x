@@ -39,6 +39,8 @@ import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
+import java.util.function.Supplier;
+
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 import static io.netty.handler.codec.http.HttpResponseStatus.CONTINUE;
 import static io.netty.handler.codec.http.HttpResponseStatus.METHOD_NOT_ALLOWED;
@@ -73,6 +75,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private static final Logger log = LoggerFactory.getLogger(Http1xServerConnection.class);
 
   private final String serverOrigin;
+  private final Supplier<ContextInternal> streamContextSupplier;
   private final SSLHelper sslHelper;
   private final TracingPolicy tracingPolicy;
   private boolean requestFailed;
@@ -86,7 +89,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   final boolean handle100ContinueAutomatically;
   final HttpServerOptions options;
 
-  public Http1xServerConnection(VertxInternal vertx,
+  public Http1xServerConnection(Supplier<ContextInternal> streamContextSupplier,
                                 SSLHelper sslHelper,
                                 HttpServerOptions options,
                                 ChannelHandlerContext chctx,
@@ -95,6 +98,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
                                 HttpServerMetrics metrics) {
     super(context, chctx);
     this.serverOrigin = serverOrigin;
+    this.streamContextSupplier = streamContextSupplier;
     this.options = options;
     this.sslHelper = sslHelper;
     this.metrics = metrics;
@@ -120,7 +124,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         handleError(request);
         return;
       }
-      Http1xServerRequest req = new Http1xServerRequest(this, request);
+      ContextInternal requestCtx = streamContextSupplier.get();
+      Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
       requestInProgress = req;
       if (responseInProgress != null) {
         enqueueRequest(req);

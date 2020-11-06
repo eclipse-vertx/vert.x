@@ -212,6 +212,11 @@ abstract class ContextImpl extends AbstractContext {
   }
 
   @Override
+  public WorkerPool workerPool() {
+    return workerPool;
+  }
+
+  @Override
   public synchronized ConcurrentMap<Object, Object> contextData() {
     if (data == null) {
       data = new ConcurrentHashMap<>();

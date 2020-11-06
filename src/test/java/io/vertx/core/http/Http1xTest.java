@@ -2200,46 +2200,6 @@ public class Http1xTest extends HttpTest {
     await();
   }
 
-  @Test
-  public void testInWorker() throws Exception {
-    vertx.deployVerticle(new AbstractVerticle() {
-      @Override
-      public void start() throws Exception {
-        assertTrue(Vertx.currentContext().isWorkerContext());
-        assertTrue(Context.isOnWorkerThread());
-        HttpServer server = vertx.createHttpServer();
-        server.requestHandler(req -> {
-          assertTrue(Vertx.currentContext().isWorkerContext());
-          assertTrue(Context.isOnWorkerThread());
-          Buffer buf = Buffer.buffer();
-          req.handler(buf::appendBuffer);
-          req.endHandler(v -> {
-            assertEquals("hello", buf.toString());
-            req.response().end("bye");
-          });
-        }).listen(testAddress, onSuccess(s -> {
-          assertTrue(Vertx.currentContext().isWorkerContext());
-          assertTrue(Context.isOnWorkerThread());
-          HttpClient client = vertx.createHttpClient();
-          client.request(new RequestOptions(requestOptions).setMethod(PUT)).onComplete(onSuccess(req -> {
-            req.send(Buffer.buffer("hello"), onSuccess(resp -> {
-              assertEquals(200, resp.statusCode());
-              assertTrue(Vertx.currentContext().isWorkerContext());
-              assertTrue(Context.isOnWorkerThread());
-              resp.handler(buf -> {
-                assertEquals("bye", buf.toString());
-                resp.endHandler(v -> {
-                  testComplete();
-                });
-              });
-            }));
-          }));
-        }));
-      }
-    }, new DeploymentOptions().setWorker(true));
-    await();
-  }
-
   /*
   Fix for https://bugs.eclipse.org/bugs/show_bug.cgi?id=475017
   Also see https://groups.google.com/forum/?fromgroups#!topic/vertx/N_wSoQlvMMs

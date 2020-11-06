@@ -22,6 +22,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.impl.clientconnection.ConnectionManager;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -155,9 +156,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
         setApplicationProtocols(alpnVersions);
     sslHelper.validate(vertx);
     this.webSocketSSLHelper = new SSLHelper(sslHelper).setUseAlpn(false);
-    if(options.getProtocolVersion() == HttpVersion.HTTP_2 && Context.isOnWorkerThread()) {
-      throw new IllegalStateException("Cannot use HttpClient with HTTP_2 in a worker");
-    }
     if (!keepAlive && pipelining) {
       throw new IllegalStateException("Cannot have pipelining with no keep alive");
     }
@@ -274,8 +272,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     String host = getHost(connectOptions);
     SocketAddress addr = SocketAddress.inetSocketAddress(port, host);
     EndpointKey key = new EndpointKey(connectOptions.isSsl() != null ? connectOptions.isSsl() : options.isSsl(), addr, addr);
+    ContextInternal ctx = promise.context();
+    EventLoopContext eventLoopContext;
+    if (ctx instanceof EventLoopContext) {
+      eventLoopContext = (EventLoopContext) ctx;
+    } else {
+      eventLoopContext = (EventLoopContext) vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+    }
     webSocketCM.getConnection(
-      promise.context(),
+      eventLoopContext,
       key,
       ar -> {
         if (ar.succeeded()) {
@@ -587,7 +592,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     } else {
       timerID = -1L;
     }
-    httpCM.getConnection(ctx, key, ar1 -> {
+    EventLoopContext eventLoopContext;
+    if (ctx instanceof EventLoopContext) {
+      eventLoopContext = (EventLoopContext) ctx;
+    } else {
+      eventLoopContext = (EventLoopContext) vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+    }
+    httpCM.getConnection(eventLoopContext, key, ar1 -> {
       if (ar1.succeeded()) {
         HttpClientConnection conn = ar1.result();
         conn.createStream(ctx, ar2 -> {

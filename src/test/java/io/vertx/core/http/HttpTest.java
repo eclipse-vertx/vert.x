@@ -53,6 +53,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+import static io.vertx.core.http.HttpMethod.PUT;
 import static io.vertx.test.core.TestUtils.*;
 import static java.util.Collections.singletonList;
 
@@ -3511,8 +3512,8 @@ public abstract class HttpTest extends HttpTestBase {
           }).connectionHandler(conn -> {
           Context current = Vertx.currentContext();
           assertTrue(Context.isOnEventLoopThread());
-          assertTrue(current.isWorkerContext());
-          assertSame(context, current);
+          assertTrue(current.isEventLoopContext());
+          assertNotSame(context, current);
           connCount.incrementAndGet(); // No complete here as we may have 1 or 5 connections depending on the protocol
         }).listen(testAddress)
           .<Void>mapEmpty()
@@ -3530,6 +3531,46 @@ public abstract class HttpTest extends HttpTestBase {
     }
     await();
     assertTrue(connCount.get() > 0);
+  }
+
+  @Test
+  public void testInWorker() throws Exception {
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        assertTrue(Vertx.currentContext().isWorkerContext());
+        assertTrue(Context.isOnWorkerThread());
+        HttpServer server = vertx.createHttpServer(createBaseServerOptions());
+        server.requestHandler(req -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          Buffer buf = Buffer.buffer();
+          req.handler(buf::appendBuffer);
+          req.endHandler(v -> {
+            assertEquals("hello", buf.toString());
+            req.response().end("bye");
+          });
+        }).listen(testAddress, onSuccess(s -> {
+          assertTrue(Vertx.currentContext().isWorkerContext());
+          assertTrue(Context.isOnWorkerThread());
+          HttpClient client = vertx.createHttpClient(createBaseClientOptions());
+          client.request(new RequestOptions(requestOptions).setMethod(PUT)).onComplete(onSuccess(req -> {
+            req.send(Buffer.buffer("hello"), onSuccess(resp -> {
+              assertEquals(200, resp.statusCode());
+              assertTrue(Vertx.currentContext().isWorkerContext());
+              assertTrue(Context.isOnWorkerThread());
+              resp.handler(buf -> {
+                assertEquals("bye", buf.toString());
+                resp.endHandler(v -> {
+                  testComplete();
+                });
+              });
+            }));
+          }));
+        }));
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
   }
 
   @Test

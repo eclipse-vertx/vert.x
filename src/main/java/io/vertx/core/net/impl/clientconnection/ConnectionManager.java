@@ -14,6 +14,7 @@ package io.vertx.core.net.impl.clientconnection;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.EventLoopContext;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +39,7 @@ public class ConnectionManager<K, C> {
     endpointMap.values().forEach(consumer);
   }
 
-  public void getConnection(ContextInternal ctx,
+  public void getConnection(EventLoopContext ctx,
                             K key,
                             Handler<AsyncResult<C>> handler) {
     Runnable dispose = () -> endpointMap.remove(key);

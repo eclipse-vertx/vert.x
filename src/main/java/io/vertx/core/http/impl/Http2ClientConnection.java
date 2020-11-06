@@ -24,6 +24,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
@@ -49,10 +50,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private boolean evicted;
 
   Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
-                               HttpClientImpl client,
-                               ContextInternal context,
-                               VertxHttp2ConnectionHandler connHandler,
-                               ClientMetrics metrics) {
+                        HttpClientImpl client,
+                        EventLoopContext context,
+                        VertxHttp2ConnectionHandler connHandler,
+                        ClientMetrics metrics) {
     super(context, connHandler);
     this.metrics = metrics;
     this.client = client;
@@ -562,7 +563,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     HttpClientImpl client,
     ClientMetrics metrics,
     ConnectionListener<HttpClientConnection> listener,
-    ContextInternal context,
+    EventLoopContext context,
     Object socketMetric,
     BiConsumer<Http2ClientConnection, Long> c) {
     long http2MaxConcurrency = client.getOptions().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.getOptions().getHttp2MultiplexingLimit();

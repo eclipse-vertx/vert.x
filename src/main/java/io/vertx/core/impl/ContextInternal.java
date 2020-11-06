@@ -235,6 +235,11 @@ public interface ContextInternal extends Context {
   ClassLoader classLoader();
 
   /**
+   * @return the context worker pool
+   */
+  WorkerPool workerPool();
+
+  /**
    * @return the tracer for this context
    */
   VertxTracer tracer();
