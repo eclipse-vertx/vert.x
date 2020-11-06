@@ -282,7 +282,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     promise.complete();
   }
 
-  private <T> void removeLocalRegistration(HandlerHolder<T> holder) {
+  protected <T> void removeLocalRegistration(HandlerHolder<T> holder) {
     String address = holder.getHandler().address;
     handlerMap.compute(address, (key, val) -> {
       if (val == null) {
