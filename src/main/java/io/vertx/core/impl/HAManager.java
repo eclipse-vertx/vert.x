@@ -137,121 +137,135 @@ public class HAManager {
    * start the quorum timer. The quorum will be checked as well.
    */
   void init() {
-    synchronized (haInfo) {
-      clusterMap.put(nodeID, haInfo.encode());
-    }
-    clusterManager.nodeListener(new NodeListener() {
-      @Override
-      public void nodeAdded(String nodeID) {
-        HAManager.this.nodeAdded(nodeID);
+    if (enabled) {
+      synchronized (haInfo) {
+        clusterMap.put(nodeID, haInfo.encode());
       }
-      @Override
-      public void nodeLeft(String leftNodeID) {
-        HAManager.this.nodeLeft(leftNodeID);
+      clusterManager.nodeListener(new NodeListener() {
+        @Override
+        public void nodeAdded(String nodeID) {
+          HAManager.this.nodeAdded(nodeID);
+        }
+
+        @Override
+        public void nodeLeft(String leftNodeID) {
+          HAManager.this.nodeLeft(leftNodeID);
+        }
+      });
+      quorumTimerID = vertx.setPeriodic(QUORUM_CHECK_PERIOD, tid -> checkHADeployments());
+      // Call check quorum to compute whether we have an initial quorum
+      synchronized (this) {
+        checkQuorum();
       }
-    });
-    quorumTimerID = vertx.setPeriodic(QUORUM_CHECK_PERIOD, tid -> checkHADeployments());
-    // Call check quorum to compute whether we have an initial quorum
-    synchronized (this) {
-      checkQuorum();
     }
   }
 
   // Remove the information on the deployment from the cluster - this is called when an HA module is undeployed
   public void removeFromHA(String depID) {
-    Deployment dep = deploymentManager.getDeployment(depID);
-    if (dep == null || !dep.deploymentOptions().isHa()) {
-      return;
-    }
-    synchronized (haInfo) {
-      JsonArray haMods = haInfo.getJsonArray("verticles");
-      Iterator<Object> iter = haMods.iterator();
-      while (iter.hasNext()) {
-        Object obj = iter.next();
-        JsonObject mod = (JsonObject) obj;
-        if (mod.getString("dep_id").equals(depID)) {
-          iter.remove();
-        }
+    if (enabled) {
+      Deployment dep = deploymentManager.getDeployment(depID);
+      if (dep == null || !dep.deploymentOptions().isHa()) {
+        return;
       }
-      clusterMap.put(nodeID, haInfo.encode());
+      synchronized (haInfo) {
+        JsonArray haMods = haInfo.getJsonArray("verticles");
+        Iterator<Object> iter = haMods.iterator();
+        while (iter.hasNext()) {
+          Object obj = iter.next();
+          JsonObject mod = (JsonObject) obj;
+          if (mod.getString("dep_id").equals(depID)) {
+            iter.remove();
+          }
+        }
+        clusterMap.put(nodeID, haInfo.encode());
+      }
     }
   }
 
   public void addDataToAHAInfo(String key, JsonObject value) {
-    synchronized (haInfo) {
-      haInfo.put(key, value);
-      clusterMap.put(nodeID, haInfo.encode());
+    if (enabled) {
+      synchronized (haInfo) {
+        haInfo.put(key, value);
+        clusterMap.put(nodeID, haInfo.encode());
+      }
     }
   }
   // Deploy an HA verticle
   public void deployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
                              final Handler<AsyncResult<String>> doneHandler) {
-    if (attainedQuorum) {
-      doDeployVerticle(verticleName, deploymentOptions, doneHandler);
-    } else {
-      log.info("Quorum not attained. Deployment of verticle will be delayed until there's a quorum.");
-      addToHADeployList(verticleName, deploymentOptions, doneHandler);
+    if (enabled) {
+      if (attainedQuorum) {
+        doDeployVerticle(verticleName, deploymentOptions, doneHandler);
+      } else {
+        log.info("Quorum not attained. Deployment of verticle will be delayed until there's a quorum.");
+        addToHADeployList(verticleName, deploymentOptions, doneHandler);
+      }
     }
   }
 
 
   public void stop() {
-    if (!stopped) {
-      if (clusterManager.isActive()) {
-        clusterMap.remove(nodeID);
+    if (enabled) {
+      if (!stopped) {
+        if (clusterManager.isActive()) {
+          clusterMap.remove(nodeID);
+        }
+        long timerID = checkQuorumTimerID;
+        if (timerID >= 0L) {
+          checkQuorumTimerID = -1L;
+          vertx.cancelTimer(timerID);
+        }
+        vertx.cancelTimer(quorumTimerID);
+        stopped = true;
       }
-      long timerID = checkQuorumTimerID;
-      if (timerID >= 0L) {
-        checkQuorumTimerID = -1L;
-        vertx.cancelTimer(timerID);
-      }
-      vertx.cancelTimer(quorumTimerID);
-      stopped = true;
     }
   }
 
   public void simulateKill() {
-    if (!stopped) {
-      killed = true;
-      CountDownLatch latch = new CountDownLatch(1);
-      Promise<Void> promise = Promise.promise();
-      clusterManager.leave(promise);
-      promise.future()
-        .onFailure(t -> log.error("Failed to leave cluster", t))
-        .onComplete(ar -> latch.countDown());
-      long timerID = checkQuorumTimerID;
-      if (timerID >= 0L) {
-        checkQuorumTimerID = -1L;
-        vertx.cancelTimer(timerID);
-      }
-      vertx.cancelTimer(quorumTimerID);
+    if (enabled) {
+      if (!stopped) {
+        killed = true;
+        CountDownLatch latch = new CountDownLatch(1);
+        Promise<Void> promise = Promise.promise();
+        clusterManager.leave(promise);
+        promise.future().onFailure(t -> log.error("Failed to leave cluster", t)).onComplete(ar -> latch.countDown());
+        long timerID = checkQuorumTimerID;
+        if (timerID >= 0L) {
+          checkQuorumTimerID = -1L;
+          vertx.cancelTimer(timerID);
+        }
+        vertx.cancelTimer(quorumTimerID);
 
-      boolean interrupted = false;
-      try {
-        long remainingNanos = MINUTES.toNanos(1);
-        long end = System.nanoTime() + remainingNanos;
+        boolean interrupted = false;
+        try {
+          long remainingNanos = MINUTES.toNanos(1);
+          long end = System.nanoTime() + remainingNanos;
 
-        while (true) {
-          try {
-            latch.await(remainingNanos, NANOSECONDS);
-            break;
-          } catch (InterruptedException e) {
-            interrupted = true;
-            remainingNanos = end - System.nanoTime();
+          while (true) {
+            try {
+              latch.await(remainingNanos, NANOSECONDS);
+              break;
+            } catch (InterruptedException e) {
+              interrupted = true;
+              remainingNanos = end - System.nanoTime();
+            }
+          }
+        } finally {
+          if (interrupted) {
+            Thread.currentThread().interrupt();
           }
         }
-      } finally {
-        if (interrupted) {
-          Thread.currentThread().interrupt();
-        }
+
+        stopped = true;
       }
 
-      stopped = true;
     }
   }
 
   public void setFailoverCompleteHandler(FailoverCompleteHandler failoverCompleteHandler) {
-    this.failoverCompleteHandler = failoverCompleteHandler;
+    if (enabled) {
+      this.failoverCompleteHandler = failoverCompleteHandler;
+    }
   }
 
   public boolean isKilled() {
@@ -269,188 +283,209 @@ public class HAManager {
 
   private void doDeployVerticle(final String verticleName, DeploymentOptions deploymentOptions,
                                 final Handler<AsyncResult<String>> doneHandler) {
-    final Handler<AsyncResult<String>> wrappedHandler = ar1 -> {
-      vertx.<String>executeBlocking(fut -> {
-        if (ar1.succeeded()) {
-          // Tell the other nodes of the cluster about the verticle for HA purposes
-          String deploymentID = ar1.result();
-          addToHA(deploymentID, verticleName, deploymentOptions);
-          fut.complete(deploymentID);
-        } else {
-          fut.fail(ar1.cause());
-        }
-      }, false, ar2 -> {
-        if (doneHandler != null) {
-          doneHandler.handle(ar2);
-        } else if (ar2.failed()) {
-          log.error("Failed to deploy verticle", ar2.cause());
-        }
-      });
-    };
-    verticleFactoryManager.deployVerticle(verticleName, deploymentOptions).map(Deployment::deploymentID).onComplete(wrappedHandler);
+    if (enabled) {
+      final Handler<AsyncResult<String>> wrappedHandler = ar1 -> {
+        vertx.<String>executeBlocking(fut -> {
+          if (ar1.succeeded()) {
+            // Tell the other nodes of the cluster about the verticle for HA purposes
+            String deploymentID = ar1.result();
+            addToHA(deploymentID, verticleName, deploymentOptions);
+            fut.complete(deploymentID);
+          } else {
+            fut.fail(ar1.cause());
+          }
+        }, false, ar2 -> {
+          if (doneHandler != null) {
+            doneHandler.handle(ar2);
+          } else if (ar2.failed()) {
+            log.error("Failed to deploy verticle", ar2.cause());
+          }
+        });
+      };
+      verticleFactoryManager.deployVerticle(verticleName, deploymentOptions).map(Deployment::deploymentID).onComplete(wrappedHandler);
+    }
   }
 
   // A node has joined the cluster
   // synchronize this in case the cluster manager is naughty and calls it concurrently
   private synchronized void nodeAdded(final String nodeID) {
-    addHaInfoIfLost();
-    // This is not ideal but we need to wait for the group information to appear - and this will be shortly
-    // after the node has been added
-    checkQuorumWhenAdded(nodeID, System.currentTimeMillis());
+    if (enabled) {
+      addHaInfoIfLost();
+      // This is not ideal but we need to wait for the group information to appear - and this will be shortly
+      // after the node has been added
+      checkQuorumWhenAdded(nodeID, System.currentTimeMillis());
+    }
   }
 
   // A node has left the cluster
   // synchronize this in case the cluster manager is naughty and calls it concurrently
   private synchronized void nodeLeft(String leftNodeID) {
-    addHaInfoIfLost();
+    if (enabled) {
+      addHaInfoIfLost();
 
-    checkQuorum();
-    if (attainedQuorum) {
-      // Check for failover
-      String sclusterInfo = clusterMap.get(leftNodeID);
+      checkQuorum();
+      if (attainedQuorum) {
+        // Check for failover
+        String sclusterInfo = clusterMap.get(leftNodeID);
 
-      if (sclusterInfo == null) {
-        // Clean close - do nothing
-      } else {
-        JsonObject clusterInfo = new JsonObject(sclusterInfo);
-        checkFailover(leftNodeID, clusterInfo);
-      }
+        if (sclusterInfo == null) {
+          // Clean close - do nothing
+        } else {
+          JsonObject clusterInfo = new JsonObject(sclusterInfo);
+          checkFailover(leftNodeID, clusterInfo);
+        }
 
-      // We also check for and potentially resume any previous failovers that might have failed
-      // We can determine this if there any ids in the cluster map which aren't in the node list
-      List<String> nodes = clusterManager.getNodes();
+        // We also check for and potentially resume any previous failovers that might have failed
+        // We can determine this if there any ids in the cluster map which aren't in the node list
+        List<String> nodes = clusterManager.getNodes();
 
-      for (Map.Entry<String, String> entry: clusterMap.entrySet()) {
-        if (!leftNodeID.equals(entry.getKey()) && !nodes.contains(entry.getKey())) {
-          JsonObject haInfo = new JsonObject(entry.getValue());
-          checkFailover(entry.getKey(), haInfo);
+        for (Map.Entry<String, String> entry : clusterMap.entrySet()) {
+          if (!leftNodeID.equals(entry.getKey()) && !nodes.contains(entry.getKey())) {
+            JsonObject haInfo = new JsonObject(entry.getValue());
+            checkFailover(entry.getKey(), haInfo);
+          }
         }
       }
     }
   }
 
   private void addHaInfoIfLost() {
-    if (clusterManager.getNodes().contains(nodeID) && !clusterMap.containsKey(nodeID)) {
-      synchronized (haInfo) {
-        clusterMap.put(nodeID, haInfo.encode());
+    if (enabled) {
+      if (clusterManager.getNodes().contains(nodeID) && !clusterMap.containsKey(nodeID)) {
+        synchronized (haInfo) {
+          clusterMap.put(nodeID, haInfo.encode());
+        }
       }
     }
   }
 
   private synchronized void checkQuorumWhenAdded(final String nodeID, final long start) {
-    if (!stopped) {
-      if (clusterMap.containsKey(nodeID)) {
-        checkQuorum();
-      } else {
-        checkQuorumTimerID = vertx.setTimer(200, tid -> {
-          checkQuorumTimerID = -1L;
-          if (!stopped) {
-            // This can block on a monitor so it needs to run as a worker
-            vertx.executeBlockingInternal(fut -> {
-              if (System.currentTimeMillis() - start > 10000) {
-                log.warn("Timed out waiting for group information to appear");
-              } else {
-                // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
-                ContextImpl.executeIsolated(v -> {
-                  checkQuorumWhenAdded(nodeID, start);
-                });
-              }
-              fut.complete();
-            }, null);
-          }
-        });
+    if (enabled) {
+      if (!stopped) {
+        if (clusterMap.containsKey(nodeID)) {
+          checkQuorum();
+        } else {
+          checkQuorumTimerID = vertx.setTimer(200, tid -> {
+            checkQuorumTimerID = -1L;
+            if (!stopped) {
+              // This can block on a monitor so it needs to run as a worker
+              vertx.executeBlockingInternal(fut -> {
+                if (System.currentTimeMillis() - start > 10000) {
+                  log.warn("Timed out waiting for group information to appear");
+                } else {
+                  // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
+                  ContextImpl.executeIsolated(v -> {
+                    checkQuorumWhenAdded(nodeID, start);
+                  });
+                }
+                fut.complete();
+              }, null);
+            }
+          });
+        }
       }
     }
   }
 
   // Check if there is a quorum for our group
   private void checkQuorum() {
-    if (quorumSize == 0) {
-      this.attainedQuorum = true;
-    } else {
-      List<String> nodes = clusterManager.getNodes();
-      int count = 0;
-      for (String node : nodes) {
-        String json = clusterMap.get(node);
-        if (json != null) {
-          JsonObject clusterInfo = new JsonObject(json);
-          String group = clusterInfo.getString("group");
-          if (group.equals(this.group)) {
-            count++;
+    if (enabled) {
+      if (quorumSize == 0) {
+        this.attainedQuorum = true;
+      } else {
+        List<String> nodes = clusterManager.getNodes();
+        int count = 0;
+        for (String node : nodes) {
+          String json = clusterMap.get(node);
+          if (json != null) {
+            JsonObject clusterInfo = new JsonObject(json);
+            String group = clusterInfo.getString("group");
+            if (group.equals(this.group)) {
+              count++;
+            }
           }
         }
-      }
-      boolean attained = count >= quorumSize;
-      if (!attainedQuorum && attained) {
-        // A quorum has been attained so we can deploy any currently undeployed HA deploymentIDs
-        log.info("A quorum has been obtained. Any deploymentIDs waiting on a quorum will now be deployed");
-        this.attainedQuorum = true;
-      } else if (attainedQuorum && !attained) {
-        // We had a quorum but we lost it - we must undeploy any HA deploymentIDs
-        log.info("There is no longer a quorum. Any HA deploymentIDs will be undeployed until a quorum is re-attained");
-        this.attainedQuorum = false;
+        boolean attained = count >= quorumSize;
+        if (!attainedQuorum && attained) {
+          // A quorum has been attained so we can deploy any currently undeployed HA deploymentIDs
+          log.info("A quorum has been obtained. Any deploymentIDs waiting on a quorum will now be deployed");
+          this.attainedQuorum = true;
+        } else if (attainedQuorum && !attained) {
+          // We had a quorum but we lost it - we must undeploy any HA deploymentIDs
+          log.info("There is no longer a quorum. Any HA deploymentIDs will be undeployed until a quorum is re-attained");
+          this.attainedQuorum = false;
+        }
       }
     }
   }
 
   // Add some information on a deployment in the cluster so other nodes know about it
   private void addToHA(String deploymentID, String verticleName, DeploymentOptions deploymentOptions) {
-    String encoded;
-    synchronized (haInfo) {
-      JsonObject verticleConf = new JsonObject().put("dep_id", deploymentID);
-      verticleConf.put("verticle_name", verticleName);
-      verticleConf.put("options", deploymentOptions.toJson());
-      JsonArray haMods = haInfo.getJsonArray("verticles");
-      haMods.add(verticleConf);
-      encoded = haInfo.encode();
-      clusterMap.put(nodeID, encoded);
+    if (enabled) {
+      String encoded;
+      synchronized (haInfo) {
+        JsonObject verticleConf = new JsonObject().put("dep_id", deploymentID);
+        verticleConf.put("verticle_name", verticleName);
+        verticleConf.put("options", deploymentOptions.toJson());
+        JsonArray haMods = haInfo.getJsonArray("verticles");
+        haMods.add(verticleConf);
+        encoded = haInfo.encode();
+        clusterMap.put(nodeID, encoded);
+      }
     }
   }
 
   // Add the deployment to an internal list of deploymentIDs - these will be executed when a quorum is attained
   private void addToHADeployList(final String verticleName, final DeploymentOptions deploymentOptions,
                                  final Handler<AsyncResult<String>> doneHandler) {
-    toDeployOnQuorum.add(() -> {
-      ContextImpl.executeIsolated(v -> {
-        deployVerticle(verticleName, deploymentOptions, doneHandler);
+    if (enabled) {
+      toDeployOnQuorum.add(() -> {
+        ContextImpl.executeIsolated(v -> {
+          deployVerticle(verticleName, deploymentOptions, doneHandler);
+        });
       });
-    });
-   }
+    }
+  }
 
   private void checkHADeployments() {
-    try {
-      if (attainedQuorum) {
-        deployHADeployments();
-      } else {
-        undeployHADeployments();
+    if (enabled) {
+      try {
+        if (attainedQuorum) {
+          deployHADeployments();
+        } else {
+          undeployHADeployments();
+        }
+      } catch (Throwable t) {
+        log.error("Failed when checking HA deploymentIDs", t);
       }
-    } catch (Throwable t) {
-      log.error("Failed when checking HA deploymentIDs", t);
     }
   }
 
   // Undeploy any HA deploymentIDs now there is no quorum
   private void undeployHADeployments() {
-    for (String deploymentID: deploymentManager.deployments()) {
-      Deployment dep = deploymentManager.getDeployment(deploymentID);
-      if (dep != null) {
-        if (dep.deploymentOptions().isHa()) {
-          ContextImpl.executeIsolated(v -> {
-            deploymentManager.undeployVerticle(deploymentID).onComplete(result -> {
-              if (result.succeeded()) {
-                log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
-                addToHADeployList(dep.verticleIdentifier(), dep.deploymentOptions(), result1 -> {
-                  if (result1.succeeded()) {
-                    log.info("Successfully redeployed verticle " + dep.verticleIdentifier() + " after quorum was re-attained");
-                  } else {
-                    log.error("Failed to redeploy verticle " + dep.verticleIdentifier() + " after quorum was re-attained", result1.cause());
-                  }
-                });
-              } else {
-                log.error("Failed to undeploy deployment on lost quorum", result.cause());
-              }
+    if (enabled) {
+      for (String deploymentID : deploymentManager.deployments()) {
+        Deployment dep = deploymentManager.getDeployment(deploymentID);
+        if (dep != null) {
+          if (dep.deploymentOptions().isHa()) {
+            ContextImpl.executeIsolated(v -> {
+              deploymentManager.undeployVerticle(deploymentID).onComplete(result -> {
+                if (result.succeeded()) {
+                  log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
+                  addToHADeployList(dep.verticleIdentifier(), dep.deploymentOptions(), result1 -> {
+                    if (result1.succeeded()) {
+                      log.info("Successfully redeployed verticle " + dep.verticleIdentifier() + " after quorum was re-attained");
+                    } else {
+                      log.error("Failed to redeploy verticle " + dep.verticleIdentifier() + " after quorum was re-attained",
+                        result1.cause());
+                    }
+                  });
+                } else {
+                  log.error("Failed to undeploy deployment on lost quorum", result.cause());
+                }
+              });
             });
-          });
+          }
         }
       }
     }
@@ -458,15 +493,17 @@ public class HAManager {
 
   // Deploy any deploymentIDs that are waiting for a quorum
   private void deployHADeployments() {
-    int size = toDeployOnQuorum.size();
-    if (size != 0) {
-      log.info("There are " + size + " HA deploymentIDs waiting on a quorum. These will now be deployed");
-      Runnable task;
-      while ((task = toDeployOnQuorum.poll()) != null) {
-        try {
-          task.run();
-        } catch (Throwable t) {
-          log.error("Failed to run redeployment task", t);
+    if (enabled) {
+      int size = toDeployOnQuorum.size();
+      if (size != 0) {
+        log.info("There are " + size + " HA deploymentIDs waiting on a quorum. These will now be deployed");
+        Runnable task;
+        while ((task = toDeployOnQuorum.poll()) != null) {
+          try {
+            task.run();
+          } catch (Throwable t) {
+            log.error("Failed to run redeployment task", t);
+          }
         }
       }
     }
@@ -474,106 +511,117 @@ public class HAManager {
 
   // Handle failover
   private void checkFailover(String failedNodeID, JsonObject theHAInfo) {
-    try {
-      JsonArray deployments = theHAInfo.getJsonArray("verticles");
-      String group = theHAInfo.getString("group");
-      String chosen = chooseHashedNode(group, failedNodeID.hashCode());
-      if (chosen != null && chosen.equals(this.nodeID)) {
-        if (deployments != null && deployments.size() != 0) {
-          log.info("node" + nodeID + " says: Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deploymentIDs from that node.");
-          for (Object obj: deployments) {
-            JsonObject app = (JsonObject)obj;
-            processFailover(app);
+    if (enabled) {
+      try {
+        JsonArray deployments = theHAInfo.getJsonArray("verticles");
+        String group = theHAInfo.getString("group");
+        String chosen = chooseHashedNode(group, failedNodeID.hashCode());
+        if (chosen != null && chosen.equals(this.nodeID)) {
+          if (deployments != null && deployments.size() != 0) {
+            log.info(
+              "node" + nodeID + " says: Node " + failedNodeID + " has failed. This node will deploy " + deployments.size() + " deploymentIDs from that node.");
+            for (Object obj : deployments) {
+              JsonObject app = (JsonObject) obj;
+              processFailover(app);
+            }
           }
+          // Failover is complete! We can now remove the failed node from the cluster map
+          clusterMap.remove(failedNodeID);
+          runOnContextAndWait(() -> {
+            if (failoverCompleteHandler != null) {
+              failoverCompleteHandler.handle(failedNodeID, theHAInfo, true);
+            }
+          });
         }
-        // Failover is complete! We can now remove the failed node from the cluster map
-        clusterMap.remove(failedNodeID);
+      } catch (Throwable t) {
+        log.error("Failed to handle failover", t);
         runOnContextAndWait(() -> {
           if (failoverCompleteHandler != null) {
-            failoverCompleteHandler.handle(failedNodeID, theHAInfo, true);
+            failoverCompleteHandler.handle(failedNodeID, theHAInfo, false);
           }
         });
       }
-    } catch (Throwable t) {
-      log.error("Failed to handle failover", t);
-      runOnContextAndWait(() -> {
-        if (failoverCompleteHandler != null) {
-          failoverCompleteHandler.handle(failedNodeID, theHAInfo, false);
-        }
-      });
     }
   }
 
   private void runOnContextAndWait(Runnable runnable) {
-    CountDownLatch latch = new CountDownLatch(1);
-    // The testsuite requires that this is called on a Vert.x thread
-    vertx.runOnContext(v -> {
+    if (enabled) {
+      CountDownLatch latch = new CountDownLatch(1);
+      // The testsuite requires that this is called on a Vert.x thread
+      vertx.runOnContext(v -> {
+        try {
+          runnable.run();
+        } finally {
+          latch.countDown();
+        }
+      });
       try {
-        runnable.run();
-      } finally {
-        latch.countDown();
+        latch.await(30, TimeUnit.SECONDS);
+      } catch (InterruptedException ignore) {
       }
-    });
-    try {
-      latch.await(30, TimeUnit.SECONDS);
-    } catch (InterruptedException ignore) {
     }
   }
 
   // Process the failover of a deployment
   private void processFailover(JsonObject failedVerticle) {
-    if (failDuringFailover) {
-      throw new VertxException("Oops!");
-    }
-    // This method must block until the failover is complete - i.e. the verticle is successfully redeployed
-    final String verticleName = failedVerticle.getString("verticle_name");
-    final CountDownLatch latch = new CountDownLatch(1);
-    final AtomicReference<Throwable> err = new AtomicReference<>();
-    // Now deploy this verticle on this node
-    ContextImpl.executeIsolated(v -> {
-      JsonObject options = failedVerticle.getJsonObject("options");
-      doDeployVerticle(verticleName, new DeploymentOptions(options), result -> {
-        if (result.succeeded()) {
-          log.info("Successfully redeployed verticle " + verticleName + " after failover");
-        } else {
-          log.error("Failed to redeploy verticle after failover", result.cause());
-          err.set(result.cause());
-        }
-        latch.countDown();
-        Throwable t = err.get();
-        if (t != null) {
-          throw new VertxException(t);
-        }
-      });
-    });
-    try {
-      if (!latch.await(120, TimeUnit.SECONDS)) {
-        throw new VertxException("Timed out waiting for redeploy on failover");
+    if (enabled) {
+      if (failDuringFailover) {
+        throw new VertxException("Oops!");
       }
-    } catch (InterruptedException e) {
-      throw new IllegalStateException(e);
+      // This method must block until the failover is complete - i.e. the verticle is successfully redeployed
+      final String verticleName = failedVerticle.getString("verticle_name");
+      final CountDownLatch latch = new CountDownLatch(1);
+      final AtomicReference<Throwable> err = new AtomicReference<>();
+      // Now deploy this verticle on this node
+      ContextImpl.executeIsolated(v -> {
+        JsonObject options = failedVerticle.getJsonObject("options");
+        doDeployVerticle(verticleName, new DeploymentOptions(options), result -> {
+          if (result.succeeded()) {
+            log.info("Successfully redeployed verticle " + verticleName + " after failover");
+          } else {
+            log.error("Failed to redeploy verticle after failover", result.cause());
+            err.set(result.cause());
+          }
+          latch.countDown();
+          Throwable t = err.get();
+          if (t != null) {
+            throw new VertxException(t);
+          }
+        });
+      });
+      try {
+        if (!latch.await(120, TimeUnit.SECONDS)) {
+          throw new VertxException("Timed out waiting for redeploy on failover");
+        }
+      } catch (InterruptedException e) {
+        throw new IllegalStateException(e);
+      }
     }
   }
 
   // Compute the failover node
   private String chooseHashedNode(String group, int hashCode) {
-    List<String> nodes = clusterManager.getNodes();
-    ArrayList<String> matchingMembers = new ArrayList<>();
-    for (String node: nodes) {
-      String sclusterInfo = clusterMap.get(node);
-      if (sclusterInfo != null) {
-        JsonObject clusterInfo = new JsonObject(sclusterInfo);
-        String memberGroup = clusterInfo.getString("group");
-        if (group == null || group.equals(memberGroup)) {
-          matchingMembers.add(node);
+    if (enabled) {
+      List<String> nodes = clusterManager.getNodes();
+      ArrayList<String> matchingMembers = new ArrayList<>();
+      for (String node : nodes) {
+        String sclusterInfo = clusterMap.get(node);
+        if (sclusterInfo != null) {
+          JsonObject clusterInfo = new JsonObject(sclusterInfo);
+          String memberGroup = clusterInfo.getString("group");
+          if (group == null || group.equals(memberGroup)) {
+            matchingMembers.add(node);
+          }
         }
       }
-    }
-    if (!matchingMembers.isEmpty()) {
-      // Hashcodes can be -ve so make it positive
-      long absHash = (long)hashCode + Integer.MAX_VALUE;
-      long lpos = absHash % matchingMembers.size();
-      return matchingMembers.get((int)lpos);
+      if (!matchingMembers.isEmpty()) {
+        // Hashcodes can be -ve so make it positive
+        long absHash = (long) hashCode + Integer.MAX_VALUE;
+        long lpos = absHash % matchingMembers.size();
+        return matchingMembers.get((int) lpos);
+      } else {
+        return null;
+      }
     } else {
       return null;
     }

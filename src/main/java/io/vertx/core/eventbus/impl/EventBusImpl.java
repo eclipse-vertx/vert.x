@@ -282,7 +282,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
     promise.complete();
   }
 
-  private <T> void removeLocalRegistration(HandlerHolder<T> holder) {
+  protected <T> void removeLocalRegistration(HandlerHolder<T> holder) {
     String address = holder.getHandler().address;
     handlerMap.compute(address, (key, val) -> {
       if (val == null) {
@@ -372,8 +372,8 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   <T> ReplyHandler<T> createReplyHandler(MessageImpl message,
-                                                 boolean src,
-                                                 DeliveryOptions options) {
+                                         boolean src,
+                                         DeliveryOptions options) {
     long timeout = options.getSendTimeout();
     String replyAddress = generateReplyAddress();
     message.setReplyAddress(replyAddress);
@@ -383,7 +383,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   public <T> OutboundDeliveryContext<T> newSendContext(MessageImpl message, DeliveryOptions options,
-                                               ReplyHandler<T> handler, Promise<Void> writePromise) {
+                                                       ReplyHandler<T> handler, Promise<Void> writePromise) {
     return new OutboundDeliveryContext<>(vertx.getOrCreateContext(), message, options, handler, writePromise);
   }
 
