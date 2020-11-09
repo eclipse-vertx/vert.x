@@ -1,0 +1,61 @@
+# todo
+# - caching
+name: CI
+on:
+  push:
+    branches:
+      - master
+jobs:
+  Test:
+    name: Run tests
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        profile: [""]
+        jdk: [8]
+        include:
+          - os: ubuntu-latest
+            jdk: 11
+          - os: ubuntu-latest
+            jdk: 8
+            profile: '-PtestNativeTransport'
+          - os: ubuntu-latest
+            jdk: 8
+            profile: '-PtestDomainSockets'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install JDK
+        uses: joschi/setup-jdk@v2
+        with:
+          java-version: ${{ matrix.jdk }}
+      - name: Run tests
+        run: mvn -q clean verify -B ${{ matrix.profile }}
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1.4
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          files: '**/surefire-reports/*.xml'
+          report_individual_runs: true
+  Deploy:
+    name: Deploy to OSSRH
+    if: ${{ github.repository_owner == 'vietj' }}
+    needs: Test
+    runs-on: ubuntu-latest
+    env:
+      SONATYPE_NEXUS_USERNAME: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
+      SONATYPE_NEXUS_PASSWORD: ${{ secrets.SONATYPE_NEXUS_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install JDK
+        uses: joschi/setup-jdk@v2
+        with:
+          java-version: 8
+      - name: Get project version
+        run: echo "PROJECT_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:evaluate -Dexpression=project.version -B | grep -v '\[')" >> $GITHUB_ENV
+      - name: Maven deploy
+        if: ${{ endsWith(env.PROJECT_VERSION, '-SNAPSHOT') }}
+        run: mvn deploy -s .travis.maven.settings.xml -DskipTests -B
