@@ -19,12 +19,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.AddressHelper;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.MessageCodec;
-import io.vertx.core.eventbus.impl.CodecManager;
-import io.vertx.core.eventbus.impl.EventBusImpl;
-import io.vertx.core.eventbus.impl.HandlerHolder;
-import io.vertx.core.eventbus.impl.HandlerRegistration;
-import io.vertx.core.eventbus.impl.MessageImpl;
-import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
+import io.vertx.core.eventbus.impl.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -66,8 +61,7 @@ public class ClusteredEventBus extends EventBusImpl {
   private String nodeId;
   private NetServer server;
 
-  public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager,
-                           NodeSelector nodeSelector) {
+  public ClusteredEventBus(VertxInternal vertx, VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector) {
     super(vertx);
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
@@ -138,18 +132,15 @@ public class ClusteredEventBus extends EventBusImpl {
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
-      clusterManager
-        .addRegistration(handlerHolder.getHandler().address, registrationInfo, Objects.requireNonNull(promise));
+      clusterManager.addRegistration(handlerHolder.getHandler().address, registrationInfo, Objects.requireNonNull(promise));
     } else if (promise != null) {
       promise.complete();
     }
   }
 
   @Override
-  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean replyHandler,
-                                                     boolean localOnly, ContextInternal context) {
-    return new ClusteredHandlerHolder<>(registration, replyHandler, localOnly, context,
-      handlerSequence.getAndIncrement());
+  protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, ContextInternal context) {
+    return new ClusteredHandlerHolder<>(registration, replyHandler, localOnly, context, handlerSequence.getAndIncrement());
   }
 
   @Override

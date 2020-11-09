@@ -372,8 +372,8 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   <T> ReplyHandler<T> createReplyHandler(MessageImpl message,
-                                         boolean src,
-                                         DeliveryOptions options) {
+                                                boolean src,
+                                                DeliveryOptions options) {
     long timeout = options.getSendTimeout();
     String replyAddress = generateReplyAddress();
     message.setReplyAddress(replyAddress);
@@ -383,7 +383,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   public <T> OutboundDeliveryContext<T> newSendContext(MessageImpl message, DeliveryOptions options,
-                                                       ReplyHandler<T> handler, Promise<Void> writePromise) {
+                                               ReplyHandler<T> handler, Promise<Void> writePromise) {
     return new OutboundDeliveryContext<>(vertx.getOrCreateContext(), message, options, handler, writePromise);
   }
 
