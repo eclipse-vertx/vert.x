@@ -372,8 +372,8 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   <T> ReplyHandler<T> createReplyHandler(MessageImpl message,
-                                                boolean src,
-                                                DeliveryOptions options) {
+                                                 boolean src,
+                                                 DeliveryOptions options) {
     long timeout = options.getSendTimeout();
     String replyAddress = generateReplyAddress();
     message.setReplyAddress(replyAddress);
