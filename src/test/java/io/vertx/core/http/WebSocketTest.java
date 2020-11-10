@@ -2218,6 +2218,52 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
+  public void testWorker() {
+    waitFor(2);
+    DeploymentOptions deploymentOptions = new DeploymentOptions().setWorker(true);
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+        server.webSocketHandler(ws -> {
+          assertTrue(Context.isOnWorkerThread());
+          ws.handler(msg -> {
+            assertTrue(Context.isOnWorkerThread());
+            ws.write(Buffer.buffer("pong"));
+          });
+          ws.endHandler(v -> {
+            assertTrue(Context.isOnWorkerThread());
+            complete();
+          });
+        });
+        server.listen()
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    }, deploymentOptions, onSuccess(serverID -> {
+      vertx.deployVerticle(() -> new AbstractVerticle() {
+        @Override
+        public void start() {
+          client = vertx.createHttpClient();
+          client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
+            assertTrue(Context.isOnWorkerThread());
+            ws.write(Buffer.buffer("ping"));
+            ws.handler(buf -> {
+              assertTrue(Context.isOnWorkerThread());
+              ws.end();
+            });
+            ws.endHandler(v -> {
+              assertTrue(Context.isOnWorkerThread());
+              complete();
+            });
+          }));
+        }
+      }, deploymentOptions, onSuccess(id -> {}));
+    }));
+    await();
+  }
+
+  @Test
   public void httpClientWebSocketConnectionFailureHandlerShouldBeCalled() throws Exception {
     int port = 7867;
     HttpClient client = vertx.createHttpClient();

@@ -29,6 +29,7 @@ import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -402,7 +403,7 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
    * @return a future of the un-accepted WebSocket
    */
   Future<ServerWebSocket> webSocket() {
-    Promise<ServerWebSocket> promise = context.promise();
+    PromiseInternal<ServerWebSocket> promise = context.promise();
     webSocket(promise);
     return promise.future();
   }
@@ -410,7 +411,7 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
   /**
    * Handle the request when a WebSocket upgrade header is present.
    */
-  private void webSocket(Promise<ServerWebSocket> promise) {
+  private void webSocket(PromiseInternal<ServerWebSocket> promise) {
     Buffer body = Buffer.buffer();
     boolean[] failed = new boolean[1];
     handler(buff -> {

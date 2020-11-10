@@ -28,6 +28,7 @@ import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -275,7 +276,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return vertx;
   }
 
-  void createWebSocket(Http1xServerRequest request, Promise<ServerWebSocket> promise) {
+  void createWebSocket(Http1xServerRequest request, PromiseInternal<ServerWebSocket> promise) {
     context.execute(() -> {
       if (request != responseInProgress) {
         promise.fail("Invalid request");
@@ -291,7 +292,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
           promise.fail(e);
           return;
         }
-        webSocket = new ServerWebSocketImpl(vertx.getOrCreateContext(), this, handshaker.version() != WebSocketVersion.V00,
+        webSocket = new ServerWebSocketImpl(promise.context(), this, handshaker.version() != WebSocketVersion.V00,
           request, handshaker, options.getMaxWebSocketFrameSize(), options.getMaxWebSocketMessageSize());
         if (METRICS_ENABLED && metrics != null) {
           webSocket.setMetric(metrics.connected(metric(), request.metric(), webSocket));

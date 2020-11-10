@@ -768,6 +768,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   }
 
   synchronized void toWebSocket(
+    ContextInternal context,
     String requestURI,
     MultiMap headers,
     WebsocketVersion vers,
@@ -816,7 +817,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, ar -> {
         AsyncResult<WebSocket> wsRes = ar.map(v -> {
           WebSocketImpl w = new WebSocketImpl(
-            Http1xClientConnection.this.getContext(),
+            context,
             Http1xClientConnection.this,
             version != WebSocketVersion.V00,
             options.getWebSocketClosingTimeout(),
