@@ -3272,6 +3272,55 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testFormUploadContext() throws Exception {
+    server.requestHandler(req -> {
+      if (req.method() == HttpMethod.POST) {
+        assertEquals(req.path(), "/form");
+        req.response().setChunked(true);
+        req.setExpectMultipart(true);
+        req.uploadHandler(upload -> upload.handler(buffer -> {
+          assertNotNull(Vertx.currentContext());
+        }));
+        req.endHandler(v -> {
+          req.response().end();
+        });
+      }
+    });
+
+    Buffer buffer = Buffer.buffer(
+      "--------------------------d74496d66958873e\n" +
+      "Content-Disposition: form-data; name=\"person\"\n" +
+      "\n" +
+      "anonymous\n" +
+      "--------------------------d74496d66958873e\n" +
+      "Content-Disposition: form-data; name=\"secret\"; filename=\"file.txt\"\n" +
+      "Content-Type: text/plain\n" +
+      "\n" +
+      "contents of the file\n" +
+      "--------------------------d74496d66958873e--\n");
+
+    server.listen(testAddress, onSuccess(s -> {
+      client.request(new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.POST)
+        .setURI("/form"), onSuccess(req -> {
+        req
+          .putHeader("content-length", String.valueOf(buffer.length()))
+          .putHeader("content-type", "multipart/form-data; boundary=------------------------d74496d66958873e")
+          .send(buffer, onSuccess(resp -> {
+            // assert the response
+            assertEquals(200, resp.statusCode());
+            resp.bodyHandler(body -> {
+              assertEquals(0, body.length());
+            });
+            testComplete();
+          }));
+      }));
+    }));
+
+    await();
+  }
+
+  @Test
   public void testFormUploadAttributes2() {
     AtomicInteger attributeCount = new AtomicInteger();
     server.requestHandler(req -> {
