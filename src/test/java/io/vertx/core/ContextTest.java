@@ -595,31 +595,36 @@ public class ContextTest extends VertxTestBase {
 
   @Test
   public void testReentrantDispatch() {
-    ClassLoader cl = new URLClassLoader(new URL[0]);
-    Thread.currentThread().setContextClassLoader(cl);
-    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
-    ctx.runOnContext(v1 -> {
-      assertSame(ctx, Vertx.currentContext());
-      assertSame(cl, Thread.currentThread().getContextClassLoader());
-      int[] called = new int[1];
-      BlockedThreadChecker.Task thread = (BlockedThreadChecker.Task) Thread.currentThread();
-      long start = thread.startTime();
-      ctx.dispatch(v2 -> {
-        called[0]++;
+    ClassLoader prev = Thread.currentThread().getContextClassLoader();
+    try {
+      ClassLoader cl = new URLClassLoader(new URL[0]);
+      Thread.currentThread().setContextClassLoader(cl);
+      ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+      ctx.runOnContext(v1 -> {
+        assertSame(ctx, Vertx.currentContext());
         assertSame(cl, Thread.currentThread().getContextClassLoader());
-        try {
-          Thread.sleep(2);
-        } catch (InterruptedException e) {
-          fail(e);
-        }
+        int[] called = new int[1];
+        BlockedThreadChecker.Task thread = (BlockedThreadChecker.Task) Thread.currentThread();
+        long start = thread.startTime();
+        ctx.dispatch(v2 -> {
+          called[0]++;
+          assertSame(cl, Thread.currentThread().getContextClassLoader());
+          try {
+            Thread.sleep(2);
+          } catch (InterruptedException e) {
+            fail(e);
+          }
+        });
+        assertEquals(start, thread.startTime());
+        assertEquals(1, called[0]);
+        assertSame(ctx, Vertx.currentContext());
+        assertSame(cl, Thread.currentThread().getContextClassLoader());
+        testComplete();
       });
-      assertEquals(start, thread.startTime());
-      assertEquals(1, called[0]);
-      assertSame(ctx, Vertx.currentContext());
-      assertSame(cl, Thread.currentThread().getContextClassLoader());
-      testComplete();
-    });
-    await();
+      await();
+    } finally {
+      Thread.currentThread().setContextClassLoader(prev);
+    }
   }
 
   @Test
