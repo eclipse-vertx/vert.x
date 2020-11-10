@@ -1567,18 +1567,16 @@ public class DeploymentTest extends VertxTestBase {
     boolean expectedSuccess = Thread.currentThread().getContextClassLoader() instanceof URLClassLoader;
     try {
       vertx.deployVerticle(verticleID, new DeploymentOptions().
-        setIsolationGroup(group1).setIsolatedClasses(isolatedClasses), ar -> {
-        assertTrue(ar.succeeded());
-        deploymentID1.set(ar.result());
+        setIsolationGroup(group1).setIsolatedClasses(isolatedClasses), onSuccess(id1 -> {
+        deploymentID1.set(id1);
         assertEquals(0, TestVerticle.instanceCount.get());
         vertx.deployVerticle(verticleID,
-          new DeploymentOptions().setIsolationGroup(group2).setIsolatedClasses(isolatedClasses), ar2 -> {
-          assertTrue(ar2.succeeded());
-          deploymentID2.set(ar2.result());
-          assertEquals(0, TestVerticle.instanceCount.get());
-          latch.countDown();
-        });
-      });
+          new DeploymentOptions().setIsolationGroup(group2).setIsolatedClasses(isolatedClasses), onSuccess(id2 -> {
+            deploymentID2.set(id2);
+            assertEquals(0, TestVerticle.instanceCount.get());
+            latch.countDown();
+          }));
+      }));
       awaitLatch(latch);
       // Wait until two entries in the map
       assertWaitUntil(() -> countMap.size() == 2);
