@@ -17,6 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
@@ -34,7 +35,7 @@ import java.nio.charset.Charset;
 class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private final ReadStream<Buffer> stream;
-  private final Context context;
+  private final ContextInternal context;
   private final String name;
   private final String filename;
   private final String contentType;
@@ -49,7 +50,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   private long size;
   private boolean lazyCalculateSize;
 
-  HttpServerFileUploadImpl(Context context, ReadStream<Buffer> stream, String name, String filename, String contentType,
+  HttpServerFileUploadImpl(ContextInternal context, ReadStream<Buffer> stream, String name, String filename, String contentType,
                            String contentTransferEncoding,
                            Charset charset, long size) {
     this.context = context;
@@ -73,7 +74,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
       size += data.length();
     }
     if (h != null) {
-      h.handle(data);
+      context.dispatch(data, h);
     }
   }
 

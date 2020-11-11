@@ -46,7 +46,7 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
       size);
     Handler<HttpServerFileUpload> uploadHandler = lazyUploadHandler.get();
     if (uploadHandler != null) {
-      context.execute(upload, uploadHandler);
+      context.dispatch(upload, uploadHandler);
     }
     return nettyUpload;
   }
