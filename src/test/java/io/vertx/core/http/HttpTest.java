@@ -3278,9 +3278,12 @@ public abstract class HttpTest extends HttpTestBase {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
         req.setExpectMultipart(true);
-        req.uploadHandler(upload -> upload.handler(buffer -> {
+        req.uploadHandler(upload -> {
           assertNotNull(Vertx.currentContext());
-        }));
+          upload.handler(buffer -> {
+            assertNotNull(Vertx.currentContext());
+          });
+        });
         req.endHandler(v -> {
           req.response().end();
         });

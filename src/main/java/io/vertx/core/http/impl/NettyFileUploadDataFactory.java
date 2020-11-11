@@ -14,10 +14,10 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.FileUpload;
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.impl.ContextInternal;
 
 import java.nio.charset.Charset;
 import java.util.function.Supplier;
@@ -27,11 +27,11 @@ import java.util.function.Supplier;
  */
 class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
-  final Context context;
+  final ContextInternal context;
   final HttpServerRequest request;
   final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
 
-  NettyFileUploadDataFactory(Context context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
+  NettyFileUploadDataFactory(ContextInternal context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.context = context;
     this.request = request;
@@ -41,13 +41,12 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
   @Override
   public FileUpload createFileUpload(HttpRequest httpRequest, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
     NettyFileUpload nettyUpload = new NettyFileUpload(context, request, name, filename, contentType,
-        contentTransferEncoding, charset);
+      contentTransferEncoding, charset);
     HttpServerFileUploadImpl upload = new HttpServerFileUploadImpl(context, nettyUpload, name, filename, contentType, contentTransferEncoding, charset,
       size);
     Handler<HttpServerFileUpload> uploadHandler = lazyUploadHandler.get();
     if (uploadHandler != null) {
-      // run the handler on the caller context
-      context.runOnContext(v -> uploadHandler.handle(upload));
+      context.execute(upload, uploadHandler);
     }
     return nettyUpload;
   }
