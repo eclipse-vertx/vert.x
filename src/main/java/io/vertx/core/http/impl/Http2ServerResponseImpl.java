@@ -101,7 +101,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse, HttpResponse
       handler = exceptionHandler;
     }
     if (handler != null) {
-      handler.handle(cause);
+      stream.context.dispatch(cause, handler);
     }
   }
 
@@ -537,8 +537,9 @@ public class Http2ServerResponseImpl implements HttpServerResponse, HttpResponse
   }
 
   void handlerWritabilityChanged(boolean writable) {
-    if (!ended && writable && drainHandler != null) {
-      drainHandler.handle(null);
+    Handler<Void> handler = this.drainHandler;
+    if (!ended && writable && handler != null) {
+      stream.context.dispatch(handler);
     }
   }
 

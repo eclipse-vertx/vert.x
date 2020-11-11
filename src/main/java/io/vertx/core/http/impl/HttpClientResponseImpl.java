@@ -18,6 +18,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -222,10 +223,13 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   }
 
   void handleUnknownFrame(HttpFrame frame) {
+    Handler<HttpFrame> handler;
     synchronized (conn) {
-      if (customFrameHandler != null) {
-        customFrameHandler.handle(frame);
-      }
+      handler = customFrameHandler;
+    }
+    if (handler != null) {
+      ContextInternal context = stream.getContext();
+      context.dispatch(frame, handler);
     }
   }
 
@@ -294,7 +298,8 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
       handler = priorityHandler;
     }
     if (handler != null) {
-      handler.handle(streamPriority);
+      ContextInternal context = stream.getContext();
+      context.dispatch(streamPriority, handler);
     }
   }
 }

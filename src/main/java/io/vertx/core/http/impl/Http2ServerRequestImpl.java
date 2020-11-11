@@ -189,8 +189,9 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
 
   @Override
   void handleCustomFrame(HttpFrame frame) {
-    if (customFrameHandler != null) {
-      customFrameHandler.handle(frame);
+    Handler<HttpFrame> handler = this.customFrameHandler;
+    if (handler != null) {
+      context.dispatch(frame, handler);
     }
   }
 

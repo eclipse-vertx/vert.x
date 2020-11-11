@@ -63,7 +63,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
       } else {
         Buffer data = (Buffer) item;
         int len = data.length();
-        conn.getContext().emit(null, v -> conn.consumeCredits(this.stream, len));
+        conn.getContext().execute(null, v -> conn.consumeCredits(this.stream, len));
         bytesRead += data.length();
         handleData(data);
       }
@@ -86,15 +86,15 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onError(Throwable cause) {
-    context.emit(cause, this::handleException);
+    context.execute(cause, this::handleException);
   }
 
   void onReset(long code) {
-    context.emit(code, this::handleReset);
+    context.execute(code, this::handleReset);
   }
 
   void onPriorityChange(StreamPriority newPriority) {
-    context.emit(newPriority, priority -> {
+    context.execute(newPriority, priority -> {
       if (!this.priority.equals(priority)) {
         this.priority = priority;
         handlePriorityChange(priority);
@@ -103,7 +103,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onCustomFrame(HttpFrame frame) {
-    context.emit(frame, this::handleCustomFrame);
+    context.execute(frame, this::handleCustomFrame);
   }
 
   void onHeaders(Http2Headers headers, StreamPriority streamPriority) {
@@ -115,7 +115,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   }
 
   void onWritabilityChanged() {
-    context.emit(null, v -> {
+    context.execute(null, v -> {
       boolean w;
       synchronized (VertxHttp2Stream.this) {
         writable = !writable;
@@ -131,7 +131,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   void onEnd(MultiMap trailers) {
     conn.flushBytesRead();
-    context.emit(trailers, pending::write);
+    context.execute(trailers, pending::write);
     if (isConnect) {
       doWriteData(Unpooled.EMPTY_BUFFER, true, null);
     }
