@@ -76,13 +76,34 @@ public class Serializer {
 
   private class SerializerQueue {
 
-    final Queue<SerializedTask<?>> tasks;
-    final String address;
-    boolean closed;
+    private final Queue<SerializedTask<?>> tasks;
+    private final String address;
+    private boolean running;
+    private boolean closed;
 
     SerializerQueue(String address) {
       this.address = address;
-      tasks = new LinkedList<>();
+      this.tasks = new LinkedList<>();
+    }
+
+    void checkPending() {
+      if (!running) {
+        running = true;
+        while (true) {
+          SerializedTask<?> task = tasks.peek();
+          if (task != null) {
+            task.process();
+            if (tasks.peek() == task) {
+              // Task will be completed later
+              break;
+            }
+          } else {
+            queues.remove(address);
+            break;
+          }
+        }
+        running = false;
+      }
     }
 
     <U> void add(Message<?> msg, BiConsumer<Message<?>, Promise<U>> selectHandler, Promise<U> promise) {
@@ -91,20 +112,13 @@ public class Serializer {
       fut.onComplete(promise);
       fut.onComplete(serializedTask);
       tasks.add(serializedTask);
-      if (tasks.size() == 1) {
-        serializedTask.process();
-      }
+      checkPending();
     }
 
     void processed() {
       if (!closed) {
-        tasks.remove();
-        SerializedTask<?> next = tasks.peek();
-        if (next != null) {
-          next.process();
-        } else {
-          queues.remove(address);
-        }
+        tasks.poll();
+        checkPending();
       }
     }
 
