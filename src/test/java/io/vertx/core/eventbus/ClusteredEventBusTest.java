@@ -20,12 +20,15 @@ import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -294,14 +297,14 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   @Test
   public void sendNoContext() throws Exception {
     int size = 1000;
-    ConcurrentLinkedDeque<Integer> expected = new ConcurrentLinkedDeque<>();
+    List<Integer> expected = Stream.iterate(0, i -> i + 1).limit(size).collect(Collectors.toList());
     ConcurrentLinkedDeque<Integer> obtained = new ConcurrentLinkedDeque<>();
     startNodes(2);
     CountDownLatch latch = new CountDownLatch(1);
     vertices[1].eventBus().<Integer>consumer(ADDRESS1, msg -> {
       obtained.add(msg.body());
       if (obtained.size() == expected.size()) {
-        assertEquals(new ArrayList<>(expected), new ArrayList<>(obtained));
+        assertEquals(expected, new ArrayList<>(obtained));
         testComplete();
       }
     }).completionHandler(ar -> {
@@ -310,10 +313,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     });
     latch.await();
     EventBus bus = vertices[0].eventBus();
-    for (int i = 0;i < size;i++) {
-      expected.add(i);
-      bus.send(ADDRESS1, i);
-    }
+    expected.forEach(val -> bus.send(ADDRESS1, val));
     await();
   }
 
