@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus.impl.clustered;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -85,8 +86,10 @@ public class Serializer {
     }
 
     <U> void add(Message<?> msg, BiConsumer<Message<?>, Promise<U>> selectHandler, Promise<U> promise) {
-      SerializedTask<U> serializedTask = new SerializedTask<>(context, msg, selectHandler, promise);
-      serializedTask.internalPromise.future().onComplete(serializedTask);
+      SerializedTask<U> serializedTask = new SerializedTask<>(context, msg, selectHandler);
+      Future<U> fut = serializedTask.internalPromise.future();
+      fut.onComplete(promise);
+      fut.onComplete(serializedTask);
       tasks.add(serializedTask);
       if (tasks.size() == 1) {
         serializedTask.process();
@@ -108,7 +111,7 @@ public class Serializer {
     void close() {
       closed = true;
       while (!tasks.isEmpty()) {
-        tasks.remove().promise.tryFail("Context is closing");
+        tasks.remove().internalPromise.tryFail("Context is closing");
       }
     }
 
@@ -116,18 +119,14 @@ public class Serializer {
 
       final Message<?> msg;
       final BiConsumer<Message<?>, Promise<U>> selectHandler;
-      final Promise<U> promise;
       final Promise<U> internalPromise;
 
       SerializedTask(
         ContextInternal context,
         Message<?> msg,
-        BiConsumer<Message<?>, Promise<U>> selectHandler,
-        Promise<U> promise
-      ) {
+        BiConsumer<Message<?>, Promise<U>> selectHandler) {
         this.msg = msg;
         this.selectHandler = selectHandler;
-        this.promise = promise;
         this.internalPromise = context.promise();
       }
 
@@ -137,11 +136,6 @@ public class Serializer {
 
       @Override
       public void handle(AsyncResult<U> ar) {
-        if (ar.succeeded()) {
-          promise.tryComplete(ar.result());
-        } else {
-          promise.tryFail(ar.cause());
-        }
         processed();
       }
     }
