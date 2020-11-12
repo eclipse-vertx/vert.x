@@ -11,6 +11,7 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -172,9 +173,25 @@ public class ClusteredEventBus extends EventBusImpl {
     } else {
       Serializer serializer = Serializer.get(sendContext.ctx);
       if (sendContext.message.isSend()) {
-        serializer.queue(sendContext, nodeSelector::selectForSend, this::sendToNode, this::sendOrPublishFailed);
+        Promise<String> promise = sendContext.ctx.promise();
+        serializer.queue(sendContext.message, nodeSelector::selectForSend, promise);
+        promise.future().onComplete(ar -> {
+          if (ar.succeeded()) {
+            sendToNode(sendContext, ar.result());
+          } else {
+            sendOrPublishFailed(sendContext, ar.cause());
+          }
+        });
       } else {
-        serializer.queue(sendContext, nodeSelector::selectForPublish, this::sendToNodes, this::sendOrPublishFailed);
+        Promise<Iterable<String>> promise = sendContext.ctx.promise();
+        serializer.queue(sendContext.message, nodeSelector::selectForPublish, promise);
+        promise.future().onComplete(ar -> {
+          if (ar.succeeded()) {
+            sendToNodes(sendContext, ar.result());
+          } else {
+            sendOrPublishFailed(sendContext, ar.cause());
+          }
+        });
       }
     }
   }

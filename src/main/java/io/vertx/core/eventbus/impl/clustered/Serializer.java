@@ -16,7 +16,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
 import io.vertx.core.impl.ContextInternal;
 
 import java.util.HashMap;
@@ -57,33 +56,16 @@ public class Serializer {
     return serializer;
   }
 
-  public <T> void queue(
-    OutboundDeliveryContext<?> sendContext,
-    BiConsumer<Message<?>, Promise<T>> selectHandler,
-    BiConsumer<OutboundDeliveryContext<?>, T> successHandler,
-    BiConsumer<OutboundDeliveryContext<?>, Throwable> failureHandler
-  ) {
+  public <T> void queue(Message<?> message, BiConsumer<Message<?>, Promise<T>> selectHandler, Promise<T> promise) {
 
     ContextInternal ctx = (ContextInternal) Vertx.currentContext();
     if (ctx != context) {
-      context.runOnContext(v -> queue(sendContext, selectHandler, successHandler, failureHandler));
-      return;
+      context.runOnContext(v -> queue(message, selectHandler, promise));
+    } else {
+      String address = message.address();
+      SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
+      queue.add(new SerializedTask<>(message, selectHandler, promise));
     }
-
-    Message<?> message = sendContext.message;
-    String address = message.address();
-
-    Promise<T> promise = sendContext.ctx.promise();
-    promise.future().onComplete(ar -> {
-      if (ar.succeeded()) {
-        successHandler.accept(sendContext, ar.result());
-      } else {
-        failureHandler.accept(sendContext, ar.cause());
-      }
-    });
-
-    SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
-    queue.add(new SerializedTask<>(sendContext, selectHandler, promise));
   }
 
   private void close(Promise<Void> promise) {
@@ -137,18 +119,18 @@ public class Serializer {
 
   private class SerializedTask<U> implements Handler<AsyncResult<U>> {
 
-    final OutboundDeliveryContext<?> sendContext;
+    final Message<?> msg;
     final BiConsumer<Message<?>, Promise<U>> selectHandler;
     final Promise<U> promise;
     final Promise<U> internalPromise;
     Promise<Void> completion;
 
     SerializedTask(
-      OutboundDeliveryContext<?> sendContext,
+      Message<?> msg,
       BiConsumer<Message<?>, Promise<U>> selectHandler,
       Promise<U> promise
     ) {
-      this.sendContext = sendContext;
+      this.msg = msg;
       this.selectHandler = selectHandler;
       this.promise = promise;
       this.internalPromise = context.promise();
@@ -157,7 +139,7 @@ public class Serializer {
 
     void process(Promise<Void> completion) {
       this.completion = completion;
-      selectHandler.accept(sendContext.message, internalPromise);
+      selectHandler.accept(msg, internalPromise);
     }
 
     @Override
