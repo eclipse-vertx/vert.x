@@ -39,13 +39,17 @@ public class DefaultNodeSelector implements NodeSelector {
   @Override
   public void selectForSend(Message<?> message, Promise<String> promise) {
     Arguments.require(message.isSend(), "selectForSend used for publishing");
-    selectors.withSelector(message, promise, (prom, selector) -> prom.complete(selector.selectForSend()));
+    selectors.withSelector(message, promise, (prom, selector) -> {
+      prom.tryComplete(selector.selectForSend());
+    });
   }
 
   @Override
   public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
     Arguments.require(!message.isSend(), "selectForPublish used for sending");
-    selectors.withSelector(message, promise, (prom, selector) -> prom.complete(selector.selectForPublish()));
+    selectors.withSelector(message, promise, (prom, selector) -> {
+      prom.tryComplete(selector.selectForPublish());
+    });
   }
 
   @Override

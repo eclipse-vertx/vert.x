@@ -36,14 +36,20 @@ public interface NodeSelector {
   /**
    * Select a node for sending the given {@code message}.
    *
-   * @throws IllegalArgumentException if {@link Message#isSend()} returns false
+   * <p> The provided {@code promise} needs to be completed with {@link Promise#tryComplete} and {@link Promise#tryFail}
+   * as it might completed outside the selector.
+   *
+   * @throws IllegalArgumentException if {@link Message#isSend()} returns {@code false}
    */
   void selectForSend(Message<?> message, Promise<String> promise);
 
   /**
    * Select a node for publishing the given {@code message}.
    *
-   * @throws IllegalArgumentException if {@link Message#isSend()} returns true
+   * <p> The provided {@code promise} needs to be completed with {@link Promise#tryComplete} and {@link Promise#tryFail}
+   * as it might completed outside the selector.
+   *
+   * @throws IllegalArgumentException if {@link Message#isSend()} returns {@code true}
    */
   void selectForPublish(Message<?> message, Promise<Iterable<String>> promise);
 
