@@ -43,7 +43,7 @@ jobs:
         run: mvn -q clean verify -B ${{ matrix.profile }}
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1.4
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-latest' && always() }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: '**/surefire-reports/*.xml'
