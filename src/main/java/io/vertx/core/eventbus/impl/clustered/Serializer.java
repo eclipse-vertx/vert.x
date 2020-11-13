@@ -12,11 +12,11 @@
 package io.vertx.core.eventbus.impl.clustered;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
-import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
 import io.vertx.core.impl.ContextInternal;
 
 import java.util.HashMap;
@@ -57,33 +57,16 @@ public class Serializer {
     return serializer;
   }
 
-  public <T> void queue(
-    OutboundDeliveryContext<?> sendContext,
-    BiConsumer<Message<?>, Promise<T>> selectHandler,
-    BiConsumer<OutboundDeliveryContext<?>, T> successHandler,
-    BiConsumer<OutboundDeliveryContext<?>, Throwable> failureHandler
-  ) {
+  public <T> void queue(Message<?> message, BiConsumer<Message<?>, Promise<T>> selectHandler, Promise<T> promise) {
 
     ContextInternal ctx = (ContextInternal) Vertx.currentContext();
     if (ctx != context) {
-      context.runOnContext(v -> queue(sendContext, selectHandler, successHandler, failureHandler));
-      return;
+      context.runOnContext(v -> queue(message, selectHandler, promise));
+    } else {
+      String address = message.address();
+      SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
+      queue.add(message, selectHandler, promise);
     }
-
-    Message<?> message = sendContext.message;
-    String address = message.address();
-
-    Promise<T> promise = sendContext.ctx.promise();
-    promise.future().onComplete(ar -> {
-      if (ar.succeeded()) {
-        successHandler.accept(sendContext, ar.result());
-      } else {
-        failureHandler.accept(sendContext, ar.cause());
-      }
-    });
-
-    SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
-    queue.add(new SerializedTask<>(sendContext, selectHandler, promise));
   }
 
   private void close(Promise<Void> promise) {
@@ -93,81 +76,82 @@ public class Serializer {
 
   private class SerializerQueue {
 
-    final Queue<SerializedTask<?>> tasks;
-    final String address;
-    boolean closed;
+    private final Queue<SerializedTask<?>> tasks;
+    private final String address;
+    private boolean running;
+    private boolean closed;
 
     SerializerQueue(String address) {
       this.address = address;
-      tasks = new LinkedList<>();
+      this.tasks = new LinkedList<>();
     }
 
-    void add(SerializedTask<?> serializedTask) {
-      tasks.add(serializedTask);
-      if (tasks.size() == 1) {
-        process(serializedTask);
+    void checkPending() {
+      if (!running) {
+        running = true;
+        while (true) {
+          SerializedTask<?> task = tasks.peek();
+          if (task != null) {
+            task.process();
+            if (tasks.peek() == task) {
+              // Task will be completed later
+              break;
+            }
+          } else {
+            queues.remove(address);
+            break;
+          }
+        }
+        running = false;
       }
     }
 
-    void process(SerializedTask<?> serializedTask) {
-      Promise<Void> completion = context.promise();
-      serializedTask.process(completion);
-      completion.future().onComplete(v -> processed());
+    <U> void add(Message<?> msg, BiConsumer<Message<?>, Promise<U>> selectHandler, Promise<U> promise) {
+      SerializedTask<U> serializedTask = new SerializedTask<>(context, msg, selectHandler);
+      Future<U> fut = serializedTask.internalPromise.future();
+      fut.onComplete(promise);
+      fut.onComplete(serializedTask);
+      tasks.add(serializedTask);
+      checkPending();
     }
 
     void processed() {
       if (!closed) {
-        tasks.remove();
-        SerializedTask<?> next = tasks.peek();
-        if (next != null) {
-          process(next);
-        } else {
-          queues.remove(address);
-        }
+        tasks.poll();
+        checkPending();
       }
     }
 
     void close() {
       closed = true;
       while (!tasks.isEmpty()) {
-        tasks.remove().promise.tryFail("Context is closing");
+        tasks.remove().internalPromise.tryFail("Context is closing");
       }
     }
-  }
 
-  private class SerializedTask<U> implements Handler<AsyncResult<U>> {
+    private class SerializedTask<U> implements Handler<AsyncResult<U>> {
 
-    final OutboundDeliveryContext<?> sendContext;
-    final BiConsumer<Message<?>, Promise<U>> selectHandler;
-    final Promise<U> promise;
-    final Promise<U> internalPromise;
-    Promise<Void> completion;
+      final Message<?> msg;
+      final BiConsumer<Message<?>, Promise<U>> selectHandler;
+      final Promise<U> internalPromise;
 
-    SerializedTask(
-      OutboundDeliveryContext<?> sendContext,
-      BiConsumer<Message<?>, Promise<U>> selectHandler,
-      Promise<U> promise
-    ) {
-      this.sendContext = sendContext;
-      this.selectHandler = selectHandler;
-      this.promise = promise;
-      this.internalPromise = context.promise();
-      internalPromise.future().onComplete(this);
-    }
-
-    void process(Promise<Void> completion) {
-      this.completion = completion;
-      selectHandler.accept(sendContext.message, internalPromise);
-    }
-
-    @Override
-    public void handle(AsyncResult<U> ar) {
-      if (ar.succeeded()) {
-        promise.tryComplete(ar.result());
-      } else {
-        promise.tryFail(ar.cause());
+      SerializedTask(
+        ContextInternal context,
+        Message<?> msg,
+        BiConsumer<Message<?>, Promise<U>> selectHandler) {
+        this.msg = msg;
+        this.selectHandler = selectHandler;
+        this.internalPromise = context.promise();
       }
-      completion.complete();
+
+      void process() {
+        selectHandler.accept(msg, internalPromise);
+      }
+
+      @Override
+      public void handle(AsyncResult<U> ar) {
+        processed();
+      }
     }
   }
 }
