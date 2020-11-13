@@ -1,10 +1,13 @@
-# todo
-# - caching
 name: CI
 on:
   push:
     branches:
       - master
+      - '[0-9]+.[0-9]+'
+  pull_request:
+    branches:
+      - master
+      - '[0-9]+.[0-9]+'
 jobs:
   Test:
     name: Run tests
@@ -24,6 +27,10 @@ jobs:
             profile: '-PtestDomainSockets'
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: maven-java-${{ matrix.jdk }}
       - name: Checkout
         uses: actions/checkout@v2
       - name: Install JDK
@@ -41,13 +48,17 @@ jobs:
           report_individual_runs: true
   Deploy:
     name: Deploy to OSSRH
-    if: ${{ github.repository_owner == 'vietj' }}
+    if: ${{ github.repository_owner == 'eclipse-vertx' && github.event_name == 'push' }}
     needs: Test
     runs-on: ubuntu-latest
     env:
       SONATYPE_NEXUS_USERNAME: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
       SONATYPE_NEXUS_PASSWORD: ${{ secrets.SONATYPE_NEXUS_PASSWORD }}
     steps:
+      - uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: maven-java-${{ matrix.jdk }}
       - name: Checkout
         uses: actions/checkout@v2
       - name: Install JDK
