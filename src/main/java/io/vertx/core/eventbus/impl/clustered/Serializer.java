@@ -11,11 +11,11 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
+import io.netty.channel.EventLoop;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.ContextInternal;
 
@@ -58,14 +58,13 @@ public class Serializer {
   }
 
   public <T> void queue(Message<?> message, BiConsumer<Message<?>, Promise<T>> selectHandler, Promise<T> promise) {
-
-    ContextInternal ctx = (ContextInternal) Vertx.currentContext();
-    if (ctx != context) {
-      context.runOnContext(v -> queue(message, selectHandler, promise));
-    } else {
+    EventLoop eventLoop = context.nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
       String address = message.address();
       SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
       queue.add(message, selectHandler, promise);
+    } else {
+      eventLoop.execute(() -> queue(message, selectHandler, promise));
     }
   }
 
