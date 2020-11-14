@@ -43,12 +43,10 @@ jobs:
       - name: Run tests
         run: mvn -q clean verify -B ${{ matrix.profile }}
       - name: Publish Unit Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v1.4
-        if: ${{ matrix.os == 'ubuntu-latest' && always() }}
+        uses: scacap/action-surefire-report@v1
+        if: ${{ always() }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          files: '**/surefire-reports/*.xml'
-          report_individual_runs: true
   Deploy:
     name: Deploy to OSSRH
     if: ${{ github.repository_owner == 'eclipse-vertx' && github.event_name == 'push' }}
