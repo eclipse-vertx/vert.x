@@ -458,7 +458,7 @@ public class MetricsTest extends VertxTestBase {
   public void testReplyFailureNoHandlers() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     EventBus eb = vertx.eventBus();
-    eb.request(ADDRESS1, "bar", new DeliveryOptions().setSendTimeout(10), ar -> {
+    eb.request(ADDRESS1, "bar", ar -> {
       assertTrue(ar.failed());
       latch.countDown();
     });

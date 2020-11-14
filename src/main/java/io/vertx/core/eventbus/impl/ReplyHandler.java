@@ -57,11 +57,15 @@ class ReplyHandler<T> extends HandlerRegistration<T> {
 
   void fail(ReplyException failure) {
     unregister(ar -> {});
-    if (eventBus.metrics != null) {
-      eventBus.metrics.replyFailure(repliedAddress, failure.failureType());
+    if (failure.failureType() == ReplyFailure.NO_HANDLERS) {
+      eventBus.vertx.cancelTimer(timeoutID);
     }
-    trace(null, failure);
-    result.tryFail(failure);
+    if (result.tryFail(failure)) {
+      if (eventBus.metrics != null) {
+        eventBus.metrics.replyFailure(repliedAddress, failure.failureType());
+      }
+      trace(null, failure);
+    }
   }
 
 
