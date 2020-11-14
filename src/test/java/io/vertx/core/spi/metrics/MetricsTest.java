@@ -481,7 +481,7 @@ public class MetricsTest extends VertxTestBase {
       latch.countDown();
     });
     awaitLatch(latch);
-    assertEquals(1, metrics.getReplyFailureAddresses().size());
+    waitUntil(() -> metrics.getReplyFailureAddresses().size() == 1);
     assertEquals(Collections.singletonList(ReplyFailure.TIMEOUT), metrics.getReplyFailures());
   }
 
@@ -500,7 +500,7 @@ public class MetricsTest extends VertxTestBase {
     });
     awaitLatch(latch);
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(eb);
-    assertEquals(1, metrics.getReplyFailureAddresses().size());
+    waitUntil(() -> metrics.getReplyFailureAddresses().size() == 1);
     assertEquals(Collections.singletonList(ReplyFailure.TIMEOUT), metrics.getReplyFailures());
   }
 
