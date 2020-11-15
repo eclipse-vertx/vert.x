@@ -132,11 +132,11 @@ public class PipeImpl<T> implements Pipe<T> {
         dst.drainHandler(null);
         dst.exceptionHandler(null);
       }
-      if (result.future().isComplete()) {
-        return;
-      }
     }
-    src.resume();
+    VertxException err = new VertxException("Pipe closed", true);
+    if (result.tryFail(err)) {
+      src.resume();
+    }
   }
 
   private static class WriteException extends VertxException {

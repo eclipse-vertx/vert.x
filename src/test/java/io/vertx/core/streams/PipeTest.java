@@ -12,6 +12,7 @@ package io.vertx.core.streams;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Promise;
+import io.vertx.core.VertxException;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.fakestream.FakeStream;
 import org.junit.Test;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class PipeTest extends AsyncTestBase {
@@ -255,5 +257,19 @@ public class PipeTest extends AsyncTestBase {
     completion.fail(failure);
     assertTrue(ended.get().failed());
     assertEquals(failure, ended.get().cause());
+  }
+
+  @Test
+  public void testPipeCloseFailsTheResult() {
+    FakeStream<Object> src = new FakeStream<>();
+    Pipe<Object> pipe = src.pipe();
+    List<AsyncResult<Void>> res = new ArrayList<>();
+    pipe.to(dst, res::add);
+    assertEquals(Collections.emptyList(), res);
+    pipe.close();
+    assertEquals(1, res.size());
+    AsyncResult<Void> ar = res.get(0);
+    assertTrue(ar.failed());
+    assertEquals(ar.cause().getClass(), VertxException.class);
   }
 }
