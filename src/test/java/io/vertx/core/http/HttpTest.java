@@ -5220,8 +5220,7 @@ public abstract class HttpTest extends HttpTestBase {
     client.close();
     client = vertx.createHttpClient(options);
     client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(resp -> {
+      .onComplete(onSuccess(req -> req.send().onComplete(onSuccess(resp -> {
         resp.endHandler(v1 -> {
           resp.request().connection().closeHandler(v2 -> {
             long time = System.currentTimeMillis() - now.get();
@@ -5229,7 +5228,7 @@ public abstract class HttpTest extends HttpTestBase {
             testComplete();
           });
         });
-      }));
+      }))));
     await();
   }
 
