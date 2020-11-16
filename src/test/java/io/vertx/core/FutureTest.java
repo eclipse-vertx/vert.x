@@ -1632,6 +1632,13 @@ public class FutureTest extends VertxTestBase {
   }
 
   @Test
+  public void testToCompletableFuture() {
+    assertEquals("Yo", Future.succeededFuture("Yo").toCompletableFuture().getNow(null));
+    assertTrue(Future.failedFuture("Woops").toCompletableFuture().isCompletedExceptionally());
+    // for more tests of toCompletableFuture() see testToCompletionStage...()
+  }
+
+  @Test
   public void testToCompletionStageTrampolining() {
     waitFor(2);
     Thread mainThread = Thread.currentThread();
