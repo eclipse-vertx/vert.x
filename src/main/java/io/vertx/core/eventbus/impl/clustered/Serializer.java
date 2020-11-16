@@ -62,7 +62,9 @@ public class Serializer {
     if (eventLoop.inEventLoop()) {
       String address = message.address();
       SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
-      queue.add(message, selectHandler, promise);
+      SerializedTask<T> task = new SerializedTask<>(message, selectHandler);
+      task.future().onComplete(promise);
+      queue.add(task);
     } else {
       eventLoop.execute(() -> queue(message, selectHandler, promise));
     }
@@ -73,7 +75,8 @@ public class Serializer {
     promise.complete();
   }
 
-  private class SerializerQueue {
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private class SerializerQueue implements Handler<AsyncResult> {
 
     private final Queue<SerializedTask<?>> tasks;
     private final String address;
@@ -105,16 +108,14 @@ public class Serializer {
       }
     }
 
-    <U> void add(Message<?> msg, BiConsumer<Message<?>, Promise<U>> selectHandler, Promise<U> promise) {
-      SerializedTask<U> serializedTask = new SerializedTask<>(context, msg, selectHandler);
-      Future<U> fut = serializedTask.internalPromise.future();
-      fut.onComplete(promise);
-      fut.onComplete(serializedTask);
-      tasks.add(serializedTask);
+    public void add(SerializedTask task) {
+      tasks.add(task);
       checkPending();
+      task.future().onComplete(this);
     }
 
-    void processed() {
+    @Override
+    public void handle(AsyncResult event) {
       if (!closed) {
         tasks.poll();
         checkPending();
@@ -127,30 +128,26 @@ public class Serializer {
         tasks.remove().internalPromise.tryFail("Context is closing");
       }
     }
+  }
 
-    private class SerializedTask<U> implements Handler<AsyncResult<U>> {
+  private class SerializedTask<U> {
 
-      final Message<?> msg;
-      final BiConsumer<Message<?>, Promise<U>> selectHandler;
-      final Promise<U> internalPromise;
+    final Message<?> msg;
+    final BiConsumer<Message<?>, Promise<U>> selectHandler;
+    final Promise<U> internalPromise;
 
-      SerializedTask(
-        ContextInternal context,
-        Message<?> msg,
-        BiConsumer<Message<?>, Promise<U>> selectHandler) {
-        this.msg = msg;
-        this.selectHandler = selectHandler;
-        this.internalPromise = context.promise();
-      }
+    SerializedTask(Message<?> msg, BiConsumer<Message<?>, Promise<U>> selectHandler) {
+      this.msg = msg;
+      this.selectHandler = selectHandler;
+      internalPromise = context.promise();
+    }
 
-      void process() {
-        selectHandler.accept(msg, internalPromise);
-      }
+    void process() {
+      selectHandler.accept(msg, internalPromise);
+    }
 
-      @Override
-      public void handle(AsyncResult<U> ar) {
-        processed();
-      }
+    Future<U> future() {
+      return internalPromise.future();
     }
   }
 }
