@@ -11,12 +11,16 @@
 
 package io.vertx.core.http.impl;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
@@ -34,7 +38,7 @@ import java.nio.charset.Charset;
 class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private final ReadStream<Buffer> stream;
-  private final Context context;
+  private final ContextInternal context;
   private final String name;
   private final String filename;
   private final String contentType;
@@ -49,7 +53,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   private long size;
   private boolean lazyCalculateSize;
 
-  HttpServerFileUploadImpl(Context context, ReadStream<Buffer> stream, String name, String filename, String contentType,
+  HttpServerFileUploadImpl(ContextInternal context, ReadStream<Buffer> stream, String name, String filename, String contentType,
                            String contentTransferEncoding,
                            Charset charset, long size) {
     this.context = context;
@@ -63,17 +67,28 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     this.lazyCalculateSize = size == 0;
 
     stream.handler(this::handleData);
+    stream.exceptionHandler(this::handleException);
     stream.endHandler(v -> this.handleEnd());
   }
 
   private void handleData(Buffer data) {
-    Handler<Buffer> h;
+    Handler<Buffer> handler;
     synchronized (HttpServerFileUploadImpl.this) {
-      h = dataHandler;
+      handler = dataHandler;
       size += data.length();
     }
-    if (h != null) {
-      h.handle(data);
+    if (handler != null) {
+      context.dispatch(data, handler);
+    }
+  }
+
+  private void handleException(Throwable cause) {
+    Handler<Throwable> handler;
+    synchronized (this) {
+      handler = exceptionHandler;
+    }
+    if (handler != null) {
+      context.dispatch(cause, handler);
     }
   }
 
@@ -84,13 +99,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
       handler = endHandler;
     }
     if (handler != null) {
-      handler.handle(null);
-    }
-  }
-
-  private void notifyExceptionHandler(Throwable cause) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(cause);
+      context.dispatch(handler);
     }
   }
 
@@ -161,8 +170,13 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public HttpServerFileUpload streamToFileSystem(String filename) {
-    Pipe<Buffer> pipe = stream.pipe().endOnComplete(false);
+  public Future<Void> streamToFileSystem(String filename) {
+    return Future.future(p -> streamToFileSystem(filename, p));
+  }
+
+  @Override
+  public void streamToFileSystem(String filename, Handler<AsyncResult<Void>> handler) {
+    Pipe<Buffer> pipe = pipe().endOnComplete(false);
     context.owner().fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         file =  ar.result();
@@ -170,20 +184,20 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
           file.close(ar3 -> {
             Throwable failure = ar2.failed() ? ar2.cause() : ar3.failed() ? ar3.cause() : null;
             if (failure != null) {
-              notifyExceptionHandler(failure);
+              handler.handle(Future.failedFuture(failure));
+            } else {
+              handler.handle(Future.succeededFuture());
             }
             synchronized (HttpServerFileUploadImpl.this) {
               size = file.getWritePos();
             }
-            handleEnd();
           });
         });
       } else {
         pipe.close();
-        notifyExceptionHandler(ar.cause());
+        handler.handle(Future.failedFuture(ar.cause()));
       }
     });
-    return this;
   }
 
   @Override

@@ -13,6 +13,8 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -49,8 +51,14 @@ public interface HttpServerFileUpload extends ReadStream<Buffer> {
    *
    * @param filename  the name of the file
    */
-  @Fluent
-  HttpServerFileUpload streamToFileSystem(String filename);
+  void streamToFileSystem(String filename, Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Stream the content of this upload to the given file on storage.
+   *
+   * @param filename  the name of the file
+   */
+  Future<Void> streamToFileSystem(String filename);
 
   /**
    * @return the filename which was used when upload the file.

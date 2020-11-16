@@ -3138,42 +3138,39 @@ public abstract class HttpTest extends HttpTestBase {
           String uploadedFileName;
           if (!streamToDisk) {
             upload.handler(tot::appendBuffer);
-            uploadedFileName = null;
+            upload.exceptionHandler(err -> {
+              assertTrue(abortClient);
+              complete();
+            });
+            upload.endHandler(v -> {
+              assertFalse(abortClient);
+              assertEquals(content, tot);
+              assertTrue(upload.isSizeAvailable());
+              assertEquals(content.length(), upload.size());
+              assertNull(upload.file());
+              complete();
+            });
           } else {
             uploadedFileName = new File(testDir, UUID.randomUUID().toString()).getPath();
-            upload.streamToFileSystem(uploadedFileName);
-          }
-          AtomicInteger failures = new AtomicInteger();
-          upload.exceptionHandler(err -> failures.incrementAndGet());
-          upload.endHandler(v -> {
-            if (abortClient) {
-              assertEquals(1, failures.get());
-            } else {
-              assertEquals(0, failures.get());
-              if (streamToDisk) {
+            upload.streamToFileSystem(uploadedFileName, ar -> {
+              if (ar.succeeded()) {
                 Buffer uploaded = vertx.fileSystem().readFileBlocking(uploadedFileName);
                 assertEquals(content.length(), uploaded.length());
                 assertEquals(content, uploaded);
+                AsyncFile file = upload.file();
+                assertNotNull(file);
+                try {
+                  file.flush();
+                  fail("Was expecting uploaded file to be closed");
+                } catch (IllegalStateException ignore) {
+                  // File has been closed
+                }
               } else {
-                assertEquals(content, tot);
+
               }
-              assertTrue(upload.isSizeAvailable());
-              assertEquals(content.length(), upload.size());
-            }
-            AsyncFile file = upload.file();
-            if (streamToDisk) {
-              assertNotNull(file);
-              try {
-                file.flush();
-                fail("Was expecting uploaded file to be closed");
-              } catch (IllegalStateException ignore) {
-                // File has been closed
-              }
-            } else {
-              assertNull(file);
-            }
-            complete();
-          });
+              complete();
+            });
+          }
         });
         req.endHandler(v -> {
           MultiMap attrs = req.formAttributes();
