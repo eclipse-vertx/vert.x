@@ -317,14 +317,14 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
-   * Bridges this Vert.x future to a {@link CompletionStage} instance.
+   * Bridges this Vert.x future to a {@link CompletableFuture} instance.
    * <p>
-   * The {@link CompletionStage} handling methods will be called from the thread that resolves this future.
+   * The {@link CompletableFuture} handling methods will be called from the thread that resolves this future.
    *
-   * @return a {@link CompletionStage} that completes when this future resolves
+   * @return a {@link CompletableFuture} that completes when this future resolves
    */
   @GenIgnore
-  default CompletionStage<T> toCompletionStage() {
+  default CompletableFuture<T> toCompletableFuture() {
     CompletableFuture<T> completableFuture = new CompletableFuture<>();
     onComplete(ar -> {
       if (ar.succeeded()) {
@@ -334,6 +334,18 @@ public interface Future<T> extends AsyncResult<T> {
       }
     });
     return completableFuture;
+  }
+
+  /**
+   * Bridges this Vert.x future to a {@link CompletionStage} instance.
+   * <p>
+   * The {@link CompletionStage} handling methods will be called from the thread that resolves this future.
+   *
+   * @return a {@link CompletionStage} that completes when this future resolves
+   */
+  @GenIgnore
+  default CompletionStage<T> toCompletionStage() {
+    return toCompletableFuture();
   }
 
   /**
