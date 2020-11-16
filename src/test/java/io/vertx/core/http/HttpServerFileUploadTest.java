@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
@@ -26,6 +27,7 @@ import java.net.URLEncoder;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 
 /**
  */
@@ -51,98 +53,119 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
 
   @Test
   public void testFormUploadEmptyFile() {
-    testFormUploadFile("", false, false);
+    testFormUploadFile("", false, false, false);
   }
 
   @Test
   public void testFormUploadSmallFile() {
-    testFormUploadFile(TestUtils.randomAlphaString(100), false, false);
+    testFormUploadFile(TestUtils.randomAlphaString(100), false, false, false);
   }
 
   @Test
   public void testFormUploadMediumFile() {
-    testFormUploadFile(TestUtils.randomAlphaString(20000), false, false);
+    testFormUploadFile(TestUtils.randomAlphaString(20000), false, false, false);
   }
 
   @Test
   public void testFormUploadLargeFile() {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), false, false);
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), false, false, false);
   }
 
   @Test
   public void testFormUploadEmptyFileStreamToDisk() {
-    testFormUploadFile("", true, false);
+    testFormUploadFile("", true, false, false);
   }
 
   @Test
   public void testFormUploadSmallFileStreamToDisk() {
-    testFormUploadFile(TestUtils.randomAlphaString(100), true, false);
+    testFormUploadFile(TestUtils.randomAlphaString(100), true, false, false);
   }
 
   @Test
   public void testFormUploadMediumFileStreamToDisk() {
-    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, false);
+    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, false, false);
   }
 
   @Test
   public void testFormUploadLargeFileStreamToDisk() {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, false);
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, false, false);
   }
 
   @Test
   public void testFormUploadWithExtFilename() {
-    testFormUploadFile(null, "%c2%a3%20and%20%e2%82%ac%20rates", "the-content", true, false);
+    testFormUploadFile(null, "%c2%a3%20and%20%e2%82%ac%20rates", "the-content", true, false, false);
   }
 
   @Test
   public void testBrokenFormUploadEmptyFile() {
-    testFormUploadFile("", true, true);
+    testFormUploadFile("", true, true, false);
   }
 
   @Test
   public void testBrokenFormUploadSmallFile() {
-    testFormUploadFile(TestUtils.randomAlphaString(100), true, true);
+    testFormUploadFile(TestUtils.randomAlphaString(100), true, true, false);
   }
 
   @Test
   public void testBrokenFormUploadMediumFile() {
-    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true);
+    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true, false);
   }
 
   @Test
   public void testBrokenFormUploadLargeFile() {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true);
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true, false);
   }
 
   @Test
   public void testBrokenFormUploadEmptyFileStreamToDisk() {
-    testFormUploadFile("", true, true);
+    testFormUploadFile("", true, true, false);
   }
 
   @Test
   public void testBrokenFormUploadSmallFileStreamToDisk() {
-    testFormUploadFile(TestUtils.randomAlphaString(100), true, true);
+    testFormUploadFile(TestUtils.randomAlphaString(100), true, true, false);
   }
 
   @Test
   public void testBrokenFormUploadMediumFileStreamToDisk() {
-    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true);
+    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, true, false);
   }
 
   @Test
   public void testBrokenFormUploadLargeFileStreamToDisk() {
-    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true);
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, true, false);
   }
 
-  private void testFormUploadFile(String contentStr, boolean streamToDisk, boolean abortClient) {
-    testFormUploadFile("tmp-0.txt", "tmp-0.txt", contentStr, streamToDisk, abortClient);
+  @Test
+  public void testCancelFormUploadEmptyFileStreamToDisk() {
+    testFormUploadFile("", true, false, true);
+  }
+
+  @Test
+  public void testCancelFormUploadSmallFileStreamToDisk() {
+    testFormUploadFile(TestUtils.randomAlphaString(100), true, false, true);
+  }
+
+  @Test
+  public void testCancelFormUploadMediumFileStreamToDisk() {
+    testFormUploadFile(TestUtils.randomAlphaString(20 * 1024), true, false, true);
+  }
+
+  @Test
+  public void testCancelFormUploadLargeFileStreamToDisk() {
+    testFormUploadFile(TestUtils.randomAlphaString(4 * 1024 * 1024), true, false, true);
+  }
+
+  private void testFormUploadFile(String contentStr, boolean streamToDisk, boolean abortClient, boolean cancelStream) {
+    testFormUploadFile("tmp-0.txt", "tmp-0.txt", contentStr, streamToDisk, abortClient, cancelStream);
   }
 
   private void testFormUploadFile(String filename,
                                   String extFilename,
                                   String contentStr,
                                   boolean streamToDisk,
-                                  boolean abortClient) {
+                                  boolean abortClient,
+                                  boolean cancelStream) {
     String expectedFilename;
     try {
       if (extFilename != null) {
@@ -220,10 +243,38 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
                   // File has been closed
                 }
               } else {
-
+                assertTrue(ar.failed());
               }
               complete();
             });
+            if (cancelStream) {
+              BooleanSupplier test = () -> {
+                File f = new File(uploadedFileName);
+                if (f.length() == contentStr.length() / 2) {
+                  assertTrue(upload.cancelStreamToFileSystem());
+                  long now = System.currentTimeMillis();
+                  vertx.setPeriodic(10, id -> {
+                    assertTrue(System.currentTimeMillis() - now < 20_000);
+                    if (!new File(uploadedFileName).exists()) {
+                      vertx.cancelTimer(id);
+                      req.response().end();
+                    }
+                  });
+                  return true;
+                } else {
+                  return false;
+                }
+              };
+              if (!test.getAsBoolean()) {
+                long now = System.currentTimeMillis();
+                vertx.setPeriodic(10, id -> {
+                  assertTrue(System.currentTimeMillis() - now < 20_000);
+                  if (test.getAsBoolean()) {
+                    vertx.cancelTimer(id);
+                  }
+                });
+              }
+            }
           }
         });
         req.endHandler(v -> {
@@ -248,11 +299,14 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
             "\r\n";
           req.headers().set("content-length", "" + (pro + contentStr + epi).length());
           req.headers().set("content-type", "multipart/form-data; boundary=" + boundary);
-          if (abortClient) {
-            req.write(pro + contentStr.substring(0, contentStr.length() / 2), onSuccess(v -> {
-              clientConn.set(req.connection());
-              checkClose.run();
-            }));
+          if (abortClient || cancelStream) {
+            Future<Void> fut = req.write(pro + contentStr.substring(0, contentStr.length() / 2));
+            if (abortClient) {
+              fut.onComplete(onSuccess(v -> {
+                clientConn.set(req.connection());
+                checkClose.run();
+              }));
+            }
           } else {
             req.end(pro + contentStr + epi);
           }

@@ -16,6 +16,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.impl.ContextInternal;
@@ -45,11 +46,13 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
-  private AsyncFile file;
   private Handler<Throwable> exceptionHandler;
 
   private long size;
   private boolean lazyCalculateSize;
+  private AsyncFile file;
+  private Pipe<Buffer> pipe;
+  private boolean cancelled;
 
   HttpServerFileUploadImpl(ContextInternal context, ReadStream<Buffer> stream, String name, String filename, String contentType,
                            String contentTransferEncoding,
@@ -177,17 +180,48 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   @Override
   public Future<Void> streamToFileSystem(String filename) {
-    Pipe<Buffer> pipe = pipe().endOnComplete(true);
-    Future<AsyncFile> fut = context.owner().fileSystem().open(filename, new OpenOptions());
+    synchronized (this) {
+      if (pipe != null) {
+        return context.failedFuture("Already streaming");
+      }
+      pipe = pipe().endOnComplete(true);
+    }
+    FileSystem fs = context.owner().fileSystem();
+    Future<AsyncFile> fut = fs.open(filename, new OpenOptions());
     fut.onFailure(err -> {
       pipe.close();
     });
     return fut.compose(f -> {
-      synchronized (HttpServerFileUploadImpl.this) {
-        file = f;
-      }
-      return pipe.to(f);
+      Future<Void> to = pipe.to(f);
+      return to.compose(v -> {
+        synchronized (HttpServerFileUploadImpl.this) {
+          if (!cancelled) {
+            file = f;
+            return context.succeededFuture();
+          }
+          fs.delete(filename);
+          return context.failedFuture("Streaming aborted");
+        }
+      }, err -> {
+        fs.delete(filename);
+        return context.failedFuture(err);
+      });
     });
+  }
+
+  @Override
+  public boolean cancelStreamToFileSystem() {
+    synchronized (this) {
+      if (pipe == null) {
+        throw new IllegalStateException("Not a streaming upload");
+      }
+      if (file != null) {
+        return false;
+      }
+      cancelled = true;
+    }
+    pipe.close();
+    return true;
   }
 
   @Override
