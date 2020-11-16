@@ -176,22 +176,17 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   @Override
   public void streamToFileSystem(String filename, Handler<AsyncResult<Void>> handler) {
-    Pipe<Buffer> pipe = pipe().endOnComplete(false);
+    Pipe<Buffer> pipe = pipe().endOnComplete(true);
     context.owner().fileSystem().open(filename, new OpenOptions(), ar -> {
       if (ar.succeeded()) {
         file =  ar.result();
         pipe.to(file, ar2 -> {
-          file.close(ar3 -> {
-            Throwable failure = ar2.failed() ? ar2.cause() : ar3.failed() ? ar3.cause() : null;
-            if (failure != null) {
-              handler.handle(Future.failedFuture(failure));
-            } else {
-              handler.handle(Future.succeededFuture());
-            }
-            synchronized (HttpServerFileUploadImpl.this) {
-              size = file.getWritePos();
-            }
-          });
+          Throwable failure = ar2.failed() ? ar2.cause() : null;
+          if (failure != null) {
+            handler.handle(Future.failedFuture(failure));
+          } else {
+            handler.handle(Future.succeededFuture());
+          }
         });
       } else {
         pipe.close();
