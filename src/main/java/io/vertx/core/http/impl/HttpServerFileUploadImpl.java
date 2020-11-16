@@ -12,10 +12,8 @@
 package io.vertx.core.http.impl;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
@@ -170,28 +168,25 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public Future<Void> streamToFileSystem(String filename) {
-    return Future.future(p -> streamToFileSystem(filename, p));
+  public void streamToFileSystem(String filename, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = streamToFileSystem(filename);
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
   }
 
   @Override
-  public void streamToFileSystem(String filename, Handler<AsyncResult<Void>> handler) {
+  public Future<Void> streamToFileSystem(String filename) {
     Pipe<Buffer> pipe = pipe().endOnComplete(true);
-    context.owner().fileSystem().open(filename, new OpenOptions(), ar -> {
-      if (ar.succeeded()) {
-        file =  ar.result();
-        pipe.to(file, ar2 -> {
-          Throwable failure = ar2.failed() ? ar2.cause() : null;
-          if (failure != null) {
-            handler.handle(Future.failedFuture(failure));
-          } else {
-            handler.handle(Future.succeededFuture());
-          }
-        });
-      } else {
-        pipe.close();
-        handler.handle(Future.failedFuture(ar.cause()));
+    Future<AsyncFile> fut = context.owner().fileSystem().open(filename, new OpenOptions());
+    fut.onFailure(err -> {
+      pipe.close();
+    });
+    return fut.compose(f -> {
+      synchronized (HttpServerFileUploadImpl.this) {
+        file = f;
       }
+      return pipe.to(f);
     });
   }
 
