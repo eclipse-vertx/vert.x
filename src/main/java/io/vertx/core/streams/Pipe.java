@@ -91,14 +91,9 @@ public interface Pipe<T> {
 
   /**
    * Close the pipe.
-   * <p> The streams handlers will be unset and the read stream resumed unless it is already ended.
-   * <p> The {@code handler} is completed immediately or when the destination stream {@link WriteStream#end()} reports it
+   * <p>
+   * The streams handlers will be unset and the read stream resumed unless it is already ended.
    */
-  void close(Handler<AsyncResult<Void>> handler);
-
-  /**
-   * Like {@link #close(Handler)} but with a future instead of a callback handler.
-   */
-  Future<Void> close();
+  void close();
 
 }

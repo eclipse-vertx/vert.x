@@ -82,7 +82,7 @@ public class PipeTest extends AsyncTestBase {
     pipe.to(dst, onFailure(err -> {
       assertSame(failure, err);
       assertTrue(dst.isEnded());
-      assertEquals(Collections.emptyList(), emitted);
+      assertEquals(Collections.singletonList(o1), emitted);
       testComplete();
     }));
     await();
@@ -202,8 +202,7 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     assertTrue(src.isPaused());
-    Future<Void> fut = pipe.close();
-    assertTrue(fut.failed());
+    pipe.close();
     assertFalse(src.isPaused());
   }
 
@@ -217,10 +216,7 @@ public class PipeTest extends AsyncTestBase {
       src.write(o1);
     }
     assertTrue(src.isPaused());
-    Future<Void> fut = pipe.close();
-    assertFalse(fut.isComplete());
-    dst.resume();
-    assertTrue(fut.isComplete());
+    pipe.close();
     assertNull(src.handler());
     assertNull(src.exceptionHandler());
     assertNull(dst.drainHandler());
@@ -239,10 +235,7 @@ public class PipeTest extends AsyncTestBase {
     }
     src.end();
     assertTrue(src.isPaused());
-    Future<Void> fut = pipe.close();
-    assertFalse(fut.isComplete());
-    dst.resume();
-    assertTrue(fut.isComplete());
+    pipe.close();
   }
 
   @Test
@@ -282,8 +275,7 @@ public class PipeTest extends AsyncTestBase {
     List<AsyncResult<Void>> res = new ArrayList<>();
     pipe.to(dst, res::add);
     assertEquals(Collections.emptyList(), res);
-    Future<Void> fut = pipe.close();
-    assertTrue(fut.isComplete());
+    pipe.close();
     assertEquals(1, res.size());
     AsyncResult<Void> ar = res.get(0);
     assertTrue(ar.failed());
