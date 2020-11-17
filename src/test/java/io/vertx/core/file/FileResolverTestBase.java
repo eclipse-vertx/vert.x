@@ -124,6 +124,8 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testResolveFileWithSpacesFromClasspath() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
+
     for (int i = 0; i < 2; i++) {
       File file = resolver.resolveFile("afile with spaces.html");
       assertTrue(file.exists());
