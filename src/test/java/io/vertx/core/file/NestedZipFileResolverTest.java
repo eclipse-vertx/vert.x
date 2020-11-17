@@ -11,8 +11,7 @@
 
 package io.vertx.core.file;
 
-import io.vertx.core.file.FileResolverTestBase;
-
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -21,24 +20,21 @@ import java.net.URL;
  */
 public class NestedZipFileResolverTest extends FileResolverTestBase {
 
-  private ClassLoader prevCL;
-
   @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    // This folder is inside the embedded zip file called nested.zip, inside webroot6.zip
-    webRoot = "webroot6";
-    // We will store the current classloader
-    prevCL = Thread.currentThread().getContextClassLoader();
-    URL webroot6URL = prevCL.getResource("webroot6.zip");
-    ClassLoader loader = new ClassLoader(prevCL = Thread.currentThread().getContextClassLoader()) {
+  protected ClassLoader resourcesLoader(File baseDir) throws Exception {
+    URL webroot6URL = new File(baseDir, "nested-files.zip").toURI().toURL();
+    return new ClassLoader(Thread.currentThread().getContextClassLoader()) {
       @Override
       public URL getResource(String name) {
         try {
           if (name.startsWith("lib/")) {
             return new URL("jar:" + webroot6URL + "!/" + name);
-          } else if (name.startsWith("webroot6")) {
+          } else if (name.startsWith("webroot")) {
             return new URL("jar:" + webroot6URL + "!/lib/nested.zip!/" + name.substring(7));
+          } else if (name.equals("afile.html")) {
+            return new URL("jar:" + webroot6URL + "!/lib/nested.zip!afile.html/");
+          } else if (name.equals("afile with spaces.html")) {
+            return new URL("jar:" + webroot6URL + "!/lib/nested.zip!afile with spaces.html/");
           }
         } catch (MalformedURLException e) {
           throw new AssertionError(e);
@@ -46,14 +42,5 @@ public class NestedZipFileResolverTest extends FileResolverTestBase {
         return super.getResource(name);
       }
     };
-    Thread.currentThread().setContextClassLoader(loader);
-  }
-
-  @Override
-  public void after() throws Exception {
-    if (prevCL != null) {
-      Thread.currentThread().setContextClassLoader(prevCL);
-    }
-    super.after();
   }
 }

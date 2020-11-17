@@ -2075,13 +2075,13 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testSendOpenRangeFileFromClasspath() {
     server.requestHandler(res -> {
-      res.response().sendFile("webroot/somefile.html", 6);
+      res.response().sendFile("hosts_config.txt", 13);
     }).listen(testAddress, onSuccess(res -> {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         client.request(requestOptions)
           .compose(HttpClientRequest::send)
           .compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
-          assertTrue(body.toString().startsWith("<body>blah</body></html>"));
+          assertTrue(body.toString().startsWith("server.net"));
           testComplete();
         }));
       }));
@@ -2092,12 +2092,12 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testSendRangeFileFromClasspath() {
     server.requestHandler(res -> {
-      res.response().sendFile("webroot/somefile.html", 6, 6);
+      res.response().sendFile("hosts_config.txt", 13, 10);
     }).listen(testAddress, onSuccess(res -> {
       client.request(requestOptions)
         .compose(HttpClientRequest::send)
         .compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
-        assertEquals("<body>", body.toString());
+        assertEquals("server.net", body.toString());
         testComplete();
       }));
     }));

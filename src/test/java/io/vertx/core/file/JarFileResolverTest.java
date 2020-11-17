@@ -11,7 +11,9 @@
 
 package io.vertx.core.file;
 
-import io.vertx.core.file.FileResolverTestBase;
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -19,10 +21,7 @@ import io.vertx.core.file.FileResolverTestBase;
 public class JarFileResolverTest extends FileResolverTestBase {
 
   @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    // This is inside the jar webroot2.jar
-    webRoot = "webroot2";
+  protected ClassLoader resourcesLoader(File baseDir) throws Exception {
+    return new URLClassLoader(new URL[]{new File(baseDir, "files.jar").toURI().toURL()}, Thread.currentThread().getContextClassLoader());
   }
-
 }

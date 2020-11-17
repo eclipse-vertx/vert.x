@@ -26,9 +26,8 @@ import java.nio.file.Files;
 public class FileSystemFileResolverTest extends FileResolverTestBase {
 
   @Override
-  public void setUp() throws Exception {
-    super.setUp();
-    webRoot = "webroot";
+  protected ClassLoader resourcesLoader(File baseDir) throws Exception {
+    return new URLClassLoader(new URL[]{new File(baseDir, "files").toURI().toURL()}, Thread.currentThread().getContextClassLoader());
   }
 
   @Test
