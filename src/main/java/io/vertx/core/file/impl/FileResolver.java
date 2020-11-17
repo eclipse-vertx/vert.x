@@ -55,9 +55,8 @@ public class FileResolver {
 
   static {
     if (PlatformDependent.isWindows()) {
-      // https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
       CACHE_PATH_CHECKER = c -> {
-        if (c < 32) {  // control characters 0-31 are invalid, space character 32 is valid
+        if (c < 33) {
           return false;
         } else {
           switch (c) {
