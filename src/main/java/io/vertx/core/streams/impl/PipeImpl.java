@@ -98,30 +98,36 @@ public class PipeImpl<T> implements Pipe<T> {
         src.endHandler(null);
       } catch (Exception ignore) {
       }
-      try {
-        if (ar.succeeded()) {
-          if (endOnSuccess) {
-            ws.end(completionHandler);
-            return;
-          }
-        } else {
-          Throwable err = ar.cause();
-          if (err instanceof WriteException) {
-            ar = Future.failedFuture(err.getCause());
-            src.resume();
-          } else if (endOnFailure){
-            ws.end();
-          }
+      if (ar.succeeded()) {
+        handleSuccess(completionHandler);
+      } else {
+        Throwable err = ar.cause();
+        if (err instanceof WriteException) {
+          src.resume();
+          err = err.getCause();
         }
-      } catch (Exception e) {
-        if (endOnFailure) {
-          ws.end();
-        }
-        completionHandler.handle(Future.failedFuture(e));
-        return;
+        handleFailure(err, completionHandler);
       }
-      completionHandler.handle(ar);
     });
+  }
+
+  private void handleSuccess(Handler<AsyncResult<Void>> completionHandler) {
+    if (endOnSuccess) {
+      dst.end(completionHandler);
+    } else {
+      completionHandler.handle(Future.succeededFuture());
+    }
+  }
+
+  private void handleFailure(Throwable cause, Handler<AsyncResult<Void>> completionHandler) {
+    Future<Void> res = Future.failedFuture(cause);
+    if (endOnFailure){
+      dst.end(ignore -> {
+        completionHandler.handle(res);
+      });
+    } else {
+      completionHandler.handle(res);
+    }
   }
 
   public void close() {

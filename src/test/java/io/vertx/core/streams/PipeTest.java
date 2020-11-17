@@ -11,6 +11,7 @@
 package io.vertx.core.streams;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.test.core.AsyncTestBase;
@@ -21,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class PipeTest extends AsyncTestBase {
@@ -93,12 +93,16 @@ public class PipeTest extends AsyncTestBase {
     Throwable expected = new Throwable();
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
+    Promise<Void> end = Promise.promise();
+    dst.setEnd(end.future());
     pipe.to(dst, onFailure(err -> {
       assertSame(expected, err);
       assertTrue(dst.isEnded());
+      assertTrue(end.future().isComplete());
       testComplete();
     }));
     src.fail(expected);
+    end.complete();
     await();
   }
 
@@ -123,10 +127,12 @@ public class PipeTest extends AsyncTestBase {
     FakeStream<Object> src = new FakeStream<>();
     Pipe<Object> pipe = src.pipe();
     dst.pause();
+    Promise<Void> end = Promise.promise();
     pipe.to(dst, onFailure(err -> {
       assertFalse(src.isPaused());
       assertSame(expected, err);
-      assertFalse(dst.isEnded());
+      assertTrue(dst.isEnded());
+      assertTrue(end.future().succeeded());
       testComplete();
     }));
     while (!src.isPaused()) {
@@ -135,7 +141,10 @@ public class PipeTest extends AsyncTestBase {
     dst.handler(item -> {
       throw expected;
     });
-    dst.fetch(1);
+
+    dst.setEnd(end.future());
+    dst.resume();
+    end.complete();
     await();
   }
 

@@ -18,6 +18,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.impl.ContextInternal;
 
 import java.nio.charset.Charset;
 import java.util.function.Supplier;
@@ -27,11 +28,11 @@ import java.util.function.Supplier;
  */
 class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
-  final Context context;
+  final ContextInternal context;
   final HttpServerRequest request;
   final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
 
-  NettyFileUploadDataFactory(Context context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
+  NettyFileUploadDataFactory(ContextInternal context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.context = context;
     this.request = request;

@@ -11,12 +11,15 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Context;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerFileUpload;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 
@@ -34,7 +37,7 @@ import java.nio.charset.Charset;
 class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private final ReadStream<Buffer> stream;
-  private final Context context;
+  private final ContextInternal context;
   private final String name;
   private final String filename;
   private final String contentType;
@@ -43,13 +46,15 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
 
   private Handler<Buffer> dataHandler;
   private Handler<Void> endHandler;
-  private AsyncFile file;
   private Handler<Throwable> exceptionHandler;
 
   private long size;
   private boolean lazyCalculateSize;
+  private AsyncFile file;
+  private Pipe<Buffer> pipe;
+  private boolean cancelled;
 
-  HttpServerFileUploadImpl(Context context, ReadStream<Buffer> stream, String name, String filename, String contentType,
+  HttpServerFileUploadImpl(ContextInternal context, ReadStream<Buffer> stream, String name, String filename, String contentType,
                            String contentTransferEncoding,
                            Charset charset, long size) {
     this.context = context;
@@ -63,17 +68,28 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     this.lazyCalculateSize = size == 0;
 
     stream.handler(this::handleData);
+    stream.exceptionHandler(this::handleException);
     stream.endHandler(v -> this.handleEnd());
   }
 
   private void handleData(Buffer data) {
-    Handler<Buffer> h;
+    Handler<Buffer> handler;
     synchronized (HttpServerFileUploadImpl.this) {
-      h = dataHandler;
+      handler = dataHandler;
       size += data.length();
     }
-    if (h != null) {
-      h.handle(data);
+    if (handler != null) {
+      context.dispatch(data, handler);
+    }
+  }
+
+  private void handleException(Throwable cause) {
+    Handler<Throwable> handler;
+    synchronized (this) {
+      handler = exceptionHandler;
+    }
+    if (handler != null) {
+      context.dispatch(cause, handler);
     }
   }
 
@@ -84,13 +100,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
       handler = endHandler;
     }
     if (handler != null) {
-      handler.handle(null);
-    }
-  }
-
-  private void notifyExceptionHandler(Throwable cause) {
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(cause);
+      context.dispatch(handler);
     }
   }
 
@@ -161,29 +171,57 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
   }
 
   @Override
-  public HttpServerFileUpload streamToFileSystem(String filename) {
-    Pipe<Buffer> pipe = stream.pipe().endOnComplete(false);
-    context.owner().fileSystem().open(filename, new OpenOptions(), ar -> {
-      if (ar.succeeded()) {
-        file =  ar.result();
-        pipe.to(file, ar2 -> {
-          file.close(ar3 -> {
-            Throwable failure = ar2.failed() ? ar2.cause() : ar3.failed() ? ar3.cause() : null;
-            if (failure != null) {
-              notifyExceptionHandler(failure);
-            }
-            synchronized (HttpServerFileUploadImpl.this) {
-              size = file.getWritePos();
-            }
-            handleEnd();
-          });
-        });
-      } else {
-        pipe.close();
-        notifyExceptionHandler(ar.cause());
+  public void streamToFileSystem(String filename, Handler<AsyncResult<Void>> handler) {
+    Future<Void> fut = streamToFileSystem(filename);
+    if (handler != null) {
+      fut.onComplete(handler);
+    }
+  }
+
+  @Override
+  public Future<Void> streamToFileSystem(String filename) {
+    synchronized (this) {
+      if (pipe != null) {
+        return context.failedFuture("Already streaming");
       }
+      pipe = pipe().endOnComplete(true);
+    }
+    FileSystem fs = context.owner().fileSystem();
+    Future<AsyncFile> fut = fs.open(filename, new OpenOptions());
+    fut.onFailure(err -> {
+      pipe.close();
     });
-    return this;
+    return fut.compose(f -> {
+      Future<Void> to = pipe.to(f);
+      return to.compose(v -> {
+        synchronized (HttpServerFileUploadImpl.this) {
+          if (!cancelled) {
+            file = f;
+            return context.succeededFuture();
+          }
+          fs.delete(filename);
+          return context.failedFuture("Streaming aborted");
+        }
+      }, err -> {
+        fs.delete(filename);
+        return context.failedFuture(err);
+      });
+    });
+  }
+
+  @Override
+  public boolean cancelStreamToFileSystem() {
+    synchronized (this) {
+      if (pipe == null) {
+        throw new IllegalStateException("Not a streaming upload");
+      }
+      if (file != null) {
+        return false;
+      }
+      cancelled = true;
+    }
+    pipe.close();
+    return true;
   }
 
   @Override
