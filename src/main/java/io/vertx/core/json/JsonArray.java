@@ -553,9 +553,9 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
-   * Make a copy of the JSON array
+   * Deep copy of the JSON array.
    *
-   * @return a copy
+   * @return a copy where all elements have been copied recursively
    */
   @Override
   public JsonArray copy() {

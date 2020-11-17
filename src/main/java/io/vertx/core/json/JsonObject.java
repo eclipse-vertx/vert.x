@@ -747,9 +747,9 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
-   * Copy the JSON object
+   * Deep copy of this JSON object.
    *
-   * @return a copy of the object
+   * @return a copy where all elements have been copied recursively
    */
   @Override
   public JsonObject copy() {
