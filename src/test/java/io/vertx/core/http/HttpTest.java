@@ -4821,9 +4821,8 @@ public abstract class HttpTest extends HttpTestBase {
       .setMaxPoolSize(1)
       .setKeepAliveTimeout(10)
     );
-    client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(resp -> {
+    client.request(requestOptions, onSuccess(req -> {
+      req.send(onSuccess(resp -> {
         resp.endHandler(v1 -> {
           AtomicBoolean closed = new AtomicBoolean();
           resp.request().connection().closeHandler(v2 -> {
@@ -4835,6 +4834,7 @@ public abstract class HttpTest extends HttpTestBase {
           });
         });
       }));
+    }));
     await();
   }
 
