@@ -14,12 +14,11 @@ package io.vertx.core.impl.logging;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Set;
@@ -112,7 +111,7 @@ public class LoggingBackendSelectionTest {
           throw new ClassNotFoundException(name);
         }
         try {
-          byte[] bytes = Files.readAllBytes(FileSystems.getDefault().getPath(url.getPath()));
+          byte[] bytes = Files.readAllBytes(new File(url.getPath()).toPath());
           Class<?> clazz = defineClass(name, bytes, 0, bytes.length);
           if (resolve) {
             resolveClass(clazz);
