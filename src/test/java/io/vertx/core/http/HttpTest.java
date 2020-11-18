@@ -20,6 +20,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.Pump;
@@ -2330,6 +2331,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
+    Assume.assumeFalse(Utils.isWindows());
     AtomicReference<Throwable> exception = new AtomicReference<>();
     // There is no server running, should fail to connect
     client.request(new RequestOptions().setPort(5000).setTimeout(800))
