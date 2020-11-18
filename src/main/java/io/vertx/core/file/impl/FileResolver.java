@@ -148,6 +148,9 @@ public class FileResolver {
         //been read works.
         String parentFileName = file.getParent();
         if (parentFileName != null) {
+          if (NON_UNIX_FILE_SEP) {
+            parentFileName = parentFileName.replace(FILE_SEP, "/");
+          }
           URL directoryContents = getValidClassLoaderResource(cl, parentFileName);
           if (directoryContents != null) {
             unpackUrlResource(directoryContents, parentFileName, cl, true);
