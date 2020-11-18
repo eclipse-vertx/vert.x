@@ -138,9 +138,6 @@ public class FileResolver {
         }
         // Look for file on classpath
         ClassLoader cl = getClassLoader();
-        if (NON_UNIX_FILE_SEP) {
-          fileName = fileName.replace(FILE_SEP, "/");
-        }
 
         //https://github.com/eclipse/vert.x/issues/2126
         //Cache all elements in the parent directory if it exists
@@ -157,6 +154,9 @@ public class FileResolver {
           }
         }
 
+        if (NON_UNIX_FILE_SEP) {
+          fileName = fileName.replace(FILE_SEP, "/");
+        }
         URL url = getValidClassLoaderResource(cl, fileName);
         if (url != null) {
           return unpackUrlResource(url, fileName, cl, false);
