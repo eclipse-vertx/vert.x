@@ -2332,7 +2332,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
     AtomicReference<Throwable> exception = new AtomicReference<>();
     // There is no server running, should fail to connect
-    client.request(new RequestOptions().setTimeout(800))
+    client.request(new RequestOptions().setPort(5000).setTimeout(800))
       .onComplete(onFailure(exception::set));
 
     vertx.setTimer(1500, id -> {
