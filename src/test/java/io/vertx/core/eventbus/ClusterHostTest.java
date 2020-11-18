@@ -12,26 +12,17 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.Utils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.Assume;
 import org.junit.Test;
 
 public class ClusterHostTest extends VertxTestBase {
-  private static final String OS_NAME = getOsName();
-
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    Assume.assumeTrue(OS_NAME.startsWith("Linux") || OS_NAME.startsWith("LINUX"));
-  }
-
-  private static String getOsName() {
-    try {
-      return System.getProperty("os.name", "");
-    } catch (SecurityException e) {
-      return "";
-    }
+    Assume.assumeTrue(Utils.isLinux());
   }
 
   @Test
