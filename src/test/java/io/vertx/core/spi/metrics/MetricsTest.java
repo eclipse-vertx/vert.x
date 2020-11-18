@@ -900,7 +900,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testThreadPoolMetricsWithExecuteBlocking() {
+  public void testThreadPoolMetricsWithExecuteBlocking() throws Exception {
     Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
 
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-worker-thread");
@@ -910,7 +910,7 @@ public class MetricsTest extends VertxTestBase {
 
     Handler<Promise<Void>> job = getSomeDumbTask();
 
-    AtomicInteger counter = new AtomicInteger();
+    CountDownLatch counter = new CountDownLatch(100);
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
@@ -927,17 +927,15 @@ public class MetricsTest extends VertxTestBase {
             if (metrics.numberOfRunningTasks() > 0) {
               hadRunning.set(true);
             }
-            if (counter.incrementAndGet() == 100) {
-              testComplete();
-            }
+            counter.countDown();
           }
       );
     }
 
-    await();
+    awaitLatch(counter);
 
-    assertEquals(metrics.numberOfSubmittedTask(), 100);
-    assertEquals(metrics.numberOfCompletedTasks(), 100);
+    assertWaitUntil(() -> metrics.numberOfSubmittedTask() == 100);
+    assertWaitUntil(() -> metrics.numberOfCompletedTasks() == 100);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
@@ -948,22 +946,23 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testThreadPoolMetricsWithInternalExecuteBlocking() {
+  public void testThreadPoolMetricsWithInternalExecuteBlocking() throws InterruptedException {
     Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-internal-blocking");
 
     assertThat(metrics.getPoolSize(), is(getOptions().getInternalBlockingPoolSize()));
     assertThat(metrics.numberOfIdleThreads(), is(getOptions().getInternalBlockingPoolSize()));
 
-    AtomicInteger counter = new AtomicInteger();
+    int num = VertxOptions.DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
+    int count = num * 5;
+
+    CountDownLatch counter = new CountDownLatch(count);
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
 
     VertxInternal v = (VertxInternal) vertx;
     Map<Integer, CountDownLatch> latches = new HashMap<>();
-    int num = VertxOptions.DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
-    int count = num * 5;
     for (int i = 0; i < count; i++) {
       CountDownLatch latch = latches.computeIfAbsent(i / num, k -> new CountDownLatch(num));
       v.executeBlockingInternal(fut -> {
@@ -986,13 +985,11 @@ public class MetricsTest extends VertxTestBase {
         if (metrics.numberOfIdleThreads() > 0) {
           hadIdle.set(true);
         }
-        if (counter.incrementAndGet() == count) {
-          testComplete();
-        }
+        counter.countDown();
       });
     }
 
-    await();
+    awaitLatch(counter);
 
     assertEquals(metrics.numberOfSubmittedTask(), 100);
     assertEquals(metrics.numberOfCompletedTasks(), 100);
@@ -1075,7 +1072,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testThreadPoolMetricsWithNamedExecuteBlocking() {
+  public void testThreadPoolMetricsWithNamedExecuteBlocking() throws InterruptedException {
     vertx.close(); // Close the instance automatically created
     vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(new FakeMetricsFactory())));
 
@@ -1090,7 +1087,7 @@ public class MetricsTest extends VertxTestBase {
 
     Handler<Promise<Void>> job = getSomeDumbTask();
 
-    AtomicInteger counter = new AtomicInteger();
+    CountDownLatch counter = new CountDownLatch(100);
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
@@ -1108,13 +1105,11 @@ public class MetricsTest extends VertxTestBase {
             if (metrics.numberOfRunningTasks() > 0) {
               hadRunning.set(true);
             }
-            if (counter.incrementAndGet() == 100) {
-              testComplete();
-            }
+            counter.countDown();
           });
     }
 
-    await();
+    awaitLatch(counter);
 
     assertEquals(metrics.numberOfSubmittedTask(), 100);
     assertEquals(metrics.numberOfCompletedTasks(), 100);
