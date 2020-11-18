@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -51,33 +50,7 @@ public class FileResolver {
   /**
    * Predicate for checking validity of cache path.
    */
-  private static final IntPredicate CACHE_PATH_CHECKER;
-
-  static {
-    if (PlatformDependent.isWindows()) {
-      CACHE_PATH_CHECKER = c -> {
-        if (c < 33) {
-          return false;
-        } else {
-          switch (c) {
-            case 34:
-            case 42:
-            case 58:
-            case 60:
-            case 62:
-            case 63:
-            case 124:
-              return false;
-            default:
-              return true;
-          }
-        }
-      };
-    } else {
-      CACHE_PATH_CHECKER = c -> c != '\u0000';
-    }
-  }
-
+  private static final boolean IS_WINDOWS = PlatformDependent.isWindows();
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
   private static final String JAR_URL_SEP = "!/";
@@ -151,6 +124,9 @@ public class FileResolver {
         //been read works.
         String parentFileName = file.getParent();
         if (parentFileName != null) {
+          if (NON_UNIX_FILE_SEP) {
+            parentFileName = parentFileName.replace(FILE_SEP, "/");
+          }
           URL directoryContents = getValidClassLoaderResource(cl, parentFileName);
           if (directoryContents != null) {
             unpackUrlResource(directoryContents, parentFileName, cl, true);
@@ -166,15 +142,55 @@ public class FileResolver {
     return file;
   }
 
-  private static boolean isValidCachePath(String fileName) {
-    int len = fileName.length();
-    for (int i = 0;i < len;i++) {
-      char c = fileName.charAt(i);
-      if (!CACHE_PATH_CHECKER.test(c)) {
+  static boolean isValidWindowsCachePath(String fullPath) {
+    // https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#naming-conventions
+    // Invalid characters are character values 0-31.
+    // Invalid are these nine characters: <>:"/\|?* but / is our separator.
+    // Invalid is a space or dot at the end of a file or directory name.
+    String path = fullPath;
+    if (path.startsWith("file:")) {
+      path = path.substring("file:".length());
+    }
+    int len = path.length();
+    for (int i=0; i<len; i++) {
+      char c = path.charAt(i);
+      if (c < 32) {
         return false;
+      }
+      switch (c) {
+        case '<':
+        case '>':
+        case ':':
+        case '"':
+        case '\\':
+        case '|':
+        case '?':
+        case '*':
+          return false;
+        case ' ':
+        case '.':
+          if (i+1 == len) {
+            return false;  // end of file name
+          }
+          char next = path.charAt(i+1);
+          if (next == '/' || next == '\\') {
+            return false;  // end of directory name
+          }
+          break;  // valid space or valid dot
+        default:
+          // valid character
+          break;
       }
     }
     return true;
+  }
+
+  private static boolean isValidCachePath(String fileName) {
+    if (IS_WINDOWS) {
+      return isValidWindowsCachePath(fileName);
+    } else {
+      return fileName.indexOf('\u0000') == -1;
+    }
   }
 
   /**
