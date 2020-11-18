@@ -399,6 +399,7 @@ public class MetricsTest extends VertxTestBase {
 
   @Test
   public void testHandlerMetricReply() throws Exception {
+    AtomicReference<HandlerMetric> replyRegistration = new AtomicReference<>();
     CountDownLatch latch = new CountDownLatch(1);
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertx.eventBus());
     vertx.eventBus().consumer(ADDRESS1, msg -> {
@@ -409,6 +410,7 @@ public class MetricsTest extends VertxTestBase {
       assertEquals(0, registration.scheduleCount.get());
       assertEquals(0, registration.deliveredCount.get());
       assertEquals(0, registration.localDeliveredCount.get());
+      replyRegistration.set(registration);
       msg.reply("pong");
     }).completionHandler(ar -> {
       assertTrue(ar.succeeded());
@@ -417,7 +419,7 @@ public class MetricsTest extends VertxTestBase {
     awaitLatch(latch);
     vertx.eventBus().request(ADDRESS1, "ping", reply -> {
       assertEquals(ADDRESS1, metrics.getRegistrations().get(0).address);
-      HandlerMetric registration = metrics.getRegistrations().get(1);
+      HandlerMetric registration = replyRegistration.get();
       assertEquals(ADDRESS1, registration.repliedAddress);
       assertEquals(1, registration.scheduleCount.get());
       assertEquals(1, registration.deliveredCount.get());
