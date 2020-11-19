@@ -71,6 +71,13 @@ public interface WorkerExecutor extends Measured {
 
   /**
    * Close the executor.
+   *
+   * @param handler the completion handler
+   */
+  void close(Handler<AsyncResult<Void>> handler);
+
+  /**
+   * Like {@link #close(Handler)} but returns a {@code Future} of the asynchronous result
    */
   Future<Void> close();
 
