@@ -857,6 +857,32 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testGetParamDefaultValue() {
+    String paramName1 = "foo";
+    String paramName1Value = "bar";
+    String paramName2 = "notPresentParam";
+    String paramName2DefaultValue = "defaultValue";
+    String reqUri = DEFAULT_TEST_URI + "/?" + paramName1 + "=" + paramName1Value;
+
+    server.requestHandler(req -> {
+      assertTrue(req.params().contains(paramName1));
+      assertEquals(paramName1Value, req.getParam(paramName1, paramName2DefaultValue));
+      assertFalse(req.params().contains(paramName2));
+      assertEquals(paramName2DefaultValue, req.getParam(paramName2, paramName2DefaultValue));
+      req.response().end();
+    });
+
+    server.listen(testAddress, onSuccess(server -> {
+      client.request(new RequestOptions(requestOptions).setURI(reqUri))
+        .onComplete(onSuccess(req -> {
+          req.send(onSuccess(resp -> testComplete()));
+        }));
+    }));
+
+    await();
+  }
+
+  @Test
   public void testMissingContentTypeMultipartRequest() throws Exception {
     testInvalidMultipartRequest(null, HttpMethod.POST);
   }
