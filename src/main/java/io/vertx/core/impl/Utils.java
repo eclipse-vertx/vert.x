@@ -11,6 +11,8 @@
 
 package io.vertx.core.impl;
 
+import io.netty.util.internal.PlatformDependent;
+
 /**
  * Simple generic utility methods and constants
  *
@@ -25,9 +27,8 @@ public class Utils {
   private static final boolean isWindows;
 
   static {
-    String os = System.getProperty("os.name", "").toLowerCase();
-    isLinux = os.startsWith("linux");
-    isWindows = os.contains("win");
+    isLinux = "linux".equals(PlatformDependent.normalizedOs());
+    isWindows = PlatformDependent.isWindows();
   }
 
   /**
