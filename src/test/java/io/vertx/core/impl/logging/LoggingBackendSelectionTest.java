@@ -15,12 +15,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -111,8 +111,14 @@ public class LoggingBackendSelectionTest {
         if (url == null) {
           throw new ClassNotFoundException(name);
         }
-        try {
-          byte[] bytes = Files.readAllBytes(FileSystems.getDefault().getPath(url.getPath()));
+        try (InputStream in = url.openStream()) {
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          byte[] buff = new byte[256];
+          int l;
+          while ((l = in.read(buff)) != -1) {
+            baos.write(buff, 0, l);;
+          }
+          byte[] bytes = baos.toByteArray();
           Class<?> clazz = defineClass(name, bytes, 0, bytes.length);
           if (resolve) {
             resolveClass(clazz);

@@ -1435,7 +1435,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
         ok |= cause.getMessage().startsWith(expectedPossiblePrefix);
       }
       if (!ok) {
-        fail("Was expecting e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
+        fail("Was expecting <" + cause.getMessage() + "> e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
       }
       assertTrue(cause.getMessage().endsWith(expectedSuffix));
     }
