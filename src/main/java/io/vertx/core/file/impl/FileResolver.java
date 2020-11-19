@@ -46,9 +46,6 @@ public class FileResolver {
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
   public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
 
-  /**
-   * Predicate for checking validity of cache path.
-   */
   private static final boolean IS_WINDOWS = PlatformDependent.isWindows();
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
