@@ -221,8 +221,6 @@
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <additionalClasspathElements>
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
-              <additionalClasspathElement>${basedir}/src/test/resources/webroot2.jar</additionalClasspathElement>
-              <additionalClasspathElement>${basedir}/src/test/resources/webroot5.zip</additionalClasspathElement>
             </additionalClasspathElements>
             <systemPropertyVariables>
               <!--<javax.net.debug>ssl</javax.net.debug>-->

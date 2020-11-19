@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -53,8 +52,6 @@ public class FileResolver {
   private static final boolean IS_WINDOWS = PlatformDependent.isWindows();
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
-  private static final String JAR_URL_SEP = "!/";
-  private static final Pattern JAR_URL_SEP_PATTERN = Pattern.compile(JAR_URL_SEP);
 
   private final File cwd;
   private final boolean enableCaching;
@@ -114,9 +111,6 @@ public class FileResolver {
         }
         // Look for file on classpath
         ClassLoader cl = getClassLoader();
-        if (NON_UNIX_FILE_SEP) {
-          fileName = fileName.replace(FILE_SEP, "/");
-        }
 
         //https://github.com/eclipse/vert.x/issues/2126
         //Cache all elements in the parent directory if it exists
@@ -133,6 +127,9 @@ public class FileResolver {
           }
         }
 
+        if (NON_UNIX_FILE_SEP) {
+          fileName = fileName.replace(FILE_SEP, "/");
+        }
         URL url = getValidClassLoaderResource(cl, fileName);
         if (url != null) {
           return unpackUrlResource(url, fileName, cl, false);
@@ -270,26 +267,17 @@ public class FileResolver {
         zip = new ZipFile(file);
       }
 
-      String inJarPath = path.substring(idx1 + 6);
-      String[] parts = JAR_URL_SEP_PATTERN.split(inJarPath);
-      StringBuilder prefixBuilder = new StringBuilder();
-      for (int i = 0; i < parts.length - 1; i++) {
-        prefixBuilder.append(parts[i]).append("/");
-      }
-      String prefix = prefixBuilder.toString();
-
       Enumeration<? extends ZipEntry> entries = zip.entries();
       while (entries.hasMoreElements()) {
         ZipEntry entry = entries.nextElement();
         String name = entry.getName();
-        if (name.startsWith(prefix.isEmpty() ? fileName : prefix + fileName)) {
-          String p = prefix.isEmpty() ? name : name.substring(prefix.length());
+        if (name.startsWith(fileName)) {
           if (name.endsWith("/")) {
             // Directory
-            cache.cacheDir(p);
+            cache.cacheDir(name);
           } else {
             try (InputStream is = zip.getInputStream(entry)) {
-              cache.cacheFile(p, is, !enableCaching);
+              cache.cacheFile(name, is, !enableCaching);
             }
           }
 

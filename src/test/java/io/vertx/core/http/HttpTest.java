@@ -20,6 +20,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.Pump;
@@ -2075,13 +2076,13 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testSendOpenRangeFileFromClasspath() {
     server.requestHandler(res -> {
-      res.response().sendFile("webroot/somefile.html", 6);
+      res.response().sendFile("hosts_config.txt", 13);
     }).listen(testAddress, onSuccess(res -> {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         client.request(requestOptions)
           .compose(HttpClientRequest::send)
           .compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
-          assertTrue(body.toString().startsWith("<body>blah</body></html>"));
+          assertTrue(body.toString().startsWith("server.net"));
           testComplete();
         }));
       }));
@@ -2092,12 +2093,12 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testSendRangeFileFromClasspath() {
     server.requestHandler(res -> {
-      res.response().sendFile("webroot/somefile.html", 6, 6);
+      res.response().sendFile("hosts_config.txt", 13, 10);
     }).listen(testAddress, onSuccess(res -> {
       client.request(requestOptions)
         .compose(HttpClientRequest::send)
         .compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
-        assertEquals("<body>", body.toString());
+        assertEquals("server.net", body.toString());
         testComplete();
       }));
     }));
@@ -2330,9 +2331,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testRequestTimeoutCanceledWhenRequestHasAnOtherError() {
+    Assume.assumeFalse(Utils.isWindows());
     AtomicReference<Throwable> exception = new AtomicReference<>();
     // There is no server running, should fail to connect
-    client.request(new RequestOptions().setTimeout(800))
+    client.request(new RequestOptions().setPort(5000).setTimeout(800))
       .onComplete(onFailure(exception::set));
 
     vertx.setTimer(1500, id -> {
@@ -4821,9 +4823,8 @@ public abstract class HttpTest extends HttpTestBase {
       .setMaxPoolSize(1)
       .setKeepAliveTimeout(10)
     );
-    client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(resp -> {
+    client.request(requestOptions, onSuccess(req -> {
+      req.send(onSuccess(resp -> {
         resp.endHandler(v1 -> {
           AtomicBoolean closed = new AtomicBoolean();
           resp.request().connection().closeHandler(v2 -> {
@@ -4835,6 +4836,7 @@ public abstract class HttpTest extends HttpTestBase {
           });
         });
       }));
+    }));
     await();
   }
 

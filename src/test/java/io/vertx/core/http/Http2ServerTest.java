@@ -54,6 +54,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.HttpUtils;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.streams.ReadStream;
@@ -61,6 +62,7 @@ import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Trust;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -1903,6 +1905,9 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testClientSendGoAwayInternalError() throws Exception {
+    // On windows the client will close the channel immediately (since it's an error)
+    // and the server might see the channel inactive without receiving the close frame before
+    Assume.assumeFalse(Utils.isWindows());
     Promise<Void> abc = Promise.promise();
     Context ctx = vertx.getOrCreateContext();
     Handler<HttpServerRequest> requestHandler = req -> {
