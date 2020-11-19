@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,11 +11,14 @@
 
 package io.vertx.core.eventbus;
 
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -298,6 +301,54 @@ public class EventBusInterceptorTest extends VertxTestBase {
       testComplete();
     });
     eb.send("some-address", "armadillo");
+    await();
+  }
+
+  @Test
+  public void testInboundInterceptorContextOnSend() {
+    testInboundInterceptorContext(false, false);
+  }
+
+  @Test
+  public void testInboundInterceptorContextOnReply() {
+    testInboundInterceptorContext(true, false);
+  }
+
+  @Test
+  public void testInboundInterceptorContextOnReplyFailure() {
+    testInboundInterceptorContext(true, true);
+  }
+
+  private void testInboundInterceptorContext(boolean reply, boolean failure) {
+    waitFor(reply ? 2:1);
+    AtomicReference<Context> msgCtx = new AtomicReference<>();
+    AtomicReference<Context> replyCtx = new AtomicReference<>();
+    eb.addInboundInterceptor(dc -> {
+      if ("bar".equals(dc.body())) {
+        msgCtx.set(Vertx.currentContext());
+      } else {
+        replyCtx.set(Vertx.currentContext());
+      }
+      dc.next();
+    });
+    eb.consumer("foo", msg -> {
+      assertSame(msgCtx.get(), Vertx.currentContext());
+      if (failure) {
+        msg.fail(42, "fail");
+      } else if (reply) {
+        msg.reply("baz");
+      }
+      complete();
+    });
+    if (reply) {
+      eb.request("foo", "bar", ar -> {
+        assertEquals(failure, ar.failed());
+        assertSame(replyCtx.get(), Vertx.currentContext());
+        complete();
+      });
+    } else {
+      eb.send("foo", "bar");
+    }
     await();
   }
 

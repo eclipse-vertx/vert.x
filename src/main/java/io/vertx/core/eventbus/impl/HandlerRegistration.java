@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -10,11 +10,7 @@
  */
 package io.vertx.core.eventbus.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.ContextInternal;
@@ -105,7 +101,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   void dispatch(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
-    deliveryCtx.dispatch();
+    context.dispatch(deliveryCtx::dispatch);
   }
 
   void discard(Message<T> msg) {
