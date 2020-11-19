@@ -29,6 +29,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents a server-side HTTP request.
@@ -203,6 +204,19 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   @Nullable
   default String getParam(String paramName) {
     return params().get(paramName);
+  }
+
+  /**
+   * Return the first param value with the specified name or {@code defaultValue} when the query param is not present
+   *
+   * @param paramName    the param name
+   * @param defaultValue the default value, must be non-null
+   * @return the param value or {@code defaultValue} when not present
+   */
+  default String getParam(String paramName, String defaultValue) {
+    Objects.requireNonNull(defaultValue, "defaultValue");
+    final String paramValue = params().get(paramName);
+    return paramValue != null ? paramValue : defaultValue;
   }
 
   /**
