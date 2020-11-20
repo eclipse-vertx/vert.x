@@ -409,19 +409,12 @@ public class ClusteredEventBus extends EventBusImpl {
 
   private void removeSub(String subName, ClusterNodeInfo node, Handler<AsyncResult<Void>> completionHandler) {
     subs.remove(subName, node, ar -> {
-      if (!ar.succeeded()) {
-        log.error("Failed to remove sub", ar.cause());
-      } else {
-        if (ar.result()) {
-          if (completionHandler != null) {
-            completionHandler.handle(Future.succeededFuture());
-          }
+      if (completionHandler != null) {
+        if (ar.succeeded()) {
+          completionHandler.handle(Future.succeededFuture());
         } else {
-          if (completionHandler != null) {
-            completionHandler.handle(Future.failedFuture("sub not found"));
-          }
+          completionHandler.handle(Future.failedFuture(new VertxException("Failed to remove sub", ar.cause())));
         }
-
       }
     });
   }
