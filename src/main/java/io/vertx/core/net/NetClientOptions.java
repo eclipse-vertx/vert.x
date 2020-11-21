@@ -352,6 +352,11 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setLocalPort(int localPort) {
+    return (NetClientOptions) super.setLocalPort(localPort);
+  }
+
+  @Override
   public NetClientOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
     return (NetClientOptions) super.setEnabledSecureTransportProtocols(enabledSecureTransportProtocols);
   }

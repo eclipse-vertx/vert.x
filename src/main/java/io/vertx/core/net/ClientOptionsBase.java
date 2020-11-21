@@ -13,9 +13,9 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -41,11 +41,17 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public static final String DEFAULT_METRICS_NAME = "";
 
+  /**
+   * The default value of local port is 0, which will let the system pick up an ephemeral port
+   */
+  public static final int DEFAULT_LOCAL_PORT = 0;
+
   private int connectTimeout;
   private boolean trustAll;
   private String metricsName;
   private ProxyOptions proxyOptions;
   private String localAddress;
+  private int localPort;
 
   /**
    * Default constructor
@@ -67,6 +73,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.metricsName = other.metricsName;
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.localAddress = other.localAddress;
+    this.localPort = other.localPort;
   }
 
   /**
@@ -95,6 +102,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
     this.connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     this.trustAll = DEFAULT_TRUST_ALL;
     this.metricsName = DEFAULT_METRICS_NAME;
+    this.localPort = DEFAULT_LOCAL_PORT;
     this.proxyOptions = null;
     this.localAddress = null;
   }
@@ -194,6 +202,26 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public ClientOptionsBase setLocalAddress(String localAddress) {
     this.localAddress = localAddress;
+    return this;
+  }
+
+  /**
+   * @return the local port to bind for network connections.
+   */
+  public int getLocalPort() {
+    return localPort;
+  }
+
+  /**
+   * Set the local port to bind for network connections. When the local port is 0,
+   * then system will automatically pick ups an ephemeral port.
+   *
+   * @param localPort the local port
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setLocalPort(int localPort) {
+    Arguments.require(localPort >= 0, "localPort must be >= 0");
+    this.localPort = localPort;
     return this;
   }
 

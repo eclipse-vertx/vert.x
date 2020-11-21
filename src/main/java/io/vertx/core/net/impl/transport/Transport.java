@@ -232,7 +232,9 @@ public class Transport {
       bootstrap.option(ChannelOption.SO_KEEPALIVE, options.isTcpKeepAlive());
     }
     if (options.getLocalAddress() != null) {
-      bootstrap.localAddress(options.getLocalAddress(), 0);
+      bootstrap.localAddress(options.getLocalAddress(), options.getLocalPort());
+    } else {
+      bootstrap.localAddress(options.getLocalPort());
     }
     if (options.getSendBufferSize() != -1) {
       bootstrap.option(ChannelOption.SO_SNDBUF, options.getSendBufferSize());

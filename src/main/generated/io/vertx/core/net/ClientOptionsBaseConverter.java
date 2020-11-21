@@ -26,6 +26,11 @@ public class ClientOptionsBaseConverter {
             obj.setLocalAddress((String)member.getValue());
           }
           break;
+        case "localPort":
+          if (member.getValue() instanceof Number) {
+            obj.setLocalPort(((Number)member.getValue()).intValue());
+          }
+          break;
         case "metricsName":
           if (member.getValue() instanceof String) {
             obj.setMetricsName((String)member.getValue());
@@ -54,6 +59,7 @@ public class ClientOptionsBaseConverter {
     if (obj.getLocalAddress() != null) {
       json.put("localAddress", obj.getLocalAddress());
     }
+    json.put("localPort", obj.getLocalPort());
     if (obj.getMetricsName() != null) {
       json.put("metricsName", obj.getMetricsName());
     }

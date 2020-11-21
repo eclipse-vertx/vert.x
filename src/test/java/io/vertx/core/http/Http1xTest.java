@@ -252,6 +252,10 @@ public class Http1xTest extends HttpTest {
 
     assertEquals(null, options.getLocalAddress());
 
+    assertEquals(ClientOptionsBase.DEFAULT_LOCAL_PORT, options.getLocalPort());
+    assertIllegalArgumentException(() -> options.setLocalPort(-1));
+    assertEquals(options, options.setLocalPort(54321));
+    assertEquals(54321, options.getLocalPort());
 
     assertEquals(false,options.isSendUnmaskedFrames());
     assertEquals(options,options.setSendUnmaskedFrames(true));
@@ -461,6 +465,7 @@ public class Http1xTest extends HttpTest {
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     boolean sendUnmaskedFrame = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
+    int localPort = TestUtils.randomPositiveInt();
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
 
     options.setSendBufferSize(sendBufferSize);
@@ -499,6 +504,7 @@ public class Http1xTest extends HttpTest {
     options.setAlpnVersions(alpnVersions);
     options.setHttp2ClearTextUpgrade(h2cUpgrade);
     options.setLocalAddress(localAddress);
+    options.setLocalPort(localPort);
     options.setSendUnmaskedFrames(sendUnmaskedFrame);
     options.setDecoderInitialBufferSize(decoderInitialBufferSize);
     options.setKeepAliveTimeout(keepAliveTimeout);
@@ -557,6 +563,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(def.getAlpnVersions(), json.getAlpnVersions());
     assertEquals(def.isHttp2ClearTextUpgrade(), json.isHttp2ClearTextUpgrade());
     assertEquals(def.getLocalAddress(), json.getLocalAddress());
+    assertEquals(def.getLocalPort(), json.getLocalPort());
     assertEquals(def.getDecoderInitialBufferSize(), json.getDecoderInitialBufferSize());
     assertEquals(def.getKeepAliveTimeout(), json.getKeepAliveTimeout());
     assertEquals(def.getHttp2KeepAliveTimeout(), json.getHttp2KeepAliveTimeout());
@@ -609,6 +616,7 @@ public class Http1xTest extends HttpTest {
     boolean h2cUpgrade = rand.nextBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     String localAddress = TestUtils.randomAlphaString(10);
+    int localPort = TestUtils.randomPositiveInt();
     int decoderInitialBufferSize = TestUtils.randomPositiveInt();
     int keepAliveTimeout = TestUtils.randomPositiveInt();
     int http2KeepAliveTimeout = TestUtils.randomPositiveInt();
@@ -656,6 +664,7 @@ public class Http1xTest extends HttpTest {
       .put("http2ClearTextUpgrade", h2cUpgrade)
       .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
       .put("localAddress", localAddress)
+      .put("localPort", localPort)
       .put("decoderInitialBufferSize", decoderInitialBufferSize)
       .put("keepAliveTimeout", keepAliveTimeout)
       .put("http2KeepAliveTimeout", http2KeepAliveTimeout);
@@ -712,6 +721,7 @@ public class Http1xTest extends HttpTest {
     assertEquals(alpnVersions, options.getAlpnVersions());
     assertEquals(h2cUpgrade, options.isHttp2ClearTextUpgrade());
     assertEquals(localAddress, options.getLocalAddress());
+    assertEquals(localPort, options.getLocalPort());
     assertEquals(decoderInitialBufferSize, options.getDecoderInitialBufferSize());
 
     // Test other keystore/truststore types
@@ -5010,9 +5020,51 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     client.connectionHandler(conn -> conn.closeHandler(v -> complete()));
     client.request(requestOptions).compose(HttpClientRequest::send)
-      .onComplete(onFailure(err -> {
-        complete();
-    }));
+      .onComplete(onFailure(err -> complete()));
+    await();
+  }
+
+  @Test
+  public void testHttpClientLocalPort() throws Exception {
+    int expectedLocalPort = 54321;
+    testHttpClientLocalAddress(
+      createBaseClientOptions().setLocalPort(expectedLocalPort),
+      actualAddress -> assertEquals(expectedLocalPort, actualAddress.port()));
+  }
+
+  @Test
+  public void testHttpClientLocalPortEphemeral() throws Exception {
+    testHttpClientLocalAddress(
+      createBaseClientOptions().setLocalPort(0),
+      actualAddress -> assertTrue(actualAddress.port() > 0));
+  }
+
+  @Test
+  public void testHttpClientLocalAddressWithLocalPort() throws Exception {
+    final String expectedAddress = TestUtils.loopbackAddress();
+    int expectedPort = 54321;
+    testHttpClientLocalAddress(
+      createBaseClientOptions().setLocalAddress(expectedAddress).setLocalPort(expectedPort),
+      actualAddress -> {
+        assertEquals(expectedAddress, actualAddress.hostAddress());
+        assertEquals(expectedPort, actualAddress.port());
+      });
+  }
+
+  private void testHttpClientLocalAddress(HttpClientOptions options,
+                                          Consumer<SocketAddress> actualClientAddressAssertion) throws Exception {
+    server.requestHandler(req -> {
+      actualClientAddressAssertion.accept(req.connection().remoteAddress());
+      req.response().end();
+    });
+
+    startServer(testAddress);
+
+    client.close();
+    client = vertx.createHttpClient(options);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .onComplete(onSuccess(res -> testComplete()));
     await();
   }
 }

@@ -147,6 +147,11 @@ public class NetTest extends VertxTestBase {
     assertEquals(options, options.setReuseAddress(false));
     assertFalse(options.isReuseAddress());
 
+    assertEquals(ClientOptionsBase.DEFAULT_LOCAL_PORT, options.getLocalPort());
+    assertIllegalArgumentException(() -> options.setLocalPort(-1));
+    assertEquals(options, options.setLocalPort(54321));
+    assertEquals(54321, options.getLocalPort());
+
     assertEquals(NetworkOptions.DEFAULT_TRAFFIC_CLASS, options.getTrafficClass());
     rand = 23;
     assertEquals(options, options.setTrafficClass(rand));
@@ -383,6 +388,7 @@ public class NetTest extends VertxTestBase {
     boolean useAlpn = TestUtils.randomBoolean();
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     long sslHandshakeTimeout = TestUtils.randomPositiveLong();
+    int localPort = TestUtils.randomPositiveInt();
 
     SSLEngineOptions sslEngine = TestUtils.randomBoolean() ? new JdkSSLEngineOptions() : new OpenSSLEngineOptions();
     options.setSendBufferSize(sendBufferSize);
@@ -407,6 +413,7 @@ public class NetTest extends VertxTestBase {
     options.setSslEngineOptions(sslEngine);
     options.setHostnameVerificationAlgorithm(hostnameVerificationAlgorithm);
     options.setSslHandshakeTimeout(sslHandshakeTimeout);
+    options.setLocalPort(localPort);
 
     NetClientOptions copy = new NetClientOptions(options);
     assertEquals(options.toJson(), copy.toJson());
@@ -430,6 +437,7 @@ public class NetTest extends VertxTestBase {
     assertEquals(def.getSslEngineOptions(), json.getSslEngineOptions());
     assertEquals(def.getHostnameVerificationAlgorithm(), json.getHostnameVerificationAlgorithm());
     assertEquals(def.getSslHandshakeTimeout(), json.getSslHandshakeTimeout());
+    assertEquals(def.getLocalPort(), json.getLocalPort());
   }
 
   @Test
@@ -465,11 +473,13 @@ public class NetTest extends VertxTestBase {
     String sslEngine = TestUtils.randomBoolean() ? "jdkSslEngineOptions" : "openSslEngineOptions";
     boolean openSslSessionCacheEnabled = rand.nextBoolean();
     long sslHandshakeTimeout = TestUtils.randomPositiveLong();
+    int localPort = TestUtils.randomPositiveInt();
 
     JsonObject json = new JsonObject();
     json.put("sendBufferSize", sendBufferSize)
         .put("receiveBufferSize", receiverBufferSize)
         .put("reuseAddress", reuseAddress)
+        .put("localPort", localPort)
         .put("trafficClass", trafficClass)
         .put("tcpNoDelay", tcpNoDelay)
         .put("tcpKeepAlive", tcpKeepAlive)
@@ -3120,6 +3130,49 @@ public class NetTest extends VertxTestBase {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testClientLocalPort() throws Exception {
+    int expectedLocalPort = 54321;
+    testClientLocalAddress(
+      new NetClientOptions().setLocalPort(expectedLocalPort),
+      actualAddress -> assertEquals(expectedLocalPort, actualAddress.port()));
+  }
+
+  @Test
+  public void testHttpClientLocalPortEphemeral() throws Exception {
+    testClientLocalAddress(
+      new NetClientOptions().setLocalPort(0),
+      actualAddress -> assertTrue(actualAddress.port() > 0));
+  }
+
+
+  @Test
+  public void testHttpClientLocalAddressWithLocalPort() throws Exception {
+    int expectedPort = 54321;
+    final String expectedAddress = TestUtils.loopbackAddress();
+
+    testClientLocalAddress(
+      new NetClientOptions().setLocalAddress(expectedAddress).setLocalPort(expectedPort),
+      actualAddress -> {
+        assertEquals(expectedAddress, actualAddress.hostAddress());
+        assertEquals(expectedPort, actualAddress.port());
+      });
+  }
+
+  private void testClientLocalAddress(NetClientOptions options,
+                                      Consumer<SocketAddress> actualClientAddressAssertion) throws Exception {
+    server.connectHandler(sock -> {
+      actualClientAddressAssertion.accept(sock.remoteAddress());
+      sock.close();
+    });
+
+    startServer(testAddress);
+
+    client.close();
+    client = vertx.createNetClient(options);
+    client.connect(testAddress, onSuccess(socket -> socket.closeHandler(v -> testComplete())));
   }
 
   @Test

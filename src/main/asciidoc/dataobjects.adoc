@@ -149,6 +149,10 @@ Set the idle timeout unit. If not specified, default is seconds.
 Set the local interface to bind for network connections. When the local address is null,
  it will pick any local address, the default local address is null.
 +++
+|[[localPort]]`@localPort`|`Number (int)`|+++
+Set the local port to bind for network connections. When the local port is 0,
+ then system will automatically pick ups an ephemeral port.
++++
 |[[logActivity]]`@logActivity`|`Boolean`|+++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
 +++
@@ -715,6 +719,10 @@ Set the keep alive timeout for HTTP/1.x, in seconds.
 Set the local interface to bind for network connections. When the local address is null,
  it will pick any local address, the default local address is null.
 +++
+|[[localPort]]`@localPort`|`Number (int)`|+++
+Set the local port to bind for network connections. When the local port is 0,
+ then system will automatically pick ups an ephemeral port.
++++
 |[[logActivity]]`@logActivity`|`Boolean`|+++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
 +++
@@ -1168,6 +1176,10 @@ Set the idle timeout unit. If not specified, default is seconds.
 |[[localAddress]]`@localAddress`|`String`|+++
 Set the local interface to bind for network connections. When the local address is null,
  it will pick any local address, the default local address is null.
++++
+|[[localPort]]`@localPort`|`Number (int)`|+++
+Set the local port to bind for network connections. When the local port is 0,
+ then system will automatically pick ups an ephemeral port.
 +++
 |[[logActivity]]`@logActivity`|`Boolean`|+++
 Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
