@@ -14,17 +14,13 @@ package io.vertx.it;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.logging.SLF4JLogDelegate;
-import io.vertx.core.logging.SLF4JLogDelegateFactory;
 import io.vertx.core.spi.logging.LogDelegate;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Marker;
 import org.slf4j.impl.SimpleLogger;
 import org.slf4j.spi.LocationAwareLogger;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
@@ -40,18 +36,6 @@ import static org.junit.Assert.*;
  */
 @SuppressWarnings("deprecation")
 public class SLF4JLogDelegateTest {
-
-
-  @BeforeClass
-  public static void initialize() throws IOException {
-    System.setProperty("vertx.logger-delegate-factory-class-name", SLF4JLogDelegateFactory.class.getName());
-    LoggerFactory.initialise();
-  }
-
-  @AfterClass
-  public static void terminate() {
-    System.clearProperty("vertx.logger-delegate-factory-class-name");
-  }
 
   @Test
   public void testDelegateUnwrap() {

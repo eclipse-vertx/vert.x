@@ -60,6 +60,9 @@ public class LoggerFactory {
     try {
       Class<?> clazz = Class.forName(shortName ? "io.vertx.core.logging." + name + "LogDelegateFactory" : name, true, loader);
       LogDelegateFactory factory = (LogDelegateFactory) clazz.newInstance();
+      if (!factory.isAvailable()) {
+        return false;
+      }
       factory.createDelegate(loggerName).debug("Using " + factory.getClass().getName());
       delegateFactory = factory;
       return true;

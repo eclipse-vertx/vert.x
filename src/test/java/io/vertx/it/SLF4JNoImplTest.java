@@ -14,9 +14,12 @@ package io.vertx.it;
 import io.vertx.core.logging.JULLogDelegate;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import io.vertx.core.logging.SLF4JLogDelegateFactory;
 import io.vertx.core.spi.logging.LogDelegate;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -27,8 +30,18 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("deprecation")
 public class SLF4JNoImplTest {
 
+  private static Object getClass(String name) {
+    try {
+      return Thread.currentThread().getContextClassLoader().loadClass(name);
+    } catch (Throwable e) {
+      return null;
+    }
+  }
+
   @Test
   public void testImplementation() {
+    assertNotNull(SLF4JLogDelegateFactory.class);
+    assertNull(getClass("org.apache.logging.log4j.message.Message"));
     Logger logger = LoggerFactory.getLogger("my-slf4j-logger");
     LogDelegate delegate = logger.getDelegate();
     assertTrue(delegate instanceof JULLogDelegate);

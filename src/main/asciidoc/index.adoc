@@ -1141,6 +1141,15 @@ Set the `vertx.logger-delegate-factory-class-name` system property to:
 * `io.vertx.core.logging.Log4j2LogDelegateFactory` for Log4J2 or,
 * `io.vertx.core.logging.JULLogDelegateFactory` for JDK logging
 
+=== Automatic configuration
+
+When no `vertx.logger-delegate-factory-class-name` system property is set, Vert.x will try to find
+the most appropriate logger:
+
+* use SLF4J when available on the classpath with an actual implementation (i.e. `LoggerFactory.getILoggerFactory()` is not an instance of `NOPLoggerFactory`)
+* otherwise use Log4j2 when available on the classpath
+* otherwise use JUL
+
 === Configuring JUL logging
 
 A JUL logging configuration file can be specified in the normal JUL way, by providing a system property named `java.util.logging.config.file` with the value being your configuration file.

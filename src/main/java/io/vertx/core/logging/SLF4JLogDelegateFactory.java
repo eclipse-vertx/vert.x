@@ -15,6 +15,7 @@ import io.vertx.core.spi.logging.LogDelegate;
 import io.vertx.core.spi.logging.LogDelegateFactory;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
+import org.slf4j.helpers.NOPLoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -35,6 +36,13 @@ public class SLF4JLogDelegateFactory implements LogDelegateFactory {
     } finally {
       System.setErr(err);
     }
+  }
+
+  @Override
+  public boolean isAvailable() {
+    // SLF might be available on the classpath but without configuration
+    ILoggerFactory fact = LoggerFactory.getILoggerFactory();
+    return !(fact instanceof NOPLoggerFactory);
   }
 
   public LogDelegate createDelegate(final String clazz) {

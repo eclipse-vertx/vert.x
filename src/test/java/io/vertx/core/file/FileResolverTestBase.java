@@ -56,7 +56,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   public void setUp() throws Exception {
     super.setUp();
     testCL = Thread.currentThread().getContextClassLoader();
-    File baseDir = new File(new File(new File("src"), "test"), "fileresolver");
+    File baseDir = new File(new File(new File(new File("src"), "test"), "classpath"), "fileresolver");
     assertTrue(baseDir.exists() && baseDir.isDirectory());
     ClassLoader resourcesLoader = resourcesLoader(baseDir);
     Thread.currentThread().setContextClassLoader(resourcesLoader);

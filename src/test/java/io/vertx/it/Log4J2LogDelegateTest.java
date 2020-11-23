@@ -11,7 +11,6 @@
 
 package io.vertx.it;
 
-import io.vertx.core.logging.Log4j2LogDelegateFactory;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.spi.logging.LogDelegate;
@@ -35,15 +34,11 @@ public class Log4J2LogDelegateTest {
 
   @BeforeClass
   public static void initialize() throws IOException {
-    // Clear value.
-    System.setProperty("vertx.logger-delegate-factory-class-name", Log4j2LogDelegateFactory.class.getName());
-    LoggerFactory.initialise();
     recording = new StreamRecording();
   }
 
   @AfterClass
   public static void terminate() {
-    System.clearProperty("vertx.logger-delegate-factory-class-name");
     recording.terminate();
   }
 

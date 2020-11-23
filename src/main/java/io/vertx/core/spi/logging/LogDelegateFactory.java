@@ -17,5 +17,11 @@ package io.vertx.core.spi.logging;
  * @author <a href="kenny.macleod@kizoom.com">Kenny MacLeod</a>
  */
 public interface LogDelegateFactory {
+
+  /**
+   * @return whether the factory is available
+   */
+  boolean isAvailable();
+
   LogDelegate createDelegate(String name);
 }
