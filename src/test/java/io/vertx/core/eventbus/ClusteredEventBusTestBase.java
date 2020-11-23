@@ -23,6 +23,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -202,6 +205,32 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
       }
       sc.next();
     }).send("whatever", content, new DeliveryOptions().setCodecName(codec.name()));
+    await();
+  }
+
+  @Test
+  public void testClusteredUnregistration() {
+    startNodes(2);
+    MessageConsumer<Object> consumer = vertices[0].eventBus().consumer("foo", msg -> msg.reply(msg.body()));
+    consumer.completionHandler(onSuccess(reg -> {
+      vertices[0].eventBus().request("foo", "echo", onSuccess(reply1 -> {
+        assertEquals("echo", reply1.body());
+        vertices[1].eventBus().request("foo", "echo", onSuccess(reply2 -> {
+          assertEquals("echo", reply1.body());
+          consumer.unregister(onSuccess(unreg -> {
+            vertices[1].eventBus().request("foo", "echo", onFailure(fail1 -> {
+              assertThat(fail1, is(instanceOf(ReplyException.class)));
+              assertEquals(ReplyFailure.NO_HANDLERS, ((ReplyException) fail1).failureType());
+              vertices[0].eventBus().request("foo", "echo", onFailure(fail2 -> {
+                assertThat(fail2, is(instanceOf(ReplyException.class)));
+                assertEquals(ReplyFailure.NO_HANDLERS, ((ReplyException) fail2).failureType());
+                testComplete();
+              }));
+            }));
+          }));
+        }));
+      }));
+    }));
     await();
   }
 }
