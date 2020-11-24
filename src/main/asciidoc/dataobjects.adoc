@@ -1101,6 +1101,56 @@ Set the password for the key store
 |[[path]]`@path`|`String`|+++
 Set the path to the key store
 +++
+|[[value]]`@value`|`Buffer`|+++
+Set the key store as a buffer
++++
+|===
+
+[[KeyStoreOptions]]
+== KeyStoreOptions
+
+++++
+ Key or trust store options configuring private key and/or certificates based on <code>KeyStore</code>.
+
+ <ul>
+   <li>when used as a key store, it should point to a store containing a private key and its certificate.</li>
+   <li>when used as a trust store, it should point to a store containing a list of trusted certificates.</li>
+ </ul>
+
+ <p> The store can either be loaded by Vert.x from the filesystem:
+
+ <pre>
+ HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ options.setKeyStore(new KeyStoreOptions().setType("JKS").setPath("/mykeystore.jks").setPassword("foo"));
+ </pre>
+
+ Or directly provided as a buffer:
+
+ <pre>
+ Buffer store = vertx.fileSystem().readFileBlocking("/mykeystore.jks");
+ options.setKeyStore(new JKSOptions().setType("JKS").setValue(store).setPassword("foo"));
+ </pre>
+
+ <p> You can also use specific subclasses link or link that will set
+ the link for you:
+
+ <pre>
+ HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ options.setKeyStore(new JksOptions().setPath("/mykeystore.jks").setPassword("foo"));
+ </pre>
+++++
+'''
+
+[cols=">25%,25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[password]]`@password`|`String`|+++
+Set the password for the key store
++++
+|[[path]]`@path`|`String`|+++
+Set the path to the key store
++++
 |[[type]]`@type`|`String`|-
 |[[value]]`@value`|`Buffer`|+++
 Set the key store as a buffer
@@ -1666,7 +1716,6 @@ Set the password for the key store
 |[[path]]`@path`|`String`|+++
 Set the path to the key store
 +++
-|[[type]]`@type`|`String`|-
 |[[value]]`@value`|`Buffer`|+++
 Set the key store as a buffer
 +++

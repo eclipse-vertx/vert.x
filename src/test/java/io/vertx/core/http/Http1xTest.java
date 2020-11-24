@@ -515,12 +515,17 @@ public class Http1xTest extends HttpTest {
     assertNotSame(options.getTrustOptions(), copy.getTrustOptions());
     if (copy.getTrustOptions() instanceof PemTrustOptions) {
       assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
-    } else {
-      KeyStoreOptions a = (KeyStoreOptions) options.getTrustOptions();
-      KeyStoreOptions b = (KeyStoreOptions) copy.getTrustOptions();
+    } else if (copy.getTrustOptions() instanceof JksOptions) {
+      JksOptions a = (JksOptions) options.getTrustOptions();
+      JksOptions b = (JksOptions) copy.getTrustOptions();
       assertEquals(a.getPath(), b.getPath());
       assertEquals(a.getPassword(), b.getPassword());
-      assertEquals(a.getType(), b.getType());
+      assertEquals(a.getValue(), b.getValue());
+    } else if (copy.getTrustOptions() instanceof PfxOptions) {
+      PfxOptions a = (PfxOptions) options.getTrustOptions();
+      PfxOptions b = (PfxOptions) copy.getTrustOptions();
+      assertEquals(a.getPath(), b.getPath());
+      assertEquals(a.getPassword(), b.getPassword());
       assertEquals(a.getValue(), b.getValue());
     }
   }
@@ -818,12 +823,17 @@ public class Http1xTest extends HttpTest {
     assertNotSame(options.getTrustOptions(), copy.getTrustOptions());
     if (copy.getTrustOptions() instanceof PemTrustOptions) {
       assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
-    } else {
-      KeyStoreOptions a = (KeyStoreOptions) options.getTrustOptions();
-      KeyStoreOptions b = (KeyStoreOptions) copy.getTrustOptions();
+    } else if (copy.getTrustOptions() instanceof JksOptions) {
+      JksOptions a = (JksOptions) options.getTrustOptions();
+      JksOptions b = (JksOptions) copy.getTrustOptions();
       assertEquals(a.getPath(), b.getPath());
       assertEquals(a.getPassword(), b.getPassword());
-      assertEquals(a.getType(), b.getType());
+      assertEquals(a.getValue(), b.getValue());
+    } else if (copy.getTrustOptions() instanceof PfxOptions) {
+      PfxOptions a = (PfxOptions) options.getTrustOptions();
+      PfxOptions b = (PfxOptions) copy.getTrustOptions();
+      assertEquals(a.getPath(), b.getPath());
+      assertEquals(a.getPassword(), b.getPassword());
       assertEquals(a.getValue(), b.getValue());
     }
   }

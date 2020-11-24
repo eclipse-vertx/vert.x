@@ -11,8 +11,9 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
 
 /**
  * Key or trust store options configuring private key and/or certificates based on {@code KeyStore}.
@@ -26,14 +27,14 @@ import io.vertx.core.buffer.Buffer;
  *
  * <pre>
  * HttpServerOptions options = HttpServerOptions.httpServerOptions();
- * options.setKeyStore(new KeyStoreOptions().setType("JKS").setPath("/mykeystore.jks").setPassword("foo"));
+ * options.setKeyCertOptions(new KeyStoreOptions().setType("JKS").setPath("/mykeystore.jks").setPassword("foo"));
  * </pre>
  *
  * Or directly provided as a buffer:
  *
  * <pre>
  * Buffer store = vertx.fileSystem().readFileBlocking("/mykeystore.jks");
- * options.setKeyStore(new JKSOptions().setType("JKS").setValue(store).setPassword("foo"));
+ * options.setKeyCertOptions(new KeyStoreOptions().setType("JKS").setValue(store).setPassword("foo"));
  * </pre>
  *
  * <p> You can also use specific subclasses {@link JksOptions} or {@link PfxOptions} that will set
@@ -41,18 +42,14 @@ import io.vertx.core.buffer.Buffer;
  *
  * <pre>
  * HttpServerOptions options = HttpServerOptions.httpServerOptions();
- * options.setKeyStore(new JksOptions().setPath("/mykeystore.jks").setPassword("foo"));
+ * options.setKeyCertOptions(new JksOptions().setPath("/mykeystore.jks").setPassword("foo"));
  * </pre>
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class KeyStoreOptions implements KeyCertOptions, TrustOptions {
-
-  private String type;
-  private String password;
-  private String path;
-  private Buffer value;
+@DataObject(generateConverter = true)
+public class KeyStoreOptions extends KeyStoreOptionsBase {
 
   /**
    * Default constructor
@@ -67,84 +64,81 @@ public class KeyStoreOptions implements KeyCertOptions, TrustOptions {
    * @param other  the options to copy
    */
   public KeyStoreOptions(KeyStoreOptions other) {
-    super();
-    this.type = other.getType();
-    this.password = other.getPassword();
-    this.path = other.getPath();
-    this.value = other.getValue();
+    super(other);
   }
 
-  @GenIgnore
+  /**
+   * Create options from JSON
+   *
+   * @param json  the JSON
+   */
+  public KeyStoreOptions(JsonObject json) {
+    this();
+    KeyStoreOptionsConverter.fromJson(json, this);
+  }
+
+  /**
+   * @return the store provider
+   */
+  public String getProvider() {
+    return super.getProvider();
+  }
+
+  /**
+   * Set the store provider.
+   *
+   * @param provider the type
+   * @return a reference to this, so the API can be used fluently
+   */
+  public KeyStoreOptions setProvider(String provider) {
+    return (KeyStoreOptions) super.setProvider(provider);
+  }
+
+  /**
+   * @return the store type
+   */
   public String getType() {
-    return type;
+    return super.getType();
   }
 
-  @GenIgnore
+  /**
+   * Set the store type.
+   *
+   * @param type the type
+   * @return a reference to this, so the API can be used fluently
+   */
   public KeyStoreOptions setType(String type) {
-    this.type = type;
-    return this;
+    return (KeyStoreOptions) super.setType(type);
   }
 
-  /**
-   * @return the password for the key store
-   */
-  public String getPassword() {
-    return password;
-  }
-
-  /**
-   * Set the password for the key store
-   *
-   * @param password  the password
-   * @return a reference to this, so the API can be used fluently
-   */
+  @Override
   public KeyStoreOptions setPassword(String password) {
-    this.password = password;
-    return this;
+    return (KeyStoreOptions) super.setPassword(password);
   }
 
-  /**
-   * Get the path to the ksy store
-   *
-   * @return the path
-   */
-  public String getPath() {
-    return path;
-  }
-
-  /**
-   * Set the path to the key store
-   *
-   * @param path  the path
-   * @return a reference to this, so the API can be used fluently
-   */
+  @Override
   public KeyStoreOptions setPath(String path) {
-    this.path = path;
-    return this;
+    return (KeyStoreOptions) super.setPath(path);
   }
 
-  /**
-   * Get the key store as a buffer
-   *
-   * @return  the key store as a buffer
-   */
-  public Buffer getValue() {
-    return value;
-  }
-
-  /**
-   * Set the key store as a buffer
-   *
-   * @param value  the key store as a buffer
-   * @return a reference to this, so the API can be used fluently
-   */
+  @Override
   public KeyStoreOptions setValue(Buffer value) {
-    this.value = value;
-    return this;
+    return (KeyStoreOptions) super.setValue(value);
   }
 
   @Override
   public KeyStoreOptions copy() {
     return new KeyStoreOptions(this);
+  }
+
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = new JsonObject();
+    KeyStoreOptionsConverter.toJson(this, json);
+    return json;
   }
 }

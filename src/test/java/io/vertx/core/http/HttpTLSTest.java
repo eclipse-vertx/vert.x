@@ -792,6 +792,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testSNICustomTrustManagerFactoryMapper() throws Exception {
     testTLS(Cert.CLIENT_PEM, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, () -> new TrustOptions() {
       @Override
+      public Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception {
+        return null;
+      }
+      @Override
       public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
         return new TrustManagerFactory(new TrustManagerFactorySpi() {
           @Override
@@ -885,7 +889,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Test custom trust manager factory
   public void testCustomTrustManagerFactory() throws Exception {
     testTLS(Cert.NONE, () -> new TrustOptions() {
-
+      @Override
+      public Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception {
+        return null;
+      }
       @Override
       public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
         return new TrustManagerFactory(new TrustManagerFactorySpi() {

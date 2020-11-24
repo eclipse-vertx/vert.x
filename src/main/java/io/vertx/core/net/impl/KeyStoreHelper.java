@@ -15,11 +15,6 @@ import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.KeyStoreOptions;
-import io.vertx.core.net.PemTrustOptions;
-import io.vertx.core.net.PemKeyCertOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
 
 import javax.naming.ldap.LdapName;
@@ -50,6 +45,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -63,58 +59,11 @@ import java.util.stream.Stream;
 public class KeyStoreHelper {
 
   // Dummy password for encrypting pem based stores in memory
-  private static final String DUMMY_PASSWORD = "dummy";
+  public static final String DUMMY_PASSWORD = "dummy";
   private static final String DUMMY_CERT_ALIAS = "cert-";
 
   private static final Pattern BEGIN_PATTERN = Pattern.compile("-----BEGIN ([A-Z ]+)-----");
   private static final Pattern END_PATTERN = Pattern.compile("-----END ([A-Z ]+)-----");
-
-  public static KeyStoreHelper create(VertxInternal vertx, KeyCertOptions options) throws Exception {
-    if (options instanceof KeyStoreOptions) {
-      KeyStoreOptions ksOptions = (KeyStoreOptions) options;
-      Supplier<Buffer> value;
-      if (ksOptions.getPath() != null) {
-        value = () -> vertx.fileSystem().readFileBlocking(vertx.resolveFile(ksOptions.getPath()).getAbsolutePath());
-      } else if (ksOptions.getValue() != null) {
-        value = ksOptions::getValue;
-      } else {
-        return null;
-      }
-      return new KeyStoreHelper(loadKeyStoreOptions(ksOptions.getType(), ksOptions.getPassword(), value), ksOptions.getPassword());
-    } else if (options instanceof PemKeyCertOptions) {
-      PemKeyCertOptions keyCert = (PemKeyCertOptions) options;
-      List<Buffer> keys = new ArrayList<>();
-      for (String keyPath : keyCert.getKeyPaths()) {
-        keys.add(vertx.fileSystem().readFileBlocking(vertx.resolveFile(keyPath).getAbsolutePath()));
-      }
-      keys.addAll(keyCert.getKeyValues());
-      List<Buffer> certs = new ArrayList<>();
-      for (String certPath : keyCert.getCertPaths()) {
-        certs.add(vertx.fileSystem().readFileBlocking(vertx.resolveFile(certPath).getAbsolutePath()));
-      }
-      certs.addAll(keyCert.getCertValues());
-      return new KeyStoreHelper(loadKeyCert(keys, certs), DUMMY_PASSWORD);
-    } else {
-      return null;
-    }
-  }
-
-  public static KeyStoreHelper create(VertxInternal vertx, TrustOptions options) throws Exception {
-    if (options instanceof KeyCertOptions) {
-      return create(vertx, (KeyCertOptions) options);
-    } else if (options instanceof PemTrustOptions) {
-      PemTrustOptions trustOptions = (PemTrustOptions) options;
-      Stream<Buffer> certValues = trustOptions.
-          getCertPaths().
-          stream().
-          map(path -> vertx.resolveFile(path).getAbsolutePath()).
-          map(vertx.fileSystem()::readFileBlocking);
-      certValues = Stream.concat(certValues, trustOptions.getCertValues().stream());
-      return new KeyStoreHelper(loadCA(certValues), null);
-    } else {
-      return null;
-    }
-  }
 
   private final String password;
   private final KeyStore store;
@@ -266,18 +215,16 @@ public class KeyStoreHelper {
     return names;
   }
 
-  private static KeyStore loadKeyStoreOptions(String type, String password, Supplier<Buffer> value) throws Exception {
-    if (type == null) {
-      throw new NullPointerException();
-    }
-    KeyStore ks = KeyStore.getInstance(type);
+  public static KeyStore loadKeyStoreOptions(String type, String provider, String password, Supplier<Buffer> value) throws Exception {
+    Objects.requireNonNull(type);
+    KeyStore ks = provider == null ? KeyStore.getInstance(type) : KeyStore.getInstance(type, provider);
     try (InputStream in = new ByteArrayInputStream(value.get().getBytes())) {
       ks.load(in, password != null ? password.toCharArray() : null);
     }
     return ks;
   }
 
-  private static KeyStore loadKeyCert(List<Buffer> keyValue, List<Buffer> certValue) throws Exception {
+  public static KeyStore loadKeyCert(List<Buffer> keyValue, List<Buffer> certValue) throws Exception {
     if (keyValue.size() < certValue.size()) {
       throw new VertxException("Missing private key");
     } else if (keyValue.size() > certValue.size()) {
@@ -338,7 +285,7 @@ public class KeyStoreHelper {
     }
   }
 
-  private static KeyStore loadCA(Stream<Buffer> certValues) throws Exception {
+  public static KeyStore loadCA(Stream<Buffer> certValues) throws Exception {
     final KeyStore keyStore = createEmptyKeyStore();
     keyStore.load(null, null);
     int count = 0;

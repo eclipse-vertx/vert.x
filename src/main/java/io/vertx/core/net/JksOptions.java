@@ -12,7 +12,6 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
@@ -23,13 +22,14 @@ import io.vertx.core.json.JsonObject;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true)
-public class JksOptions extends KeyStoreOptions {
+public class JksOptions extends KeyStoreOptionsBase {
 
   /**
    * Default constructor
    */
   public JksOptions() {
     super();
+    setType("JKS");
   }
 
   /**
@@ -47,34 +47,30 @@ public class JksOptions extends KeyStoreOptions {
    * @param json  the JSON
    */
   public JksOptions(JsonObject json) {
-    super();
+    this();
     JksOptionsConverter.fromJson(json, this);
   }
 
-  @Override
-  public String getType() {
-    return "JKS";
-  }
-
-  @GenIgnore
-  @Override
-  public JksOptions setType(String type) {
-    throw new UnsupportedOperationException("Cannot change type of a JKS key store");
-  }
-
-  @Override
   public JksOptions setPassword(String password) {
     return (JksOptions) super.setPassword(password);
   }
 
-  @Override
   public JksOptions setPath(String path) {
     return (JksOptions) super.setPath(path);
   }
 
-  @Override
+  /**
+   * Set the key store as a buffer
+   *
+   * @param value  the key store as a buffer
+   * @return a reference to this, so the API can be used fluently
+   */
   public JksOptions setValue(Buffer value) {
     return (JksOptions) super.setValue(value);
+  }
+
+  public JksOptions copy() {
+    return new JksOptions(this);
   }
 
   /**
@@ -86,10 +82,5 @@ public class JksOptions extends KeyStoreOptions {
     JsonObject json = new JsonObject();
     JksOptionsConverter.toJson(this, json);
     return json;
-  }
-
-  @Override
-  public JksOptions copy() {
-    return new JksOptions(this);
   }
 }

@@ -10,7 +10,7 @@
  */
 
 
-package io.vertx.core.net.impl;
+package io.vertx.core.net;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 
@@ -23,6 +23,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Enumeration;
 
+import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
@@ -48,7 +49,7 @@ public class KeyStoreHelperTest extends VertxTestBase {
     PemKeyCertOptions options = new PemKeyCertOptions()
             .addKeyPath("target/test-classes/tls/server-key.pem")
             .addCertPath("target/test-classes/tls/server-cert.pem");
-    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, options);
+    KeyStoreHelper helper = options.getHelper(vertx);
     assertKeyType(helper.store(), RSAPrivateKey.class);
   }
 
@@ -65,7 +66,7 @@ public class KeyStoreHelperTest extends VertxTestBase {
     PemKeyCertOptions options = new PemKeyCertOptions()
             .addKeyPath("target/test-classes/tls/server-key-ec.pem")
             .addCertPath("target/test-classes/tls/server-cert-ec.pem");
-    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, options);
+    KeyStoreHelper helper = options.getHelper(vertx);
     assertKeyType(helper.store(), ECPrivateKey.class);
   }
 
