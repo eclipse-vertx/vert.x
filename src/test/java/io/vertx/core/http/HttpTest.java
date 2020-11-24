@@ -4519,44 +4519,26 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientDecompressionError() throws Exception {
-    waitFor(2);
     server.requestHandler(req -> {
       req.response()
         .putHeader("Content-Encoding", "gzip")
         .end("long response with mismatched encoding causes connection leaks");
     });
     startServer(testAddress);
-    AtomicInteger exceptionCount = new AtomicInteger();
     client.close();
     client = vertx.createHttpClient(createBaseClientOptions().setTryUseCompression(true));
-    client.connectionHandler(conn -> {
-      conn.closeHandler(v -> {
-        complete();
-      });
-    });
     client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .onComplete(ar -> {
-        if (ar.failed()) {
-          complete();
-        } else {
-          HttpClientResponse resp = ar.result();
-          resp.exceptionHandler(err -> {
-            if (exceptionCount.incrementAndGet() == 1) {
-              if (err instanceof Http2Exception) {
-                complete();
-                // Connection is not closed for HTTP/2 only the streams so we need to force it
-                resp.request().connection().close();
-              } else if (err instanceof DecompressionException) {
-                complete();
-              }
-            }
-          });
-        }
-      });
-
+      .compose(req -> req.send().compose(HttpClientResponse::body))
+      .onFailure(err -> {
+      if (err instanceof Http2Exception) {
+        testComplete();
+      } else if (err instanceof DecompressionException) {
+        testComplete();
+      } else {
+        fail();
+      }
+    });
     await();
-
   }
 
   @Test
