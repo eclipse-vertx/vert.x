@@ -12,15 +12,20 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
-import io.vertx.core.json.JsonArray;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.KeyStoreHelper;
 
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Certificate Authority options configuring certificates based on
@@ -59,6 +64,7 @@ import java.util.Objects;
 @DataObject(generateConverter = true, publicConverter = false)
 public class PemTrustOptions implements TrustOptions, Cloneable {
 
+  private KeyStoreHelper helper;
   private ArrayList<String> certPaths;
   private ArrayList<Buffer> certValues;
 
@@ -146,8 +152,32 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
   }
 
   @Override
+  public TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = getHelper(vertx);
+    return helper != null ? helper.getTrustMgrFactory((VertxInternal) vertx) : null;
+  }
+
+  @Override
+  public Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = getHelper(vertx);
+    return helper != null ? helper::getTrustMgr : null;
+  }
+
+  @Override
   public PemTrustOptions copy() {
     return new PemTrustOptions(this);
+  }
+
+  KeyStoreHelper getHelper(Vertx vertx) throws Exception {
+    if (helper == null) {
+      Stream<Buffer> certValues = certPaths.
+        stream().
+        map(path -> ((VertxInternal)vertx).resolveFile(path).getAbsolutePath()).
+        map(vertx.fileSystem()::readFileBlocking);
+      certValues = Stream.concat(certValues, this.certValues.stream());
+      helper = new KeyStoreHelper(KeyStoreHelper.loadCA(certValues), null);
+    }
+    return helper;
   }
 
 }

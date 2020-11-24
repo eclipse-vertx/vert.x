@@ -7,13 +7,13 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Converter and mapper for {@link io.vertx.core.net.PfxOptions}.
- * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.PfxOptions} original class using Vert.x codegen.
+ * Converter and mapper for {@link io.vertx.core.net.KeyStoreOptions}.
+ * NOTE: This class has been automatically generated from the {@link io.vertx.core.net.KeyStoreOptions} original class using Vert.x codegen.
  */
-public class PfxOptionsConverter {
+public class KeyStoreOptionsConverter {
 
 
-   static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, PfxOptions obj) {
+  public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, KeyStoreOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
         case "password":
@@ -26,6 +26,11 @@ public class PfxOptionsConverter {
             obj.setPath((String)member.getValue());
           }
           break;
+        case "type":
+          if (member.getValue() instanceof String) {
+            obj.setType((String)member.getValue());
+          }
+          break;
         case "value":
           if (member.getValue() instanceof String) {
             obj.setValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)member.getValue())));
@@ -35,16 +40,19 @@ public class PfxOptionsConverter {
     }
   }
 
-   static void toJson(PfxOptions obj, JsonObject json) {
+  public static void toJson(KeyStoreOptions obj, JsonObject json) {
     toJson(obj, json.getMap());
   }
 
-   static void toJson(PfxOptions obj, java.util.Map<String, Object> json) {
+  public static void toJson(KeyStoreOptions obj, java.util.Map<String, Object> json) {
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }
     if (obj.getPath() != null) {
       json.put("path", obj.getPath());
+    }
+    if (obj.getType() != null) {
+      json.put("type", obj.getType());
     }
     if (obj.getValue() != null) {
       json.put("value", JsonUtil.BASE64_ENCODER.encodeToString(obj.getValue().getBytes()));
