@@ -31,19 +31,19 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
       result.onComplete(ar -> {
         if (ar.succeeded()) {
           synchronized (composite) {
-            composite.count++;
-            if (composite.isComplete() || composite.count < len) {
+            if (composite.count == len || ++composite.count != len) {
               return;
             }
           }
-          composite.complete();
+          composite.tryComplete();
         } else {
           synchronized (composite) {
-            if (composite.isComplete()) {
+            if (composite.count == len) {
               return;
             }
+            composite.count = len;
           }
-          composite.fail(ar.cause());
+          composite.tryFail(ar.cause());
         }
       });
     }
@@ -60,19 +60,19 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
       result.onComplete(ar -> {
         if (ar.succeeded()) {
           synchronized (composite) {
-            if (composite.isComplete()) {
+            if (composite.count == len) {
               return;
             }
+            composite.count = len;
           }
-          composite.complete();
+          composite.tryComplete();
         } else {
           synchronized (composite) {
-            composite.count++;
-            if (composite.isComplete() || composite.count < len) {
+            if (composite.count == len || ++composite.count != len) {
               return;
             }
           }
-          composite.fail(ar.cause());
+          composite.tryFail(ar.cause());
         }
       });
     }
@@ -102,8 +102,7 @@ public class CompositeFutureImpl implements CompositeFuture, Handler<AsyncResult
     for (Future<?> result : results) {
       result.onComplete(ar -> {
         synchronized (composite) {
-          composite.count++;
-          if (composite.isComplete() || composite.count < len) {
+          if (++composite.count < len) {
             return;
           }
         }
