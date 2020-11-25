@@ -151,7 +151,7 @@ public class VertxTestBase extends AsyncTestBase {
   protected void startNodes(int numNodes, VertxOptions options) {
     VertxOptions[] array = new VertxOptions[numNodes];
     for (int i = 0;i < numNodes;i++) {
-      array[i] = options;
+      array[i] = new VertxOptions(options);
     }
     startNodes(array);
   }
@@ -162,19 +162,20 @@ public class VertxTestBase extends AsyncTestBase {
     vertices = new Vertx[numNodes];
     for (int i = 0; i < numNodes; i++) {
       int index = i;
-      options[i].setClusterManager(getClusterManager())
-        .getEventBusOptions().setHost("localhost").setPort(0);
+      if (options[i].getClusterManager() == null) {
+        options[i].setClusterManager(getClusterManager());
+      }
+      options[i].getEventBusOptions().setHost("localhost").setPort(0);
       clusteredVertx(options[i], ar -> {
-          try {
-            if (ar.failed()) {
-              ar.cause().printStackTrace();
-            }
-            assertTrue("Failed to start node", ar.succeeded());
-            vertices[index] = ar.result();
+        try {
+          if (ar.failed()) {
+            ar.cause().printStackTrace();
           }
-          finally {
-            latch.countDown();
-          }
+          assertTrue("Failed to start node", ar.succeeded());
+          vertices[index] = ar.result();
+        } finally {
+          latch.countDown();
+        }
       });
     }
     try {
