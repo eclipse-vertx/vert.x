@@ -28,11 +28,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.jar.JarEntry;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import java.util.zip.GZIPOutputStream;
 
 import static org.junit.Assert.assertTrue;
@@ -446,6 +450,12 @@ public class TestUtils {
     RandomAccessFile f = new RandomAccessFile(tmp, "rw");
     f.setLength(length);
     return tmp;
+  }
+
+  public static String getJarEntryName(Path path) {
+    return StreamSupport
+      .stream(path.spliterator(), false)
+      .map(p -> "" + p.getName(0)).collect(Collectors.joining("/"));
   }
 
   public static TestLoggerFactory testLogging(Runnable runnable) {

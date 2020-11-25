@@ -12,16 +12,33 @@
 package io.vertx.core.file;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class JarFileResolverTest extends FileResolverTestBase {
 
+  static File getFiles(File baseDir) throws Exception {
+    return ZipFileResolverTest.getFiles(
+      baseDir,
+      new File("target", "files.jar"),
+      out -> {
+        try {
+          return new JarOutputStream(out);
+        } catch (IOException e) {
+          throw new AssertionError(e);
+        }
+      }, JarEntry::new);
+  }
+
   @Override
   protected ClassLoader resourcesLoader(File baseDir) throws Exception {
-    return new URLClassLoader(new URL[]{new File(baseDir, "files.jar").toURI().toURL()}, Thread.currentThread().getContextClassLoader());
+    File files = getFiles(baseDir);
+    return new URLClassLoader(new URL[]{files.toURI().toURL()}, Thread.currentThread().getContextClassLoader());
   }
 }

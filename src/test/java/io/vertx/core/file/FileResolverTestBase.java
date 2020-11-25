@@ -21,6 +21,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -28,7 +29,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermissions;

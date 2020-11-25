@@ -14,6 +14,7 @@ package io.vertx.core.file;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 
 /**
  * @author Clement Escoffier
@@ -22,6 +23,14 @@ public class JarFileResolverWithSpacesTest extends FileResolverTestBase {
 
   @Override
   protected ClassLoader resourcesLoader(File baseDir) throws Exception {
-    return new URLClassLoader(new URL[]{new File(baseDir, "dir with spaces/files.jar").toURI().toURL()}, Thread.currentThread().getContextClassLoader());
+    File dirWithSpaces = new File("target", "dir with spaces");
+    if (!dirWithSpaces.exists()) {
+      assertTrue(dirWithSpaces.mkdirs());
+    }
+    File files = new File(dirWithSpaces, "files.jar");
+    if (!files.exists()) {
+      files = JarFileResolverTest.getFiles(dirWithSpaces);
+    }
+    return new URLClassLoader(new URL[]{files.toURI().toURL()}, Thread.currentThread().getContextClassLoader());
   }
 }
