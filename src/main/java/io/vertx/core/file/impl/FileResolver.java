@@ -47,36 +47,6 @@ public class FileResolver {
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
   public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
 
-  /**
-   * Predicate for checking validity of cache path.
-   */
-  private static final IntPredicate CACHE_PATH_CHECKER;
-
-  static {
-    if (PlatformDependent.isWindows()) {
-      CACHE_PATH_CHECKER = c -> {
-        if (c < 33) {
-          return false;
-        } else {
-          switch (c) {
-            case 34:
-            case 42:
-            case 58:
-            case 60:
-            case 62:
-            case 63:
-            case 124:
-              return false;
-            default:
-              return true;
-          }
-        }
-      };
-    } else {
-      CACHE_PATH_CHECKER = c -> c != '\u0000';
-    }
-  }
-
   private static final String FILE_SEP = System.getProperty("file.separator");
   private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
 
@@ -166,15 +136,41 @@ public class FileResolver {
     return file;
   }
 
-  private static boolean isValidCachePath(String fileName) {
-    int len = fileName.length();
-    for (int i = 0;i < len;i++) {
-      char c = fileName.charAt(i);
-      if (!CACHE_PATH_CHECKER.test(c)) {
-        return false;
-      }
+  private static boolean isValidWindowsCachePath(char c) {
+    if (c < 32) {
+      return false;
     }
-    return true;
+    switch (c) {
+      case '"':
+      case '*':
+      case ':':
+      case '<':
+      case '>':
+      case '?':
+      case '|':
+        return false;
+      default:
+        return true;
+    }
+  }
+
+  private static boolean isValidCachePath(String fileName) {
+    if (PlatformDependent.isWindows()) {
+      int len = fileName.length();
+      for (int i = 0;i < len;i++) {
+        char c = fileName.charAt(i);
+        if (!isValidWindowsCachePath(c)) {
+          return false;
+        }
+        // Space only valid when it's not ending a name
+        if (c == ' ' && (i + 1 == len || fileName.charAt(i + 1) == '/')) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return fileName.indexOf('\u0000') == -1;
+    }
   }
 
   /**

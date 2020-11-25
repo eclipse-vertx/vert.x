@@ -50,6 +50,8 @@ public class NestedZipFileResolverTest extends FileResolverTestBase {
             return new URL("jar:" + webrootURL + "!/lib/nested.zip!afile.html/");
           } else if (name.equals("afile with spaces.html")) {
             return new URL("jar:" + webrootURL + "!/lib/nested.zip!afile with spaces.html/");
+          } else if (name.equals("afilewithspaceatend ")) {
+            return new URL("jar:" + webrootURL + "!/lib/nested.zip!afilewithspaceatend /");
           }
         } catch (MalformedURLException e) {
           throw new AssertionError(e);

@@ -40,7 +40,7 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
   @Test
   public void testResolveInvalidFileName()  throws Exception{
     for (int i = 0;i < 256;i++) {
-      String s = "file-" + (char) i;
+      String s = "file-" + (char) i + "-";
       File f = File.createTempFile("vertx", ".txt");
       Files.write(f.toPath(), "the_content".getBytes());
       Thread thread = Thread.currentThread();
@@ -66,5 +66,10 @@ public class FileSystemFileResolverTest extends FileResolverTestBase {
         thread.setContextClassLoader(prev);
       }
     }
+  }
+
+  @Override
+  public void testResolveFileWithSpaceAtEndFromClasspath() {
+
   }
 }

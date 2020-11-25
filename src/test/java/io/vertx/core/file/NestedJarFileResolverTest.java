@@ -50,6 +50,8 @@ public class NestedJarFileResolverTest extends FileResolverTestBase {
             return new URL("jar:" + webrootURL + "!/lib/nested.jar!afile.html/");
           } else if (name.equals("afile with spaces.html")) {
             return new URL("jar:" + webrootURL + "!/lib/nested.jar!afile with spaces.html/");
+          } else if (name.equals("afilewithspaceatend ")) {
+            return new URL("jar:" + webrootURL + "!/lib/nested.jar!afilewithspaceatend /");
           }
         } catch (MalformedURLException e) {
           throw new AssertionError(e);

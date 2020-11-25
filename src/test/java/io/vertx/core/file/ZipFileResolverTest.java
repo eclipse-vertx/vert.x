@@ -65,6 +65,10 @@ public class ZipFileResolverTest extends FileResolverTestBase {
             return FileVisitResult.CONTINUE;
           }
         });
+        // Add file with space at end that cannot exist on the FS because of windows
+        zip.putNextEntry(entryFact.apply("afilewithspaceatend "));
+        zip.write("afilewithspaceatend ".getBytes());
+        zip.closeEntry();
       }
     }
     return files;
