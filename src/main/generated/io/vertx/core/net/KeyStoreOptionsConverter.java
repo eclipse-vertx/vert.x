@@ -26,6 +26,11 @@ public class KeyStoreOptionsConverter {
             obj.setPath((String)member.getValue());
           }
           break;
+        case "provider":
+          if (member.getValue() instanceof String) {
+            obj.setProvider((String)member.getValue());
+          }
+          break;
         case "type":
           if (member.getValue() instanceof String) {
             obj.setType((String)member.getValue());
@@ -50,6 +55,9 @@ public class KeyStoreOptionsConverter {
     }
     if (obj.getPath() != null) {
       json.put("path", obj.getPath());
+    }
+    if (obj.getProvider() != null) {
+      json.put("provider", obj.getProvider());
     }
     if (obj.getType() != null) {
       json.put("type", obj.getType());

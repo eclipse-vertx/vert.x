@@ -21,6 +21,7 @@ import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -149,6 +150,17 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
     Objects.requireNonNull(certValue, "No null certificate accepted");
     certValues.add(certValue);
     return this;
+  }
+
+  /**
+   * Load and return a Java keystore.
+   *
+   * @param vertx the vertx instance
+   * @return the {@code KeyStore}
+   */
+  public KeyStore loadKeyStore(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = getHelper(vertx);
+    return helper != null ? helper.store() : null;
   }
 
   @Override

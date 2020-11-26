@@ -22,6 +22,7 @@ import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
+import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -404,6 +405,17 @@ public class PemKeyCertOptions implements KeyCertOptions {
       helper = new KeyStoreHelper(KeyStoreHelper.loadKeyCert(keys, certs), KeyStoreHelper.DUMMY_PASSWORD);
     }
     return helper;
+  }
+
+  /**
+   * Load and return a Java keystore.
+   *
+   * @param vertx the vertx instance
+   * @return the {@code KeyStore}
+   */
+  public KeyStore loadKeyStore(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = getHelper(vertx);
+    return helper != null ? helper.store() : null;
   }
 
   @Override
