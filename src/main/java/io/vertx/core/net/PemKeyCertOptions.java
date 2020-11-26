@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -13,12 +13,18 @@ package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.KeyStoreHelper;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.X509KeyManager;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Key store options configuring a list of private key and its certificate based on
@@ -88,8 +94,9 @@ import java.util.List;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true, publicConverter = false)
-public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
+public class PemKeyCertOptions implements KeyCertOptions {
 
+  private KeyStoreHelper helper;
   private List<String> keyPaths;
   private List<Buffer> keyValues;
   private List<String> certPaths;
@@ -417,5 +424,39 @@ public class PemKeyCertOptions implements KeyCertOptions, Cloneable {
   @Override
   public PemKeyCertOptions clone() {
     return new PemKeyCertOptions(this);
+  }
+
+  @Override
+  public PemKeyCertOptions copy() {
+    return clone();
+  }
+
+  KeyStoreHelper getHelper(Vertx vertx) throws Exception {
+    if (helper == null) {
+      List<Buffer> keys = new ArrayList<>();
+      for (String keyPath : keyPaths) {
+        keys.add(vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).resolveFile(keyPath).getAbsolutePath()));
+      }
+      keys.addAll(keyValues);
+      List<Buffer> certs = new ArrayList<>();
+      for (String certPath : certPaths) {
+        certs.add(vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).resolveFile(certPath).getAbsolutePath()));
+      }
+      certs.addAll(certValues);
+      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyCert(keys, certs), KeyStoreHelper.DUMMY_PASSWORD);
+    }
+    return helper;
+  }
+
+  @Override
+  public KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = getHelper(vertx);
+    return helper != null ? helper.getKeyMgrFactory() : null;
+  }
+
+  @Override
+  public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = getHelper(vertx);
+    return helper != null ? helper::getKeyMgr : null;
   }
 }

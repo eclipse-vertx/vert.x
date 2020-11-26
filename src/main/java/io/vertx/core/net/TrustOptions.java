@@ -49,9 +49,7 @@ public interface TrustOptions {
    * @param vertx the vertx instance
    * @return the trust manager factory
    */
-  default TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception {
-    return KeyStoreHelper.create((VertxInternal) vertx, this).getTrustMgrFactory((VertxInternal) vertx);
-  }
+  TrustManagerFactory getTrustManagerFactory(Vertx vertx) throws Exception;
 
   /**
    * Returns a function that maps SNI server names to a {@link TrustManagerFactory} instance.
@@ -65,8 +63,5 @@ public interface TrustOptions {
    * @param vertx the vertx instance
    * @return the trustManager
    */
-  default Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception {
-    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, this);
-    return helper != null ? helper::getTrustMgr : null;
-  }
+  Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception;
 }

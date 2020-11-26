@@ -1232,23 +1232,55 @@ Set the WebSocket sub-protocols supported by the server.
 
 ++++
  Key or trust store options configuring private key and/or certificates based on Java Keystore files.
- <p>
- When used as a key store, it should point to a store containing a private key and its certificate.
- When used as a trust store, it should point to a store containing a list of trusted certificates.
- <p>
- The store can either be loaded by Vert.x from the filesystem:
- <p>
+++++
+'''
+
+[cols=">25%,25%,50%"]
+[frame="topbot"]
+|===
+^|Name | Type ^| Description
+|[[password]]`@password`|`String`|+++
+Set the password for the key store
++++
+|[[path]]`@path`|`String`|+++
+Set the path to the key store
++++
+|[[value]]`@value`|`Buffer`|+++
+Set the key store as a buffer
++++
+|===
+
+[[KeyStoreOptions]]
+== KeyStoreOptions
+
+++++
+ Key or trust store options configuring private key and/or certificates based on <code>KeyStore</code>.
+
+ <ul>
+   <li>when used as a key store, it should point to a store containing a private key and its certificate.</li>
+   <li>when used as a trust store, it should point to a store containing a list of trusted certificates.</li>
+ </ul>
+
+ <p> The store can either be loaded by Vert.x from the filesystem:
+
  <pre>
  HttpServerOptions options = HttpServerOptions.httpServerOptions();
- options.setKeyStore(new JKSOptions().setPath("/mykeystore.jks").setPassword("foo"));
+ options.setKeyCertOptions(new KeyStoreOptions().setType("JKS").setPath("/mykeystore.jks").setPassword("foo"));
  </pre>
 
  Or directly provided as a buffer:
- <p>
 
  <pre>
  Buffer store = vertx.fileSystem().readFileBlocking("/mykeystore.jks");
- options.setKeyStore(new JKSOptions().setValue(store).setPassword("foo"));
+ options.setKeyCertOptions(new KeyStoreOptions().setType("JKS").setValue(store).setPassword("foo"));
+ </pre>
+
+ <p> You can also use specific subclasses link or link that will set
+ the link for you:
+
+ <pre>
+ HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ options.setKeyCertOptions(new JksOptions().setPath("/mykeystore.jks").setPassword("foo"));
  </pre>
 ++++
 '''
@@ -1262,6 +1294,12 @@ Set the password for the key store
 +++
 |[[path]]`@path`|`String`|+++
 Set the path to the key store
++++
+|[[provider]]`@provider`|`String`|+++
+Set the store provider.
++++
+|[[type]]`@type`|`String`|+++
+Set the store type.
 +++
 |[[value]]`@value`|`Buffer`|+++
 Set the key store as a buffer
@@ -1857,24 +1895,6 @@ Add a certificate value
 
 ++++
  Key or trust store options configuring private key and/or certificates based on PKCS#12 files.
- <p>
- When used as a key store, it should point to a store containing a private key and its certificate.
- When used as a trust store, it should point to a store containing a list of accepted certificates.
- <p>
-
- The store can either be loaded by Vert.x from the filesystem:
- <p>
- <pre>
- HttpServerOptions options = new HttpServerOptions();
- options.setPfxKeyCertOptions(new PfxOptions().setPath("/mykeystore.p12").setPassword("foo"));
- </pre>
-
- Or directly provided as a buffer:<p>
-
- <pre>
- Buffer store = vertx.fileSystem().readFileBlocking("/mykeystore.p12");
- options.setPfxKeyCertOptions(new PfxOptions().setValue(store).setPassword("foo"));
- </pre>
 ++++
 '''
 
@@ -1883,13 +1903,13 @@ Add a certificate value
 |===
 ^|Name | Type ^| Description
 |[[password]]`@password`|`String`|+++
-Set the password
+Set the password for the key store
 +++
 |[[path]]`@path`|`String`|+++
-Set the path
+Set the path to the key store
 +++
 |[[value]]`@value`|`Buffer`|+++
-Set the store as a buffer
+Set the key store as a buffer
 +++
 |===
 

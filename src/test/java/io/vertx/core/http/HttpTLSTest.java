@@ -84,6 +84,18 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   // Server specifies cert that the client trusts (not trust all)
+  public void testTLSClientTrustServerCertKeyStore() throws Exception {
+    testTLS(Cert.NONE, () -> {
+      JksOptions opts = Trust.SERVER_JKS.get();
+      return new KeyStoreOptions().setType("JKS").setPath(opts.getPath()).setPassword(opts.getPassword());
+    }, () -> {
+      JksOptions opts = Cert.SERVER_JKS.get();
+      return new KeyStoreOptions().setType("JKS").setPath(opts.getPath()).setPassword(opts.getPassword());
+    }, Trust.NONE).pass();
+  }
+
+  @Test
+  // Server specifies cert that the client trusts (not trust all)
   public void testTLSClientTrustServerCertPKCS12() throws Exception {
     testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SERVER_PKCS12, Trust.NONE).pass();
   }
@@ -774,6 +786,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
   public void testSNICustomTrustManagerFactoryMapper() throws Exception {
     testTLS(Cert.CLIENT_PEM, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, () -> new TrustOptions() {
       @Override
+      public Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception {
+        return null;
+      }
+      @Override
       public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
         return new TrustManagerFactory(new TrustManagerFactorySpi() {
           @Override
@@ -866,6 +882,10 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Test custom trust manager factory
   public void testCustomTrustManagerFactory() throws Exception {
     testTLS(Cert.NONE, () -> new TrustOptions() {
+      @Override
+      public Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception {
+        return null;
+      }
       @Override
       public TrustManagerFactory getTrustManagerFactory(Vertx v) throws Exception {
         return new TrustManagerFactory(new TrustManagerFactorySpi() {

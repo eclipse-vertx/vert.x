@@ -12,7 +12,7 @@
  */
 
 
-package io.vertx.core.net.impl;
+package io.vertx.core.net;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertThat;
@@ -27,6 +27,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Enumeration;
 
+import io.vertx.core.net.impl.KeyStoreHelper;
 import org.junit.Assume;
 import org.junit.Test;
 
@@ -45,7 +46,7 @@ public class KeyStoreHelperTest {
   /**
    * Verifies that the key store helper can read a PKCS#8 encoded RSA private key
    * from a PEM file.
-   * 
+   *
    * @throws Exception if the key cannot be read.
    */
   @Test
@@ -55,14 +56,14 @@ public class KeyStoreHelperTest {
     PemKeyCertOptions options = new PemKeyCertOptions()
             .addKeyPath("target/test-classes/tls/server-key.pem")
             .addCertPath("target/test-classes/tls/server-cert.pem");
-    KeyStoreHelper helper = KeyStoreHelper.create(vertxInternal, options);
+    KeyStoreHelper helper = options.getHelper(vertx);
     assertKeyType(helper.store(), RSAPrivateKey.class);
   }
 
   /**
    * Verifies that the key store helper can read a PKCS#8 encoded EC private key
    * from a PEM file.
-   * 
+   *
    * @throws Exception if the key cannot be read.
    */
   @Test
@@ -72,7 +73,7 @@ public class KeyStoreHelperTest {
     PemKeyCertOptions options = new PemKeyCertOptions()
             .addKeyPath("target/test-classes/tls/server-key-ec.pem")
             .addCertPath("target/test-classes/tls/server-cert-ec.pem");
-    KeyStoreHelper helper = KeyStoreHelper.create(vertx, options);
+    KeyStoreHelper helper = options.getHelper(vertx);
     assertKeyType(helper.store(), ECPrivateKey.class);
   }
 

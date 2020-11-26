@@ -49,9 +49,7 @@ public interface KeyCertOptions {
    * @param vertx the vertx instance
    * @return the key manager factory
    */
-  default KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
-    return KeyStoreHelper.create((VertxInternal) vertx, this).getKeyMgrFactory();
-  }
+  KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception;
 
   /**
    * Returns a function that maps SNI server names to {@link X509KeyManager} instance.
@@ -71,8 +69,5 @@ public interface KeyCertOptions {
    * will be used.
    *
    */
-  default Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception {
-    KeyStoreHelper helper = KeyStoreHelper.create((VertxInternal) vertx, this);
-    return helper::getKeyMgr;
-  }
+  Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception;
 }
