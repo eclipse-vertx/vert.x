@@ -20,16 +20,17 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
+import java.security.KeyStore;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Internal base class of {@code KeyStore} based options.
+ * Base class of {@code KeyStore} based options.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-class KeyStoreOptionsBase implements KeyCertOptions, TrustOptions {
+public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOptions {
 
   private KeyStoreHelper helper;
   private String provider;
@@ -41,7 +42,7 @@ class KeyStoreOptionsBase implements KeyCertOptions, TrustOptions {
   /**
    * Default constructor
    */
-  KeyStoreOptionsBase() {
+  protected KeyStoreOptionsBase() {
     super();
   }
 
@@ -50,7 +51,7 @@ class KeyStoreOptionsBase implements KeyCertOptions, TrustOptions {
    *
    * @param other  the options to copy
    */
-  KeyStoreOptionsBase(KeyStoreOptionsBase other) {
+  protected KeyStoreOptionsBase(KeyStoreOptionsBase other) {
     super();
     this.type = other.type;
     this.password = other.password;
@@ -58,20 +59,20 @@ class KeyStoreOptionsBase implements KeyCertOptions, TrustOptions {
     this.value = other.value;
   }
 
-  String getType() {
+  protected String getType() {
     return type;
   }
 
-  KeyStoreOptionsBase setType(String type) {
+  protected KeyStoreOptionsBase setType(String type) {
     this.type = type;
     return this;
   }
 
-  String getProvider() {
+  protected String getProvider() {
     return provider;
   }
 
-  KeyStoreOptionsBase setProvider(String provider) {
+  protected KeyStoreOptionsBase setProvider(String provider) {
     this.provider = provider;
     return this;
   }
@@ -149,6 +150,17 @@ class KeyStoreOptionsBase implements KeyCertOptions, TrustOptions {
     return helper;
   }
 
+  /**
+   * Load and return a Java keystore.
+   *
+   * @param vertx the vertx instance
+   * @return the {@code KeyStore}
+   */
+  public KeyStore loadKeyStore(Vertx vertx) throws Exception {
+    KeyStoreHelper helper = getHelper(vertx);
+    return helper != null ? helper.store() : null;
+  }
+
   @Override
   public KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
     KeyStoreHelper helper = getHelper(vertx);
@@ -215,7 +227,6 @@ class KeyStoreOptionsBase implements KeyCertOptions, TrustOptions {
   }
 
   @Override
-  public KeyStoreOptionsBase clone() {
-    return new KeyStoreOptionsBase(this);
-  }
+  public abstract KeyStoreOptionsBase clone();
+
 }
