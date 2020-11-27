@@ -201,7 +201,7 @@ If you want to turn off these warnings or change the settings, you can do that i
 
 == Future results
 
-Vert.x 4 use futures to model asynchronous results.
+Vert.x 4 use futures to represent asynchronous results.
 
 Any asynchronous method returns a {@link io.vertx.core.Future} object for the result of the call:
 a _success_ or a _failure_.
