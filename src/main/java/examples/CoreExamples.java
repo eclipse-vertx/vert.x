@@ -14,7 +14,10 @@ package examples;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileProps;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -108,6 +111,36 @@ public class CoreExamples {
     String blockingMethod(String str) {
       return str;
     }
+  }
+
+  public void exampleFuture1(Vertx vertx, Handler<HttpServerRequest> requestHandler) {
+    FileSystem fs = vertx.fileSystem();
+
+    Future<FileProps> future = fs.props("/my_file.txt");
+
+    future.onComplete((AsyncResult<FileProps> ar) -> {
+      if (ar.succeeded()) {
+        FileProps props = ar.result();
+        System.out.println("File size = " + props.size());
+      } else {
+        System.out.println("Failure: " + ar.cause().getMessage());
+      }
+    });
+  }
+
+  public void exampleFuture2(Vertx vertx, Handler<HttpServerRequest> requestHandler) {
+    FileSystem fs = vertx.fileSystem();
+
+    Future<FileProps> future = fs.props("/my_file.txt");
+
+    future.onComplete((AsyncResult<FileProps> ar) -> {
+      if (ar.succeeded()) {
+        FileProps props = ar.result();
+        System.out.println("File size = " + props.size());
+      } else {
+        System.out.println("Failure: " + ar.cause().getMessage());
+      }
+    });
   }
 
   public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
