@@ -199,81 +199,6 @@ Vert.x will also provide stack traces to pinpoint exactly where the blocking is 
 If you want to turn off these warnings or change the settings, you can do that in the
 {@link io.vertx.core.VertxOptions} object before creating the Vertx object.
 
-[[blocking_code]]
-== Running blocking code
-
-In a perfect world, there will be no war or hunger, all APIs will be written asynchronously and bunny rabbits will
-skip hand-in-hand with baby lambs across sunny green meadows.
-
-*But... the real world is not like that. (Have you watched the news lately?)*
-
-Fact is, many, if not most libraries, especially in the JVM ecosystem have synchronous APIs and many of the methods are
-likely to block. A good example is the JDBC API - it's inherently synchronous, and no matter how hard it tries, Vert.x
-cannot sprinkle magic pixie dust on it to make it asynchronous.
-
-We're not going to rewrite everything to be asynchronous overnight so we need to provide you a way to use "traditional"
-blocking APIs safely within a Vert.x application.
-
-As discussed before, you can't call blocking operations directly from an event loop, as that would prevent it
-from doing any other useful work. So how can you do this?
-
-It's done by calling {@link io.vertx.core.Vertx#executeBlocking} specifying both the blocking code to execute and a
-result handler to be called back asynchronous when the blocking code has been executed.
-
-[source,$lang]
-----
-{@link examples.CoreExamples#example7}
-----
-
-WARNING: Blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
-         or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
-         When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
-         blocked thread checker. Long blocking operations should use a dedicated thread managed by the application,
-         which can interact with verticles using the event-bus or {@link io.vertx.core.Context#runOnContext(io.vertx.core.Handler)}
-
-
-By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
-the different executeBlocking are executed _serially_ (i.e. one after another).
-
-If you don't care about ordering you can call {@link io.vertx.core.Vertx#executeBlocking(io.vertx.core.Handler,boolean,io.vertx.core.Handler)}
-specifying `false` as the argument to `ordered`. In this case any executeBlocking may be executed in parallel
-on the worker pool.
-
-An alternative way to run blocking code is to use a <<worker_verticles, worker verticle>>
-
-A worker verticle is always executed with a thread from the worker pool.
-
-By default blocking code is executed on the Vert.x worker pool, configured with {@link io.vertx.core.VertxOptions#setWorkerPoolSize(int)}.
-
-Additional pools can be created for different purposes:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#workerExecutor1}
-----
-
-The worker executor must be closed when it's not necessary anymore:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#workerExecutor2}
-----
-
-When several workers are created with the same name, they will share the same pool. The worker pool is destroyed
-when all the worker executors using it are closed.
-
-When an executor is created in a Verticle, Vert.x will close it automatically for you when the Verticle
-is undeployed.
-
-Worker executors can be configured when created:
-
-[source,$lang]
-----
-{@link examples.CoreExamples#workerExecutor3}
-----
-
-NOTE: the configuration is set when the worker pool is created
-
 == Async coordination
 
 Coordination of multiple asynchronous results can be achieved with Vert.x {@link io.vertx.core.Future futures}. It
@@ -764,6 +689,81 @@ from the event loop of the verticle.
 
 If you stick to the standard Vert.x verticle deployment model and avoid sharing objects between verticles then this
 should be the case without you having to think about it.
+
+[[blocking_code]]
+== Running blocking code
+
+In a perfect world, there will be no war or hunger, all APIs will be written asynchronously and bunny rabbits will
+skip hand-in-hand with baby lambs across sunny green meadows.
+
+*But... the real world is not like that. (Have you watched the news lately?)*
+
+Fact is, many, if not most libraries, especially in the JVM ecosystem have synchronous APIs and many of the methods are
+likely to block. A good example is the JDBC API - it's inherently synchronous, and no matter how hard it tries, Vert.x
+cannot sprinkle magic pixie dust on it to make it asynchronous.
+
+We're not going to rewrite everything to be asynchronous overnight so we need to provide you a way to use "traditional"
+blocking APIs safely within a Vert.x application.
+
+As discussed before, you can't call blocking operations directly from an event loop, as that would prevent it
+from doing any other useful work. So how can you do this?
+
+It's done by calling {@link io.vertx.core.Vertx#executeBlocking} specifying both the blocking code to execute and a
+result handler to be called back asynchronous when the blocking code has been executed.
+
+[source,$lang]
+----
+{@link examples.CoreExamples#example7}
+----
+
+WARNING: Blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
+or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
+When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
+blocked thread checker. Long blocking operations should use a dedicated thread managed by the application,
+which can interact with verticles using the event-bus or {@link io.vertx.core.Context#runOnContext(io.vertx.core.Handler)}
+
+
+By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
+the different executeBlocking are executed _serially_ (i.e. one after another).
+
+If you don't care about ordering you can call {@link io.vertx.core.Vertx#executeBlocking(io.vertx.core.Handler,boolean,io.vertx.core.Handler)}
+specifying `false` as the argument to `ordered`. In this case any executeBlocking may be executed in parallel
+on the worker pool.
+
+An alternative way to run blocking code is to use a <<worker_verticles, worker verticle>>
+
+A worker verticle is always executed with a thread from the worker pool.
+
+By default blocking code is executed on the Vert.x worker pool, configured with {@link io.vertx.core.VertxOptions#setWorkerPoolSize(int)}.
+
+Additional pools can be created for different purposes:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#workerExecutor1}
+----
+
+The worker executor must be closed when it's not necessary anymore:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#workerExecutor2}
+----
+
+When several workers are created with the same name, they will share the same pool. The worker pool is destroyed
+when all the worker executors using it are closed.
+
+When an executor is created in a Verticle, Vert.x will close it automatically for you when the Verticle
+is undeployed.
+
+Worker executors can be configured when created:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#workerExecutor3}
+----
+
+NOTE: the configuration is set when the worker pool is created
 
 == Metrics SPI
 
