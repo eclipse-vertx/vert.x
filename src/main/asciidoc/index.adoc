@@ -239,6 +239,7 @@ In this example, 3 operations are chained together:
 When these 3 steps are successful, the final future (`future`) will succeed. However, if one
 of the steps fails, the final future will fail.
 
+Beyond this, {@link io.vertx.core.Future} offers more: `map`, `recover`, `otherwise` and even a `flatMap` which is an alias of `compose`
 
 == Future coordination
 
