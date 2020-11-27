@@ -221,8 +221,7 @@
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <additionalClasspathElements>
               <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
-              <additionalClasspathElement>${basedir}/src/test/resources/webroot2.jar</additionalClasspathElement>
-              <additionalClasspathElement>${basedir}/src/test/resources/webroot5.zip</additionalClasspathElement>
+              <additionalClasspathElement>${project.basedir}/src/test/classpath/jul</additionalClasspathElement>
             </additionalClasspathElements>
             <systemPropertyVariables>
               <!--<javax.net.debug>ssl</javax.net.debug>-->
@@ -499,9 +498,9 @@
                 <include>io/vertx/it/SLF4JNoImplTest.java</include>
               </includes>
               <classpathDependencyExcludes>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
                 <classpathDependencyExclude>org.slf4j:slf4j-simple</classpathDependencyExclude>
+                <classpathDependencyExclude>org.apache.logging.log4j:log4j-api</classpathDependencyExclude>
+                <classpathDependencyExclude>org.apache.logging.log4j:log4j-core</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -515,6 +514,9 @@
               <includes>
                 <include>io/vertx/it/JULLogDelegateTest.java</include>
               </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/jul</additionalClasspathElement>
+              </additionalClasspathElements>
             </configuration>
           </execution>
           <execution>
@@ -527,6 +529,9 @@
               <includes>
                 <include>io/vertx/it/Log4J2LogDelegateTest.java</include>
               </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>org.slf4j:slf4j-simple</classpathDependencyExclude>
+              </classpathDependencyExcludes>
             </configuration>
           </execution>
           <execution>
@@ -602,7 +607,7 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/externals</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsoncodec</additionalClasspathElement>
               </additionalClasspathElements>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
@@ -611,6 +616,13 @@
             </configuration>
           </execution>
         </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
 
       <plugin>

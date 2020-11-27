@@ -80,6 +80,11 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
   }
 
   @Override
+  public void close(Handler<AsyncResult<Void>> handler) {
+    close().onComplete(handler);
+  }
+
+  @Override
   public void close(Promise<Void> completion) {
     synchronized (this) {
       if (!closed) {

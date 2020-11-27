@@ -49,8 +49,7 @@ public class ServiceHelperTest {
         output));
 
     List<File> classesToCompile = new ArrayList<>();
-    classesToCompile.add(new File("src/test/externals/MyVerticle.java"));
-    classesToCompile.add(new File("src/test/externals/SomeFactoryImplA.java"));
+    classesToCompile.add(new File("src/test/classpath/servicehelper/SomeFactoryImplA.java"));
 
     Iterable<? extends JavaFileObject> compilationUnits1 =
         fileManager.getJavaFileObjectsFromFiles(classesToCompile);
@@ -58,7 +57,7 @@ public class ServiceHelperTest {
     compiler.getTask(null, fileManager, null, null, null, compilationUnits1).call();
 
     // Also copy the META-INF dir
-    File source = new File("src/test/externals/META-INF/services/io.vertx.test.spi.SomeFactory");
+    File source = new File("src/test/classpath/servicehelper/META-INF/services/io.vertx.test.spi.SomeFactory");
     File out = new File("target/externals/META-INF/services/io.vertx.test.spi.SomeFactory");
     out.getParentFile().mkdirs();
     Files.copy(source.toPath(), out.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);

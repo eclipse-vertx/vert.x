@@ -310,19 +310,18 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
           } else {
             req.end(pro + contentStr + epi);
           }
-          req.response(ar -> {
-            assertEquals(ar.failed(), abortClient);
-            if (ar.succeeded()) {
-              HttpClientResponse resp = ar.result();
-              // assert the response
+          if (abortClient) {
+            req.response(onFailure(err -> complete()));
+          } else {
+            req.response(onSuccess(resp -> {
               assertEquals(200, resp.statusCode());
               resp.bodyHandler(body -> {
                 assertEquals(0, body.length());
               });
               assertEquals(0, attributeCount.get());
-            }
-            complete();
-          });
+              complete();
+            }));
+          }
         }));
     }));
     await();

@@ -30,24 +30,24 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
       result.onComplete(ar -> {
         if (ar.succeeded()) {
           synchronized (composite) {
-            composite.count++;
-            if (composite.isComplete() || composite.count < len) {
+            if (composite.count == len || ++composite.count != len) {
               return;
             }
           }
-          composite.succeed();
+          composite.trySucceed();
         } else {
           synchronized (composite) {
-            if (composite.isComplete()) {
+            if (composite.count == len) {
               return;
             }
+            composite.count = len;
           }
-          composite.fail(ar.cause());
+          composite.tryFail(ar.cause());
         }
       });
     }
     if (len == 0) {
-      composite.succeed();
+      composite.trySucceed();
     }
     return composite;
   }
@@ -59,24 +59,24 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
       result.onComplete(ar -> {
         if (ar.succeeded()) {
           synchronized (composite) {
-            if (composite.isComplete()) {
+            if (composite.count == len) {
               return;
             }
+            composite.count = len;
           }
-          composite.succeed();
+          composite.trySucceed();
         } else {
           synchronized (composite) {
-            composite.count++;
-            if (composite.isComplete() || composite.count < len) {
+            if (composite.count == len || ++composite.count != len) {
               return;
             }
           }
-          composite.fail(ar.cause());
+          composite.tryFail(ar.cause());
         }
       });
     }
     if (results.length == 0) {
-      composite.succeed();
+      composite.trySucceed();
     }
     return composite;
   }
@@ -101,8 +101,7 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
     for (Future<?> result : results) {
       result.onComplete(ar -> {
         synchronized (composite) {
-          composite.count++;
-          if (composite.isComplete() || composite.count < len) {
+          if (++composite.count < len) {
             return;
           }
         }
@@ -110,7 +109,7 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
       });
     }
     if (len == 0) {
-      composite.succeed();
+      composite.trySucceed();
     }
     return composite;
   }
@@ -159,8 +158,8 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
     return results.length;
   }
 
-  private void succeed() {
-    complete(this);
+  private void trySucceed() {
+    tryComplete(this);
   }
 
   private void fail(Throwable t) {

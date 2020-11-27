@@ -44,7 +44,7 @@ public class ClasspathHandlerTest extends CommandTestBase {
 
     Iterable<? extends JavaFileObject> compilationUnits1 =
         fileManager.getJavaFileObjectsFromFiles(Collections.singletonList(
-            new File("src/test/externals/MyVerticle.java")));
+            new File("src/test/classpath/verticle/MyVerticle.java")));
 
     compiler.getTask(null, fileManager, null, null, null, compilationUnits1).call();
   }

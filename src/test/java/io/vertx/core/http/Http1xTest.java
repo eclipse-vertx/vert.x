@@ -515,12 +515,17 @@ public class Http1xTest extends HttpTest {
     assertNotSame(options.getTrustOptions(), copy.getTrustOptions());
     if (copy.getTrustOptions() instanceof PemTrustOptions) {
       assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
-    } else {
-      KeyStoreOptions a = (KeyStoreOptions) options.getTrustOptions();
-      KeyStoreOptions b = (KeyStoreOptions) copy.getTrustOptions();
+    } else if (copy.getTrustOptions() instanceof JksOptions) {
+      JksOptions a = (JksOptions) options.getTrustOptions();
+      JksOptions b = (JksOptions) copy.getTrustOptions();
       assertEquals(a.getPath(), b.getPath());
       assertEquals(a.getPassword(), b.getPassword());
-      assertEquals(a.getType(), b.getType());
+      assertEquals(a.getValue(), b.getValue());
+    } else if (copy.getTrustOptions() instanceof PfxOptions) {
+      PfxOptions a = (PfxOptions) options.getTrustOptions();
+      PfxOptions b = (PfxOptions) copy.getTrustOptions();
+      assertEquals(a.getPath(), b.getPath());
+      assertEquals(a.getPassword(), b.getPassword());
       assertEquals(a.getValue(), b.getValue());
     }
   }
@@ -818,12 +823,17 @@ public class Http1xTest extends HttpTest {
     assertNotSame(options.getTrustOptions(), copy.getTrustOptions());
     if (copy.getTrustOptions() instanceof PemTrustOptions) {
       assertEquals(((PemTrustOptions) options.getTrustOptions()).getCertValues(), ((PemTrustOptions) copy.getTrustOptions()).getCertValues());
-    } else {
-      KeyStoreOptions a = (KeyStoreOptions) options.getTrustOptions();
-      KeyStoreOptions b = (KeyStoreOptions) copy.getTrustOptions();
+    } else if (copy.getTrustOptions() instanceof JksOptions) {
+      JksOptions a = (JksOptions) options.getTrustOptions();
+      JksOptions b = (JksOptions) copy.getTrustOptions();
       assertEquals(a.getPath(), b.getPath());
       assertEquals(a.getPassword(), b.getPassword());
-      assertEquals(a.getType(), b.getType());
+      assertEquals(a.getValue(), b.getValue());
+    } else if (copy.getTrustOptions() instanceof PfxOptions) {
+      PfxOptions a = (PfxOptions) options.getTrustOptions();
+      PfxOptions b = (PfxOptions) copy.getTrustOptions();
+      assertEquals(a.getPath(), b.getPath());
+      assertEquals(a.getPassword(), b.getPassword());
       assertEquals(a.getValue(), b.getValue());
     }
   }
@@ -3585,15 +3595,16 @@ public class Http1xTest extends HttpTest {
   public void testInvalidChunkInHttpClientResponse() throws Exception {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
+    CompletableFuture<Void> cont = new CompletableFuture<>();
     server.connectHandler(so -> {
-      so.write("HTTP/1.1 200 OK\r\n");
-      so.write("Transfer-Encoding: chunked\r\n");
-      so.write("\r\n");
-      so.write("invalid\r\n"); // Empty chunk
+      so.write("HTTP/1.1 200 OK\r\n" + "Transfer-Encoding: chunked\r\n" + "\r\n");
+      cont.whenComplete((v,e) -> {
+        so.write("invalid\r\n"); // Invalid chunk
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     AtomicInteger status = new AtomicInteger();
-    testHttpClientResponseDecodeError(err -> {
+    testHttpClientResponseDecodeError(cont::complete, err -> {
       switch (status.incrementAndGet()) {
         case 1:
           assertTrue(err instanceof NumberFormatException);
@@ -3611,19 +3622,22 @@ public class Http1xTest extends HttpTest {
   public void testInvalidTrailersInHttpClientResponse() throws Exception {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
+    CompletableFuture<Void> cont = new CompletableFuture<>();
     server.connectHandler(so -> {
-      so.write("HTTP/1.1 200 OK\r\n");
-      so.write("Transfer-Encoding: chunked\r\n");
-      so.write("\r\n");
-      so.write("0\r\n"); // Empty chunk
+      so.write("HTTP/1.1 200 OK\r\n" +
+        "Transfer-Encoding: chunked\r\n" +
+        "\r\n" +
+        "0\r\n"); // Empty chunk
       // Send large trailer
-      for (int i = 0;i < 2000;i++) {
-        so.write("01234567");
-      }
+      cont.whenComplete((v, e) -> {
+        for (int i = 0;i < 2000;i++) {
+          so.write("01234567");
+        }
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     AtomicInteger status = new AtomicInteger();
-    testHttpClientResponseDecodeError(err -> {
+    testHttpClientResponseDecodeError(cont::complete, err -> {
       switch (status.incrementAndGet()) {
         case 1:
           assertTrue(err instanceof TooLongFrameException);
@@ -3637,11 +3651,12 @@ public class Http1xTest extends HttpTest {
     });
   }
 
-  private void testHttpClientResponseDecodeError(Handler<Throwable> errorHandler) throws Exception {
+  private void testHttpClientResponseDecodeError(Handler<Void> continuation, Handler<Throwable> errorHandler) throws Exception {
     client.request(requestOptions)
       .onComplete(onSuccess(req -> {
         req.send(onSuccess(resp -> {
           resp.exceptionHandler(errorHandler);
+          continuation.handle(null);
         }));
       }));
     await();
@@ -4749,11 +4764,11 @@ public class Http1xTest extends HttpTest {
   public void testHttpServerWithIdleTimeoutSendChunkedFile() throws Exception {
     // Does not pass reliably in CI (timeout)
     Assume.assumeFalse(vertx.isNativeTransportEnabled());
-    int expected = 16 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
+    int expected = 64 * 1024 * 1024; // We estimate this will take more than 200ms to transfer with a 1ms pause in chunks
     File sent = TestUtils.tmpFile(".dat", expected);
     server.close();
     server = vertx
-      .createHttpServer(createBaseServerOptions().setIdleTimeout(400).setIdleTimeoutUnit(TimeUnit.MILLISECONDS))
+      .createHttpServer(createBaseServerOptions().setIdleTimeout(1000).setIdleTimeoutUnit(TimeUnit.MILLISECONDS))
       .requestHandler(
         req -> {
           req.response().sendFile(sent.getAbsolutePath());

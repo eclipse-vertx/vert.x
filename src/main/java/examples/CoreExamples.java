@@ -14,7 +14,10 @@ package examples;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
+import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.FileProps;
 import io.vertx.core.file.FileSystem;
+import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -110,10 +113,56 @@ public class CoreExamples {
     }
   }
 
-  public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
-    Future<HttpServer> httpServerFuture = Future.future(promise -> httpServer.listen(promise));
+  public void exampleFuture1(Vertx vertx, Handler<HttpServerRequest> requestHandler) {
+    FileSystem fs = vertx.fileSystem();
 
-    Future<NetServer> netServerFuture = Future.future(promise -> netServer.listen(promise));
+    Future<FileProps> future = fs.props("/my_file.txt");
+
+    future.onComplete((AsyncResult<FileProps> ar) -> {
+      if (ar.succeeded()) {
+        FileProps props = ar.result();
+        System.out.println("File size = " + props.size());
+      } else {
+        System.out.println("Failure: " + ar.cause().getMessage());
+      }
+    });
+  }
+
+  public void exampleFutureComposition1(Vertx vertx) {
+
+    FileSystem fs = vertx.fileSystem();
+
+    Future<Void> future = fs
+      .createFile("/foo")
+      .compose(v -> {
+        // When the file is created (fut1), execute this:
+        return fs.writeFile("/foo", Buffer.buffer());
+      })
+      .compose(v -> {
+        // When the file is written (fut2), execute this:
+        return fs.move("/foo", "/bar");
+      });
+  }
+
+  public void exampleFuture2(Vertx vertx, Handler<HttpServerRequest> requestHandler) {
+    FileSystem fs = vertx.fileSystem();
+
+    Future<FileProps> future = fs.props("/my_file.txt");
+
+    future.onComplete((AsyncResult<FileProps> ar) -> {
+      if (ar.succeeded()) {
+        FileProps props = ar.result();
+        System.out.println("File size = " + props.size());
+      } else {
+        System.out.println("Failure: " + ar.cause().getMessage());
+      }
+    });
+  }
+
+  public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
+    Future<HttpServer> httpServerFuture = httpServer.listen();
+
+    Future<NetServer> netServerFuture = netServer.listen();
 
     CompositeFuture.all(httpServerFuture, netServerFuture).onComplete(ar -> {
       if (ar.succeeded()) {
@@ -154,23 +203,6 @@ public class CoreExamples {
 
   public void exampleFutureJoin2(Future future1, Future future2, Future future3) {
     CompositeFuture.join(Arrays.asList(future1, future2, future3));
-  }
-
-  public void exampleFuture6(Vertx vertx) {
-
-    FileSystem fs = vertx.fileSystem();
-
-    Future<Void> fut1 = Future.future(promise -> fs.createFile("/foo", promise));
-
-    Future<Void> startFuture = fut1
-      .compose(v -> {
-      // When the file is created (fut1), execute this:
-      return Future.<Void>future(promise -> fs.writeFile("/foo", Buffer.buffer(), promise));
-    })
-      .compose(v -> {
-      // When the file is written (fut2), execute this:
-      return Future.future(promise -> fs.move("/foo", "/bar", promise));
-    });
   }
 
   public void example7_1(Vertx vertx) {

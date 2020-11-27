@@ -15,8 +15,7 @@ jobs:
     name: Run tests
     strategy:
       matrix:
-        # os: [ubuntu-latest, windows-latest]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
         profile: [""]
         jdk: [8]
         include:
@@ -42,11 +41,6 @@ jobs:
           java-version: ${{ matrix.jdk }}
       - name: Run tests
         run: mvn -q clean verify -B ${{ matrix.profile }}
-      - name: Publish Unit Test Results
-        uses: scacap/action-surefire-report@v1
-        if: ${{ always() }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
   Deploy:
     name: Deploy to OSSRH
     if: ${{ github.repository_owner == 'eclipse-vertx' && github.event_name == 'push' }}

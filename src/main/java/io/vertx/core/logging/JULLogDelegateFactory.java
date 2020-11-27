@@ -42,6 +42,11 @@ public class JULLogDelegateFactory implements LogDelegateFactory {
     }
   }
 
+  @Override
+  public boolean isAvailable() {
+    return true;
+  }
+
   public LogDelegate createDelegate(final String name) {
     return new JULLogDelegate(name);
   }

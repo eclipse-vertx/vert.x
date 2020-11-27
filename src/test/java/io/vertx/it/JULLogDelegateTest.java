@@ -30,19 +30,18 @@ import static org.junit.Assert.*;
 @SuppressWarnings("deprecation")
 public class JULLogDelegateTest {
 
+  private static Logger logger;
   private static Recording recording;
 
   @BeforeClass
   public static void initialize() throws IOException {
-    // Clear value.
-    System.clearProperty("vertx.logger-delegate-factory-class-name");
-    LoggerFactory.initialise();
+    // Init logging before recording add its own logging handler
+    logger = LoggerFactory.getLogger("my-jul-logger");
     recording = new Recording();
   }
 
   @Test
   public void testDelegateUnwrap() {
-    Logger logger = LoggerFactory.getLogger("my-jul-logger");
     LogDelegate delegate = logger.getDelegate();
     assertNotNull("Delegate is null", delegate);
     try {

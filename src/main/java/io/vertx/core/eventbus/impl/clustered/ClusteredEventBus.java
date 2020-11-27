@@ -11,7 +11,6 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -145,7 +144,7 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void removeRegistration(HandlerHolder<T> handlerHolder, Promise<Void> completionHandler) {
+  protected <T> void onLocalUnregistration(HandlerHolder<T> handlerHolder, Promise<Void> completionHandler) {
     if (!handlerHolder.isReplyHandler()) {
       RegistrationInfo registrationInfo = new RegistrationInfo(
         nodeId,
@@ -154,11 +153,7 @@ public class ClusteredEventBus extends EventBusImpl {
       );
       Promise<Void> promise = Promise.promise();
       clusterManager.removeRegistration(handlerHolder.getHandler().address, registrationInfo, promise);
-      if (completionHandler != null) {
-        promise.future().onComplete(completionHandler);
-      } else {
-        promise.future().onFailure(t -> log.error("Failed to remove sub", t));
-      }
+      promise.future().onComplete(completionHandler);
     } else {
       completionHandler.complete();
     }

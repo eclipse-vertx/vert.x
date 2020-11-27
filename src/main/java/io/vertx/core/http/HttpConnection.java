@@ -160,13 +160,20 @@ public interface HttpConnection {
   HttpConnection closeHandler(Handler<Void> handler);
 
   /**
+   * Like {@link #close(Handler)} but returns a {@code Future} of the asynchronous result
+   */
+  Future<Void> close();
+
+  /**
    * Close the connection and all the currently active streams.
    * <p/>
    * An HTTP/2 connection will send a {@literal GOAWAY} frame before.
    *
-   * @return a future completed with the result
+   * @param handler the handler to be completed when the connection is closed
    */
-  Future<Void> close();
+  default void close(Handler<AsyncResult<Void>> handler) {
+    close().onComplete(handler);
+  }
 
   /**
    * @return the latest server settings acknowledged by the remote endpoint - this is not implemented for HTTP/1.x

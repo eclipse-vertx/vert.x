@@ -25,9 +25,9 @@ public class SharedServersConcurrencyTest extends VertxTestBase {
   @Test
   @Repeat(times = 100)
   public void testConcurrency() {
-    deployVerticle(vertx, new MonitorVerticle())
-      .compose(__ -> deployVerticle(vertx, new RestVerticle()))
-      .compose(__ -> deployVerticle(vertx, new ApiVerticle()))
+    vertx.deployVerticle(new MonitorVerticle())
+      .compose(__ -> vertx.deployVerticle(new RestVerticle()))
+      .compose(__ -> vertx.deployVerticle(new ApiVerticle()))
       .onComplete(onSuccess(__ -> testComplete()));
     await();
   }
@@ -93,9 +93,5 @@ public class SharedServersConcurrencyTest extends VertxTestBase {
           }
         });
     }
-  }
-
-  private static Future<String> deployVerticle(Vertx vertx, Verticle verticle) {
-    return Future.future(promise -> vertx.deployVerticle(verticle, promise));
   }
 }

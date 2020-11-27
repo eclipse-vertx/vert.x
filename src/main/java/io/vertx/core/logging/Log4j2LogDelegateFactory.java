@@ -23,7 +23,13 @@ import io.vertx.core.spi.logging.LogDelegateFactory;
  */
 public class Log4j2LogDelegateFactory implements LogDelegateFactory
 {
-   public LogDelegate createDelegate(final String name)
+
+  @Override
+  public boolean isAvailable() {
+    return true;
+  }
+
+  public LogDelegate createDelegate(final String name)
    {
       return new Log4j2LogDelegate(name);
    }

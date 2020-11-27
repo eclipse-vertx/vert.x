@@ -236,7 +236,6 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   protected <T> HandlerHolder<T> addRegistration(String address, HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, Promise<Void> promise) {
-//    Objects.requireNonNull(registration.getHandler(), "handler");
     HandlerHolder<T> holder = addLocalRegistration(address, registration, replyHandler, localOnly);
     onLocalRegistration(holder, promise);
     return holder;

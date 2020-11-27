@@ -12,7 +12,6 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
@@ -23,13 +22,14 @@ import io.vertx.core.json.JsonObject;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 @DataObject(generateConverter = true, publicConverter = false)
-public class PfxOptions extends KeyStoreOptions {
+public class PfxOptions extends KeyStoreOptionsBase {
 
   /**
    * Default constructor
    */
   public PfxOptions() {
     super();
+    setType("PKCS12");
   }
 
   /**
@@ -47,8 +47,31 @@ public class PfxOptions extends KeyStoreOptions {
    * @param json  the JSON
    */
   public PfxOptions(JsonObject json) {
-    super();
+    this();
     PfxOptionsConverter.fromJson(json, this);
+  }
+
+  public PfxOptions setPassword(String password) {
+    return (PfxOptions) super.setPassword(password);
+  }
+
+  public PfxOptions setPath(String path) {
+    return (PfxOptions) super.setPath(path);
+  }
+
+  /**
+   * Set the key store as a buffer
+   *
+   * @param value  the key store as a buffer
+   * @return a reference to this, so the API can be used fluently
+   */
+  public PfxOptions setValue(Buffer value) {
+    return (PfxOptions) super.setValue(value);
+  }
+
+  @Override
+  public PfxOptions copy() {
+    return new PfxOptions(this);
   }
 
   /**
@@ -60,36 +83,5 @@ public class PfxOptions extends KeyStoreOptions {
     JsonObject json = new JsonObject();
     PfxOptionsConverter.toJson(this, json);
     return json;
-  }
-
-  @Override
-  public String getType() {
-    return "PKCS12";
-  }
-
-  @GenIgnore
-  @Override
-  public PfxOptions setType(String type) {
-    throw new UnsupportedOperationException("Cannot change type of a PKCS12 key store");
-  }
-
-  @Override
-  public PfxOptions setPassword(String password) {
-    return (PfxOptions) super.setPassword(password);
-  }
-
-  @Override
-  public PfxOptions setValue(Buffer value) {
-    return (PfxOptions) super.setValue(value);
-  }
-
-  @Override
-  public PfxOptions setPath(String path) {
-    return (PfxOptions) super.setPath(path);
-  }
-
-  @Override
-  public PfxOptions copy() {
-    return new PfxOptions(this);
   }
 }
