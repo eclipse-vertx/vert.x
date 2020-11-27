@@ -206,15 +206,15 @@ Vert.x 4 use futures to represent asynchronous results.
 Any asynchronous method returns a {@link io.vertx.core.Future} object for the result of the call:
 a _success_ or a _failure_.
 
-You cannot interact directly with a future instance, instead you need to set a handler that will be called when the future
-completes, like any other kind of event.
+You cannot interact directly with the result of a future, instead you need to set a handler that will be called when the future
+completes and the result is available, like any other kind of event.
 
 [source,$lang]
 ----
 {@link examples.CoreExamples#exampleFuture1}
 ----
 
-NOTE: Vert.x 3 provides a callback only model. To allow an easy migration to Vert.x 4 we decided that each asynchronous method
+NOTE: Vert.x 3 provides a callback-only model. To allow an easy migration to Vert.x 4 we decided that each asynchronous method
 has also a callback version. The `props` method above has also a version {@link io.vertx.core.file.FileSystem#props(java.lang.String, io.vertx.core.Handler)}
 with a callback as method argument.
 
