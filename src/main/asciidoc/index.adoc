@@ -199,7 +199,7 @@ Vert.x will also provide stack traces to pinpoint exactly where the blocking is 
 If you want to turn off these warnings or change the settings, you can do that in the
 {@link io.vertx.core.VertxOptions} object before creating the Vertx object.
 
-== Async results
+== Future results
 
 Vert.x 4 use futures to model asynchronous results.
 
@@ -218,13 +218,33 @@ NOTE: Vert.x 3 provides a callback only model. To allow an easy migration to Ver
 has also a callback version. The `props` method above has also a version {@link io.vertx.core.file.FileSystem#props(java.lang.String, io.vertx.core.Handler)}
 with a callback as method argument.
 
-== Async coordination
+== Future composition
 
-Coordination of multiple asynchronous results can be achieved with Vert.x {@link io.vertx.core.Future futures}. It
+{@link io.vertx.core.Future#compose(java.util.function.Function)} can be used for chaining futures:
+
+- when the current future succeeds, apply the given function, that returns a future. When this returned future completes, the composition succeeds.
+- when the current future fails, the composition fails
+
+[source,$lang]
+----
+{@link examples.CoreExamples#exampleFutureComposition1}
+----
+
+In this example, 3 operations are chained together:
+
+1. a file is created
+2. data is written in this file
+3. the file is moved
+
+When these 3 steps are successful, the final future (`future`) will succeed. However, if one
+of the steps fails, the final future will fail.
+
+
+== Future coordination
+
+Coordination of multiple futures can be achieved with Vert.x {@link io.vertx.core.Future futures}. It
 supports concurrent composition (run several async operations in parallel) and sequential composition
 (chain async operations).
-
-=== Concurrent composition
 
 {@link io.vertx.core.CompositeFuture#all} takes several futures arguments (up to 6) and returns a future that is
 _succeeded_ when all the futures are and _failed_ when at least one of the futures is failed:
@@ -279,31 +299,6 @@ A list of futures can be used also:
 ----
 {@link examples.CoreExamples#exampleFutureJoin2}
 ----
-
-=== Sequential composition
-
-While `all` and `any` are implementing concurrent composition, {@link io.vertx.core.Future#compose} can be used
-for chaining futures (so sequential composition).
-
-[source,$lang]
-----
-{@link examples.CoreExamples#exampleFuture6}
-----
-
-In this example, 3 operations are chained:
-
-1. a file is created (`fut1`)
-2. something is written in the file (`fut2`)
-3. the file is moved (`startFuture`)
-
-When these 3 steps are successful, the final future (`startFuture`) is succeeded. However, if one
-of the steps fails, the final future is failed.
-
-This example uses {@link io.vertx.core.Future#compose(java.util.function.Function)}: when the current future completes,
-run the given function, that returns a future. When this returned future completes, it completes the composition.
-
-In this second case, the {@link io.vertx.core.Handler} should complete the `next` future to report its success or
-failure.
 
 === CompletionStage interoperability
 

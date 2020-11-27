@@ -128,6 +128,22 @@ public class CoreExamples {
     });
   }
 
+  public void exampleFutureComposition1(Vertx vertx) {
+
+    FileSystem fs = vertx.fileSystem();
+
+    Future<Void> future = fs
+      .createFile("/foo")
+      .compose(v -> {
+        // When the file is created (fut1), execute this:
+        return fs.writeFile("/foo", Buffer.buffer());
+      })
+      .compose(v -> {
+        // When the file is written (fut2), execute this:
+        return fs.move("/foo", "/bar");
+      });
+  }
+
   public void exampleFuture2(Vertx vertx, Handler<HttpServerRequest> requestHandler) {
     FileSystem fs = vertx.fileSystem();
 
@@ -187,23 +203,6 @@ public class CoreExamples {
 
   public void exampleFutureJoin2(Future future1, Future future2, Future future3) {
     CompositeFuture.join(Arrays.asList(future1, future2, future3));
-  }
-
-  public void exampleFuture6(Vertx vertx) {
-
-    FileSystem fs = vertx.fileSystem();
-
-    Future<Void> fut1 = Future.future(promise -> fs.createFile("/foo", promise));
-
-    Future<Void> startFuture = fut1
-      .compose(v -> {
-      // When the file is created (fut1), execute this:
-      return Future.<Void>future(promise -> fs.writeFile("/foo", Buffer.buffer(), promise));
-    })
-      .compose(v -> {
-      // When the file is written (fut2), execute this:
-      return Future.future(promise -> fs.move("/foo", "/bar", promise));
-    });
   }
 
   public void example7_1(Vertx vertx) {
