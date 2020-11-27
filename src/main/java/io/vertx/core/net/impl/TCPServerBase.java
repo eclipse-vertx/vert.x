@@ -245,7 +245,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   public void closeAll(Handler<AsyncResult<Void>> handler) {
     List<Future> futures = new ArrayList<>(actualServer.servers)
       .stream()
-      .<Future<Void>>map(server -> Future.future(server::close))
+      .map(TCPServerBase::close)
       .collect(Collectors.toList());
     CompositeFuture fut = CompositeFuture.all(futures);
     fut.onComplete(ar -> handler.handle(ar.mapEmpty()));

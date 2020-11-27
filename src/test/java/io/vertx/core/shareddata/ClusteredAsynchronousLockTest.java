@@ -63,18 +63,16 @@ public class ClusteredAsynchronousLockTest extends AsynchronousLockTest {
     assertNotSame(node1, node2);
     AtomicInteger checkpoint = new AtomicInteger(1);
 
-    CompositeFuture.all(Future.<Lock>future(fut -> {
-      node1.sharedData().getLocalLock("lock", fut);
-    }), Future.<Lock>future(fut -> {
-      node2.sharedData().getLocalLock("lock", fut);
-    })).compose(compFuture -> {
+    CompositeFuture
+      .all(node1.sharedData().getLocalLock("lock"), node2.sharedData().getLocalLock("lock"))
+      .compose(compFuture -> {
       Lock lockNode1 = compFuture.result().resultAt(0);
       Lock lockNode2 = compFuture.result().resultAt(1);
       lockNode1.release();
 
-      return Future.<Lock>future(fut -> {
-        node2.sharedData().getLocalLockWithTimeout("lock", 250, fut);
-      }).otherwise(t -> {
+      return node2.sharedData()
+        .getLocalLockWithTimeout("lock", 250)
+        .otherwise(t -> {
         assertEquals("Acquire lock should fail", "Timed out waiting to get lock", t.getMessage());
         checkpoint.decrementAndGet();
         return lockNode2;

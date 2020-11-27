@@ -111,9 +111,9 @@ public class CoreExamples {
   }
 
   public void exampleFutureAll1(HttpServer httpServer, NetServer netServer) {
-    Future<HttpServer> httpServerFuture = Future.future(promise -> httpServer.listen(promise));
+    Future<HttpServer> httpServerFuture = httpServer.listen();
 
-    Future<NetServer> netServerFuture = Future.future(promise -> netServer.listen(promise));
+    Future<NetServer> netServerFuture = netServer.listen();
 
     CompositeFuture.all(httpServerFuture, netServerFuture).onComplete(ar -> {
       if (ar.succeeded()) {
