@@ -199,88 +199,53 @@ Vert.x will also provide stack traces to pinpoint exactly where the blocking is 
 If you want to turn off these warnings or change the settings, you can do that in the
 {@link io.vertx.core.VertxOptions} object before creating the Vertx object.
 
-[[blocking_code]]
-== Running blocking code
+== Future results
 
-In a perfect world, there will be no war or hunger, all APIs will be written asynchronously and bunny rabbits will
-skip hand-in-hand with baby lambs across sunny green meadows.
+Vert.x 4 use futures to represent asynchronous results.
 
-*But... the real world is not like that. (Have you watched the news lately?)*
+Any asynchronous method returns a {@link io.vertx.core.Future} object for the result of the call:
+a _success_ or a _failure_.
 
-Fact is, many, if not most libraries, especially in the JVM ecosystem have synchronous APIs and many of the methods are
-likely to block. A good example is the JDBC API - it's inherently synchronous, and no matter how hard it tries, Vert.x
-cannot sprinkle magic pixie dust on it to make it asynchronous.
-
-We're not going to rewrite everything to be asynchronous overnight so we need to provide you a way to use "traditional"
-blocking APIs safely within a Vert.x application.
-
-As discussed before, you can't call blocking operations directly from an event loop, as that would prevent it
-from doing any other useful work. So how can you do this?
-
-It's done by calling {@link io.vertx.core.Vertx#executeBlocking} specifying both the blocking code to execute and a
-result handler to be called back asynchronous when the blocking code has been executed.
+You cannot interact directly with the result of a future, instead you need to set a handler that will be called when the future
+completes and the result is available, like any other kind of event.
 
 [source,$lang]
 ----
-{@link examples.CoreExamples#example7}
+{@link examples.CoreExamples#exampleFuture1}
 ----
 
-WARNING: Blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
-         or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
-         When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
-         blocked thread checker. Long blocking operations should use a dedicated thread managed by the application,
-         which can interact with verticles using the event-bus or {@link io.vertx.core.Context#runOnContext(io.vertx.core.Handler)}
+NOTE: Vert.x 3 provides a callback-only model. To allow an easy migration to Vert.x 4 we decided that each asynchronous method
+has also a callback version. The `props` method above has also a version {@link io.vertx.core.file.FileSystem#props(java.lang.String, io.vertx.core.Handler)}
+with a callback as method argument.
 
+== Future composition
 
-By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
-the different executeBlocking are executed _serially_ (i.e. one after another).
+{@link io.vertx.core.Future#compose(java.util.function.Function)} can be used for chaining futures:
 
-If you don't care about ordering you can call {@link io.vertx.core.Vertx#executeBlocking(io.vertx.core.Handler,boolean,io.vertx.core.Handler)}
-specifying `false` as the argument to `ordered`. In this case any executeBlocking may be executed in parallel
-on the worker pool.
-
-An alternative way to run blocking code is to use a <<worker_verticles, worker verticle>>
-
-A worker verticle is always executed with a thread from the worker pool.
-
-By default blocking code is executed on the Vert.x worker pool, configured with {@link io.vertx.core.VertxOptions#setWorkerPoolSize(int)}.
-
-Additional pools can be created for different purposes:
+- when the current future succeeds, apply the given function, that returns a future. When this returned future completes, the composition succeeds.
+- when the current future fails, the composition fails
 
 [source,$lang]
 ----
-{@link examples.CoreExamples#workerExecutor1}
+{@link examples.CoreExamples#exampleFutureComposition1}
 ----
 
-The worker executor must be closed when it's not necessary anymore:
+In this example, 3 operations are chained together:
 
-[source,$lang]
-----
-{@link examples.CoreExamples#workerExecutor2}
-----
+1. a file is created
+2. data is written in this file
+3. the file is moved
 
-When several workers are created with the same name, they will share the same pool. The worker pool is destroyed
-when all the worker executors using it are closed.
+When these 3 steps are successful, the final future (`future`) will succeed. However, if one
+of the steps fails, the final future will fail.
 
-When an executor is created in a Verticle, Vert.x will close it automatically for you when the Verticle
-is undeployed.
+Beyond this, {@link io.vertx.core.Future} offers more: `map`, `recover`, `otherwise` and even a `flatMap` which is an alias of `compose`
 
-Worker executors can be configured when created:
+== Future coordination
 
-[source,$lang]
-----
-{@link examples.CoreExamples#workerExecutor3}
-----
-
-NOTE: the configuration is set when the worker pool is created
-
-== Async coordination
-
-Coordination of multiple asynchronous results can be achieved with Vert.x {@link io.vertx.core.Future futures}. It
+Coordination of multiple futures can be achieved with Vert.x {@link io.vertx.core.Future futures}. It
 supports concurrent composition (run several async operations in parallel) and sequential composition
 (chain async operations).
-
-=== Concurrent composition
 
 {@link io.vertx.core.CompositeFuture#all} takes several futures arguments (up to 6) and returns a future that is
 _succeeded_ when all the futures are and _failed_ when at least one of the futures is failed:
@@ -335,31 +300,6 @@ A list of futures can be used also:
 ----
 {@link examples.CoreExamples#exampleFutureJoin2}
 ----
-
-=== Sequential composition
-
-While `all` and `any` are implementing concurrent composition, {@link io.vertx.core.Future#compose} can be used
-for chaining futures (so sequential composition).
-
-[source,$lang]
-----
-{@link examples.CoreExamples#exampleFuture6}
-----
-
-In this example, 3 operations are chained:
-
-1. a file is created (`fut1`)
-2. something is written in the file (`fut2`)
-3. the file is moved (`startFuture`)
-
-When these 3 steps are successful, the final future (`startFuture`) is succeeded. However, if one
-of the steps fails, the final future is failed.
-
-This example uses {@link io.vertx.core.Future#compose(java.util.function.Function)}: when the current future completes,
-run the given function, that returns a future. When this returned future completes, it completes the composition.
-
-In this second case, the {@link io.vertx.core.Handler} should complete the `next` future to report its success or
-failure.
 
 === CompletionStage interoperability
 
@@ -764,6 +704,81 @@ from the event loop of the verticle.
 
 If you stick to the standard Vert.x verticle deployment model and avoid sharing objects between verticles then this
 should be the case without you having to think about it.
+
+[[blocking_code]]
+== Running blocking code
+
+In a perfect world, there will be no war or hunger, all APIs will be written asynchronously and bunny rabbits will
+skip hand-in-hand with baby lambs across sunny green meadows.
+
+*But... the real world is not like that. (Have you watched the news lately?)*
+
+Fact is, many, if not most libraries, especially in the JVM ecosystem have synchronous APIs and many of the methods are
+likely to block. A good example is the JDBC API - it's inherently synchronous, and no matter how hard it tries, Vert.x
+cannot sprinkle magic pixie dust on it to make it asynchronous.
+
+We're not going to rewrite everything to be asynchronous overnight so we need to provide you a way to use "traditional"
+blocking APIs safely within a Vert.x application.
+
+As discussed before, you can't call blocking operations directly from an event loop, as that would prevent it
+from doing any other useful work. So how can you do this?
+
+It's done by calling {@link io.vertx.core.Vertx#executeBlocking} specifying both the blocking code to execute and a
+result handler to be called back asynchronous when the blocking code has been executed.
+
+[source,$lang]
+----
+{@link examples.CoreExamples#example7}
+----
+
+WARNING: Blocking code should block for a reasonable amount of time (i.e no more than a few seconds). Long blocking operations
+or polling operations (i.e a thread that spin in a loop polling events in a blocking fashion) are precluded.
+When the blocking operation lasts more than the 10 seconds, a message will be printed on the console by the
+blocked thread checker. Long blocking operations should use a dedicated thread managed by the application,
+which can interact with verticles using the event-bus or {@link io.vertx.core.Context#runOnContext(io.vertx.core.Handler)}
+
+
+By default, if executeBlocking is called several times from the same context (e.g. the same verticle instance) then
+the different executeBlocking are executed _serially_ (i.e. one after another).
+
+If you don't care about ordering you can call {@link io.vertx.core.Vertx#executeBlocking(io.vertx.core.Handler,boolean,io.vertx.core.Handler)}
+specifying `false` as the argument to `ordered`. In this case any executeBlocking may be executed in parallel
+on the worker pool.
+
+An alternative way to run blocking code is to use a <<worker_verticles, worker verticle>>
+
+A worker verticle is always executed with a thread from the worker pool.
+
+By default blocking code is executed on the Vert.x worker pool, configured with {@link io.vertx.core.VertxOptions#setWorkerPoolSize(int)}.
+
+Additional pools can be created for different purposes:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#workerExecutor1}
+----
+
+The worker executor must be closed when it's not necessary anymore:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#workerExecutor2}
+----
+
+When several workers are created with the same name, they will share the same pool. The worker pool is destroyed
+when all the worker executors using it are closed.
+
+When an executor is created in a Verticle, Vert.x will close it automatically for you when the Verticle
+is undeployed.
+
+Worker executors can be configured when created:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#workerExecutor3}
+----
+
+NOTE: the configuration is set when the worker pool is created
 
 == Metrics SPI
 
