@@ -139,18 +139,13 @@ public class SocketAddressImpl implements SocketAddress{
     if (o == null || getClass() != o.getClass()) return false;
 
     SocketAddressImpl that = (SocketAddressImpl) o;
-
-    if (port != that.port) return false;
-    if (host != null ? !host.equals(that.host) : that.host != null) return false;
-    if (path != null ? !path.equals(that.path) : that.path != null) return false;
-
-    return true;
+    return port == that.port && Objects.equals(host, that.host) && Objects.equals(path, that.path);
   }
 
   @Override
   public int hashCode() {
-    int result = host != null ? host.hashCode() : 0;
-    result = 31 * result + (path != null ? path.hashCode() : 0);
+    int result = Objects.hashCode(host);
+    result = 31 * result + Objects.hashCode(path);
     result = 31 * result + port;
     return result;
   }

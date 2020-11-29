@@ -569,7 +569,7 @@ public class BufferImpl implements Buffer {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     BufferImpl buffer1 = (BufferImpl) o;
-    return buffer != null ? buffer.equals(buffer1.buffer) : buffer1.buffer == null;
+    return Objects.equals(buffer, buffer1.buffer);
   }
 
   @Override
