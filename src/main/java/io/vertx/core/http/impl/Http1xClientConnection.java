@@ -798,7 +798,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebSocketExtensionHandshakers(client.getOptions());
       if (!extensionHandshakers.isEmpty()) {
         p.addBefore("handler", "webSocketsExtensionsHandler", new WebSocketClientExtensionHandler(
-          extensionHandshakers.toArray(new WebSocketClientExtensionHandshaker[extensionHandshakers.size()])));
+          extensionHandshakers.toArray(new WebSocketClientExtensionHandshaker[0])));
       }
 
       String subp = null;

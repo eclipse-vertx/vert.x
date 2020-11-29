@@ -212,7 +212,7 @@ public class DnsResolverProvider implements ResolverProvider {
   @Override
   public void close(Handler<Void> doneHandler) {
     Context context = vertx.getOrCreateContext();
-    ResolverRegistration[] registrations = this.resolvers.toArray(new ResolverRegistration[this.resolvers.size()]);
+    ResolverRegistration[] registrations = this.resolvers.toArray(new ResolverRegistration[0]);
     if (registrations.length == 0) {
       context.runOnContext(doneHandler);
       return;

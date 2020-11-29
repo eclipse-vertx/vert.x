@@ -607,7 +607,7 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(to);
     Objects.requireNonNull(options);
     Set<CopyOption> copyOptionSet = toCopyOptionSet(options);
-    CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[copyOptionSet.size()]);
+    CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[0]);
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
@@ -669,7 +669,7 @@ public class FileSystemImpl implements FileSystem {
     Objects.requireNonNull(to);
     Objects.requireNonNull(options);
     Set<CopyOption> copyOptionSet = toCopyOptionSet(options);
-    CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[copyOptionSet.size()]);
+    CopyOption[] copyOptions = copyOptionSet.toArray(new CopyOption[0]);
     return new BlockingAction<Void>() {
       public Void perform() {
         try {
