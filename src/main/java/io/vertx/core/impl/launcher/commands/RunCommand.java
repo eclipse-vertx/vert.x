@@ -393,7 +393,7 @@ public class RunCommand extends BareCommand {
     // Enable stream redirection
     args.add("--redirect-output");
 
-    executionContext.execute("start", args.toArray(new String[args.size()]));
+    executionContext.execute("start", args.toArray(new String[0]));
     if (onCompletion != null) {
       onCompletion.handle(null);
     }

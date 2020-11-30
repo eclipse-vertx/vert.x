@@ -93,7 +93,7 @@ class LoaderManager {
     }
     // And add the URLs of the Vert.x classloader
     urls.addAll(Arrays.asList(parent.getURLs()));
-    return new IsolatingClassLoader(urls.toArray(new URL[urls.size()]), parent,
+    return new IsolatingClassLoader(urls.toArray(new URL[0]), parent,
       options.getIsolatedClasses());
   }
 }

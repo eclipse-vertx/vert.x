@@ -127,7 +127,7 @@ public class KeyStoreHelper {
             }
             @Override
             public X509Certificate[] getCertificateChain(String s) {
-              return chain.toArray(new X509Certificate[chain.size()]);
+              return chain.toArray(new X509Certificate[0]);
             }
             @Override
             public PrivateKey getPrivateKey(String s) {
@@ -350,7 +350,7 @@ public class KeyStoreHelper {
     if (certs.isEmpty()) {
       throw new RuntimeException("Missing -----BEGIN CERTIFICATE----- delimiter");
     }
-    return certs.toArray(new X509Certificate[certs.size()]);
+    return certs.toArray(new X509Certificate[0]);
   }
 
   /**
