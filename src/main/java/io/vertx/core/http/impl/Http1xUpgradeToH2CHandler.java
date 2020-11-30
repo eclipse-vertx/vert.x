@@ -124,9 +124,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
           ctx.fireChannelRead(new DefaultHttp2DataFrame(buf, end, 0));
           if (end) {
             ChannelPipeline pipeline = ctx.pipeline();
-            Iterator<Map.Entry<String, ChannelHandler>> iterator = pipeline.iterator();
-            while (iterator.hasNext()) {
-              Map.Entry<String, ChannelHandler> handler = iterator.next();
+            for (Map.Entry<String, ChannelHandler> handler : pipeline) {
               if (handler.getValue() instanceof Http2ConnectionHandler) {
                 // Continue
               } else {

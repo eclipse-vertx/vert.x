@@ -18,8 +18,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -154,15 +154,12 @@ public final class VertxEventLoopGroup extends AbstractEventExecutorGroup implem
       if (o == null || getClass() != o.getClass()) return false;
 
       EventLoopHolder that = (EventLoopHolder) o;
-
-      if (worker != null ? !worker.equals(that.worker) : that.worker != null) return false;
-
-      return true;
+      return Objects.equals(worker, that.worker);
     }
 
     @Override
     public int hashCode() {
-      return worker != null ? worker.hashCode() : 0;
+      return Objects.hashCode(worker);
     }
   }
 

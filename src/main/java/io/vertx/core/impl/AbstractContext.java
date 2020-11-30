@@ -183,7 +183,7 @@ abstract class AbstractContext implements ContextInternal {
 
   @Override
   public <T> Future<T> failedFuture(String message) {
-    return new FailedFuture<T>(this, message);
+    return new FailedFuture<>(this, message);
   }
 
   @SuppressWarnings("unchecked")

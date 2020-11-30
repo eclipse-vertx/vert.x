@@ -377,7 +377,7 @@ public class UsageMessageFormatter {
         StringBuilder buf = new StringBuilder();
         buf.append(lpad).append("   ").append(command.getName());
         prefixList.add(buf);
-        max = buf.length() > max ? buf.length() : max;
+        max = Math.max(buf.length(), max);
       }
     }
 
@@ -469,7 +469,7 @@ public class UsageMessageFormatter {
         }
       }
       prefixList.add(buf);
-      max = buf.length() > max ? buf.length() : max;
+      max = Math.max(buf.length(), max);
     }
 
     for (Argument argument : arguments) {
@@ -480,7 +480,7 @@ public class UsageMessageFormatter {
       buf.append(lpad).append("<").append(argument.getArgName()).append(">");
 
       prefixList.add(buf);
-      max = buf.length() > max ? buf.length() : max;
+      max = Math.max(buf.length(), max);
     }
 
     int x = 0;

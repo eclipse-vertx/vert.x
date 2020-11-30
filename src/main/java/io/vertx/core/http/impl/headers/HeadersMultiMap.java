@@ -21,6 +21,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
 
 import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -346,9 +347,7 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
 
   @Override
   public HeadersMultiMap clear() {
-    for (int i = 0; i < entries.length; i ++) {
-      entries[i] = null;
-    }
+    Arrays.fill(entries, null);
     head.before = head.after = head;
     return this;
   }

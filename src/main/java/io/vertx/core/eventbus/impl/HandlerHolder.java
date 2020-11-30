@@ -13,6 +13,8 @@ package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.impl.ContextInternal;
 
+import java.util.Objects;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -53,14 +55,13 @@ public class HandlerHolder<T> {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    HandlerHolder that = (HandlerHolder) o;
-    if (handler != null ? !handler.equals(that.handler) : that.handler != null) return false;
-    return true;
+    HandlerHolder<?> that = (HandlerHolder<?>) o;
+    return Objects.equals(handler, that.handler);
   }
 
   @Override
   public int hashCode() {
-    return handler != null ? handler.hashCode() : 0;
+    return Objects.hashCode(handler);
   }
 
   public long getSeq() {

@@ -82,8 +82,7 @@ public class CloseHooks {
       closeHooks = null;
     }
     // We want an immutable version of the list holding strong references to avoid racing against finalization
-    List<Closeable> list = new ArrayList<>(copy.size());
-    copy.keySet().forEach(list::add);
+    List<Closeable> list = new ArrayList<>(copy.keySet());
     int num = list.size();
     if (num > 0) {
       AtomicInteger count = new AtomicInteger();
