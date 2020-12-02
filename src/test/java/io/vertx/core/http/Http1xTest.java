@@ -24,6 +24,7 @@ import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -35,7 +36,6 @@ import io.vertx.test.core.CheckingSender;
 import io.vertx.test.verticles.SimpleServer;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -50,6 +50,7 @@ import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static io.vertx.core.http.HttpMethod.PUT;
 import static io.vertx.test.core.TestUtils.*;
@@ -2102,9 +2103,6 @@ public class Http1xTest extends HttpTest {
     awaitLatch(latch);
     CountDownLatch latch2 = new CountDownLatch(1);
     int numConns = 4;
-    // There should be a context per request
-    Set<Context> contexts = new ConcurrentHashSet<>();
-    Set<Thread> threads = new ConcurrentHashSet<>();
     client.close();
     client = null;
     Context clientCtx = vertx.getOrCreateContext();
@@ -2112,18 +2110,32 @@ public class Http1xTest extends HttpTest {
       client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(numConns));
     });
     waitUntil(() -> client != null);
+    // There should be a context per request
+    List<EventLoopContext> contexts = Stream.generate(() -> ((VertxInternal) vertx).createEventLoopContext())
+      .limit(4)
+      .collect(Collectors.toList());
+    Set<Thread> expectedThreads = new HashSet<>();
+    for (Context ctx : contexts) {
+      CompletableFuture<Thread> th = new CompletableFuture<>();
+      ctx.runOnContext(v -> {
+        th.complete(Thread.currentThread());
+      });
+      expectedThreads.add(th.get());
+    }
+    Set<Thread> threads = new ConcurrentHashSet<>();
     for (int i = 0; i < numReqs; i++) {
+      Context requestCtx = contexts.get(i);
       CompletableFuture<Long> cf = new CompletableFuture<>();
       String path = "/" + i;
       requestResumeMap.put(path, cf);
-      Context requestCtx = ((VertxInternal)vertx).createEventLoopContext();
       requestCtx.runOnContext(v -> {
+        Thread t = Thread.currentThread();
         client.request(new RequestOptions(requestOptions).setURI(path))
           .onComplete(onSuccess(req -> {
+            assertSame(t, Thread.currentThread());
             req.response(onSuccess(resp -> {
                 assertSameEventLoop(requestCtx, Vertx.currentContext());
                 assertEquals(200, resp.statusCode());
-                contexts.add(Vertx.currentContext());
                 threads.add(Thread.currentThread());
                 resp.pause();
                 responseResumeMap.get(path).thenAccept(v2 -> resp.resume());
@@ -2134,8 +2146,7 @@ public class Http1xTest extends HttpTest {
                 resp.endHandler(v2 -> {
                   assertSameEventLoop(requestCtx, Vertx.currentContext());
                   if (cnt.incrementAndGet() == numReqs) {
-                    assertEquals(4, contexts.size());
-                    assertEquals(4, threads.size());
+                    assertEquals(expectedThreads, new HashSet<>(threads));
                     latch2.countDown();
                   }
                 });
