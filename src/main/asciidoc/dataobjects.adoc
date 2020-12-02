@@ -1211,8 +1211,8 @@ Add an enabled cipher suite, appended to the ordered suites.
 Sets the list of enabled SSL/TLS protocols.
 +++
 |[[hostnameVerificationAlgorithm]]`@hostnameVerificationAlgorithm`|`String`|+++
-Set the hostname verification algorithm interval
- To disable hostname verification, set hostnameVerificationAlgorithm to an empty String
+Set the hostname verification algorithm, either HTTPS, LDAPS, or an empty String
+ to disable hostname verification. The default is HTTPS.
 +++
 |[[idleTimeout]]`@idleTimeout`|`Number (int)`|+++
 Set the idle timeout, default time unit is seconds. Zero means don't timeout.

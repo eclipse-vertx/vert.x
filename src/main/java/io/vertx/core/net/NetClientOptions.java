@@ -38,9 +38,9 @@ public class NetClientOptions extends ClientOptionsBase {
   public static final long DEFAULT_RECONNECT_INTERVAL = 1000;
 
   /**
-   * Default value to determine hostname verification algorithm hostname verification (for SSL/TLS) = ""
+   * Default hostname verification algorithm (for SSL/TLS)
    */
-  public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = "";
+  public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = "HTTPS";
 
 
   private int reconnectAttempts;
@@ -309,7 +309,8 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return  the value of the hostname verification algorithm
+   * @return  the hostname verification algorithm, either HTTPS, LDAPS, or
+   *            an empty String for no hostname validation
    */
 
   public String getHostnameVerificationAlgorithm() {
@@ -317,8 +318,8 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Set the hostname verification algorithm interval
-   * To disable hostname verification, set hostnameVerificationAlgorithm to an empty String
+   * Set the hostname verification algorithm, either HTTPS, LDAPS, or an empty String
+   * to disable hostname verification. The default is HTTPS.
    *
    * @param hostnameVerificationAlgorithm should be HTTPS, LDAPS or an empty String
    * @return a reference to this, so the API can be used fluently

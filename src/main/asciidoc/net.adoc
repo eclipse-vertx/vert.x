@@ -448,9 +448,16 @@ To enable SSL on a NetClient the function setSSL(true) is called.
 
 ==== Client trust configuration
 
-If the {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustALl} is set to true on the client, then the client will
-trust all server certificates. The connection will still be encrypted but this mode is vulnerable to 'man in the middle' attacks. I.e. you can't
-be sure who you are connecting to. Use this with caution. Default value is false.
+By default, the client checks that the certificate presented by the server is trusted, and that the host name the
+client wants to connect to is listed in the server certificate.
+
+Disabling one or both of these checks makes the connection vulnerable to 'man in the middle' attacks. I.e. you can't
+be sure who you are connecting to. Use this with caution.
+
+If the {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustAll} is set to true on the client, then the client will
+trust all server certificates, i.e. certificates issued by an attacker.
+
+The default value for trustAll is false.
 
 [source,$lang]
 ----
@@ -460,8 +467,13 @@ be sure who you are connecting to. Use this with caution. Default value is false
 If {@link io.vertx.core.net.ClientOptionsBase#setTrustAll trustAll} is not set then a client trust store must be
 configured and should contain the certificates of the servers that the client trusts.
 
-By default, host verification is disabled on the client.
-To enable host verification, set the algorithm to use on your client (only HTTPS and LDAPS is currently supported):
+If the {@link io.vertx.core.net.NetClientOptions#setHostnameVerificationAlgorithm hostnameVerificationAlgorithm}
+is set to an empty string on the client, then the client will trust server certificates issued for wrong hosts. Use
+this with caution.
+
+By default, HTTPS host name verification is enabled on the client.
+Use {@link io.vertx.core.net.NetClientOptions#setHostnameVerificationAlgorithm setHostnameVerificationAlgorithm}
+to switch to "LDAPS", "HTTPS" or "".
 
 
 [source,$lang]
