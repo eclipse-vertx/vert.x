@@ -39,7 +39,7 @@ jobs:
         run: mvn -q clean verify -B ${{ matrix.profile }}
   Deploy:
     name: Deploy to OSSRH
-    if: ${{ github.repository_owner == 'eclipse-vertx' && github.event_name == 'push' }}
+    if: ${{ github.repository_owner == 'vert-x3' && (github.event_name == 'push' || github.event_name == 'schedule') }}
     needs: Test
     runs-on: ubuntu-latest
     env:
