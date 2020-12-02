@@ -99,6 +99,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE = 65536 * 4;
 
   /**
+   * The default value for the maximum number of WebSocket = 50
+   */
+  public static final int DEFAULT_MAX_WEBSOCKETS = 50;
+
+  /**
    * The default value for host name = "localhost"
    */
   public static final String DEFAULT_DEFAULT_HOST = "localhost";
@@ -218,6 +223,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private boolean tryUseCompression;
   private int maxWebSocketFrameSize;
   private int maxWebSocketMessageSize;
+  private int maxWebSockets;
   private String defaultHost;
   private int defaultPort;
   private HttpVersion protocolVersion;
@@ -270,6 +276,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.tryUseCompression = other.isTryUseCompression();
     this.maxWebSocketFrameSize = other.maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = other.maxWebSocketMessageSize;
+    this.maxWebSockets = other.maxWebSockets;
     this.defaultHost = other.defaultHost;
     this.defaultPort = other.defaultPort;
     this.protocolVersion = other.protocolVersion;
@@ -330,6 +337,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     tryUseCompression = DEFAULT_TRY_USE_COMPRESSION;
     maxWebSocketFrameSize = DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
     maxWebSocketMessageSize = DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE;
+    maxWebSockets = DEFAULT_MAX_WEBSOCKETS;
     defaultHost = DEFAULT_DEFAULT_HOST;
     defaultPort = DEFAULT_DEFAULT_PORT;
     protocolVersion = DEFAULT_PROTOCOL_VERSION;
@@ -843,6 +851,29 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setMaxWebSocketMessageSize(int maxWebSocketMessageSize) {
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
+    return this;
+  }
+
+  /**
+   * Get the maximum of WebSockets per endpoint.
+   *
+   * @return  the max number of WebSockets
+   */
+  public int getMaxWebSockets() {
+    return maxWebSockets;
+  }
+
+  /**
+   * Set the max number of WebSockets per endpoint.
+   *
+   * @param maxWebSockets  the max value
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setMaxWebSockets(int maxWebSockets) {
+    if (maxWebSockets == 0 || maxWebSockets < -1) {
+      throw new IllegalArgumentException("maxWebSockets must be > 0 or -1 (disabled)");
+    }
+    this.maxWebSockets = maxWebSockets;
     return this;
   }
 

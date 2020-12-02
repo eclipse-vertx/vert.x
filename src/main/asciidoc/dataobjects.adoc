@@ -743,6 +743,9 @@ Set the max WebSocket frame size
 |[[maxWebSocketMessageSize]]`@maxWebSocketMessageSize`|`Number (int)`|+++
 Set the max WebSocket message size
 +++
+|[[maxWebSockets]]`@maxWebSockets`|`Number (int)`|+++
+Set the max number of WebSockets per endpoint.
++++
 |[[metricsName]]`@metricsName`|`String`|+++
 Set the metrics name identifying the reported metrics, useful for grouping metrics
  with the same name.

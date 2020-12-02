@@ -126,6 +126,11 @@ public class HttpClientOptionsConverter {
             obj.setMaxWebSocketMessageSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "maxWebSockets":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxWebSockets(((Number)member.getValue()).intValue());
+          }
+          break;
         case "pipelining":
           if (member.getValue() instanceof Boolean) {
             obj.setPipelining((Boolean)member.getValue());
@@ -236,6 +241,7 @@ public class HttpClientOptionsConverter {
     json.put("maxWaitQueueSize", obj.getMaxWaitQueueSize());
     json.put("maxWebSocketFrameSize", obj.getMaxWebSocketFrameSize());
     json.put("maxWebSocketMessageSize", obj.getMaxWebSocketMessageSize());
+    json.put("maxWebSockets", obj.getMaxWebSockets());
     json.put("pipelining", obj.isPipelining());
     json.put("pipeliningLimit", obj.getPipeliningLimit());
     json.put("poolCleanerPeriod", obj.getPoolCleanerPeriod());

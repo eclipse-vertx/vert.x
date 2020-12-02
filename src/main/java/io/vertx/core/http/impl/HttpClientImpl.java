@@ -217,7 +217,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   }
 
   private ConnectionManager<EndpointKey, HttpClientConnection> webSocketConnectionManager() {
-    int maxPoolSize = options.getMaxPoolSize();
+    int maxPoolSize = options.getMaxWebSockets();
     return new ConnectionManager<>((key, ctx, dispose) -> {
       String host;
       int port;
