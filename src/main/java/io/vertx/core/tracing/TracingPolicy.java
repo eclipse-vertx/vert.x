@@ -10,11 +10,14 @@
  */
 package io.vertx.core.tracing;
 
+import io.vertx.codegen.annotations.VertxGen;
+
 /**
  * Policy controlling the behavior across boundaries.
  *
  * This control is applied for clients or servers reporting traces.
  */
+@VertxGen
 public enum TracingPolicy {
 
   /**
