@@ -249,7 +249,6 @@ public class FutureTest extends FutureTestBase {
   @Test
   public void testComposeFailure() {
     Exception cause = new Exception();
-
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
     Future<Integer> f4 = f3.compose(string -> Future.succeededFuture(string.length()));
@@ -275,6 +274,85 @@ public class FutureTest extends FutureTestBase {
     Future<Integer> f = p.future();
     try {
       f.compose((Function<Integer, Future<Integer>>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
+  public void testEventuallySuccessToSuccess() {
+    testEventuallyToSuccess(p -> p.complete("abcdef"));
+  }
+
+  @Test
+  public void testEventuallyFailureToSuccess() {
+    testEventuallyToSuccess(p -> p.fail("it-failed"));
+  }
+
+  private void testEventuallyToSuccess(Consumer<Promise<String>> consumer) {
+    AtomicInteger cnt = new AtomicInteger();
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> c = p.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<Integer> f4 = f3.eventually(v -> {
+      cnt.incrementAndGet();
+      return c;
+    });
+    Checker<Integer>  checker = new Checker<>(f4);
+    consumer.accept(p3);
+    checker.assertNotCompleted();
+    assertEquals(1, cnt.get());
+    p.complete(6);
+    checker.assertSucceeded(6);
+  }
+
+  @Test
+  public void testEventuallySuccessToFailure() {
+    testEventuallyToFailure(p -> p.complete("abcdef"));
+  }
+
+  @Test
+  public void testEventuallyFailureToFailure() {
+    testEventuallyToFailure(p -> p.fail("it-failed"));
+  }
+
+  private void testEventuallyToFailure(Consumer<Promise<String>> consumer) {
+    Throwable cause = new Throwable();
+    AtomicInteger cnt = new AtomicInteger();
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> c = p.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<Integer> f4 = f3.eventually(v -> {
+      cnt.incrementAndGet();
+      return c;
+    });
+    Checker<Integer> checker = new Checker<>(f4);
+    consumer.accept(p3);
+    checker.assertNotCompleted();
+    assertEquals(1, cnt.get());
+    p.fail(cause);
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testEventuallyFails() {
+    RuntimeException cause = new RuntimeException();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<Integer> f4 = f3.eventually(string -> { throw cause; });
+    Checker<Integer> checker = new Checker<>(f4);
+    p3.complete("foo");
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testEventuallyWithNullFunction() {
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> f = p.future();
+    try {
+      f.eventually(null);
       fail();
     } catch (NullPointerException ignore) {
     }
@@ -663,6 +741,7 @@ public class FutureTest extends FutureTestBase {
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
       public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<U> eventually(Function<Void, Future<U>> mapper) { throw new UnsupportedOperationException(); }
       public <U> Future<U> map(Function<T, U> mapper) { throw new UnsupportedOperationException(); }
       public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
       public Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }
