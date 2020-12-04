@@ -106,6 +106,14 @@ abstract class FutureBase<T> implements FutureInternal<T> {
   }
 
   @Override
+  public <U> Future<U> eventually(Function<Void, Future<U>> mapper) {
+    Objects.requireNonNull(mapper, "No null success accepted");
+    EventuallyTransformation<T, U> transformation = new EventuallyTransformation<>(context, mapper);
+    addListener(transformation);
+    return transformation;
+  }
+
+  @Override
   public <U> Future<U> map(Function<T, U> mapper) {
     Objects.requireNonNull(mapper, "No null mapper accepted");
     MapTransformation<T, U> transformation = new MapTransformation<>(context, mapper);

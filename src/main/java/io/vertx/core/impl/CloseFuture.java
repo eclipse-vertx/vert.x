@@ -105,6 +105,11 @@ public class CloseFuture implements Future<Void>, Closeable {
   }
 
   @Override
+  public <U> Future<U> eventually(Function<Void, Future<U>> mapper) {
+    return promise.future().eventually(mapper);
+  }
+
+  @Override
   public <U> Future<U> map(Function<Void, U> mapper) {
     return promise.future().map(mapper);
   }
