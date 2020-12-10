@@ -235,4 +235,47 @@ public class RedeployTest extends CommandTestBase {
     }, 20000);
   }
 
+  @Test
+  public void testStartingApplicationInRedeployModeWithInlineOptions() throws IOException {
+    cli.dispatch(new Launcher(), new String[]{"run",
+      HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
+      "--launcher-class=" + OptionsRecordingLauncher.class.getName(),
+      "--options", "{\"metricsOptions\":{\"enabled\":true}}"
+    });
+    assertWaitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    JsonObject conf = RunCommandTest.getContent().getJsonObject("conf");
+    assertThat(conf).isNotNull().isNotEmpty();
+    JsonObject metricsOptions = conf.getJsonObject(OptionsRecordingLauncher.class.getName());
+    assertThat(metricsOptions).isNotNull().isNotEmpty();
+    assertThat(metricsOptions.getBoolean("enabled")).isEqualTo(true);
+  }
+
+  @Test
+  public void testStartingApplicationInRedeployModeWithInlineOptions2() throws IOException {
+    cli.dispatch(new Launcher(), new String[]{"run",
+      HttpTestVerticle.class.getName(), "--redeploy=**" + File.separator + "*.txt",
+      "--launcher-class=" + OptionsRecordingLauncher.class.getName(),
+      "--options={\"metricsOptions\":{\"enabled\":true}}"
+    });
+    assertWaitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    JsonObject conf = RunCommandTest.getContent().getJsonObject("conf");
+    assertThat(conf).isNotNull().isNotEmpty();
+    JsonObject metricsOptions = conf.getJsonObject(OptionsRecordingLauncher.class.getName());
+    assertThat(metricsOptions).isNotNull().isNotEmpty();
+    assertThat(metricsOptions.getBoolean("enabled")).isEqualTo(true);
+  }
 }

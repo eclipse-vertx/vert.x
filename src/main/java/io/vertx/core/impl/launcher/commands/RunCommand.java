@@ -375,6 +375,11 @@ public class RunCommand extends BareCommand {
     if (classpath != null && !classpath.isEmpty()) {
       args.add("--classpath=" + classpath.stream().collect(Collectors.joining(File.pathSeparator)));
     }
+    if (vertxOptions != null) {
+      // Pass the configuration in 2 steps to quote correctly the options if it's an inlined json string
+      args.add("--options");
+      args.add(vertxOptions);
+    }
     if (config != null) {
       // Pass the configuration in 2 steps to quote correctly the configuration if it's an inlined json string
       args.add("--conf");
