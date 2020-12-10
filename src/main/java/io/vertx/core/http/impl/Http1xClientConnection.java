@@ -100,6 +100,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     this.timerID = -1L;
     this.endpointMetric = endpointMetric;
     this.keepAliveTimeout = options.getKeepAliveTimeout();
+    this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
   }
 
   Object endpointMetric() {
@@ -859,7 +860,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
         close();
       }
     } else {
-      expirationTimestamp = keepAliveTimeout == 0 ? 0L : System.currentTimeMillis() + keepAliveTimeout * 1000;
+      expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
       listener.onRecycle();
     }
   }
@@ -888,5 +889,15 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     listener.onEvict();
     checkLifecycle();
     return this;
+  }
+
+  /**
+   * Compute the expiration timeout of the connection, relative to the current time.
+   *
+   * @param timeout the timeout
+   * @return the expiration timestamp
+   */
+  private static long expirationTimestampOf(long timeout) {
+    return timeout == 0 ? 0L : System.currentTimeMillis() + timeout * 1000;
   }
 }
