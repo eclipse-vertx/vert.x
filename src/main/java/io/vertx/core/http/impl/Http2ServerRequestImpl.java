@@ -458,6 +458,11 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
+  public int streamId() {
+    return stream.id();
+  }
+
+  @Override
   public ServerWebSocket upgrade() {
     throw new UnsupportedOperationException("HTTP/2 request cannot be upgraded to a websocket");
   }
