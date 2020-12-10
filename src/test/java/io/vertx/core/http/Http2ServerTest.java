@@ -410,6 +410,7 @@ public class Http2ServerTest extends Http2TestBase {
     String expected = TestUtils.randomAlphaString(1000);
     AtomicBoolean requestEnded = new AtomicBoolean();
     Context ctx = vertx.getOrCreateContext();
+    AtomicInteger expectedStreamId = new AtomicInteger();
     server.requestHandler(req -> {
       assertOnIOContext(ctx);
       req.endHandler(v -> {
@@ -421,6 +422,7 @@ public class Http2ServerTest extends Http2TestBase {
       assertEquals(DEFAULT_HTTPS_HOST_AND_PORT, req.host());
       assertEquals("/", req.path());
       assertTrue(req.isSSL());
+      assertEquals(expectedStreamId.get(), req.streamId());
       assertEquals("https", req.scheme());
       assertEquals("/", req.uri());
       assertEquals("foo_request_value", req.getHeader("Foo_request"));
@@ -439,6 +441,7 @@ public class Http2ServerTest extends Http2TestBase {
     TestClient client = new TestClient();
     ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
       int id = request.nextStreamId();
+      expectedStreamId.set(id);
       request.decoder.frameListener(new Http2EventAdapter() {
         @Override
         public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endStream) throws Http2Exception {

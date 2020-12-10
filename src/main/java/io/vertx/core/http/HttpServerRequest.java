@@ -339,6 +339,15 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   String getFormAttribute(String attributeName);
 
   /**
+   * @return the id of the stream of this request, {@literal -1} when it is not yet determined, i.e
+   *         the request has not been yet sent or it is not supported HTTP/1.x
+   */
+  @CacheReturn
+  default int streamId() {
+    return -1;
+  }
+
+  /**
    * Upgrade the connection of the current request to a WebSocket.
    * <p>
    * This is an alternative way of handling WebSockets and can only be used if no WebSocket handler is set on the

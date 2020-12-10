@@ -480,6 +480,11 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
+  public int streamId() {
+    return stream.id();
+  }
+
+  @Override
   public Future<ServerWebSocket> toWebSocket() {
     return context.failedFuture("HTTP/2 request cannot be upgraded to a WebSocket");
   }
