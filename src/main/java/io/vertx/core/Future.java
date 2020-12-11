@@ -230,17 +230,33 @@ public interface Future<T> extends AsyncResult<T> {
   <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper);
 
   /**
+   * Transform this future with a {@code mapper} functions.<p>
+   *
+   * When this future (the one on which {@code transform} is called) completes, the {@code mapper} will be called with
+   * the async result and this mapper returns another future object. This returned future completion will complete
+   * the future returned by this method call.<p>
+   *
+   * If any mapper function throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * @param mapper the function mapping the future
+   * @return the transformed future
+   */
+  <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper);
+
+  /**
    * Compose this future with a {@code mapper} that will be always be called.
    *
    * <p>When this future (the one on which {@code eventually} is called) completes, the {@code mapper} will be called
-   * and this mapper returns another future object. This returned future completion will complete the future returned by this method call.
+   * and this mapper returns another future object. This returned future completion will complete the future returned
+   * by this method call with the original result of the future.
    *
-   * <p>If the {@code mapper} function throws an exception, the returned future will be failed with this exception.
+   * <p>The outcome of the future returned by the {@code mapper} will not influence the the nature
+   * of the returned future.
    *
-   * @param mapper the function returning the value.
+   * @param mapper the function returning the future.
    * @return the composed future
    */
-  <U> Future<U> eventually(Function<Void, Future<U>> mapper);
+  <U> Future<T> eventually(Function<Void, Future<U>> mapper);
 
   /**
    * Apply a {@code mapper} function on this future.<p>
