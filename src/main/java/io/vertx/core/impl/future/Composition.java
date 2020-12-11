@@ -20,20 +20,22 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class EventuallyTransformation<T, U> extends Transformation<U> implements Listener<T> {
+class Composition<T, U> extends Operation<U> implements Listener<T> {
 
-  private final Function<Void, Future<U>> mapper;
+  private final Function<T, Future<U>> successMapper;
+  private final Function<Throwable, Future<U>> failureMapper;
 
-  EventuallyTransformation(ContextInternal context, Function<Void, Future<U>> mapper) {
+  Composition(ContextInternal context, Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
     super(context);
-    this.mapper = mapper;
+    this.successMapper = successMapper;
+    this.failureMapper = failureMapper;
   }
 
   @Override
   public void onSuccess(T value) {
     FutureInternal<U> future;
     try {
-      future = (FutureInternal<U>) mapper.apply(null);
+      future = (FutureInternal<U>) successMapper.apply(value);
     } catch (Throwable e) {
       tryFail(e);
       return;
@@ -45,7 +47,7 @@ class EventuallyTransformation<T, U> extends Transformation<U> implements Listen
   public void onFailure(Throwable failure) {
     FutureInternal<U> future;
     try {
-      future = (FutureInternal<U>) mapper.apply(null);
+      future = (FutureInternal<U>) failureMapper.apply(failure);
     } catch (Throwable e) {
       tryFail(e);
       return;

@@ -12,27 +12,31 @@ package io.vertx.core.impl.future;
 
 import io.vertx.core.impl.ContextInternal;
 
-/**
- * Map value transformation.
- *
- * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
- */
-class MapValueTransformation<T, U> extends Transformation<U> implements Listener<T> {
+import java.util.function.Function;
 
-  private final U value;
+class Otherwise<T> extends Operation<T> implements Listener<T> {
 
-  MapValueTransformation(ContextInternal context, U value) {
+  private final Function<Throwable, T> mapper;
+
+  Otherwise(ContextInternal context, Function<Throwable, T> mapper) {
     super(context);
-    this.value = value;
+    this.mapper = mapper;
   }
 
   @Override
   public void onSuccess(T value) {
-    tryComplete(this.value);
+    tryComplete(value);
   }
 
   @Override
   public void onFailure(Throwable failure) {
-    tryFail(failure);
+    T result;
+    try {
+      result = mapper.apply(failure);
+    } catch (Throwable e) {
+      tryFail(e);
+      return;
+    }
+    tryComplete(result);
   }
 }

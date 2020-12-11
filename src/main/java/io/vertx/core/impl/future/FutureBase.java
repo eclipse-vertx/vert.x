@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl.future;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
@@ -100,30 +101,38 @@ abstract class FutureBase<T> implements FutureInternal<T> {
   public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
     Objects.requireNonNull(successMapper, "No null success mapper accepted");
     Objects.requireNonNull(failureMapper, "No null failure mapper accepted");
-    ComposeTransformation<T, U> transformation = new ComposeTransformation<>(context, successMapper, failureMapper);
-    addListener(transformation);
-    return transformation;
+    Composition<T, U> operation = new Composition<>(context, successMapper, failureMapper);
+    addListener(operation);
+    return operation;
   }
 
   @Override
-  public <U> Future<U> eventually(Function<Void, Future<U>> mapper) {
-    Objects.requireNonNull(mapper, "No null success accepted");
-    EventuallyTransformation<T, U> transformation = new EventuallyTransformation<>(context, mapper);
-    addListener(transformation);
-    return transformation;
+  public <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper) {
+    Objects.requireNonNull(mapper, "No null mapper accepted");
+    Transformation<T, U> operation = new Transformation<>(context, this, mapper);
+    addListener(operation);
+    return operation;
+  }
+
+  @Override
+  public <U> Future<T> eventually(Function<Void, Future<U>> mapper) {
+    Objects.requireNonNull(mapper, "No null mapper accepted");
+    Eventually<T, U> operation = new Eventually<>(context, mapper);
+    addListener(operation);
+    return operation;
   }
 
   @Override
   public <U> Future<U> map(Function<T, U> mapper) {
     Objects.requireNonNull(mapper, "No null mapper accepted");
-    MapTransformation<T, U> transformation = new MapTransformation<>(context, mapper);
-    addListener(transformation);
-    return transformation;
+    Mapping<T, U> operation = new Mapping<>(context, mapper);
+    addListener(operation);
+    return operation;
   }
 
   @Override
   public <V> Future<V> map(V value) {
-    MapValueTransformation<T, V> transformation = new MapValueTransformation<>(context, value);
+    FixedMapping<T, V> transformation = new FixedMapping<>(context, value);
     addListener(transformation);
     return transformation;
   }
@@ -131,15 +140,15 @@ abstract class FutureBase<T> implements FutureInternal<T> {
   @Override
   public Future<T> otherwise(Function<Throwable, T> mapper) {
     Objects.requireNonNull(mapper, "No null mapper accepted");
-    OtherwiseTransformation<T> transformation = new OtherwiseTransformation<>(context, mapper);
+    Otherwise<T> transformation = new Otherwise<>(context, mapper);
     addListener(transformation);
     return transformation;
   }
 
   @Override
   public Future<T> otherwise(T value) {
-    OtherwiseValueTransformation<T> transformation = new OtherwiseValueTransformation<>(context, value);
-    addListener(transformation);
-    return transformation;
+    FixedOtherwise<T> operation = new FixedOtherwise<>(context, value);
+    addListener(operation);
+    return operation;
   }
 }

@@ -19,11 +19,11 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class MapTransformation<T, U> extends Transformation<U> implements Listener<T> {
+class Mapping<T, U> extends Operation<U> implements Listener<T> {
 
   private final Function<T, U> successMapper;
 
-  MapTransformation(ContextInternal context, Function<T, U> successMapper) {
+  Mapping(ContextInternal context, Function<T, U> successMapper) {
     super(context);
     this.successMapper = successMapper;
   }

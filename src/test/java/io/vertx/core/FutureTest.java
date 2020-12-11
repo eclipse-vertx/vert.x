@@ -280,22 +280,23 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testEventuallySuccessToSuccess() {
-    testEventuallyToSuccess(p -> p.complete("abcdef"));
+  public void testTransformSuccessToSuccess() {
+    testTransformToSuccess(p -> p.complete("abcdef"));
   }
 
   @Test
-  public void testEventuallyFailureToSuccess() {
-    testEventuallyToSuccess(p -> p.fail("it-failed"));
+  public void testTransformFailureToSuccess() {
+    testTransformToSuccess(p -> p.fail("it-failed"));
   }
 
-  private void testEventuallyToSuccess(Consumer<Promise<String>> consumer) {
+  private void testTransformToSuccess(Consumer<Promise<String>> consumer) {
     AtomicInteger cnt = new AtomicInteger();
     Promise<Integer> p = Promise.promise();
     Future<Integer> c = p.future();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
-    Future<Integer> f4 = f3.eventually(v -> {
+    Future<Integer> f4 = f3.transform(ar -> {
+      assertSame(f3, ar);
       cnt.incrementAndGet();
       return c;
     });
@@ -308,23 +309,24 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testEventuallySuccessToFailure() {
-    testEventuallyToFailure(p -> p.complete("abcdef"));
+  public void testTransformSuccessToFailure() {
+    testTransformToFailure(p -> p.complete("abcdef"));
   }
 
   @Test
-  public void testEventuallyFailureToFailure() {
-    testEventuallyToFailure(p -> p.fail("it-failed"));
+  public void testTransformFailureToFailure() {
+    testTransformToFailure(p -> p.fail("it-failed"));
   }
 
-  private void testEventuallyToFailure(Consumer<Promise<String>> consumer) {
+  private void testTransformToFailure(Consumer<Promise<String>> consumer) {
     Throwable cause = new Throwable();
     AtomicInteger cnt = new AtomicInteger();
     Promise<Integer> p = Promise.promise();
     Future<Integer> c = p.future();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
-    Future<Integer> f4 = f3.eventually(v -> {
+    Future<Integer> f4 = f3.transform(ar -> {
+      assertSame(f3, ar);
       cnt.incrementAndGet();
       return c;
     });
@@ -337,25 +339,84 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testEventuallyFails() {
+  public void testTransformFails() {
     RuntimeException cause = new RuntimeException();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
-    Future<Integer> f4 = f3.eventually(string -> { throw cause; });
+    Future<Integer> f4 = f3.transform(string -> { throw cause; });
     Checker<Integer> checker = new Checker<>(f4);
     p3.complete("foo");
     checker.assertFailed(cause);
   }
 
   @Test
-  public void testEventuallyWithNullFunction() {
+  public void testTransformWithNullFunction() {
     Promise<Integer> p = Promise.promise();
     Future<Integer> f = p.future();
     try {
-      f.eventually(null);
+      f.transform(null);
       fail();
     } catch (NullPointerException ignore) {
     }
+  }
+
+  @Test
+  public void testEventuallySuccessToSuccess() {
+    testEventuallySuccessTo(p -> p.complete(6));
+  }
+
+  @Test
+  public void testEventuallySuccessToFailure() {
+    testEventuallySuccessTo(p -> p.fail("it-failed"));
+  }
+
+  private void testEventuallySuccessTo(Consumer<Promise<Integer>> op) {
+    AtomicInteger cnt = new AtomicInteger();
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> c = p.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<String> f4 = f3.eventually(v -> {
+      cnt.incrementAndGet();
+      return c;
+    });
+    Checker<String>  checker = new Checker<>(f4);
+    checker.assertNotCompleted();
+    p3.complete("abcdef");
+    assertEquals(1, cnt.get());
+    checker.assertNotCompleted();
+    op.accept(p);
+    checker.assertSucceeded("abcdef");
+  }
+
+  @Test
+  public void testEventuallyFailureToSuccess() {
+    testEventuallyFailureTo(p -> p.complete(6));
+  }
+
+  @Test
+  public void testEventuallyFailureToFailure() {
+    testEventuallyFailureTo(p -> p.fail("it-failed"));
+  }
+
+  private void testEventuallyFailureTo(Consumer<Promise<Integer>> op) {
+    AtomicInteger cnt = new AtomicInteger();
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> c = p.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<String> f4 = f3.eventually(v -> {
+      cnt.incrementAndGet();
+      return c;
+    });
+    Checker<String>  checker = new Checker<>(f4);
+    checker.assertNotCompleted();
+    RuntimeException expected = new RuntimeException();
+    p3.fail(expected);
+    assertEquals(1, cnt.get());
+    checker.assertNotCompleted();
+    op.accept(p);
+    checker.assertFailed(expected);
   }
 
   @Test
@@ -741,7 +802,8 @@ public class FutureTest extends FutureTestBase {
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
       public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
-      public <U> Future<U> eventually(Function<Void, Future<U>> mapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<T> eventually(Function<Void, Future<U>> mapper) { throw new UnsupportedOperationException(); }
       public <U> Future<U> map(Function<T, U> mapper) { throw new UnsupportedOperationException(); }
       public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
       public Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }

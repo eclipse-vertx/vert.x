@@ -10,61 +10,65 @@
  */
 package io.vertx.core.impl.future;
 
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.impl.ContextInternal;
 
 import java.util.function.Function;
 
 /**
- * Function compose transformation.
+ * Eventually operation.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class ComposeTransformation<T, U> extends Transformation<U> implements Listener<T> {
+class Eventually<T, U> extends Operation<T> implements Listener<T> {
 
-  private final Function<T, Future<U>> successMapper;
-  private final Function<Throwable, Future<U>> failureMapper;
+  private final Function<Void, Future<U>> mapper;
 
-  ComposeTransformation(ContextInternal context, Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
+  Eventually(ContextInternal context, Function<Void, Future<U>> mapper) {
     super(context);
-    this.successMapper = successMapper;
-    this.failureMapper = failureMapper;
+    this.mapper = mapper;
   }
 
   @Override
   public void onSuccess(T value) {
     FutureInternal<U> future;
     try {
-      future = (FutureInternal<U>) successMapper.apply(value);
+      future = (FutureInternal<U>) mapper.apply(null);
     } catch (Throwable e) {
       tryFail(e);
       return;
     }
-    future.addListener(newListener());
+    future.addListener(new Listener<U>() {
+      @Override
+      public void onSuccess(U ignore) {
+        tryComplete(value);
+      }
+      @Override
+      public void onFailure(Throwable ignore) {
+        tryComplete(value);
+      }
+    });
   }
 
   @Override
   public void onFailure(Throwable failure) {
     FutureInternal<U> future;
     try {
-      future = (FutureInternal<U>) failureMapper.apply(failure);
+      future = (FutureInternal<U>) mapper.apply(null);
     } catch (Throwable e) {
       tryFail(e);
       return;
     }
-    future.addListener(newListener());
-  }
-
-  private Listener<U> newListener() {
-    return new Listener<U>() {
+    future.addListener(new Listener<U>() {
       @Override
-      public void onSuccess(U value) {
-        tryComplete(value);
-      }
-      @Override
-      public void onFailure(Throwable failure) {
+      public void onSuccess(U ignore) {
         tryFail(failure);
       }
-    };
+      @Override
+      public void onFailure(Throwable ignore) {
+        tryFail(failure);
+      }
+    });
   }
 }

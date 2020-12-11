@@ -12,31 +12,27 @@ package io.vertx.core.impl.future;
 
 import io.vertx.core.impl.ContextInternal;
 
-import java.util.function.Function;
+/**
+ * Map value transformation.
+ *
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
+ */
+class FixedMapping<T, U> extends Operation<U> implements Listener<T> {
 
-class OtherwiseTransformation<T> extends Transformation<T> implements Listener<T> {
+  private final U value;
 
-  private final Function<Throwable, T> mapper;
-
-  OtherwiseTransformation(ContextInternal context, Function<Throwable, T> mapper) {
+  FixedMapping(ContextInternal context, U value) {
     super(context);
-    this.mapper = mapper;
+    this.value = value;
   }
 
   @Override
   public void onSuccess(T value) {
-    tryComplete(value);
+    tryComplete(this.value);
   }
 
   @Override
   public void onFailure(Throwable failure) {
-    T result;
-    try {
-      result = mapper.apply(failure);
-    } catch (Throwable e) {
-      tryFail(e);
-      return;
-    }
-    tryComplete(result);
+    tryFail(failure);
   }
 }

@@ -17,11 +17,11 @@ import io.vertx.core.impl.ContextInternal;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class OtherwiseValueTransformation<T> extends Transformation<T> implements Listener<T> {
+class FixedOtherwise<T> extends Operation<T> implements Listener<T> {
 
   private final T value;
 
-  OtherwiseValueTransformation(ContextInternal context, T value) {
+  FixedOtherwise(ContextInternal context, T value) {
     super(context);
     this.value = value;
   }

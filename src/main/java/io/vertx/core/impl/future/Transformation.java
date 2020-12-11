@@ -10,16 +10,62 @@
  */
 package io.vertx.core.impl.future;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.impl.ContextInternal;
 
+import java.util.function.Function;
+
 /**
- * Base class for transforming the completion of a future.
+ * Function compose transformation.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class Transformation<T> extends FutureImpl<T> {
+class Transformation<T, U> extends Operation<U> implements Listener<T> {
 
-  protected Transformation(ContextInternal context) {
+  private final Future<T> future;
+  private final Function<AsyncResult<T>, Future<U>> mapper;
+
+  Transformation(ContextInternal context, Future<T> future, Function<AsyncResult<T>, Future<U>> mapper) {
     super(context);
+    this.future = future;
+    this.mapper = mapper;
+  }
+
+  @Override
+  public void onSuccess(T value) {
+    FutureInternal<U> future;
+    try {
+      future = (FutureInternal<U>) mapper.apply(this.future);
+    } catch (Throwable e) {
+      tryFail(e);
+      return;
+    }
+    future.addListener(newListener());
+  }
+
+  @Override
+  public void onFailure(Throwable failure) {
+    FutureInternal<U> future;
+    try {
+      future = (FutureInternal<U>) mapper.apply(this.future);
+    } catch (Throwable e) {
+      tryFail(e);
+      return;
+    }
+    future.addListener(newListener());
+  }
+
+  private Listener<U> newListener() {
+    return new Listener<U>() {
+      @Override
+      public void onSuccess(U value) {
+        tryComplete(value);
+      }
+      @Override
+      public void onFailure(Throwable failure) {
+        tryFail(failure);
+      }
+    };
   }
 }
