@@ -52,7 +52,7 @@ public class MyVerticle extends AbstractVerticle {
 
   private HttpServer server;
 
-  public void start(Future<Void> startFuture) {
+  public void start(Promise<Void> startFuture) {
     server = vertx.createHttpServer().requestHandler(req -> {
       req.response()
         .putHeader("content-type", "text/plain")
