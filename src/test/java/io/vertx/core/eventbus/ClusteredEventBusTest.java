@@ -15,6 +15,10 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
+import io.vertx.core.spi.cluster.WrappedClusterManager;
+import io.vertx.core.spi.cluster.WrappedNodeSelector;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
@@ -27,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -384,16 +389,31 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   @Test
-  public void testSendWriteHandler() {
-    startNodes(2);
+  public void testSendWriteHandler() throws Exception {
+    CountDownLatch updateLatch = new CountDownLatch(3);
+    Supplier<VertxOptions> options = () -> getOptions().setClusterManager(new WrappedClusterManager(getClusterManager()) {
+      @Override
+      public void init(Vertx vertx, NodeSelector nodeSelector) {
+        super.init(vertx, new WrappedNodeSelector(nodeSelector) {
+          @Override
+          public void registrationsUpdated(RegistrationUpdateEvent event) {
+            super.registrationsUpdated(event);
+            if (event.address().equals(ADDRESS1) && event.registrations().size() == 1) {
+              updateLatch.countDown();
+            }
+          }
+        });
+      }
+    });
+    startNodes(options.get(), options.get());
     waitFor(2);
     vertices[1]
       .eventBus()
       .consumer(ADDRESS1, msg -> complete())
-      .completionHandler(onSuccess(v1 -> {
-        MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
-        producer.write("body", onSuccess(v2 -> complete()));
-      }));
+      .completionHandler(onSuccess(v1 -> updateLatch.countDown()));
+    awaitLatch(updateLatch);
+    MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
+    producer.write("body", onSuccess(v2 -> complete()));
     await();
   }
 
