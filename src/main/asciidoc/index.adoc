@@ -1042,9 +1042,9 @@ examples:
 
 [source]
 ----
-vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy" --launcher-class=io.vertx.core.Launcher
-vertx run MyVerticle.groovy --redeploy="**&#47;*.groovy,**&#47;*.rb"  --launcher-class=io.vertx.core.Launcher
-java io.vertx.core.Launcher run org.acme.MyVerticle --redeploy="**&#47;*.class"  --launcher-class=io.vertx.core
+vertx run MyVerticle.groovy --redeploy="**/*.groovy" --launcher-class=io.vertx.core.Launcher
+vertx run MyVerticle.groovy --redeploy="**/*.groovy,**/*.rb"  --launcher-class=io.vertx.core.Launcher
+java io.vertx.core.Launcher run org.acme.MyVerticle --redeploy="**/*.class"  --launcher-class=io.vertx.core
 .Launcher -cp ...
 ----
 
@@ -1066,11 +1066,11 @@ The `--launcher-class` option determine with with _main_ class the application i
 The redeploy feature can be used in your IDE:
 
 * Eclipse - create a _Run_ configuration, using the `io.vertx.core.Launcher` class a _main class_. In the _Program
-arguments_ area (in the _Arguments_ tab), write `run your-verticle-fully-qualified-name --redeploy=\**&#47;*.java
+arguments_ area (in the _Arguments_ tab), write `run your-verticle-fully-qualified-name --redeploy=\**/*.java
 --launcher-class=io.vertx.core.Launcher`. You can also add other parameters. The redeployment works smoothly as
 Eclipse incrementally compiles your files on save.
 * IntelliJ - create a _Run_ configuration (_Application_), set the _Main class_ to `io.vertx.core.Launcher`. In
-the Program arguments write: `run your-verticle-fully-qualified-name --redeploy=\**&#47;*.class
+the Program arguments write: `run your-verticle-fully-qualified-name --redeploy=\**/*.class
 --launcher-class=io.vertx.core.Launcher`. To trigger the redeployment, you need to _make_ the project or
 the module explicitly (_Build_ menu -> _Make project_).
 
@@ -1082,8 +1082,8 @@ You can also hook your build process in the redeploy cycle:
 
 [source]
 ----
-java -jar target/my-fat-jar.jar --redeploy="**&#47;*.java" --on-redeploy="mvn package"
-java -jar build/libs/my-fat-jar.jar --redeploy="src&#47;**&#47;*.java" --on-redeploy='./gradlew shadowJar'
+java -jar target/my-fat-jar.jar --redeploy="**/*.java" --on-redeploy="mvn package"
+java -jar build/libs/my-fat-jar.jar --redeploy="src/**/*.java" --on-redeploy='./gradlew shadowJar'
 ----
 
 The "on-redeploy" option specifies a command invoked after the shutdown of the application and before the
@@ -1093,8 +1093,8 @@ or `grunt` to update your resources. Don't forget that passing parameters to you
 
 [source]
 ----
-java -jar target/my-fat-jar.jar --redeploy="**&#47;*.java" --on-redeploy="mvn package" --java-opts="-Dkey=val"
-java -jar build/libs/my-fat-jar.jar --redeploy="src&#47;**&#47;*.java" --on-redeploy='./gradlew shadowJar' --java-opts="-Dkey=val"
+java -jar target/my-fat-jar.jar --redeploy="**/*.java" --on-redeploy="mvn package" --java-opts="-Dkey=val"
+java -jar build/libs/my-fat-jar.jar --redeploy="src/**/*.java" --on-redeploy='./gradlew shadowJar' --java-opts="-Dkey=val"
 ----
 
 The redeploy feature also supports the following settings:
@@ -1502,18 +1502,18 @@ You can extend the set of command by implementing your own {@link io.vertx.core.
 
 [source, java]
 ----
-&#64;Name("my-command")
-&#64;Summary("A simple hello command.")
+@Name("my-command")
+@Summary("A simple hello command.")
 public class MyCommand extends DefaultCommand {
 
   private String name;
 
-  &#64;Option(longName = "name", required = true)
+  @Option(longName = "name", required = true)
   public void setName(String n) {
     this.name = n;
   }
 
-  &#64;Override
+  @Override
   public void run() throws CLIException {
     System.out.println("Hello " + name);
   }
