@@ -47,26 +47,26 @@ methods:
 
 [source, java]
 ----
-&#64;Name("some-name")
-&#64;Summary("some short summary.")
-&#64;Description("some long description")
+@Name("some-name")
+@Summary("some short summary.")
+@Description("some long description")
 public class AnnotatedCli {
 
   private boolean flag;
   private String name;
   private String arg;
 
- &#64;Option(shortName = "f", flag = true)
+ @Option(shortName = "f", flag = true)
  public void setFlag(boolean flag) {
    this.flag = flag;
  }
 
- &#64;Option(longName = "name")
+ @Option(longName = "name")
  public void setName(String name) {
    this.name = name;
  }
 
- &#64;Argument(index = 0)
+ @Argument(index = 0)
  public void setArg(String arg) {
   this.arg = arg;
  }
