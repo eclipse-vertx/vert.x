@@ -292,8 +292,15 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
           promise.fail(e);
           return;
         }
-        webSocket = new ServerWebSocketImpl(promise.context(), this, handshaker.version() != WebSocketVersion.V00,
-          request, handshaker, options.getMaxWebSocketFrameSize(), options.getMaxWebSocketMessageSize());
+        webSocket = new ServerWebSocketImpl(
+          promise.context(),
+          this,
+          handshaker.version() != WebSocketVersion.V00,
+          options.getWebSocketClosingTimeout(),
+          request,
+          handshaker,
+          options.getMaxWebSocketFrameSize(),
+          options.getMaxWebSocketMessageSize());
         if (METRICS_ENABLED && metrics != null) {
           webSocket.setMetric(metrics.connected(metric(), request.metric(), webSocket));
         }

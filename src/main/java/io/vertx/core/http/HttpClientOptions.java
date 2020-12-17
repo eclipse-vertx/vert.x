@@ -199,9 +199,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_POOL_CLEANER_PERIOD = 1000;
 
   /**
-   * Default WebSocket closing timeout = 10000 ms (10 second)
+   * Default WebSocket closing timeout = 10 second
    */
-  public static final int DEFAULT_WEBSOCKET_CLOSING_TIMEOUT = 10_000;
+  public static final int DEFAULT_WEBSOCKET_CLOSING_TIMEOUT = 10;
 
   /**
    * Default tracing control = {@link TracingPolicy#PROPAGATE}
@@ -1255,7 +1255,9 @@ public class HttpClientOptions extends ClientOptionsBase {
    * <p> When a WebSocket is closed, the server should close the TCP connection. This timeout will close
    * the TCP connection on the client when it expires.
    *
-   * <p> Set {@code 0L} or a negative value to disable.
+   * <p> Set to {@code 0L} closes the TCP connection immediately after receiving the close frame.
+   *
+   * <p> Set to a negative value to disable it.
    *
    * @param webSocketClosingTimeout the timeout is seconds
    * @return a reference to this, so the API can be used fluently

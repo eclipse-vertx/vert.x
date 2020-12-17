@@ -84,6 +84,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   private boolean closed;
   private Short closeStatusCode;
   private String closeReason;
+  private long closeTimeoutID = -1L;
   private MultiMap headers;
 
   WebSocketImplBase(ContextInternal context, Http1xConnectionBase conn, boolean supportsContinuation,
@@ -502,9 +503,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     if (echo) {
       ChannelPromise fut = conn.channelFuture();
       conn.writeToChannel(closeFrame.retainedDuplicate(), fut);
-      fut.addListener(v -> closeConnection());
+      fut.addListener(v -> handleCloseConnection());
     } else {
-      closeConnection();
+      handleCloseConnection();
     }
   }
 
@@ -563,7 +564,33 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  protected abstract void closeConnection();
+  /**
+   * Called when a close frame is received and the WebSocket.
+   */
+  protected abstract void handleCloseConnection();
+
+  /**
+   * Close the connection.
+   */
+  void closeConnection() {
+    conn.channelHandlerContext().close();
+  }
+
+  /**
+   * Initiate a timeout that will close the TCP connection.
+   *
+   * @param timeoutMillis the timeout in milliseconds
+   */
+  void initiateConnectionCloseTimeout(long timeoutMillis) {
+    synchronized (conn) {
+      closeTimeoutID = context.owner().setTimer(timeoutMillis, id -> {
+        synchronized (conn) {
+          closeTimeoutID = -1L;
+        }
+        closeConnection();
+      });
+    }
+  }
 
   private class FrameAggregator implements Handler<WebSocketFrameInternal> {
     private Handler<String> textMessageHandler;
@@ -714,6 +741,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   void handleConnectionClosed() {
     synchronized (conn) {
+      if (closeTimeoutID != -1L) {
+        context.owner().cancelTimer(closeTimeoutID);
+      }
       if (closed) {
         return;
       }
