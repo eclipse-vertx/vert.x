@@ -278,8 +278,14 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     if (handshaker == null) {
       return null;
     }
-    ws = new ServerWebSocketImpl(this, handshaker.version() != WebSocketVersion.V00,
-      request, handshaker, options.getMaxWebsocketFrameSize(), options.getMaxWebsocketMessageSize());
+    ws = new ServerWebSocketImpl(
+      this,
+      handshaker.version() != WebSocketVersion.V00,
+      options.getWebSocketClosingTimeout(),
+      request,
+      handshaker,
+      options.getMaxWebsocketFrameSize(),
+      options.getMaxWebsocketMessageSize());
     if (METRICS_ENABLED && metrics != null) {
       ws.setMetric(metrics.connected(metric(), request.metric(), ws));
     }
