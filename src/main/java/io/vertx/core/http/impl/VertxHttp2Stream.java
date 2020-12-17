@@ -111,7 +111,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
 
   void onData(Buffer data) {
     conn.reportBytesRead(data.length());
-    context.emit(data, pending::write);
+    context.execute(data, pending::write);
   }
 
   void onWritabilityChanged() {

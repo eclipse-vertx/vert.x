@@ -142,7 +142,7 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
         conn.doPause();
       }
     } else {
-      onData(buffer);
+      context.execute(buffer, this::onData);
     }
   }
 

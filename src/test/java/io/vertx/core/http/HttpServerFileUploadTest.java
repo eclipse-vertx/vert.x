@@ -12,6 +12,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.net.SocketAddress;
@@ -204,6 +205,8 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
         assertTrue(req.isExpectMultipart());
 
         req.uploadHandler(upload -> {
+
+          assertNotNull(Vertx.currentContext());
 
           serverConn.set(req.connection());
           checkClose.run();
