@@ -16,7 +16,6 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
@@ -48,6 +47,7 @@ import static io.vertx.core.http.impl.HttpUtils.SC_BAD_GATEWAY;
 public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> implements ServerWebSocket {
 
   private final Http1xServerConnection conn;
+  private final long closingTimeoutMS;
   private final String uri;
   private final String path;
   private final String query;
@@ -58,12 +58,14 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
 
   ServerWebSocketImpl(Http1xServerConnection conn,
                       boolean supportsContinuation,
+                      long closingTimeout,
                       HttpServerRequestImpl request,
                       WebSocketServerHandshaker handshaker,
                       int maxWebSocketFrameSize,
                       int maxWebSocketMessageSize) {
     super(conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.conn = conn;
+    this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
     this.uri = request.uri();
     this.path = request.path();
     this.query = request.query();
@@ -121,10 +123,10 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
+  ChannelPromise doClose(short statusCode, String reason, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       if (closed) {
-        return;
+        return null;
       }
       if (status == null) {
         if (handshakePromise == null) {
@@ -134,7 +136,15 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
         }
       }
     }
-    super.close(statusCode, reason, handler);
+    ChannelPromise fut = super.doClose(statusCode, reason, handler);
+    fut.addListener(f -> {
+      if (closingTimeoutMS == 0L) {
+        closeConnection();
+      } else if (closingTimeoutMS > 0L) {
+        initiateConnectionCloseTimeout(closingTimeoutMS);
+      }
+    });
+    return fut;
   }
 
   @Override
@@ -231,6 +241,6 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
 
   @Override
   protected void doClose() {
-    conn.channelHandlerContext().close();
+    closeConnection();
   }
 }

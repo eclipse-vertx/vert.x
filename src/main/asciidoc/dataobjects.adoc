@@ -946,7 +946,9 @@ Set the amount of time a client WebSocket will wait until it closes the TCP conn
  <p> When a WebSocket is closed, the server should close the TCP connection. This timeout will close
  the TCP connection on the client when it expires.
 
- <p> Set <code>0L</code> or a negative value to disable.
+ <p> Set to <code>0L</code> closes the TCP connection immediately after receiving the close frame.
+
+ <p> Set to a negative value to disable it.
 +++
 |[[webSocketCompressionAllowClientNoContext]]`@webSocketCompressionAllowClientNoContext`|`Boolean`|+++
 Set whether the <code>client_no_context_takeover</code> parameter of the WebSocket per-message
@@ -1186,6 +1188,19 @@ Set whether Netty pooled buffers are enabled
 |[[webSocketAllowServerNoContext]]`@webSocketAllowServerNoContext`|`Boolean`|+++
 Set whether the WebSocket server will accept the <code>server_no_context_takeover</code> parameter of the per-message
  deflate compression extension offered by the client.
++++
+|[[webSocketClosingTimeout]]`@webSocketClosingTimeout`|`Number (int)`|+++
+Set the amount of time a server WebSocket will wait until it closes the TCP connection
+ after sending a close frame.
+
+ <p> When a server closes a WebSocket, it should wait the client close frame to close the TCP connection.
+ This timeout will close the TCP connection on the server when it expires. When the TCP
+ connection is closed receiving the close frame, the link instead
+ of the link will be called.
+
+ <p> Set to <code>0L</code> closes the TCP connection immediately after sending the close frame.
+
+ <p> Set to a negative value to disable it.
 +++
 |[[webSocketCompressionLevel]]`@webSocketCompressionLevel`|`Number (int)`|+++
 Set the WebSocket compression level.

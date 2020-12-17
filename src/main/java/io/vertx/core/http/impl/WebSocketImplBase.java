@@ -69,6 +69,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   protected boolean closed;
   private Short closeStatusCode;
   private String closeReason;
+  private long closeTimeoutID = -1L;
   private MultiMap headers;
   private boolean closeFrameSent;
   private Handler<AsyncResult<Void>> closeOpHandler;
@@ -144,10 +145,14 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public void close(short statusCode, @Nullable String reason, Handler<AsyncResult<Void>> handler) {
+  public void close(short statusCode, String reason, Handler<AsyncResult<Void>> handler) {
+    doClose(statusCode, reason, handler);
+  }
+
+  ChannelPromise doClose(short statusCode, String reason, Handler<AsyncResult<Void>> handler) {
     synchronized (conn) {
       if (closed) {
-        return;
+        return null;
       }
       closed = true;
       closeFrameSent = true;
@@ -157,7 +162,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     // close the WebSocket by sending a close frame with specified payload
     ByteBuf byteBuf = HttpUtils.generateWSCloseFrameByteBuf(statusCode, reason);
     CloseWebSocketFrame frame = new CloseWebSocketFrame(true, 0, byteBuf);
-    conn.writeToChannel(frame);
+    ChannelPromise fut = conn.channelFuture();
+    conn.writeToChannel(frame, fut);
+    return fut;
   }
 
   @Override
@@ -432,6 +439,22 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   protected abstract void doClose();
 
+  /**
+   * Close the connection.
+   */
+  void closeConnection() {
+    conn.channelHandlerContext().close();
+  }
+
+  void initiateConnectionCloseTimeout(long timeoutMillis) {
+    closeTimeoutID = conn.getContext().owner().setTimer(timeoutMillis, id -> {
+      synchronized (conn) {
+        closeTimeoutID = -1L;
+      }
+      closeConnection();
+    });
+  }
+
   private class FrameAggregator implements Handler<WebSocketFrameInternal> {
     private Handler<String> textMessageHandler;
     private Handler<Buffer> binaryMessageHandler;
@@ -577,6 +600,9 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     Handler<AsyncResult<Void>> closeOpHandler;
     Handler<Throwable> exceptionHandler;
     synchronized (conn) {
+      if (closeTimeoutID != -1L) {
+        conn.getContext().owner().cancelTimer(closeTimeoutID);
+      }
       closeHandler = this.closeHandler;
       exceptionHandler = closeStatusCode == null ? this.exceptionHandler : null;
       closeOpHandler = this.closeOpHandler;

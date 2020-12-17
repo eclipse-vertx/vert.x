@@ -25,7 +25,6 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
  */
 public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
 
-  private long timerID = -1L;
   private final long closingTimeoutMS;
 
   public WebSocketImpl(Http1xClientConnection conn,
@@ -40,9 +39,6 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   @Override
   void handleClosed() {
     synchronized (conn) {
-      if (timerID != -1L) {
-        conn.getContext().owner().cancelTimer(timerID);
-      }
       HttpClientMetrics metrics = ((Http1xClientConnection) conn).metrics();
       if (metrics != null) {
         metrics.disconnected(getMetric());
@@ -54,13 +50,10 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
   @Override
   protected void doClose() {
     synchronized (conn) {
-      if (closingTimeoutMS > 0L) {
-        timerID = conn.getContext().owner().setTimer(closingTimeoutMS, id -> {
-          synchronized (conn) {
-            timerID = -1L;
-          }
-          conn.channelHandlerContext().close();
-        });
+      if (closingTimeoutMS == 0L) {
+        closeConnection();
+      } else if (closingTimeoutMS > 0L) {
+        initiateConnectionCloseTimeout(closingTimeoutMS);
       }
     }
   }
