@@ -2963,8 +2963,17 @@ public class WebSocketTest extends VertxTestBase {
   }
 
   @Test
-  public void testClientCloseTimeout() {
-    waitFor(2);
+  public void testClientConnectionCloseTimeout() {
+    testClientConnectionCloseTimeout(1);
+  }
+
+  @Test
+  public void testClientConnectionCloseImmediately() {
+    testClientConnectionCloseTimeout(0);
+  }
+
+  public void testClientConnectionCloseTimeout(int timeout) {
+    waitFor(3);
     List<Object> received = Collections.synchronizedList(new ArrayList<>());
     server = vertx.createHttpServer();
     server.requestHandler(req -> {
@@ -2985,8 +2994,12 @@ public class WebSocketTest extends VertxTestBase {
       }));
     });
     server.listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(v1 -> {
-      client = vertx.createHttpClient(new HttpClientOptions().setWebSocketClosingTimeout(1));
+      client = vertx.createHttpClient(new HttpClientOptions().setWebSocketClosingTimeout(timeout));
       client.webSocket(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/chat", onSuccess(ws -> {
+        ws.endHandler(v -> {
+          complete();
+        });
+        ws.exceptionHandler(err -> fail());
         ws.closeHandler(v -> {
           assertEquals(1, received.size());
           assertEquals(received.get(0).getClass(), CloseWebSocketFrame.class);
@@ -2996,6 +3009,47 @@ public class WebSocketTest extends VertxTestBase {
         ws.close();
       }));
     }));
+    await();
+  }
+
+  @Test
+  public void testServerCloseTimeout() {
+    testServerConnectionClose(1);
+  }
+
+  @Test
+  public void testServerImmediateClose() {
+    testServerConnectionClose(0);
+  }
+
+  public void testServerConnectionClose(int timeout) {
+    waitFor(3);
+    server = vertx.createHttpServer(new HttpServerOptions().setWebSocketClosingTimeout(timeout))
+      .webSocketHandler(ws -> {
+        long now = System.currentTimeMillis();
+        ws.endHandler(v -> fail());
+        ws.exceptionHandler(ignore -> complete());
+        ws.closeHandler(v -> {
+          long elapsed = System.currentTimeMillis() - now;
+          assertTrue(timeout <= elapsed && elapsed < 5000);
+          complete();
+        });
+        ws.close();
+      }).listen(DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, onSuccess(s -> {
+        client = vertx.createHttpClient();
+        handshake(client, req -> {
+          req.send(onSuccess(resp -> {
+            assertEquals(101, resp.statusCode());
+            Http1xClientConnection conn = (Http1xClientConnection) req.connection();
+            NetSocketInternal soi = conn.toNetSocket();
+            soi.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
+            soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
+            soi.closeHandler(v -> {
+              complete();
+            });
+          }));
+        });
+      }));
     await();
   }
 

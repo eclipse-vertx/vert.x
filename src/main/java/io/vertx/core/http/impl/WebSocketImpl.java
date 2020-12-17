@@ -29,7 +29,6 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements WebSocket {
 
   private final Http1xClientConnection conn;
-  private long timerID = -1L;
   private final long closingTimeoutMS;
 
   public WebSocketImpl(ContextInternal context,
@@ -40,31 +39,15 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
                        int maxWebSocketMessageSize) {
     super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.conn = conn;
-    this.closingTimeoutMS = closingTimeout > 0 ? closingTimeout * 1000L : 0L;
+    this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
   }
 
   @Override
-  void handleConnectionClosed() {
-    // THAT SHOULD BE CALLED ON EVENT LOOP
-    synchronized (conn) {
-      if (timerID != -1L) {
-        context.owner().cancelTimer(timerID);
-      }
-    }
-    super.handleConnectionClosed();
-  }
-
-  @Override
-  protected void closeConnection() {
-    if (closingTimeoutMS > 0L) {
-      synchronized (conn) {
-        timerID = context.owner().setTimer(closingTimeoutMS, id -> {
-          synchronized (conn) {
-            timerID = -1L;
-          }
-          conn.channelHandlerContext().close();
-        });
-      }
+  protected void handleCloseConnection() {
+    if (closingTimeoutMS == 0L) {
+      closeConnection();
+    } else if (closingTimeoutMS > 0L) {
+      initiateConnectionCloseTimeout(closingTimeoutMS);
     }
   }
 

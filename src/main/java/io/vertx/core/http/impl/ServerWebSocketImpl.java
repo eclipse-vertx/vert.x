@@ -14,9 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -26,7 +24,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
@@ -53,6 +50,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> implements ServerWebSocket {
 
   private final Http1xServerConnection conn;
+  private final long closingTimeoutMS;
   private final String scheme;
   private final String host;
   private final String uri;
@@ -66,12 +64,14 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   ServerWebSocketImpl(ContextInternal context,
                       Http1xServerConnection conn,
                       boolean supportsContinuation,
+                      long closingTimeout,
                       Http1xServerRequest request,
                       WebSocketServerHandshaker handshaker,
                       int maxWebSocketFrameSize,
                       int maxWebSocketMessageSize) {
     super(context, conn, supportsContinuation, maxWebSocketFrameSize, maxWebSocketMessageSize);
     this.conn = conn;
+    this.closingTimeoutMS = closingTimeout >= 0 ? closingTimeout * 1000L : -1L;
     this.scheme = request.scheme();
     this.host = request.host();
     this.uri = request.uri();
@@ -151,7 +151,15 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
         }
       }
     }
-    return super.close(statusCode, reason);
+    Future<Void> fut = super.close(statusCode, reason);
+    fut.onComplete(v -> {
+      if (closingTimeoutMS == 0L) {
+        closeConnection();
+      } else if (closingTimeoutMS > 0L) {
+        initiateConnectionCloseTimeout(closingTimeoutMS);
+      }
+    });
+    return fut;
   }
 
   @Override
@@ -254,8 +262,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  protected void closeConnection() {
-    conn.channelHandlerContext().close();
+  protected void handleCloseConnection() {
+    closeConnection();
   }
 
   @Override

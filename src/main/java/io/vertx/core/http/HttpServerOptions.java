@@ -132,6 +132,11 @@ public class HttpServerOptions extends NetServerOptions {
   public static final boolean DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT = false;
 
   /**
+   * Default WebSocket closing timeout = 10 second)
+   */
+  public static final int DEFAULT_WEBSOCKET_CLOSING_TIMEOUT = 10;
+
+  /**
    * Default tracing control = {@link TracingPolicy#ALWAYS}
    */
   public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.ALWAYS;
@@ -156,6 +161,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int webSocketCompressionLevel;
   private boolean webSocketAllowServerNoContext;
   private boolean webSocketPreferredClientNoContext;
+  private int webSocketClosingTimeout;
   private TracingPolicy tracingPolicy;
 
   /**
@@ -194,6 +200,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.webSocketCompressionLevel = other.webSocketCompressionLevel;
     this.webSocketPreferredClientNoContext = other.webSocketPreferredClientNoContext;
     this.webSocketAllowServerNoContext = other.webSocketAllowServerNoContext;
+    this.webSocketClosingTimeout = other.webSocketClosingTimeout;
     this.tracingPolicy = other.tracingPolicy;
   }
 
@@ -240,6 +247,7 @@ public class HttpServerOptions extends NetServerOptions {
     webSocketCompressionLevel = DEFAULT_WEBSOCKET_COMPRESSION_LEVEL;
     webSocketPreferredClientNoContext = DEFAULT_WEBSOCKET_PREFERRED_CLIENT_NO_CONTEXT;
     webSocketAllowServerNoContext = DEFAULT_WEBSOCKET_ALLOW_SERVER_NO_CONTEXT;
+    webSocketClosingTimeout = DEFAULT_WEBSOCKET_CLOSING_TIMEOUT;
     tracingPolicy = DEFAULT_TRACING_POLICY;
   }
 
@@ -884,6 +892,34 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public boolean getWebSocketPreferredClientNoContext() {
     return this.webSocketPreferredClientNoContext;
+  }
+
+  /**
+   * @return the amount of time (in seconds) a client WebSocket will wait until it closes TCP connection after receiving a close frame
+   */
+  public int getWebSocketClosingTimeout() {
+    return webSocketClosingTimeout;
+  }
+
+  /**
+   * Set the amount of time a server WebSocket will wait until it closes the TCP connection
+   * after sending a close frame.
+   *
+   * <p> When a server closes a WebSocket, it should wait the client close frame to close the TCP connection.
+   * This timeout will close the TCP connection on the server when it expires. When the TCP
+   * connection is closed receiving the close frame, the {@link WebSocket#exceptionHandler} instead
+   * of the {@link WebSocket#endHandler} will be called.
+   *
+   * <p> Set to {@code 0L} closes the TCP connection immediately after sending the close frame.
+   *
+   * <p> Set to a negative value to disable it.
+   *
+   * @param webSocketClosingTimeout the timeout is seconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setWebSocketClosingTimeout(int webSocketClosingTimeout) {
+    this.webSocketClosingTimeout = webSocketClosingTimeout;
+    return this;
   }
 
   /**
