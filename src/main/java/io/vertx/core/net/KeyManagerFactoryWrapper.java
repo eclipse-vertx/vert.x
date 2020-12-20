@@ -28,7 +28,7 @@ class KeyManagerFactoryWrapper extends KeyManagerFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(KeyManagerFactoryWrapper.class);
   private static final String KEY_MANAGER_FACTORY_ALGORITHM = "no-algorithm";
-  private static final Provider PROVIDER = new Provider("", "1.0", "") {
+  private static final Provider PROVIDER = new Provider("", 1.0, "") {
   };
 
   KeyManagerFactoryWrapper(KeyManager keyManager) {
