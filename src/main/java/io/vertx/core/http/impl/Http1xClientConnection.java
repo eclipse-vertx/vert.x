@@ -75,7 +75,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     throw new IllegalStateException("Invalid object " + msg);
   };
 
-  private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
   private final HttpClientOptions options;
   private final boolean ssl;
@@ -89,6 +88,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private boolean shutdown;
   private long shutdownTimerID = -1L;
 
+  private Handler<Boolean> lifecycleHandler = DEFAULT_LIFECYCLE_HANDLER;
+  private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private Handler<Object> invalidMessageHandler = INVALID_MSG_HANDLER;
   private boolean close;
   private boolean isConnect;
@@ -96,8 +97,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private long expirationTimestamp;
   private int seq = 1;
 
-  Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
-                         HttpVersion version,
+  Http1xClientConnection(HttpVersion version,
                          HttpClientImpl client,
                          ChannelHandlerContext channel,
                          boolean ssl,
@@ -105,7 +105,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
                          ContextInternal context,
                          ClientMetrics metrics) {
     super(context, channel);
-    this.listener = listener;
     this.client = client;
     this.options = client.getOptions();
     this.ssl = ssl;
@@ -116,8 +115,24 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
   }
 
-  ConnectionListener<HttpClientConnection> listener() {
-    return listener;
+  public Http1xClientConnection lifecycleHandler(Handler<Boolean> handler) {
+    lifecycleHandler = handler;
+    return this;
+  }
+
+  public Handler<Boolean> lifecycleHandler() {
+    return lifecycleHandler;
+  }
+
+  @Override
+  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+    concurrencyChangeHandler = handler;
+    return this;
+  }
+
+  @Override
+  public long concurrency() {
+    return options.isPipelining() ? options.getPipeliningLimit() : 1;
   }
 
   /**
@@ -127,7 +142,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     removeChannelHandlers();
     NetSocketImpl socket = new NetSocketImpl(context, chctx, client.getSslHelper(), metrics());
     socket.metric(metric());
-    listener.onEvict();
+    lifecycleHandler.handle(false);
     chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));
     return socket;
   }
@@ -1007,7 +1022,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
     } else if (!isConnect) {
       expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
-      listener.onRecycle();
+      lifecycleHandler.handle(true);
     }
   }
 
@@ -1037,7 +1052,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       shutdown = true;
       closeFuture().onComplete(promise);
     }
-    listener.onEvict();
+    lifecycleHandler.handle(false);
     synchronized (this) {
       if (!closed) {
         if (timeoutMs > 0L) {

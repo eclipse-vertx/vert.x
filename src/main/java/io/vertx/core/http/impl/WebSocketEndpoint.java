@@ -13,11 +13,10 @@ package io.vertx.core.http.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.net.impl.clientconnection.ConnectResult;
-import io.vertx.core.net.impl.clientconnection.ConnectionListener;
+import io.vertx.core.Promise;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -52,20 +51,11 @@ class WebSocketEndpoint extends ClientHttpEndpointBase {
 
   private void tryConnect(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler) {
 
-    class Listener implements ConnectionListener<HttpClientConnection>, Handler<AsyncResult<ConnectResult<HttpClientConnection>>> {
+    class Listener implements Handler<AsyncResult<HttpClientConnection>> {
 
       private HttpClientConnection conn;
 
-      @Override
-      public void onConcurrencyChange(long concurrency) {
-      }
-
-      @Override
-      public void onRecycle() {
-      }
-
-      @Override
-      public void onEvict() {
+      private void onEvict() {
         connectionRemoved(conn);
         Waiter h;
         synchronized (WebSocketEndpoint.this) {
@@ -78,10 +68,14 @@ class WebSocketEndpoint extends ClientHttpEndpointBase {
       }
 
       @Override
-      public void handle(AsyncResult<ConnectResult<HttpClientConnection>> ar) {
+      public void handle(AsyncResult<HttpClientConnection> ar) {
         if (ar.succeeded()) {
-          ConnectResult<HttpClientConnection> res = ar.result();
-          HttpClientConnection c = res.connection();
+          HttpClientConnection c = ar.result();
+          c.lifecycleHandler(recycle -> {
+            if (!recycle) {
+              onEvict();
+            }
+          });
           conn = c;
           connectionAdded(c);
           handler.handle(Future.succeededFuture(c));
@@ -91,7 +85,9 @@ class WebSocketEndpoint extends ClientHttpEndpointBase {
       }
     }
     Listener listener = new Listener();
-    connector.connect(listener, ctx, listener);
+    Promise<HttpClientConnection> promise = Promise.promise();
+    promise.future().onComplete(listener);
+    connector.connect((EventLoopContext) ctx, promise);
   }
 
   @Override

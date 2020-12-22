@@ -31,7 +31,7 @@ class ClientHttpStreamEndpoint extends ClientHttpEndpointBase {
                                   String host,
                                   int port,
                                   ContextInternal ctx,
-                                  HttpChannelConnector connector,
+                                  HttpConnectionProvider connector,
                                   Runnable dispose) {
     super(metrics, port, host, metric, dispose);
     this.pool = new Pool<>(

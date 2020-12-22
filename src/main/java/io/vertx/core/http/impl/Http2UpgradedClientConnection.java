@@ -27,7 +27,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -56,11 +55,18 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   private Handler<GoAway> goAwayHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Buffer> pingHandler;
+  private Handler<Boolean> lifecycleHandler;
+  private Handler<Long> concurrencyChangeHandler;
   private Handler<Http2Settings> remoteSettingsHandler;
 
   Http2UpgradedClientConnection(HttpClientImpl client, Http1xClientConnection connection) {
     this.client = client;
     this.current = connection;
+  }
+
+  @Override
+  public long concurrency() {
+    return 1L;
   }
 
   @Override
@@ -156,8 +162,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
-          ConnectionListener<HttpClientConnection> listener = conn.listener();
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, conn.metrics, listener, (EventLoopContext) conn.getContext(), current.metric(), (conn, concurrency) -> {
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(client, conn.metrics, (EventLoopContext) conn.getContext(), current.metric(), conn -> {
             conn.upgradeStream(stream.metric(), stream.getContext(), ar -> {
               UpgradingStream.this.conn.closeHandler(null);
               UpgradingStream.this.conn.exceptionHandler(null);
@@ -196,7 +201,9 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                 conn.goAwayHandler(goAwayHandler);
                 conn.shutdownHandler(shutdownHandler);
                 conn.remoteSettingsHandler(remoteSettingsHandler);
-                listener.onConcurrencyChange(concurrency);
+                conn.lifecycleHandler(lifecycleHandler);
+                conn.concurrencyChangeHandler(concurrencyChangeHandler);
+                concurrencyChangeHandler.handle(conn.concurrency());
               } else {
                 // Handle me
                 log.error(ar.cause().getMessage(), ar.cause());
@@ -543,6 +550,26 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       shutdownHandler = handler;
     } else {
       current.shutdownHandler(handler);
+    }
+    return this;
+  }
+
+  @Override
+  public HttpClientConnection lifecycleHandler(Handler<Boolean> handler) {
+    if (current instanceof Http1xClientConnection) {
+      lifecycleHandler = handler;
+    } else {
+      current.lifecycleHandler(handler);
+    }
+    return this;
+  }
+
+  @Override
+  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+    if (current instanceof Http1xClientConnection) {
+      concurrencyChangeHandler = handler;
+    } else {
+      current.concurrencyChangeHandler(handler);
     }
     return this;
   }
