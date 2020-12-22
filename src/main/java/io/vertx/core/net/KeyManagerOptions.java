@@ -21,11 +21,11 @@ import java.util.function.Function;
 /**
  * @author Hakan Altindag
  */
-public class KeyCertOptionsWrapper implements KeyCertOptions {
+public class KeyManagerOptions implements KeyCertOptions {
 
   private final KeyManagerFactory keyManagerFactory;
 
-  public KeyCertOptionsWrapper(KeyManagerFactory keyManagerFactory) {
+  public KeyManagerOptions(KeyManagerFactory keyManagerFactory) {
     if (keyManagerFactory == null
       || keyManagerFactory.getKeyManagers() == null
       || keyManagerFactory.getKeyManagers().length == 0) {
@@ -34,17 +34,17 @@ public class KeyCertOptionsWrapper implements KeyCertOptions {
     this.keyManagerFactory = keyManagerFactory;
   }
 
-  public KeyCertOptionsWrapper(KeyManager keyManager) {
+  public KeyManagerOptions(KeyManager keyManager) {
     this(new KeyManagerFactoryWrapper(keyManager));
   }
 
-  private KeyCertOptionsWrapper(KeyCertOptionsWrapper keyCertOptionsWrapper) {
-    this.keyManagerFactory = keyCertOptionsWrapper.keyManagerFactory;
+  private KeyManagerOptions(KeyManagerOptions other) {
+    this.keyManagerFactory = other.keyManagerFactory;
   }
 
   @Override
   public KeyCertOptions copy() {
-    return new KeyCertOptionsWrapper(this);
+    return new KeyManagerOptions(this);
   }
 
   @Override

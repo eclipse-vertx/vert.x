@@ -20,11 +20,11 @@ import java.util.function.Function;
 /**
  * @author Hakan Altindag
  */
-public class TrustOptionsWrapper implements TrustOptions {
+public class TrustManagerOptions implements TrustOptions {
 
   private final TrustManagerFactory trustManagerFactory;
 
-  public TrustOptionsWrapper(TrustManagerFactory trustManagerFactory) {
+  public TrustManagerOptions(TrustManagerFactory trustManagerFactory) {
     if (trustManagerFactory == null
       || trustManagerFactory.getTrustManagers() == null
       || trustManagerFactory.getTrustManagers().length == 0) {
@@ -33,17 +33,17 @@ public class TrustOptionsWrapper implements TrustOptions {
     this.trustManagerFactory = trustManagerFactory;
   }
 
-  public TrustOptionsWrapper(TrustManager trustManager) {
+  public TrustManagerOptions(TrustManager trustManager) {
     this(new TrustManagerFactoryWrapper(trustManager));
   }
 
-  private TrustOptionsWrapper(TrustOptionsWrapper other) {
+  private TrustManagerOptions(TrustManagerOptions other) {
     trustManagerFactory = other.trustManagerFactory;
   }
 
   @Override
   public TrustOptions copy() {
-    return new TrustOptionsWrapper(this);
+    return new TrustManagerOptions(this);
   }
 
   @Override

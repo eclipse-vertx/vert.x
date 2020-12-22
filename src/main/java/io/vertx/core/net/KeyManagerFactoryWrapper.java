@@ -20,6 +20,7 @@ import javax.net.ssl.KeyManagerFactorySpi;
 import javax.net.ssl.ManagerFactoryParameters;
 import java.security.KeyStore;
 import java.security.Provider;
+import java.util.Objects;
 
 /**
  * @author Hakan Altindag
@@ -40,6 +41,7 @@ class KeyManagerFactoryWrapper extends KeyManagerFactory {
     private final KeyManager[] keyManagers;
 
     private KeyManagerFactorySpiWrapper(KeyManager keyManager) {
+      Objects.requireNonNull(keyManager);
       this.keyManagers = new KeyManager[]{keyManager};
     }
 
