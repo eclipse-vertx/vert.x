@@ -389,6 +389,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
       setChunked(true);
     }
     body.pipeTo(this);
+    response(handler);
   }
 
   /**

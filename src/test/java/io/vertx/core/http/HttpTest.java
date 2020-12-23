@@ -24,6 +24,7 @@ import io.vertx.core.impl.Utils;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.Pump;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
@@ -48,10 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.IntStream;
 
 import static io.vertx.core.http.HttpMethod.PUT;
@@ -64,7 +62,7 @@ import static java.util.Collections.singletonList;
 public abstract class HttpTest extends HttpTestBase {
 
   @Rule
-  public TemporaryFolder testFolder = new TemporaryFolder();
+  public TemporaryFolder testFolder = TemporaryFolder.builder().assureDeletion().build();
 
   protected File testDir;
   private File tmp;
@@ -5806,15 +5804,33 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientRequestWithLargeBodyInSmallChunks() throws Exception {
-    testClientRequestWithLargeBodyInSmallChunks(false);
+    testClientRequestWithLargeBodyInSmallChunks(false, HttpClientRequest::send);
   }
 
   @Test
   public void testClientRequestWithLargeBodyInSmallChunksChunked() throws Exception {
-    testClientRequestWithLargeBodyInSmallChunks(true);
+    testClientRequestWithLargeBodyInSmallChunks(true, HttpClientRequest::send);
   }
 
-  private void testClientRequestWithLargeBodyInSmallChunks(boolean chunked) throws Exception {
+  @Test
+  public void testClientRequestWithLargeBodyInSmallChunksWithHandler() throws Exception {
+    testClientRequestWithLargeBodyInSmallChunks(false, (req,src) -> {
+      Promise<HttpClientResponse> p = Promise.promise();
+      req.send(src, p);
+      return p.future();
+    });
+  }
+
+  @Test
+  public void testClientRequestWithLargeBodyInSmallChunksChunkedWithHandler() throws Exception {
+    testClientRequestWithLargeBodyInSmallChunks(true, (req,src) -> {
+      Promise<HttpClientResponse> p = Promise.promise();
+      req.send(src, p);
+      return p.future();
+    });
+  }
+
+  private void testClientRequestWithLargeBodyInSmallChunks(boolean chunked, BiFunction<HttpClientRequest, ReadStream<Buffer>, Future<HttpClientResponse>> sendFunction) throws Exception {
     StringBuilder sb = new StringBuilder();
     FakeStream<Buffer> src = new FakeStream<>();
     src.pause();
@@ -5850,7 +5866,7 @@ public abstract class HttpTest extends HttpTestBase {
         if (!chunked) {
           req.putHeader(HttpHeaders.CONTENT_LENGTH, contentLength);
         }
-        return req.send(src);
+        return sendFunction.apply(req,src);
       })
       .onComplete(onSuccess(resp -> {
       assertEquals(200, resp.statusCode());
