@@ -11,49 +11,15 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.Vertx;
-
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import java.util.function.Function;
 
 /**
  * @author Hakan Altindag
  */
-public class TrustManagerOptions implements TrustOptions {
-
-  private final TrustManagerFactory trustManagerFactory;
-
-  public TrustManagerOptions(TrustManagerFactory trustManagerFactory) {
-    if (trustManagerFactory == null
-      || trustManagerFactory.getTrustManagers() == null
-      || trustManagerFactory.getTrustManagers().length == 0) {
-      throw new IllegalArgumentException("TrustManagerFactory is not present or is not initialized yet");
-    }
-    this.trustManagerFactory = trustManagerFactory;
-  }
+public class TrustManagerOptions extends TrustManagerFactoryOptions {
 
   public TrustManagerOptions(TrustManager trustManager) {
-    this(new TrustManagerFactoryWrapper(trustManager));
-  }
-
-  private TrustManagerOptions(TrustManagerOptions other) {
-    trustManagerFactory = other.trustManagerFactory;
-  }
-
-  @Override
-  public TrustOptions copy() {
-    return new TrustManagerOptions(this);
-  }
-
-  @Override
-  public TrustManagerFactory getTrustManagerFactory(Vertx vertx) {
-    return trustManagerFactory;
-  }
-
-  @Override
-  public Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) {
-    return serverName -> trustManagerFactory.getTrustManagers();
+    super(new TrustManagerFactoryWrapper(trustManager));
   }
 
 }

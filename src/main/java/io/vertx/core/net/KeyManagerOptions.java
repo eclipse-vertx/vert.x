@@ -11,50 +11,15 @@
 
 package io.vertx.core.net;
 
-import io.vertx.core.Vertx;
-
 import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.X509KeyManager;
-import java.util.function.Function;
 
 /**
  * @author Hakan Altindag
  */
-public class KeyManagerOptions implements KeyCertOptions {
-
-  private final KeyManagerFactory keyManagerFactory;
-
-  public KeyManagerOptions(KeyManagerFactory keyManagerFactory) {
-    if (keyManagerFactory == null
-      || keyManagerFactory.getKeyManagers() == null
-      || keyManagerFactory.getKeyManagers().length == 0) {
-      throw new IllegalArgumentException("KeyManagerFactory is not present or is not initialized yet");
-    }
-    this.keyManagerFactory = keyManagerFactory;
-  }
+public class KeyManagerOptions extends KeyManagerFactoryOptions {
 
   public KeyManagerOptions(KeyManager keyManager) {
-    this(new KeyManagerFactoryWrapper(keyManager));
-  }
-
-  private KeyManagerOptions(KeyManagerOptions other) {
-    this.keyManagerFactory = other.keyManagerFactory;
-  }
-
-  @Override
-  public KeyCertOptions copy() {
-    return new KeyManagerOptions(this);
-  }
-
-  @Override
-  public KeyManagerFactory getKeyManagerFactory(Vertx vertx) {
-    return keyManagerFactory;
-  }
-
-  @Override
-  public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) {
-    return keyManagerFactory.getKeyManagers()[0] instanceof X509KeyManager ? serverName -> (X509KeyManager) keyManagerFactory.getKeyManagers()[0] : null;
+    super(new KeyManagerFactoryWrapper(keyManager));
   }
 
 }
