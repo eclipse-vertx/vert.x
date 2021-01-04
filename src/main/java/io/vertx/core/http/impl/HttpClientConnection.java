@@ -79,4 +79,9 @@ public interface HttpClientConnection extends HttpConnection {
 
   Object metric();
 
+  /**
+   * @return the timestamp of the last received response - this is used for LIFO connection pooling
+   */
+  long lastResponseReceivedTimestamp();
+
 }

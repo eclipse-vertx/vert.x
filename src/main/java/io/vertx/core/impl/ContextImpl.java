@@ -56,7 +56,6 @@ abstract class ContextImpl extends AbstractContext {
   static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
 
   protected final VertxInternal owner;
-  protected final VertxTracer<?, ?> tracer;
   protected final JsonObject config;
   private final Deployment deployment;
   private final CloseFuture closeFuture;
@@ -71,7 +70,6 @@ abstract class ContextImpl extends AbstractContext {
   final TaskQueue orderedTasks;
 
   ContextImpl(VertxInternal vertx,
-              VertxTracer<?, ?> tracer,
               EventLoop eventLoop,
               WorkerPool internalBlockingPool,
               WorkerPool workerPool,
@@ -81,7 +79,6 @@ abstract class ContextImpl extends AbstractContext {
     if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
     }
-    this.tracer = tracer;
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
     this.eventLoop = eventLoop;
@@ -187,7 +184,7 @@ abstract class ContextImpl extends AbstractContext {
 
   @Override
   public VertxTracer tracer() {
-    return tracer;
+    return owner.tracer();
   }
 
   @Override

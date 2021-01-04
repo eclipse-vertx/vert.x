@@ -427,12 +427,13 @@ public class Pool<C> {
     }
   }
 
-  private synchronized void recycle(Holder holder) {
+  private synchronized boolean recycle(Holder holder) {
     if (holder.removed) {
-      return;
+      return false;
     }
     recycleConnection(holder);
     checkProgress();
+    return true;
   }
 
   private synchronized void evicted(Holder holder) {

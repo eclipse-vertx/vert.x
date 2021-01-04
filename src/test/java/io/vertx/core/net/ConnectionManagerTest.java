@@ -52,7 +52,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       public Endpoint<Connection> create(Object key, ContextInternal ctx, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, Handler<AsyncResult<Connection>> handler) {
+          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
             incRefCount();
             if (success) {
               handler.handle(Future.succeededFuture(result));
@@ -95,7 +95,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       public Endpoint<Connection> create(Object key, ContextInternal ctx, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, Handler<AsyncResult<Connection>> handler) {
+          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
             incRefCount();
             if (closeConnectionAfterCallback) {
               handler.handle(Future.succeededFuture(expected));
@@ -132,7 +132,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       public Endpoint<Connection> create(Object key, ContextInternal ctx, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, Handler<AsyncResult<Connection>> handler) {
+          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
             incRefCount();
             handler.handle(Future.succeededFuture(expected));
           }
@@ -170,7 +170,7 @@ public class ConnectionManagerTest extends VertxTestBase {
       public Endpoint<Connection> create(Object key, ContextInternal ctx, Runnable dispose) {
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, Handler<AsyncResult<Connection>> handler) {
+          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
             adder.set(() -> {
               incRefCount();
             });
@@ -196,7 +196,7 @@ public class ConnectionManagerTest extends VertxTestBase {
         disposals.add(disposed);
         return new Endpoint<Connection>(dispose) {
           @Override
-          public void requestConnection(ContextInternal ctx, Handler<AsyncResult<Connection>> handler) {
+          public void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<Connection>> handler) {
             if (disposed.get()) {
               // Check we don't have reentrant demands once disposed
               fail();

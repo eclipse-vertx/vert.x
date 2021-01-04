@@ -13,7 +13,6 @@ package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
 import io.vertx.core.Handler;
-import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.RejectedExecutionException;
 
@@ -23,14 +22,13 @@ import java.util.concurrent.RejectedExecutionException;
 public class EventLoopContext extends ContextImpl {
 
   EventLoopContext(VertxInternal vertx,
-                   VertxTracer<?, ?> tracer,
                    EventLoop eventLoop,
                    WorkerPool internalBlockingPool,
                    WorkerPool workerPool,
                    Deployment deployment,
                    CloseFuture closeFuture,
                    ClassLoader tccl) {
-    super(vertx, tracer, eventLoop, internalBlockingPool, workerPool, deployment, closeFuture, tccl);
+    super(vertx, eventLoop, internalBlockingPool, workerPool, deployment, closeFuture, tccl);
   }
 
   @Override

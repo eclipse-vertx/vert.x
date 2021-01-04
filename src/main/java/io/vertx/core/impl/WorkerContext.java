@@ -14,7 +14,6 @@ package io.vertx.core.impl;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.spi.metrics.PoolMetrics;
-import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.Objects;
 import java.util.concurrent.RejectedExecutionException;
@@ -25,13 +24,12 @@ import java.util.concurrent.RejectedExecutionException;
 public class WorkerContext extends ContextImpl {
 
   WorkerContext(VertxInternal vertx,
-                VertxTracer<?, ?> tracer,
                 WorkerPool internalBlockingPool,
                 WorkerPool workerPool,
                 Deployment deployment,
                 CloseFuture closeFuture,
                 ClassLoader tccl) {
-    super(vertx, tracer, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeFuture, tccl);
+    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeFuture, tccl);
   }
 
   @Override

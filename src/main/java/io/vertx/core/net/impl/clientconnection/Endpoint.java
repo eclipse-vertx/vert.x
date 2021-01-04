@@ -31,14 +31,14 @@ public abstract class Endpoint<C> {
     this.dispose = dispose;
   }
 
-  public boolean getConnection(ContextInternal ctx, Handler<AsyncResult<C>> handler) {
+  public boolean getConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<C>> handler) {
     synchronized (this) {
       if (disposed) {
         return false;
       }
       pendingRequestCount++;
     }
-    requestConnection(ctx, ar -> {
+    requestConnection(ctx, timeout, ar -> {
       boolean dispose;
       synchronized (Endpoint.this) {
         pendingRequestCount--;
@@ -54,7 +54,7 @@ public abstract class Endpoint<C> {
     return true;
   }
 
-  public abstract void requestConnection(ContextInternal ctx, Handler<AsyncResult<C>> handler);
+  public abstract void requestConnection(ContextInternal ctx, long timeout, Handler<AsyncResult<C>> handler);
 
   protected boolean incRefCount() {
     synchronized (this) {

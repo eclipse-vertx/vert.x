@@ -11,36 +11,30 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.group.ChannelGroup;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
-import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -52,42 +46,45 @@ import java.util.Map;
 public class HttpChannelConnector {
 
   private final HttpClientImpl client;
-  private final ChannelGroup channelGroup;
+  private final NetClientImpl netClient;
   private final HttpClientOptions options;
   private final ClientMetrics metrics;
-  private final SSLHelper sslHelper;
+  private final boolean ssl;
+  private final boolean useAlpn;
   private final HttpVersion version;
   private final SocketAddress peerAddress;
   private final SocketAddress server;
 
   public HttpChannelConnector(HttpClientImpl client,
-                              ChannelGroup channelGroup,
+                              NetClientImpl netClient,
                               ClientMetrics metrics,
                               HttpVersion version,
-                              SSLHelper sslHelper,
+                              boolean ssl,
+                              boolean useAlpn,
                               SocketAddress peerAddress,
                               SocketAddress server) {
     this.client = client;
-    this.channelGroup = channelGroup;
+    this.netClient = netClient;
     this.metrics = metrics;
     this.options = client.getOptions();
-    this.sslHelper = sslHelper;
+    this.ssl = ssl;
+    this.useAlpn = useAlpn;
     this.version = version;
     this.peerAddress = peerAddress;
     this.server = server;
   }
 
+  public SocketAddress server() {
+    return server;
+  }
+
   private void connect(EventLoopContext context, Promise<NetSocket> promise) {
     ProxyOptions proxyOptions = this.options.getProxyOptions();
-    if (proxyOptions != null && sslHelper == null && proxyOptions.getType()== ProxyType.HTTP) {
+    if (proxyOptions != null && !ssl && proxyOptions.getType()== ProxyType.HTTP) {
       // http proxy requests are handled in HttpClientImpl, everything else can use netty proxy handler
       proxyOptions = null;
     }
-    NetClientOptions options = new NetClientOptions();
-    options.setSsl(sslHelper != null);
-    options.setProxyOptions(proxyOptions);
-    NetClientImpl netClient = new NetClientImpl(client.getVertx(), channelGroup, sslHelper, options);
-    netClient.doConnect(server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, promise, context, 0);
+    netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, promise, context, 0);
   }
 
   public Future<HttpClientConnection> wrap(EventLoopContext context, NetSocket so_) {
@@ -107,9 +104,9 @@ public class HttpChannelConnector {
 
     //
     Channel ch = so.channelHandlerContext().channel();
-    if (sslHelper != null) {
+    if (ssl) {
       String protocol = so.applicationLayerProtocol();
-      if (sslHelper.isUseAlpn()) {
+      if (useAlpn) {
         if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
           http2Connected(context, ch, promise);

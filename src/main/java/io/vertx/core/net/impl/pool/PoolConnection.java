@@ -8,21 +8,35 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.clientconnection;
+package io.vertx.core.net.impl.pool;
+
+import io.vertx.core.Context;
 
 /**
- * A recyclable object.
+ * A wrapper for the actual connection.
+ *
+ * @param <C>
  */
-public interface Lease<T> {
+public interface PoolConnection<C> {
 
   /**
-   * @return the leased object until it is recycled
+   * @return the connection context
    */
-  T get();
+  Context context();
 
   /**
-   * Recycle the object.
+   * @return the connection
    */
-  void recycle();
+  C get();
+
+  /**
+   * @return the connection concurrency
+   */
+  int concurrency();
+
+  /**
+   * @return the maximum connection concurrency
+   */
+  int maxConcurrency();
 
 }
