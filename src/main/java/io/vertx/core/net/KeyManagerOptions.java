@@ -16,9 +16,9 @@ import javax.net.ssl.KeyManager;
 /**
  * @author Hakan Altindag
  */
-public class KeyManagerOptions extends KeyManagerFactoryOptions {
+class KeyManagerOptions extends KeyManagerFactoryOptions {
 
-  public KeyManagerOptions(KeyManager keyManager) {
+  KeyManagerOptions(KeyManager keyManager) {
     super(new KeyManagerFactoryWrapper(keyManager));
   }
 

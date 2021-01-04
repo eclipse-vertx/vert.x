@@ -20,11 +20,11 @@ import java.util.function.Function;
 /**
  * @author Hakan Altindag
  */
-public class TrustManagerFactoryOptions implements TrustOptions {
+class TrustManagerFactoryOptions implements TrustOptions {
 
   private final TrustManagerFactory trustManagerFactory;
 
-  public TrustManagerFactoryOptions(TrustManagerFactory trustManagerFactory) {
+  TrustManagerFactoryOptions(TrustManagerFactory trustManagerFactory) {
     if (trustManagerFactory == null
       || trustManagerFactory.getTrustManagers() == null
       || trustManagerFactory.getTrustManagers().length == 0) {

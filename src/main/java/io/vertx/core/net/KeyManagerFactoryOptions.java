@@ -20,11 +20,11 @@ import java.util.function.Function;
 /**
  * @author Hakan Altindag
  */
-public class KeyManagerFactoryOptions implements KeyCertOptions {
+class KeyManagerFactoryOptions implements KeyCertOptions {
 
   private final KeyManagerFactory keyManagerFactory;
 
-  public KeyManagerFactoryOptions(KeyManagerFactory keyManagerFactory) {
+  KeyManagerFactoryOptions(KeyManagerFactory keyManagerFactory) {
     if (keyManagerFactory == null
       || keyManagerFactory.getKeyManagers() == null
       || keyManagerFactory.getKeyManagers().length == 0) {

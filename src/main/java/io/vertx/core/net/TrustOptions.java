@@ -12,8 +12,6 @@
 package io.vertx.core.net;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.KeyStoreHelper;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -54,5 +52,9 @@ public interface TrustOptions {
    * @return the trustManager
    */
   Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception;
+
+  default TrustOptions wrap(TrustManager trustManager) {
+    return new TrustManagerOptions(trustManager);
+  }
 
 }

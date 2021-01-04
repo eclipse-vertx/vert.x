@@ -16,9 +16,9 @@ import javax.net.ssl.TrustManager;
 /**
  * @author Hakan Altindag
  */
-public class TrustManagerOptions extends TrustManagerFactoryOptions {
+class TrustManagerOptions extends TrustManagerFactoryOptions {
 
-  public TrustManagerOptions(TrustManager trustManager) {
+  TrustManagerOptions(TrustManager trustManager) {
     super(new TrustManagerFactoryWrapper(trustManager));
   }
 
