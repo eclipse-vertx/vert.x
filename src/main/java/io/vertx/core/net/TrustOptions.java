@@ -53,7 +53,7 @@ public interface TrustOptions {
    */
   Function<String, TrustManager[]> trustManagerMapper(Vertx vertx) throws Exception;
 
-  default TrustOptions wrap(TrustManager trustManager) {
+  static TrustOptions wrap(TrustManager trustManager) {
     return new TrustManagerOptions(trustManager);
   }
 
