@@ -16,6 +16,16 @@ public class NetClientOptionsConverter {
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, NetClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "applicationLayerProtocols":
+          if (member.getValue() instanceof JsonArray) {
+            java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
+            ((Iterable<Object>)member.getValue()).forEach( item -> {
+              if (item instanceof String)
+                list.add((String)item);
+            });
+            obj.setApplicationLayerProtocols(list);
+          }
+          break;
         case "hostnameVerificationAlgorithm":
           if (member.getValue() instanceof String) {
             obj.setHostnameVerificationAlgorithm((String)member.getValue());
@@ -40,6 +50,11 @@ public class NetClientOptionsConverter {
   }
 
    static void toJson(NetClientOptions obj, java.util.Map<String, Object> json) {
+    if (obj.getApplicationLayerProtocols() != null) {
+      JsonArray array = new JsonArray();
+      obj.getApplicationLayerProtocols().forEach(item -> array.add(item));
+      json.put("applicationLayerProtocols", array);
+    }
     if (obj.getHostnameVerificationAlgorithm() != null) {
       json.put("hostnameVerificationAlgorithm", obj.getHostnameVerificationAlgorithm());
     }

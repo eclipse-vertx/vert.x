@@ -81,37 +81,21 @@ public class HttpConnectionProvider implements ConnectionProvider<HttpClientConn
 
   @Override
   public void connect(ConnectionListener<HttpClientConnection> listener, ContextInternal context, Handler<AsyncResult<ConnectResult<HttpClientConnection>>> asyncResultHandler) {
-    Promise<HttpClientConnection> promise = Promise.promise();
-    promise.future().onComplete(ar -> {
-      if (ar.succeeded()) {
-        HttpClientConnection conn = ar.result();
-        conn.lifecycleHandler(recycle -> {
-          if (recycle) {
-            listener.onRecycle();
-          } else {
-            listener.onEvict();
-          }
-        });
-        conn.concurrencyChangeHandler(listener::onConcurrencyChange);
-        long weight;
-        if (conn instanceof Http1xClientConnection) {
-          weight = http1Weight;
-        } else if (conn instanceof Http2ClientConnection) {
-          weight = http2Weight;
-        } else {
-          // Upgrade
-          weight = http2Weight;
-        }
-        ConnectResult<HttpClientConnection> result = new ConnectResult<>(conn, conn.concurrency(), weight);
-        asyncResultHandler.handle(io.vertx.core.Future.succeededFuture(result));
+    connector
+      .httpConnect((EventLoopContext) context)
+      .map(conn -> {
+      conn.evictionHandler(recycle -> listener.onEvict());
+      conn.concurrencyChangeHandler(listener::onConcurrencyChange);
+      long weight;
+      if (conn instanceof Http1xClientConnection) {
+        weight = http1Weight;
+      } else if (conn instanceof Http2ClientConnection) {
+        weight = http2Weight;
       } else {
-        asyncResultHandler.handle(io.vertx.core.Future.failedFuture(ar.cause()));
+        // Upgrade
+        weight = http2Weight;
       }
-    });
-    try {
-      connector.connect((EventLoopContext) context, promise);
-    } catch(Exception e) {
-      promise.tryFail(e);
-    }
+      return new ConnectResult<>(conn, conn.concurrency(), weight);
+    }).onComplete(asyncResultHandler);
   }
 }

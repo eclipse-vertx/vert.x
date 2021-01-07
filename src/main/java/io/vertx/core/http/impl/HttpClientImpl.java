@@ -34,6 +34,7 @@ import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.clientconnection.Endpoint;
+import io.vertx.core.net.impl.clientconnection.Lease;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;
@@ -45,9 +46,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -117,14 +116,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   };
 
   private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
-  private static final Consumer<Endpoint<HttpClientConnection>> EXPIRED_CHECKER = endpoint -> ((ClientHttpStreamEndpoint)endpoint).checkExpired();
+  private static final Consumer<Endpoint<Lease<HttpClientConnection>>> EXPIRED_CHECKER = endpoint -> ((ClientHttpStreamEndpoint)endpoint).checkExpired();
 
 
   private final VertxInternal vertx;
   private final ChannelGroup channelGroup;
   private final HttpClientOptions options;
   private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
-  private final ConnectionManager<EndpointKey, HttpClientConnection> httpCM;
+  private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
   private final ProxyType proxyType;
   private final SSLHelper sslHelper;
   private final SSLHelper webSocketSSLHelper;
@@ -200,7 +199,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     }
   }
 
-  private ConnectionManager<EndpointKey, HttpClientConnection> httpConnectionManager() {
+  private ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpConnectionManager() {
     long maxSize = options.getMaxPoolSize() * options.getHttp2MaxPoolSize();
     int maxPoolSize = Math.max(options.getMaxPoolSize(), options.getHttp2MaxPoolSize());
     return new ConnectionManager<>((key, ctx, dispose) -> {
@@ -264,6 +263,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
 
   HttpClientMetrics metrics() {
     return metrics;
+  }
+
+  /**
+   * Connect to a server.
+   */
+  public Future<HttpClientConnection> connect(SocketAddress server) {
+    EventLoopContext context = (EventLoopContext) vertx.getOrCreateContext();
+    HttpChannelConnector connector = new HttpChannelConnector(this, channelGroup, null, options.getProtocolVersion(), options.isSsl() ? sslHelper : null, server, server);
+    return connector.httpConnect(context);
   }
 
   @Override
@@ -604,10 +612,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     }
     httpCM.getConnection(eventLoopContext, key, ar1 -> {
       if (ar1.succeeded()) {
-        HttpClientConnection conn = ar1.result();
+        Lease<HttpClientConnection> lease = ar1.result();
+        HttpClientConnection conn = lease.get();
         conn.createStream(ctx, ar2 -> {
           if (ar2.succeeded()) {
             HttpClientStream stream = ar2.result();
+            stream.closeHandler(v -> {
+              lease.recycle();
+            });
             HttpClientRequestImpl req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, server, host, port, requestURI);
             if (headers != null) {
               req.headers().setAll(headers);

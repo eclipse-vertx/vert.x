@@ -65,6 +65,7 @@ public interface HttpClientStream {
   void chunkHandler(Handler<Buffer> handler);
   void endHandler(Handler<MultiMap> handler);
   void priorityHandler(Handler<StreamPriority> handler);
+  void closeHandler(Handler<Void> handler);
 
   void doSetWriteQueueMaxSize(int size);
   boolean isNotWritable();
@@ -75,4 +76,5 @@ public interface HttpClientStream {
 
   StreamPriority priority();
   void updatePriority(StreamPriority streamPriority);
+
 }

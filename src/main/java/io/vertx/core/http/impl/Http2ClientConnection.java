@@ -45,7 +45,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private final HttpClientImpl client;
   private final ClientMetrics metrics;
-  private Handler<Boolean> lifecycleHandler = DEFAULT_LIFECYCLE_HANDLER;
+  private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private long expirationTimestamp;
   private boolean evicted;
@@ -60,8 +60,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  public Http2ClientConnection lifecycleHandler(Handler<Boolean> handler) {
-    lifecycleHandler = handler;
+  public Http2ClientConnection evictionHandler(Handler<Void> handler) {
+    evictionHandler = handler;
     return this;
   }
 
@@ -108,7 +108,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private void tryEvict() {
     if (!evicted) {
       evicted = true;
-      lifecycleHandler.handle(false);
+      evictionHandler.handle(null);
     }
   }
 
@@ -163,7 +163,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     int timeout = client.getOptions().getHttp2KeepAliveTimeout();
     long expired = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
     expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
-    lifecycleHandler.handle(true);
   }
 
   @Override
@@ -230,6 +229,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     protected Handler<HttpFrame> unknownFrameHandler;
     protected Handler<Throwable> exceptionHandler;
     protected Handler<HttpClientPush> pushHandler;
+    protected Handler<Void> closeHandler;
 
     Stream(Http2ClientConnection conn, ContextInternal context, boolean push) {
       super(conn, context);
@@ -351,6 +351,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       } /* else {
         conn.listener.onRecycle(0, disposable);
       } */
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
   }
 
@@ -358,6 +361,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     StreamImpl(Http2ClientConnection conn, ContextInternal context, boolean push) {
       super(conn, context, push);
+    }
+
+    @Override
+    public void closeHandler(Handler<Void> handler) {
+      closeHandler = handler;
     }
 
     @Override

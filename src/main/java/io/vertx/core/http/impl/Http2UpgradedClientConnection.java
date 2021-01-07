@@ -55,7 +55,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   private Handler<GoAway> goAwayHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Buffer> pingHandler;
-  private Handler<Boolean> lifecycleHandler;
+  private Handler<Void> evictionHandler;
   private Handler<Long> concurrencyChangeHandler;
   private Handler<Http2Settings> remoteSettingsHandler;
 
@@ -106,6 +106,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     private Handler<Void> continueHandler;
     private Handler<HttpClientPush> pushHandler;
     private Handler<HttpFrame> unknownFrameHandler;
+    private Handler<Void> closeHandler;
     private HttpClientStream upgradedStream;
 
     UpgradingStream(HttpClientStream stream, Http1xClientConnection conn) {
@@ -177,6 +178,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                 upgradedStream.continueHandler(continueHandler);
                 upgradedStream.pushHandler(pushHandler);
                 upgradedStream.unknownFrameHandler(unknownFrameHandler);
+                upgradedStream.closeHandler(closeHandler);
                 stream.headHandler(null);
                 stream.chunkHandler(null);
                 stream.endHandler(null);
@@ -186,6 +188,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                 stream.continueHandler(null);
                 stream.pushHandler(null);
                 stream.unknownFrameHandler(null);
+                stream.closeHandler(null);
                 headHandler = null;
                 chunkHandler = null;
                 endHandler = null;
@@ -194,6 +197,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                 drainHandler = null;
                 continueHandler = null;
                 pushHandler = null;
+                closeHandler = null;
                 current = conn;
                 conn.closeHandler(closeHandler);
                 conn.exceptionHandler(exceptionHandler);
@@ -201,7 +205,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
                 conn.goAwayHandler(goAwayHandler);
                 conn.shutdownHandler(shutdownHandler);
                 conn.remoteSettingsHandler(remoteSettingsHandler);
-                conn.lifecycleHandler(lifecycleHandler);
+                conn.evictionHandler(evictionHandler);
                 conn.concurrencyChangeHandler(concurrencyChangeHandler);
                 concurrencyChangeHandler.handle(conn.concurrency());
               } else {
@@ -350,6 +354,16 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       } else {
         stream.pushHandler(handler);
         pushHandler = handler;
+      }
+    }
+
+    @Override
+    public void closeHandler(Handler<Void> handler) {
+      if (closeHandler != null) {
+        upgradedStream.closeHandler(handler);
+      } else {
+        stream.closeHandler(handler);
+        closeHandler = handler;
       }
     }
 
@@ -555,11 +569,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   }
 
   @Override
-  public HttpClientConnection lifecycleHandler(Handler<Boolean> handler) {
+  public HttpClientConnection evictionHandler(Handler<Void> handler) {
     if (current instanceof Http1xClientConnection) {
-      lifecycleHandler = handler;
+      evictionHandler = handler;
     } else {
-      current.lifecycleHandler(handler);
+      current.evictionHandler(handler);
     }
     return this;
   }

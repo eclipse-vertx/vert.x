@@ -26,7 +26,7 @@ import java.util.Deque;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WebSocketEndpoint extends ClientHttpEndpointBase {
+class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
 
   private final int maxPoolSize;
   private final HttpChannelConnector connector;
@@ -71,11 +71,7 @@ class WebSocketEndpoint extends ClientHttpEndpointBase {
       public void handle(AsyncResult<HttpClientConnection> ar) {
         if (ar.succeeded()) {
           HttpClientConnection c = ar.result();
-          c.lifecycleHandler(recycle -> {
-            if (!recycle) {
-              onEvict();
-            }
-          });
+          c.evictionHandler(v -> onEvict());
           conn = c;
           connectionAdded(c);
           handler.handle(Future.succeededFuture(c));
@@ -84,10 +80,10 @@ class WebSocketEndpoint extends ClientHttpEndpointBase {
         }
       }
     }
-    Listener listener = new Listener();
-    Promise<HttpClientConnection> promise = Promise.promise();
-    promise.future().onComplete(listener);
-    connector.connect((EventLoopContext) ctx, promise);
+
+    connector
+      .httpConnect((EventLoopContext) ctx)
+      .onComplete(new Listener());
   }
 
   @Override
@@ -113,5 +109,10 @@ class WebSocketEndpoint extends ClientHttpEndpointBase {
       });
       waiters.clear();
     }
+  }
+
+  @Override
+  public void close(HttpClientConnection connection) {
+    connection.close();
   }
 }

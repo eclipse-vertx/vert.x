@@ -37,7 +37,6 @@ import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
-import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -85,13 +84,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private Deque<Stream> requests = new ArrayDeque<>();
   private Deque<Stream> responses = new ArrayDeque<>();
   private boolean closed;
-  private boolean shutdown;
-  private long shutdownTimerID = -1L;
+  private boolean evicted;
 
-  private Handler<Boolean> lifecycleHandler = DEFAULT_LIFECYCLE_HANDLER;
-  private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
+  private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Object> invalidMessageHandler = INVALID_MSG_HANDLER;
   private boolean close;
+  private boolean shutdown;
+  private long shutdownTimerID = -1L;
   private boolean isConnect;
   private int keepAliveTimeout;
   private long expirationTimestamp;
@@ -115,18 +114,15 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
   }
 
-  public Http1xClientConnection lifecycleHandler(Handler<Boolean> handler) {
-    lifecycleHandler = handler;
+  @Override
+  public HttpClientConnection evictionHandler(Handler<Void> handler) {
+    evictionHandler = handler;
     return this;
-  }
-
-  public Handler<Boolean> lifecycleHandler() {
-    return lifecycleHandler;
   }
 
   @Override
   public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
-    concurrencyChangeHandler = handler;
+    // Never changes
     return this;
   }
 
@@ -142,7 +138,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     removeChannelHandlers();
     NetSocketImpl socket = new NetSocketImpl(context, chctx, client.getSslHelper(), metrics());
     socket.metric(metric());
-    lifecycleHandler.handle(false);
+    evictionHandler.handle(null);
     chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));
     return socket;
   }
@@ -249,11 +245,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   private void endRequest(Stream s) {
     Stream next;
-    boolean recycle;
+    boolean checkLifecycle;
     synchronized (this) {
       requests.pop();
       next = requests.peek();
-      recycle = s.responseEnded;
+      checkLifecycle = s.responseEnded;
       if (metrics != null) {
         metrics.requestEnd(s.metric, s.bytesWritten);
       }
@@ -262,30 +258,25 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (next != null) {
       next.promise.complete((HttpClientStream) next);
     }
-    if (recycle) {
-      recycle();
+    if (checkLifecycle) {
+      checkLifecycle();
     }
   }
 
-  private void resetRequest(Stream stream) {
-    boolean close;
+  /**
+   * Resets the given {@code stream}.
+   *
+   * @param stream to reset
+   * @return whether the stream should be considered as closed
+   */
+  private boolean reset(Stream stream) {
+    boolean isInflight;
     synchronized (this) {
-      if (responses.remove(stream)) {
-        // Already sent
-        close = true;
-      } else if (requests.remove(stream)) {
-        // Not yet sent
-        close = false;
-      } else {
-        // Response received
-        return;
-      }
+      isInflight = responses.remove(stream) || (requests.remove(stream) && stream.responseEnded);
+      close = isInflight;
     }
-    if (close) {
-      close();
-    } else {
-      recycle();
-    }
+    checkLifecycle();
+    return !isInflight;
   }
 
   private abstract static class Stream {
@@ -345,6 +336,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
     private Handler<Throwable> exceptionHandler;
+    private Handler<Void> closeHandler;
 
     StreamImpl(ContextInternal context, Http1xClientConnection conn, int id) {
       super(context, id);
@@ -398,6 +390,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     public void headHandler(Handler<HttpResponseHead> handler) {
       this.headHandler = handler;
+    }
+
+    @Override
+    public void closeHandler(Handler<Void> handler) {
+      closeHandler = handler;
     }
 
     @Override
@@ -507,17 +504,20 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         }
         reset = true;
       }
-      handleException(cause);
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        reset();
+        _reset(cause);
       } else {
-        eventLoop.execute(this::reset);
+        eventLoop.execute(() -> _reset(cause));
       }
     }
 
-    private void reset() {
-      conn.resetRequest(this);
+    private void _reset(Throwable cause) {
+      boolean removed = conn.reset(this);
+      context.execute(cause, this::handleException);
+      if (removed) {
+        context.execute(this::handleClosed);
+      }
     }
 
     @Override
@@ -575,6 +575,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     void handleEnd(LastHttpContent trailer) {
       queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
 
     void handleException(Throwable cause) {
@@ -586,15 +589,29 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     void handleClosed() {
       handleException(CLOSED_EXCEPTION);
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
   }
 
   private void checkLifecycle() {
-    if (close) {
+    if (close || (shutdown && requests.isEmpty() && responses.isEmpty())) {
       close();
-    } else {
-      recycle();
+    } else if (!isConnect) {
+      expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
     }
+  }
+
+  @Override
+  public Future<Void> close() {
+    if (!evicted) {
+      evicted = true;
+      if (evictionHandler != null) {
+        evictionHandler.handle(null);
+      }
+    }
+    return super.close();
   }
 
   private Throwable validateMessage(Object msg) {
@@ -775,12 +792,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (metrics != null) {
       metrics.responseEnd(stream.metric, stream.bytesRead);
     }
-    stream.context.execute(trailer, stream::handleEnd);
     this.doResume();
     flushBytesRead();
     if (check) {
       checkLifecycle();
     }
+    stream.context.execute(trailer, stream::handleEnd);
   }
 
   public HttpClientMetrics metrics() {
@@ -934,6 +951,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       HttpClientMetrics met = client.metrics();
       met.endpointDisconnected(metrics);
     }
+    if (!evicted) {
+      evicted = true;
+      if (evictionHandler != null) {
+        evictionHandler.handle(null);
+      }
+    }
     WebSocketImpl ws;
     VertxTracer tracer = context.tracer();
     Iterable<Stream> streams;
@@ -1015,17 +1038,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
   }
 
-  private void recycle() {
-    if (shutdown) {
-      if (requests.isEmpty() && responses.isEmpty()) {
-        close();
-      }
-    } else if (!isConnect) {
-      expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
-      lifecycleHandler.handle(true);
-    }
-  }
-
   @Override
   public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
     shutdown(timeout, vertx.promise(handler));
@@ -1052,7 +1064,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       shutdown = true;
       closeFuture().onComplete(promise);
     }
-    lifecycleHandler.handle(false);
     synchronized (this) {
       if (!closed) {
         if (timeoutMs > 0L) {

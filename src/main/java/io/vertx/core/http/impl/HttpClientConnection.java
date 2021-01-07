@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
@@ -28,21 +27,19 @@ public interface HttpClientConnection extends HttpConnection {
 
   Logger log = LoggerFactory.getLogger(HttpClientConnection.class);
 
-  Handler<Boolean> DEFAULT_LIFECYCLE_HANDLER = status -> {
-    log.warn("Connection " + (status ? "evicted" : "recycled"));
+  Handler<Void> DEFAULT_EVICTION_HANDLER = v -> {
+    log.warn("Connection evicted");
   };
 
   Handler<Long> DEFAULT_CONCURRENCY_CHANGE_HANDLER = concurrency -> {};
 
   /**
-   * Set a {@code handler} called when the connection lifecycle changes.
-   * When the handler is called with {@code true} the connection can be recycled
-   * otherwise it is considered to be closed.
+   * Set a {@code handler} called when the connection should be evicted from a pool.
    *
    * @param handler the handler
    * @return a reference to this, so the API can be used fluently
    */
-  HttpClientConnection lifecycleHandler(Handler<Boolean> handler);
+  HttpClientConnection evictionHandler(Handler<Void> handler);
 
   /**
    * Set a {@code handler} called when the connection concurrency changes.

@@ -65,6 +65,18 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final TCPMetrics metrics;
   private final CloseFuture closeFuture;
 
+  public NetClientImpl(VertxInternal vertx, ChannelGroup channelGroup, SSLHelper sslHelper, NetClientOptions options) {
+    this.vertx = vertx;
+    this.channelGroup = channelGroup;
+    this.options = options;
+    this.sslHelper = sslHelper;
+    this.metrics = null;
+    this.logEnabled = options.getLogActivity();
+    this.idleTimeout = options.getIdleTimeout();
+    this.idleTimeoutUnit = options.getIdleTimeoutUnit();
+    this.closeFuture = new CloseFuture();
+  }
+
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
@@ -81,7 +93,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler());
     }
-    if (sslHelper.isSSL()) {
+    if (options.isSsl()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
@@ -190,13 +202,20 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   }
 
   private void doConnect(SocketAddress remoteAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal ctx) {
-    doConnect(remoteAddress, serverName, connectHandler, ctx, options.getReconnectAttempts());
+    SocketAddress peerAddress = remoteAddress;
+    String peerHost = peerAddress.host();
+    if (peerHost != null && peerHost.endsWith(".")) {
+      peerAddress = SocketAddress.inetSocketAddress(peerAddress.port(), peerHost.substring(0, peerHost.length() - 1));
+    }
+    doConnect(remoteAddress, peerAddress, serverName, connectHandler, ctx, options.getReconnectAttempts());
   }
 
-  private void doConnect(SocketAddress remoteAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal context, int remainingAttempts) {
+  public void doConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal context, int remainingAttempts) {
     checkClosed();
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
-    sslHelper.validate(vertx);
+    if (sslHelper != null) {
+      sslHelper.validate(vertx);
+    }
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
 
@@ -204,12 +223,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
     ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
 
-    SocketAddress peerAddress = remoteAddress;
-    String peerHost = peerAddress.host();
-    if (peerHost != null && peerHost.endsWith(".")) {
-      peerAddress = SocketAddress.inetSocketAddress(peerAddress.port(), peerHost.substring(0, peerHost.length() - 1));
-    }
-    io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, sslHelper.isSSL());
+    io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, options.isSsl());
     fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
       if (future.isSuccess()) {
         Channel ch = future.getNow();
@@ -223,7 +237,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
-              doConnect(remoteAddress, serverName, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+              doConnect(remoteAddress, peerAddress, serverName, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
             );
           });
         } else {

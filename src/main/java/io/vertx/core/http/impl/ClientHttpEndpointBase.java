@@ -19,7 +19,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class ClientHttpEndpointBase extends Endpoint<HttpClientConnection> {
+abstract class ClientHttpEndpointBase<C> extends Endpoint<C> {
 
   private final Object metric;
   private final int port;
@@ -36,7 +36,7 @@ abstract class ClientHttpEndpointBase extends Endpoint<HttpClientConnection> {
   }
 
   @Override
-  public final void requestConnection(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler) {
+  public final void requestConnection(ContextInternal ctx, Handler<AsyncResult<C>> handler) {
     if (metrics != null) {
       Object metric;
       if (metrics != null) {
@@ -44,7 +44,7 @@ abstract class ClientHttpEndpointBase extends Endpoint<HttpClientConnection> {
       } else {
         metric = null;
       }
-      Handler<AsyncResult<HttpClientConnection>> next = handler;
+      Handler<AsyncResult<C>> next = handler;
       handler = ar -> {
         if (metrics != null) {
           metrics.dequeueRequest(metric);
@@ -55,17 +55,12 @@ abstract class ClientHttpEndpointBase extends Endpoint<HttpClientConnection> {
     requestConnection2(ctx, handler);
   }
 
-  protected abstract void requestConnection2(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler);
+  protected abstract void requestConnection2(ContextInternal ctx, Handler<AsyncResult<C>> handler);
 
   @Override
   protected void dispose() {
     if (metrics != null) {
       metrics.close();
     }
-  }
-
-  @Override
-  public void close(HttpClientConnection connection) {
-    connection.close();
   }
 }
