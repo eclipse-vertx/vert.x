@@ -345,9 +345,10 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   /**
    * Get the instant value with the specified key.
    *
-   * JSON itself has no notion of a temporal types, this extension complies to the RFC-7493, so this method assumes
-   * there is a String value with the key and it contains an ISO 8601 encoded date and time format
-   * such as "2017-04-03T10:25:41Z", which it decodes if found and returns.
+   * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted dates with timezone
+   * always set to zero UTC offset, as denoted by the suffix "Z" to be parsed as a instant value.
+   * {@code YYYY-MM-DDTHH:mm:ss.sssZ} is the default format used by web browser scripting. This extension complies to
+   * the RFC-7493 with all the restrictions mentioned before. The method will then decode and return a instant value.
    *
    * @param key the key to return the value for
    * @return the value or null if no value for that key
