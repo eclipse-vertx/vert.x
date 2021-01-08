@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
@@ -194,6 +195,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
     };
 
     server.requestHandler(req -> {
+      Context requestContext = vertx.getOrCreateContext();
       if (req.method() == HttpMethod.POST) {
         assertEquals(req.path(), "/form");
         req.response().setChunked(true);
@@ -206,7 +208,9 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
 
         req.uploadHandler(upload -> {
 
-          assertNotNull(Vertx.currentContext());
+          Context uploadContext = Vertx.currentContext();
+          assertNotNull(uploadContext);
+          assertSame(requestContext, uploadContext);
 
           serverConn.set(req.connection());
           checkClose.run();
