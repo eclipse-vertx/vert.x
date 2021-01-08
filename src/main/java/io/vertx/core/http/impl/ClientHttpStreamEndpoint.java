@@ -16,7 +16,6 @@ import io.vertx.core.net.impl.clientconnection.Lease;
 import io.vertx.core.net.impl.clientconnection.Pool;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -41,8 +40,12 @@ class ClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpClientCo
       queueMaxSize,
       connector.weight(),
       maxSize,
-      this::connectionAdded,
-      this::connectionRemoved,
+      conn -> {
+        if (!incRefCount()) {
+          conn.close();
+        }
+      },
+      v -> decRefCount(),
       false);
   }
 
@@ -53,10 +56,5 @@ class ClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpClientCo
   @Override
   public void requestConnection2(ContextInternal ctx, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
     pool.getConnection(handler);
-  }
-
-  @Override
-  public void close(Lease<HttpClientConnection> lease) {
-    lease.get().close();
   }
 }

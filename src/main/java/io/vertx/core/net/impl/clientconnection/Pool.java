@@ -155,8 +155,8 @@ public class Pool<C> {
 
   private final ContextInternal context;
   private final ConnectionProvider<C> connector;
-  private final Consumer<Lease<C>> connectionAdded;
-  private final Consumer<Lease<C>> connectionRemoved;
+  private final Consumer<C> connectionAdded;
+  private final Consumer<C> connectionRemoved;
 
   private final int queueMaxSize;                                   // the queue max size (does not include inflight waiters)
   private final Deque<Waiter<C>> waitersQueue = new ArrayDeque<>(); // The waiters pending
@@ -177,8 +177,8 @@ public class Pool<C> {
               int queueMaxSize,
               long initialWeight,
               long maxWeight,
-              Consumer<Lease<C>> connectionAdded,
-              Consumer<Lease<C>> connectionRemoved,
+              Consumer<C> connectionAdded,
+              Consumer<C> connectionRemoved,
               boolean fifo) {
     this.context = (ContextInternal) context;
     this.weight = 0;
@@ -382,7 +382,7 @@ public class Pool<C> {
       }
       checkProgress();
     }
-    connectionAdded.accept(holder);
+    connectionAdded.accept(holder.connection);
     for (Waiter<C> waiter : waiters) {
       waiter.handler.handle(Future.succeededFuture(holder.createLease()));
     }
@@ -447,7 +447,7 @@ public class Pool<C> {
   }
 
   private void evictConnection(Holder holder) {
-    connectionRemoved.accept(holder);
+    connectionRemoved.accept(holder.connection);
     if (holder.capacity > 0) {
       capacity -= holder.capacity;
       holder.capacity = 0;

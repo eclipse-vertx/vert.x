@@ -53,10 +53,8 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
 
     class Listener implements Handler<AsyncResult<HttpClientConnection>> {
 
-      private HttpClientConnection conn;
-
       private void onEvict() {
-        connectionRemoved(conn);
+        decRefCount();
         Waiter h;
         synchronized (WebSocketEndpoint.this) {
           if (--inflightConnections > maxPoolSize || waiters.isEmpty()) {
@@ -71,10 +69,13 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
       public void handle(AsyncResult<HttpClientConnection> ar) {
         if (ar.succeeded()) {
           HttpClientConnection c = ar.result();
-          c.evictionHandler(v -> onEvict());
-          conn = c;
-          connectionAdded(c);
-          handler.handle(Future.succeededFuture(c));
+          if (incRefCount()) {
+            c.evictionHandler(v -> onEvict());
+            handler.handle(Future.succeededFuture(c));
+          } else {
+            c.close();
+            handler.handle(Future.failedFuture("Connection closed"));
+          }
         } else {
           handler.handle(Future.failedFuture(ar.cause()));
         }
@@ -109,10 +110,5 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
       });
       waiters.clear();
     }
-  }
-
-  @Override
-  public void close(HttpClientConnection connection) {
-    connection.close();
   }
 }

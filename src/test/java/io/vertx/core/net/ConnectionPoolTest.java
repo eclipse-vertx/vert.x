@@ -99,11 +99,11 @@ public class ConnectionPoolTest extends VertxTestBase {
             poolMaxSize,
             conn -> {
             synchronized (FakeConnectionManager.this) {
-              active.add(conn.get());
+              active.add(conn);
             }
           }, conn -> {
             synchronized (FakeConnectionManager.this) {
-              active.remove(conn.get());
+              active.remove(conn);
             }
           }, fifo
           );

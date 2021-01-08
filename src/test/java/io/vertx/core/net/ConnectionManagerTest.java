@@ -53,7 +53,7 @@ public class ConnectionManagerTest extends VertxTestBase {
         return new Endpoint<Connection>(dispose) {
           @Override
           public void requestConnection(ContextInternal ctx, Handler<AsyncResult<Connection>> handler) {
-            connectionAdded(result);
+            incRefCount();
             if (success) {
               handler.handle(Future.succeededFuture(result));
             } else {
@@ -96,14 +96,14 @@ public class ConnectionManagerTest extends VertxTestBase {
         return new Endpoint<Connection>(dispose) {
           @Override
           public void requestConnection(ContextInternal ctx, Handler<AsyncResult<Connection>> handler) {
-            connectionAdded(expected);
+            incRefCount();
             if (closeConnectionAfterCallback) {
               handler.handle(Future.succeededFuture(expected));
               assertFalse(disposed[0]);
-              connectionRemoved(expected);
+              decRefCount();
               assertTrue(disposed[0]);
             } else {
-              connectionRemoved(expected);
+              decRefCount();
               assertFalse(disposed[0]);
               handler.handle(Future.succeededFuture(expected));
               assertTrue(disposed[0]);
@@ -133,7 +133,7 @@ public class ConnectionManagerTest extends VertxTestBase {
         return new Endpoint<Connection>(dispose) {
           @Override
           public void requestConnection(ContextInternal ctx, Handler<AsyncResult<Connection>> handler) {
-            connectionAdded(expected);
+            incRefCount();
             handler.handle(Future.succeededFuture(expected));
           }
           @Override
@@ -141,8 +141,9 @@ public class ConnectionManagerTest extends VertxTestBase {
             disposed[0] = true;
           }
           @Override
-          public void close(Connection connection) {
-            connectionRemoved(connection);
+          protected void close() {
+            super.close();
+            decRefCount();
           }
         };
       }
@@ -171,12 +172,8 @@ public class ConnectionManagerTest extends VertxTestBase {
           @Override
           public void requestConnection(ContextInternal ctx, Handler<AsyncResult<Connection>> handler) {
             adder.set(() -> {
-              connectionAdded(expected);
+              incRefCount();
             });
-          }
-          @Override
-          public void close(Connection connection) {
-            connectionRemoved(connection);
           }
         };
       }
@@ -205,18 +202,14 @@ public class ConnectionManagerTest extends VertxTestBase {
               fail();
             } else {
               Connection conn = new Connection();
-              connectionAdded(conn);
+              incRefCount();
               handler.handle(Future.succeededFuture(conn));
-              connectionRemoved(conn);
+              decRefCount();
             }
           }
           @Override
           protected void dispose() {
             disposed.set(true);
-          }
-          @Override
-          public void close(Connection connection) {
-            connectionRemoved(connection);
           }
         };
       }
