@@ -1127,7 +1127,7 @@ vertx.deployVerticle(() -> new AbstractVerticle() {
 }, new DeploymentOptions());
 ----
 
-When you interacting with the client possibly outside a verticle then you  you can safely perform
+When you are interacting with the client possibly outside a verticle then you can safely perform
 composition as long as you do not delay the response events, e.g processing  directly the response on the event-loop.
 
 [source,$lang]
@@ -1154,7 +1154,7 @@ Alternatively you can just parse the `Set-Cookie` headers yourself in the respon
 The client can be configured to follow HTTP redirections provided by the `Location` response header when the client receives:
 
 * a `301`, `302`, `307` or `308` status code along with a HTTP GET or HEAD method
-* a `303` status code, in addition the directed request perform an HTTP GET methodn
+* a `303` status code, in addition the directed request perform an HTTP GET method
 
 Here's an example:
 
