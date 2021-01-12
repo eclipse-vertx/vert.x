@@ -1313,7 +1313,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testPKCS12MissingPassword() {
-    testInvalidKeyStore(Cert.SERVER_PKCS12.get().setPassword(null), "Get Key failed: null", null);
+    testInvalidKeyStore(Cert.SERVER_PKCS12.get().setPassword(null), "Get Key failed: Cannot read the array length because \"password\" is null", null);
   }
 
   @Test

@@ -11,9 +11,6 @@
 
 package io.vertx.core.http;
 
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
@@ -21,7 +18,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
