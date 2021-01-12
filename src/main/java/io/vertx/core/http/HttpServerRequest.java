@@ -23,7 +23,7 @@ import io.vertx.core.streams.ReadStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
+import java.security.cert.Certificate;
 import java.util.Map;
 
 /**
@@ -192,18 +192,14 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   }
 
   /**
-   * Note: Java SE 5+ recommends to use javax.net.ssl.SSLSession#getPeerCertificates() instead of
-   * of javax.net.ssl.SSLSession#getPeerCertificateChain() which this method is based on. Use {@link #sslSession()} to
-   * access that method.
-   *
    * @return an ordered array of the peer certificates. Returns null if connection is
    *         not SSL.
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
-   * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
+   * @see javax.net.ssl.SSLSession#getPeerCertificates()
    * @see #sslSession()
    */
   @GenIgnore
-  X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
+  Certificate[] peerCertificates() throws SSLPeerUnverifiedException;
 
   /**
    * @return the absolute URI corresponding to the the HTTP request

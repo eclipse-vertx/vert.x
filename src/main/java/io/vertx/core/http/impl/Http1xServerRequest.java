@@ -20,7 +20,6 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
@@ -39,8 +38,8 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
+import java.security.cert.Certificate;
 import java.util.Map;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
@@ -358,8 +357,8 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
   }
 
   @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.peerCertificateChain();
+  public Certificate[] peerCertificates() throws SSLPeerUnverifiedException {
+    return conn.peerCertificates();
   }
 
   @Override

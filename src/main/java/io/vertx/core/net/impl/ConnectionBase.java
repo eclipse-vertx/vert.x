@@ -30,10 +30,10 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
+import java.security.cert.Certificate;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
@@ -521,10 +521,10 @@ public abstract class ConnectionBase {
     }
   }
 
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
+  public Certificate[] peerCertificates() throws SSLPeerUnverifiedException {
     SSLSession session = sslSession();
     if (session != null) {
-      return session.getPeerCertificateChain();
+      return session.getPeerCertificates();
     } else {
       return null;
     }

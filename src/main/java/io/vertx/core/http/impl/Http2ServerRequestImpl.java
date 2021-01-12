@@ -47,9 +47,9 @@ import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
+import java.security.cert.Certificate;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
@@ -384,8 +384,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.peerCertificateChain();
+  public Certificate[] peerCertificates() throws SSLPeerUnverifiedException {
+    return conn.peerCertificates();
   }
 
   @Override

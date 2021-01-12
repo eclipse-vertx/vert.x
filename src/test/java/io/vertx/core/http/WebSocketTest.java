@@ -53,6 +53,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -457,7 +458,7 @@ public class WebSocketTest extends VertxTestBase {
             WebSocket ws = ar2.result();
             if (clientSsl && sni) {
               try {
-                X509Certificate clientPeerCert = ws.peerCertificateChain()[0];
+                Certificate clientPeerCert = ws.peerCertificates()[0];
                 assertEquals("host2.com", cnOf(clientPeerCert));
               } catch (Exception err) {
                 fail(err);

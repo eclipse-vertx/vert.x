@@ -17,23 +17,20 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
-import io.vertx.core.http.StreamResetException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 import java.nio.channels.ClosedChannelException;
+import java.security.cert.Certificate;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -328,8 +325,8 @@ class HttpNetSocket implements NetSocket {
   }
 
   @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.peerCertificateChain();
+  public Certificate[] peerCertificates() throws SSLPeerUnverifiedException {
+    return conn.peerCertificates();
   }
 
   @Override

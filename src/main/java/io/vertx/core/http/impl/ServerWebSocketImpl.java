@@ -29,7 +29,8 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
+
+import java.security.cert.Certificate;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
 
@@ -136,8 +137,8 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.peerCertificateChain();
+  public Certificate[] peerCertificates() throws SSLPeerUnverifiedException {
+    return conn.peerCertificates();
   }
 
   @Override

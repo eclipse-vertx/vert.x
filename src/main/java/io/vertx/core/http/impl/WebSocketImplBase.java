@@ -44,7 +44,7 @@ import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
+import java.security.cert.Certificate;
 import java.util.UUID;
 
 import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
@@ -202,8 +202,8 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.peerCertificateChain();
+  public Certificate[] peerCertificates() throws SSLPeerUnverifiedException {
+    return conn.peerCertificates();
   }
 
   @Override

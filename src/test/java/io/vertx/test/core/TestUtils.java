@@ -23,18 +23,18 @@ import io.vertx.core.net.*;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.test.netty.TestLoggerFactory;
 
-import javax.security.cert.X509Certificate;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.jar.JarEntry;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPOutputStream;
@@ -419,10 +419,13 @@ public class TestUtils {
     );
   }
 
-  public static String cnOf(X509Certificate cert) throws Exception {
-    String dn = cert.getSubjectDN().getName();
-    List<String> names = KeyStoreHelper.getX509CertificateCommonNames(dn);
-    return names.isEmpty() ? null : names.get(0);
+  public static String cnOf(Certificate cert) throws Exception {
+    if (cert instanceof X509Certificate) {
+      String dn = ((X509Certificate) cert).getSubjectDN().getName();
+      List<String> names = KeyStoreHelper.getX509CertificateCommonNames(dn);
+      return names.isEmpty() ? null : names.get(0);
+    }
+    return null;
   }
 
   /**
