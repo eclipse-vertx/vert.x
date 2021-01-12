@@ -458,6 +458,19 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapReplaceTtl() {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
+      map.replace("pipo", "molo", 10, onSuccess(vd -> {
+        assertNull(vd);
+        getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
+          assertWaitUntil(map2, "pipo", 15, Objects::isNull);
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testMapReplaceIfPresentByte() {
     testMapReplaceIfPresent((byte)1, (byte)2, (byte)3);
   }
@@ -527,6 +540,22 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testMapReplaceIfPresentClusterSerializableObject() {
     testMapReplaceIfPresent(new SomeClusterSerializableObject("foo"), new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("quux"));
+  }
+
+  @Test
+  public void testMapReplaceIfPresentTtl() {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
+      map.put("pipo", "molo",  onSuccess(vd -> {
+        assertNull(vd);
+        map.replaceIfPresent("pipo", "molo", "mili",10, onSuccess(vd2 -> {
+          assertTrue(vd2);
+          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
+            assertWaitUntil(map2, "pipo", 15, Objects::isNull);
+          }));
+        }));
+      }));
+    }));
+    await();
   }
 
   @Test
