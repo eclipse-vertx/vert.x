@@ -33,6 +33,10 @@ class TrustManagerFactoryOptions implements TrustOptions {
     this.trustManagerFactory = trustManagerFactory;
   }
 
+  TrustManagerFactoryOptions(TrustManager trustManager) {
+    this(new TrustManagerFactoryWrapper(trustManager));
+  }
+
   private TrustManagerFactoryOptions(TrustManagerFactoryOptions other) {
     trustManagerFactory = other.trustManagerFactory;
   }

@@ -33,6 +33,10 @@ class KeyManagerFactoryOptions implements KeyCertOptions {
     this.keyManagerFactory = keyManagerFactory;
   }
 
+  KeyManagerFactoryOptions(X509KeyManager keyManager) {
+    this(new KeyManagerFactoryWrapper(keyManager));
+  }
+
   private KeyManagerFactoryOptions(KeyManagerFactoryOptions other) {
     this.keyManagerFactory = other.keyManagerFactory;
   }

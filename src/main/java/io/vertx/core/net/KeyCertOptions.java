@@ -60,7 +60,7 @@ public interface KeyCertOptions {
   Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception;
 
   static KeyCertOptions wrap(X509KeyManager keyManager) {
-    return new KeyManagerOptions(keyManager);
+    return new KeyManagerFactoryOptions(keyManager);
   }
 
 }
