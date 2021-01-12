@@ -11,41 +11,14 @@
 
 package io.vertx.core.impl;
 
-import java.io.File;
-import java.io.IOException;
-import java.lang.ref.WeakReference;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
-
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Closeable;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.TimeoutStream;
-import io.vertx.core.Verticle;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.datagram.impl.DatagramSocketImpl;
@@ -90,6 +63,16 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -160,7 +143,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     maxEventLoopExecTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
     eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, maxEventLoopExecTime, maxEventLoopExecTimeUnit);
-    executorServiceResolver = new ExecutorServiceResolver();
     eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
     ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
@@ -168,6 +150,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
 
     int workerPoolSize = options.getWorkerPoolSize();
+    executorServiceResolver = new ExecutorServiceResolver();
     ExecutorService workerExec = executorServiceResolver.getExecutorServiceForDefaultWorkerPool(options, workerPoolSize, checker);
     PoolMetrics workerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
     ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
@@ -1150,7 +1133,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     return sharedWorkerPool;
   }
-
 
   @Override
   public Vertx exceptionHandler(Handler<Throwable> handler) {
