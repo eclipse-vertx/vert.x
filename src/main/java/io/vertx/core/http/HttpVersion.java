@@ -20,5 +20,18 @@ import io.vertx.codegen.annotations.VertxGen;
  */
 @VertxGen
 public enum HttpVersion {
-  HTTP_1_0, HTTP_1_1, HTTP_2
+  HTTP_1_0("http/1.0"), HTTP_1_1("http/1.1"), HTTP_2("h2");
+
+  private final String alpnName;
+
+  HttpVersion(String alpnName) {
+    this.alpnName = alpnName;
+  }
+
+  /**
+   * @return the protocol name for Application-Layer Protocol Negotiation (ALPN).
+   */
+  public String alpnName() {
+    return alpnName;
+  }
 }

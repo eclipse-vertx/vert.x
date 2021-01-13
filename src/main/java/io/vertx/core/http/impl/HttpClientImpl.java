@@ -45,11 +45,14 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -153,7 +156,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     this.keepAlive = options.isKeepAlive();
     this.pipelining = options.isPipelining();
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).
-        setApplicationProtocols(alpnVersions);
+        setApplicationProtocols(alpnVersions.stream().map(HttpVersion::alpnName).collect(Collectors.toList()));
     sslHelper.validate(vertx);
     this.webSocketSSLHelper = new SSLHelper(sslHelper).setUseAlpn(false);
     if (!keepAlive && pipelining) {
