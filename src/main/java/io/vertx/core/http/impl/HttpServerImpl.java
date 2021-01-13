@@ -30,6 +30,7 @@ import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * This class is thread-safe
@@ -199,7 +200,10 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     String host = address.isInetSocket() ? address.host() : "localhost";
     int port = address.port();
     List<HttpVersion> applicationProtocols = options.getAlpnVersions();
-    sslHelper.setApplicationProtocols(applicationProtocols);
+    sslHelper.setApplicationProtocols(applicationProtocols
+      .stream()
+      .map(HttpVersion::alpnName)
+      .collect(Collectors.toList()));
 
     String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
 

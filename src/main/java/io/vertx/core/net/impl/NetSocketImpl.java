@@ -59,22 +59,29 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private final SocketAddress remoteAddress;
   private final TCPMetrics metrics;
   private final InboundBuffer<Object> pending;
+  private final String negotiatedApplicationLayerProtocol;
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private MessageConsumer registration;
   private Handler<Object> messageHandler;
 
   public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SSLHelper helper, TCPMetrics metrics) {
-    this(context, channel, null, helper, metrics);
+    this(context, channel, null, helper, metrics, null);
   }
 
-  public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SocketAddress remoteAddress, SSLHelper helper, TCPMetrics metrics) {
+  public NetSocketImpl(ContextInternal context,
+                       ChannelHandlerContext channel,
+                       SocketAddress remoteAddress,
+                       SSLHelper helper,
+                       TCPMetrics metrics,
+                       String negotiatedApplicationLayerProtocol) {
     super(context, channel);
     this.helper = helper;
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
     this.messageHandler = DEFAULT_MSG_HANDLER;
+    this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
     pending = new InboundBuffer<>(context);
     pending.drainHandler(v -> doResume());
     pending.exceptionHandler(context::reportException);
@@ -133,6 +140,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     if (msg instanceof ByteBuf) {
       reportBytesRead(((ByteBuf)msg).readableBytes());
     }
+  }
+
+  @Override
+  public String applicationLayerProtocol() {
+    return negotiatedApplicationLayerProtocol;
   }
 
   @Override

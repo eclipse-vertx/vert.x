@@ -336,4 +336,9 @@ class HttpNetSocket implements NetSocket {
   public String indicatedServerName() {
     return conn.indicatedServerName();
   }
+
+  @Override
+  public String applicationLayerProtocol() {
+    return null;
+  }
 }

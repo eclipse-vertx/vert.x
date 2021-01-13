@@ -15,6 +15,8 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +48,7 @@ public class NetClientOptions extends ClientOptionsBase {
   private int reconnectAttempts;
   private long reconnectInterval;
   private String hostnameVerificationAlgorithm;
+  private List<String> applicationLayerProtocols;
 
     /**
    * The default constructor
@@ -65,6 +68,7 @@ public class NetClientOptions extends ClientOptionsBase {
     this.reconnectAttempts = other.getReconnectAttempts();
     this.reconnectInterval = other.getReconnectInterval();
     this.hostnameVerificationAlgorithm = other.getHostnameVerificationAlgorithm();
+    this.applicationLayerProtocols = other.applicationLayerProtocols != null ? new ArrayList<>(other.applicationLayerProtocols) : null;
   }
 
   /**
@@ -327,6 +331,24 @@ public class NetClientOptions extends ClientOptionsBase {
   public NetClientOptions setHostnameVerificationAlgorithm(String hostnameVerificationAlgorithm) {
     Objects.requireNonNull(hostnameVerificationAlgorithm, "hostnameVerificationAlgorithm can not be null!");
     this.hostnameVerificationAlgorithm = hostnameVerificationAlgorithm;
+    return this;
+  }
+
+  /**
+   * @return the list of application-layer protocols send during the Application-Layer Protocol Negotiation.
+   */
+  public List<String> getApplicationLayerProtocols() {
+    return applicationLayerProtocols;
+  }
+
+  /**
+   * Set the list of application-layer protocols to provide to the server during the Application-Layer Protocol Negotiation.
+   *
+   * @param protocols the protocols
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setApplicationLayerProtocols(List<String> protocols) {
+    this.applicationLayerProtocols = protocols;
     return this;
   }
 

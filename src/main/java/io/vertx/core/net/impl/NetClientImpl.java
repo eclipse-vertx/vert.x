@@ -69,7 +69,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
-    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
+    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).setApplicationProtocols(options.getApplicationLayerProtocols());
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null;
     this.logEnabled = options.getLogActivity();
     this.idleTimeout = options.getIdleTimeout();
@@ -210,7 +210,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
       if (future.isSuccess()) {
         Channel ch = future.getNow();
-        connected(context, ch, connectHandler, remoteAddress);
+        connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol());
       } else {
         Throwable cause = future.cause();
         // FileNotFoundException for domain sockets
@@ -230,10 +230,10 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     });
   }
 
-  private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress) {
+  private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress, String applicationLayerProtocol) {
     channelGroup.add(ch);
     initChannel(ch.pipeline());
-    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslHelper, metrics));
+    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslHelper, metrics, applicationLayerProtocol));
     handler.addHandler(sock -> {
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
