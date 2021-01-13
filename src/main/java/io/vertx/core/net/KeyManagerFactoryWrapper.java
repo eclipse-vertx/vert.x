@@ -23,7 +23,11 @@ import java.security.Provider;
 import java.util.Objects;
 
 /**
- * @author Hakan Altindag
+ * {@link KeyManagerFactoryWrapper} serves as a {@link KeyManagerFactory} wrapper class for a {@link KeyManager} instance.
+ * A {@link KeyManagerFactory} is usually used when transforming a {@link KeyStore} instance into a KeyManager[]. Vert.x core has a
+ * base {@link KeyCertOptions} which relies on a {@link KeyManagerFactory} instance and therefore it can only be constructed from the a {@link KeyManagerFactory}.
+ *
+ * @author <a href="mailto:hakangoudberg@hotmail.com">Hakan Altindag</a>
  */
 class KeyManagerFactoryWrapper extends KeyManagerFactory {
 

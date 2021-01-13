@@ -18,7 +18,32 @@ import javax.net.ssl.TrustManagerFactory;
 import java.util.function.Function;
 
 /**
- * @author Hakan Altindag
+ * Trust options configuring trusted certificates based on {@link TrustManagerFactory} or {@link TrustManager}.
+ *
+ * <pre>
+ * InputStream trustStoreStream = null;
+ * KeyStore trustStore = KeyStore.getInstance("JKS");
+ * trustStore.load(trustStoreStream, "truststore-password".toCharArray());
+ *
+ * TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+ * trustManagerFactory.init(trustStore);
+ *
+ * HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ * options.setTrustOptions(new TrustManagerFactoryOptions(keyManagerFactory));
+ *
+ * // or with a TrustManager
+ *
+ * TrustManager trustManager = trustManagerFactory.getTrustManagers()[0];
+ * options.setTrustOptions(new TrustManagerFactoryOptions(trustManager));
+ * </pre>
+ *
+ * As this class is not available because it is part of the internal api the proper usage would be:
+ * <pre>
+ * options.setTrustOptions(TrustOptions.wrap(trustManager));
+ * </pre>
+ *
+ *
+ * @author <a href="mailto:hakangoudberg@hotmail.com">Hakan Altindag</a>
  */
 class TrustManagerFactoryOptions implements TrustOptions {
 

@@ -23,7 +23,11 @@ import java.security.Provider;
 import java.util.Objects;
 
 /**
- * @author Hakan Altindag
+ * {@link TrustManagerFactoryWrapper} serves as a {@link TrustManagerFactory} wrapper class for a {@link TrustManager} instance.
+ * A {@link TrustManagerFactory} is usually used when transforming a {@link KeyStore TrustStore} instance into a TrustManager[]. Vert.x core has a
+ * base {@link TrustOptions} which relies on a {@link TrustManagerFactory} instance and therefore it can only be constructed from the a {@link TrustManagerFactory}.
+ *
+ * @author <a href="mailto:hakangoudberg@hotmail.com">Hakan Altindag</a>
  */
 class TrustManagerFactoryWrapper extends TrustManagerFactory {
 

@@ -18,7 +18,31 @@ import javax.net.ssl.X509KeyManager;
 import java.util.function.Function;
 
 /**
- * @author Hakan Altindag
+ * Key options configuring private key based on {@link KeyManagerFactory} or {@link X509KeyManager}.
+ *
+ * <pre>
+ * InputStream keyStoreStream = ...;
+ * KeyStore keyStore = KeyStore.getInstance("JKS");
+ * keyStore.load(keyStoreStream, "keystore-password".toCharArray());
+ *
+ * KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+ * keyManagerFactory.init(keyStore, "key-password".toCharArray());
+ *
+ * HttpServerOptions options = HttpServerOptions.httpServerOptions();
+ * options.setKeyCertOptions(new KeyManagerFactoryOptions(keyManagerFactory));
+ *
+ * // or with a KeyManager
+ *
+ * X509KeyManager keyManager = (X509KeyManager) keyManagerFactory.getKeyManagers()[0]
+ * options.setKeyCertOptions(new KeyManagerFactoryOptions(keyManager));
+ * </pre>
+ *
+ * As this class is not available because it is part of the internal api the proper usage would be:
+ * <pre>
+ * options.setKeyCertOptions(KeyCertOptions.wrap(keyManager));
+ * </pre>
+ *
+ * @author <a href="mailto:hakangoudberg@hotmail.com">Hakan Altindag</a>
  */
 class KeyManagerFactoryOptions implements KeyCertOptions {
 
