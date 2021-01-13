@@ -59,4 +59,14 @@ public interface KeyCertOptions {
    */
   Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception;
 
+  /**
+   * Returns a {@link KeyCertOptions} from the provided {@link X509KeyManager}
+   *
+   * @param keyManager the keyManager instance
+   * @return the {@link KeyCertOptions}
+   */
+  static KeyCertOptions wrap(X509KeyManager keyManager) {
+    return new KeyManagerFactoryOptions(keyManager);
+  }
+
 }
