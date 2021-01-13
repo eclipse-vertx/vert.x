@@ -107,9 +107,12 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
   @Override
   public Future<NetSocket> connect(SocketAddress remoteAddress, String serverName) {
-    ContextInternal ctx = vertx.getOrCreateContext();
-    Promise<NetSocket> promise = ctx.promise();
-    doConnect(remoteAddress, serverName, promise, ctx);
+    return connect(vertx.getOrCreateContext(), remoteAddress, serverName);
+  }
+
+  public Future<NetSocket> connect(ContextInternal context, SocketAddress remoteAddress, String serverName) {
+    Promise<NetSocket> promise = context.promise();
+    doConnect(remoteAddress, serverName, promise, context);
     return promise.future();
   }
 
