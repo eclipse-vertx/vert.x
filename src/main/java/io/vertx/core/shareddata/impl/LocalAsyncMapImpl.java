@@ -176,10 +176,14 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
         }
         return h;
       }
-      vertx.cancelTimer(timerId);
       return holder;
     });
-    return ctx.succeededFuture(h == result);
+    if(h == result) {
+      return ctx.succeededFuture(true);
+    } else {
+      vertx.cancelTimer(timerId);
+      return ctx.succeededFuture(false);
+    }
   }
 
   @Override

@@ -17,7 +17,6 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 
 import java.util.List;
 import java.util.Map;
@@ -181,8 +180,12 @@ public interface AsyncMap<K, V> {
 
   /**
    * Same as {@link #replace(K, V, long, Handler)} but returns a {@code Future} of the asynchronous result
+   *
+   * returns UnsupportedOperationException if the implementation does not support it
    */
-  Future<@Nullable V> replace(K k, V v, long ttl);
+  default Future<@Nullable V> replace(K k, V v, long ttl) {
+    return Future.failedFuture(new UnsupportedOperationException());
+  }
 
   /**
    * Replace the entry only if it is currently mapped to a specific value
@@ -216,8 +219,12 @@ public interface AsyncMap<K, V> {
 
   /**
    * Same as {@link #replaceIfPresent(K, V, V, long, Handler)} but returns a {@code Future} of the asynchronous result
+   *
+   * returns UnsupportedOperationException if the implementation does not support it
    */
-  Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue, long ttl);
+  default Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue, long ttl) {
+    return Future.failedFuture(new UnsupportedOperationException());
+  }
 
   /**
    * Clear all entries in the map

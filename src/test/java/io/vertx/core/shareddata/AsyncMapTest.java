@@ -242,6 +242,21 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapPutIfAbsentTtlWithExistingNotGettingDeleted() {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
+      map.put("pipo", "molo", onSuccess(vd -> {
+        map.putIfAbsent("pipo", "mili", 10, onSuccess(vd2 -> {
+          assertEquals("molo", vd2);
+          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
+            assertWaitUntil(map2, "pipo", 15, "molo"::equals);
+          }));
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testMapRemoveByte() {
     testMapRemove((byte)1, (byte)2);
   }
@@ -471,6 +486,22 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapReplaceTtlWithPreviousValue() {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
+      map.put("pipo", "molo",  onSuccess(vd -> {
+        assertNull(vd);
+        map.replace("pipo", "mili", 10, onSuccess(vd2 -> {
+          assertEquals("molo", vd2);
+          getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
+            assertWaitUntil(map2, "pipo", 15, Objects::isNull);
+          }));
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testMapReplaceIfPresentByte() {
     testMapReplaceIfPresent((byte)1, (byte)2, (byte)3);
   }
@@ -553,6 +584,17 @@ public abstract class AsyncMapTest extends VertxTestBase {
             assertWaitUntil(map2, "pipo", 15, Objects::isNull);
           }));
         }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testMapReplaceIfPresentTtlWhenNotPresent() {
+    getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
+      map.replaceIfPresent("pipo", "molo", "mili",10, onSuccess(vd -> {
+        assertFalse(vd);
+        testComplete();
       }));
     }));
     await();
