@@ -42,7 +42,6 @@ import java.util.function.Function;
  * options.setTrustOptions(TrustOptions.wrap(trustManager));
  * </pre>
  *
- *
  * @author <a href="mailto:hakangoudberg@hotmail.com">Hakan Altindag</a>
  */
 class TrustManagerFactoryOptions implements TrustOptions {
