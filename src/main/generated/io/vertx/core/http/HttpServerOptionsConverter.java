@@ -111,6 +111,11 @@ public class HttpServerOptionsConverter {
             obj.setWebSocketAllowServerNoContext((Boolean)member.getValue());
           }
           break;
+        case "webSocketClosingTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketClosingTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
         case "webSocketCompressionLevel":
           if (member.getValue() instanceof Number) {
             obj.setWebSocketCompressionLevel(((Number)member.getValue()).intValue());
@@ -166,6 +171,7 @@ public class HttpServerOptionsConverter {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }
     json.put("webSocketAllowServerNoContext", obj.getWebSocketAllowServerNoContext());
+    json.put("webSocketClosingTimeout", obj.getWebSocketClosingTimeout());
     json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
     json.put("webSocketPreferredClientNoContext", obj.getWebSocketPreferredClientNoContext());
     if (obj.getWebSocketSubProtocols() != null) {
