@@ -499,39 +499,35 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return super.supportsFileRegion() && chctx.pipeline().get(HttpChunkContentCompressor.class) == null;
   }
 
-  private void handleError(HttpObject obj) {
-    DecoderResult result = obj.decoderResult();
+  private void handleError(HttpRequest request) {
+    DecoderResult result = request.decoderResult();
     Throwable cause = result.cause();
+    HttpResponseStatus status = null;
     if (cause instanceof TooLongFrameException) {
       String causeMsg = cause.getMessage();
-      HttpVersion version;
-      if (obj instanceof HttpRequest) {
-        version = ((HttpRequest) obj).protocolVersion();
-      } else if (requestInProgress != null) {
-        version = requestInProgress.version() == io.vertx.core.http.HttpVersion.HTTP_1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-      } else {
-        version = HttpVersion.HTTP_1_1;
-      }
-      HttpResponseStatus status;
       if (causeMsg.startsWith("An HTTP line is larger than")) {
         status = HttpResponseStatus.REQUEST_URI_TOO_LONG;
       } else if (causeMsg.startsWith("HTTP header is larger than")) {
         status = HttpResponseStatus.REQUEST_HEADER_FIELDS_TOO_LARGE;
-      } else {
-        status = HttpResponseStatus.BAD_REQUEST;
       }
-      DefaultFullHttpResponse resp = new DefaultFullHttpResponse(version, status);
+    }
+    if (status == null && HttpMethod.GET == request.method() &&
+      HttpVersion.HTTP_1_0 == request.protocolVersion() && "/bad-request".equals(request.uri())) {
+      // Matches Netty's specific HttpRequest for invalid messages
+      status = HttpResponseStatus.BAD_REQUEST;
+    }
+    if (status != null) {
+      DefaultFullHttpResponse resp = new DefaultFullHttpResponse(request.protocolVersion(), status);
       ChannelPromise fut = chctx.newPromise();
       writeToChannel(resp, fut);
-      fut.addListener(res -> {
-        // fail(result.cause());
-        // because of CCE
-        fail(result.cause());
-      });
+      fut.addListener(res -> fail(result.cause()));
     } else {
-      // fail(result.cause());
-      // because of CCE
-      fail(result.cause());
+      handleError((HttpObject) request);
     }
+  }
+
+  private void handleError(HttpObject obj) {
+    DecoderResult result = obj.decoderResult();
+    fail(result.cause());
   }
 }

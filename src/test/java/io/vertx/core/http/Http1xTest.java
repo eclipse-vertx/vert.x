@@ -2534,6 +2534,24 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testServerInvalidHttpMessage() {
+    server.requestHandler(req -> {
+        fail();
+      }).listen(testAddress, onSuccess(res -> {
+      vertx.createHttpClient()
+        .request(new RequestOptions(requestOptions).setURI("/?ab c=1"))
+        .compose(HttpClientRequest::send)
+        .onComplete(onSuccess(resp -> {
+          assertEquals(400, resp.statusCode());
+          resp.request().connection().closeHandler(v -> {
+            testComplete();
+          });
+        }));
+      }));
+    await();
+  }
+
+  @Test
   public void testClientMaxInitialLineLengthOption() {
 
     String longParam = TestUtils.randomAlphaString(5000);
