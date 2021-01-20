@@ -1749,6 +1749,28 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testSetInvalidStatusMessage() {
+    server.requestHandler(req -> {
+      try {
+        req.response().setStatusMessage("hello\nworld");
+        assertEquals(HttpVersion.HTTP_2, req.version());
+      } catch (IllegalArgumentException ignore) {
+        assertEquals(HttpVersion.HTTP_1_1, req.version());
+      }
+      req.response().end();
+    });
+    server.listen(testAddress, onSuccess(s -> {
+      client.request(requestOptions)
+        .compose(req -> req.send()
+          .compose(HttpClientResponse::body)
+        ).onComplete(onSuccess(body -> {
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testResponseBodyBufferAtEnd() {
     Buffer body = TestUtils.randomBuffer(1000);
 
