@@ -54,6 +54,7 @@ import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
+import io.vertx.core.spi.VertxThreadFactoryProvider;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -129,7 +130,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final TimeUnit maxEventLoopExecTimeUnit;
   private final CloseHooks closeHooks;
   private final Transport transport;
-  private final VertxThreadFactoryCreator threadFactoryCreator;
+  private final VertxThreadFactoryProvider threadFactoryProvider;
 
   private VertxImpl(VertxOptions options, Transport transport) {
     // Sanity check
@@ -138,7 +139,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     closeHooks = new CloseHooks(log);
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
-    threadFactoryCreator = options.getThreadFactoryCreator();
+    threadFactoryProvider = ServiceHelper.loadFactoryOrNull(VertxThreadFactoryProvider.class);
     maxEventLoopExTime = options.getMaxEventLoopExecuteTime();
     maxEventLoopExecTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
     eventLoopThreadFactory = createVertxThreadFactory("vert.x-eventloop-thread-", checker, false, maxEventLoopExTime, maxEventLoopExecTimeUnit);
@@ -182,8 +183,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private ThreadFactory createVertxThreadFactory(String prefix, BlockedThreadChecker checker, boolean worker, long maxExecTime,
                                                  TimeUnit maxExecTimeUnit) {
-    if(threadFactoryCreator != null)
-        return threadFactoryCreator.createVertxThreadFactory(prefix, checker, worker, maxExecTime, maxExecTimeUnit);
+    if(threadFactoryProvider != null)
+        return threadFactoryProvider.createVertxThreadFactory(prefix, checker, worker, maxExecTime, maxExecTimeUnit);
     return new VertxThreadFactory(prefix, checker, worker, maxExecTime, maxExecTimeUnit);
   }
 
