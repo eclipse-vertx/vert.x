@@ -509,4 +509,10 @@ public class CompositeFutureTest extends FutureTestBase {
     p2.complete(4);
     assertEquals(2, count.get());
   }
+
+  @Test
+  public void testToString() {
+    assertEquals("Future{result=(Future{result=null},Future{result=null})}", CompositeFuture.all(Future.succeededFuture(), Future.succeededFuture()).toString());
+    assertEquals("Future{result=(Future{result=true},Future{result=false})}", CompositeFuture.all(Future.succeededFuture(true), Future.succeededFuture(false)).toString());
+  }
 }

@@ -19,7 +19,6 @@ import io.vertx.core.impl.NoStackTraceThrowable;
 
 import java.util.ArrayList;
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * Future implementation.
@@ -208,10 +207,20 @@ class FutureImpl<T> extends FutureBase<T> {
         return "Future{cause=" + ((Throwable)value).getMessage() + "}";
       }
       if (value != null) {
-        return "Future{result=" + (value == NULL_VALUE ? "null" : value) + "}";
+        if (value == NULL_VALUE) {
+          return "Future{result=null}";
+        }
+        StringBuilder sb = new StringBuilder("Future{result=");
+        formatValue(value, sb);
+        sb.append("}");
+        return sb.toString();
       }
       return "Future{unresolved}";
     }
+  }
+
+  protected void formatValue(Object value, StringBuilder sb) {
+    sb.append(value);
   }
 
   private static class ListenerArray<T> extends ArrayList<Listener<T>> implements Listener<T> {
