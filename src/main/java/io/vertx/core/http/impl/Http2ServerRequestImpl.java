@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Headers;
@@ -169,6 +170,18 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
       if (postRequestDecoder != null) {
         try {
           postRequestDecoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
+          while (postRequestDecoder.hasNext()) {
+            InterfaceHttpData data = postRequestDecoder.next();
+            if (data instanceof Attribute) {
+              Attribute attr = (Attribute) data;
+              try {
+                formAttributes().add(attr.getName(), attr.getValue());
+              } catch (Exception e) {
+                // Will never happen, anyway handle it somehow just in case
+                handleException(e);
+              }
+            }
+          }
         } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
           // ignore this as it is expected
         } catch (Exception e) {
