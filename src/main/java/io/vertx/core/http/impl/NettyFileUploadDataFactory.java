@@ -11,13 +11,11 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.handler.codec.http.HttpConstants;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.FileUpload;
 import io.netty.handler.codec.http.multipart.MemoryAttribute;
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
@@ -78,18 +76,22 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
     return nettyUpload;
   }
 
-  /**
-   * Vert.x attribute that will add itself to the HTTP request form attributes when completed.
-   */
-  private class VertxAttribute extends MemoryAttribute {
+  private static class VertxAttribute extends MemoryAttribute {
     public VertxAttribute(String name, long definedSize) {
       super(name, definedSize);
       setMaxSize(1024);
     }
+    String value;
     @Override
     protected void setCompleted() {
       super.setCompleted();
-      request.formAttributes().set(getName(), getValue());
+      // Capture value before it gets corrupted
+      // this can be called multiple times (e.g "vert+x" then "vert x"
+      value = super.getValue();
+    }
+    @Override
+    public String getValue() {
+      return value;
     }
   }
 }
