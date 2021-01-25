@@ -13,12 +13,14 @@ package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
@@ -551,6 +553,18 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
   private void endDecode() {
     try {
       decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
+      while (decoder.hasNext()) {
+        InterfaceHttpData data = decoder.next();
+        if (data instanceof Attribute) {
+          Attribute attr = (Attribute) data;
+          try {
+            attributes().add(attr.getName(), attr.getValue());
+          } catch (Exception e) {
+            // Will never happen, anyway handle it somehow just in case
+            handleException(e);
+          }
+        }
+      }
     } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
       handleException(e);
     } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {

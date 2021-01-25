@@ -327,11 +327,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
               resp.bodyHandler(body -> {
                 assertEquals(0, body.length());
               });
-              if (cancelStream) {
-                assertEquals(0, attributeCount.get());
-              } else {
-                assertEquals(3, attributeCount.get());
-              }
+              assertEquals(0, attributeCount.get());
               complete();
             }));
           }
