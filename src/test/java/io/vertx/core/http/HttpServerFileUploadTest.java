@@ -26,6 +26,8 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -354,8 +356,16 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
           attributeCount.set(attrs.size());
           assertEquals("vert x", attrs.get("framework"));
           assertEquals("vert x", req.getFormAttribute("framework"));
+          assertEquals("vert x", req.formAttributes().get("framework"));
+          assertEquals(Collections.singletonList("vert x"), req.formAttributes().getAll("framework"));
           assertEquals("jvm", attrs.get("runson"));
           assertEquals("jvm", req.getFormAttribute("runson"));
+          assertEquals("jvm", req.formAttributes().get("runson"));
+          assertEquals(Collections.singletonList("jvm"), req.formAttributes().getAll("runson"));
+          assertEquals("0", attrs.get("list"));
+          assertEquals("0", req.getFormAttribute("list"));
+          assertEquals("0", req.formAttributes().get("list"));
+          assertEquals(Arrays.asList("0", "1"), req.formAttributes().getAll("list"));
           req.response().end();
         });
       }
@@ -363,7 +373,12 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
 
     Buffer buffer = Buffer.buffer();
     // Make sure we have one param that needs url encoding
-    buffer.appendString("framework=" + URLEncoder.encode("vert x", "UTF-8") + "&runson=jvm", "UTF-8");
+    buffer.appendString(
+      "framework=" + URLEncoder.encode("vert x", "UTF-8") +
+      "&runson=jvm" +
+      "&list=0" +
+      "&list=1"
+      , "UTF-8");
     server.listen(testAddress, onSuccess(s -> {
       client.request(new RequestOptions(requestOptions)
         .setMethod(HttpMethod.POST)
@@ -377,7 +392,7 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
             resp.bodyHandler(body -> {
               assertEquals(0, body.length());
             });
-            assertEquals(2, attributeCount.get());
+            assertEquals(3, attributeCount.get());
             testComplete();
           }));
       }));
