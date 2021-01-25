@@ -12,14 +12,16 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.FileUpload;
+import io.netty.handler.codec.http.multipart.MemoryAttribute;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.function.Supplier;
 
@@ -28,15 +30,37 @@ import java.util.function.Supplier;
  */
 class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
-  final Context context;
-  final HttpServerRequest request;
-  final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
+  private final Context context;
+  private final HttpServerRequest request;
+  private final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
 
   NettyFileUploadDataFactory(Context context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.context = context;
     this.request = request;
     this.lazyUploadHandler = lazyUploadHandler;
+  }
+
+  @Override
+  public Attribute createAttribute(HttpRequest request, String name) {
+    return createAttribute(request, name, 0L);
+  }
+
+  @Override
+  public Attribute createAttribute(HttpRequest request, String name, long definedSize) {
+    return new VertxAttribute(name, definedSize);
+  }
+
+  @Override
+  public Attribute createAttribute(HttpRequest request, String name, String value) {
+    Attribute attr;
+    try {
+      attr = createAttribute(request, name);
+      attr.setValue(value);
+    } catch (IOException e) {
+      throw new IllegalArgumentException(e);
+    }
+    return attr;
   }
 
   @Override
@@ -50,5 +74,24 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
       uploadHandler.handle(upload);
     }
     return nettyUpload;
+  }
+
+  private static class VertxAttribute extends MemoryAttribute {
+    public VertxAttribute(String name, long definedSize) {
+      super(name, definedSize);
+      setMaxSize(1024);
+    }
+    String value;
+    @Override
+    protected void setCompleted() {
+      super.setCompleted();
+      // Capture value before it gets corrupted
+      // this can be called multiple times (e.g "vert+x" then "vert x"
+      value = super.getValue();
+    }
+    @Override
+    public String getValue() {
+      return value;
+    }
   }
 }
