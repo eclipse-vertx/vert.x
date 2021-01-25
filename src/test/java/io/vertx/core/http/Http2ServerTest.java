@@ -668,7 +668,7 @@ public class Http2ServerTest extends Http2TestBase {
         });
       });
       req.endHandler(v -> {
-        assertEquals(5, req.formAttributes().size());
+        assertEquals(0, req.formAttributes().size());
         req.response().putHeader("content-type", "text/plain").end("done");
       });
     });

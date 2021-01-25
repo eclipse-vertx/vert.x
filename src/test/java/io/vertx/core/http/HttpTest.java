@@ -3198,7 +3198,7 @@ public abstract class HttpTest extends HttpTestBase {
         resp.bodyHandler(body -> {
           assertEquals(0, body.length());
         });
-        assertEquals(3, attributeCount.get());
+        assertEquals(0, attributeCount.get());
         complete();
       }).exceptionHandler(err -> {
         if (failed.compareAndSet(false, true)) {
