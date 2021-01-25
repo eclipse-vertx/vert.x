@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.util.CharsetUtil;
@@ -527,18 +526,6 @@ public class HttpServerRequestImpl implements HttpServerRequest {
   private void endDecode() {
     try {
       decoder.offer(LastHttpContent.EMPTY_LAST_CONTENT);
-      while (decoder.hasNext()) {
-        InterfaceHttpData data = decoder.next();
-        if (data instanceof Attribute) {
-          Attribute attr = (Attribute) data;
-          try {
-            attributes().add(attr.getName(), attr.getValue());
-          } catch (Exception e) {
-            // Will never happen, anyway handle it somehow just in case
-            handleException(e);
-          }
-        }
-      }
     } catch (HttpPostRequestDecoder.ErrorDataDecoderException e) {
       handleException(e);
     } catch (HttpPostRequestDecoder.EndOfDataDecoderException e) {
