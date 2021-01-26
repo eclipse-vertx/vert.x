@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public final class VertxThread extends FastThreadLocalThread implements BlockedThreadChecker.Task {
+public class VertxThread extends FastThreadLocalThread implements BlockedThreadChecker.Task {
 
   private final boolean worker;
   private final long maxExecTime;
