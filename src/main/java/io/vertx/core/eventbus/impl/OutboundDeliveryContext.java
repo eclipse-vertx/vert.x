@@ -119,7 +119,9 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
           src = true;
           BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
           TracingPolicy tracingPolicy = options.getTracingPolicy();
-          if (tracingPolicy == null) tracingPolicy = TracingPolicy.PROPAGATE;
+          if (tracingPolicy == null) {
+            tracingPolicy = TracingPolicy.PROPAGATE;
+          }
           message.trace = tracer.sendRequest(ctx, SpanKind.RPC, tracingPolicy, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
         } else {
           // Handle failure here
