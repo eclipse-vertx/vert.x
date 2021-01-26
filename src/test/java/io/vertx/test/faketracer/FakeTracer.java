@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -109,6 +109,9 @@ public class FakeTracer implements VertxTracer<Span, Span> {
 
   @Override
   public <R> Span receiveRequest(Context context, SpanKind kind, TracingPolicy policy, R request, String operation, Iterable<Map.Entry<String, String>> headers, TagExtractor<R> tagExtractor) {
+    if (policy == TracingPolicy.IGNORE) {
+      return null;
+    }
     Span serverSpan = getServerSpan(kind, operation, headers);
     serverSpan.addTag("span_kind", "server");
     addTags(serverSpan, request, tagExtractor);
@@ -126,6 +129,9 @@ public class FakeTracer implements VertxTracer<Span, Span> {
 
   @Override
   public <R> Span sendRequest(Context context, SpanKind kind, TracingPolicy policy, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
+    if (policy == TracingPolicy.IGNORE) {
+      return null;
+    }
     Span span = activeSpan(context);
     if (span == null) {
       span = newTrace(kind, operation);
