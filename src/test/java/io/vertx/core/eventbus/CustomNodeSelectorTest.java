@@ -15,7 +15,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.impl.VertxFactory;
+import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
@@ -47,7 +47,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         return vertxOptions;
       })
       .map(options -> {
-        VertxFactory factory = new VertxFactory(options).clusterNodeSelector(new CustomNodeSelector());
+        VertxBuilder factory = new VertxBuilder(options).init().clusterNodeSelector(new CustomNodeSelector());
         Promise promise = Promise.promise();
         factory.clusteredVertx(promise);
         return promise.future();
