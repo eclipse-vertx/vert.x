@@ -274,6 +274,16 @@ Worker executors can be configured when created:
 
 NOTE: the configuration is set when the worker pool is created
 
+You can provide your own `ExecutorService` that backs the worker executors by implementing the `ExecutorServiceFactory`
+interface and making your implementation loadable by the Java `ServiceLoader` mechanism. Your
+`ExecutorService` should use the Vert.x `ThreadFactory` provided on the `createExecutor` call to create
+threads in the worker pool and respect the maximum concurrency limits Vert.x passes. 
+
+[source,$lang]
+----
+{@link examples.spi.executor.FixedThreadPoolExecutorServiceFactory#createExecutor}
+----
+
 == Async coordination
 
 Coordination of multiple asynchronous results can be achieved with Vert.x {@link io.vertx.core.Future futures}. It
