@@ -24,6 +24,12 @@ import java.util.function.BiConsumer;
 public interface VertxTracer<I, O> {
 
   /**
+   * Noop tracer.
+   */
+  VertxTracer NOOP = new VertxTracer<Object, Object>() {
+  };
+
+  /**
    * Signal a request has been received and will be processed.
    *
    * @param context the context data attached to the request

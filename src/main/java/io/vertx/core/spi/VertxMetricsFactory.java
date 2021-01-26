@@ -12,16 +12,43 @@
 package io.vertx.core.spi;
 
 import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.impl.launcher.commands.BareCommand;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.metrics.impl.DummyVertxMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
+
+import static io.vertx.core.impl.launcher.commands.BareCommand.METRICS_OPTIONS_PROP_PREFIX;
 
 /**
  * A factory for the plugable metrics SPI.
  *
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public interface VertxMetricsFactory {
+public interface VertxMetricsFactory extends VertxServiceProvider {
+
+  @Override
+  default void init(VertxBuilder builder) {
+    if (builder.metrics() == null) {
+      JsonObject config = builder.config();
+      MetricsOptions metricsOptions;
+      VertxOptions options = builder.options();
+      if (config != null && config.containsKey("metricsOptions")) {
+        metricsOptions = newOptions(config.getJsonObject("metricsOptions"));
+      } else {
+        metricsOptions = options.getMetricsOptions();
+        if (metricsOptions == null) {
+          metricsOptions = newOptions();
+        }
+      }
+      BareCommand.configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);;
+      builder.options().setMetricsOptions(metricsOptions);
+      if (options.getMetricsOptions().isEnabled()) {
+        builder.metrics(metrics(options));
+      }
+    }
+  }
 
   /**
    * Create a new {@link io.vertx.core.spi.metrics.VertxMetrics} object.<p/>

@@ -16,6 +16,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SocketAddress;
@@ -26,7 +27,20 @@ import io.vertx.core.spi.metrics.*;
  */
 public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
 
+  private final MetricsOptions options;
   private volatile Vertx vertx;
+
+  public FakeVertxMetrics(MetricsOptions options) {
+    this.options = options;
+  }
+
+  public FakeVertxMetrics() {
+    this.options = new MetricsOptions();
+  }
+
+  public MetricsOptions options() {
+    return options;
+  }
 
   public Vertx vertx() {
     return vertx;

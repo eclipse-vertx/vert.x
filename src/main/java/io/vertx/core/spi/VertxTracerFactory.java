@@ -11,6 +11,8 @@
 
 package io.vertx.core.spi;
 
+import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingOptions;
@@ -20,7 +22,26 @@ import io.vertx.core.tracing.TracingOptions;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public interface VertxTracerFactory {
+public interface VertxTracerFactory extends VertxServiceProvider {
+
+  /**
+   * Noop tracer factory, it can be useful for disabling metrics, e.g
+   * {@code new VertxOptions().setTracingOptions(new TracingOptions().setFactory(VertxTracerFactory.NOOP))}
+   */
+  VertxTracerFactory NOOP = options -> VertxTracer.NOOP;
+
+  @Override
+  default void init(VertxBuilder builder) {
+    if (builder.tracer() == null) {
+      VertxOptions options = builder.options();
+      TracingOptions tracingOptions = options.getTracingOptions();
+      if (tracingOptions == null) {
+        tracingOptions = newOptions();
+        builder.options().setTracingOptions(tracingOptions);
+      }
+      builder.tracer(tracer(tracingOptions));
+    }
+  }
 
   /**
    * Create a new {@link VertxTracer} object.<p/>

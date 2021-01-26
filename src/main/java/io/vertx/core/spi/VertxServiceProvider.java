@@ -9,20 +9,24 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.test.fakemetrics;
+package io.vertx.core.spi;
 
-import io.vertx.core.VertxOptions;
-import io.vertx.core.spi.VertxMetricsFactory;
-import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.json.Json;
+import io.vertx.core.spi.json.JsonCodec;
 
 /**
+ * Entry point for loading Vert.x SPI implementations.
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeMetricsFactory implements VertxMetricsFactory {
+public interface VertxServiceProvider {
 
-  @Override
-  public VertxMetrics metrics(VertxOptions options) {
-    return new FakeVertxMetrics(options.getMetricsOptions());
-  }
+  /**
+   * Let the provider initialize the Vert.x builder.
+   *
+   * @param builder the builder
+   */
+  void init(VertxBuilder builder);
 
 }

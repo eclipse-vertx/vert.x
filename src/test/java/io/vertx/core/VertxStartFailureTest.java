@@ -12,7 +12,7 @@
 package io.vertx.core;
 
 import io.netty.channel.EventLoopGroup;
-import io.vertx.core.impl.VertxFactory;
+import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.NodeListener;
 import io.vertx.test.core.AsyncTestBase;
@@ -111,7 +111,7 @@ public class VertxStartFailureTest extends AsyncTestBase {
       }
     };
     AtomicReference<AsyncResult<Vertx>> resultRef = new AtomicReference<>();
-    new VertxFactory(options).transport(transport).clusteredVertx(ar -> {
+    new VertxBuilder(options).init().transport(transport).clusteredVertx(ar -> {
       resultRef.set(ar);
       latch.countDown();
     });

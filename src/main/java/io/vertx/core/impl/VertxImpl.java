@@ -168,7 +168,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     this.fileResolver = fileResolver;
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
-    this.tracer = tracer;
+    this.tracer = tracer == VertxTracer.NOOP ? null : tracer;
     this.clusterManager = clusterManager;
     this.nodeSelector = nodeSelector;
     this.eventBus = clusterManager != null ? new ClusteredEventBus(this, options, clusterManager, nodeSelector) : new EventBusImpl(this);

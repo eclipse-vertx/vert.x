@@ -13,7 +13,15 @@ package io.vertx.core.spi.cluster;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.impl.VertxBuilder;
+import io.vertx.core.impl.launcher.commands.BareCommand;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.spi.VertxServiceProvider;
+
+import static io.vertx.core.impl.launcher.commands.BareCommand.METRICS_OPTIONS_PROP_PREFIX;
 
 /**
  * Used by the {@link io.vertx.core.eventbus.EventBus clustered EventBus} to select a node for a given message..
@@ -21,7 +29,14 @@ import io.vertx.core.eventbus.Message;
  * This selector is skipped only when the user raises the {@link io.vertx.core.eventbus.DeliveryOptions#setLocalOnly(boolean)} flag.
  * Consequently, implementations must be aware of local {@link io.vertx.core.eventbus.EventBus} registrations.
  */
-public interface NodeSelector {
+public interface NodeSelector extends VertxServiceProvider {
+
+  @Override
+  default void init(VertxBuilder builder) {
+    if (builder.clusterNodeSelector() == null) {
+      builder.clusterNodeSelector(this);
+    }
+  }
 
   /**
    * Invoked before the {@code vertx} instance tries to join the cluster.

@@ -24,7 +24,7 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxFactory;
+import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.NetClient;
@@ -83,7 +83,7 @@ public interface Vertx extends Measured {
    * @return the instance
    */
   static Vertx vertx(VertxOptions options) {
-    return new VertxFactory(options).vertx();
+    return new VertxBuilder(options).init().vertx();
   }
 
   /**
@@ -95,7 +95,7 @@ public interface Vertx extends Measured {
    * @param resultHandler  the result handler that will receive the result
    */
   static void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
-    new VertxFactory(options).clusteredVertx(resultHandler);
+    new VertxBuilder(options).init().clusteredVertx(resultHandler);
   }
 
   /**
