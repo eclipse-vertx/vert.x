@@ -41,7 +41,7 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
 
   @Test
   public void testEventBusSendIgnore() throws Exception {
-    testSend(TracingPolicy.IGNORE, true, 1);
+    testSend(TracingPolicy.IGNORE, true, 0);
   }
 
   @Test
@@ -77,7 +77,7 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
 
   @Test
   public void testEventBusPublishIgnore() throws Exception {
-    testPublish(TracingPolicy.IGNORE, true, 2, false);
+    testPublish(TracingPolicy.IGNORE, true, 0, false);
   }
 
   @Test
@@ -113,35 +113,35 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
 
   @Test
   public void testEventBusRequestReplyPropagate() throws Exception {
-    testRequestReply(TracingPolicy.PROPAGATE, true, false);
+    testRequestReply(TracingPolicy.PROPAGATE, true, false, 2);
   }
 
   @Test
   public void testEventBusRequestReplyIgnore() throws Exception {
-    testRequestReply(TracingPolicy.IGNORE, true, false);
+    testRequestReply(TracingPolicy.IGNORE, true, false, 0);
   }
 
   @Test
   public void testEventBusRequestReplyAlways() throws Exception {
-    testRequestReply(TracingPolicy.ALWAYS, false, false);
+    testRequestReply(TracingPolicy.ALWAYS, false, false, 2);
   }
 
   @Test
   public void testEventBusRequestReplyFailurePropagate() throws Exception {
-    testRequestReply(TracingPolicy.PROPAGATE, true, true);
+    testRequestReply(TracingPolicy.PROPAGATE, true, true, 2);
   }
 
   @Test
   public void testEventBusRequestReplyFailureIgnore() throws Exception {
-    testRequestReply(TracingPolicy.IGNORE, true, true);
+    testRequestReply(TracingPolicy.IGNORE, true, true, 0);
   }
 
   @Test
   public void testEventBusRequestReplyFailureAlways() throws Exception {
-    testRequestReply(TracingPolicy.ALWAYS, false, true);
+    testRequestReply(TracingPolicy.ALWAYS, false, true, 2);
   }
 
-  private void testRequestReply(TracingPolicy policy, boolean create, boolean fail) throws Exception {
+  private void testRequestReply(TracingPolicy policy, boolean create, boolean fail, int expected) throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
     vertx2.eventBus().consumer("the-address", msg -> {
       if (fail) {
@@ -155,14 +155,14 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
       if (create) {
         tracer.activate(tracer.newTrace());
       }
-      vertx1.eventBus().request("the-address", "ping", ar -> {
+      vertx1.eventBus().request("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy), ar -> {
         assertEquals(fail, ar.failed());
         vertx1.runOnContext(v2 -> latch.countDown()); // make sure span is finished
       });
     });
     awaitLatch(latch);
     List<Span> finishedSpans = tracer.getFinishedSpans();
-    assertEquals(2, finishedSpans.size());
+    assertEquals(expected, finishedSpans.size());
     assertSingleTrace(finishedSpans);
     finishedSpans.forEach(span -> {
       assertEquals("send", span.operation);
