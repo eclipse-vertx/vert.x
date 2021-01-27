@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -12,12 +12,15 @@ package io.vertx.core.spi.tracing;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.tracing.TracingPolicy;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.faketracer.FakeTracer;
 import io.vertx.test.faketracer.Span;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 public abstract class EventBusTracingTestBase extends VertxTestBase {
 
@@ -32,17 +35,35 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testEventBusSend() {
+  public void testEventBusSendPropagate() throws Exception {
+    testSend(TracingPolicy.PROPAGATE, true, 2);
+  }
+
+  @Test
+  public void testEventBusSendIgnore() throws Exception {
+    testSend(TracingPolicy.IGNORE, true, 0);
+  }
+
+  @Test
+  public void testEventBusSendAlways() throws Exception {
+    testSend(TracingPolicy.ALWAYS, false, 2);
+  }
+
+  private void testSend(TracingPolicy policy, boolean create, int expected) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
     vertx2.eventBus().consumer("the-address", msg -> {
+      vertx2.runOnContext(v -> latch.countDown()); // make sure span is finished
     });
-    Span rootSpan = tracer.newTrace();
     Context ctx = vertx1.getOrCreateContext();
     ctx.runOnContext(v -> {
-      tracer.activate(rootSpan);
-      vertx1.eventBus().send("the-address", "ping");
+      if (create) {
+        tracer.activate(tracer.newTrace());
+      }
+      vertx1.eventBus().send("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy));
     });
-    waitUntil(() -> tracer.getFinishedSpans().size() == 2);
+    awaitLatch(latch);
     List<Span> finishedSpans = tracer.getFinishedSpans();
+    assertEquals(expected, finishedSpans.size());
     assertSingleTrace(finishedSpans);
     finishedSpans.forEach(span -> {
       assertEquals("send", span.operation);
@@ -50,61 +71,98 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
   }
 
   @Test
-  public void testEventBusPublish() {
+  public void testEventBusPublishProgagate() throws Exception {
+    testPublish(TracingPolicy.PROPAGATE, true, 3, true);
+  }
+
+  @Test
+  public void testEventBusPublishIgnore() throws Exception {
+    testPublish(TracingPolicy.IGNORE, true, 0, false);
+  }
+
+  @Test
+  public void testEventBusPublishAlways() throws Exception {
+    testPublish(TracingPolicy.ALWAYS, false, 3, true);
+  }
+
+  private void testPublish(TracingPolicy policy, boolean create, int expected, boolean singleTrace) throws Exception {
+    CountDownLatch latch = new CountDownLatch(2);
     vertx2.eventBus().consumer("the-address", msg -> {
+      vertx2.runOnContext(v -> latch.countDown()); // make sure span is finished
     });
     vertx2.eventBus().consumer("the-address", msg -> {
+      vertx2.runOnContext(v -> latch.countDown()); // make sure span is finished
     });
-    Span rootSpan = tracer.newTrace();
     Context ctx = vertx1.getOrCreateContext();
     ctx.runOnContext(v -> {
-      tracer.activate(rootSpan);
-      vertx1.eventBus().publish("the-address", "ping");
+      if (create) {
+        tracer.activate(tracer.newTrace());
+      }
+      vertx1.eventBus().publish("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy));
     });
-    waitUntil(() -> tracer.getFinishedSpans().size() == 3);
+    awaitLatch(latch);
     List<Span> finishedSpans = tracer.getFinishedSpans();
-    assertSingleTrace(finishedSpans);
+    assertEquals(expected, finishedSpans.size());
+    if (singleTrace) {
+      assertSingleTrace(finishedSpans);
+    }
     finishedSpans.forEach(span -> {
       assertEquals("publish", span.operation);
     });
   }
 
   @Test
-  public void testEventBusRequestReply() {
-    vertx2.eventBus().consumer("the-address", msg -> {
-      msg.reply("pong");
-    });
-    Span rootSpan = tracer.newTrace();
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v -> {
-      tracer.activate(rootSpan);
-      vertx1.eventBus().request("the-address", "ping", onSuccess(reply -> {
-
-      }));
-    });
-    waitUntil(() -> tracer.getFinishedSpans().size() == 2);
-    List<Span> finishedSpans = tracer.getFinishedSpans();
-    assertSingleTrace(finishedSpans);
-    finishedSpans.forEach(span -> {
-      assertEquals("send", span.operation);
-    });
+  public void testEventBusRequestReplyPropagate() throws Exception {
+    testRequestReply(TracingPolicy.PROPAGATE, true, false, 2);
   }
 
   @Test
-  public void testEventBusRequestReplyFailure() {
-    vertx2.eventBus().consumer("the-address", msg -> {
-      msg.fail(10, "it failed");
-    });
-    Span rootSpan = tracer.newTrace();
-    Context ctx = vertx.getOrCreateContext();
-    ctx.runOnContext(v -> {
-      tracer.activate(rootSpan);
-      vertx1.eventBus().request("the-address", "ping", onFailure(err -> {
+  public void testEventBusRequestReplyIgnore() throws Exception {
+    testRequestReply(TracingPolicy.IGNORE, true, false, 0);
+  }
 
-      }));
+  @Test
+  public void testEventBusRequestReplyAlways() throws Exception {
+    testRequestReply(TracingPolicy.ALWAYS, false, false, 2);
+  }
+
+  @Test
+  public void testEventBusRequestReplyFailurePropagate() throws Exception {
+    testRequestReply(TracingPolicy.PROPAGATE, true, true, 2);
+  }
+
+  @Test
+  public void testEventBusRequestReplyFailureIgnore() throws Exception {
+    testRequestReply(TracingPolicy.IGNORE, true, true, 0);
+  }
+
+  @Test
+  public void testEventBusRequestReplyFailureAlways() throws Exception {
+    testRequestReply(TracingPolicy.ALWAYS, false, true, 2);
+  }
+
+  private void testRequestReply(TracingPolicy policy, boolean create, boolean fail, int expected) throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
+    vertx2.eventBus().consumer("the-address", msg -> {
+      if (fail) {
+        msg.fail(10, "it failed");
+      } else {
+        msg.reply("pong");
+      }
     });
-    waitUntil(() -> tracer.getFinishedSpans().size() == 2);
+    Context ctx = vertx1.getOrCreateContext();
+    ctx.runOnContext(v -> {
+      if (create) {
+        tracer.activate(tracer.newTrace());
+      }
+      vertx1.eventBus().request("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy), ar -> {
+        assertEquals(fail, ar.failed());
+        vertx1.runOnContext(v2 -> latch.countDown()); // make sure span is finished
+      });
+    });
+    awaitLatch(latch);
     List<Span> finishedSpans = tracer.getFinishedSpans();
+    assertEquals(expected, finishedSpans.size());
     assertSingleTrace(finishedSpans);
     finishedSpans.forEach(span -> {
       assertEquals("send", span.operation);

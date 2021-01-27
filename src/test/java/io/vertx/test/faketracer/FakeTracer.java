@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -98,18 +98,25 @@ public class FakeTracer implements VertxTracer<Span, Span> {
     return null;
   }
 
-  private Span getServerSpan(SpanKind kind, String operation, Iterable<Map.Entry<String, String>> headers) {
+  private Span getServerSpan(SpanKind kind, TracingPolicy policy, String operation, Iterable<Map.Entry<String, String>> headers) {
     Span parent = decode(kind, operation, headers);
     if (parent != null) {
       return parent.createChild(kind, operation);
-    } else {
+    } else if (policy == TracingPolicy.ALWAYS) {
       return newTrace(kind, operation);
     }
+    return null;
   }
 
   @Override
   public <R> Span receiveRequest(Context context, SpanKind kind, TracingPolicy policy, R request, String operation, Iterable<Map.Entry<String, String>> headers, TagExtractor<R> tagExtractor) {
-    Span serverSpan = getServerSpan(kind, operation, headers);
+    if (policy == TracingPolicy.IGNORE) {
+      return null;
+    }
+    Span serverSpan = getServerSpan(kind, policy, operation, headers);
+    if (serverSpan == null) {
+      return null;
+    }
     serverSpan.addTag("span_kind", "server");
     addTags(serverSpan, request, tagExtractor);
     // Create scope
@@ -126,11 +133,16 @@ public class FakeTracer implements VertxTracer<Span, Span> {
 
   @Override
   public <R> Span sendRequest(Context context, SpanKind kind, TracingPolicy policy, R request, String operation, BiConsumer<String, String> headers, TagExtractor<R> tagExtractor) {
+    if (policy == TracingPolicy.IGNORE) {
+      return null;
+    }
     Span span = activeSpan(context);
-    if (span == null) {
+    if (span != null) {
+      span = span.createChild(kind, operation);
+    } else if (policy == TracingPolicy.ALWAYS) {
       span = newTrace(kind, operation);
     } else {
-      span = span.createChild(kind, operation);
+      return null;
     }
     span.addTag("span_kind", "client");
     addTags(span, request, tagExtractor);

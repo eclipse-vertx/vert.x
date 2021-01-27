@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.tracing.TracingPolicy;
 
 import java.util.Map;
 import java.util.Objects;
@@ -41,10 +42,16 @@ public class DeliveryOptions {
    */
   public static final boolean DEFAULT_LOCAL_ONLY = false;
 
+  /**
+   * Default tracing control = {@link TracingPolicy#PROPAGATE}
+   */
+  public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.PROPAGATE;
+
   private long timeout = DEFAULT_TIMEOUT;
   private String codecName;
   private MultiMap headers;
   private boolean localOnly = DEFAULT_LOCAL_ONLY;
+  private TracingPolicy tracingPolicy = DEFAULT_TRACING_POLICY;
 
   /**
    * Default constructor
@@ -62,6 +69,7 @@ public class DeliveryOptions {
     this.codecName = other.getCodecName();
     this.headers = other.getHeaders();
     this.localOnly = other.localOnly;
+    this.tracingPolicy = other.tracingPolicy;
   }
 
   /**
@@ -75,14 +83,16 @@ public class DeliveryOptions {
     JsonObject hdrs = json.getJsonObject("headers", null);
     if (hdrs != null) {
       headers = MultiMap.caseInsensitiveMultiMap();
-      for (Map.Entry<String, Object> entry: hdrs) {
+      for (Map.Entry<String, Object> entry : hdrs) {
         if (!(entry.getValue() instanceof String)) {
           throw new IllegalStateException("Invalid type for message header value " + entry.getValue().getClass());
         }
-        headers.set(entry.getKey(), (String)entry.getValue());
+        headers.set(entry.getKey(), (String) entry.getValue());
       }
     }
     this.localOnly = json.getBoolean("localOnly", DEFAULT_LOCAL_ONLY);
+    String tracingPolicyStr = json.getString("tracingPolicy");
+    this.tracingPolicy = tracingPolicyStr != null ? TracingPolicy.valueOf(tracingPolicyStr) : DEFAULT_TRACING_POLICY;
   }
 
   /**
@@ -100,6 +110,9 @@ public class DeliveryOptions {
       json.put("headers", hJson);
     }
     json.put("localOnly", localOnly);
+    if (tracingPolicy != null) {
+      json.put("tracingPolicy", tracingPolicy.name());
+    }
     return json;
   }
 
@@ -215,6 +228,24 @@ public class DeliveryOptions {
    */
   public DeliveryOptions setLocalOnly(boolean localOnly) {
     this.localOnly = localOnly;
+    return this;
+  }
+
+  /**
+   * @return the tracing policy
+   */
+  public TracingPolicy getTracingPolicy() {
+    return tracingPolicy;
+  }
+
+  /**
+   * Set the tracing policy when Vert.x has tracing enabled.
+   *
+   * @param tracingPolicy the tracing policy
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeliveryOptions setTracingPolicy(TracingPolicy tracingPolicy) {
+    this.tracingPolicy = tracingPolicy;
     return this;
   }
 }

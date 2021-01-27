@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -118,7 +118,11 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
         if (message.trace == null) {
           src = true;
           BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
-          message.trace = tracer.sendRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
+          TracingPolicy tracingPolicy = options.getTracingPolicy();
+          if (tracingPolicy == null) {
+            tracingPolicy = TracingPolicy.PROPAGATE;
+          }
+          message.trace = tracer.sendRequest(ctx, SpanKind.RPC, tracingPolicy, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
         } else {
           // Handle failure here
           tracer.sendResponse(ctx, null, message.trace, null, TagExtractor.empty());
