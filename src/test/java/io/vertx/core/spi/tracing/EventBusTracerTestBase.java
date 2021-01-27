@@ -69,7 +69,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     private <T> String addressOf(T obj, TagExtractor<T> extractor) {
       int len = extractor.len(obj);
       for (int idx = 0;idx < len;idx++) {
-        if (extractor.name(obj, idx).equals("peer.service")) {
+        if (extractor.name(obj, idx).equals("message_bus.destination")) {
           String value = extractor.value(obj, idx);
           if (value.startsWith("__vertx")) {
             value = "generated";
