@@ -24,23 +24,27 @@ import io.vertx.core.streams.ReadStream;
 
 public class LengthFieldParserImpl implements LengthFieldParser {
 
+  private Buffer acc = Buffer.buffer();
   private Handler<Throwable> exceptionHandler;
   private final RecordParser parser;
 
   private long frameLength = -1;
   private final int length;
   private final int offset;
+  private final boolean skip;
   private final int max;
 
-  public LengthFieldParserImpl(int length, int offset, int max, ReadStream<Buffer> stream) {
+  public LengthFieldParserImpl(int length, int offset, boolean skip, int max, ReadStream<Buffer> stream) {
     Arguments.require(length == 1 || length == 2 || length == 3 || length == 4 || length == 8,
       "Field length must be 1, 2, 3, 4, or 8");
     Arguments.require(offset >= 0, "Field offset must be >= 0");
     Arguments.require(max > 0, "Max frame length must be > 0");
     this.length = length;
     this.offset = offset;
+    this.skip = skip;
     this.max = max;
     this.parser = RecordParser.newFixed(length + offset, stream);
+
   }
 
   @Override
@@ -77,13 +81,28 @@ public class LengthFieldParserImpl implements LengthFieldParser {
               frameLength = 0;
             }
           } else {
+            if (!skip) {
+              // append length + offset
+              acc.appendBuffer(buffer);
+            }
+            // next will get the content
             parser.fixedSizeMode((int) frameLength);
             fetch(1);
           }
         } else {
+          if(!skip) {
+            // sanity check
+            if(buffer.length() > 0) {
+              // append content
+              acc.appendBuffer(buffer);
+              buffer = acc.copy();
+              acc = Buffer.buffer();
+            }
+          }
+          handler.handle(buffer);
+          // reset for next read
           parser.fixedSizeMode(length + offset);
           frameLength = -1;
-          handler.handle(buffer);
         }
       } catch (Exception ex) {
         if (exceptionHandler != null) {

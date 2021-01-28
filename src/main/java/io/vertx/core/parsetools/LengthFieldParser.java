@@ -19,84 +19,70 @@ import io.vertx.core.parsetools.impl.LengthFieldParserImpl;
 import io.vertx.core.streams.ReadStream;
 
 /**
- *  Parser for length field frame protocols
- * * <p/>
- *  The parser handles length fields byte(1), short(2), medium(3), int(4) and long(8) in the {@link Buffer}
- *  with length field offset to skip explicit length while parsing.
- * * <p/>
- *  the default maximum frame length is {@link Integer#MAX_VALUE} and can be changed explicitly.
- * * <p/>
- *  The {@link #exceptionHandler(Handler)} is called when the frame exceeds the maximum length
+ * A parser that splits the received {@link io.vertx.core.buffer.Buffer} dynamically by the value of the length field in
+ * the frame.
+ *  <p/>
+ *  It is convenient when you parse a binary data which has an integer header field byte(1), short(2), medium(3),
+ *  int(4) or long(8) that represents the length of the frame body.
+ *  <p/>
+ *  The parser supports length field offset to specify explicit position while parsing.
+ *  <p/>
+ *  The user can configure the parser to skip all fields that precedes the frame body or to receive the whole frame
+ *  conveniently.
+ *  <p/>
+ *  The default maximum frame length is {@link Integer#MAX_VALUE} if not specified and can be changed explicitly.
+ *  <p/>
+ *  The {@link #exceptionHandler(Handler)} is called when the frame body exceeds the maximum length
  *  or the length is invalid "less or equal to zero".
- * * <p/>
+ *  <p/>
  * @author <a href="mailto:emad.albloushi@gmail.com">Emad Alblueshi</a>
  */
 
 @VertxGen
 public interface LengthFieldParser extends ReadStream<Buffer>, Handler<Buffer> {
-
-
   /**
    * Create a new {@code LengthFieldParser} instance.
    *
    * @param length the length of the field : byte(1), short(2), medium(3), int(4) or long(8)
+   * @param offset the offset of the field
+   * @param skip skips prior field(s) of the frame body
    */
-  static LengthFieldParser newParser(int length) {
-    return new LengthFieldParserImpl(length, 0, Integer.MAX_VALUE, null);
+  static LengthFieldParser newParser(int length, int offset, boolean skip) {
+    return new LengthFieldParserImpl(length, offset, skip, Integer.MAX_VALUE, null);
   }
-
   /**
    * Create a new {@code LengthFieldParser} instance.
    *
    * @param length the length of the field : byte(1), short(2), medium(3), int(4) or long(8)
+   * @param offset the offset of the field
+   * @param skip skips prior field(s) of the frame body
+   * @param max the maximum length of the frame body
+   */
+  static LengthFieldParser newParser(int length, int offset, boolean skip, int max) {
+    return new LengthFieldParserImpl(length, offset, skip, max, null);
+  }
+  /**
+   * Create a new {@code LengthFieldParser} instance.
+   *
+   * @param length the length of the field : byte(1), short(2), medium(3), int(4) or long(8)
+   * @param offset the offset of the field
+   * @param skip skips prior field(s) of the frame body
    * @param stream the wrapped of read stream
    */
-  static LengthFieldParser newParser(int length, ReadStream<Buffer> stream) {
-    return new LengthFieldParserImpl(length, 0, Integer.MAX_VALUE, stream);
+  static LengthFieldParser newParser(int length, int offset, boolean skip, ReadStream<Buffer> stream) {
+    return new LengthFieldParserImpl(length, offset, skip, Integer.MAX_VALUE, stream);
   }
-
   /**
    * Create a new {@code LengthFieldParser} instance.
    *
    * @param length the length of the field : byte(1), short(2), medium(3), int(4) or long(8)
    * @param offset the offset of the field
+   * @param skip skips prior field(s) of the frame body
+   * @param max the maximum length of the frame body
    * @param stream the wrapped of read stream
    */
-  static LengthFieldParser newParser(int length, int offset, ReadStream<Buffer> stream) {
-    return new LengthFieldParserImpl(length, offset, Integer.MAX_VALUE, stream);
-  }
-
-  /**
-   * Create a new {@code LengthFieldParser} instance.
-   *
-   * @param length the length of the field : byte(1), short(2), medium(3), int(4) or long(8)
-   * @param offset the offset of the field
-   * @param max the maximum length of the frame
-   * @param stream the wrapped of read stream
-   */
-  static LengthFieldParser newParser(int length, int offset, int max, ReadStream<Buffer> stream) {
-    return new LengthFieldParserImpl(length, offset, max, stream);
-  }
-
-  /**
-   * Create a new {@code LengthFieldParser} instance.
-   *
-   * @param length the length of the field : byte(1), short(2), medium(3), int(4) or long(8)
-   * @param offset the offset of the field
-   * @param max the maximum length of the frame
-   */
-  static LengthFieldParser newParser(int length, int offset, int max) {
-    return new LengthFieldParserImpl(length, offset, max, null);
-  }
-
-  /**
-   * Create a new {@code LengthFieldParser} instance.
-   *
-   * @param length the length of the field : byte(1), short(2), medium(3), int(4) or long(8)
-   * @param offset the offset of the field
-   */
-  static LengthFieldParser newParser(int length, int offset) {
-    return new LengthFieldParserImpl(length, offset, Integer.MAX_VALUE, null);
+  static LengthFieldParser newParser(int length, int offset, boolean skip, int max, ReadStream<Buffer> stream) {
+    return new LengthFieldParserImpl(length, offset, skip, max, stream);
   }
 
   @Override

@@ -13,6 +13,7 @@ package examples;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.parsetools.JsonParser;
+import io.vertx.core.parsetools.LengthFieldParser;
 import io.vertx.core.parsetools.RecordParser;
 
 /**
@@ -205,4 +206,48 @@ public class ParseToolsExamples {
       // Catch any parsing or decoding error
     });
   }
+
+  public void lengthFieldParserBuffer() {
+    // Frame
+    Buffer data = Buffer.buffer();
+    // Frame header length
+    data.appendByte((byte) 18);
+    // Frame body
+    data.appendString("Vert.x is awesome!");
+  }
+
+  public void lengthFieldParser1(Buffer data) {
+
+    LengthFieldParser parser = LengthFieldParser.newParser(1, 0, true);
+
+    parser.handler(buffer -> {
+      // Vert.x is awesome!
+      System.out.println(buffer.toString());
+
+    });
+
+    parser.handle(data);
+
+  }
+
+  public void lengthFieldParser2(Buffer data) {
+
+    LengthFieldParser parser = LengthFieldParser.newParser(1, 0, false);
+
+    parser.handler(buffer -> {
+
+      int length = buffer.getByte(0);
+      // 18
+      System.out.println(length);
+
+      String body = buffer.getString(1, buffer.length());
+      // Vert.x is awesome!
+      System.out.println(body);
+
+    });
+
+    parser.handle(data);
+
+  }
+
 }
