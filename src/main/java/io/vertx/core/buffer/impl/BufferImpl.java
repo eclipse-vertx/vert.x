@@ -26,6 +26,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
+ * This buffer implementation ignores the wrapped {@code ByteBuf} reader index, assuming that
+ * the first logical byte of this buffer maps to the first logical byte of the wrapped buffer.
+ *
+ * If a {@code ByteBuf} is wrapped and requires a reader index, then the buffer should be
+ * sliced or copied at the given index.
+ *
+ * This buffer implementation maps its length to the wrapped {@code ByteBuf} writer index.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class BufferImpl implements Buffer {
@@ -108,75 +116,100 @@ public class BufferImpl implements Buffer {
   }
 
   public byte getByte(int pos) {
+    checkUpperBound(pos, 1);
     return buffer.getByte(pos);
   }
 
   public short getUnsignedByte(int pos) {
+    checkUpperBound(pos, 1);
     return buffer.getUnsignedByte(pos);
   }
 
   public int getInt(int pos) {
+    checkUpperBound(pos, 4);
     return buffer.getInt(pos);
   }
 
   public int getIntLE(int pos) {
+    checkUpperBound(pos, 4);
     return buffer.getIntLE(pos);
   }
 
   public long getUnsignedInt(int pos) {
+    checkUpperBound(pos, 4);
     return buffer.getUnsignedInt(pos);
   }
 
   public long getUnsignedIntLE(int pos) {
+    checkUpperBound(pos, 4);
     return buffer.getUnsignedIntLE(pos);
   }
 
   public long getLong(int pos) {
+    checkUpperBound(pos, 8);
     return buffer.getLong(pos);
   }
 
   public long getLongLE(int pos) {
+    checkUpperBound(pos, 8);
     return buffer.getLongLE(pos);
   }
 
   public double getDouble(int pos) {
+    checkUpperBound(pos, 8);
     return buffer.getDouble(pos);
   }
 
   public float getFloat(int pos) {
+    checkUpperBound(pos, 4);
     return buffer.getFloat(pos);
   }
 
   public short getShort(int pos) {
+    checkUpperBound(pos, 2);
     return buffer.getShort(pos);
   }
 
   public short getShortLE(int pos) {
+    checkUpperBound(pos, 2);
     return buffer.getShortLE(pos);
   }
 
   public int getUnsignedShort(int pos) {
+    checkUpperBound(pos, 2);
     return buffer.getUnsignedShort(pos);
   }
 
   public int getUnsignedShortLE(int pos) {
+    checkUpperBound(pos, 2);
     return buffer.getUnsignedShortLE(pos);
   }
 
   public int getMedium(int pos) {
+    checkUpperBound(pos, 3);
     return buffer.getMedium(pos);
   }
 
   public int getMediumLE(int pos) {
+    checkUpperBound(pos, 3);
     return buffer.getMediumLE(pos);
   }
 
   public int getUnsignedMedium(int pos) {
+    checkUpperBound(pos, 3);
     return buffer.getUnsignedMedium(pos);
   }
 
   public int getUnsignedMediumLE(int pos) {
+    checkUpperBound(pos, 3);
     return buffer.getUnsignedMediumLE(pos);
+  }
+
+  private void checkUpperBound(int index, int size) {
+    int length = buffer.writerIndex();
+    if ((index | length - (index + size)) < 0) {
+      throw new IndexOutOfBoundsException(index + " + " + size + " > " + length);
+    }
   }
 
   public byte[] getBytes() {
