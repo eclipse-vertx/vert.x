@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -130,7 +131,7 @@ public class Utils {
    * @return a JUnit test rule that checks the Vert.x log files
    */
   static LogContainsRule executorMethodLogged(String executor, String method) {
-    return new LogContainsRule(ExecutorServiceFactory.class, Utils.PACKAGE + executor + "::" + method);
+    return new LogContainsRule(ExecutorServiceFactory.class, Level.ALL, Utils.PACKAGE + executor + "::" + method);
   }
 
   /**

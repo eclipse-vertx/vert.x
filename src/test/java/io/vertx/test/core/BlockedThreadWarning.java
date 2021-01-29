@@ -11,76 +11,50 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.impl.BlockedThreadChecker;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import static org.hamcrest.CoreMatchers.containsString;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
+import org.hamcrest.Matcher;
+
+import io.vertx.core.impl.BlockedThreadChecker;
 
 /**
- * @author Thomas Segismont
+ * A log checker that specializes in task blocked messages.
+ * 
+ * @author Thomas Segismont (first version)
  */
-public class BlockedThreadWarning implements TestRule {
+public class BlockedThreadWarning extends LogContainsRule {
 
-  private boolean doTest;
   private String poolName;
   private long maxExecuteTime;
   private TimeUnit maxExecuteTimeUnit;
-  private List<String> logs = new ArrayList<>(); // guarded by this
 
+  public BlockedThreadWarning() {
+    logger = Logger.getLogger(BlockedThreadChecker.class.getName());
+  }
+
+  /**
+   * Setup the search, the instance is recyclable via this method
+   * 
+   * @param poolName           which pool is expected to have a blocked task
+   * @param maxExecuteTime     the expected time limit
+   * @param maxExecuteTimeUnit the expected time limit units
+   */
   public synchronized void expectMessage(String poolName, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
-    doTest = true;
     this.poolName = poolName;
     this.maxExecuteTime = maxExecuteTime;
     this.maxExecuteTimeUnit = maxExecuteTimeUnit;
+    doTest = true; // switch testing on
+    matchers = null; // reset what is looked
   }
 
   @Override
-  public Statement apply(Statement base, Description description) {
-    return new Statement() {
-      @Override
-      public void evaluate() throws Throwable {
-        synchronized (BlockedThreadWarning.this) {
-          logs.clear();
-        }
-        Logger logger = Logger.getLogger(BlockedThreadChecker.class.getName());
-        Handler handler = new Handler() {
-          public void publish(LogRecord record) {
-            synchronized (BlockedThreadWarning.this) {
-              logs.add(record.getMessage());
-            }
-          }
-          public void flush() { }
-          public void close() throws SecurityException { }
-        };
-        logger.addHandler(handler);
-        try {
-          base.evaluate();
-          doTest();
-        } finally {
-          logger.removeHandler(handler);
-        }
-      }
-    };
-  }
-
-  private synchronized void doTest() {
-    if (!doTest) {
-      return;
-    }
-    assertThat(logs, hasItem(allOf(
-      containsString(" has been blocked for "),
-      containsString(" time limit is " + maxExecuteTimeUnit.toMillis(maxExecuteTime) + " ms"),
-      containsString("Thread[" + poolName + "-"))
-    ));
+  public Matcher[] constructMatchers() {
+    Matcher<String> blocked = containsString(" has been blocked for ");
+    Matcher<String> timeLimit = containsString(" time limit is " + maxExecuteTimeUnit.toMillis(maxExecuteTime) + " ms");
+    Matcher<String> pool = containsString("Thread[" + poolName + "-");
+    return new Matcher[] { blocked, timeLimit, pool };
   }
 }
