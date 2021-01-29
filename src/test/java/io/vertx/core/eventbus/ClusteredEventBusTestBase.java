@@ -185,7 +185,6 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     reg.completionHandler(new MyRegisterHandler());
     reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler(new MyHandler());
     reg.completionHandler(new MyRegisterHandler());
-    vertices[0].eventBus().publish(ADDRESS1, val);
     await();
   }
 
