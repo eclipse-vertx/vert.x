@@ -196,17 +196,19 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   private void doHandshake() {
     Channel channel = conn.channel();
     Object metric;
+    Http1xServerResponse response = request.response();
     try {
       handshaker.handshake(channel, request.nettyRequest());
       metric = request.metric;
     } catch (Exception e) {
-      request.response().setStatusCode(BAD_REQUEST.code()).end();
+      response.setStatusCode(BAD_REQUEST.code()).end();
       throw e;
     } finally {
       request = null;
     }
+    response.setStatusCode(101);
     if (conn.metrics != null) {
-      conn.metrics.responseBegin(metric, new HttpResponseHead(HttpVersion.HTTP_1_1, 101, "Switching Protocol", MultiMap.caseInsensitiveMultiMap()));
+      conn.metrics.responseBegin(metric, response);
     }
     conn.responseComplete();
     status = SWITCHING_PROTOCOLS.code();

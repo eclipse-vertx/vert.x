@@ -27,7 +27,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -245,7 +244,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void reportRequestComplete(Http1xServerRequest request) {
     if (metrics != null) {
-      metrics.requestEnd(request.metric(), request.bytesRead());
+      metrics.requestEnd(request.metric(), request, request.bytesRead());
       flushBytesRead();
     }
   }
@@ -258,7 +257,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         metrics.requestReset(request.metric());
         requestFailed = false;
       } else {
-        metrics.responseEnd(request.metric(), request.response().bytesWritten());
+        metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
       }
     }
     VertxTracer tracer = context.tracer();
@@ -395,7 +394,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
           protected void handleClosed() {
             if (metrics != null) {
               Http1xServerRequest request = Http1xServerConnection.this.responseInProgress;
-              metrics.responseEnd(request.metric(), request.response().bytesWritten());
+              metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
             }
             super.handleClosed();
           }

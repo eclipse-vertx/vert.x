@@ -51,11 +51,11 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
 
   /**
    * Called when an http server request has ended.
-   *
    * @param requestMetric the request metric
+   * @param request the same {@code HttpRequest} provided in the initial response callback
    * @param bytesRead the total number of bytes read
    */
-  default void requestEnd(R requestMetric, long bytesRead) {
+  default void requestEnd(R requestMetric, HttpRequest request, long bytesRead) {
   }
 
   /**
@@ -90,11 +90,11 @@ public interface HttpServerMetrics<R, W, S> extends TCPMetrics<S> {
 
   /**
    * Called when an http server response has ended.
-   *
    * @param requestMetric the request metric
+   * @param response the same {@code HttpResponse} provided in the initial response callback
    * @param bytesWritten the total number of bytes written
    */
-  default void responseEnd(R requestMetric, long bytesWritten) {
+  default void responseEnd(R requestMetric, HttpResponse response, long bytesWritten) {
   }
 
   /**

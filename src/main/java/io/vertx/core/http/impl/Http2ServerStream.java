@@ -98,7 +98,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     if (Metrics.METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
-        metrics.requestEnd(metric, bytesRead());
+        metrics.requestEnd(metric, (HttpRequest) this, bytesRead());
       }
     }
     super.onEnd(trailers);
@@ -139,7 +139,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
         if (failed) {
           metrics.requestReset(metric);
         } else {
-          metrics.responseEnd(metric, bytesWritten());
+          metrics.responseEnd(metric, response, bytesWritten());
         }
       }
     }

@@ -105,7 +105,7 @@ public class MetricsContextTest extends VertxTestBase {
             return null;
           }
           @Override
-          public void responseEnd(Void requestMetric, long bytesWritten) {
+          public void responseEnd(Void requestMetric, HttpResponse response, long bytesWritten) {
             responseEndCalled.set(true);
           }
           @Override
@@ -202,7 +202,7 @@ public class MetricsContextTest extends VertxTestBase {
             return null;
           }
           @Override
-          public void requestEnd(Void requestMetric, long bytesRead) {
+          public void requestEnd(Void requestMetric, HttpRequest request, long bytesRead) {
             assertEquals(1, httpLifecycle.getAndIncrement());
           }
           @Override
@@ -210,7 +210,7 @@ public class MetricsContextTest extends VertxTestBase {
             assertEquals(2, httpLifecycle.getAndIncrement());
           }
           @Override
-          public void responseEnd(Void requestMetric, long bytesWritten) {
+          public void responseEnd(Void requestMetric, HttpResponse response, long bytesWritten) {
             assertEquals(3, httpLifecycle.getAndIncrement());
           }
           @Override

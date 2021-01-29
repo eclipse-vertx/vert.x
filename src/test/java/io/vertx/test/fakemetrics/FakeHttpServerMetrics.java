@@ -13,7 +13,6 @@ package io.vertx.test.fakemetrics;
 
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -53,7 +52,7 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
   }
 
   @Override
-  public void requestEnd(HttpServerMetric requestMetric, long bytesRead) {
+  public void requestEnd(HttpServerMetric requestMetric, HttpRequest request, long bytesRead) {
     requestMetric.requestEnded.set(true);
     requestMetric.bytesRead.set(bytesRead);
   }
@@ -78,7 +77,7 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
   }
 
   @Override
-  public void responseEnd(HttpServerMetric requestMetric, long bytesWritten) {
+  public void responseEnd(HttpServerMetric requestMetric, HttpResponse response, long bytesWritten) {
     requests.remove(requestMetric);
     requestMetric.responseEnded.set(true);
     requestMetric.bytesWritten.set(bytesWritten);
