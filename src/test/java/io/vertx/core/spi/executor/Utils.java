@@ -12,22 +12,11 @@
 package io.vertx.core.spi.executor;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
-
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
-import javax.tools.StandardLocation;
-import javax.tools.ToolProvider;
 
 import org.junit.rules.ExternalResource;
 import org.junit.rules.RuleChain;
@@ -41,16 +30,15 @@ public class Utils {
 
   private static final Logger log = LoggerFactory.getLogger(ExecutorServiceFactory.class);
 
-  static final String EXTERNALS = "src/test/externals/";
-  static final String SERVICES = "META-INF/services/";
+  static final String SERVICES_SRC_DIR = "src/test/classpath/servicehelper/META-INF/services/";
 
-  static final String PACKAGE = "io.vertx.core.externals.";
-  static final String CLASSPATH_LOCATION = "target/test-classes";
-  static final String PROVIDER_CONFIG_DIR = "target/test-classes/META-INF/services/";
+  static final String TEST_CLASSPATH = "target/test-classes/";
+  static final String SERVICE_LOADER_SUFFIX = "META-INF/services/";
+  static final String SERVICE = "io.vertx.core.spi.executor.ExecutorServiceFactory";
+  static final String SERVICE_CFG_FILE = TEST_CLASSPATH + SERVICE_LOADER_SUFFIX + SERVICE;
 
-  static final String ES_FACTORY = "io.vertx.core.spi.executor.ExecutorServiceFactory";
-  static final String BASE_FACTORY = "ExternalLoadableExecutorServiceFactory";
-  static final String BASE_TEST_EXECUTOR = "ExternalLoadableExecutorServiceFactory";
+  static final String TESTS_PACKAGE = Utils.class.getPackage().getName(); // TODO replace with clazz.getPackage()
+
 
   /*
    * Set up some typesafe tokens for the testcases to refer to ExecutorService
@@ -68,61 +56,6 @@ public class Utils {
   }
 
   /**
-   * This will take the indicated .java file and compile it to the classpath along
-   * with the required standard test superclasses and set up Java ServiceLoader
-   * configuration to load it into Vert.x
-   * 
-   * @param impl the {@link ExecutorServiceFactory} desired
-   * @throws IOException
-   */
-  static void putExecutorServiceFactoryOnClasspath(String impl) throws IOException {
-    Utils.compileToClassPath(Utils.BASE_FACTORY);
-    Utils.compileToClassPath(Utils.BASE_TEST_EXECUTOR);
-    compileToClassPath(impl);
-    configureServiceLoaded(ES_FACTORY, impl);
-  }
-
-  /**
-   * A utility function to set the Java {@link ServiceLoader}
-   * provider-configuration file for a SPI test.
-   * 
-   * @param service the name of the service being supplied
-   * @param impl    the name of the implementation
-   * @throws IOException
-   */
-  static void configureServiceLoaded(String service, String impl) throws IOException {
-    File source = new File(EXTERNALS + SERVICES + impl);
-    File out = new File(PROVIDER_CONFIG_DIR + service);
-    out.getParentFile().mkdirs();
-    Files.deleteIfExists(out.toPath());
-    Files.copy(source.toPath(), out.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-    log.debug("Placed " + impl + " as service loadable for " + service);
-  }
-
-  /**
-   * Compiles a particular .java file, in the conventional test source directory
-   * src/test/externals to the classpath of a test. If we have SPI implementation
-   * files and {@link ServiceLoader} provider-configuration files in the normal
-   * IDE classpath they all interfere with each other's tests.
-   * 
-   * @param impl the non package qualified class name
-   * @throws IOException
-   */
-  static void compileToClassPath(String impl) throws IOException {
-    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-    StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-    File output = new File(CLASSPATH_LOCATION);
-    output.mkdirs();
-    fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singletonList(output));
-
-    List<File> classesToCompile = new ArrayList<>();
-    classesToCompile.add(new File(EXTERNALS + impl + ".java"));
-
-    Iterable<? extends JavaFileObject> compilationUnits1 = fileManager.getJavaFileObjectsFromFiles(classesToCompile);
-    compiler.getTask(null, fileManager, null, null, null, compilationUnits1).call();
-  }
-
-  /**
    * Checks that a particular {@link ExecutorService} implementation's method
    * makes an appearance in the test logs
    * 
@@ -131,7 +64,7 @@ public class Utils {
    * @return a JUnit test rule that checks the Vert.x log files
    */
   static LogContainsRule executorMethodLogged(String executor, String method) {
-    return new LogContainsRule(ExecutorServiceFactory.class, Level.ALL, Utils.PACKAGE + executor + "::" + method);
+    return new LogContainsRule(ExecutorServiceFactory.class, Level.ALL, Utils.TESTS_PACKAGE + "." + executor + "::" + method);
   }
 
   /**
@@ -143,7 +76,7 @@ public class Utils {
    * @param meth     a Varargs list of expected {@link ExecutorService} methods
    * @return
    */
-  public static TestRule setupAndCheckSpiImpl(String factory, String executor, Method... meth) {
+  public static TestRule setupAndCheckSpiImpl(Class factory, String executor, Method... meth) {
 
     RuleChain chain = RuleChain.emptyRuleChain();
 
@@ -160,28 +93,33 @@ public class Utils {
    * {@link ExecutorServiceFactory} provider
    */
   static class SpiPopulator extends ExternalResource {
-    private final String factory;
+    private final Class factory;
 
     /**
      * Create a Junit external resource manager for {@link ExecutorServiceFactory}
      * SPI providers
      * 
-     * @param factory the {@link ExecutorServiceFactory} name expected, the .java
-     *                file should exist in the conventional directory
-     *                (src/test/externals)
+     * @param factory the {@link ExecutorServiceFactory} class
+     * 
      */
-    SpiPopulator(String factory) {
+    SpiPopulator(Class factory) {
       this.factory = factory;
     }
 
     @Override
     protected void before() throws Throwable {
-      putExecutorServiceFactoryOnClasspath(factory);
+      // Set up the Java ServiceLoader config file
+      File source = new File(SERVICES_SRC_DIR + factory.getSimpleName());
+      File out = new File(SERVICE_CFG_FILE);
+      out.getParentFile().mkdirs();
+      Files.deleteIfExists(out.toPath());
+      Files.copy(source.toPath(), out.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
+      log.debug("Placed " + factory + " as service loadable for " + SERVICE);
     }
 
     @Override
     protected void after() {
-      new File(PROVIDER_CONFIG_DIR).delete();
+      new File(SERVICE_CFG_FILE).delete();
     }
   }
 

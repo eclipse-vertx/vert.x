@@ -16,7 +16,7 @@
  * interface and to allow for testing with different SPI implementations on the
  * classpath.
  */
-package io.vertx.core.externals;
+package io.vertx.core.spi.executor;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import io.vertx.core.spi.executor.ExecutorServiceFactory;
 
 /**
  * This is a base {@link ExecutorServiceFactory} used in the junit tests for the

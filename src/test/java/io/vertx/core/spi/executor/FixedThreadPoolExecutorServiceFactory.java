@@ -16,13 +16,11 @@
  * interface and to allow for testing with different SPI implementations on the
  * classpath.
  */
-package io.vertx.core.externals;
+package io.vertx.core.spi.executor;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-
-import io.vertx.core.spi.executor.ExecutorServiceFactory;
 
 /**
  * This is a simple test ExecutorServiceFactory that overrides the base executor

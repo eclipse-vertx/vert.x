@@ -37,8 +37,8 @@ import io.vertx.core.BlockedThreadCheckerTest;
  */
 public class ExecutorFactoryBlockedThreadCheckerTest extends BlockedThreadCheckerTest {
 
-  private static final String FACTORY = "ExternalLoadableExecutorServiceFactory";
-  private static final String EXECUTOR = FACTORY + "$1";
+  private static final Class<ExternalLoadableExecutorServiceFactory> FACTORY = ExternalLoadableExecutorServiceFactory.class;
+  private static final String EXECUTOR = FACTORY.getSimpleName() + "$1";
 
   /*
    * We use a Junit test rule to setup and tear down the classpath to have the

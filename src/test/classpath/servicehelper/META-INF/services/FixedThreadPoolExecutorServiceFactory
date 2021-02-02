@@ -9,4 +9,4 @@
 #
 # A ServiceLoader provider-configuration file for the ExecutorServiceFactory SPI tests
 
-io.vertx.core.externals.FixedThreadPoolExecutorServiceFactory
+io.vertx.core.spi.executor.FixedThreadPoolExecutorServiceFactory

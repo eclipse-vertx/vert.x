@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,26 +11,19 @@
 
 package io.vertx.core;
 
-import io.vertx.test.spi.FakeFactory;
-import io.vertx.test.spi.NotImplementedSPI;
-import io.vertx.test.spi.SomeFactory;
-import org.junit.Before;
-import org.junit.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import javax.tools.*;
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.Test;
+
+import io.vertx.test.spi.FakeFactory;
+import io.vertx.test.spi.NotImplementedSPI;
+import io.vertx.test.spi.SomeFactory;
 
 /**
  * Check the service helper behavior.
@@ -39,44 +32,19 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class ServiceHelperTest {
 
-  @Before
-  public void setUp() throws IOException {
-    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-    StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
-    File output = new File("target/externals");
-    output.mkdirs();
-    fileManager.setLocation(StandardLocation.CLASS_OUTPUT, Collections.singletonList(
-        output));
-
-    List<File> classesToCompile = new ArrayList<>();
-    classesToCompile.add(new File("src/test/externals/MyVerticle.java"));
-    classesToCompile.add(new File("src/test/externals/SomeFactoryImplA.java"));
-
-    Iterable<? extends JavaFileObject> compilationUnits1 =
-        fileManager.getJavaFileObjectsFromFiles(classesToCompile);
-
-    compiler.getTask(null, fileManager, null, null, null, compilationUnits1).call();
-
-    // Also copy the META-INF dir
-    File source = new File("src/test/externals/META-INF/services/io.vertx.test.spi.SomeFactory");
-    File out = new File("target/externals/META-INF/services/io.vertx.test.spi.SomeFactory");
-    out.getParentFile().mkdirs();
-    Files.copy(source.toPath(), out.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES);
-  }
-
   @Test
-  public void loadFactory() throws Exception {
+  public void loadFactory() {
     FakeFactory factory = ServiceHelper.loadFactory(FakeFactory.class);
     assertThat(factory.classloader()).isEqualTo(ServiceHelperTest.class.getClassLoader());
   }
 
   @Test(expected = IllegalStateException.class)
-  public void loadNotImplementedSPI() throws Exception {
+  public void loadNotImplementedSPI() {
     ServiceHelper.loadFactory(NotImplementedSPI.class);
   }
 
   @Test
-  public void loadFactoryOrNull() throws Exception {
+  public void loadFactoryOrNull() {
     NotImplementedSPI factory = ServiceHelper.loadFactoryOrNull(NotImplementedSPI.class);
     assertThat(factory).isNull();
 
@@ -86,7 +54,7 @@ public class ServiceHelperTest {
   }
 
   @Test
-  public void loadFactories() throws Exception {
+  public void loadFactories() {
     Collection<FakeFactory> factories = ServiceHelper.loadFactories(FakeFactory.class);
     assertThat(factories)
         .isNotNull()
@@ -100,7 +68,7 @@ public class ServiceHelperTest {
 
   @Test
   public void loadFactoriesWithClassloader() throws Exception {
-    ClassLoader custom = new URLClassLoader(new URL[]{new File("target/externals").toURI().toURL()});
+    ClassLoader custom = new URLClassLoader(new URL[]{new File("target/classpath/servicehelper").toURI().toURL()});
 
     // Try without the custom classloader.
     Collection<SomeFactory> factories = ServiceHelper.loadFactories(SomeFactory.class);
@@ -118,7 +86,7 @@ public class ServiceHelperTest {
 
   @Test
   public void loadFactoriesFromTCCL() throws Exception {
-    ClassLoader custom = new URLClassLoader(new URL[]{new File("target/externals").toURI().toURL()});
+    ClassLoader custom = new URLClassLoader(new URL[]{new File("target/classpath/servicehelper").toURI().toURL()});
 
     // Try without the TCCL classloader.
     Collection<SomeFactory> factories = ServiceHelper.loadFactories(SomeFactory.class);
@@ -147,7 +115,7 @@ public class ServiceHelperTest {
     ClassLoader custom = new URLClassLoader(new URL[]{
         new File("target/classes").toURI().toURL(),
         new File("target/test-classes").toURI().toURL(),
-        new File("target/externals").toURI().toURL(),
+        new File("target/classpath/servicehelper").toURI().toURL(),
     }, null);
 
     Class serviceHelperClass = custom.loadClass(ServiceHelper.class.getName());
@@ -158,5 +126,4 @@ public class ServiceHelperTest {
     Collection collection = (Collection) method.invoke(null, someFactoryClass);
     assertThat(collection).hasSize(1);
   }
-
 }
