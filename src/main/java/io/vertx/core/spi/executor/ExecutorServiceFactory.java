@@ -21,6 +21,8 @@ import java.util.concurrent.ThreadFactory;
  * classpath and pointed to by a {@link ServiceLoader} provider-configuration
  * file, Vert.x will use it to create {@link ExecutorService} instances to run
  * worker tasks.
+ * 
+ * @author Gordon Hutchison
  */
 public interface ExecutorServiceFactory {
 
