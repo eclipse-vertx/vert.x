@@ -106,7 +106,7 @@ For more details, check out the {@link io.vertx.core.parsetools.JsonParser} clas
 
 The length field parser splits the received {@link io.vertx.core.buffer.Buffer} dynamically by the value of
 the length field in the frame. It is convenient when you parse a binary data which has an header field
-`byte(1)`, `short(2)`, `medium(3)`, `int(4)` or `long(8)` that represents the length of the frame body.
+`byte(1)`, `short(2)`, `medium(3)`, `int(4)` or `long(8)` that represents the length of the frame.
 
 The parser has configurable parameters, you can configure to skip prior fields *"offset and header"*
 to receive the body of the frame or to receive the whole frame conveniently.
