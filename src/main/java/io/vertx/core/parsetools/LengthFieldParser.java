@@ -22,7 +22,7 @@ import io.vertx.core.streams.ReadStream;
  * A parser that splits the received {@link io.vertx.core.buffer.Buffer} dynamically by the value of the length field in
  * the frame.
  *  <p/>
- *  It is convenient when you parse a binary data which has an integer header field byte(1), short(2), medium(3),
+ *  It is convenient when you parse a binary data which has an header field byte(1), short(2), medium(3),
  *  int(4) or long(8) that represents the length of the frame.
  *  <p/>
  *  The parser supports length field offset to specify explicit position while parsing.
