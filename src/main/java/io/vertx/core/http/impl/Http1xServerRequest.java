@@ -562,6 +562,8 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
           } catch (Exception e) {
             // Will never happen, anyway handle it somehow just in case
             handleException(e);
+          } finally {
+            attr.release();
           }
         }
       }

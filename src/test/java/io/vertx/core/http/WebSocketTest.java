@@ -2027,7 +2027,6 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-
   @Test
   public void testInvalidUnmaskedFrameRequest(){
 

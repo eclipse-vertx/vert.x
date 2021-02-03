@@ -12,7 +12,6 @@
 package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SniHandler;
@@ -52,13 +51,7 @@ import java.util.UUID;
  */
 public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
-  private static final Handler<Object> NULL_MSG_HANDLER = event -> {
-    if (event instanceof ReferenceCounted) {
-      ReferenceCounted refCounter = (ReferenceCounted) event;
-      refCounter.release();
-    }
-  };
-
+  private static final Handler<Object> DEFAULT_MSG_HANDLER = new InvalidMessageHandler();
   private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
   private final String writeHandlerID;
@@ -81,7 +74,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
-    this.messageHandler = NULL_MSG_HANDLER;
+    this.messageHandler = DEFAULT_MSG_HANDLER;
     pending = new InboundBuffer<>(context);
     pending.drainHandler(v -> doResume());
     pending.exceptionHandler(context::reportException);
@@ -181,7 +174,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   @Override
   public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
     if (dataHandler != null) {
-      messageHandler(new DataMessageHandler(channelHandlerContext().alloc(), dataHandler));
+      messageHandler(new DataMessageHandler(dataHandler));
     } else {
       messageHandler(null);
     }
@@ -378,30 +371,41 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   public void handleMessage(Object msg) {
-    context.emit(msg, o -> {
-      if (!pending.write(msg)) {
+    if (msg instanceof ByteBuf) {
+      msg = VertxHandler.safeBuffer((ByteBuf) msg);
+    }
+    context.emit(msg, elt -> {
+      if (!pending.write(elt)) {
         doPause();
       }
     });
   }
 
-  private class DataMessageHandler implements Handler<Object> {
+  private static class DataMessageHandler implements Handler<Object> {
 
     private final Handler<Buffer> dataHandler;
-    private final ByteBufAllocator allocator;
 
-    DataMessageHandler(ByteBufAllocator allocator, Handler<Buffer> dataHandler) {
-      this.allocator = allocator;
+    DataMessageHandler(Handler<Buffer> dataHandler) {
       this.dataHandler = dataHandler;
     }
 
     @Override
-    public void handle(Object event) {
-      if (event instanceof ByteBuf) {
-        ByteBuf byteBuf = (ByteBuf) event;
-        byteBuf = VertxHandler.safeBuffer(byteBuf, allocator);
+    public void handle(Object msg) {
+      if (msg instanceof ByteBuf) {
+        ByteBuf byteBuf = (ByteBuf) msg;
         Buffer data = Buffer.buffer(byteBuf);
         dataHandler.handle(data);
+      }
+    }
+  }
+
+  private static class InvalidMessageHandler implements Handler<Object> {
+    @Override
+    public void handle(Object msg) {
+      // ByteBuf are eagerly released when the message is processed
+      if (msg instanceof ReferenceCounted && (!(msg instanceof ByteBuf))) {
+        ReferenceCounted refCounter = (ReferenceCounted) msg;
+        refCounter.release();
       }
     }
   }

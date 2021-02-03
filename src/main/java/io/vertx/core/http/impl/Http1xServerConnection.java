@@ -17,6 +17,7 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -154,7 +155,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     if (msg instanceof HttpContent) {
       onContent(msg);
     } else if (msg instanceof WebSocketFrame) {
-      // TODO
       handleWsFrame((WebSocketFrame) msg);
     }
   }
@@ -175,7 +175,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       handleError(content);
       return;
     }
-    Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content(), chctx.alloc()));
+    Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content()));
     Http1xServerRequest request;
     synchronized (this) {
       request = requestInProgress;
@@ -527,6 +527,9 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void handleError(HttpObject obj) {
     DecoderResult result = obj.decoderResult();
+    if (obj instanceof ReferenceCounted) {
+      ((ReferenceCounted) obj).release();
+    }
     fail(result.cause());
   }
 }

@@ -226,6 +226,7 @@
             <systemPropertyVariables>
               <!--<javax.net.debug>ssl</javax.net.debug>-->
               <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
+              <io.netty.leakDetection.targetRecords>20</io.netty.leakDetection.targetRecords>
               <buildDirectory>${project.build.directory}</buildDirectory>
               <vertx.version>${project.version}</vertx.version>
               <vertx.handle100Continue>true</vertx.handle100Continue>
