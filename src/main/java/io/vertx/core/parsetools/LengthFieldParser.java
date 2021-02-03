@@ -45,7 +45,7 @@ public interface LengthFieldParser extends ReadStream<Buffer>, Handler<Buffer> {
    *
    * @param length the length of the field : byte(1), short(2), medium(3), int(4) or long(8)
    * @param offset the offset of the field
-   * @param skip skips prior field(s) of the frame body
+   * @param skip if set to {@code true}, only the frame body is emitted by the parse, if {@code false}, the whole frame is emitted
    */
   static LengthFieldParser newParser(int length, int offset, boolean skip) {
     return new LengthFieldParserImpl(length, offset, skip, Integer.MAX_VALUE, null);
