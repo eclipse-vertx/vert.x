@@ -23,7 +23,7 @@ import io.vertx.core.streams.ReadStream;
  * the frame.
  *  <p/>
  *  It is convenient when you parse a binary data which has an integer header field byte(1), short(2), medium(3),
- *  int(4) or long(8) that represents the length of the frame body.
+ *  int(4) or long(8) that represents the length of the frame.
  *  <p/>
  *  The parser supports length field offset to specify explicit position while parsing.
  *  <p/>
