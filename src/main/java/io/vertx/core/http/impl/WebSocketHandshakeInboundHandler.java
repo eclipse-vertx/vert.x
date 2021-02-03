@@ -86,20 +86,25 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
       response.headers().add(resp.headers());
     }
     if (msg instanceof HttpContent) {
-      if (response != null) {
-        response.content().writeBytes(((HttpContent) msg).content());
-        if (msg instanceof LastHttpContent) {
-          response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
-          ChannelPipeline pipeline = chctx.pipeline();
-          pipeline.remove(WebSocketHandshakeInboundHandler.this);
-          ChannelHandler handler = pipeline.get(HttpContentDecompressor.class);
-          if (handler != null) {
-            // remove decompressor as its not needed anymore once connection was upgraded to WebSocket
-            ctx.pipeline().remove(handler);
+      HttpContent content = (HttpContent) msg;
+      try {
+        if (response != null) {
+          response.content().writeBytes(content.content());
+          if (msg instanceof LastHttpContent) {
+            response.trailingHeaders().add(((LastHttpContent) msg).trailingHeaders());
+            ChannelPipeline pipeline = chctx.pipeline();
+            pipeline.remove(WebSocketHandshakeInboundHandler.this);
+            ChannelHandler handler = pipeline.get(HttpContentDecompressor.class);
+            if (handler != null) {
+              // remove decompressor as its not needed anymore once connection was upgraded to WebSocket
+              ctx.pipeline().remove(handler);
+            }
+            Future<HeadersAdaptor> fut = handshakeComplete(response);
+            wsHandler.handle(fut);
           }
-          Future<HeadersAdaptor> fut = handshakeComplete(response);
-          wsHandler.handle(fut);
         }
+      } finally {
+        content.release();
       }
     }
   }

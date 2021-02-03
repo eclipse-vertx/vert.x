@@ -486,7 +486,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
         DatagramPacket packet = (DatagramPacket) msg;
         ByteBuf content = packet.content();
         if (content.isDirect())  {
-          content = VertxHandler.safeBuffer(content, chctx.alloc());
+          content = VertxHandler.safeBuffer(content);
         }
         handlePacket(new DatagramPacketImpl(packet.sender(), Buffer.buffer(content)));
       }
