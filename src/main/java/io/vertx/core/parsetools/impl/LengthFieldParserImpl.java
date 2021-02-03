@@ -58,9 +58,11 @@ public class LengthFieldParserImpl implements LengthFieldParser {
   @Override
   public LengthFieldParser handler(Handler<Buffer> handler) {
     if (handler == null) {
-      parser.handler(null);
-      parser.exceptionHandler(null);
-      parser.endHandler(null);
+      if(parser != null) {
+        parser.handler(null);
+        parser.exceptionHandler(null);
+        parser.endHandler(null);
+      }
       return this;
     }
     parser.handler(buffer -> {
@@ -79,6 +81,7 @@ public class LengthFieldParserImpl implements LengthFieldParser {
               }
             } finally {
               frameLength = 0;
+              this.handler(null);
             }
           } else {
             if (!skip) {
