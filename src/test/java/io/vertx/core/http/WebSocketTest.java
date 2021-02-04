@@ -15,6 +15,7 @@ package io.vertx.core.http;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
@@ -2904,10 +2905,7 @@ public class WebSocketTest extends VertxTestBase {
               assertEquals(reason, frame.reasonText());
               closeFrameReceived.set(true);
             }
-            if (msg instanceof ReferenceCounted) {
-              // release to avoid leaks
-              ((ReferenceCounted)msg).release();
-            }
+            ReferenceCountUtil.release(msg);
           });
           soi.closeHandler(v2 -> {
             assertTrue(closeFrameReceived.get());

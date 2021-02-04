@@ -18,6 +18,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.EventExecutor;
 import io.vertx.codegen.annotations.Nullable;
@@ -270,9 +271,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
             buffered = null;
             Object msg;
             while ((msg = messages.poll()) != null) {
-              if (msg instanceof ReferenceCounted) {
-                ((ReferenceCounted) msg).release();
-              }
+              ReferenceCountUtil.release(msg);
             }
           }
           super.handlerRemoved(ctx);

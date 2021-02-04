@@ -16,6 +16,7 @@ import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.AttributeKey;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
@@ -151,13 +152,7 @@ public abstract class ConnectionBase {
       }
       handleMessage(msg);
     } else {
-      tryRelease(msg);
-    }
-  }
-
-  private void tryRelease(Object msg) {
-    if (msg instanceof ReferenceCounted) {
-      ((ReferenceCounted) msg).release();
+      ReferenceCountUtil.release(msg);
     }
   }
 

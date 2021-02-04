@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensio
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
@@ -70,9 +71,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
   private static final Handler<Object> INVALID_MSG_HANDLER = msg -> {
-    if (msg instanceof ReferenceCounted) {
-      ((ReferenceCounted) msg).release();
-    }
+    ReferenceCountUtil.release(msg);
     throw new IllegalStateException("Invalid object " + msg);
   };
 
@@ -602,9 +601,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   public void handleMessage(Object msg) {
     Throwable error = validateMessage(msg);
     if (error != null) {
-      if (msg instanceof ReferenceCounted) {
-        ((ReferenceCounted) msg).release();
-      }
+      ReferenceCountUtil.release(msg);
       fail(error);
     } else if (msg instanceof HttpObject) {
       handleHttpMessage((HttpObject) msg);
@@ -729,9 +726,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     // this happens when the channel reads the HTTP response and the following data in a single buffer
     Handler<Object> prev = invalidMessageHandler;
     invalidMessageHandler = msg -> {
-      if (msg instanceof ReferenceCounted) {
-        ((ReferenceCounted) msg).release();
-      }
+      ReferenceCountUtil.release(msg);
     };
     try {
       pipeline.remove("codec");
