@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -185,6 +186,11 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
 
   Object trace() {
     return trace;
+  }
+
+  @Override
+  public Context context() {
+    return context;
   }
 
   @Override

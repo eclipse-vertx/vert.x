@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -445,5 +446,10 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
 	default HttpServerRequest routed(String route) {
 	  return this;
   }
+
+  /**
+   * @return the Vert.x context associated with this server request
+   */
+  Context context();
 
 }

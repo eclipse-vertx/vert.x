@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -262,6 +263,11 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     if (ended) {
       throw new IllegalStateException("Request has already been read");
     }
+  }
+
+  @Override
+  public Context context() {
+    return context;
   }
 
   @Override

@@ -3161,6 +3161,7 @@ public abstract class HttpTest extends HttpTestBase {
         server.requestHandler(req -> {
           req.response().end();
           assertSameEventLoop(ctx, Vertx.currentContext());
+          assertSame(req.context(), Vertx.currentContext());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
