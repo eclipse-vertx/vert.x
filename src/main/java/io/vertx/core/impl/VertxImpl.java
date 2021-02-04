@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -1069,15 +1069,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     @Override
     void close() {
-      synchronized (VertxImpl.this) {
-        if (refCount > 0) {
-          refCount = 0;
-          super.close();
-        }
-      }
-    }
-
-    void release() {
       synchronized (VertxImpl.this) {
         if (--refCount == 0) {
           namedWorkerPools.remove(name);
