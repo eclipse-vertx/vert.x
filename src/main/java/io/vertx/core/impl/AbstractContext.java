@@ -18,6 +18,7 @@ import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
 import java.util.List;
+import java.util.function.Function;
 
 import static io.vertx.core.impl.VertxThread.DISABLE_TCCL;
 
@@ -227,4 +228,19 @@ abstract class AbstractContext implements ContextInternal {
       fut.onFailure(ctx::reportException);
     }
   }
+
+  abstract void runOnContext(AbstractContext ctx, Handler<Void> action);
+
+  abstract <T> void execute(AbstractContext ctx, Runnable task);
+
+  abstract <T> void execute(AbstractContext ctx, T argument, Handler<T> task);
+
+  abstract <T> void emit(AbstractContext ctx, T argument, Handler<T> task);
+
+  @Override
+  public ContextInternal substitute(Function<ContextInternal, ContextSubstitution> builder) {
+    return new SubstitutedContext(this, builder);
+  }
+
+  abstract AbstractContext root();
 }

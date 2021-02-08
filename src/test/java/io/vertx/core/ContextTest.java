@@ -513,12 +513,12 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testDuplicateWorkerConcurrency() throws Exception {
+  public void testTaskQueueSubstituteWorkerConcurrency() throws Exception {
     ContextInternal ctx = createWorkerContext();
-    ContextInternal dup1 = ctx.duplicate();
-    ContextInternal dup2 = ctx.duplicate();
+    ContextInternal sub1 = ctx.substitute(ContextSubstitution.TASK_QUEUE);
+    ContextInternal sub2 = ctx.substitute(ContextSubstitution.TASK_QUEUE);
     CyclicBarrier barrier = new CyclicBarrier(3);
-    dup1.runOnContext(v -> {
+    sub1.runOnContext(v -> {
       assertTrue(Context.isOnWorkerThread());
       try {
         barrier.await(10, TimeUnit.SECONDS);
@@ -526,7 +526,7 @@ public class ContextTest extends VertxTestBase {
         fail(e);
       }
     });
-    dup2.runOnContext(v -> {
+    sub2.runOnContext(v -> {
       assertTrue(Context.isOnWorkerThread());
       try {
         barrier.await(10, TimeUnit.SECONDS);
@@ -538,20 +538,20 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testDuplicateEventLoopExecuteBlocking() throws Exception {
-    testDuplicateExecuteBlocking((ContextInternal) vertx.getOrCreateContext());
+  public void testTaskQueueSubstituteEventLoopExecuteBlocking() throws Exception {
+    testTaskQueueSubstituteExecuteBlocking((ContextInternal) vertx.getOrCreateContext());
   }
 
   @Test
-  public void testDuplicateWorkerExecuteBlocking() throws Exception {
-    testDuplicateExecuteBlocking(createWorkerContext());
+  public void testTaskQueueSubstituteWorkerExecuteBlocking() throws Exception {
+    testTaskQueueSubstituteExecuteBlocking(createWorkerContext());
   }
 
-  private void testDuplicateExecuteBlocking(ContextInternal ctx) throws Exception {
-    ContextInternal dup1 = ctx.duplicate();
-    ContextInternal dup2 = ctx.duplicate();
+  private void testTaskQueueSubstituteExecuteBlocking(ContextInternal ctx) throws Exception {
+    ContextInternal sub1 = ctx.substitute(ContextSubstitution.TASK_QUEUE);
+    ContextInternal sub2 = ctx.substitute(ContextSubstitution.TASK_QUEUE);
     CyclicBarrier barrier = new CyclicBarrier(3);
-    dup1.executeBlocking(p -> {
+    sub1.executeBlocking(p -> {
       assertTrue(Context.isOnWorkerThread());
       try {
         barrier.await(10, TimeUnit.SECONDS);
@@ -560,7 +560,7 @@ public class ContextTest extends VertxTestBase {
       }
       p.complete();
     });
-    dup2.executeBlocking(p -> {
+    sub2.executeBlocking(p -> {
       assertTrue(Context.isOnWorkerThread());
       try {
         barrier.await(10, TimeUnit.SECONDS);
@@ -573,21 +573,21 @@ public class ContextTest extends VertxTestBase {
   }
 
   @Test
-  public void testDuplicateEventLoopExecuteBlockingOrdering() {
-    testDuplicateExecuteBlockingOrdering((ContextInternal) vertx.getOrCreateContext());
+  public void testTaskQueueSubstituteEventLoopExecuteBlockingOrdering() {
+    testTaskQueueSubstituteExecuteBlockingOrdering((ContextInternal) vertx.getOrCreateContext());
   }
 
   @Test
-  public void testDuplicateWorkerExecuteBlockingOrdering() {
-    testDuplicateExecuteBlockingOrdering(createWorkerContext());
+  public void testTaskQueueSubstituteWorkerExecuteBlockingOrdering() {
+    testTaskQueueSubstituteExecuteBlockingOrdering(createWorkerContext());
   }
 
-  private void testDuplicateExecuteBlockingOrdering(ContextInternal context) {
+  private void testTaskQueueSubstituteExecuteBlockingOrdering(ContextInternal context) {
     List<Consumer<Handler<Promise<Object>>>> lst = new ArrayList<>();
     for (int i = 0;i < 2;i++) {
-      ContextInternal duplicate = context.duplicate();
+      ContextInternal substitute = context.substitute(ContextSubstitution.TASK_QUEUE);
       lst.add(task -> {
-        duplicate.executeBlocking(task, ar -> {});
+        substitute.executeBlocking(task, ar -> {});
       });
     }
     testInternalExecuteBlockingWithQueue(lst);

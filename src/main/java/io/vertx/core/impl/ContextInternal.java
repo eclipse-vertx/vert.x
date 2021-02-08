@@ -18,6 +18,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -240,30 +241,65 @@ public interface ContextInternal extends Context {
   WorkerPool workerPool();
 
   /**
+   * @return the context internal worker pool
+   */
+  WorkerPool workerPoolInternal();
+
+  /**
+   * @return the context task queue
+   */
+  TaskQueue orderedTasks();
+
+  /**
+   * @return the context internal task queue
+   */
+  TaskQueue orderedTasksInternal();
+
+  /**
    * @return the tracer for this context
    */
   VertxTracer tracer();
 
   /**
-   * Returns a context sharing with this context
+   * @return a context that maintains separate local data and forwards all operations to this context
+   */
+  ContextInternal duplicate();
+
+  /**
+   * @return the delegate of this duplicated context or this if not a duplicated context
+   */
+  ContextInternal duplicateDelegate();
+
+  /**
+   * Returns a substitute of this context
    * <ul>
    *   <li>the same concurrency</li>
    *   <li>the same exception handler</li>
-   *   <li>the same context data</li>
    *   <li>the same deployment</li>
    *   <li>the same config</li>
    *   <li>the same classloader</li>
    * </ul>
    * <p>
-   * The duplicate context has its own
+   * The substitute might have its own
    * <ul>
-   *   <li>local context data</li>
-   *   <li>worker task queue</li>
+   *   <li>context data</li>
+   *   <li>worker pool (includes internal)</li>
+   *   <li>blocking task queues (includes internal)</li>
    * </ul>
+   * </p>
+   * The substitute will have its own local context data
+   *
+   * Using substitutes should be avoided if at all possible as they break many of the assumption that surround contexts
+   * in vertx. Handlers that return a substituted context should always be documented to avoid end user issues.
    *
    * @return a duplicate of this context
    */
-  ContextInternal duplicate();
+  ContextInternal substitute(Function<ContextInternal, ContextSubstitution> builder);
+
+  /**
+   * @return the delegate of this substituted context or {@code null} if there is no parent
+   */
+  ContextInternal substituteParent();
 
   /**
    * Like {@link Vertx#setPeriodic(long, Handler)} except the periodic timer will fire on this context.

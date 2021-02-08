@@ -21,35 +21,30 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
- * A context that forwards most operations to a delegate. This context
- *
- * <ul>
- *   <li>maintains its own ordered task queue, ordered execute blocking are ordered on this
- *  context instead of the delegate.</li>
- *  <li>maintains its own local data instead of the delegate.</li>
- * </ul>
+ * A context that maintains separate local data and forwards all operations to a delegate.
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class DuplicatedContext extends AbstractContext {
+final class DuplicatedContext extends AbstractContext {
 
-  protected final ContextImpl delegate;
-  private TaskQueue orderedTasks;
+  private final AbstractContext delegate;
   private ConcurrentMap<Object, Object> localData;
 
-  DuplicatedContext(ContextImpl delegate) {
+  DuplicatedContext(AbstractContext delegate) {
     this.delegate = delegate;
   }
 
-  final TaskQueue orderedTasks() {
-    synchronized (this) {
-      if (orderedTasks == null) {
-        orderedTasks = new TaskQueue();
-      }
-      return orderedTasks;
-    }
+  @Override
+  public final TaskQueue orderedTasks() {
+    return this.delegate.orderedTasks();
+  }
+
+  @Override
+  public final TaskQueue orderedTasksInternal() {
+    return this.delegate.orderedTasksInternal();
   }
 
   @Override
@@ -134,6 +129,11 @@ class DuplicatedContext extends AbstractContext {
   }
 
   @Override
+  public WorkerPool workerPoolInternal() {
+    return this.delegate.workerPoolInternal();
+  }
+
+  @Override
   public final void reportException(Throwable t) {
     delegate.reportException(t);
   }
@@ -144,39 +144,31 @@ class DuplicatedContext extends AbstractContext {
   }
 
   @Override
-  public final ConcurrentMap<Object, Object> localContextData() {
-    synchronized (this) {
-      if (localData == null) {
-        localData = new ConcurrentHashMap<>();
-      }
-      return localData;
+  public final synchronized ConcurrentMap<Object, Object> localContextData() {
+    if(localData == null) {
+      localData = new ConcurrentHashMap<>();
     }
+    return localData;
   }
 
   @Override
   public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
-    return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, delegate.internalOrderedTasks);
+    return ContextImpl.executeBlocking(this, action, delegate.workerPoolInternal(), delegate.orderedTasksInternal());
   }
 
   @Override
   public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
-    return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, ordered ? delegate.internalOrderedTasks : null);
+    return ContextImpl.executeBlocking(this, action, delegate.workerPoolInternal(), ordered ? delegate.orderedTasksInternal() : null);
   }
 
   @Override
   public final <T> Future<T> executeBlocking(Handler<Promise<T>> action, boolean ordered) {
-    TaskQueue queue;
-    if (ordered) {
-      queue = orderedTasks();
-    } else {
-      queue = null;
-    }
-    return ContextImpl.executeBlocking(this, action, delegate.workerPool, queue);
+    return ContextImpl.executeBlocking(this, action, delegate.workerPool(), ordered ? this.orderedTasks() : null);
   }
 
   @Override
   public final <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
-    return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
+    return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool(), queue);
   }
 
   @Override
@@ -185,8 +177,18 @@ class DuplicatedContext extends AbstractContext {
   }
 
   @Override
+  void runOnContext(AbstractContext ctx, Handler<Void> action) {
+    delegate.runOnContext(ctx, action);
+  }
+
+  @Override
   public final <T> void execute(T argument, Handler<T> task) {
     delegate.execute(this, argument, task);
+  }
+
+  @Override
+  <T> void execute(AbstractContext ctx, T argument, Handler<T> task) {
+    delegate.execute(ctx, argument, task);
   }
 
   @Override
@@ -195,18 +197,47 @@ class DuplicatedContext extends AbstractContext {
   }
 
   @Override
+  <T> void emit(AbstractContext ctx, T argument, Handler<T> task) {
+    delegate.emit(ctx, argument, task);
+  }
+
+  @Override
   public void execute(Runnable task) {
     delegate.execute(this, task);
   }
 
   @Override
-  public boolean isEventLoopContext() {
+  <T> void execute(AbstractContext ctx, Runnable task) {
+    delegate.execute(ctx, task);
+  }
+
+  @Override
+  public final boolean isEventLoopContext() {
     return delegate.isEventLoopContext();
   }
 
   @Override
-  public ContextInternal duplicate() {
-    return new DuplicatedContext(delegate);
+  public final ContextInternal duplicate() {
+    return new DuplicatedContext(this.delegate);
   }
 
+  @Override
+  public final ContextInternal substitute(Function<ContextInternal, ContextSubstitution> builder) {
+    return new SubstitutedContext(this.delegate, builder);
+  }
+
+  @Override
+  public final ContextInternal substituteParent() {
+    return this.delegate.substituteParent();
+  }
+
+  @Override
+  public final ContextInternal duplicateDelegate() {
+    return this.delegate;
+  }
+
+  @Override
+  final AbstractContext root() {
+    return this.delegate.root();
+  }
 }

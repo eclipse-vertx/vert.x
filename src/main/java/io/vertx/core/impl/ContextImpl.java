@@ -65,10 +65,10 @@ abstract class ContextImpl extends AbstractContext {
   private ConcurrentMap<Object, Object> data;
   private ConcurrentMap<Object, Object> localData;
   private volatile Handler<Throwable> exceptionHandler;
-  final TaskQueue internalOrderedTasks;
-  final WorkerPool internalBlockingPool;
-  final WorkerPool workerPool;
-  final TaskQueue orderedTasks;
+  private final TaskQueue internalOrderedTasks;
+  private final WorkerPool internalBlockingPool;
+  private final WorkerPool workerPool;
+  private final TaskQueue orderedTasks;
 
   ContextImpl(VertxInternal vertx,
               VertxTracer<?, ?> tracer,
@@ -217,6 +217,21 @@ abstract class ContextImpl extends AbstractContext {
   }
 
   @Override
+  public WorkerPool workerPoolInternal() {
+    return this.internalBlockingPool;
+  }
+
+  @Override
+  public TaskQueue orderedTasks() {
+    return this.orderedTasks;
+  }
+
+  @Override
+  public TaskQueue orderedTasksInternal() {
+    return this.internalOrderedTasks;
+  }
+
+  @Override
   public synchronized ConcurrentMap<Object, Object> contextData() {
     if (data == null) {
       data = new ConcurrentHashMap<>();
@@ -273,31 +288,38 @@ abstract class ContextImpl extends AbstractContext {
     runOnContext(this, action);
   }
 
-  abstract void runOnContext(AbstractContext ctx, Handler<Void> action);
-
   @Override
   public void execute(Runnable task) {
     execute(this, task);
   }
-
-  abstract <T> void execute(AbstractContext ctx, Runnable task);
 
   @Override
   public final <T> void execute(T argument, Handler<T> task) {
     execute(this, argument, task);
   }
 
-  abstract <T> void execute(AbstractContext ctx, T argument, Handler<T> task);
-
   @Override
   public <T> void emit(T argument, Handler<T> task) {
     emit(this, argument, task);
   }
 
-  abstract <T> void emit(AbstractContext ctx, T argument, Handler<T> task);
-
   @Override
   public final ContextInternal duplicate() {
     return new DuplicatedContext(this);
+  }
+
+  @Override
+  public ContextInternal substituteParent() {
+    return null;
+  }
+
+  @Override
+  public AbstractContext root() {
+    return this;
+  }
+
+  @Override
+  public ContextInternal duplicateDelegate() {
+    return this;
   }
 }

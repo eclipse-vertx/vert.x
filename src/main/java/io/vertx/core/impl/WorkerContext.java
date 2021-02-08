@@ -37,13 +37,7 @@ public class WorkerContext extends ContextImpl {
   @Override
   void runOnContext(AbstractContext ctx, Handler<Void> action) {
     try {
-      TaskQueue orderedTasks;
-      if (ctx instanceof DuplicatedContext) {
-        orderedTasks = ((DuplicatedContext)ctx).orderedTasks();
-      } else {
-        orderedTasks = this.orderedTasks;
-      }
-      run(ctx, orderedTasks, null, action);
+      run(ctx, ctx.orderedTasks(), null, action);
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }
@@ -57,24 +51,12 @@ public class WorkerContext extends ContextImpl {
    */
   @Override
   <T> void execute(AbstractContext ctx, T argument, Handler<T> task) {
-    TaskQueue orderedTasks;
-    if (ctx instanceof DuplicatedContext) {
-      orderedTasks = ((DuplicatedContext)ctx).orderedTasks();
-    } else {
-      orderedTasks = this.orderedTasks;
-    }
-    execute(orderedTasks, argument, task);
+    execute(ctx.orderedTasks(), argument, task);
   }
 
   @Override
   <T> void emit(AbstractContext ctx, T argument, Handler<T> task) {
-    TaskQueue orderedTasks;
-    if (ctx instanceof DuplicatedContext) {
-      orderedTasks = ((DuplicatedContext)ctx).orderedTasks();
-    } else {
-      orderedTasks = this.orderedTasks;
-    }
-    execute(orderedTasks, argument, arg -> {
+    execute(ctx.orderedTasks(), argument, arg -> {
       ctx.dispatch(arg, task);
     });
   }
@@ -91,7 +73,7 @@ public class WorkerContext extends ContextImpl {
 
   private <T> void run(ContextInternal ctx, TaskQueue queue, T value, Handler<T> task) {
     Objects.requireNonNull(task, "Task handler must not be null");
-    PoolMetrics metrics = workerPool.metrics();
+    PoolMetrics metrics = this.workerPool().metrics();
     Object queueMetric = metrics != null ? metrics.submitted() : null;
     queue.execute(() -> {
       Object execMetric = null;
@@ -105,14 +87,14 @@ public class WorkerContext extends ContextImpl {
           metrics.end(execMetric, true);
         }
       }
-    }, workerPool.executor());
+    }, this.workerPool().executor());
   }
 
   private <T> void execute(TaskQueue queue, T argument, Handler<T> task) {
     if (Context.isOnWorkerThread()) {
       task.handle(argument);
     } else {
-      PoolMetrics metrics = workerPool.metrics();
+      PoolMetrics metrics = this.workerPool().metrics();
       Object queueMetric = metrics != null ? metrics.submitted() : null;
       queue.execute(() -> {
         Object execMetric = null;
@@ -126,7 +108,7 @@ public class WorkerContext extends ContextImpl {
             metrics.end(execMetric, true);
           }
         }
-      }, workerPool.executor());
+      }, this.workerPool().executor());
     }
   }
 
