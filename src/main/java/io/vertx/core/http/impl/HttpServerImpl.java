@@ -16,6 +16,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.ContextSubstitution;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -204,7 +205,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
 
     HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestStream.handler, wsStream.handler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
-    Supplier<ContextInternal> streamContextSupplier = listenContext::duplicate;
+    Supplier<ContextInternal> streamContextSupplier = () -> listenContext.substitute(ContextSubstitution.TASK_QUEUE);
     Handler<Channel> channelHandler = childHandler(connContext, streamContextSupplier, hello, exceptionHandler, address, serverOrigin);
     io.netty.util.concurrent.Future<Channel> bindFuture = listen(address, listenContext, channelHandler);
 
