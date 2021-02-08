@@ -237,6 +237,7 @@ public class VertxCommandLauncher extends UsageMessageFormatter {
         context.put("Main", main);
         context.put("Main-Class", main.getClass().getName());
         context.put("Default-Verticle-Factory", getFromManifest("Default-Verticle-Factory"));
+        context.put("Main-Verticle", getMainVerticle());
       }
 
       CLIConfigurator.inject(evaluated, cmd);
