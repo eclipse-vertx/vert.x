@@ -59,7 +59,7 @@ import java.util.AbstractMap;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequestImpl extends Http2ServerStream implements HttpServerRequest, io.vertx.core.spi.observability.HttpRequest {
+public class Http2ServerRequest extends Http2ServerStream implements HttpServerRequest, io.vertx.core.spi.observability.HttpRequest {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 
@@ -83,13 +83,13 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private Handler<HttpFrame> customFrameHandler;
   private Handler<StreamPriority> streamPriorityHandler;
 
-  Http2ServerRequestImpl(Http2ServerConnection conn,
-                         TracingPolicy tracingPolicy,
-                         ContextInternal context,
-                         String serverOrigin,
-                         Http2Headers headers,
-                         String contentEncoding,
-                         boolean streamEnded) {
+  Http2ServerRequest(Http2ServerConnection conn,
+                     TracingPolicy tracingPolicy,
+                     ContextInternal context,
+                     String serverOrigin,
+                     Http2Headers headers,
+                     String contentEncoding,
+                     boolean streamEnded) {
     super(conn, context, headers, contentEncoding, serverOrigin);
 
     String scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
@@ -372,7 +372,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
-  public Http2ServerResponseImpl response() {
+  public Http2ServerResponse response() {
     return response;
   }
 

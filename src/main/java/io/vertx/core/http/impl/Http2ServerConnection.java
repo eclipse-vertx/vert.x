@@ -99,10 +99,10 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     return false;
   }
 
-  private Http2ServerRequestImpl createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
+  private Http2ServerRequest createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
     Http2Stream stream = handler.connection().stream(streamId);
     String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
-    Http2ServerRequestImpl request = new Http2ServerRequestImpl(this, options.getTracingPolicy(), streamContextSupplier.get(), serverOrigin, headers, contentEncoding, streamEnded);
+    Http2ServerRequest request = new Http2ServerRequest(this, options.getTracingPolicy(), streamContextSupplier.get(), serverOrigin, headers, contentEncoding, streamEnded);
     request.isConnect = request.method() == HttpMethod.CONNECT;
     request.init(stream);
     return request;
