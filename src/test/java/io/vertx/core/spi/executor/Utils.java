@@ -18,6 +18,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 
+import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
@@ -44,14 +45,16 @@ public class Utils {
    * Set up some typesafe tokens for the testcases to refer to ExecutorService
    * methods
    */
-  static Method EXECUTE = null;
-  static Method SHUTDOWN_NOW = null;
+  static Method EXECUTE;
+  static Method SHUTDOWN_NOW;
   static {
     try {
       EXECUTE = ExecutorService.class.getMethod("execute", Runnable.class);
       SHUTDOWN_NOW = ExecutorService.class.getMethod("shutdownNow");
     } catch (NoSuchMethodException | SecurityException e) {
-      throw new IllegalStateException(e);
+      // Set these both null, tests that use them will fail
+      EXECUTE = null;
+      SHUTDOWN_NOW = null;
     }
   }
 
@@ -81,6 +84,7 @@ public class Utils {
     RuleChain chain = RuleChain.emptyRuleChain();
 
     for (Method method : meth) {
+      Assert.assertNotNull(method);
       LogContainsRule rule = executorMethodLogged(executor, method.getName());
       chain = chain.around(rule);
     }
