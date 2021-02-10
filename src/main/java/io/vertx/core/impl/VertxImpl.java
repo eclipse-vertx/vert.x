@@ -1133,10 +1133,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return runnable -> {
       VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
       checker.registerThread(thread, thread);
-      // Vert.x threads are NOT daemons - we want them to prevent JVM exit so embededd user doesn't
+      // Vert.x threads are NOT daemons - we want them to prevent JVM exit so embedded user doesn't
       // have to explicitly prevent JVM from exiting.
-      // I know the default is false anyway, but just to be explicit-  Vert.x threads are NOT daemons
-      // we want to prevent the JVM from exiting until Vert.x instances are closed
       thread.setDaemon(false);
       return thread;
     };
