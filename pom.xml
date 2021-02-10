@@ -653,6 +653,25 @@
               </classpathDependencyExcludes>
             </configuration>
           </execution>
+          <execution>
+            <id>vertx-thread-factory</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/VertxThreadFactoryTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+              </systemProperties>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/threadfactory</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
         </executions>
         <dependencies>
           <dependency>

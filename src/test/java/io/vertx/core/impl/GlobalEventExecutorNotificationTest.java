@@ -60,7 +60,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
           throw cause;
         };
       }
-    }).vertx();
+    }).init().vertx();
 
     vertx.createNetServer().connectHandler(so -> {
       fail();
@@ -83,7 +83,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
           throw cause;
         };
       }
-    }).vertx();
+    }).init().vertx();
 
     vertx.createNetServer()
       .connectHandler(so -> fail())
@@ -103,7 +103,7 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
           throw cause;
         };
       }
-    }).vertx();
+    }).init().vertx();
 
     vertx.createHttpServer()
       .requestHandler(req -> fail())
