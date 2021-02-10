@@ -18,6 +18,7 @@ import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxServiceProvider;
+import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
@@ -28,7 +29,6 @@ import io.vertx.core.tracing.TracingOptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
 
 /**
  * Vertx builder for creating vertx instances with SPI overrides.
@@ -43,6 +43,7 @@ public class VertxBuilder {
   private ClusterManager clusterManager;
   private NodeSelector clusterNodeSelector;
   private VertxTracer tracer;
+  private VertxThreadFactory threadFactory;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
 
@@ -159,6 +160,23 @@ public class VertxBuilder {
   }
 
   /**
+   * @return the {@code VertxThreadFactory} to use
+   */
+  public VertxThreadFactory threadFactory() {
+    return threadFactory;
+  }
+
+  /**
+   * Set the {@code VertxThreadFactory} instance to use.
+   * @param factory the metrics
+   * @return this builder instance
+   */
+  public VertxBuilder threadFactory(VertxThreadFactory factory) {
+    this.threadFactory = factory;
+    return this;
+  }
+
+  /**
    * Build and return the vertx instance
    */
   public Vertx vertx() {
@@ -169,7 +187,8 @@ public class VertxBuilder {
       metrics,
       tracer,
       transport,
-      fileResolver);
+      fileResolver,
+      threadFactory);
     vertx.init();
     return vertx;
   }
@@ -188,7 +207,8 @@ public class VertxBuilder {
       metrics,
       tracer,
       transport,
-      fileResolver);
+      fileResolver,
+      threadFactory);
     vertx.initClustered(options, handler);
   }
 
@@ -205,6 +225,7 @@ public class VertxBuilder {
     initClusterManager(options, providers);
     providers.addAll(ServiceHelper.loadFactories(VertxServiceProvider.class));
     initProviders(providers);
+    initThreadFactory();
     return this;
   }
 
@@ -265,5 +286,12 @@ public class VertxBuilder {
       return;
     }
     fileResolver = new FileResolver(options.getFileSystemOptions());
+  }
+
+  private void initThreadFactory() {
+    if (threadFactory != null) {
+      return;
+    }
+    threadFactory = VertxThreadFactory.INSTANCE;
   }
 }
