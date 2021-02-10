@@ -23,7 +23,7 @@ public class BenchmarkContext extends ContextImpl {
     VertxImpl impl = (VertxImpl) vertx;
     return new BenchmarkContext(
       impl,
-      impl.internalBlockingPool,
+      impl.internalWorkerPool,
       impl.workerPool,
       Thread.currentThread().getContextClassLoader()
     );
