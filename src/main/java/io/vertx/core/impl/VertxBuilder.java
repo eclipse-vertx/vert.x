@@ -159,12 +159,20 @@ public class VertxBuilder {
     return this;
   }
 
+  /**
+   * @return the {@code VertxThreadFactory} to use
+   */
   public VertxThreadFactory threadFactory() {
     return threadFactory;
   }
 
-  public VertxBuilder threadFactory(VertxThreadFactory provider) {
-    this.threadFactory = provider;
+  /**
+   * Set the {@code VertxThreadFactory} instance to use.
+   * @param factory the metrics
+   * @return this builder instance
+   */
+  public VertxBuilder threadFactory(VertxThreadFactory factory) {
+    this.threadFactory = factory;
     return this;
   }
 
