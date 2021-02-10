@@ -16,6 +16,7 @@ import io.vertx.core.file.impl.FileResolver;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxServiceProvider;
 import io.vertx.core.spi.VertxThreadFactory;
@@ -44,6 +45,7 @@ public class VertxBuilder {
   private NodeSelector clusterNodeSelector;
   private VertxTracer tracer;
   private VertxThreadFactory threadFactory;
+  private ExecutorServiceFactory executorServiceFactory;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
 
@@ -177,6 +179,23 @@ public class VertxBuilder {
   }
 
   /**
+   * @return the {@code ExecutorServiceFactory} to use
+   */
+  public ExecutorServiceFactory executorServiceFactory() {
+    return executorServiceFactory;
+  }
+
+  /**
+   * Set the {@code ExecutorServiceFactory} instance to use.
+   * @param factory the factory
+   * @return this builder instance
+   */
+  public VertxBuilder executorServiceFactory(ExecutorServiceFactory factory) {
+    this.executorServiceFactory = factory;
+    return this;
+  }
+
+  /**
    * Build and return the vertx instance
    */
   public Vertx vertx() {
@@ -188,7 +207,8 @@ public class VertxBuilder {
       tracer,
       transport,
       fileResolver,
-      threadFactory);
+      threadFactory,
+      executorServiceFactory);
     vertx.init();
     return vertx;
   }
@@ -208,7 +228,8 @@ public class VertxBuilder {
       tracer,
       transport,
       fileResolver,
-      threadFactory);
+      threadFactory,
+      executorServiceFactory);
     vertx.initClustered(options, handler);
   }
 
@@ -226,6 +247,7 @@ public class VertxBuilder {
     providers.addAll(ServiceHelper.loadFactories(VertxServiceProvider.class));
     initProviders(providers);
     initThreadFactory();
+    initExecutorServiceFactory();
     return this;
   }
 
@@ -293,5 +315,12 @@ public class VertxBuilder {
       return;
     }
     threadFactory = VertxThreadFactory.INSTANCE;
+  }
+
+  private void initExecutorServiceFactory() {
+    if (executorServiceFactory != null) {
+      return;
+    }
+    executorServiceFactory = ExecutorServiceFactory.INSTANCE;
   }
 }
