@@ -56,6 +56,7 @@ import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxThreadFactoryProvider;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.executor.ExecutorServiceFactory;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.PoolMetrics;
@@ -131,6 +132,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final CloseHooks closeHooks;
   private final Transport transport;
   private final VertxThreadFactoryProvider threadFactoryProvider;
+  private ExecutorServiceFactory executorFactory;
 
   private VertxImpl(VertxOptions options, Transport transport) {
     // Sanity check
@@ -140,6 +142,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     closeHooks = new CloseHooks(log);
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
     threadFactoryProvider = ServiceHelper.loadFactoryOrNull(VertxThreadFactoryProvider.class);
+    executorFactory = ServiceHelper.loadFactoryOrNull(ExecutorServiceFactory.class);
+    if (executorFactory == null)
+      executorFactory = new DefaultExecutorServiceFactory();
     maxEventLoopExTime = options.getMaxEventLoopExecuteTime();
     maxEventLoopExecTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
     eventLoopThreadFactory = createVertxThreadFactory("vert.x-eventloop-thread-", checker, false, maxEventLoopExTime, maxEventLoopExecTimeUnit);
@@ -152,12 +157,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     metrics = initialiseMetrics(options);
 
     int workerPoolSize = options.getWorkerPoolSize();
-    ExecutorService workerExec = new ThreadPoolExecutor(workerPoolSize, workerPoolSize,
-      0L, TimeUnit.MILLISECONDS, new LinkedTransferQueue<>(),
-      createVertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
+    ExecutorService workerExec = executorFactory.createExecutor(createVertxThreadFactory("vert.x-worker-thread-", checker, true,
+        options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()), workerPoolSize, workerPoolSize);
     PoolMetrics workerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
-    ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
-        createVertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
+    ExecutorService internalBlockingExec = executorFactory.createExecutor(createVertxThreadFactory("vert.x-internal-blocking-", checker,
+        true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()), options.getInternalBlockingPoolSize(),
+        options.getInternalBlockingPoolSize());
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
     internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
@@ -1082,6 +1087,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
   }
 
+  public class DefaultExecutorServiceFactory implements ExecutorServiceFactory {
+    @Override
+    public ExecutorService createExecutor(ThreadFactory threadFactory, Integer concurrency, Integer maxConcurrency) {
+      return Executors.newFixedThreadPool(maxConcurrency, threadFactory);
+    }
+  }
+
   @Override
   public WorkerExecutorImpl createSharedWorkerExecutor(String name) {
     return createSharedWorkerExecutor(name, defaultWorkerPoolSize);
@@ -1107,7 +1119,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
     if (sharedWorkerPool == null) {
-      ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, createVertxThreadFactory(name + "-", checker, true, maxExecuteTime, maxExecuteTimeUnit));
+      ExecutorService workerExec = executorFactory
+          .createExecutor(createVertxThreadFactory(name + "-", checker, true, maxExecuteTime, maxExecuteTimeUnit), poolSize, poolSize);
       PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
       namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
     } else {

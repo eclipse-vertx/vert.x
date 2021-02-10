@@ -571,6 +571,62 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>test-service-helper</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <configuration>
+              <compileSourceRoots>
+                <compileSourceRoot>src/test/classpath/servicehelper</compileSourceRoot>
+              </compileSourceRoots>
+              <outputDirectory>${project.build.directory}/classpath/servicehelper</outputDirectory>
+            </configuration>
+          </execution>
+          <execution>
+            <id>test-classpath-handler</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <configuration>
+              <compileSourceRoots>
+                  <compileSourceRoot>src/test/classpath/verticle</compileSourceRoot>
+              </compileSourceRoots>
+              <outputDirectory>${project.build.directory}/classpath/verticle</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-service-helper</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/classpath/servicehelper</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/test/classpath/servicehelper</directory>
+                  <includes>
+                    <include>META-INF/**</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>     
+      </plugin>
     </plugins>
 
     <resources>
