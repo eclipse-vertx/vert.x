@@ -3195,7 +3195,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testWorkerServer() throws Exception {
     int numReq = 5; // 5 == the HTTP/1 pool max size
     waitFor(numReq);
-    CyclicBarrier barrier = new CyclicBarrier(numReq);
+    AtomicBoolean owner = new AtomicBoolean();
     CountDownLatch latch = new CountDownLatch(1);
     AtomicInteger connCount = new AtomicInteger();
     vertx.deployVerticle(() -> new AbstractVerticle() {
@@ -3207,9 +3207,12 @@ public abstract class HttpTest extends HttpTestBase {
             assertTrue(current.isWorkerContext());
             assertSameEventLoop(context, current);
             try {
-              barrier.await(20, TimeUnit.SECONDS);
+              assertTrue(owner.compareAndSet(false, true));
+              Thread.sleep(200);
             } catch (Exception e) {
               fail(e);
+            } finally {
+              owner.set(false);
             }
             req.response().end("pong");
           }).connectionHandler(conn -> {
