@@ -22,8 +22,10 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -514,28 +516,36 @@ public class ContextTest extends VertxTestBase {
 
   @Test
   public void testDuplicateWorkerConcurrency() throws Exception {
-    ContextInternal ctx = createWorkerContext();
-    ContextInternal dup1 = ctx.duplicate();
-    ContextInternal dup2 = ctx.duplicate();
-    CyclicBarrier barrier = new CyclicBarrier(3);
-    dup1.runOnContext(v -> {
-      assertTrue(Context.isOnWorkerThread());
-      try {
-        barrier.await(10, TimeUnit.SECONDS);
-      } catch (Exception e) {
-        fail(e);
-      }
-    });
-    dup2.runOnContext(v -> {
-      assertTrue(Context.isOnWorkerThread());
-      try {
-        barrier.await(10, TimeUnit.SECONDS);
-      } catch (Exception e) {
-        fail(e);
-      }
-    });
-    barrier.await(10, TimeUnit.SECONDS);
+    testDuplicateWorkerConcurrency((ctx, task) -> ctx.runOnContext(v -> task.run()));
+    testDuplicateWorkerConcurrency((ctx, task) -> ctx.execute(v -> task.run()));
+    testDuplicateWorkerConcurrency((ctx, task) -> ctx.execute(null, v -> task.run()));
+    testDuplicateWorkerConcurrency(ContextInternal::execute);
+    testDuplicateWorkerConcurrency((ctx, task) -> ctx.emit(v -> task.run()));
+    testDuplicateWorkerConcurrency((ctx, task) -> ctx.emit(null, v -> task.run()));
   }
+
+  private void testDuplicateWorkerConcurrency(BiConsumer<ContextInternal, Runnable> task) throws Exception {
+    ContextInternal worker = ((VertxInternal)vertx).createWorkerContext();
+    ContextInternal[] contexts = new ContextInternal[] { worker.duplicate(), worker.duplicate()};
+    waitFor(contexts.length);
+    AtomicBoolean owner = new AtomicBoolean();
+    CountDownLatch latch = new CountDownLatch(contexts.length);
+    for (ContextInternal context : contexts) {
+      task.accept(context, () -> {
+        try {
+          assertTrue(owner.compareAndSet(false, true));
+          Thread.sleep(200);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        } finally {
+          owner.set(false);
+        }
+        latch.countDown();
+      });
+    }
+    awaitLatch(latch);
+  }
+
 
   @Test
   public void testDuplicateEventLoopExecuteBlocking() throws Exception {
