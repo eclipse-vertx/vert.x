@@ -865,7 +865,7 @@ public class ContextTest extends VertxTestBase {
   public void testFailedFutureContextPropagation2() {
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     Future<String> future = context.failedFuture("error");
-    future = future.recover(πerr -> {
+    future = future.recover(err -> {
       assertSame(context, Vertx.currentContext());
       return Future.succeededFuture("value-2");
     });
