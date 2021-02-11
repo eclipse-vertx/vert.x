@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -59,19 +59,19 @@ class WeightedRoundRobinSelector implements RoundRobinSelector {
   private final TreeMap<Integer, Integer> offsets = new TreeMap<>();
   private final Index index;
 
-  WeightedRoundRobinSelector(Map<String, Integer> weights) {
+  WeightedRoundRobinSelector(Map<String, Weight> weights) {
     List<String> uniqueIds = new ArrayList<>(weights.size());
-    List<Map.Entry<String, Integer>> sorted = new ArrayList<>(weights.entrySet());
+    List<Map.Entry<String, Weight>> sorted = new ArrayList<>(weights.entrySet());
     sorted.sort(Map.Entry.comparingByValue());
     int totalWeight = 0;
     int increment, limit;
     for (int i = 0; i < sorted.size(); i++) {
-      Map.Entry<String, Integer> current = sorted.get(i);
+      Map.Entry<String, Weight> current = sorted.get(i);
       uniqueIds.add(current.getKey());
-      int weight = current.getValue();
+      int weight = current.getValue().value();
       totalWeight += weight;
       if (i < sorted.size() - 1) {
-        increment = weight - (i == 0 ? 0 : sorted.get(i - 1).getValue());
+        increment = weight - (i == 0 ? 0 : sorted.get(i - 1).getValue().value());
         limit = (i == 0 ? 0 : offsets.lastKey()) + (weights.size() - i) * increment;
         offsets.put(limit, i + 1);
       }
