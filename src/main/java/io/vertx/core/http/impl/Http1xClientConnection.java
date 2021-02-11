@@ -570,6 +570,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
   public void handleMessage(Object msg) {
     Throwable error = validateMessage(msg);
     if (error != null) {
+      ReferenceCountUtil.release(msg);
       fail(error);
     } else if (msg instanceof HttpObject) {
       HttpObject obj = (HttpObject) msg;
@@ -577,6 +578,7 @@ class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> impleme
     } else if (msg instanceof WebSocketFrame) {
       handleWsFrame((WebSocketFrame) msg);
     } else {
+      ReferenceCountUtil.release(msg);
       throw new IllegalStateException("Invalid object " + msg);
     }
   }

@@ -491,6 +491,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void handleError(HttpObject obj) {
     DecoderResult result = obj.decoderResult();
+    ReferenceCountUtil.release(obj);
     fail(result.cause());
   }
 

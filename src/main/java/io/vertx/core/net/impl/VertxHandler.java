@@ -17,6 +17,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 
@@ -41,7 +42,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
     }
   }
 
-  private static final Handler<Object> NULL_HANDLER = m -> { };
+  private static final Handler<Object> NULL_HANDLER = ReferenceCountUtil::release;
 
   public static <C extends ConnectionBase> VertxHandler<C> create(C connection) {
     return create(connection.context, ctx -> connection);
@@ -161,6 +162,8 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
   public void channelRead(ChannelHandlerContext chctx, Object msg) throws Exception {
     if (conn.setRead()) {
       context.executeFromIO(msg, messageHandler);
+    } else {
+      ReferenceCountUtil.release(msg);
     }
   }
 
