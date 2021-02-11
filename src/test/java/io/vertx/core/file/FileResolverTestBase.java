@@ -294,32 +294,36 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   private void testCaching(boolean enabled) throws Exception {
     VertxInternal vertx = (VertxInternal) Vertx.vertx(new VertxOptions().setFileResolverCachingEnabled(enabled));
-    File tmp = File.createTempFile("vertx", ".bin");
-    tmp.deleteOnExit();
-    URL url = tmp.toURI().toURL();
-    Files.write(tmp.toPath(), "foo".getBytes());
-    ClassLoader old = Thread.currentThread().getContextClassLoader();
     try {
-      Thread.currentThread().setContextClassLoader(new ClassLoader() {
-        @Override
-        public URL getResource(String name) {
-          if ("foo".equals(name)) {
-            return url;
+      File tmp = File.createTempFile("vertx", ".bin");
+      tmp.deleteOnExit();
+      URL url = tmp.toURI().toURL();
+      Files.write(tmp.toPath(), "foo".getBytes());
+      ClassLoader old = Thread.currentThread().getContextClassLoader();
+      try {
+        Thread.currentThread().setContextClassLoader(new ClassLoader() {
+          @Override
+          public URL getResource(String name) {
+            if ("foo".equals(name)) {
+              return url;
+            }
+            return super.getResource(name);
           }
-          return super.getResource(name);
-        }
-      });
-      File f = vertx.resolveFile("foo");
-      assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
-      Files.write(tmp.toPath(), "bar".getBytes());
-      f = vertx.resolveFile("foo");
-      if (enabled) {
+        });
+        File f = vertx.resolveFile("foo");
         assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
-      } else {
-        assertEquals("bar", new String(Files.readAllBytes(f.toPath())));
+        Files.write(tmp.toPath(), "bar".getBytes());
+        f = vertx.resolveFile("foo");
+        if (enabled) {
+          assertEquals("foo", new String(Files.readAllBytes(f.toPath())));
+        } else {
+          assertEquals("bar", new String(Files.readAllBytes(f.toPath())));
+        }
+      } finally {
+        Thread.currentThread().setContextClassLoader(old);
       }
     } finally {
-      Thread.currentThread().setContextClassLoader(old);
+      vertx.close();
     }
   }
 

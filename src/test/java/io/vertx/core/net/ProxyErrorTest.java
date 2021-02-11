@@ -51,9 +51,7 @@ public class ProxyErrorTest extends VertxTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    if (dnsServer.isStarted()) {
-      dnsServer.stop();
-    }
+    dnsServer.stop();
     if (proxy!=null) {
       proxy.stop();
     }
@@ -134,17 +132,21 @@ public class ProxyErrorTest extends VertxTestBase {
             .setPort(proxy.getPort()));
     HttpClient client = vertx.createHttpClient(options);
 
-    client.getAbs(url, assertResponse)
-    .exceptionHandler(e -> {
-      if (completeOnException) {
-        testComplete();
-      } else {
-        fail(e);
-      }
-    })
-    .end();
+    try {
+      client.getAbs(url, assertResponse)
+      .exceptionHandler(e -> {
+        if (completeOnException) {
+          testComplete();
+        } else {
+          fail(e);
+        }
+      })
+      .end();
 
-    await();
+      await();
+    } finally {
+      client.close();
+    }
   }
 
 }
