@@ -518,65 +518,61 @@ public class WebSocketTest extends VertxTestBase {
     int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
     int numConnections = numServers * 100;
 
-    List<HttpServer> servers = new ArrayList<>();
-    Set<HttpServer> connectedServers = new ConcurrentHashSet<>();
-    Map<HttpServer, Integer> connectCount = new ConcurrentHashMap<>();
-
-    CountDownLatch latchListen = new CountDownLatch(numServers);
-    CountDownLatch latchConns = new CountDownLatch(numConnections);
-    for (int i = 0; i < numServers; i++) {
-      HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
-      servers.add(theServer);
-      theServer.websocketHandler(ws -> {
-        connectedServers.add(theServer);
-        Integer cnt = connectCount.get(theServer);
-        int icnt = cnt == null ? 0 : cnt;
-        icnt++;
-        connectCount.put(theServer, icnt);
-        latchConns.countDown();
-      }).listen(ar -> {
-        if (ar.succeeded()) {
-          latchListen.countDown();
-        } else {
-          fail("Failed to bind server");
-        }
-      });
-    }
-    assertTrue(latchListen.await(10, TimeUnit.SECONDS));
-
-    // Create a bunch of connections
-    CountDownLatch latchClient = new CountDownLatch(numConnections);
-    for (int i = 0; i < numConnections; i++) {
-      client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
-        ws.closeHandler(v -> latchClient.countDown());
-        ws.close();
-      }));
-    }
-
-    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
-    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
-
-    assertEquals(numServers, connectedServers.size());
-    for (HttpServer server: servers) {
-      assertTrue(connectedServers.contains(server));
-    }
-    assertEquals(numServers, connectCount.size());
-    for (int cnt: connectCount.values()) {
-      assertEquals(numConnections / numServers, cnt);
-    }
-
     CountDownLatch closeLatch = new CountDownLatch(numServers);
+    List<HttpServer> servers = new ArrayList<>();
+    try {
+      Set<HttpServer> connectedServers = new ConcurrentHashSet<>();
+      Map<HttpServer, Integer> connectCount = new ConcurrentHashMap<>();
 
-    for (HttpServer server: servers) {
-      server.close(ar -> {
-        assertTrue(ar.succeeded());
-        closeLatch.countDown();
-      });
+      CountDownLatch latchListen = new CountDownLatch(numServers);
+      CountDownLatch latchConns = new CountDownLatch(numConnections);
+      for (int i = 0; i < numServers; i++) {
+        HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
+        servers.add(theServer);
+        theServer.websocketHandler(ws -> {
+          connectedServers.add(theServer);
+          Integer cnt = connectCount.get(theServer);
+          int icnt = cnt == null ? 0 : cnt;
+          icnt++;
+          connectCount.put(theServer, icnt);
+          latchConns.countDown();
+        }).listen(ar -> {
+          if (ar.succeeded()) {
+            latchListen.countDown();
+          } else {
+            fail("Failed to bind server");
+          }
+        });
+      }
+      assertTrue(latchListen.await(10, TimeUnit.SECONDS));
+
+      // Create a bunch of connections
+      CountDownLatch latchClient = new CountDownLatch(numConnections);
+      for (int i = 0; i < numConnections; i++) {
+        client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/someuri", onSuccess(ws -> {
+          ws.closeHandler(v -> latchClient.countDown());
+          ws.close();
+        }));
+      }
+
+      assertTrue(latchClient.await(30, TimeUnit.SECONDS));
+      assertTrue(latchConns.await(30, TimeUnit.SECONDS));
+
+      assertEquals(numServers, connectedServers.size());
+      for (HttpServer server: servers) {
+        assertTrue(connectedServers.contains(server));
+      }
+      assertEquals(numServers, connectCount.size());
+      for (int cnt: connectCount.values()) {
+        assertEquals(numConnections / numServers, cnt);
+      }
+    } finally {
+      for (HttpServer server: servers) {
+        server.close(ar -> closeLatch.countDown());
+      }
     }
 
     assertTrue(closeLatch.await(10, TimeUnit.SECONDS));
-
-    testComplete();
   }
 
   @Test
@@ -586,15 +582,13 @@ public class WebSocketTest extends VertxTestBase {
     HttpServer theServer = vertx.createHttpServer(new HttpServerOptions().setPort(4321));
     theServer.websocketHandler(ws -> {
       fail("Should not connect");
-    }).listen(ar -> {
-      if (ar.succeeded()) {
-        latch.countDown();
-      } else {
-        fail("Failed to bind server");
-      }
-    });
+    }).listen(onSuccess(v -> latch.countDown()));
     awaitLatch(latch);
-    testSharedServersRoundRobin();
+    try {
+      testSharedServersRoundRobin();
+    } finally {
+      theServer.close();
+    }
   }
 
   @Test

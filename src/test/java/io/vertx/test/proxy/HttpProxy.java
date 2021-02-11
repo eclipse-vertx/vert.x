@@ -22,7 +22,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.Pump;
 
@@ -51,6 +50,8 @@ public class HttpProxy extends TestProxyBase {
   private static final Logger log = LoggerFactory.getLogger(HttpProxy.class);
 
   private HttpServer server;
+  private HttpClient client;
+  private NetClient netClient;
 
   private int error = 0;
 
@@ -71,6 +72,7 @@ public class HttpProxy extends TestProxyBase {
   public HttpProxy start(Vertx vertx) throws Exception {
     HttpServerOptions options = new HttpServerOptions();
     options.setHost("localhost").setPort(PORT);
+    netClient = vertx.createNetClient();
     server = vertx.createHttpServer(options);
     server.requestHandler(request -> {
       HttpMethod method = request.method();
@@ -109,8 +111,6 @@ public class HttpProxy extends TestProxyBase {
             request.response().setStatusCode(403).end("access to port denied");
             return;
           }
-          NetClientOptions netOptions = new NetClientOptions();
-          NetClient netClient = vertx.createNetClient(netOptions);
           netClient.connect(port, host, result -> {
             if (result.succeeded()) {
               NetSocket serverSocket = request.netSocket();
@@ -130,7 +130,7 @@ public class HttpProxy extends TestProxyBase {
         if (forceUri != null) {
           uri = forceUri;
         }
-        HttpClient client = vertx.createHttpClient();
+        client = vertx.createHttpClient();
         HttpClientRequest clientRequest = client.getAbs(uri, resp -> {
           for (String name : resp.headers().names()) {
             request.response().putHeader(name, resp.headers().getAll(name));
@@ -181,6 +181,14 @@ public class HttpProxy extends TestProxyBase {
     if (server != null) {
       server.close();
       server = null;
+    }
+    if (client != null) {
+      client.close();
+      client = null;
+    }
+    if (netClient != null) {
+      netClient.close();
+      netClient = null;
     }
   }
 
