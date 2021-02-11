@@ -81,7 +81,9 @@ public class EventLoopGroupTest extends VertxTestBase {
             @Override
             public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
               ByteBuf buf = (ByteBuf) msg;
-              assertEquals("hello", buf.toString(StandardCharsets.UTF_8));
+              String s = buf.toString(StandardCharsets.UTF_8);
+              buf.release();
+              assertEquals("hello", s);
               assertSame(contextThread.get(), Thread.currentThread());
               context.executeFromIO(v -> {
                 assertSame(contextThread.get(), Thread.currentThread());

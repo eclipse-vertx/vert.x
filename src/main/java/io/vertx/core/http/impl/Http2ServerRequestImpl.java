@@ -179,6 +179,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
               } catch (Exception e) {
                 // Will never happen, anyway handle it somehow just in case
                 handleException(e);
+              } finally {
+                attr.release();
               }
             }
           }

@@ -536,6 +536,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
           } catch (Exception e) {
             // Will never happen, anyway handle it somehow just in case
             handleException(e);
+          } finally {
+            attr.release();
           }
         }
       }

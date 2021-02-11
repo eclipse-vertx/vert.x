@@ -18,6 +18,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
@@ -33,13 +34,17 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 /**
  * An HTTP/2 connection in clear text that upgraded from an HTTP/1 upgrade.
  */
 public class Http2UpgradedClientConnection implements HttpClientConnection {
+
+  private static final Object SEND_BUFFERED_MESSAGES = new Object();
 
   private HttpClientImpl client;
   private HttpClientConnection current;
@@ -85,8 +90,6 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     private HttpClientRequestImpl request;
     private Http1xClientConnection conn;
     private HttpClientStream stream;
-    private long pendingSize = 0;
-    private List<Object> pending = new ArrayList<>();
 
     UpgradingStream(HttpClientStream stream, Http1xClientConnection conn) {
       this.conn = conn;
@@ -173,9 +176,13 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
         }
       };
       HttpClientUpgradeHandler upgradeHandler = new HttpClientUpgradeHandler(httpCodec, upgradeCodec, 65536) {
+
+        private long bufferedSize = 0;
+        private Deque<Object> buffered = new ArrayDeque<>();
+
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-          if (pending != null) {
+          if (buffered != null) {
             // Buffer all messages received from the server until the HTTP request is fully sent.
             //
             // Explanation:
@@ -195,24 +202,45 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
             // Therefore we must buffer all pending messages until the request is fully sent.
 
             int maxContent = maxContentLength();
-            boolean lower = pendingSize < maxContent;
+            boolean lower = bufferedSize < maxContent;
             if (msg instanceof ByteBufHolder) {
-              pendingSize += ((ByteBufHolder)msg).content().readableBytes();
+              bufferedSize += ((ByteBufHolder)msg).content().readableBytes();
             } else if (msg instanceof ByteBuf) {
-              pendingSize += ((ByteBuf)msg).readableBytes();
+              bufferedSize += ((ByteBuf)msg).readableBytes();
             }
+            buffered.add(msg);
 
-            if (pendingSize >= maxContent) {
-              if (lower) {
-                pending.clear();
-                ctx.fireExceptionCaught(new TooLongFrameException("Max content exceeded " + maxContentLength() + " bytes."));
-              }
-              return;
+            if (bufferedSize >= maxContent && lower) {
+              ctx.fireExceptionCaught(new TooLongFrameException("Max content exceeded " + maxContentLength() + " bytes."));
             }
-            pending.add(msg);
           } else {
             super.channelRead(ctx, msg);
           }
+        }
+        @Override
+        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+          if (SEND_BUFFERED_MESSAGES == evt) {
+            Deque<Object> messages = buffered;
+            buffered = null;
+            Object msg;
+            while ((msg = messages.poll()) != null) {
+              super.channelRead(ctx, msg);
+            }
+          } else {
+            super.userEventTriggered(ctx, evt);
+          }
+        }
+        @Override
+        public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+          if (buffered != null) {
+            Deque<Object> messages = buffered;
+            buffered = null;
+            Object msg;
+            while ((msg = messages.poll()) != null) {
+              ReferenceCountUtil.release(msg);
+            }
+          }
+          super.handlerRemoved(ctx);
         }
       };
       pipeline.addAfter("codec", null, new UpgradeRequestHandler());
@@ -235,20 +263,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       if (exec.inEventLoop()) {
         stream.writeHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, continueHandler, handler);
         if (end) {
-          end();
+          ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
+          pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
         }
       } else {
         exec.execute(() -> doWriteHead(method, rawMethod, uri, headers, hostHeader, chunked, buf, end, priority, continueHandler, handler));
-      }
-    }
-
-    private void end() {
-      // Deliver pending messages to the handler
-      List<Object> messages = pending;
-      pending = null;
-      ChannelHandlerContext context = conn.channelHandlerContext().pipeline().context("codec");
-      for (Object msg : messages) {
-        context.fireChannelRead(msg);
       }
     }
 
@@ -278,7 +297,8 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
       if (exec.inEventLoop()) {
         stream.writeBuffer(buf, end, handler);
         if (end) {
-          end();
+          ChannelPipeline pipeline = conn.channelHandlerContext().pipeline();
+          pipeline.fireUserEventTriggered(SEND_BUFFERED_MESSAGES);
         }
       } else {
         exec.execute(() -> writeBuffer(buf, end, handler));

@@ -1795,8 +1795,8 @@ public class Http1xTest extends HttpTest {
       client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, res -> latchClient.countDown()).end();
     }
 
-    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
-    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
+    assertTrue(latchClient.await(30, TimeUnit.SECONDS));
+    assertTrue(latchConns.await(30, TimeUnit.SECONDS));
 
     assertEquals(numServers, connectedServers.size());
     for (HttpServer server : servers) {

@@ -817,6 +817,7 @@ public class Http2ServerTest extends Http2TestBase {
     fut.sync();
     await();
   }
+
   @Test
   public void testServerResponseWritability() throws Exception {
     testStreamWritability(req -> {
@@ -2397,7 +2398,9 @@ public class Http2ServerTest extends Http2TestBase {
         Buffer received = Buffer.buffer();
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-          received.appendBuffer(Buffer.buffer(data.copy()));
+          byte[] tmp = new byte[data.readableBytes()];
+          data.getBytes(data.readerIndex(), tmp);
+          received.appendBytes(tmp);
           if (endOfStream) {
             vertx.runOnContext(v -> {
               assertEquals(received, expected);
@@ -2565,7 +2568,9 @@ public class Http2ServerTest extends Http2TestBase {
         @Override
         public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) {
           int s = status++;
-          Buffer recv = Buffer.buffer(payload.copy());
+          byte[] tmp = new byte[payload.readableBytes()];
+          payload.getBytes(payload.readerIndex(), tmp);
+          Buffer recv = Buffer.buffer().appendBytes(tmp);
           vertx.runOnContext(v -> {
             assertEquals(1, s);
             assertEquals(12, frameType);
