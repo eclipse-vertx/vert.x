@@ -15,13 +15,51 @@ import io.vertx.core.ServiceHelper;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
+import io.vertx.core.json.jackson.JacksonCodec;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface JsonCodec {
 
-  JsonCodec INSTANCE = ServiceHelper.loadFactory(JsonCodec.class);
+  /**
+   * <p> Load the JSON codec with the {@code ServiceLoader}
+   *
+   * <ul>
+   *   <li>An attempt is made to load a factory using the service loader {@code META-INF/services} {@link JsonCodec}.</li>
+   *   <li>Codecs are sorted </li>
+   *   <li>If no codec is resolved (which is usually the default case), the a {@link JacksonCodec} is created and used.</li>
+   * </ul>
+   */
+  static JsonCodec loadCodec() {
+    List<JsonCodec> factories = new ArrayList<>(ServiceHelper.loadFactories(JsonCodec.class));
+    factories.sort(Comparator.comparingInt(JsonCodec::order));
+    if (factories.size() > 0) {
+      return factories.iterator().next();
+    } else {
+      return JacksonCodecLoader.loadJacksonCodec();
+    }
+  }
+
+  /**
+   * Static cached codec instance, initialized with {@link #loadCodec()}.
+   */
+  JsonCodec INSTANCE = loadCodec();
+
+  /**
+   * The order of the codec. If there is more than one matching codec they will be tried in ascending order.
+   *
+   * @implSpec returns {@link Integer#MAX_VALUE}
+   *
+   * @return  the order
+   */
+  default int order() {
+    return Integer.MAX_VALUE;
+  }
 
   /**
    * Decode the provide {@code json} string to an object extending {@code clazz}.
