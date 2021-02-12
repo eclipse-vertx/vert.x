@@ -18,9 +18,11 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpTestBase;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.spi.json.JsonCodec;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
@@ -100,5 +102,18 @@ public class JsonTest extends VertxTestBase {
     } finally {
       vertx.close();
     }
+  }
+
+  @Test
+  public void testJsonCodec() {
+    JsonCodec codec = JsonCodec.loadCodec();
+    boolean failed;
+    try {
+      codec.toString("test");
+      failed = false;
+    } catch (Throwable e) {
+      failed = true;
+    }
+    assertTrue(failed);
   }
 }

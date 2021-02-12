@@ -497,6 +497,29 @@
               </classpathDependencyExcludes>
             </configuration>
           </execution>
+          <execution>
+            <id>json-codec</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/JsonCodecTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+              </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsoncodec</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 
@@ -615,18 +638,15 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.build.directory}/classpath/servicehelper</outputDirectory>
+              <outputDirectory>${project.build.directory}/classpath</outputDirectory>
               <resources>
                 <resource>
-                  <directory>src/test/classpath/servicehelper</directory>
-                  <includes>
-                    <include>META-INF/**</include>
-                  </includes>
+                  <directory>src/test/classpath</directory>
                 </resource>
               </resources>
             </configuration>
           </execution>
-        </executions>     
+        </executions>
       </plugin>
     </plugins>
 
