@@ -98,7 +98,7 @@ public class MetricsOptionsTest extends VertxTestBase {
     VertxMetrics metrics = ((VertxInternal) vertx).metricsSPI();
     assertNotNull(metrics);
     assertTrue(metrics instanceof FakeVertxMetrics);
-    assertSame(metricsOptions, ((FakeVertxMetrics)metrics).options());
+    assertEquals(metricsOptions.isEnabled(), ((FakeVertxMetrics)metrics).options().isEnabled());
   }
 
   @Test

@@ -40,6 +40,8 @@ public interface VertxMetricsFactory extends VertxServiceProvider {
         metricsOptions = options.getMetricsOptions();
         if (metricsOptions == null) {
           metricsOptions = newOptions();
+        } else {
+          metricsOptions = newOptions(metricsOptions.toJson());
         }
       }
       BareCommand.configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);;

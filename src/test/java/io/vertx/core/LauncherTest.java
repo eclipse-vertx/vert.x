@@ -497,6 +497,25 @@ public class LauncherTest extends VertxTestBase {
   }
 
   @Test
+  public void testCustomMetricsOptions() throws Exception {
+    System.setProperty(RunCommand.METRICS_OPTIONS_PROP_PREFIX + "enabled", "true");
+    System.setProperty(RunCommand.METRICS_OPTIONS_PROP_PREFIX + "customProperty", "customPropertyValue");
+    MyLauncher launcher = new MyLauncher();
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName()};
+    ClassLoader oldCL = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(MetricsOptionsTest.createMetricsFromMetaInfLoader("io.vertx.core.CustomMetricsFactory"));
+    try {
+      launcher.dispatch(args);
+    } finally {
+      Thread.currentThread().setContextClassLoader(oldCL);
+    }
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    VertxOptions opts = launcher.getVertxOptions();
+    CustomMetricsOptions custom = (CustomMetricsOptions) opts.getMetricsOptions();
+    assertEquals("customPropertyValue", custom.getCustomProperty());
+  }
+
+  @Test
   public void testConfigureFromSystemPropertiesInvalidPropertyName() throws Exception {
 
     System.setProperty(RunCommand.VERTX_OPTIONS_PROP_PREFIX + "nosuchproperty", "123");
