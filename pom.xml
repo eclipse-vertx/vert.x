@@ -357,7 +357,7 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>2.19.1</version>
         <executions>
-          <execution>
+<!--          <execution>
             <id>ssl-engine:default</id>
             <goals>
               <goal>integration-test</goal>
@@ -476,7 +476,7 @@
                 <include>io/vertx/it/Log4J2LogDelegateTest.java</include>
               </includes>
             </configuration>
-          </execution>
+          </execution>-->
           <execution>
             <id>no-jackson</id>
             <goals>
@@ -495,6 +495,29 @@
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
               </classpathDependencyExcludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>json-codec</id>
+            <goals>
+              <goal>integration-test</goal>
+            </goals>
+            <phase>integration-test</phase>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/JsonCodecTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+              </systemProperties>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsoncodec</additionalClasspathElement>
+              </additionalClasspathElements>
             </configuration>
           </execution>
         </executions>
@@ -626,7 +649,7 @@
               </resources>
             </configuration>
           </execution>
-        </executions>     
+        </executions>
       </plugin>
     </plugins>
 

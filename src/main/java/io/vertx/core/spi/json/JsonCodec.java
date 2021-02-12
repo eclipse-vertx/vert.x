@@ -21,7 +21,15 @@ import io.vertx.core.json.EncodeException;
  */
 public interface JsonCodec {
 
-  JsonCodec INSTANCE = ServiceHelper.loadFactory(JsonCodec.class);
+  static JsonCodec loadCodec() {
+    JsonCodec instance = ServiceHelper.loadFactoryOrNull(JsonCodec.class);
+    if (instance == null) {
+      instance = JacksonCodecLoader.loadJacksonCodec();
+    }
+    return instance;
+  }
+
+  JsonCodec INSTANCE = loadCodec();
 
   /**
    * Decode the provide {@code json} string to an object extending {@code clazz}.
