@@ -339,13 +339,10 @@
               <goal>copy-resources</goal>
             </goals>
             <configuration>
-              <outputDirectory>${project.build.directory}/classpath/servicehelper</outputDirectory>
+              <outputDirectory>${project.build.directory}/classpath</outputDirectory>
               <resources>
                 <resource>
-                  <directory>src/test/classpath/servicehelper</directory>
-                  <includes>
-                    <include>META-INF/**</include>
-                  </includes>
+                  <directory>src/test/classpath</directory>
                 </resource>
               </resources>
             </configuration>
