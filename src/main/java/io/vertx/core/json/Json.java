@@ -23,9 +23,9 @@ import io.vertx.core.spi.json.JsonCodec;
 public class Json {
 
   /**
-   *
+   * This will load the default codec.
    */
-  public static final JsonCodec CODEC = JsonFactory.INSTANCE.codec();
+  public static final JsonCodec CODEC = load().codec();
 
   /**
    * Load the factory with the {@code ServiceLoader}, when no factory is found then a factory
@@ -35,11 +35,7 @@ public class Json {
    * the codec will only use {@code jackson-core} and provide best effort mapping.
    */
   public static io.vertx.core.spi.JsonFactory load() {
-    io.vertx.core.spi.JsonFactory factory = ServiceHelper.loadFactoryOrNull(io.vertx.core.spi.JsonFactory.class);
-    if (factory == null) {
-      factory = JacksonFactory.INSTANCE;
-    }
-    return factory;
+    return JsonFactory.load();
   }
 
   /**
