@@ -56,6 +56,7 @@ public class MimeMapping {
     m.put("ser", "application/java-serialized-object");
     m.put("class", "application/java-vm");
     m.put("js", "application/javascript");
+    m.put("mjs", "application/javascript");
     m.put("json", "application/json");
     m.put("jsonml", "application/jsonml+json");
     m.put("lostxml", "application/lost+xml");
