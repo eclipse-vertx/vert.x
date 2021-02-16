@@ -1,0 +1,59 @@
+name: CI
+on:
+  push:
+    branches:
+      - master
+      - '[0-9]+.[0-9]+'
+  pull_request:
+    branches:
+      - master
+      - '[0-9]+.[0-9]+'
+  schedule:
+    - cron:  '0 4 * * *'
+jobs:
+  Test:
+    name: Run tests
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        profile: [""]
+        jdk: [8]
+        include:
+          - os: ubuntu-latest
+            jdk: 11
+          - os: ubuntu-latest
+            jdk: 8
+            profile: '-PtestNativeTransport'
+          - os: ubuntu-latest
+            jdk: 8
+            profile: '-PtestDomainSockets'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install JDK
+        uses: joschi/setup-jdk@v2
+        with:
+          java-version: ${{ matrix.jdk }}
+      - name: Run tests
+        run: mvn -q clean verify -B ${{ matrix.profile }}
+  Deploy:
+    name: Deploy to OSSRH
+    if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+    needs: Test
+    runs-on: ubuntu-latest
+    env:
+      SONATYPE_NEXUS_USERNAME: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
+      SONATYPE_NEXUS_PASSWORD: ${{ secrets.SONATYPE_NEXUS_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install JDK
+        uses: joschi/setup-jdk@v2
+        with:
+          java-version: 8
+      - name: Get project version
+        run: echo "PROJECT_VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:evaluate -Dexpression=project.version -B | grep -v '\[')" >> $GITHUB_ENV
+      - name: Maven deploy
+        if: ${{ endsWith(env.PROJECT_VERSION, '-SNAPSHOT') }}
+        run: mvn deploy -s .travis.maven.settings.xml -DskipTests -B
