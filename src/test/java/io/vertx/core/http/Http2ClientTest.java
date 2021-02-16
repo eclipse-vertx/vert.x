@@ -1108,7 +1108,7 @@ public class Http2ClientTest extends Http2TestBase {
 
   private ServerBootstrap createH2CServer(BiFunction<Http2ConnectionDecoder, Http2ConnectionEncoder, Http2FrameListener> handler, boolean upgrade) {
     ServerBootstrap bootstrap = new ServerBootstrap();
-    bootstrap.channel(NioServerSocketChannel.class);
+    bootstrap.channelFactory(((VertxInternal)vertx).transport().serverChannelFactory(false));
     bootstrap.group(vertx.nettyEventLoopGroup());
     bootstrap.childHandler(new ChannelInitializer<Channel>() {
       @Override
