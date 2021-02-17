@@ -7,9 +7,9 @@
 
   <servers>
     <server>
-      <id>sonatype-nexus-snapshots</id>
-      <username>${env.SONATYPE_NEXUS_USERNAME}</username>
-      <password>${env.SONATYPE_NEXUS_PASSWORD}</password>
+      <id>vertx-snapshots-repository</id>
+      <username>${env.VERTX_NEXUS_USERNAME}</username>
+      <password>${env.VERTX_NEXUS_PASSWORD}</password>
     </server>
   </servers>
 
