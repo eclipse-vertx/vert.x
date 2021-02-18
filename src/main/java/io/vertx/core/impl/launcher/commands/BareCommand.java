@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,7 +11,10 @@
 
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.cli.annotations.*;
 import io.vertx.core.eventbus.AddressHelper;
 import io.vertx.core.eventbus.EventBusOptions;
@@ -20,8 +23,6 @@ import io.vertx.core.impl.launcher.VertxLifecycleHooks;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.launcher.ExecutionContext;
 
 import java.io.File;
@@ -212,18 +213,19 @@ public class BareCommand extends ClasspathHandler {
     options = builder.options();
     options.setEventBusOptions(eventBusOptions);
 
+    beforeStartingVertx(options);
+    builder.init();
+
     configureFromSystemProperties.set(log);
     try {
       configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
       if (options.getMetricsOptions() != null) {
         configureFromSystemProperties(options.getMetricsOptions(), METRICS_OPTIONS_PROP_PREFIX);
       }
-      builder.init();
     } finally {
       configureFromSystemProperties.set(null);
     }
 
-    beforeStartingVertx(options);
     Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
