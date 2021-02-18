@@ -69,6 +69,11 @@ import java.time.format.DateTimeFormatter;
             obj.setMaxChunkSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "maxFormAttributeSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxFormAttributeSize(((Number)member.getValue()).intValue());
+          }
+          break;
         case "maxHeaderSize":
           if (member.getValue() instanceof Number) {
             obj.setMaxHeaderSize(((Number)member.getValue()).intValue());
@@ -194,6 +199,7 @@ import java.time.format.DateTimeFormatter;
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
     json.put("maxChunkSize", obj.getMaxChunkSize());
+    json.put("maxFormAttributeSize", obj.getMaxFormAttributeSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxWebSocketFrameSize", obj.getMaxWebSocketFrameSize());

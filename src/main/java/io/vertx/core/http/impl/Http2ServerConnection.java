@@ -63,6 +63,10 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     this.metrics = metrics;
   }
 
+  public HttpServerOptions options() {
+    return options;
+  }
+
   @Override
   public HttpServerConnection handler(Handler<HttpServerRequest> handler) {
     requestHandler = handler;

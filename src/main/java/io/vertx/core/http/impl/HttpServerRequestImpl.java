@@ -441,7 +441,8 @@ public class HttpServerRequestImpl implements HttpServerRequest {
           if (!HttpUtils.isValidMultipartMethod(request.method())) {
             throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
           }
-          decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(conn.getContext(), this, () -> uploadHandler), request);
+          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(conn.getContext(), conn.options.getMaxFormAttributeSize(), this, () -> uploadHandler);
+          decoder = new HttpPostRequestDecoder(factory, request);
         }
       } else {
         decoder = null;

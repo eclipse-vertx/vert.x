@@ -11,6 +11,7 @@
 
 package io.vertx.core.http;
 
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -849,6 +850,41 @@ public abstract class HttpTest extends HttpTestBase {
       request.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
     }
     request.end("param=hello");
+    await();
+  }
+  
+  @Test
+  public void testAttributeSizeOverflow() {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setMaxFormAttributeSize(9));
+    server.requestHandler(req -> {
+      if (req.method() == HttpMethod.POST) {
+        assertEquals(req.path(), "/form");
+        AtomicReference<Throwable> err = new AtomicReference<>();
+        req
+          .setExpectMultipart(true)
+          .exceptionHandler(err::set)
+          .endHandler(v -> {
+            assertNotNull(err.get());
+            assertTrue(err.get() instanceof DecoderException);
+            assertTrue(err.get().getMessage().contains("Size exceed allowed maximum capacity"));
+            assertEquals(0, req.formAttributes().size());
+            req.response().end();
+          });
+      }
+    });
+    server.listen(testAddress, onSuccess(s -> {
+      Buffer buffer = Buffer.buffer();
+      buffer.appendString("origin=0123456789");
+      HttpClientRequest req = client.request(HttpMethod.POST, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/form", resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
+      });
+      req.putHeader("content-length", String.valueOf(buffer.length()))
+        .putHeader("content-type", "application/x-www-form-urlencoded")
+        .end(buffer);
+    }));
+
     await();
   }
 
