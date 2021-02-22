@@ -106,6 +106,7 @@ public class RequestOptions {
     setPort(other.port);
     setSsl(other.ssl);
     setURI(other.uri);
+    setFollowRedirects(other.followRedirects);
     setTimeout(other.timeout);
     if (other.headers != null) {
       setHeaders(MultiMap.caseInsensitiveMultiMap().setAll(other.headers));
