@@ -14,14 +14,6 @@ public class RequestOptionsConverter {
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, RequestOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
-        case "headers":
-          if (member.getValue() instanceof JsonObject) {
-            ((Iterable<java.util.Map.Entry<String, Object>>)member.getValue()).forEach(entry -> {
-              if (entry.getValue() instanceof String)
-                obj.addHeader(entry.getKey(), (String)entry.getValue());
-            });
-          }
-          break;
         case "host":
           if (member.getValue() instanceof String) {
             obj.setHost((String)member.getValue());

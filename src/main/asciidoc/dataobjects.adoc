@@ -1971,9 +1971,6 @@ Set proxy username.
 [frame="topbot"]
 |===
 ^|Name | Type ^| Description
-|[[headers]]`@headers`|`String`|+++
-Add a request header.
-+++
 |[[host]]`@host`|`String`|+++
 Set the host name to be used by the client request.
 +++
