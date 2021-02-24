@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,12 +14,7 @@ package io.vertx.core.impl.resolver;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.EventLoop;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.resolver.AddressResolverGroup;
-import io.netty.resolver.HostsFileEntries;
-import io.netty.resolver.HostsFileEntriesResolver;
-import io.netty.resolver.HostsFileParser;
-import io.netty.resolver.NameResolver;
-import io.netty.resolver.ResolvedAddressTypes;
+import io.netty.resolver.*;
 import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -35,17 +30,8 @@ import io.vertx.core.spi.resolver.ResolverProvider;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.net.*;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.netty.util.internal.ObjectUtil.intValue;
@@ -135,6 +121,15 @@ public class DnsResolverProvider implements ResolverProvider {
       protected io.netty.resolver.AddressResolver<InetSocketAddress> newResolver(EventExecutor executor) throws Exception {
         ChannelFactory<DatagramChannel> channelFactory = () -> vertx.transport().datagramChannel();
         DnsAddressResolverGroup group = new DnsAddressResolverGroup(channelFactory, nameServerAddressProvider) {
+          @Override
+          protected final io.netty.resolver.AddressResolver<InetSocketAddress> newAddressResolver(EventLoop eventLoop, NameResolver<InetAddress> resolver) throws Exception {
+            if (options.isRoundRobinInetAddress()) {
+              return new RoundRobinInetAddressResolver(eventLoop, resolver).asAddressResolver();
+            } else {
+              return super.newAddressResolver(eventLoop, resolver);
+            }
+          }
+
           @Override
           protected NameResolver<InetAddress> newNameResolver(EventLoop eventLoop, ChannelFactory<? extends DatagramChannel> channelFactory, DnsServerAddressStreamProvider nameServerProvider) throws Exception {
             DnsNameResolverBuilder builder = new DnsNameResolverBuilder((EventLoop) executor);
