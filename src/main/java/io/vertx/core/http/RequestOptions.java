@@ -16,6 +16,8 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -81,7 +83,23 @@ public class RequestOptions {
    * @param json the JSON
    */
   public RequestOptions(JsonObject json) {
+    this();
     RequestOptionsConverter.fromJson(json, this);
+    JsonObject headers = json.getJsonObject("headers");
+    if (headers != null) {
+      for (Map.Entry<String, Object> entry : headers) {
+        Object value = entry.getValue();
+        if (value instanceof String) {
+          this.addHeader(entry.getKey(), (String) value);
+        } else if (value instanceof Iterable) {
+          for (Object subValue : ((Iterable<?>) value)) {
+            if (subValue instanceof String) {
+              this.addHeader(entry.getKey(), (String) subValue);
+            }
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -165,6 +183,7 @@ public class RequestOptions {
    * @param value  the header value
    * @return a reference to this, so the API can be used fluently
    */
+  @GenIgnore
   public RequestOptions addHeader(String key, String value) {
     checkHeaders();
     Objects.requireNonNull(key, "no null key accepted");
@@ -204,6 +223,18 @@ public class RequestOptions {
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     RequestOptionsConverter.toJson(this, json);
+    if (this.headers != null) {
+      JsonObject headers = new JsonObject();
+      for (String name : this.headers.names()) {
+        List<String> values = this.headers.getAll(name);
+        if (values.size() == 1) {
+          headers.put(name, values.iterator().next());
+        } else {
+          headers.put(name, values);
+        }
+      }
+      json.put("headers", headers);
+    }
     return json;
   }
 }
