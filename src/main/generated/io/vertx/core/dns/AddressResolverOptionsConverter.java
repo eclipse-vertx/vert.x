@@ -71,6 +71,11 @@ public class AddressResolverOptionsConverter {
             obj.setRotateServers((Boolean)member.getValue());
           }
           break;
+        case "roundRobinInetAddress":
+          if (member.getValue() instanceof Boolean) {
+            obj.setRoundRobinInetAddress((Boolean)member.getValue());
+          }
+          break;
         case "searchDomains":
           if (member.getValue() instanceof JsonArray) {
             java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
@@ -115,6 +120,7 @@ public class AddressResolverOptionsConverter {
     json.put("queryTimeout", obj.getQueryTimeout());
     json.put("rdFlag", obj.getRdFlag());
     json.put("rotateServers", obj.isRotateServers());
+    json.put("roundRobinInetAddress", obj.isRoundRobinInetAddress());
     if (obj.getSearchDomains() != null) {
       JsonArray array = new JsonArray();
       obj.getSearchDomains().forEach(item -> array.add(item));
