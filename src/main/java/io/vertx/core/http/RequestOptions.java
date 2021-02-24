@@ -20,6 +20,8 @@ import io.vertx.core.net.SocketAddress;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -119,7 +121,12 @@ public class RequestOptions {
    * @param json the JSON
    */
   public RequestOptions(JsonObject json) {
+    this();
     RequestOptionsConverter.fromJson(json, this);
+    String method = json.getString("method");
+    if (method != null) {
+      setMethod(HttpMethod.valueOf(method));
+    }
     JsonObject server = json.getJsonObject("server");
     if (server != null) {
       Integer port = server.getInteger("port", 80);
@@ -129,6 +136,21 @@ public class RequestOptions {
         this.server = SocketAddress.inetSocketAddress(port, host);
       } else if (path != null) {
         this.server = SocketAddress.domainSocketAddress(path);
+      }
+    }
+    JsonObject headers = json.getJsonObject("headers");
+    if (headers != null) {
+      for (Map.Entry<String, Object> entry : headers) {
+        Object value = entry.getValue();
+        if (value instanceof String) {
+          this.addHeader(entry.getKey(), (String) value);
+        } else if (value instanceof Iterable) {
+          for (Object subValue : ((Iterable<?>) value)) {
+            if (subValue instanceof String) {
+              this.addHeader(entry.getKey(), (String) subValue);
+            }
+          }
+        }
       }
     }
   }
@@ -162,6 +184,7 @@ public class RequestOptions {
    *
    * @return  the HTTP method
    */
+  @GenIgnore
   public HttpMethod getMethod() {
     return method;
   }
@@ -171,6 +194,7 @@ public class RequestOptions {
    *
    * @return a reference to this, so the API can be used fluently
    */
+  @GenIgnore
   public RequestOptions setMethod(HttpMethod method) {
     this.method = method;
     return this;
@@ -343,6 +367,7 @@ public class RequestOptions {
    * @param value  the header value
    * @return a reference to this, so the API can be used fluently
    */
+  @GenIgnore
   public RequestOptions addHeader(String key, String value) {
     return addHeader((CharSequence) key, value);
   }
@@ -436,6 +461,9 @@ public class RequestOptions {
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     RequestOptionsConverter.toJson(this, json);
+    if (method != null) {
+      json.put("method", method.name());
+    }
     if (this.server != null) {
       JsonObject server = new JsonObject();
       if (this.server.isInetSocket()) {
@@ -445,6 +473,18 @@ public class RequestOptions {
         server.put("path", this.server.path());
       }
       json.put("server", server);
+    }
+    if (this.headers != null) {
+      JsonObject headers = new JsonObject();
+      for (String name : this.headers.names()) {
+        List<String> values = this.headers.getAll(name);
+        if (values.size() == 1) {
+          headers.put(name, values.iterator().next());
+        } else {
+          headers.put(name, values);
+        }
+      }
+      json.put("headers", headers);
     }
     return json;
   }
