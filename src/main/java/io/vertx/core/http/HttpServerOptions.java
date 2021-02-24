@@ -72,6 +72,11 @@ public class HttpServerOptions extends NetServerOptions {
   public static final int DEFAULT_MAX_HEADER_SIZE = 8192;
 
   /**
+   * Default max length of all headers = 2048
+   */
+  public static final int DEFAULT_MAX_FORM_ATTRIBUTE_SIZE = 2048;
+
+  /**
    * Default value of whether 100-Continue should be handled automatically = {@code false}
    */
   public static final boolean DEFAULT_HANDLE_100_CONTINE_AUTOMATICALLY = false;
@@ -150,6 +155,7 @@ public class HttpServerOptions extends NetServerOptions {
   private int maxChunkSize;
   private int maxInitialLineLength;
   private int maxHeaderSize;
+  private int maxFormAttributeSize;
   private Http2Settings initialSettings;
   private List<HttpVersion> alpnVersions;
   private int http2ConnectionWindowSize;
@@ -189,6 +195,7 @@ public class HttpServerOptions extends NetServerOptions {
     this.maxChunkSize = other.getMaxChunkSize();
     this.maxInitialLineLength = other.getMaxInitialLineLength();
     this.maxHeaderSize = other.getMaxHeaderSize();
+    this.maxFormAttributeSize = other.getMaxFormAttributeSize();
     this.initialSettings = other.initialSettings != null ? new Http2Settings(other.initialSettings) : null;
     this.alpnVersions = other.alpnVersions != null ? new ArrayList<>(other.alpnVersions) : null;
     this.http2ConnectionWindowSize = other.http2ConnectionWindowSize;
@@ -236,6 +243,7 @@ public class HttpServerOptions extends NetServerOptions {
     maxChunkSize = DEFAULT_MAX_CHUNK_SIZE;
     maxInitialLineLength = DEFAULT_MAX_INITIAL_LINE_LENGTH;
     maxHeaderSize = DEFAULT_MAX_HEADER_SIZE;
+    maxFormAttributeSize = DEFAULT_MAX_FORM_ATTRIBUTE_SIZE;
     initialSettings = new Http2Settings().setMaxConcurrentStreams(DEFAULT_INITIAL_SETTINGS_MAX_CONCURRENT_STREAMS);
     alpnVersions = new ArrayList<>(DEFAULT_ALPN_VERSIONS);
     http2ConnectionWindowSize = DEFAULT_HTTP2_CONNECTION_WINDOW_SIZE;
@@ -676,6 +684,24 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setMaxHeaderSize(int maxHeaderSize) {
     this.maxHeaderSize = maxHeaderSize;
+    return this;
+  }
+
+  /**
+   * @return Returns the maximum size of a form attribute
+   */
+  public int getMaxFormAttributeSize() {
+    return maxFormAttributeSize;
+  }
+
+  /**
+   * Set the maximum size of a form attribute. Set to {@code -1} to allow unlimited length
+   *
+   * @param maxSize the new maximum size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpServerOptions setMaxFormAttributeSize(int maxSize) {
+    this.maxFormAttributeSize = maxSize;
     return this;
   }
 

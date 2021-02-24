@@ -444,7 +444,8 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
             method.toNetty(),
             uri);
           req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
-          postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(context, this, () -> uploadHandler), req);
+          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, conn.options.getMaxFormAttributeSize(), this, () -> uploadHandler);
+          postRequestDecoder = new HttpPostRequestDecoder(factory, req);
         }
       } else {
         postRequestDecoder = null;

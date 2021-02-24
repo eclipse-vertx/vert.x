@@ -33,10 +33,12 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
   private final ContextInternal context;
   private final HttpServerRequest request;
   private final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
+  private final long maxAttributeSize;
 
-  NettyFileUploadDataFactory(ContextInternal context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
+  NettyFileUploadDataFactory(ContextInternal context, long maxAttributeSize, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);
     this.context = context;
+    this.maxAttributeSize = maxAttributeSize;
     this.request = request;
     this.lazyUploadHandler = lazyUploadHandler;
   }
@@ -48,7 +50,9 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
   @Override
   public Attribute createAttribute(HttpRequest request, String name, long definedSize) {
-    return new VertxAttribute(name, definedSize);
+    VertxAttribute attribute = new VertxAttribute(name, definedSize);
+    attribute.setMaxSize(maxAttributeSize);
+    return attribute;
   }
 
   @Override
@@ -79,7 +83,6 @@ class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
   private static class VertxAttribute extends MemoryAttribute {
     public VertxAttribute(String name, long definedSize) {
       super(name, definedSize);
-      setMaxSize(1024);
     }
     String value;
     @Override
