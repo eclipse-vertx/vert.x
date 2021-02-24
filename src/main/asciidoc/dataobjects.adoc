@@ -59,6 +59,9 @@ Set the DNS queries <i>Recursion Desired</i> flag value.
 Set to <code>true</code> to enable round-robin selection of the dns server to use. It spreads the query load
  among the servers and avoids all lookup to hit the first server of the list.
 +++
+|[[roundRobinInetAddress]]`@roundRobinInetAddress`|`Boolean`|+++
+Set to <code>true</code> to enable round-robin inet address selection of the ip address to use.
++++
 |[[searchDomains]]`@searchDomains`|`Array of String`|+++
 Set the lists of DNS search domains.
  <p/>
