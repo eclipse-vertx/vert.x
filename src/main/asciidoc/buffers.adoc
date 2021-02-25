@@ -3,12 +3,12 @@
 
 Most data is shuffled around inside Vert.x using buffers.
 
-A buffer is a sequence of zero or more bytes that can read from or written to and which expands automatically as
-necessary to accommodate any bytes written to it. You can perhaps think of a buffer as smart byte array.
+A buffer is a sequence of zero or more bytes that can be read from or written to and which expands automatically as
+necessary to accommodate any bytes written to it. You can perhaps think of a buffer as a smart byte array.
 
 === Creating buffers
 
-Buffers can create by using one of the static {@link io.vertx.core.buffer.Buffer#buffer} methods.
+Buffers can be created by using one of the static {@link io.vertx.core.buffer.Buffer#buffer} methods.
 
 Buffers can be initialised from strings or byte arrays, or empty buffers can be created.
 
