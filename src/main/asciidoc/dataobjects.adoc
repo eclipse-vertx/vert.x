@@ -1086,6 +1086,9 @@ Set to true to enabled network activity logging: Netty's pipeline is configured 
 |[[maxChunkSize]]`@maxChunkSize`|`Number (int)`|+++
 Set the maximum HTTP chunk size that link will receive
 +++
+|[[maxFormAttributeSize]]`@maxFormAttributeSize`|`Number (int)`|+++
+Set the maximum size of a form attribute. Set to <code>-1</code> to allow unlimited length
++++
 |[[maxHeaderSize]]`@maxHeaderSize`|`Number (int)`|+++
 Set the maximum length of all headers for HTTP/1.x .
 +++
