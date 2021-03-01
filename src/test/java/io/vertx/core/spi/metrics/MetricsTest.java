@@ -193,44 +193,44 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testReplyMessageFromSelf() {
+  public void testReplyMessageFromSelf() throws Exception {
     testReply(vertx, vertx, true, false);
   }
 
   @Test
-  public void testReplyMessageFromRemote() {
+  public void testReplyMessageFromRemote() throws Exception {
     startNodes(2);
     testReply(vertices[0], vertices[1], false, true);
   }
 
-  private void testReply(Vertx from, Vertx to, boolean expectedLocal, boolean expectedRemote) {
+  private void testReply(Vertx from, Vertx to, boolean expectedLocal, boolean expectedRemote) throws Exception {
     FakeEventBusMetrics fromMetrics = FakeMetricsBase.getMetrics(from.eventBus());
     FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(to.eventBus());
     MessageConsumer<Object> consumer = to.eventBus().consumer(ADDRESS1);
-    consumer.completionHandler(done -> {
-      assertTrue(done.succeeded());
+    CountDownLatch latch = new CountDownLatch(1);
+    consumer.completionHandler(onSuccess(v -> {
       String msg = TestUtils.randomAlphaString(10);
       from.eventBus().request(ADDRESS1, msg, reply -> {
-        assertEquals(1, fromMetrics.getReceivedMessages().size());
-        ReceivedMessage receivedMessage = fromMetrics.getReceivedMessages().get(0);
-        assertEquals(false, receivedMessage.publish);
-        assertEquals(expectedLocal, receivedMessage.local);
-        assertEquals(1, receivedMessage.handlers);
-        assertEquals(1, toMetrics.getSentMessages().size());
-        SentMessage sentMessage = toMetrics.getSentMessages().get(0);
-        assertEquals(false, sentMessage.publish);
-        assertEquals(expectedLocal, sentMessage.local);
-        assertEquals(expectedRemote, sentMessage.remote);
-        assertEquals(sentMessage.address, receivedMessage.address);
-        testComplete();
+        latch.countDown();
       });
-    });
+    }));
     consumer.handler(msg -> {
       toMetrics.getReceivedMessages().clear();
       toMetrics.getSentMessages().clear();
       msg.reply(TestUtils.randomAlphaString(10));
     });
-    await();
+    awaitLatch(latch);
+    assertWaitUntil(() -> fromMetrics.getReceivedMessages().size() > 0);
+    ReceivedMessage receivedMessage = fromMetrics.getReceivedMessages().get(0);
+    assertEquals(false, receivedMessage.publish);
+    assertEquals(expectedLocal, receivedMessage.local);
+    assertEquals(1, receivedMessage.handlers);
+    assertWaitUntil(() -> toMetrics.getSentMessages().size() > 0);
+    SentMessage sentMessage = toMetrics.getSentMessages().get(0);
+    assertEquals(false, sentMessage.publish);
+    assertEquals(expectedLocal, sentMessage.local);
+    assertEquals(expectedRemote, sentMessage.remote);
+    assertEquals(sentMessage.address, receivedMessage.address);
   }
 
   @Test
