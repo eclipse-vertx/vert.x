@@ -269,8 +269,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
    * Connect to a server.
    */
   public Future<HttpClientConnection> connect(SocketAddress server) {
+    return connect(server, null);
+  }
+
+  /**
+   * Connect to a server.
+   */
+  public Future<HttpClientConnection> connect(SocketAddress server, SocketAddress peer) {
     EventLoopContext context = (EventLoopContext) vertx.getOrCreateContext();
-    HttpChannelConnector connector = new HttpChannelConnector(this, channelGroup, null, options.getProtocolVersion(), options.isSsl() ? sslHelper : null, server, server);
+    HttpChannelConnector connector = new HttpChannelConnector(this, channelGroup, null, options.getProtocolVersion(), options.isSsl() ? sslHelper : null, peer, server);
     return connector.httpConnect(context);
   }
 

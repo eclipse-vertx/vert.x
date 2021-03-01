@@ -12,7 +12,6 @@ package io.vertx.core.http;
 
 import io.netty.buffer.Unpooled;
 import io.vertx.core.MultiMap;
-import io.vertx.core.Promise;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpRequestHead;
 import io.vertx.core.impl.ContextInternal;
@@ -25,12 +24,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class HttpClientConnectionTest extends HttpTestBase {
 
+  protected SocketAddress peerAddress;
   private File tmp;
   protected HttpClientImpl client;
 
   @Override
   public void setUp() throws Exception {
     super.setUp();
+    peerAddress = testAddress;
     if (USE_DOMAIN_SOCKETS) {
       assertTrue("Native transport not enabled", USE_NATIVE_TRANSPORT);
       tmp = TestUtils.tmpFile(".sock");
@@ -47,7 +48,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       req.response().end();
     });
     startServer(testAddress);
-    client.connect(testAddress).onComplete(onSuccess(conn -> {
+    client.connect(testAddress, peerAddress).onComplete(onSuccess(conn -> {
       conn.createStream((ContextInternal) vertx.getOrCreateContext(), onSuccess(stream -> {
         stream.writeHead(new HttpRequestHead(
           HttpMethod.GET, "/", MultiMap.caseInsensitiveMultiMap(), "localhost:8080", ""), false, Unpooled.EMPTY_BUFFER, true, new StreamPriority(), false, onSuccess(v -> {
@@ -75,7 +76,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
       req.response().close();
     });
     startServer(testAddress);
-    client.connect(testAddress).onComplete(onSuccess(conn -> {
+    client.connect(testAddress, peerAddress).onComplete(onSuccess(conn -> {
       AtomicInteger evictions = new AtomicInteger();
       conn.evictionHandler(v -> {
         assertEquals(1, evictions.incrementAndGet());
