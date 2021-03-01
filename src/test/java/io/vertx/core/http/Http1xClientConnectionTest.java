@@ -26,7 +26,7 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
     waitFor(1);
     server.requestHandler(req -> {
     });
-    startServer();
+    startServer(testAddress);
     client.connect(testAddress).onComplete(onSuccess(conn -> {
       AtomicInteger evictions = new AtomicInteger();
       conn.evictionHandler(v -> {
@@ -51,7 +51,7 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
     server.requestHandler(req -> {
       continuation.complete();
     });
-    startServer();
+    startServer(testAddress);
     client.connect(testAddress).onComplete(onSuccess(conn -> {
       AtomicInteger evictions = new AtomicInteger();
       conn.evictionHandler(v -> {
@@ -81,7 +81,7 @@ public class Http1xClientConnectionTest extends HttpClientConnectionTest {
     server.requestHandler(req -> {
       req.response().putHeader("Connection", "close").end();
     });
-    startServer();
+    startServer(testAddress);
     client.connect(testAddress).onComplete(onSuccess(conn -> {
       AtomicInteger evictions = new AtomicInteger();
       conn.evictionHandler(v -> {

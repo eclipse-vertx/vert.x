@@ -46,7 +46,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().end();
     });
-    startServer();
+    startServer(testAddress);
     client.connect(testAddress).onComplete(onSuccess(conn -> {
       conn.createStream((ContextInternal) vertx.getOrCreateContext(), onSuccess(stream -> {
         stream.writeHead(new HttpRequestHead(
@@ -74,7 +74,7 @@ public abstract class HttpClientConnectionTest extends HttpTestBase {
     server.requestHandler(req -> {
       req.response().close();
     });
-    startServer();
+    startServer(testAddress);
     client.connect(testAddress).onComplete(onSuccess(conn -> {
       AtomicInteger evictions = new AtomicInteger();
       conn.evictionHandler(v -> {
