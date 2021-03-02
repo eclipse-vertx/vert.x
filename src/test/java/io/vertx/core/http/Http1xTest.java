@@ -4901,8 +4901,10 @@ public class Http1xTest extends HttpTest {
     server.listen(testAddress, onSuccess(s -> latch.countDown()));
     awaitLatch(latch);
     client.connectionHandler(conn -> {
-      conn.exceptionHandler(this::fail);
+      AtomicBoolean failed = new AtomicBoolean();
+      conn.exceptionHandler(err -> failed.set(true));
       conn.closeHandler(v -> {
+        assertTrue(failed.get());
         complete();
       });
     });
