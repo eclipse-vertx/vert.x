@@ -3626,7 +3626,10 @@ public class Http1xTest extends HttpTest {
     CountDownLatch listenLatch = new CountDownLatch(1);
     CompletableFuture<Void> cont = new CompletableFuture<>();
     server.connectHandler(so -> {
-      so.write("HTTP/1.1 200 OK\r\n" + "Transfer-Encoding: chunked\r\n" + "\r\n");
+      so.handler(buff -> {
+        so.handler(null);
+        so.write("HTTP/1.1 200 OK\r\n" + "Transfer-Encoding: chunked\r\n" + "\r\n");
+      });
       cont.whenComplete((v,e) -> {
         so.write("invalid\r\n"); // Invalid chunk
       });
@@ -3653,11 +3656,14 @@ public class Http1xTest extends HttpTest {
     CountDownLatch listenLatch = new CountDownLatch(1);
     CompletableFuture<Void> cont = new CompletableFuture<>();
     server.connectHandler(so -> {
-      so.write("HTTP/1.1 200 OK\r\n" +
-        "Transfer-Encoding: chunked\r\n" +
-        "\r\n" +
-        "0\r\n"); // Empty chunk
-      // Send large trailer
+      so.handler(buff -> {
+        so.handler(null);
+        so.write("HTTP/1.1 200 OK\r\n" +
+          "Transfer-Encoding: chunked\r\n" +
+          "\r\n" +
+          "0\r\n"); // Empty chunk
+        // Send large trailer
+      });
       cont.whenComplete((v, e) -> {
         for (int i = 0;i < 2000;i++) {
           so.write("01234567");
@@ -3721,6 +3727,32 @@ public class Http1xTest extends HttpTest {
     } finally {
       client.close();
     }
+  }
+
+  @Test
+  public void testReceiveResponseWithNoRequestInProgress() throws Exception {
+    NetServer server = vertx.createNetServer();
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    server.connectHandler(so -> {
+      so.write("HTTP/1.1 200 OK\r\n" +
+        "Transfer-Encoding: chunked\r\n" +
+        "\r\n");
+    }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    client.connectionHandler(conn -> {
+      AtomicBoolean failed = new AtomicBoolean();
+      conn.exceptionHandler(err -> {
+        failed.set(true);
+      });
+      conn.closeHandler(v -> {
+        assertTrue(failed.get());
+        testComplete();
+      });
+    });
+    client.request(requestOptions)
+      .onComplete(onSuccess(req -> {
+      }));
+    await();
   }
 
   @Test
