@@ -100,9 +100,17 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     });
   }
 
-  synchronized void registerEventBusHandler() {
+  void registerEventBusHandler() {
     Handler<Message<Buffer>> writeHandler = msg -> write(msg.body());
     registration = vertx.eventBus().<Buffer>localConsumer(writeHandlerID).handler(writeHandler);
+  }
+
+  void unregisterEventBusHandler() {
+    if (registration != null) {
+      MessageConsumer consumer = registration;
+      registration = null;
+      consumer.unregister();
+    }
   }
 
   @Override
@@ -370,16 +378,8 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   protected void handleClosed() {
-    MessageConsumer consumer;
-    synchronized (this) {
-      consumer = registration;
-      registration = null;
-    }
     context.emit(InboundBuffer.END_SENTINEL, pending::write);
     super.handleClosed();
-    if (consumer != null) {
-      consumer.unregister();
-    }
   }
 
   public void handleMessage(Object msg) {

@@ -251,6 +251,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     channelGroup.add(ch);
     initChannel(ch.pipeline());
     VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslHelper, metrics, applicationLayerProtocol));
+    handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
     handler.addHandler(sock -> {
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));

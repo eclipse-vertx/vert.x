@@ -89,6 +89,15 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
     setConnection(connectionFactory.apply(ctx));
   }
 
+  @Override
+  public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+    if (removeHandler != null) {
+      Handler<C> handler = removeHandler;
+      removeHandler = null;
+      handler.handle(conn);
+    }
+  }
+
   /**
    * Set an handler to be called when the connection is set on this handler.
    *
@@ -132,9 +141,6 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
 
   @Override
   public void channelInactive(ChannelHandlerContext chctx) {
-    if (removeHandler != null) {
-      removeHandler.handle(conn);
-    }
     conn.handleClosed();
   }
 
