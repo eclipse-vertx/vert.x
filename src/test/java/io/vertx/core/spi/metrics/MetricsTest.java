@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -730,19 +731,13 @@ public class MetricsTest extends VertxTestBase {
       started.countDown();
     });
     awaitLatch(started);
-    CountDownLatch closed = new CountDownLatch(1);
     client.request(HttpMethod.GET, 8080, "localhost", "/somepath")
-      .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(resp -> {
-        resp.endHandler(v1 -> {
-          HttpConnection conn = resp.request().connection();
-          conn.closeHandler(v2 -> {
-            closed.countDown();
-          });
-          conn.close();
-        });
-      }));
-    awaitLatch(closed);
+      .compose(req -> req.send()
+        .compose(HttpClientResponse::end)
+        .compose(v ->  req.connection().close()))
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
     EndpointMetric val = endpointMetrics.get();
     assertWaitUntil(() -> val.connectionCount.get() == 0);
     assertEquals(0, val.queueSize.get());
