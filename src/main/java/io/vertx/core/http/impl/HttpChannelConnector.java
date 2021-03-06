@@ -77,7 +77,7 @@ public class HttpChannelConnector {
     this.server = server;
   }
 
-  public Future<NetSocket> connect(EventLoopContext context) {
+  private void connect(EventLoopContext context, Promise<NetSocket> promise) {
     ProxyOptions proxyOptions = this.options.getProxyOptions();
     if (proxyOptions != null && sslHelper == null && proxyOptions.getType()== ProxyType.HTTP) {
       // http proxy requests are handled in HttpClientImpl, everything else can use netty proxy handler
@@ -87,9 +87,7 @@ public class HttpChannelConnector {
     options.setSsl(sslHelper != null);
     options.setProxyOptions(proxyOptions);
     NetClientImpl netClient = new NetClientImpl(client.getVertx(), channelGroup, sslHelper, options);
-    Promise<NetSocket> promise = context.promise();
     netClient.doConnect(server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, promise, context, 0);
-    return promise.future();
   }
 
   public Future<HttpClientConnection> wrap(EventLoopContext context, NetSocket so_) {
@@ -143,26 +141,10 @@ public class HttpChannelConnector {
   }
 
   public Future<HttpClientConnection> httpConnect(EventLoopContext context) {
-    return connect(context).flatMap(so -> wrap(context, so));
-
-
-    //    boolean domainSocket = server.path() != null;
-//
-//    Bootstrap bootstrap = new Bootstrap();
-//    bootstrap.group(context.nettyEventLoop());
-//
-//    applyConnectionOptions(domainSocket, bootstrap);
-//
-//    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options);
-//    // SocketAddress.inetSocketAddress(server.port(), peerHost)
-//    Future<Channel> fut = channelProvider.connect(server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, sslHelper != null);
-//
-//    fut.addListener((GenericFutureListener<Future<Channel>>) res -> {
-//    });
-  }
-
-  private void applyConnectionOptions(boolean domainSocket, Bootstrap bootstrap) {
-    client.getVertx().transport().configure(options, domainSocket, bootstrap);
+    Promise<NetSocket> promise = context.promise();
+    Future<HttpClientConnection> fut = promise.future().flatMap(so -> wrap(context, so));
+    connect(context, promise);
+    return fut;
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {

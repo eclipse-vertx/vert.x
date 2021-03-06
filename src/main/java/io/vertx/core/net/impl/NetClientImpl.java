@@ -13,6 +13,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -221,14 +222,14 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
     applyConnectionOptions(remoteAddress.isDomainSocket(), bootstrap);
 
-    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
+    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context)
+      .proxyOptions(options.getProxyOptions());
+
+    channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol()));
 
     io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, options.isSsl());
     fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
-      if (future.isSuccess()) {
-        Channel ch = future.getNow();
-        connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol());
-      } else {
+      if (!future.isSuccess()) {
         Throwable cause = future.cause();
         // FileNotFoundException for domain sockets
         boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
