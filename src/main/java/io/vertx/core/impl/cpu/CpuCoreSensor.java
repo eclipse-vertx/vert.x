@@ -15,6 +15,7 @@ import io.vertx.core.impl.launcher.commands.ExecUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -32,7 +33,6 @@ public class CpuCoreSensor {
 
   private static final String CPUS_ALLOWED = "Cpus_allowed:";
   private static final byte[] BITS = new byte[]{0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
-  private static final Charset ASCII = Charset.forName("US-ASCII");
 
   /**
    * Returns the number of processors available to this process.
@@ -80,10 +80,9 @@ public class CpuCoreSensor {
       return -1;
     }
 
-    final FileInputStream stream = new FileInputStream(file);
-    final InputStreamReader inputReader = new InputStreamReader(stream, ASCII);
-
-    try (BufferedReader reader = new BufferedReader(inputReader)) {
+    try (final FileInputStream stream = new FileInputStream(file);
+        final InputStreamReader inputReader = new InputStreamReader(stream, StandardCharsets.US_ASCII);
+        final BufferedReader reader = new BufferedReader(inputReader)) {
       String line;
       while ((line = reader.readLine()) != null) {
         if (line.startsWith(CPUS_ALLOWED)) {
