@@ -41,7 +41,7 @@ public interface VertxMetricsFactory extends VertxServiceProvider {
         if (metricsOptions == null) {
           metricsOptions = newOptions();
         } else {
-          metricsOptions = newOptions(metricsOptions.toJson());
+          metricsOptions = newOptions(metricsOptions);
         }
       }
       BareCommand.configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);;
@@ -67,6 +67,7 @@ public interface VertxMetricsFactory extends VertxServiceProvider {
    * Providers can override this method to provide a custom metrics options subclass that exposes custom configuration.
    * It is used by the {@link io.vertx.core.Launcher} class when creating new options when building a CLI Vert.x.
    *
+   * @implSpec The default implementation returns {@link MetricsOptions#MetricsOptions()}
    * @return new metrics options
    */
   default MetricsOptions newOptions() {
@@ -74,10 +75,24 @@ public interface VertxMetricsFactory extends VertxServiceProvider {
   }
 
   /**
-   * Create metrics options from the provided {@code jsonObject}.
-   * Providers can override this method to provide a custom metrics options subclass that exposes custom configuration.
-   * It is used by the {@link io.vertx.core.Launcher} class when creating new options when building a CLI Vert.x.
+   * Create metrics options from the provided {@code options}.
+   * <p> Providers can override this method to provide a custom metrics options subclass that exposes custom configuration.
+   * <p> It is used when a Vert.x instance is created with a {@link MetricsOptions} instance.
    *
+   * @implSpec The default implementation calls {@link #newOptions(JsonObject)} with {@link MetricsOptions#toJson()}
+   * @param options new metrics options
+   * @return new metrics options
+   */
+  default MetricsOptions newOptions(MetricsOptions options) {
+    return newOptions(options.toJson());
+  }
+
+  /**
+   * Create metrics options from the provided {@code jsonObject}.
+   * <p> Providers can override this method to provide a custom metrics options subclass that exposes custom configuration.
+   * <p>It is used by the {@link io.vertx.core.Launcher} class when creating new options when building a CLI Vert.x.
+   *
+   * @implSpec The default implementation calls {@link MetricsOptions#MetricsOptions(JsonObject)} )} with {@code jsonObject}
    * @param jsonObject json provided by the user
    * @return new metrics options
    */
