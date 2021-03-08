@@ -148,7 +148,7 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
   }
 
   private <T> Future<T> future(int index) {
-    if (index < 0 || index > results.length) {
+    if (index < 0 || index >= results.length) {
       throw new IndexOutOfBoundsException();
     }
     return (Future<T>) results[index];
