@@ -42,6 +42,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private String uri;
   private String path;
   private String query;
+  private boolean newQuery = true;
   private final PromiseInternal<HttpClientResponse> responsePromise;
   private Handler<HttpClientRequest> pushHandler;
   private long currentTimeoutTimerId = -1;
@@ -91,16 +92,16 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   public String query() {
-    if (query == null) {
+    if (newQuery) {
+      newQuery = false;
       query = HttpUtils.parseQuery(uri);
-
     }
     return query;
   }
 
   public String path() {
     if (path == null) {
-      path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
+      path = HttpUtils.parsePath(uri);
     }
     return path;
   }
@@ -113,7 +114,9 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   public synchronized HttpClientRequest setURI(String uri) {
     Objects.requireNonNull(uri);
     this.uri = uri;
-    this.path = null; // Invalidate
+    this.path = null; // invalidate
+    this.newQuery = true; // invalidate
+    this.query = null;
     return this;
   }
 
