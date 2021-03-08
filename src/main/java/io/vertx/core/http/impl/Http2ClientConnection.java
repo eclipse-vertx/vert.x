@@ -161,8 +161,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private void recycle() {
     int timeout = client.getOptions().getHttp2KeepAliveTimeout();
-    long expired = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
-    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
+    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : 0L;
   }
 
   @Override
