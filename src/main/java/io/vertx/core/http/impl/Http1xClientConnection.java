@@ -200,9 +200,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
-        List<Map.Entry<String, String>> tags = new ArrayList<>();
-        tags.add(new AbstractMap.SimpleEntry<>("http.url", "todo"));
-        tags.add(new AbstractMap.SimpleEntry<>("http.method", request.method.name()));
         BiConsumer<String, String> headers = (key, val) -> nettyRequest.headers().add(key, val);
         stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, request.method.name(), headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }

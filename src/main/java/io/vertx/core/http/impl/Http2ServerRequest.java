@@ -115,9 +115,6 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   void dispatch(Handler<HttpServerRequest> handler) {
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      List<Map.Entry<String, String>> tags = new ArrayList<>();
-      tags.add(new AbstractMap.SimpleEntry<>("http.url", absoluteURI()));
-      tags.add(new AbstractMap.SimpleEntry<>("http.method", method.name()));
       trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     context.emit(this, handler);
