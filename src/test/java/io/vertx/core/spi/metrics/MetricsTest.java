@@ -1084,7 +1084,6 @@ public class MetricsTest extends VertxTestBase {
 
     Handler<Promise<Void>> job = getSomeDumbTask();
 
-    CountDownLatch counter = new CountDownLatch(100);
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
@@ -1102,14 +1101,10 @@ public class MetricsTest extends VertxTestBase {
             if (metrics.numberOfRunningTasks() > 0) {
               hadRunning.set(true);
             }
-            counter.countDown();
           });
     }
 
-    awaitLatch(counter);
-
-    assertEquals(metrics.numberOfSubmittedTask(), 100);
-    assertEquals(metrics.numberOfCompletedTasks(), 100);
+    waitUntil(() -> metrics.numberOfSubmittedTask() == 100 && metrics.numberOfCompletedTasks() == 100);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
