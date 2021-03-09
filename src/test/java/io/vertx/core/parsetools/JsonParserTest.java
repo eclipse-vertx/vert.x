@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -22,25 +22,17 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
-import static java.time.format.DateTimeFormatter.*;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static junit.framework.TestCase.assertFalse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -835,5 +827,40 @@ public class JsonParserTest {
     parser.fetch(1);
     assertEquals(2, events.size());
     assertEquals(1, ended.get());
+  }
+
+
+  @Test
+  public void testPauseAndResumeInHandler() throws Exception {
+    AtomicInteger counter = new AtomicInteger(0);
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    parser.objectValueMode();
+    parser.handler(event -> {
+      parser.pause(); // Needed pause for doing something
+
+      assertNotNull(event);
+      assertEquals(JsonEventType.VALUE, event.type());
+      counter.incrementAndGet();
+
+      parser.resume(); // There and then resume
+    });
+    parser.exceptionHandler(t -> {
+      throw new AssertionError(t);
+    });
+    CountDownLatch latch = new CountDownLatch(1);
+    parser.endHandler(end -> {
+      assertEquals(4, counter.get());
+      latch.countDown();
+    });
+
+    stream.handle("" + "{\"field_0\": \"value");
+    stream.handle("_0\"}{\"field_1\": \"value_1\"}");
+    stream.handle("{\"field_2\": \"val");
+    stream.handle("ue_2\"}{\"field_3\": \"value_3\"}");
+
+    stream.end();
+
+    assertTrue(latch.await(5, TimeUnit.SECONDS));
   }
 }
