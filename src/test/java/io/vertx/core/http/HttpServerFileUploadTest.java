@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http;
 
+import io.netty.channel.ChannelFuture;
 import io.netty.handler.codec.DecoderException;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -478,6 +479,38 @@ public abstract class HttpServerFileUploadTest extends HttpTestBase {
       }));
     }));
 
+    await();
+  }
+
+  @Test
+  public void testInvalidPostFileUpload() throws Exception {
+    server.requestHandler(req -> {
+      req.setExpectMultipart(true);
+      AtomicInteger errCount = new AtomicInteger();
+      req.exceptionHandler(err -> {
+        errCount.incrementAndGet();
+      });
+      req.endHandler(v -> {
+        assertTrue(errCount.get() > 0);
+        testComplete();
+      });
+    });
+    startServer(testAddress);
+
+    String contentType = "multipart/form-data; boundary=a4e41223-a527-49b6-ac1c-315d76be757e";
+    String body = "--a4e41223-a527-49b6-ac1c-315d76be757e\r\n" +
+      "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
+      "Content-Type: image/gif; charset=ABCD\r\n" +
+      "Content-Length: 12\r\n" +
+      "\r\n" +
+      "some-content\r\n" +
+      "--a4e41223-a527-49b6-ac1c-315d76be757e--\r\n";
+
+    client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.POST).setURI("/form"), onSuccess(req -> {
+      req.putHeader(HttpHeaders.CONTENT_TYPE, contentType);
+      req.putHeader(HttpHeaders.CONTENT_LENGTH, "" + body.length());
+      req.end(body);
+    }));
     await();
   }
 }

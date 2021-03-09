@@ -17,6 +17,7 @@ import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
@@ -46,7 +47,7 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
   }
 
   @Override
-  protected MultiMap newMultiMap() {
+  protected HeadersMultiMap newMultiMap() {
     return HeadersMultiMap.httpHeaders();
   }
 
@@ -220,5 +221,26 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     mmap.remove(name1);
     mmap.set(name1, "w");
     assertEquals("w", mmap.get(name1));
+  }
+
+  @Test
+  public void testNonCharSequenceValue() {
+    HeadersMultiMap mmap = newMultiMap();
+    mmap.set("key1", 0);
+    assertEquals("0", mmap.get("key1"));
+    mmap.set((CharSequence) "key2", 1);
+    assertEquals("1", mmap.get("key2"));
+    mmap.set("key3", Arrays.asList(2, 3));
+    assertEquals("2", mmap.get("key3"));
+    mmap.set((CharSequence) "key4", Arrays.asList(4, 5));
+    assertEquals("4", mmap.get("key4"));
+    mmap.add("key5", 6);
+    assertEquals("6", mmap.get("key5"));
+    mmap.add((CharSequence) "key6", 7);
+    assertEquals("7", mmap.get("key6"));
+    mmap.add("key8", Arrays.asList(2, 3));
+    assertEquals("2", mmap.get("key8"));
+    mmap.add((CharSequence) "key9", Arrays.asList(4, 5));
+    assertEquals("4", mmap.get("key9"));
   }
 }

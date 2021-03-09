@@ -466,7 +466,8 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
           if (!HttpUtils.isValidMultipartMethod(request.method())) {
             throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
           }
-          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, conn.options.getMaxFormAttributeSize(), this, () -> uploadHandler);
+          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
+          factory.setMaxLimit(conn.options.getMaxFormAttributeSize());
           decoder = new HttpPostRequestDecoder(factory, request);
         }
       } else {
