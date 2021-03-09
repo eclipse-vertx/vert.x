@@ -11,12 +11,15 @@
 
 package io.vertx.core.http;
 
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
@@ -208,5 +211,41 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     mm.remove(name1);
     mm.remove(name2);
     assertTrue("not empty", mm.isEmpty());
+  }
+
+  @Test
+  public void testRemovalNext() {
+    MultiMap mmap = newMultiMap();
+    String name1 = this.sameHash1;
+    String name2 = this.sameHash2;
+    mmap.add(name1, "v");
+    mmap.add(name1, "v");
+    mmap.add(name2, "q");
+    mmap.remove(name1);
+    mmap.set(name1, "w");
+    assertEquals("w", mmap.get(name1));
+  }
+
+  @Test
+  public void testNonCharSequenceValue() {
+    MultiMap mmap = newMultiMap();
+    Assume.assumeTrue(mmap instanceof HttpHeaders);
+    HttpHeaders headers = (HttpHeaders) mmap;
+    headers.set("key1", 0);
+    assertEquals("0", headers.get("key1"));
+    headers.set((CharSequence) "key2", 1);
+    assertEquals("1", headers.get("key2"));
+    headers.set("key3", Arrays.asList(2, 3));
+    assertEquals("2", headers.get("key3"));
+    headers.set((CharSequence) "key4", Arrays.asList(4, 5));
+    assertEquals("4", headers.get("key4"));
+    headers.add("key5", 6);
+    assertEquals("6", headers.get("key5"));
+    headers.add((CharSequence) "key6", 7);
+    assertEquals("7", headers.get("key6"));
+    headers.add("key8", Arrays.asList(2, 3));
+    assertEquals("2", headers.get("key8"));
+    headers.add((CharSequence) "key9", Arrays.asList(4, 5));
+    assertEquals("4", headers.get("key9"));
   }
 }

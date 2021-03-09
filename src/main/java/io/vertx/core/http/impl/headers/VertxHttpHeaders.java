@@ -39,6 +39,20 @@ import static io.netty.util.AsciiString.*;
  */
 public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
+  /**
+   * Convert the {@code value} to a non null {@code CharSequence}
+   * @param value the value
+   * @return the char sequence
+   */
+  private static CharSequence toValidCharSequence(Object value) {
+    if (value instanceof CharSequence) {
+      return (CharSequence) value;
+    } else {
+      // Throws NPE
+      return value.toString();
+    }
+  }
+
   @Override
   public MultiMap setAll(MultiMap headers) {
     return set0(headers);
@@ -72,12 +86,12 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public VertxHttpHeaders add(CharSequence name, Object value) {
-    return add(name, (CharSequence)value);
+    return add(name, toValidCharSequence(value));
   }
 
   @Override
   public HttpHeaders add(String name, Object value) {
-    return add((CharSequence) name, (CharSequence) value);
+    return add((CharSequence) name, toValidCharSequence(value));
   }
 
   @Override
@@ -90,7 +104,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
     for (Object vstr: values) {
-      add0(h, i, name, (CharSequence) vstr);
+      add0(h, i, name, toValidCharSequence(vstr));
     }
     return this;
   }
@@ -143,12 +157,12 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public VertxHttpHeaders set(String name, Object value) {
-    return set((CharSequence)name, (CharSequence) value);
+    return set((CharSequence)name, toValidCharSequence(value));
   }
 
   @Override
   public VertxHttpHeaders set(CharSequence name, Object value) {
-    return set(name, (CharSequence)value);
+    return set(name, toValidCharSequence(value));
   }
 
   @Override
@@ -163,7 +177,7 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
       if (v == null) {
         break;
       }
-      add0(h, i, name, (CharSequence) v);
+      add0(h, i, name, toValidCharSequence(v));
     }
 
     return this;
