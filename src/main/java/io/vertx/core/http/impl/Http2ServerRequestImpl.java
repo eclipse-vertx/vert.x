@@ -416,7 +416,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
             method,
             uri);
           req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
-          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, conn.options().getMaxFormAttributeSize(), this, () -> uploadHandler);
+          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
+          factory.setMaxLimit(conn.options().getMaxFormAttributeSize());
           postRequestDecoder = new HttpPostRequestDecoder(factory, req);
         }
       } else {
