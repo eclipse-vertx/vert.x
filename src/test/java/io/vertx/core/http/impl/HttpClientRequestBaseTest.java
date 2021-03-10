@@ -28,6 +28,10 @@ public class HttpClientRequestBaseTest extends HttpTestBase {
         assertThat(req.getURI(), is("/?"));
         assertThat(req.path(), is("/"));
         assertThat(req.query(), is(""));
+        req.setURI("/index.html");
+        assertThat(req.getURI(), is("/index.html"));
+        assertThat(req.path(), is("/index.html"));
+        assertThat(req.query(), is(nullValue()));
         req.setURI("/foo?bar");
         assertThat(req.getURI(), is("/foo?bar"));
         assertThat(req.path(), is("/foo"));
