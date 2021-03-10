@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -13,18 +13,12 @@ package io.vertx.core.spi.cluster;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.VertxBuilder;
-import io.vertx.core.impl.launcher.commands.BareCommand;
-import io.vertx.core.json.JsonObject;
-import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.spi.VertxServiceProvider;
 
-import static io.vertx.core.impl.launcher.commands.BareCommand.METRICS_OPTIONS_PROP_PREFIX;
-
 /**
- * Used by the {@link io.vertx.core.eventbus.EventBus clustered EventBus} to select a node for a given message..
+ * Used by the {@link io.vertx.core.eventbus.EventBus clustered EventBus} to select a node for a given message.
  * <p>
  * This selector is skipped only when the user raises the {@link io.vertx.core.eventbus.DeliveryOptions#setLocalOnly(boolean)} flag.
  * Consequently, implementations must be aware of local {@link io.vertx.core.eventbus.EventBus} registrations.
@@ -77,5 +71,15 @@ public interface NodeSelector extends VertxServiceProvider {
    * Invoked by the {@link ClusterManager} when some handler registrations have been lost.
    */
   void registrationsLost();
+
+  /**
+   * Invoked by the {@link ClusterManager} to determine if the node selector wants updates for the given {@code address}.
+   *
+   * @param address the event bus address
+   * @return {@code true} if the node selector wants updates for the given {@code address}, {@code false} otherwise
+   */
+  default boolean wantsUpdatesFor(String address) {
+    return true;
+  }
 
 }

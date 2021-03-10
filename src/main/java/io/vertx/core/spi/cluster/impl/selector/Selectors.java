@@ -124,4 +124,8 @@ public class Selectors {
       }
     }
   }
+
+  public boolean hasEntryFor(String address) {
+    return map.containsKey(address);
+  }
 }
