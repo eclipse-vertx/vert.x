@@ -61,7 +61,7 @@ public class Selectors {
     clusterManager.getRegistrations(address, getPromise);
     getPromise.future().onComplete(ar -> {
       if (ar.succeeded()) {
-        dataReceived(address, ar.result());
+        dataReceived(address, ar.result(), false);
       } else {
         SelectorEntry entry = map.remove(address);
         if (entry != null && entry.isNotReady()) {
@@ -71,11 +71,11 @@ public class Selectors {
     });
   }
 
-  public void dataReceived(String address, List<RegistrationInfo> registrations) {
+  public void dataReceived(String address, List<RegistrationInfo> registrations, boolean isUpdate) {
     List<String> accessible = computeAccessible(registrations);
     while (true) {
       SelectorEntry previous = map.get(address);
-      if (previous == null) {
+      if (previous == null || (isUpdate && previous.isNotReady())) {
         break;
       }
       SelectorEntry next = previous.data(accessible);
