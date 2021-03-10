@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,13 +16,12 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author Thomas Segismont
@@ -102,10 +101,15 @@ public class Selectors {
     if (registrations == null || registrations.isEmpty()) {
       return Collections.emptyList();
     }
-    return registrations.stream()
-      .filter(this::isAccessible)
-      .map(RegistrationInfo::nodeId)
-      .collect(toList());
+    ArrayList<String> list = new ArrayList<>(registrations.size());
+    for (RegistrationInfo registration : registrations) {
+      if (isAccessible(registration)) {
+        String nodeId = registration.nodeId();
+        list.add(nodeId);
+      }
+    }
+    list.trimToSize();
+    return list;
   }
 
   private boolean isAccessible(RegistrationInfo registrationInfo) {
