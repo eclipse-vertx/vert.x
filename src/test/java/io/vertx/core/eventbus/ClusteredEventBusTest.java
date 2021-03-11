@@ -403,6 +403,11 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
               updateLatch.countDown();
             }
           }
+
+          @Override
+          public boolean wantsUpdatesFor(String address) {
+            return true;
+          }
         });
       }
     });
