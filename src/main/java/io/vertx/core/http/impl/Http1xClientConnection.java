@@ -26,7 +26,6 @@ import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFram
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -80,6 +79,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private final SocketAddress server;
   public final ClientMetrics metrics;
   private final HttpVersion version;
+  private final long lowWaterMark;
+  private final long highWaterMark;
 
   private Deque<Stream> requests = new ArrayDeque<>();
   private Deque<Stream> responses = new ArrayDeque<>();
@@ -95,6 +96,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private int keepAliveTimeout;
   private long expirationTimestamp;
   private int seq = 1;
+  private long bytesWindow;
 
   Http1xClientConnection(HttpVersion version,
                          HttpClientImpl client,
@@ -110,6 +112,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     this.server = server;
     this.metrics = metrics;
     this.version = version;
+    this.bytesWindow = 0;
+    this.highWaterMark = channel.channel().config().getWriteBufferHighWaterMark();
+    this.lowWaterMark = channel.channel().config().getWriteBufferLowWaterMark();
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
   }
@@ -276,6 +281,29 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return !isInflight;
   }
 
+  private void receiveBytes(int len) {
+    boolean le = bytesWindow <= highWaterMark;
+    bytesWindow += len;
+    boolean gt = bytesWindow > highWaterMark;
+    if (le && gt) {
+      doPause();
+    }
+  }
+
+  private void ackBytes(int len) {
+    EventLoop eventLoop = context.nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      boolean gt = bytesWindow > lowWaterMark;
+      bytesWindow -= len;
+      boolean le = bytesWindow <= lowWaterMark;
+      if (gt && le) {
+        doResume();
+      }
+    } else {
+      eventLoop.execute(() -> ackBytes(len));
+    }
+  }
+
   private abstract static class Stream {
 
     protected final Promise<HttpClientStream> promise;
@@ -310,12 +338,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   }
 
-  private void drainResponse(Stream n) {
-    if (!n.responseEnded) {
-      this.doResume();
-    }
-  }
-
   /**
    * We split the stream class in two classes so that the base {@link #Stream} class defines the (mutable)
    * state managed by the connection and this class defines the state managed by the stream implementation
@@ -341,14 +363,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       this.writable = !conn.isNotWritable();
       this.conn = conn;
       this.queue = new InboundBuffer<>(context, 5)
-        .drainHandler(v -> {
-          EventLoop eventLoop = conn.context.nettyEventLoop();
-          if (eventLoop.inEventLoop()) {
-            drained();
-          } else {
-            eventLoop.execute(this::drained);
-          }
-        })
         .handler(item -> {
           if (item instanceof MultiMap) {
             Handler<MultiMap> handler = endHandler;
@@ -356,17 +370,16 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
               handler.handle((MultiMap) item);
             }
           } else {
+            Buffer buffer = (Buffer) item;
+            int len = buffer.length();
+            conn.ackBytes(len);
             Handler<Buffer> handler = chunkHandler;
             if (handler != null) {
-              handler.handle((Buffer) item);
+              handler.handle(buffer);
             }
           }
         })
         .exceptionHandler(context::reportException);
-    }
-
-    private void drained() {
-      conn.drainResponse(this);
     }
 
     @Override
@@ -565,9 +578,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     void handleChunk(Buffer buff) {
-      if (!queue.write(buff)) {
-        conn.doPause();
-      }
+      queue.write(buff);
     }
 
     void handleEnd(LastHttpContent trailer) {
@@ -765,7 +776,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
     Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk));
-    stream.bytesRead += buff.length();
+    int len = buff.length();
+    receiveBytes(len);
+    stream.bytesRead += len;
     stream.context.execute(buff, stream::handleChunk);
   }
 
@@ -788,7 +801,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (metrics != null) {
       metrics.responseEnd(stream.metric, stream.bytesRead);
     }
-    this.doResume();
     flushBytesRead();
     if (check) {
       checkLifecycle();
