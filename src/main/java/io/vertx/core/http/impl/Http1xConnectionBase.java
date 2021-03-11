@@ -31,6 +31,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
@@ -63,19 +64,19 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   private WebSocketFrameInternal decodeFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
     ByteBuf payload = safeBuffer(msg.content());
     boolean isFinal = msg.isFinalFragment();
-    FrameType frameType;
+    WebSocketFrameType frameType;
     if (msg instanceof BinaryWebSocketFrame) {
-      frameType = FrameType.BINARY;
+      frameType = WebSocketFrameType.BINARY;
     } else if (msg instanceof CloseWebSocketFrame) {
-      frameType = FrameType.CLOSE;
+      frameType = WebSocketFrameType.CLOSE;
     } else if (msg instanceof PingWebSocketFrame) {
-      frameType = FrameType.PING;
+      frameType = WebSocketFrameType.PING;
     } else if (msg instanceof PongWebSocketFrame) {
-      frameType = FrameType.PONG;
+      frameType = WebSocketFrameType.PONG;
     } else if (msg instanceof TextWebSocketFrame) {
-      frameType = FrameType.TEXT;
+      frameType = WebSocketFrameType.TEXT;
     } else if (msg instanceof ContinuationWebSocketFrame) {
-      frameType = FrameType.CONTINUATION;
+      frameType = WebSocketFrameType.CONTINUATION;
     } else {
       throw new IllegalStateException("Unsupported WebSocket msg " + msg);
     }

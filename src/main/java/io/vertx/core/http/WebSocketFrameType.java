@@ -8,18 +8,45 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.http.impl;
+package io.vertx.core.http;
+
+import io.vertx.codegen.annotations.VertxGen;
 
 /**
  * List of all frame types.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public enum FrameType {
+@VertxGen
+public enum WebSocketFrameType {
+
+  /**
+   * Continuation frame.
+   */
   CONTINUATION,
+
+  /**
+   * Text frame.
+   */
   TEXT,
+
+  /**
+   * Binary frame.
+   */
   BINARY,
+
+  /**
+   * Close frame.
+   */
   CLOSE,
+
+  /**
+   * Ping frame.
+   */
   PING,
+
+  /**
+   * Pong frame.
+   */
   PONG,
 }

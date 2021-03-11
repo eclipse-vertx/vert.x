@@ -17,7 +17,7 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCounted;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.impl.FrameType;
+import io.vertx.core.http.WebSocketFrameType;
 
 import java.nio.charset.StandardCharsets;
 
@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCounted {
 
   public static WebSocketFrame binaryFrame(Buffer data, boolean isFinal) {
-    return new WebSocketFrameImpl(FrameType.BINARY, data.getByteBuf(), isFinal);
+    return new WebSocketFrameImpl(WebSocketFrameType.BINARY, data.getByteBuf(), isFinal);
   }
 
   public static WebSocketFrame textFrame(String str, boolean isFinal) {
@@ -39,18 +39,18 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   public static WebSocketFrame continuationFrame(Buffer data, boolean isFinal) {
-    return new WebSocketFrameImpl(FrameType.CONTINUATION, data.getByteBuf(), isFinal);
+    return new WebSocketFrameImpl(WebSocketFrameType.CONTINUATION, data.getByteBuf(), isFinal);
   }
 
   public static WebSocketFrame pingFrame(Buffer data) {
-    return new WebSocketFrameImpl(FrameType.PING, data.getByteBuf(), true);
+    return new WebSocketFrameImpl(WebSocketFrameType.PING, data.getByteBuf(), true);
   }
 
   public static WebSocketFrame pongFrame(Buffer data) {
-    return new WebSocketFrameImpl(FrameType.PONG, data.getByteBuf(), true);
+    return new WebSocketFrameImpl(WebSocketFrameType.PONG, data.getByteBuf(), true);
   }
 
-  private final FrameType type;
+  private final WebSocketFrameType type;
   private final boolean isFinalFrame;
   private ByteBuf binaryData;
 
@@ -68,7 +68,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   /**
    * Creates a new empty text frame.
    */
-  public WebSocketFrameImpl(FrameType frameType) {
+  public WebSocketFrameImpl(WebSocketFrameType frameType) {
     this(frameType, Unpooled.EMPTY_BUFFER, true);
   }
 
@@ -83,7 +83,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
    * Creates a new text frame from with the specified string.
    */
   public WebSocketFrameImpl(String textData, boolean isFinalFrame) {
-    this.type = FrameType.TEXT;
+    this.type = WebSocketFrameType.TEXT;
     this.isFinalFrame = isFinalFrame;
     this.binaryData = Unpooled.copiedBuffer(textData, CharsetUtil.UTF_8);
   }
@@ -97,7 +97,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  public WebSocketFrameImpl(FrameType type, ByteBuf binaryData) {
+  public WebSocketFrameImpl(WebSocketFrameType type, ByteBuf binaryData) {
     this(type, binaryData, true);
   }
 
@@ -111,25 +111,30 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
    * @throws IllegalArgumentException if If <tt>(type &amp; 0x80 == 0)</tt> and the data is not encoded
    *                                  in UTF-8
    */
-  public WebSocketFrameImpl(FrameType type, ByteBuf binaryData, boolean isFinalFrame) {
+  public WebSocketFrameImpl(WebSocketFrameType type, ByteBuf binaryData, boolean isFinalFrame) {
     this.type = type;
     this.isFinalFrame = isFinalFrame;
     this.binaryData = Unpooled.unreleasableBuffer(binaryData);
   }
 
   public boolean isText() {
-    return this.type == FrameType.TEXT;
+    return this.type == WebSocketFrameType.TEXT;
   }
 
   public boolean isBinary() {
-    return this.type == FrameType.BINARY;
+    return this.type == WebSocketFrameType.BINARY;
   }
 
   public boolean isContinuation() {
-    return this.type == FrameType.CONTINUATION;
+    return this.type == WebSocketFrameType.CONTINUATION;
   }
 
-  public boolean isClose() { return this.type == FrameType.CLOSE; }
+  public boolean isClose() { return this.type == WebSocketFrameType.CLOSE; }
+
+  @Override
+  public boolean isPing() {
+    return this.type == WebSocketFrameType.PING;
+  }
 
   public ByteBuf getBinaryData() {
     return binaryData;
@@ -248,7 +253,7 @@ public class WebSocketFrameImpl implements WebSocketFrameInternal, ReferenceCoun
   }
 
   @Override
-  public FrameType type() {
+  public WebSocketFrameType type() {
     return type;
   }
 }

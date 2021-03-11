@@ -13,7 +13,6 @@ package io.vertx.core.http.impl.ws;
 
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.http.WebSocketFrame;
-import io.vertx.core.http.impl.FrameType;
 
 /**
  * A Web Socket frame that represents either text or binary data.
@@ -23,6 +22,7 @@ import io.vertx.core.http.impl.FrameType;
  * @version $Rev: 2080 $, $Date: 2010-01-26 18:04:19 +0900 (Tue, 26 Jan 2010) $
  */
 public interface WebSocketFrameInternal extends WebSocketFrame {
+
   /**
    * Returns the content of this frame as-is, with no UTF-8 decoding.
    */
@@ -50,5 +50,4 @@ public interface WebSocketFrameInternal extends WebSocketFrame {
    */
   int length();
 
-  FrameType type();
 }

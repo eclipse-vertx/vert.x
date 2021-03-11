@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
@@ -34,6 +33,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
@@ -282,7 +282,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeBinaryMessage(Buffer data) {
-    return writePartialMessage(FrameType.BINARY, data, 0);
+    return writePartialMessage(WebSocketFrameType.BINARY, data, 0);
   }
 
   @Override
@@ -296,7 +296,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeTextMessage(String text) {
-    return writePartialMessage(FrameType.TEXT, Buffer.buffer(text), 0);
+    return writePartialMessage(WebSocketFrameType.TEXT, Buffer.buffer(text), 0);
   }
 
   @Override
@@ -359,7 +359,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
    * Splits the provided buffer into multiple frames (which do not exceed the maximum web socket frame size)
    * and writes them in order to the socket.
    */
-  private Future<Void> writePartialMessage(FrameType frameType, Buffer data, int offset) {
+  private Future<Void> writePartialMessage(WebSocketFrameType frameType, Buffer data, int offset) {
     int end = offset + maxWebSocketFrameSize;
     boolean isFinal;
     if (end >= data.length()) {
@@ -405,7 +405,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   private void writeBinaryFrameInternal(Buffer data) {
-    writeFrame(new WebSocketFrameImpl(FrameType.BINARY, data.getByteBuf()));
+    writeFrame(new WebSocketFrameImpl(WebSocketFrameType.BINARY, data.getByteBuf()));
   }
 
   private void writeTextFrameInternal(String str) {
