@@ -3280,6 +3280,84 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testClientReadStreamInWorker() throws Exception {
+    int numReq = 16;
+    waitFor(numReq);
+    Buffer body = Buffer.buffer(randomAlphaString(512 * 1024));
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        HttpServer server = vertx.createHttpServer(createBaseServerOptions());
+        server.requestHandler(req -> {
+          req.response().end(body);
+        }).listen(testAddress)
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    })
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        HttpClient client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+        for (int i = 0; i < numReq; i++) {
+          client.request(requestOptions, onSuccess(req -> {
+            req.send(onSuccess(resp -> {
+              resp.end(onSuccess(v -> complete()));
+              resp.pause();
+              vertx.setTimer(250, id -> {
+                resp.resume();
+              });
+            }));
+          }));
+        }
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testServerReadStreamInWorker() throws Exception {
+    int numReq = 16;
+    waitFor(numReq);
+    Buffer body = Buffer.buffer(randomAlphaString(512 * 1024));
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        HttpServer server = vertx.createHttpServer(createBaseServerOptions());
+        server.requestHandler(req -> {
+          req.end(onSuccess(v -> req.response().end()));
+          req.pause();
+          vertx.setTimer(250, id -> {
+            req.resume();
+          });
+        }).listen(testAddress)
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    }, new DeploymentOptions().setWorker(true))
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        HttpClient client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+        for (int i = 0; i < numReq; i++) {
+          client.request(requestOptions, onSuccess(req -> {
+            req.send(body, onSuccess(resp -> {
+              resp.end(onSuccess(v -> complete()));
+            }));
+          }));
+        }
+      }
+    });
+    await();
+  }
+
+  @Test
   public void testMultipleServerClose() {
     this.server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT));
     AtomicInteger times = new AtomicInteger();
