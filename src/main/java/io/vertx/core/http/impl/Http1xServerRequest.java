@@ -180,7 +180,7 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
     }
   }
 
-  Object metric() {
+  public Object metric() {
     return metric;
   }
 

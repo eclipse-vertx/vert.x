@@ -145,6 +145,10 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     }
   }
 
+  public Object metric() {
+    return metric;
+  }
+
   HttpServerRequest routed(String route) {
     if (METRICS_ENABLED && !response.ended()) {
       HttpServerMetrics metrics = conn.metrics();

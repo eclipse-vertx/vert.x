@@ -12,6 +12,7 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.Context;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.spi.observability.HttpRequest;
 
 /**
  * Extends to expose internal methods that are necessary for integration.
@@ -24,5 +25,10 @@ public interface HttpServerRequestInternal extends HttpServerRequest {
    * @return the Vert.x context associated with this server request
    */
   Context context();
+
+  /**
+   * @return the metric object returned by the {@link io.vertx.core.spi.metrics.HttpServerMetrics#requestBegin(Object, HttpRequest)} call
+   */
+  Object metric();
 
 }
