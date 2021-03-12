@@ -447,9 +447,4 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
     return this;
   }
 
-  /**
-   * @return the Vert.x context associated with this server request
-   */
-  Context context();
-
 }

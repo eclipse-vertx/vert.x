@@ -59,7 +59,7 @@ import java.util.AbstractMap;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequest extends Http2ServerStream implements HttpServerRequest, io.vertx.core.spi.observability.HttpRequest {
+public class Http2ServerRequest extends Http2ServerStream implements HttpServerRequestInternal, io.vertx.core.spi.observability.HttpRequest {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 

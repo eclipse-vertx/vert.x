@@ -20,6 +20,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
@@ -3161,7 +3162,7 @@ public abstract class HttpTest extends HttpTestBase {
         server.requestHandler(req -> {
           req.response().end();
           assertSameEventLoop(ctx, Vertx.currentContext());
-          assertSame(req.context(), Vertx.currentContext());
+          assertSame(((HttpServerRequestInternal)req).context(), Vertx.currentContext());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
