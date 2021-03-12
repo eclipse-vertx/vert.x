@@ -11,11 +11,13 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -751,9 +753,23 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * Deep copy of this JSON object.
    *
    * @return a copy where all elements have been copied recursively
+   * @throws IllegalStateException when a nested element cannot be copied
    */
   @Override
   public JsonObject copy() {
+    return copy(DEFAULT_CLONER);
+  }
+
+  /**
+   * Deep copy of this JSON object.
+   *
+   * <p> Unlike {@link #copy()} that can fail when an unknown element cannot be copied, this method
+   * delegates the copy of such element to the {@code cloner} function and will not fail.
+   *
+   * @param cloner a function that copies custom values not supported by the JSON implementation
+   * @return a copy where all elements have been copied recursively
+   */
+  public JsonObject copy(Function<Object, ?> cloner) {
     Map<String, Object> copiedMap;
     if (map instanceof LinkedHashMap) {
       copiedMap = new LinkedHashMap<>(map.size());
@@ -761,7 +777,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       copiedMap = new HashMap<>(map.size());
     }
     for (Map.Entry<String, Object> entry : map.entrySet()) {
-      Object val = checkAndCopy(entry.getValue());
+      Object val = deepCopy(entry.getValue(), cloner);
       copiedMap.put(entry.getKey(), val);
     }
     return new JsonObject(copiedMap);

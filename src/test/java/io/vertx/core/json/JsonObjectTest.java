@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
@@ -1392,48 +1393,54 @@ public class JsonObjectTest {
 
   @Test
   public void testInvalidValsOnCopy1() {
-    Map<String, Object> invalid = new HashMap<>();
-    invalid.put("foo", new SomeClass());
-    JsonObject object = new JsonObject(invalid);
+    SomeClass invalid = new SomeClass();
+    JsonObject object = new JsonObject(Collections.singletonMap("foo", invalid));
     try {
       object.copy();
       fail();
     } catch (IllegalStateException e) {
       // OK
     }
+    object = object.copy(SomeClass.CLONER);
+    assertTrue(object.getValue("foo") instanceof SomeClass);
+    assertNotSame(object.getValue("foo"), invalid);
   }
 
   @Test
   public void testInvalidValsOnCopy2() {
-    Map<String, Object> invalid = new HashMap<>();
-    Map<String, Object> invalid2 = new HashMap<>();
-    invalid2.put("foo", new SomeClass());
-    invalid.put("bar",invalid2);
-    JsonObject object = new JsonObject(invalid);
+    SomeClass invalid = new SomeClass();
+    JsonObject object = new JsonObject(Collections.singletonMap("bar", Collections.singletonMap("foo", invalid)));
     try {
       object.copy();
       fail();
     } catch (IllegalStateException e) {
       // OK
     }
+    object = object.copy(SomeClass.CLONER);
+    assertTrue(object.getJsonObject("bar").getValue("foo") instanceof SomeClass);
+    assertNotSame(object.getJsonObject("bar").getValue("foo"), invalid);
   }
 
   @Test
   public void testInvalidValsOnCopy3() {
-    Map<String, Object> invalid = new HashMap<>();
-    List<Object> invalid2 = new ArrayList<>();
-    invalid2.add(new SomeClass());
-    invalid.put("bar",invalid2);
-    JsonObject object = new JsonObject(invalid);
+    SomeClass invalid = new SomeClass();
+    JsonObject object = new JsonObject(Collections.singletonMap("bar", Collections.singletonList(invalid)));
     try {
       object.copy();
       fail();
     } catch (IllegalStateException e) {
       // OK
     }
+    object = object.copy(SomeClass.CLONER);
+    assertTrue(object.getJsonArray("bar").getValue(0) instanceof SomeClass);
+    assertNotSame(object.getJsonArray("bar").getValue(0), invalid);
   }
 
-  class SomeClass {
+  static class SomeClass {
+    static final Function<Object, ?> CLONER = o -> {
+      assertTrue(o instanceof SomeClass);
+      return new SomeClass();
+    };
   }
 
   @Test
