@@ -24,10 +24,14 @@ import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakemetrics.*;
+import io.vertx.test.tls.Trust;
 import org.junit.Test;
 
 import java.util.*;
@@ -1166,5 +1170,31 @@ public class MetricsTest extends VertxTestBase {
       assertTrue(count <= VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE);
     }
     assertEquals(loops.size(), VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE);
+  }
+
+  @Test
+  public void testHTTP2ConnectionCloseBeforePrefaceIsReceived() throws Exception {
+    // Let the server close the connection with an idle timeout
+    HttpServerOptions options = Http2TestBase
+      .createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST)
+      .setIdleTimeout(1);
+    HttpServer server = vertx.createHttpServer(options);
+    server.requestHandler(req -> {
+
+    }).listen().toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
+    FakeHttpServerMetrics metrics = FakeVertxMetrics.getMetrics(server);
+    NetClient client = vertx.createNetClient(new NetClientOptions()
+      .setSslEngineOptions(new JdkSSLEngineOptions())
+      .setUseAlpn(true)
+      .setSsl(true)
+      .setTrustStoreOptions(Trust.SERVER_JKS.get())
+      .setApplicationLayerProtocols(Collections.singletonList("h2")));
+    CountDownLatch latch = new CountDownLatch(1);
+    client.connect(HttpTestBase.DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, onSuccess(so -> {
+      assertEquals("h2", so.applicationLayerProtocol());
+      so.closeHandler(v -> latch.countDown());
+    }));
+    awaitLatch(latch);
+    assertEquals(0, metrics.getConnectionCount());
   }
 }

@@ -224,13 +224,16 @@ public class HttpServerWorker implements Handler<Channel> {
       .useDecompression(options.isDecompressionSupported())
       .compressionLevel(options.getCompressionLevel())
       .initialSettings(options.getInitialSettings())
-      .connectionFactory(connHandler -> new Http2ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler, options, metrics))
+      .connectionFactory(connHandler -> {
+        Http2ServerConnection conn = new Http2ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler, options, metrics);
+        if (metrics != null) {
+          conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
+        }
+        return conn;
+      })
       .logEnabled(logEnabled)
       .build();
     handler.addHandler(conn -> {
-      if (metrics != null) {
-        conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
-      }
       if (options.getHttp2ConnectionWindowSize() > 0) {
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
       }
