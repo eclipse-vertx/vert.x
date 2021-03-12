@@ -53,7 +53,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     this.stream = stream;
     this.responsePromise = responsePromise;
     this.context = responsePromise.context();
-    this.uri = uri;
+    setURI(uri);
     this.method = method;
     this.server = server;
     this.host = host;
@@ -91,16 +91,12 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   }
 
   public String query() {
-    if (query == null) {
-      query = HttpUtils.parseQuery(uri);
-
-    }
     return query;
   }
 
   public String path() {
     if (path == null) {
-      path = uri.length() > 0 ? HttpUtils.parsePath(uri) : "";
+      path = HttpUtils.parsePath(uri);
     }
     return path;
   }
@@ -113,7 +109,8 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   public synchronized HttpClientRequest setURI(String uri) {
     Objects.requireNonNull(uri);
     this.uri = uri;
-    this.path = null; // Invalidate
+    this.path = null; // invalidate
+    this.query = HttpUtils.parseQuery(uri);
     return this;
   }
 
