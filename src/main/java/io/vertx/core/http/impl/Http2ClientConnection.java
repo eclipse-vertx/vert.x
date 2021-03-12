@@ -593,15 +593,25 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     Object socketMetric,
     Handler<Http2ClientConnection> c) {
     HttpClientOptions options = client.getOptions();
+    HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
       .server(false)
       .useCompression(client.getOptions().isTryUseCompression())
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.getOptions().getInitialSettings())
-      .connectionFactory(connHandler -> new Http2ClientConnection(client, context, connHandler, metrics))
+      .connectionFactory(connHandler -> {
+        Http2ClientConnection conn = new Http2ClientConnection(client, context, connHandler, metrics);
+        if (metrics != null) {
+          Object m = socketMetric;
+          if (m == null)  {
+            m = met.connected(conn.remoteAddress(), conn.remoteName());
+          }
+          conn.metric(m);
+        }
+        return conn;
+      })
       .logEnabled(options.getLogActivity())
       .build();
-    HttpClientMetrics met = client.metrics();
     handler.addHandler(conn -> {
       if (options.getHttp2ConnectionWindowSize() > 0) {
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
@@ -609,10 +619,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (metrics != null) {
         Object m = socketMetric;
         if (m == null)  {
-          m = met.connected(conn.remoteAddress(), conn.remoteName());
           met.endpointConnected(metrics);
         }
-        conn.metric(m);
       }
       c.handle(conn);
     });

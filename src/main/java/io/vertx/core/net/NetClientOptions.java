@@ -347,7 +347,7 @@ public class NetClientOptions extends ClientOptionsBase {
    * @param protocols the protocols
    * @return a reference to this, so the API can be used fluently
    */
-  public ClientOptionsBase setApplicationLayerProtocols(List<String> protocols) {
+  public NetClientOptions setApplicationLayerProtocols(List<String> protocols) {
     this.applicationLayerProtocols = protocols;
     return this;
   }
