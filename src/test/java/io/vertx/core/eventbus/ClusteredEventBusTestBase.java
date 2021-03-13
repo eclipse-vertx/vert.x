@@ -66,7 +66,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
       }
       testComplete();
     });
-    reg.completionHandler(ar -> {
+    reg.registrationCompletion(ar -> {
       assertTrue(ar.succeeded());
       if (options == null) {
         vertices[0].eventBus().send(ADDRESS1, val);
@@ -101,7 +101,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
         msg.reply(val, options);
       }
     });
-    reg.completionHandler(ar -> {
+    reg.registrationCompletion(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].eventBus().request(ADDRESS1, str, onSuccess((Message<R> reply) -> {
         if (consumer == null) {
@@ -131,7 +131,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     vertices[0].eventBus().<String>consumer(ADDRESS1).handler((Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
-    }).completionHandler(ar -> {
+    }).registrationCompletion(ar -> {
       assertTrue(ar.succeeded());
       vertices[1].eventBus().send(ADDRESS1, str);
     });
@@ -145,7 +145,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     vertices[0].eventBus().consumer(ADDRESS1, (Message<String> msg) -> {
       assertEquals(str, msg.body());
       testComplete();
-    }).completionHandler(ar -> {
+    }).registrationCompletion(ar -> {
       assertTrue(ar.succeeded());
       vertices[1].eventBus().send(ADDRESS1, str);
     });
@@ -182,9 +182,9 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
       }
     }
     MessageConsumer reg = vertices[2].eventBus().<T>consumer(ADDRESS1).handler(new MyHandler());
-    reg.completionHandler(new MyRegisterHandler());
+    reg.registrationCompletion(new MyRegisterHandler());
     reg = vertices[1].eventBus().<T>consumer(ADDRESS1).handler(new MyHandler());
-    reg.completionHandler(new MyRegisterHandler());
+    reg.registrationCompletion(new MyRegisterHandler());
     await();
   }
 
@@ -197,7 +197,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     vertices[0].eventBus().registerCodec(new StringLengthCodec()).<Integer>consumer("whatever", msg -> {
       assertEquals(content.length(), (int) msg.body());
       complete();
-    }).completionHandler(ar -> latch.countDown());
+    }).registrationCompletion(ar -> latch.countDown());
     awaitLatch(latch);
     StringLengthCodec codec = new StringLengthCodec();
     vertices[1].eventBus().registerCodec(codec).addOutboundInterceptor(sc -> {
@@ -229,7 +229,7 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     });
     startNodes(options.get(), options.get());
     MessageConsumer<Object> consumer = vertices[0].eventBus().consumer("foo", msg -> msg.reply(msg.body()));
-    consumer.completionHandler(onSuccess(reg -> {
+    consumer.registrationCompletion(onSuccess(reg -> {
       vertices[0].eventBus().request("foo", "echo", onSuccess(reply1 -> {
         assertEquals("echo", reply1.body());
         vertices[1].eventBus().request("foo", "echo", onSuccess(reply2 -> {

@@ -46,7 +46,7 @@ public class EventBusExamples {
   }
 
   public void example3(MessageConsumer<String> consumer) {
-    consumer.completionHandler(res -> {
+    consumer.registrationCompletion(res -> {
       if (res.succeeded()) {
         System.out.println("The handler registration has reached all nodes");
       } else {

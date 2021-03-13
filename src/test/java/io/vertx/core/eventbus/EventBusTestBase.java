@@ -340,7 +340,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
       public void start() throws Exception {
         vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
           msg.reply(expectedBody);
-        }).completionHandler(ar -> {
+        }).registrationCompletion(ar -> {
           assertTrue(ar.succeeded());
           latch.countDown();
         });
@@ -363,7 +363,7 @@ public abstract class EventBusTestBase extends VertxTestBase {
     vertices[1].eventBus().<String>consumer(ADDRESS1, msg -> {
       assertEquals(expectedBody, msg.body());
       receivedLatch.countDown();
-    }).completionHandler(ar -> {
+    }).registrationCompletion(ar -> {
       assertTrue(ar.succeeded());
       vertices[0].executeBlocking(fut -> {
         vertices[0].eventBus().send(ADDRESS1, expectedBody);

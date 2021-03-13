@@ -32,7 +32,7 @@ public class ReplyFailureErrorTest extends VertxTestBase {
     vertices[0].eventBus().registerCodec(codec);
     vertices[1].eventBus().consumer("foo", msg -> {
       fail("Should not receive message");
-    }).completionHandler(onSuccess(v -> {
+    }).registrationCompletion(onSuccess(v -> {
       DeliveryOptions options = new DeliveryOptions().setCodecName(codec.name());
       vertices[0].eventBus().request("foo", new MyPOJO("bar"), options, onFailure(t -> {
         assertThat(t, instanceOf(ReplyException.class));

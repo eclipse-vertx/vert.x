@@ -68,7 +68,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
       }))
       .map(consumer -> {
         Promise promise = Promise.promise();
-        consumer.completionHandler(promise);
+        consumer.registrationCompletion(promise);
         return promise.future();
       })
       .collect(collectingAndThen(toList(), CompositeFuture::all));

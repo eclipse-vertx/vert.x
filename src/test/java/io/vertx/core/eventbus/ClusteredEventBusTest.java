@@ -58,8 +58,8 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testLocalHandlerClusteredSend() throws Exception {
     startNodes(2);
     waitFor(2);
-    vertices[1].eventBus().consumer(ADDRESS1, msg -> complete()).completionHandler(v1 -> {
-      vertices[0].eventBus().localConsumer(ADDRESS1, msg -> complete()).completionHandler(v2 -> {
+    vertices[1].eventBus().consumer(ADDRESS1, msg -> complete()).registrationCompletion(v1 -> {
+      vertices[0].eventBus().localConsumer(ADDRESS1, msg -> complete()).registrationCompletion(v2 -> {
         vertices[0].eventBus().send(ADDRESS1, "foo");
         vertices[0].eventBus().send(ADDRESS1, "foo");
       });
@@ -71,8 +71,8 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testLocalHandlerClusteredPublish() throws Exception {
     startNodes(2);
     waitFor(2);
-    vertices[1].eventBus().consumer(ADDRESS1, msg -> complete()).completionHandler(v1 -> {
-      vertices[0].eventBus().localConsumer(ADDRESS1, msg -> complete()).completionHandler(v2 -> {
+    vertices[1].eventBus().consumer(ADDRESS1, msg -> complete()).registrationCompletion(v1 -> {
+      vertices[0].eventBus().localConsumer(ADDRESS1, msg -> complete()).registrationCompletion(v2 -> {
         vertices[0].eventBus().publish(ADDRESS1, "foo");
       });
     });
@@ -174,7 +174,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       assertTrue(msg.body() instanceof MyReplyException);
       testComplete();
     });
-    reg.completionHandler(ar -> {
+    reg.registrationCompletion(ar -> {
       vertices[1].eventBus().send(ADDRESS1, myReplyException);
     });
 
@@ -198,7 +198,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         testComplete();
       }
     });
-    consumer.completionHandler(ar -> {
+    consumer.registrationCompletion(ar -> {
       assertTrue(ar.succeeded());
       vertices[1].eventBus().send("foobar", "whatever");
     });
@@ -211,7 +211,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1);
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
-    consumer.completionHandler(v -> {
+    consumer.registrationCompletion(v -> {
       assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       testComplete();
@@ -228,7 +228,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     });
     ThreadLocal<Object> stack = new ThreadLocal<>();
     stack.set(true);
-    consumer.completionHandler(v -> {
+    consumer.registrationCompletion(v -> {
       assertTrue(Vertx.currentContext().isEventLoopContext());
       assertNull(stack.get());
       testComplete();
@@ -272,10 +272,10 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       if (c > 9) {
         fail("too many messages");
       }
-    }).completionHandler(onSuccess(v -> {
+    }).registrationCompletion(onSuccess(v -> {
       vertices[1].eventBus().consumer(ADDRESS1, msg -> {
         fail("shouldn't get message");
-      }).completionHandler(onSuccess(v2 -> {
+      }).registrationCompletion(onSuccess(v2 -> {
         regLatch.countDown();
       }));
     }));
@@ -313,7 +313,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         assertEquals(expected, new ArrayList<>(obtained));
         testComplete();
       }
-    }).completionHandler(ar -> {
+    }).registrationCompletion(ar -> {
       assertTrue(ar.succeeded());
       latch.countDown();
     });
@@ -344,7 +344,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     AtomicLong consumer1 = new AtomicLong();
     vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
       consumer1.incrementAndGet();
-    }).completionHandler(onSuccess(v -> {
+    }).registrationCompletion(onSuccess(v -> {
       for (int i = 0; i < 30; i++) {
         if (send) {
           vertices[0].eventBus().send(ADDRESS1, "msg", new DeliveryOptions().setLocalOnly(true));
@@ -363,7 +363,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     startNodes(2);
     vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
       msg.reply("pong", new DeliveryOptions().setLocalOnly(true));
-    }).completionHandler(onSuccess(v -> {
+    }).registrationCompletion(onSuccess(v -> {
       vertices[0].eventBus().request(ADDRESS1, "ping", new DeliveryOptions().setSendTimeout(500), onSuccess(msg -> testComplete()));
     }));
     await();
@@ -374,7 +374,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     startNodes(1);
     MessageConsumer<Object> consumer = vertices[0].eventBus().consumer(ADDRESS1);
     AtomicInteger completionCount = new AtomicInteger();
-    consumer.completionHandler(v -> {
+    consumer.registrationCompletion(v -> {
       // Do not assert success because the handler could be unregistered locally
       // before the registration was propagated to the cluster manager
       int val = completionCount.getAndIncrement();
@@ -416,7 +416,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     vertices[1]
       .eventBus()
       .consumer(ADDRESS1, msg -> complete())
-      .completionHandler(onSuccess(v1 -> updateLatch.countDown()));
+      .registrationCompletion(onSuccess(v1 -> updateLatch.countDown()));
     awaitLatch(updateLatch);
     MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
     producer.write("body", onSuccess(v2 -> complete()));
@@ -443,7 +443,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     vertices[1]
       .eventBus()
       .consumer(ADDRESS1, msg -> complete())
-      .completionHandler(onSuccess(v1 -> {
+      .registrationCompletion(onSuccess(v1 -> {
         MessageProducer<String> producer = vertices[0].eventBus().publisher(ADDRESS1);
         producer.write("body", onSuccess(v -> complete()));
       }));
@@ -474,7 +474,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     vertices[1]
       .eventBus()
       .consumer(ADDRESS1, msg -> {})
-      .completionHandler(onSuccess(v1 -> {
+      .registrationCompletion(onSuccess(v1 -> {
         MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1);
         producer.write("body", onFailure(err -> {
           testComplete();
@@ -498,7 +498,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     vertices[0].eventBus().consumer(ADDRESS1, msg -> {
       assertTrue(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
       testComplete();
-    }).completionHandler(onSuccess(v -> vertices[0].eventBus().send(ADDRESS1, "foo")));
+    }).registrationCompletion(onSuccess(v -> vertices[0].eventBus().send(ADDRESS1, "foo")));
     await();
   }
 

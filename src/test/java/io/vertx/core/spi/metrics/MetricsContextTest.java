@@ -803,7 +803,7 @@ public class MetricsContextTest extends VertxTestBase {
             }));
           });
         });
-      }).completionHandler(onSuccess(v2 -> {
+      }).registrationCompletion(onSuccess(v2 -> {
         t.start();
       }));
     });

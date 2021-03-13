@@ -131,7 +131,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
         assertNotSame(Vertx.currentContext(), ctx);
         assertSameEventLoop(ctx, Vertx.currentContext());
         assertEquals("msg", msg.body());
-      }).completionHandler(onSuccess(v2 -> {
+      }).registrationCompletion(onSuccess(v2 -> {
         latch.countDown();
       }));
     });
@@ -176,7 +176,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
         ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) vertx.getOrCreateContext()).localContextData();
         tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
         msg.reply("msg_2");
-      }).completionHandler(onSuccess(v2 -> {
+      }).registrationCompletion(onSuccess(v2 -> {
         latch.countDown();
       }));
     });
@@ -205,7 +205,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) vertx.getOrCreateContext()).localContextData();
       tracerMap.put(ebTracer.sendKey, ebTracer.sendVal);
       msg.fail(10, "it failed");
-    }).completionHandler(onSuccess(v -> {
+    }).registrationCompletion(onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
@@ -243,7 +243,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
     CountDownLatch latch = new CountDownLatch(1);
     vertx1.eventBus().consumer("the_address", msg -> {
       // Let timeout
-    }).completionHandler(onSuccess(v -> {
+    }).registrationCompletion(onSuccess(v -> {
       latch.countDown();
     }));
     awaitLatch(latch);
@@ -277,7 +277,7 @@ public abstract class EventBusTracerTestBase extends VertxTestBase {
           assertSame(consumerCtx, vertx2.getOrCreateContext());
           assertSameEventLoop(consumerCtx, vertx2.getOrCreateContext());
         });
-      }).completionHandler(onSuccess(v2 -> {
+      }).registrationCompletion(onSuccess(v2 -> {
         latch.countDown();
       }));
     });
