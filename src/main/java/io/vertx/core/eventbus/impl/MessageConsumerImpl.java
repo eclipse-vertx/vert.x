@@ -99,11 +99,23 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
 
   @Override
   public synchronized void completionHandler(Handler<AsyncResult<Void>> handler) {
+    registrationCompletion(handler);
+  }
+
+  @Override
+  public synchronized void registrationCompletion(Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(handler);
+    registrationCompletion().onComplete(handler);
+  }
+
+  @Override
+  public synchronized Future<Void> registrationCompletion() {
     if (result != null) {
-      result.future().onComplete(handler);
+      return result.future();
     } else {
-      completionHandler = handler;
+      final Promise<Void> completion = context.promise();
+      completionHandler = completion;
+      return completion.future();
     }
   }
 

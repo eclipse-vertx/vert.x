@@ -87,8 +87,20 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
    * Optional method which can be called to indicate when the registration has been propagated across the cluster.
    *
    * @param completionHandler the completion handler
+   * @deprecated Please use {@link #registrationCompletion(Handler)} or {@link #registrationCompletion()}
    */
+  @Deprecated
   void completionHandler(Handler<AsyncResult<Void>> completionHandler);
+
+  /**
+   * Optional method which can be called to indicate when the registration has been propagated across the cluster.
+   */
+  void registrationCompletion(Handler<AsyncResult<Void>> completionHandler);
+
+  /**
+   * Like {@link #registrationCompletion(Handler)} but returns a {@code Future} of the asynchronous result.
+   */
+  Future<Void> registrationCompletion();
 
   /**
    * Unregisters the handler which created this registration
