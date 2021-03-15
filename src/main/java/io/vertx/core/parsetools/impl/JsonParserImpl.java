@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -52,6 +52,7 @@ public class JsonParserImpl implements JsonParser {
   private long demand = Long.MAX_VALUE;
   private boolean ended;
   private final ReadStream<Buffer> stream;
+  private boolean emitting;
 
   public JsonParserImpl(ReadStream<Buffer> stream) {
     this.stream = stream;
@@ -218,53 +219,60 @@ public class JsonParserImpl implements JsonParser {
   }
 
   private void checkPending() {
-    try {
-      while (true) {
-        if (currentToken == null) {
-          JsonToken next = parser.nextToken();
-          if (next != null && next != JsonToken.NOT_AVAILABLE) {
-            currentToken = next;
-          }
-        }
-        if (currentToken == null) {
-          if (ended) {
-            if (endHandler != null) {
-              endHandler.handle(null);
+    if (!emitting) {
+      emitting = true;
+      try {
+        while (true) {
+          if (currentToken == null) {
+            JsonToken next = parser.nextToken();
+            if (next != null && next != JsonToken.NOT_AVAILABLE) {
+              currentToken = next;
             }
-            return;
           }
-          break;
-        } else {
-          if (demand > 0L) {
-            JsonToken token = currentToken;
-            currentToken = null;
-            tokenHandler.handle(token);
-          } else {
+          if (currentToken == null) {
+            if (ended) {
+              if (endHandler != null) {
+                endHandler.handle(null);
+              }
+              return;
+            }
             break;
+          } else {
+            if (demand > 0L) {
+              JsonToken token = currentToken;
+              currentToken = null;
+              tokenHandler.handle(token);
+            } else {
+              break;
+            }
           }
         }
-      }
-      if (demand == 0L) {
-        if (stream != null) {
-          stream.pause();
+        if (demand == 0L) {
+          if (stream != null) {
+            stream.pause();
+          }
+        } else {
+          if (stream != null) {
+            stream.resume();
+          }
         }
-      } else {
-        if (stream != null) {
-          stream.resume();
+      } catch (IOException e) {
+        if (exceptionHandler != null) {
+          exceptionHandler.handle(e);
+        } else {
+          throw new DecodeException(e.getMessage());
         }
+      } catch (Exception e) {
+        if (exceptionHandler != null) {
+          exceptionHandler.handle(e);
+        } else {
+          throw e;
+        }
+      } finally {
+        emitting = false;
       }
-    } catch (IOException e) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(e);
-      } else {
-        throw new DecodeException(e.getMessage());
-      }
-    } catch (Exception e) {
-      if (exceptionHandler != null) {
-        exceptionHandler.handle(e);
-      } else {
-        throw e;
-      }
+    } else {
+      return;
     }
   }
 

@@ -15,7 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.internal.PlatformDependent;
 
-abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
+public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
 
   private static VertxByteBufAllocator UNSAFE_IMPL = new VertxByteBufAllocator() {
     @Override
@@ -31,7 +31,7 @@ abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
     }
   };
 
-  static final VertxByteBufAllocator DEFAULT = PlatformDependent.hasUnsafe() ? UNSAFE_IMPL : IMPL;
+  public static final VertxByteBufAllocator DEFAULT = PlatformDependent.hasUnsafe() ? UNSAFE_IMPL : IMPL;
 
   @Override
   protected ByteBuf newDirectBuffer(int initialCapacity, int maxCapacity) {

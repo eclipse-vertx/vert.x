@@ -388,6 +388,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
     if (headers == null || !headers.contains(HttpHeaders.CONTENT_LENGTH)) {
       setChunked(true);
     }
+    response(handler);
     body.pipeTo(this);
   }
 

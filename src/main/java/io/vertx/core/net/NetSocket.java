@@ -299,5 +299,11 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @return the indicated server name
    */
   String indicatedServerName();
+
+  /**
+   * @return the application-level protocol negotiated during the TLS handshake
+   */
+  String applicationLayerProtocol();
+
 }
 

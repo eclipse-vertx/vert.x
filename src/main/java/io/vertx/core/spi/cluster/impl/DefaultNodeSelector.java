@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -54,11 +54,16 @@ public class DefaultNodeSelector implements NodeSelector {
 
   @Override
   public void registrationsUpdated(RegistrationUpdateEvent event) {
-    selectors.dataReceived(event.address(), event.registrations());
+    selectors.dataReceived(event.address(), event.registrations(), true);
   }
 
   @Override
   public void registrationsLost() {
     selectors.dataLost();
+  }
+
+  @Override
+  public boolean wantsUpdatesFor(String address) {
+    return selectors.hasEntryFor(address);
   }
 }

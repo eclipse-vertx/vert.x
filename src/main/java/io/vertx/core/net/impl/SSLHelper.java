@@ -97,14 +97,6 @@ public class SSLHelper {
     return engineOptions;
   }
 
-  private static final Map<HttpVersion, String> PROTOCOL_NAME_MAPPING = new EnumMap<>(HttpVersion.class);
-
-  static {
-    PROTOCOL_NAME_MAPPING.put(HttpVersion.HTTP_2, "h2");
-    PROTOCOL_NAME_MAPPING.put(HttpVersion.HTTP_1_1, "http/1.1");
-    PROTOCOL_NAME_MAPPING.put(HttpVersion.HTTP_1_0, "http/1.0");
-  }
-
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
   private boolean ssl;
@@ -121,7 +113,7 @@ public class SSLHelper {
   private boolean openSsl;
   private boolean client;
   private boolean useAlpn;
-  private List<HttpVersion> applicationProtocols;
+  private List<String> applicationProtocols;
   private Set<String> enabledProtocols;
 
   private String endpointIdentificationAlgorithm = "";
@@ -224,11 +216,11 @@ public class SSLHelper {
     return clientAuth;
   }
 
-  public List<HttpVersion> getApplicationProtocols() {
+  public List<String> getApplicationProtocols() {
     return applicationProtocols;
   }
 
-  public SSLHelper setApplicationProtocols(List<HttpVersion> applicationProtocols) {
+  public SSLHelper setApplicationProtocols(List<String> applicationProtocols) {
     this.applicationProtocols = applicationProtocols;
     return this;
   }
@@ -284,7 +276,7 @@ public class SSLHelper {
             ApplicationProtocolConfig.Protocol.ALPN,
             ApplicationProtocolConfig.SelectorFailureBehavior.NO_ADVERTISE,
             ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-            applicationProtocols.stream().map(PROTOCOL_NAME_MAPPING::get).collect(Collectors.toList())
+            applicationProtocols
         ));
       }
       SslContext ctx = builder.build();

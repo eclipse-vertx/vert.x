@@ -47,7 +47,7 @@ import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerResponseImpl implements HttpServerResponse, HttpResponse {
+public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   private final Http2ServerStream stream;
   private final ChannelHandlerContext ctx;
@@ -74,11 +74,11 @@ public class Http2ServerResponseImpl implements HttpServerResponse, HttpResponse
   private Handler<Void> endHandler;
   private Future<NetSocket> netSocket;
 
-  public Http2ServerResponseImpl(Http2ServerConnection conn,
-                                 Http2ServerStream stream,
-                                 boolean push,
-                                 String contentEncoding,
-                                 String host) {
+  public Http2ServerResponse(Http2ServerConnection conn,
+                             Http2ServerStream stream,
+                             boolean push,
+                             String contentEncoding,
+                             String host) {
     this.stream = stream;
     this.ctx = conn.handlerContext;
     this.conn = conn;
@@ -364,7 +364,7 @@ public class Http2ServerResponseImpl implements HttpServerResponse, HttpResponse
     write(Buffer.buffer(chunk).getByteBuf(), false, handler);
   }
 
-  private Http2ServerResponseImpl write(ByteBuf chunk) {
+  private Http2ServerResponse write(ByteBuf chunk) {
     write(chunk, false, null);
     return this;
   }

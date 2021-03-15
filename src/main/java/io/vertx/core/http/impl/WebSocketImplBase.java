@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
@@ -34,6 +33,7 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.http.WebSocketFrame;
+import io.vertx.core.http.WebSocketFrameType;
 import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
 import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
@@ -282,7 +282,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeBinaryMessage(Buffer data) {
-    return writePartialMessage(FrameType.BINARY, data, 0);
+    return writePartialMessage(WebSocketFrameType.BINARY, data, 0);
   }
 
   @Override
@@ -296,7 +296,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
 
   @Override
   public Future<Void> writeTextMessage(String text) {
-    return writePartialMessage(FrameType.TEXT, Buffer.buffer(text), 0);
+    return writePartialMessage(WebSocketFrameType.TEXT, Buffer.buffer(text), 0);
   }
 
   @Override
@@ -359,7 +359,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
    * Splits the provided buffer into multiple frames (which do not exceed the maximum web socket frame size)
    * and writes them in order to the socket.
    */
-  private Future<Void> writePartialMessage(FrameType frameType, Buffer data, int offset) {
+  private Future<Void> writePartialMessage(WebSocketFrameType frameType, Buffer data, int offset) {
     int end = offset + maxWebSocketFrameSize;
     boolean isFinal;
     if (end >= data.length()) {
@@ -405,7 +405,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   private void writeBinaryFrameInternal(Buffer data) {
-    writeFrame(new WebSocketFrameImpl(FrameType.BINARY, data.getByteBuf()));
+    writeFrame(new WebSocketFrameImpl(WebSocketFrameType.BINARY, data.getByteBuf()));
   }
 
   private void writeTextFrameInternal(String str) {
@@ -413,10 +413,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   }
 
   private io.netty.handler.codec.http.websocketx.WebSocketFrame encodeFrame(WebSocketFrameImpl frame) {
-    ByteBuf buf = frame.getBinaryData();
-    if (buf != Unpooled.EMPTY_BUFFER) {
-      buf = safeBuffer(buf, chctx.alloc());
-    }
+    ByteBuf buf = safeBuffer(frame.getBinaryData());
     switch (frame.type()) {
       case BINARY:
         return new BinaryWebSocketFrame(frame.isFinal(), 0, buf);
@@ -447,30 +444,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  private WebSocketFrameInternal decodeFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
-    ByteBuf payload = safeBuffer(msg, chctx.alloc());
-    boolean isFinal = msg.isFinalFragment();
-    FrameType frameType;
-    if (msg instanceof BinaryWebSocketFrame) {
-      frameType = FrameType.BINARY;
-    } else if (msg instanceof CloseWebSocketFrame) {
-      frameType = FrameType.CLOSE;
-    } else if (msg instanceof PingWebSocketFrame) {
-      frameType = FrameType.PING;
-    } else if (msg instanceof PongWebSocketFrame) {
-      frameType = FrameType.PONG;
-    } else if (msg instanceof TextWebSocketFrame) {
-      frameType = FrameType.TEXT;
-    } else if (msg instanceof ContinuationWebSocketFrame) {
-      frameType = FrameType.CONTINUATION;
-    } else {
-      throw new IllegalStateException("Unsupported WebSocket msg " + msg);
-    }
-    return new WebSocketFrameImpl(frameType, payload, isFinal);
-  }
-
-  void handleFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
-    WebSocketFrameInternal frame = decodeFrame(msg);
+  void handleFrame(WebSocketFrameInternal frame) {
     switch (frame.type()) {
       case PING:
         // Echo back the content of the PING frame as PONG frame as specified in RFC 6455 Section 5.5.2
@@ -483,7 +457,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
         }
         break;
       case CLOSE:
-        handleCloseFrame((CloseWebSocketFrame) msg);
+        handleCloseFrame(frame);
         break;
     }
     if (!pending.write(frame)) {
@@ -491,18 +465,18 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     }
   }
 
-  private void handleCloseFrame(CloseWebSocketFrame closeFrame) {
+  private void handleCloseFrame(WebSocketFrameInternal closeFrame) {
     boolean echo;
     synchronized (conn) {
       echo = closeStatusCode == null;
       closed = true;
-      closeStatusCode = (short)closeFrame.statusCode();
-      closeReason = closeFrame.reasonText();
+      closeStatusCode = closeFrame.closeStatusCode();
+      closeReason = closeFrame.closeReason();
     }
     handleClose(true);
     if (echo) {
       ChannelPromise fut = conn.channelFuture();
-      conn.writeToChannel(closeFrame.retainedDuplicate(), fut);
+      conn.writeToChannel(new CloseWebSocketFrame(closeStatusCode, closeReason), fut);
       fut.addListener(v -> handleCloseConnection());
     } else {
       handleCloseConnection();

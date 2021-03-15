@@ -112,9 +112,24 @@ public class Pool<C> {
       setConcurrency(this, concurrency);
     }
 
-    @Override
-    public void onRecycle() {
-      recycle(this);
+    Lease<C> createLease() {
+      return new Lease<C>() {
+        private boolean recycled;
+        @Override
+        public C get() {
+          return connection;
+        }
+        @Override
+        public void recycle() {
+          synchronized (this) {
+            if (recycled) {
+              throw new IllegalStateException("Already recycled");
+            }
+            recycled = true;
+          }
+          Pool.this.recycle(Holder.this);
+        }
+      };
     }
 
     @Override
@@ -194,7 +209,7 @@ public class Pool<C> {
    *
    * @param handler the handler
    */
-  public synchronized void getConnection(Handler<AsyncResult<C>> handler) {
+  public synchronized void getConnection(Handler<AsyncResult<Lease<C>>> handler) {
     Waiter<C> waiter = new Waiter<>(handler);
     waitersQueue.add(waiter);
     checkProgress();
@@ -275,7 +290,7 @@ public class Pool<C> {
           available.poll();
         }
         Waiter<C> waiter = waitersQueue.poll();
-        return () -> waiter.handler.handle(Future.succeededFuture(conn.connection));
+        return () -> waiter.handler.handle(Future.succeededFuture(conn.createLease()));
       } else if (needToCreateConnection()) {
         connecting++;
         weight += initialWeight;
@@ -369,7 +384,7 @@ public class Pool<C> {
     }
     connectionAdded.accept(holder.connection);
     for (Waiter<C> waiter : waiters) {
-      waiter.handler.handle(Future.succeededFuture(holder.connection));
+      waiter.handler.handle(Future.succeededFuture(holder.createLease()));
     }
   }
 
@@ -486,8 +501,8 @@ public class Pool<C> {
   }
 
   private static final class Waiter<C> {
-    private final Handler<AsyncResult<C>> handler;
-    Waiter(Handler<AsyncResult<C>> handler) {
+    private final Handler<AsyncResult<Lease<C>>> handler;
+    Waiter(Handler<AsyncResult<Lease<C>>> handler) {
       this.handler = handler;
     }
   }

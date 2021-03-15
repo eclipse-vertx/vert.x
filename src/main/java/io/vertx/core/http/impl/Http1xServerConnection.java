@@ -17,6 +17,7 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -27,7 +28,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -155,7 +155,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     if (msg instanceof HttpContent) {
       onContent(msg);
     } else if (msg instanceof WebSocketFrame) {
-      // TODO
       handleWsFrame((WebSocketFrame) msg);
     }
   }
@@ -176,7 +175,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       handleError(content);
       return;
     }
-    Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content(), chctx.alloc()));
+    Buffer buffer = Buffer.buffer(VertxHandler.safeBuffer(content.content()));
     Http1xServerRequest request;
     synchronized (this) {
       request = requestInProgress;
@@ -245,7 +244,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void reportRequestComplete(Http1xServerRequest request) {
     if (metrics != null) {
-      metrics.requestEnd(request.metric(), request.bytesRead());
+      metrics.requestEnd(request.metric(), request, request.bytesRead());
       flushBytesRead();
     }
   }
@@ -258,7 +257,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         metrics.requestReset(request.metric());
         requestFailed = false;
       } else {
-        metrics.responseEnd(request.metric(), request.response().bytesWritten());
+        metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
       }
     }
     VertxTracer tracer = context.tracer();
@@ -395,7 +394,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
           protected void handleClosed() {
             if (metrics != null) {
               Http1xServerRequest request = Http1xServerConnection.this.responseInProgress;
-              metrics.responseEnd(request.metric(), request.response().bytesWritten());
+              metrics.responseEnd(request.metric(), request.response(), request.response().bytesWritten());
             }
             super.handleClosed();
           }
@@ -499,39 +498,36 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return super.supportsFileRegion() && chctx.pipeline().get(HttpChunkContentCompressor.class) == null;
   }
 
-  private void handleError(HttpObject obj) {
-    DecoderResult result = obj.decoderResult();
+  private void handleError(HttpRequest request) {
+    DecoderResult result = request.decoderResult();
     Throwable cause = result.cause();
+    HttpResponseStatus status = null;
     if (cause instanceof TooLongFrameException) {
       String causeMsg = cause.getMessage();
-      HttpVersion version;
-      if (obj instanceof HttpRequest) {
-        version = ((HttpRequest) obj).protocolVersion();
-      } else if (requestInProgress != null) {
-        version = requestInProgress.version() == io.vertx.core.http.HttpVersion.HTTP_1_0 ? HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-      } else {
-        version = HttpVersion.HTTP_1_1;
-      }
-      HttpResponseStatus status;
       if (causeMsg.startsWith("An HTTP line is larger than")) {
         status = HttpResponseStatus.REQUEST_URI_TOO_LONG;
       } else if (causeMsg.startsWith("HTTP header is larger than")) {
         status = HttpResponseStatus.REQUEST_HEADER_FIELDS_TOO_LARGE;
-      } else {
-        status = HttpResponseStatus.BAD_REQUEST;
       }
-      DefaultFullHttpResponse resp = new DefaultFullHttpResponse(version, status);
+    }
+    if (status == null && HttpMethod.GET == request.method() &&
+      HttpVersion.HTTP_1_0 == request.protocolVersion() && "/bad-request".equals(request.uri())) {
+      // Matches Netty's specific HttpRequest for invalid messages
+      status = HttpResponseStatus.BAD_REQUEST;
+    }
+    if (status != null) {
+      DefaultFullHttpResponse resp = new DefaultFullHttpResponse(request.protocolVersion(), status);
       ChannelPromise fut = chctx.newPromise();
       writeToChannel(resp, fut);
-      fut.addListener(res -> {
-        // fail(result.cause());
-        // because of CCE
-        fail(result.cause());
-      });
+      fut.addListener(res -> fail(result.cause()));
     } else {
-      // fail(result.cause());
-      // because of CCE
-      fail(result.cause());
+      handleError((HttpObject) request);
     }
+  }
+
+  private void handleError(HttpObject obj) {
+    DecoderResult result = obj.decoderResult();
+    ReferenceCountUtil.release(obj);
+    fail(result.cause());
   }
 }

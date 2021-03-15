@@ -21,6 +21,7 @@ import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -58,7 +59,7 @@ import java.util.AbstractMap;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class Http2ServerRequestImpl extends Http2ServerStream implements HttpServerRequest, io.vertx.core.spi.observability.HttpRequest {
+public class Http2ServerRequest extends Http2ServerStream implements HttpServerRequestInternal, io.vertx.core.spi.observability.HttpRequest {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 
@@ -82,13 +83,13 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   private Handler<HttpFrame> customFrameHandler;
   private Handler<StreamPriority> streamPriorityHandler;
 
-  Http2ServerRequestImpl(Http2ServerConnection conn,
-                         TracingPolicy tracingPolicy,
-                         ContextInternal context,
-                         String serverOrigin,
-                         Http2Headers headers,
-                         String contentEncoding,
-                         boolean streamEnded) {
+  Http2ServerRequest(Http2ServerConnection conn,
+                     TracingPolicy tracingPolicy,
+                     ContextInternal context,
+                     String serverOrigin,
+                     Http2Headers headers,
+                     String contentEncoding,
+                     boolean streamEnded) {
     super(conn, context, headers, contentEncoding, serverOrigin);
 
     String scheme = headers.get(":scheme") != null ? headers.get(":scheme").toString() : null;
@@ -114,9 +115,6 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   void dispatch(Handler<HttpServerRequest> handler) {
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      List<Map.Entry<String, String>> tags = new ArrayList<>();
-      tags.add(new AbstractMap.SimpleEntry<>("http.url", absoluteURI()));
-      tags.add(new AbstractMap.SimpleEntry<>("http.method", method.name()));
       trace = tracer.receiveRequest(context, SpanKind.RPC, tracingPolicy, this, method().name(), headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
     context.emit(this, handler);
@@ -225,6 +223,8 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
               } catch (Exception e) {
                 // Will never happen, anyway handle it somehow just in case
                 handleException(e);
+              } finally {
+                attr.release();
               }
             }
           }
@@ -260,6 +260,11 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
     if (ended) {
       throw new IllegalStateException("Request has already been read");
     }
+  }
+
+  @Override
+  public Context context() {
+    return context;
   }
 
   @Override
@@ -364,7 +369,7 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
   }
 
   @Override
-  public Http2ServerResponseImpl response() {
+  public Http2ServerResponse response() {
     return response;
   }
 
@@ -436,7 +441,9 @@ public class Http2ServerRequestImpl extends Http2ServerStream implements HttpSer
             method.toNetty(),
             uri);
           req.headers().add(HttpHeaderNames.CONTENT_TYPE, contentType);
-          postRequestDecoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(context, this, () -> uploadHandler), req);
+          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
+          factory.setMaxLimit(conn.options.getMaxFormAttributeSize());
+          postRequestDecoder = new HttpPostRequestDecoder(factory, req);
         }
       } else {
         postRequestDecoder = null;

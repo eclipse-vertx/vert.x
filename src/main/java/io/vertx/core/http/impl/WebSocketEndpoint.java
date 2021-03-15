@@ -13,11 +13,10 @@ package io.vertx.core.http.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.net.impl.clientconnection.ConnectResult;
-import io.vertx.core.net.impl.clientconnection.ConnectionListener;
+import io.vertx.core.Promise;
+import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -27,7 +26,7 @@ import java.util.Deque;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class WebSocketEndpoint extends ClientHttpEndpointBase {
+class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
 
   private final int maxPoolSize;
   private final HttpChannelConnector connector;
@@ -52,21 +51,10 @@ class WebSocketEndpoint extends ClientHttpEndpointBase {
 
   private void tryConnect(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler) {
 
-    class Listener implements ConnectionListener<HttpClientConnection>, Handler<AsyncResult<ConnectResult<HttpClientConnection>>> {
+    class Listener implements Handler<AsyncResult<HttpClientConnection>> {
 
-      private HttpClientConnection conn;
-
-      @Override
-      public void onConcurrencyChange(long concurrency) {
-      }
-
-      @Override
-      public void onRecycle() {
-      }
-
-      @Override
-      public void onEvict() {
-        connectionRemoved(conn);
+      private void onEvict() {
+        decRefCount();
         Waiter h;
         synchronized (WebSocketEndpoint.this) {
           if (--inflightConnections > maxPoolSize || waiters.isEmpty()) {
@@ -78,20 +66,25 @@ class WebSocketEndpoint extends ClientHttpEndpointBase {
       }
 
       @Override
-      public void handle(AsyncResult<ConnectResult<HttpClientConnection>> ar) {
+      public void handle(AsyncResult<HttpClientConnection> ar) {
         if (ar.succeeded()) {
-          ConnectResult<HttpClientConnection> res = ar.result();
-          HttpClientConnection c = res.connection();
-          conn = c;
-          connectionAdded(c);
-          handler.handle(Future.succeededFuture(c));
+          HttpClientConnection c = ar.result();
+          if (incRefCount()) {
+            c.evictionHandler(v -> onEvict());
+            handler.handle(Future.succeededFuture(c));
+          } else {
+            c.close();
+            handler.handle(Future.failedFuture("Connection closed"));
+          }
         } else {
           handler.handle(Future.failedFuture(ar.cause()));
         }
       }
     }
-    Listener listener = new Listener();
-    connector.connect(listener, ctx, listener);
+
+    connector
+      .httpConnect((EventLoopContext) ctx)
+      .onComplete(new Listener());
   }
 
   @Override

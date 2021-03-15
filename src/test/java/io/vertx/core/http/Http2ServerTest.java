@@ -214,7 +214,7 @@ public class Http2ServerTest extends Http2TestBase {
         @Override
         protected void initChannel(Channel ch) throws Exception {
           SSLHelper sslHelper = new SSLHelper(new HttpClientOptions().setUseAlpn(true).setSsl(true), null, Trust.SERVER_JKS.get());
-          SslHandler sslHandler = new SslHandler(sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2, HttpVersion.HTTP_1_1)).createEngine((VertxInternal) vertx, host, port));
+          SslHandler sslHandler = new SslHandler(sslHelper.setApplicationProtocols(Arrays.asList(HttpVersion.HTTP_2.alpnName(), HttpVersion.HTTP_1_1.alpnName())).createEngine((VertxInternal) vertx, host, port));
           ch.pipeline().addLast(sslHandler);
           ch.pipeline().addLast(new ApplicationProtocolNegotiationHandler("whatever") {
             @Override
@@ -660,43 +660,6 @@ public class Http2ServerTest extends Http2TestBase {
     String body = "--a4e41223-a527-49b6-ac1c-315d76be757e\r\n" +
         "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
         "Content-Type: image/gif; charset=utf-8\r\n" +
-        "Content-Length: 12\r\n" +
-        "\r\n" +
-        "some-content\r\n" +
-        "--a4e41223-a527-49b6-ac1c-315d76be757e--\r\n";
-
-    TestClient client = new TestClient();
-    ChannelFuture fut = client.connect(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, request -> {
-      int id = request.nextStreamId();
-      request.encoder.writeHeaders(request.context, id, POST("/form").
-          set("content-type", contentType).set("content-length", contentLength), 0, false, request.context.newPromise());
-      request.encoder.writeData(request.context, id, Buffer.buffer(body).getByteBuf(), 0, true, request.context.newPromise());
-      request.context.flush();
-    });
-    fut.sync();
-    await();
-  }
-
-  @Test
-  public void testInvalidPostFileUpload() throws Exception {
-    server.requestHandler(req -> {
-      req.setExpectMultipart(true);
-      AtomicInteger errCount = new AtomicInteger();
-      req.exceptionHandler(err -> {
-        errCount.incrementAndGet();
-      });
-      req.endHandler(v -> {
-        assertTrue(errCount.get() > 0);
-        testComplete();
-      });
-    });
-    startServer();
-
-    String contentType = "multipart/form-data; boundary=a4e41223-a527-49b6-ac1c-315d76be757e";
-    String contentLength = "225";
-    String body = "--a4e41223-a527-49b6-ac1c-315d76be757e\r\n" +
-        "Content-Disposition: form-data; name=\"file\"; filename=\"tmp-0.txt\"\r\n" +
-        "Content-Type: image/gif; charset=ABCD\r\n" +
         "Content-Length: 12\r\n" +
         "\r\n" +
         "some-content\r\n" +
@@ -2375,7 +2338,9 @@ public class Http2ServerTest extends Http2TestBase {
         Buffer received = Buffer.buffer();
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-          received.appendBuffer(Buffer.buffer(data.copy()));
+          byte[] tmp = new byte[data.readableBytes()];
+          data.getBytes(data.readerIndex(), tmp);
+          received.appendBytes(tmp);
           if (endOfStream) {
             vertx.runOnContext(v -> {
               assertEquals(received, expected);
@@ -2545,7 +2510,9 @@ public class Http2ServerTest extends Http2TestBase {
         @Override
         public void onUnknownFrame(ChannelHandlerContext ctx, byte frameType, int streamId, Http2Flags flags, ByteBuf payload) {
           int s = status++;
-          Buffer recv = Buffer.buffer(payload.copy());
+          byte[] tmp = new byte[payload.readableBytes()];
+          payload.getBytes(payload.readerIndex(), tmp);
+          Buffer recv = Buffer.buffer().appendBytes(tmp);
           vertx.runOnContext(v -> {
             assertEquals(1, s);
             assertEquals(12, frameType);

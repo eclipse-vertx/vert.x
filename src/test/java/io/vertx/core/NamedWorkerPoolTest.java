@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -360,5 +360,36 @@ public class NamedWorkerPoolTest extends VertxTestBase {
       testComplete();
     });
     await();
+  }
+
+  @Test
+  public void testReuseWorkerPoolNameAfterVerticleIsUndeployed() throws Exception {
+    CountDownLatch deployLatch1 = new CountDownLatch(1);
+    AtomicReference<String> ref = new AtomicReference<>();
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        vertx.executeBlocking(Promise::complete, startPromise);
+      }
+    }, new DeploymentOptions().setWorkerPoolName("foo"), onSuccess(id -> {
+      ref.set(id);
+      deployLatch1.countDown();
+    }));
+    awaitLatch(deployLatch1);
+
+    CountDownLatch unDeployLatch = new CountDownLatch(1);
+    vertx.undeploy(ref.get(), onSuccess(v -> unDeployLatch.countDown()));
+    awaitLatch(unDeployLatch);
+
+    CountDownLatch deployLatch2 = new CountDownLatch(1);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        vertx.executeBlocking(Promise::complete, startPromise);
+      }
+    }, new DeploymentOptions().setWorkerPoolName("foo"), onSuccess(id -> {
+      deployLatch2.countDown();
+    }));
+    awaitLatch(deployLatch2);
   }
 }

@@ -16,6 +16,8 @@ import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.AttributeKey;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
@@ -149,6 +151,8 @@ public abstract class ConnectionBase {
         reportBytesRead(msg);
       }
       handleMessage(msg);
+    } else {
+      ReferenceCountUtil.release(msg);
     }
   }
 

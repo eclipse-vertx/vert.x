@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -33,32 +33,32 @@ public class WeightedRoundRobinSelectorTest {
   @Parameters
   public static Collection<Object[]> data() {
     List<Object[]> objects = new ArrayList<>();
-    Map<String, Integer> map = new HashMap<>();
-    map.put("foo", 38);
-    map.put("bar", 13);
+    Map<String, Weight> map = new HashMap<>();
+    map.put("foo", new Weight(38));
+    map.put("bar", new Weight(13));
     objects.add(new Object[]{map});
     map = new HashMap<>();
-    map.put("foo", 91);
-    map.put("bar", 22);
-    map.put("baz", 115);
+    map.put("foo", new Weight(91));
+    map.put("bar", new Weight(22));
+    map.put("baz", new Weight(115));
     objects.add(new Object[]{map});
     map = new HashMap<>();
-    map.put("foo", 28);
-    map.put("bar", 91);
-    map.put("baz", 28);
-    map.put("qux", 13);
-    map.put("quux", 28);
+    map.put("foo", new Weight(28));
+    map.put("bar", new Weight(91));
+    map.put("baz", new Weight(28));
+    map.put("qux", new Weight(13));
+    map.put("quux", new Weight(28));
     objects.add(new Object[]{map});
     return objects;
   }
 
-  private final Map<String, Integer> weights;
+  private final Map<String, Weight> weights;
   private final int totalWeight;
   private final WeightedRoundRobinSelector selector;
 
-  public WeightedRoundRobinSelectorTest(Map<String, Integer> weights) {
+  public WeightedRoundRobinSelectorTest(Map<String, Weight> weights) {
     this.weights = weights;
-    totalWeight = weights.values().stream().mapToInt(value -> value).sum();
+    totalWeight = weights.values().stream().mapToInt(Weight::value).sum();
     selector = new WeightedRoundRobinSelector(weights);
   }
 
@@ -75,7 +75,7 @@ public class WeightedRoundRobinSelectorTest {
     }
 
     for (Map.Entry<String, Integer> count : counts.entrySet()) {
-      assertEquals(10 * weights.get(count.getKey()), count.getValue().intValue());
+      assertEquals(10 * weights.get(count.getKey()).value(), count.getValue().intValue());
     }
   }
 

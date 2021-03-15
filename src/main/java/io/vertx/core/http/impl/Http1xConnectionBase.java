@@ -15,6 +15,12 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.FileRegion;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.websocketx.BinaryWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.ContinuationWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.PongWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.stream.ChunkedFile;
 import io.vertx.codegen.annotations.Nullable;
@@ -25,8 +31,13 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.Http2Settings;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.WebSocketFrameType;
+import io.vertx.core.http.impl.ws.WebSocketFrameImpl;
+import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
+
+import static io.vertx.core.net.impl.VertxHandler.safeBuffer;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -40,13 +51,36 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
   }
 
   void handleWsFrame(WebSocketFrame msg) {
+    WebSocketFrameInternal frame = decodeFrame(msg);
     WebSocketImplBase<?> w;
     synchronized (this) {
       w = webSocket;
     }
     if (w != null) {
-      w.context.execute(msg, w::handleFrame);
+      w.context.execute(frame, w::handleFrame);
     }
+  }
+
+  private WebSocketFrameInternal decodeFrame(io.netty.handler.codec.http.websocketx.WebSocketFrame msg) {
+    ByteBuf payload = safeBuffer(msg.content());
+    boolean isFinal = msg.isFinalFragment();
+    WebSocketFrameType frameType;
+    if (msg instanceof BinaryWebSocketFrame) {
+      frameType = WebSocketFrameType.BINARY;
+    } else if (msg instanceof CloseWebSocketFrame) {
+      frameType = WebSocketFrameType.CLOSE;
+    } else if (msg instanceof PingWebSocketFrame) {
+      frameType = WebSocketFrameType.PING;
+    } else if (msg instanceof PongWebSocketFrame) {
+      frameType = WebSocketFrameType.PONG;
+    } else if (msg instanceof TextWebSocketFrame) {
+      frameType = WebSocketFrameType.TEXT;
+    } else if (msg instanceof ContinuationWebSocketFrame) {
+      frameType = WebSocketFrameType.CONTINUATION;
+    } else {
+      throw new IllegalStateException("Unsupported WebSocket msg " + msg);
+    }
+    return new WebSocketFrameImpl(frameType, payload, isFinal);
   }
 
   @Override

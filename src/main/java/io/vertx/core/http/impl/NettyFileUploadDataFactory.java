@@ -14,7 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.multipart.DefaultHttpDataFactory;
 import io.netty.handler.codec.http.multipart.FileUpload;
-import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpServerFileUpload;
 import io.vertx.core.http.HttpServerRequest;
@@ -28,9 +27,9 @@ import java.util.function.Supplier;
  */
 class NettyFileUploadDataFactory extends DefaultHttpDataFactory {
 
-  final ContextInternal context;
-  final HttpServerRequest request;
-  final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
+  private final ContextInternal context;
+  private final HttpServerRequest request;
+  private final Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler;
 
   NettyFileUploadDataFactory(ContextInternal context, HttpServerRequest request, Supplier<Handler<HttpServerFileUpload>> lazyUploadHandler) {
     super(false);

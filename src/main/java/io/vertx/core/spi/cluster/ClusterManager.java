@@ -14,9 +14,11 @@ package io.vertx.core.spi.cluster;
 
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.shareddata.AsyncMap;
 import io.vertx.core.shareddata.Counter;
 import io.vertx.core.shareddata.Lock;
+import io.vertx.core.spi.VertxServiceProvider;
 
 import java.util.List;
 import java.util.Map;
@@ -39,7 +41,14 @@ import java.util.Map;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public interface ClusterManager {
+public interface ClusterManager extends VertxServiceProvider {
+
+  @Override
+  default void init(VertxBuilder builder) {
+    if (builder.clusterManager() == null) {
+      builder.clusterManager(this);
+    }
+  }
 
   /**
    * Invoked before this cluster node tries to join the cluster.

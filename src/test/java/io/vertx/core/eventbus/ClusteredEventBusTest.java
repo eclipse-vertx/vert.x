@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -30,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -402,6 +403,11 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
               updateLatch.countDown();
             }
           }
+
+          @Override
+          public boolean wantsUpdatesFor(String address) {
+            return true;
+          }
         });
       }
     });
@@ -475,5 +481,39 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
         }));
       }));
     await();
+  }
+
+  @Test
+  public void testSelectorWantsUpdates() throws Exception {
+    AtomicReference<NodeSelector> nodeSelectorRef = new AtomicReference<>();
+    VertxOptions options = getOptions().setClusterManager(new WrappedClusterManager(getClusterManager()) {
+      @Override
+      public void init(Vertx vertx, NodeSelector nodeSelector) {
+        nodeSelectorRef.set(nodeSelector);
+        super.init(vertx, nodeSelector);
+      }
+    });
+    startNodes(options);
+    assertNotNull(nodeSelectorRef.get());
+    vertices[0].eventBus().consumer(ADDRESS1, msg -> {
+      assertTrue(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
+      testComplete();
+    }).completionHandler(onSuccess(v -> vertices[0].eventBus().send(ADDRESS1, "foo")));
+    await();
+  }
+
+  @Test
+  public void testSelectorDoesNotWantUpdates() throws Exception {
+    AtomicReference<NodeSelector> nodeSelectorRef = new AtomicReference<>();
+    VertxOptions options = getOptions().setClusterManager(new WrappedClusterManager(getClusterManager()) {
+      @Override
+      public void init(Vertx vertx, NodeSelector nodeSelector) {
+        nodeSelectorRef.set(nodeSelector);
+        super.init(vertx, nodeSelector);
+      }
+    });
+    startNodes(options);
+    assertNotNull(nodeSelectorRef.get());
+    assertFalse(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
   }
 }

@@ -20,10 +20,12 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.streams.Pump;
+import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.DetectFileDescriptorLeaks;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
@@ -48,10 +50,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.*;
 import java.util.stream.IntStream;
 
 import static io.vertx.core.http.HttpMethod.PUT;
@@ -64,7 +63,7 @@ import static java.util.Collections.singletonList;
 public abstract class HttpTest extends HttpTestBase {
 
   @Rule
-  public TemporaryFolder testFolder = new TemporaryFolder();
+  public TemporaryFolder testFolder = TemporaryFolder.builder().assureDeletion().build();
 
   protected File testDir;
   private File tmp;
@@ -1749,6 +1748,28 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testSetInvalidStatusMessage() {
+    server.requestHandler(req -> {
+      try {
+        req.response().setStatusMessage("hello\nworld");
+        assertEquals(HttpVersion.HTTP_2, req.version());
+      } catch (IllegalArgumentException ignore) {
+        assertEquals(HttpVersion.HTTP_1_1, req.version());
+      }
+      req.response().end();
+    });
+    server.listen(testAddress, onSuccess(s -> {
+      client.request(requestOptions)
+        .compose(req -> req.send()
+          .compose(HttpClientResponse::body)
+        ).onComplete(onSuccess(body -> {
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testResponseBodyBufferAtEnd() {
     Buffer body = TestUtils.randomBuffer(1000);
 
@@ -3141,6 +3162,7 @@ public abstract class HttpTest extends HttpTestBase {
         server.requestHandler(req -> {
           req.response().end();
           assertSameEventLoop(ctx, Vertx.currentContext());
+          assertSame(((HttpServerRequestInternal)req).context(), Vertx.currentContext());
           if (!worker) {
             assertSame(thr, Thread.currentThread());
           }
@@ -3174,7 +3196,7 @@ public abstract class HttpTest extends HttpTestBase {
   public void testWorkerServer() throws Exception {
     int numReq = 5; // 5 == the HTTP/1 pool max size
     waitFor(numReq);
-    CyclicBarrier barrier = new CyclicBarrier(numReq);
+    AtomicBoolean owner = new AtomicBoolean();
     CountDownLatch latch = new CountDownLatch(1);
     AtomicInteger connCount = new AtomicInteger();
     vertx.deployVerticle(() -> new AbstractVerticle() {
@@ -3186,9 +3208,12 @@ public abstract class HttpTest extends HttpTestBase {
             assertTrue(current.isWorkerContext());
             assertSameEventLoop(context, current);
             try {
-              barrier.await(20, TimeUnit.SECONDS);
+              assertTrue(owner.compareAndSet(false, true));
+              Thread.sleep(200);
             } catch (Exception e) {
               fail(e);
+            } finally {
+              owner.set(false);
             }
             req.response().end("pong");
           }).connectionHandler(conn -> {
@@ -3252,6 +3277,84 @@ public abstract class HttpTest extends HttpTestBase {
         }));
       }
     }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testClientReadStreamInWorker() throws Exception {
+    int numReq = 16;
+    waitFor(numReq);
+    Buffer body = Buffer.buffer(randomAlphaString(512 * 1024));
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        HttpServer server = vertx.createHttpServer(createBaseServerOptions());
+        server.requestHandler(req -> {
+          req.response().end(body);
+        }).listen(testAddress)
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    })
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        HttpClient client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+        for (int i = 0; i < numReq; i++) {
+          client.request(requestOptions, onSuccess(req -> {
+            req.send(onSuccess(resp -> {
+              resp.end(onSuccess(v -> complete()));
+              resp.pause();
+              vertx.setTimer(250, id -> {
+                resp.resume();
+              });
+            }));
+          }));
+        }
+      }
+    }, new DeploymentOptions().setWorker(true));
+    await();
+  }
+
+  @Test
+  public void testServerReadStreamInWorker() throws Exception {
+    int numReq = 16;
+    waitFor(numReq);
+    Buffer body = Buffer.buffer(randomAlphaString(512 * 1024));
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        HttpServer server = vertx.createHttpServer(createBaseServerOptions());
+        server.requestHandler(req -> {
+          req.end(onSuccess(v -> req.response().end()));
+          req.pause();
+          vertx.setTimer(250, id -> {
+            req.resume();
+          });
+        }).listen(testAddress)
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    }, new DeploymentOptions().setWorker(true))
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start(Promise<Void> startPromise) {
+        HttpClient client = vertx.createHttpClient(createBaseClientOptions().setMaxPoolSize(1));
+        for (int i = 0; i < numReq; i++) {
+          client.request(requestOptions, onSuccess(req -> {
+            req.send(body, onSuccess(resp -> {
+              resp.end(onSuccess(v -> complete()));
+            }));
+          }));
+        }
+      }
+    });
     await();
   }
 
@@ -5806,15 +5909,33 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testClientRequestWithLargeBodyInSmallChunks() throws Exception {
-    testClientRequestWithLargeBodyInSmallChunks(false);
+    testClientRequestWithLargeBodyInSmallChunks(false, HttpClientRequest::send);
   }
 
   @Test
   public void testClientRequestWithLargeBodyInSmallChunksChunked() throws Exception {
-    testClientRequestWithLargeBodyInSmallChunks(true);
+    testClientRequestWithLargeBodyInSmallChunks(true, HttpClientRequest::send);
   }
 
-  private void testClientRequestWithLargeBodyInSmallChunks(boolean chunked) throws Exception {
+  @Test
+  public void testClientRequestWithLargeBodyInSmallChunksWithHandler() throws Exception {
+    testClientRequestWithLargeBodyInSmallChunks(false, (req,src) -> {
+      Promise<HttpClientResponse> p = Promise.promise();
+      req.send(src, p);
+      return p.future();
+    });
+  }
+
+  @Test
+  public void testClientRequestWithLargeBodyInSmallChunksChunkedWithHandler() throws Exception {
+    testClientRequestWithLargeBodyInSmallChunks(true, (req,src) -> {
+      Promise<HttpClientResponse> p = Promise.promise();
+      req.send(src, p);
+      return p.future();
+    });
+  }
+
+  private void testClientRequestWithLargeBodyInSmallChunks(boolean chunked, BiFunction<HttpClientRequest, ReadStream<Buffer>, Future<HttpClientResponse>> sendFunction) throws Exception {
     StringBuilder sb = new StringBuilder();
     FakeStream<Buffer> src = new FakeStream<>();
     src.pause();
@@ -5850,7 +5971,7 @@ public abstract class HttpTest extends HttpTestBase {
         if (!chunked) {
           req.putHeader(HttpHeaders.CONTENT_LENGTH, contentLength);
         }
-        return req.send(src);
+        return sendFunction.apply(req,src);
       })
       .onComplete(onSuccess(resp -> {
       assertEquals(200, resp.statusCode());

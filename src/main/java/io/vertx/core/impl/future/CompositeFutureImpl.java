@@ -17,6 +17,7 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Handler;
 
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -147,7 +148,7 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
   }
 
   private <T> Future<T> future(int index) {
-    if (index < 0 || index > results.length) {
+    if (index < 0 || index >= results.length) {
       throw new IndexOutOfBoundsException();
     }
     return (Future<T>) results[index];
@@ -187,5 +188,17 @@ public class CompositeFutureImpl extends FutureImpl<CompositeFuture> implements 
   @Override
   public CompositeFuture onFailure(Handler<Throwable> handler) {
     return (CompositeFuture)super.onFailure(handler);
+  }
+
+  @Override
+  protected void formatValue(Object value, StringBuilder sb) {
+    sb.append('(');
+    for (int i = 0;i < results.length;i++) {
+      if (i > 0) {
+        sb.append(',');
+      }
+      sb.append(results[i]);
+    }
+    sb.append(')');
   }
 }

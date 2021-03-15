@@ -37,12 +37,6 @@ public class WorkerContext extends ContextImpl {
   @Override
   void runOnContext(AbstractContext ctx, Handler<Void> action) {
     try {
-      TaskQueue orderedTasks;
-      if (ctx instanceof DuplicatedContext) {
-        orderedTasks = ((DuplicatedContext)ctx).orderedTasks();
-      } else {
-        orderedTasks = this.orderedTasks;
-      }
       run(ctx, orderedTasks, null, action);
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
@@ -57,23 +51,11 @@ public class WorkerContext extends ContextImpl {
    */
   @Override
   <T> void execute(AbstractContext ctx, T argument, Handler<T> task) {
-    TaskQueue orderedTasks;
-    if (ctx instanceof DuplicatedContext) {
-      orderedTasks = ((DuplicatedContext)ctx).orderedTasks();
-    } else {
-      orderedTasks = this.orderedTasks;
-    }
     execute(orderedTasks, argument, task);
   }
 
   @Override
   <T> void emit(AbstractContext ctx, T argument, Handler<T> task) {
-    TaskQueue orderedTasks;
-    if (ctx instanceof DuplicatedContext) {
-      orderedTasks = ((DuplicatedContext)ctx).orderedTasks();
-    } else {
-      orderedTasks = this.orderedTasks;
-    }
     execute(orderedTasks, argument, arg -> {
       ctx.dispatch(arg, task);
     });

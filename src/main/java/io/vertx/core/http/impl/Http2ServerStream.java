@@ -32,7 +32,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
   protected final HttpMethod method;
   protected final String uri;
   protected final String host;
-  protected final Http2ServerResponseImpl response;
+  protected final Http2ServerResponse response;
   private Object metric;
 
   Http2ServerStream(Http2ServerConnection conn,
@@ -46,7 +46,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     this.method = method;
     this.uri = uri;
     this.host = null;
-    this.response = new Http2ServerResponseImpl(conn, this, true, contentEncoding, null);
+    this.response = new Http2ServerResponse(conn, this, true, contentEncoding, null);
   }
 
   Http2ServerStream(Http2ServerConnection conn, ContextInternal context, Http2Headers headers, String contentEncoding, String serverOrigin) {
@@ -62,7 +62,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     this.host = host;
     this.uri = headers.get(":path") != null ? headers.get(":path").toString() : null;
     this.method = headers.get(":method") != null ? HttpMethod.valueOf(headers.get(":method").toString()) : null;
-    this.response = new Http2ServerResponseImpl(conn, this, false, contentEncoding, host);
+    this.response = new Http2ServerResponse(conn, this, false, contentEncoding, host);
   }
 
   void registerMetrics() {
@@ -98,7 +98,7 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
     if (Metrics.METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
-        metrics.requestEnd(metric, bytesRead());
+        metrics.requestEnd(metric, (HttpRequest) this, bytesRead());
       }
     }
     super.onEnd(trailers);
@@ -139,10 +139,14 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
         if (failed) {
           metrics.requestReset(metric);
         } else {
-          metrics.responseEnd(metric, bytesWritten());
+          metrics.responseEnd(metric, response, bytesWritten());
         }
       }
     }
+  }
+
+  public Object metric() {
+    return metric;
   }
 
   HttpServerRequest routed(String route) {

@@ -13,7 +13,6 @@ package io.vertx.test.fakemetrics;
 
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketBase;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -24,6 +23,7 @@ import io.vertx.core.spi.observability.HttpResponse;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -32,6 +32,11 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
 
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentHashSet<HttpServerMetric> requests = new ConcurrentHashSet<>();
+  private final AtomicInteger connectionCount = new AtomicInteger();
+
+  public int getConnectionCount() {
+    return connectionCount.get();
+  }
 
   public WebSocketMetric getWebSocketMetric(ServerWebSocket ws) {
     return webSockets.get(ws);
@@ -53,7 +58,7 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
   }
 
   @Override
-  public void requestEnd(HttpServerMetric requestMetric, long bytesRead) {
+  public void requestEnd(HttpServerMetric requestMetric, HttpRequest request, long bytesRead) {
     requestMetric.requestEnded.set(true);
     requestMetric.bytesRead.set(bytesRead);
   }
@@ -78,7 +83,7 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
   }
 
   @Override
-  public void responseEnd(HttpServerMetric requestMetric, long bytesWritten) {
+  public void responseEnd(HttpServerMetric requestMetric, HttpResponse response, long bytesWritten) {
     requests.remove(requestMetric);
     requestMetric.responseEnded.set(true);
     requestMetric.bytesWritten.set(bytesWritten);
@@ -103,12 +108,16 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
 
   @Override
   public SocketMetric connected(SocketAddress remoteAddress, String remoteName) {
+    connectionCount.incrementAndGet();
     return new SocketMetric(remoteAddress, remoteName);
   }
 
   @Override
   public void disconnected(SocketMetric socketMetric, SocketAddress remoteAddress) {
-    socketMetric.connected.set(false);
+    connectionCount.decrementAndGet();
+    if (socketMetric != null) {
+      socketMetric.connected.set(false);
+    }
   }
 
   @Override

@@ -12,10 +12,7 @@ package io.vertx.core.net.impl.clientconnection;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
-
-import java.util.Set;
 
 /**
  * An endpoint, i.e a set of connection to the same address.
@@ -24,12 +21,11 @@ import java.util.Set;
  */
 public abstract class Endpoint<C> {
 
-  private final Set<C> connectionMap = new ConcurrentHashSet<>();
   private final Runnable dispose;
   private boolean closed;
   private boolean disposed;
   private long pendingRequestCount;
-  private long openConnectionCount;
+  private long refCount;
 
   public Endpoint(Runnable dispose) {
     this.dispose = dispose;
@@ -60,35 +56,23 @@ public abstract class Endpoint<C> {
 
   public abstract void requestConnection(ContextInternal ctx, Handler<AsyncResult<C>> handler);
 
-  protected void connectionAdded(C conn) {
+  protected boolean incRefCount() {
     synchronized (this) {
-      if (connectionMap.add(conn)) {
-        openConnectionCount++;
-      } else {
-        System.out.println("BUG!!!");
-      }
-      if (!closed) {
-        return;
-      }
+      refCount++;
+      return !closed;
     }
-    close(conn);
   }
 
-  protected void connectionRemoved(C conn) {
-
+  protected boolean decRefCount() {
     // CHECK SHOULD CLOSE
-
     synchronized (this) {
-      if (connectionMap.remove(conn)) {
-        openConnectionCount--;
-      } else {
-        System.out.println("BUG!!!!");
-      }
+      refCount--;
       if (!checkDispose()) {
-        return;
+        return false;
       }
     }
     disposeInternal();
+    return true;
   }
 
   private void disposeInternal() {
@@ -97,7 +81,7 @@ public abstract class Endpoint<C> {
   }
 
   private boolean checkDispose() {
-    if (!disposed && openConnectionCount == 0 && pendingRequestCount == 0) {
+    if (!disposed && refCount == 0 && pendingRequestCount == 0) {
       disposed = true;
       return true;
     }
@@ -112,12 +96,6 @@ public abstract class Endpoint<C> {
   }
 
   /**
-   * Close the {@code connection}.
-   */
-  protected void close(C connection) {
-  }
-
-  /**
    * Close the endpoint, this will close all connections, this method is called by the {@link ConnectionManager} when
    * it is closed.
    */
@@ -127,9 +105,6 @@ public abstract class Endpoint<C> {
         throw new IllegalStateException();
       }
       closed = true;
-    }
-    for (C conn : connectionMap) {
-      close(conn);
     }
   }
 }

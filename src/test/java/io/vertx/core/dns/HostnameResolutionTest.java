@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -31,23 +31,22 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.FakeDNSServer;
+import org.apache.directory.server.dns.messages.RecordClass;
+import org.apache.directory.server.dns.messages.RecordType;
+import org.apache.directory.server.dns.messages.ResourceRecord;
+import org.apache.directory.server.dns.store.DnsAttribute;
 import org.junit.Test;
 
 import java.io.File;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -73,9 +72,12 @@ public class HostnameResolutionTest extends VertxTestBase {
 
   @Override
   protected VertxOptions getOptions() {
-    VertxOptions options = super.getOptions();
-    options.getAddressResolverOptions().addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
-    return options;
+    return super.getOptions().setAddressResolverOptions(getAddressResolverOptions());
+  }
+
+  private AddressResolverOptions getAddressResolverOptions() {
+    return new AddressResolverOptions()
+      .addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort());
   }
 
   @Test
@@ -846,6 +848,69 @@ public class HostnameResolutionTest extends VertxTestBase {
     }
   }
 
+  @Test
+  public void testAddressSelectionDefault() throws Exception {
+    testAddressSelection(getAddressResolverOptions(), 1);
+  }
+
+  @Test
+  public void testAddressSelectionWithRoundRobin() throws Exception {
+    testAddressSelection(getAddressResolverOptions().setRoundRobinInetAddress(true), 2);
+  }
+
+  @Test
+  public void testAddressSelectionWithoutRoundRobin() throws Exception {
+    testAddressSelection(getAddressResolverOptions().setRoundRobinInetAddress(false), 1);
+  }
+
+  private void testAddressSelection(AddressResolverOptions options, int expected) throws Exception {
+    Function<String, ResourceRecord> createRecord = ipAddress -> new ResourceRecord() {
+      @Override
+      public String getDomainName() {
+        return "vertx.io";
+      }
+
+      @Override
+      public RecordType getRecordType() {
+        return RecordType.A;
+      }
+
+      @Override
+      public RecordClass getRecordClass() {
+        return RecordClass.IN;
+      }
+
+      @Override
+      public int getTimeToLive() {
+        return 100;
+      }
+
+      @Override
+      public String get(String s) {
+        return DnsAttribute.IP_ADDRESS.equals(s) ? ipAddress : null;
+      }
+    };
+
+    Set<ResourceRecord> records = new LinkedHashSet<>();
+    records.add(createRecord.apply("127.0.0.1"));
+    records.add(createRecord.apply("127.0.0.2"));
+
+    dnsServer.store(question -> records);
+
+    AddressResolver resolver = new AddressResolver(vertx, options);
+    Set<String> resolved = Collections.synchronizedSet(new HashSet<>());
+    //due to the random nature of netty's round robin algorithm
+    //the below outcome is generally non-deterministic and will fail once in about 2^100 runs (virtually never)
+    CountDownLatch latch = new CountDownLatch(100);
+    for (int i = 0; i < 100; i++) {
+      resolver.resolveHostname("vertx.io", onSuccess(inetAddress -> {
+        resolved.add(inetAddress.getHostAddress());
+        latch.countDown();
+      }));
+    }
+    awaitLatch(latch);
+    assertEquals(expected, resolved.size());
+  }
 
   @Test
   public void testServerFailover() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -18,7 +18,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Configuration options for Vert.x hostname resolver. The resolver uses the local <i>hosts</i> file and performs
@@ -84,6 +83,11 @@ public class AddressResolverOptions {
    */
   public static final boolean DEFAULT_ROTATE_SERVERS = AddressResolver.DEFAULT_ROTATE_RESOLV_OPTION;
 
+  /**
+   * The default round robin inet address = false
+   */
+  public static final boolean DEFAULT_ROUND_ROBIN_INET_ADDRESS = false;
+
   private String hostsPath;
   private Buffer hostsValue;
   private List<String> servers;
@@ -97,6 +101,7 @@ public class AddressResolverOptions {
   private List<String> searchDomains;
   private int ndots;
   private boolean rotateServers;
+  private boolean roundRobinInetAddress;
 
   public AddressResolverOptions() {
     servers = DEFAULT_SERVERS;
@@ -110,6 +115,7 @@ public class AddressResolverOptions {
     searchDomains = DEFAULT_SEACH_DOMAINS;
     ndots = DEFAULT_NDOTS;
     rotateServers = DEFAULT_ROTATE_SERVERS;
+    roundRobinInetAddress = DEFAULT_ROUND_ROBIN_INET_ADDRESS;
   }
 
   public AddressResolverOptions(AddressResolverOptions other) {
@@ -126,6 +132,7 @@ public class AddressResolverOptions {
     this.searchDomains = other.searchDomains != null ? new ArrayList<>(other.searchDomains) : null;
     this.ndots = other.ndots;
     this.rotateServers = other.rotateServers;
+    this.roundRobinInetAddress = other.roundRobinInetAddress;
   }
 
   public AddressResolverOptions(JsonObject json) {
@@ -427,6 +434,23 @@ public class AddressResolverOptions {
    */
   public AddressResolverOptions setRotateServers(boolean rotateServers) {
     this.rotateServers = rotateServers;
+    return this;
+  }
+
+  /**
+   * @return the value {@code true} when the inet address selection uses round robin
+   */
+  public boolean isRoundRobinInetAddress() {
+    return roundRobinInetAddress;
+  }
+
+  /**
+   * Set to {@code true} to enable round-robin inet address selection of the ip address to use.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public AddressResolverOptions setRoundRobinInetAddress(boolean roundRobinInetAddress) {
+    this.roundRobinInetAddress = roundRobinInetAddress;
     return this;
   }
 

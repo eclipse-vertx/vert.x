@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,16 +11,18 @@
 
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.cli.annotations.*;
 import io.vertx.core.eventbus.AddressHelper;
 import io.vertx.core.eventbus.EventBusOptions;
+import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.impl.launcher.VertxLifecycleHooks;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.metrics.MetricsOptions;
-import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.launcher.ExecutionContext;
 
 import java.io.File;
@@ -200,20 +202,30 @@ public class BareCommand extends ClasspathHandler {
     JsonObject optionsJson = getJsonFromFileOrString(vertxOptions, "options");
 
     EventBusOptions eventBusOptions;
-    MetricsOptions metricsOptions;
+    VertxBuilder builder;
     if (optionsJson == null) {
       eventBusOptions = getEventBusOptions();
-      metricsOptions = getMetricsOptions();
-      options = new VertxOptions();
+      builder = new VertxBuilder();
     } else {
       eventBusOptions = getEventBusOptions(optionsJson.getJsonObject("eventBusOptions"));
-      metricsOptions = getMetricsOptions(optionsJson.getJsonObject("metricsOptions"));
-      options = new VertxOptions(optionsJson);
+      builder = new VertxBuilder(optionsJson);
     }
-    options.setEventBusOptions(eventBusOptions).setMetricsOptions(metricsOptions);
+    options = builder.options();
+    options.setEventBusOptions(eventBusOptions);
 
-    configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
     beforeStartingVertx(options);
+    builder.init();
+
+    configureFromSystemProperties.set(log);
+    try {
+      configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
+      if (options.getMetricsOptions() != null) {
+        configureFromSystemProperties(options.getMetricsOptions(), METRICS_OPTIONS_PROP_PREFIX);
+      }
+    } finally {
+      configureFromSystemProperties.set(null);
+    }
+
     Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
@@ -249,7 +261,7 @@ public class BareCommand extends ClasspathHandler {
 
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
-      create(options, ar -> {
+      create(builder, ar -> {
         result.set(ar);
         latch.countDown();
       });
@@ -269,7 +281,7 @@ public class BareCommand extends ClasspathHandler {
       }
       instance = result.get().result();
     } else {
-      instance = create(options);
+      instance = create(builder);
     }
     addShutdownHook(instance, log, finalAction);
     afterStartingVertx(instance);
@@ -327,28 +339,6 @@ public class BareCommand extends ClasspathHandler {
   }
 
   /**
-   * @return the metric options.
-   */
-  protected MetricsOptions getMetricsOptions() {
-    return getMetricsOptions(null);
-  }
-
-  /**
-   * @return the metric options.
-   */
-  protected MetricsOptions getMetricsOptions(JsonObject jsonObject) {
-    MetricsOptions metricsOptions;
-    VertxMetricsFactory factory = ServiceHelper.loadFactoryOrNull(VertxMetricsFactory.class);
-    if (factory != null) {
-      metricsOptions = jsonObject == null ? factory.newOptions() : factory.newOptions(jsonObject);
-    } else {
-      metricsOptions = jsonObject == null ? new MetricsOptions() : new MetricsOptions(jsonObject);
-    }
-    configureFromSystemProperties(metricsOptions, METRICS_OPTIONS_PROP_PREFIX);
-    return metricsOptions;
-  }
-
-  /**
    * @return the event bus options.
    */
   protected EventBusOptions getEventBusOptions() {
@@ -360,13 +350,28 @@ public class BareCommand extends ClasspathHandler {
    */
   protected EventBusOptions getEventBusOptions(JsonObject jsonObject) {
     EventBusOptions eventBusOptions = jsonObject == null ? new EventBusOptions() : new EventBusOptions(jsonObject);
-    configureFromSystemProperties(eventBusOptions, VERTX_EVENTBUS_PROP_PREFIX);
+    configureFromSystemProperties.set(log);
+    try {
+      configureFromSystemProperties(eventBusOptions, VERTX_EVENTBUS_PROP_PREFIX);
+    } finally {
+      configureFromSystemProperties.set(null);
+    }
     return eventBusOptions;
   }
 
-  protected void configureFromSystemProperties(Object options, String prefix) {
+  private static final ThreadLocal<Logger> configureFromSystemProperties = new ThreadLocal<>();
+
+  /**
+   * This is used as workaround to retain the existing behavior of the Vert.x CLI and won't be executed
+   * in other situation.
+   */
+  public static void configureFromSystemProperties(Object options, String prefix) {
+    Logger log = configureFromSystemProperties.get();
+    if (log == null) {
+      return;
+    }
     Properties props = System.getProperties();
-    Enumeration e = props.propertyNames();
+    Enumeration<?> e = props.propertyNames();
     // Uhh, properties suck
     while (e.hasMoreElements()) {
       String propName = (String) e.nextElement();
@@ -408,10 +413,10 @@ public class BareCommand extends ClasspathHandler {
     }
   }
 
-  private Method getSetter(String fieldName, Class<?> clazz) {
+  private static Method getSetter(String fieldName, Class<?> clazz) {
     Method[] meths = clazz.getDeclaredMethods();
     for (Method meth : meths) {
-      if (("set" + fieldName).toLowerCase().equals(meth.getName().toLowerCase())) {
+      if (("set" + fieldName).equalsIgnoreCase(meth.getName())) {
         return meth;
       }
     }
@@ -419,7 +424,7 @@ public class BareCommand extends ClasspathHandler {
     // This set contains the overridden methods
     meths = clazz.getMethods();
     for (Method meth : meths) {
-      if (("set" + fieldName).toLowerCase().equals(meth.getName().toLowerCase())) {
+      if (("set" + fieldName).equalsIgnoreCase(meth.getName())) {
         return meth;
       }
     }

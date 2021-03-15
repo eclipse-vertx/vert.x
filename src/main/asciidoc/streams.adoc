@@ -127,7 +127,7 @@ set a handler which will receive items from the ReadStream.
 - {@link io.vertx.core.streams.ReadStream#pause}:
 pause the stream. When paused no items will be received in the handler.
 - {@link io.vertx.core.streams.ReadStream#fetch}:
-fetch a specified amount of item fro the stream. The handler will be called if any item arrives. Fetches
+fetch a specified amount of item from the stream. The handler will be called if any item arrives. Fetches
 are cumulative.
 - {@link io.vertx.core.streams.ReadStream#resume}:
 resume the stream. The handler will be called if any item arrives. Resuming is equivalent of fetching `Long.MAX_VALUE` items.

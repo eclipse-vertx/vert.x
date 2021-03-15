@@ -53,14 +53,14 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
 
   private void testConnectErrorNotifiesOnEventLoop(NetClientOptions options) {
     RuntimeException cause = new RuntimeException();
-    vertx = new VertxFactory().transport(new Transport() {
+    vertx = new VertxBuilder().transport(new Transport() {
       @Override
       public ChannelFactory<? extends Channel> channelFactory(boolean domainSocket) {
         return (ChannelFactory<Channel>) () -> {
           throw cause;
         };
       }
-    }).vertx();
+    }).init().vertx();
 
     vertx.createNetServer().connectHandler(so -> {
       fail();
@@ -76,14 +76,14 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
   @Test
   public void testNetBindError() {
     RuntimeException cause = new RuntimeException();
-    vertx = new VertxFactory().transport(new Transport() {
+    vertx = new VertxBuilder().transport(new Transport() {
       @Override
       public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
         return (ChannelFactory<ServerChannel>) () -> {
           throw cause;
         };
       }
-    }).vertx();
+    }).init().vertx();
 
     vertx.createNetServer()
       .connectHandler(so -> fail())
@@ -96,14 +96,14 @@ public class GlobalEventExecutorNotificationTest extends AsyncTestBase {
   @Test
   public void testHttpBindError() {
     RuntimeException cause = new RuntimeException();
-    vertx = new VertxFactory().transport(new Transport() {
+    vertx = new VertxBuilder().transport(new Transport() {
       @Override
       public ChannelFactory<? extends ServerChannel> serverChannelFactory(boolean domainSocket) {
         return (ChannelFactory<ServerChannel>) () -> {
           throw cause;
         };
       }
-    }).vertx();
+    }).init().vertx();
 
     vertx.createHttpServer()
       .requestHandler(req -> fail())

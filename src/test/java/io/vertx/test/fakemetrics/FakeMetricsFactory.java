@@ -22,7 +22,7 @@ public class FakeMetricsFactory implements VertxMetricsFactory {
 
   @Override
   public VertxMetrics metrics(VertxOptions options) {
-    return new FakeVertxMetrics();
+    return new FakeVertxMetrics(options.getMetricsOptions());
   }
 
 }

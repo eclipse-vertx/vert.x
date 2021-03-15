@@ -119,7 +119,7 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
       if (handler != null) {
         if (msg instanceof HttpContent) {
           HttpContent content = (HttpContent) msg;
-          ByteBuf buf = VertxHandler.safeBuffer(content.content(), ctx.alloc());
+          ByteBuf buf = VertxHandler.safeBuffer(content.content());
           boolean end = msg instanceof LastHttpContent;
           ctx.fireChannelRead(new DefaultHttp2DataFrame(buf, end, 0));
           if (end) {

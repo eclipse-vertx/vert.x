@@ -112,7 +112,12 @@ public class MetricsOptions {
   }
 
   public JsonObject toJson() {
-    return json != null ? json.copy() : new JsonObject();
+    JsonObject json = this.json;
+    if (json == null) {
+      json = new JsonObject();
+      MetricsOptionsConverter.toJson(this, json);
+    }
+    return json;
   }
 
   @Override

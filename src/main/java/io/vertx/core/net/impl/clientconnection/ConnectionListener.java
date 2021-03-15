@@ -25,12 +25,6 @@ public interface ConnectionListener<C> {
   void onConcurrencyChange(long concurrency);
 
   /**
-   * Recycles the connection.
-   *
-   */
-  void onRecycle();
-
-  /**
    * Evict the connection from the pool, it will now be fully managed by the borrower.
    */
   void onEvict();

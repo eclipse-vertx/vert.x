@@ -11,7 +11,11 @@
 
 package io.vertx.core;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import io.vertx.test.core.Repeat;
+
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -508,5 +512,25 @@ public class CompositeFutureTest extends FutureTestBase {
     p1.complete("foo");
     p2.complete(4);
     assertEquals(2, count.get());
+  }
+
+  private void testIndexOutOfBounds(ThrowingCallable throwingCallable) {
+    assertThatThrownBy(throwingCallable)
+    .isExactlyInstanceOf(IndexOutOfBoundsException.class).hasMessage(null);
+  }
+
+  @Test
+  public void testIndexOutOfBounds() {
+    CompositeFuture composite = CompositeFuture.all(Future.succeededFuture(), Future.succeededFuture());
+    testIndexOutOfBounds(() -> composite.resultAt(-2));
+    testIndexOutOfBounds(() -> composite.resultAt(-1));
+    testIndexOutOfBounds(() -> composite.resultAt(2));
+    testIndexOutOfBounds(() -> composite.resultAt(3));
+  }
+
+  @Test
+  public void testToString() {
+    assertEquals("Future{result=(Future{result=null},Future{result=null})}", CompositeFuture.all(Future.succeededFuture(), Future.succeededFuture()).toString());
+    assertEquals("Future{result=(Future{result=true},Future{result=false})}", CompositeFuture.all(Future.succeededFuture(true), Future.succeededFuture(false)).toString());
   }
 }

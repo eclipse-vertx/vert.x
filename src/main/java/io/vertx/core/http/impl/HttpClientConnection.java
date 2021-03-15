@@ -14,22 +14,63 @@ package io.vertx.core.http.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface HttpClientConnection extends HttpConnection {
 
+  Logger log = LoggerFactory.getLogger(HttpClientConnection.class);
+
+  Handler<Void> DEFAULT_EVICTION_HANDLER = v -> {
+    log.warn("Connection evicted");
+  };
+
+  Handler<Long> DEFAULT_CONCURRENCY_CHANGE_HANDLER = concurrency -> {};
+
+  /**
+   * Set a {@code handler} called when the connection should be evicted from a pool.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  HttpClientConnection evictionHandler(Handler<Void> handler);
+
+  /**
+   * Set a {@code handler} called when the connection concurrency changes.
+   * The handler is called with the new concurrency.
+   *
+   * @param handler the handler
+   * @return a reference to this, so the API can be used fluently
+   */
+  HttpClientConnection concurrencyChangeHandler(Handler<Long> handler);
+
+  /**
+   * @return the connection concurrency
+   */
+  long concurrency();
+
+  /**
+   * @return the connection channel
+   */
   Channel channel();
 
+  /**
+   * @return the {@link ChannelHandlerContext} of the handler managing the connection
+   */
   ChannelHandlerContext channelHandlerContext();
 
-  Future<Void> close();
-
+  /**
+   * Create an HTTP stream.
+   *
+   * @param context the stream context
+   * @param handler the handler called when the stream is created
+   */
   void createStream(ContextInternal context, Handler<AsyncResult<HttpClientStream>> handler);
 
   ContextInternal getContext();

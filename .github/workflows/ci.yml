@@ -39,12 +39,12 @@ jobs:
         run: mvn -q clean verify -B ${{ matrix.profile }}
   Deploy:
     name: Deploy to OSSRH
-    if: ${{ github.repository_owner == 'vert-x3' && (github.event_name == 'push' || github.event_name == 'schedule') }}
+    if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
     needs: Test
     runs-on: ubuntu-latest
     env:
-      SONATYPE_NEXUS_USERNAME: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
-      SONATYPE_NEXUS_PASSWORD: ${{ secrets.SONATYPE_NEXUS_PASSWORD }}
+      VERTX_NEXUS_USERNAME: ${{ secrets.VERTX_NEXUS_USERNAME }}
+      VERTX_NEXUS_PASSWORD: ${{ secrets.VERTX_NEXUS_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2

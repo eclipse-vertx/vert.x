@@ -32,6 +32,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.impl.NetServerImpl;
+import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.*;
 import io.vertx.test.proxy.*;
@@ -3383,6 +3384,25 @@ public class NetTest extends VertxTestBase {
         assertEquals("Hello World", msg.toString());
         testComplete();
       });
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetSocketInternalRemoveVertxHandler() throws Exception {
+    server.connectHandler(so -> {
+      so.closeHandler(v -> testComplete());
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      String id = soi.writeHandlerID();
+      ChannelHandlerContext ctx = soi.channelHandlerContext();
+      ChannelPipeline pipeline = ctx.pipeline();
+      pipeline.remove(VertxHandler.class);
+      vertx.eventBus().request(id, "test", onFailure(what -> {
+        ctx.close();
+      }));
     }));
     await();
   }

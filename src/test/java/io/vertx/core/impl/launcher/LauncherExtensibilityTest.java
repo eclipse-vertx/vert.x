@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,21 +16,22 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.annotations.Name;
-import io.vertx.core.impl.launcher.commands.BareCommand;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.launcher.commands.CommandTestBase;
 import io.vertx.core.impl.launcher.commands.HttpTestVerticle;
 import io.vertx.core.impl.launcher.commands.RunCommandTest;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.launcher.DefaultCommand;
+import io.vertx.test.fakecluster.FakeClusterManager;
+import io.vertx.test.fakemetrics.FakeMetricsFactory;
 import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
@@ -168,6 +169,71 @@ public class LauncherExtensibilityTest extends CommandTestBase {
     });
 
     assertThat(RunCommandTest.getContent().getJsonObject("conf").getLong("time")).isEqualTo(time);
+  }
+
+  @Test
+  public void testThatCustomLauncherCanCustomizeMetricsOption() throws Exception {
+    Launcher myLauncher = new Launcher() {
+      @Override
+      protected String getMainVerticle() {
+        return HttpTestVerticle.class.getName();
+      }
+
+      @Override
+      public void afterStartingVertx(Vertx vertx) {
+        LauncherExtensibilityTest.this.vertx = vertx;
+      }
+
+      @Override
+      public void beforeStartingVertx(VertxOptions options) {
+        options.getMetricsOptions().setEnabled(true).setFactory(new FakeMetricsFactory());
+      }
+    };
+
+    myLauncher.dispatch(new String[0]);
+    assertWaitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    assertThat(RunCommandTest.getContent().getBoolean("metrics")).isEqualTo(true);
+  }
+
+  @Test
+  public void testThatCustomLauncherCanCustomizeClusterManager() throws Exception {
+    FakeClusterManager clusterManager = new FakeClusterManager();
+
+    Launcher myLauncher = new Launcher() {
+      @Override
+      protected String getMainVerticle() {
+        return HttpTestVerticle.class.getName();
+      }
+
+      @Override
+      public void afterStartingVertx(Vertx vertx) {
+        LauncherExtensibilityTest.this.vertx = vertx;
+      }
+
+      @Override
+      public void beforeStartingVertx(VertxOptions options) {
+        options.setClusterManager(clusterManager);
+      }
+    };
+
+    myLauncher.dispatch(new String[]{"-cluster"});
+    assertWaitUntil(() -> {
+      try {
+        return RunCommandTest.getHttpCode() == 200;
+      } catch (IOException e) {
+        return false;
+      }
+    });
+
+    assertThat(RunCommandTest.getContent().getBoolean("clustered")).isEqualTo(true);
+    assertSame(clusterManager, ((VertxInternal) vertx).getClusterManager());
   }
 
   @Name("foo")

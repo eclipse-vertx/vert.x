@@ -12,11 +12,13 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
@@ -557,12 +559,26 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * Deep copy of the JSON array.
    *
    * @return a copy where all elements have been copied recursively
+   * @throws IllegalStateException when a nested element cannot be copied
    */
   @Override
   public JsonArray copy() {
+    return copy(DEFAULT_CLONER);
+  }
+
+  /**
+   * Deep copy of the JSON array.
+   *
+   * <p> Unlike {@link #copy()} that can fail when an unknown element cannot be copied, this method
+   * delegates the copy of such element to the {@code cloner} function and will not fail.
+   *
+   * @param cloner a function that copies custom values not supported by the JSON implementation
+   * @return a copy where all elements have been copied recursively
+   */
+  public JsonArray copy(Function<Object, ?> cloner) {
     List<Object> copiedList = new ArrayList<>(list.size());
     for (Object val : list) {
-      copiedList.add(checkAndCopy(val));
+      copiedList.add(deepCopy(val, cloner));
     }
     return new JsonArray(copiedList);
   }

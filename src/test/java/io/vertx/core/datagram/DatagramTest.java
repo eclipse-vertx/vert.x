@@ -11,6 +11,7 @@
 package io.vertx.core.datagram;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.UnpooledHeapByteBuf;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
@@ -112,7 +113,8 @@ public class DatagramTest extends VertxTestBase {
         while (buff != buff.unwrap() && buff.unwrap() != null) {
           buff = buff.unwrap();
         }
-        assertTrue("Was expecting an unpooled buffer instead of " + buff.getClass().getSimpleName(), buff.getClass().getSimpleName().contains("Unpooled"));
+
+        assertTrue("Was expecting an unpooled buffer instead of " + buff.getClass().getSimpleName(), buff instanceof UnpooledHeapByteBuf);
         assertEquals(expected, data);
         complete();
       });

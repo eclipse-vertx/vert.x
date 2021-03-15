@@ -18,6 +18,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.cli.annotations.Description;
 import io.vertx.core.cli.annotations.Option;
+import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.launcher.DefaultCommand;
@@ -103,14 +104,14 @@ public abstract class ClasspathHandler extends DefaultCommand {
   /**
    * Creates a new non-clustered vert.x instance.
    *
-   * @param options the options
+   * @param builder the builder
    * @return the created instance
    */
-  protected synchronized Vertx create(VertxOptions options) {
+  protected synchronized Vertx create(VertxBuilder builder) {
     final ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
     try {
       Thread.currentThread().setContextClassLoader(classloader != null ? classloader : getClass().getClassLoader());
-      return Vertx.vertx(options);
+      return builder.vertx();
     } catch (Exception e) {
       log.error("Failed to create the vert.x instance", e);
     } finally {
@@ -122,14 +123,14 @@ public abstract class ClasspathHandler extends DefaultCommand {
   /**
    * Creates a new clustered vert.x instance.
    *
-   * @param options       the options
+   * @param builder       the builder
    * @param resultHandler the result handler
    */
-  protected synchronized void create(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
+  protected synchronized void create(VertxBuilder builder, Handler<AsyncResult<Vertx>> resultHandler) {
     final ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
     try {
       Thread.currentThread().setContextClassLoader(classloader != null ? classloader : getClass().getClassLoader());
-      Vertx.clusteredVertx(options, resultHandler);
+      builder.clusteredVertx(resultHandler);
     } catch (Exception e) {
       log.error("Failed to create the vert.x instance", e);
     } finally {

@@ -33,7 +33,7 @@ class MessageTagExtractor implements TagExtractor<Message<?>> {
   @Override
   public String name(Message<?> obj, int index) {
     if (index == 0) {
-      return "peer.service";
+      return "message_bus.destination";
     }
     throw new IndexOutOfBoundsException("Invalid tag index " + index);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -55,7 +55,9 @@ import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
+import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VerticleFactory;
+import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.metrics.Metrics;
@@ -71,6 +73,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -88,8 +91,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   static {
     // Disable Netty's resource leak detection to reduce the performance overhead if not set by user
     // Supports both the default netty leak detection system property and the deprecated one
-    if (System.getProperty("io.netty.leakDetection.level") != null ||
-        System.getProperty("io.netty.leakDetectionLevel") != null) {
+    if (System.getProperty("io.netty.leakDetection.level") == null &&
+        System.getProperty("io.netty.leakDetectionLevel") == null) {
       ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
     }
 
@@ -110,7 +113,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
   private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
   final WorkerPool workerPool;
-  final WorkerPool internalBlockingPool;
+  final WorkerPool internalWorkerPool;
+  private final VertxThreadFactory threadFactory;
+  private final ExecutorServiceFactory executorServiceFactory;
   private final ThreadFactory eventLoopThreadFactory;
   private final EventLoopGroup eventLoopGroup;
   private final EventLoopGroup acceptorEventLoopGroup;
@@ -132,7 +137,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<AbstractContext>> stickyContext = new ThreadLocal<>();
 
-  VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics, VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver) {
+  VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
+            VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, VertxThreadFactory threadFactory,
+            ExecutorServiceFactory executorServiceFactory) {
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -141,34 +148,35 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     maxEventLoopExecTime = options.getMaxEventLoopExecuteTime();
     maxEventLoopExecTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
-    eventLoopThreadFactory = new VertxThreadFactory("vert.x-eventloop-thread-", checker, false, maxEventLoopExecTime, maxEventLoopExecTimeUnit);
+    eventLoopThreadFactory = createThreadFactory(maxEventLoopExecTime, maxEventLoopExecTimeUnit, "vert.x-eventloop-thread-", false);
     eventLoopGroup = transport.eventLoopGroup(Transport.IO_EVENT_LOOP_GROUP, options.getEventLoopPoolSize(), eventLoopThreadFactory, NETTY_IO_RATIO);
-    ThreadFactory acceptorEventLoopThreadFactory = new VertxThreadFactory("vert.x-acceptor-thread-", checker, false, options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit());
+    ThreadFactory acceptorEventLoopThreadFactory = createThreadFactory(options.getMaxEventLoopExecuteTime(), options.getMaxEventLoopExecuteTimeUnit(), "vert.x-acceptor-thread-", false);
     // The acceptor event loop thread needs to be from a different pool otherwise can get lags in accepted connections
     // under a lot of load
     acceptorEventLoopGroup = transport.eventLoopGroup(Transport.ACCEPTOR_EVENT_LOOP_GROUP, 1, acceptorEventLoopThreadFactory, 100);
 
     int workerPoolSize = options.getWorkerPoolSize();
-    ExecutorService workerExec = new ThreadPoolExecutor(workerPoolSize, workerPoolSize,
-      0L, TimeUnit.MILLISECONDS, new LinkedTransferQueue<>(),
-      new VertxThreadFactory("vert.x-worker-thread-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
+    ThreadFactory workerThreadFactory = createThreadFactory(options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit(), "vert.x-worker-thread-", true);
+    ExecutorService workerExec = executorServiceFactory.createExecutor(workerThreadFactory, workerPoolSize, workerPoolSize);
     PoolMetrics workerPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-worker-thread", options.getWorkerPoolSize()) : null;
-    ExecutorService internalBlockingExec = Executors.newFixedThreadPool(options.getInternalBlockingPoolSize(),
-        new VertxThreadFactory("vert.x-internal-blocking-", checker, true, options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()));
+    ThreadFactory internalWorkerThreadFactory = createThreadFactory(options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit(), "vert.x-internal-blocking-", true);
+    ExecutorService internalWorkerExec = executorServiceFactory.createExecutor(internalWorkerThreadFactory, options.getInternalBlockingPoolSize(), options.getInternalBlockingPoolSize());
     PoolMetrics internalBlockingPoolMetrics = metrics != null ? metrics.createPoolMetrics("worker", "vert.x-internal-blocking", options.getInternalBlockingPoolSize()) : null;
-    internalBlockingPool = new WorkerPool(internalBlockingExec, internalBlockingPoolMetrics);
+    internalWorkerPool = new WorkerPool(internalWorkerExec, internalBlockingPoolMetrics);
     namedWorkerPools = new HashMap<>();
     workerPool = new WorkerPool(workerExec, workerPoolMetrics);
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     maxWorkerExecTime = options.getMaxWorkerExecuteTime();
     maxWorkerExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
 
+    this.executorServiceFactory = executorServiceFactory;
+    this.threadFactory = threadFactory;
     this.metrics = metrics;
     this.transport = transport;
     this.fileResolver = fileResolver;
     this.addressResolverOptions = options.getAddressResolverOptions();
     this.addressResolver = new AddressResolver(this, options.getAddressResolverOptions());
-    this.tracer = tracer;
+    this.tracer = tracer == VertxTracer.NOOP ? null : tracer;
     this.clusterManager = clusterManager;
     this.nodeSelector = nodeSelector;
     this.eventBus = clusterManager != null ? new ClusteredEventBus(this, options, clusterManager, nodeSelector) : new EventBusImpl(this);
@@ -458,12 +466,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public EventLoopContext createEventLoopContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, eventLoopGroup.next(), internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
+    return new EventLoopContext(this, tracer, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
   public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, eventLoop, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, null, null, tccl);
+    return new EventLoopContext(this, tracer, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, null, tccl);
   }
 
   @Override
@@ -473,7 +481,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public WorkerContext createWorkerContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
-    return new WorkerContext(this, tracer, internalBlockingPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
+    return new WorkerContext(this, tracer, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
   }
 
   @Override
@@ -857,7 +865,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }, ar -> {
 
       workerPool.close();
-      internalBlockingPool.close();
+      internalWorkerPool.close();
       new ArrayList<>(namedWorkerPools.values()).forEach(WorkerPool::close);
 
       acceptorEventLoopGroup.shutdownGracefully(0, 10, TimeUnit.SECONDS).addListener(new GenericFutureListener() {
@@ -1070,15 +1078,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     @Override
     void close() {
       synchronized (VertxImpl.this) {
-        if (refCount > 0) {
-          refCount = 0;
-          super.close();
-        }
-      }
-    }
-
-    void release() {
-      synchronized (VertxImpl.this) {
         if (--refCount == 0) {
           namedWorkerPools.remove(name);
           super.close();
@@ -1124,13 +1123,26 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     }
     SharedWorkerPool sharedWorkerPool = namedWorkerPools.get(name);
     if (sharedWorkerPool == null) {
-      ExecutorService workerExec = Executors.newFixedThreadPool(poolSize, new VertxThreadFactory(name + "-", checker, true, maxExecuteTime, maxExecuteTimeUnit));
+      ThreadFactory workerThreadFactory = createThreadFactory(maxExecuteTime, maxExecuteTimeUnit, name + "-", true);
+      ExecutorService workerExec = executorServiceFactory.createExecutor(workerThreadFactory, poolSize, poolSize);
       PoolMetrics workerMetrics = metrics != null ? metrics.createPoolMetrics("worker", name, poolSize) : null;
       namedWorkerPools.put(name, sharedWorkerPool = new SharedWorkerPool(name, workerExec, workerMetrics));
     } else {
       sharedWorkerPool.refCount++;
     }
     return sharedWorkerPool;
+  }
+
+  private ThreadFactory createThreadFactory(long maxExecuteTime, TimeUnit maxExecuteTimeUnit, String prefix, boolean worker) {
+    AtomicInteger threadCount = new AtomicInteger(0);
+    return runnable -> {
+      VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
+      checker.registerThread(thread, thread);
+      // Vert.x threads are NOT daemons - we want them to prevent JVM exit so embedded user doesn't
+      // have to explicitly prevent JVM from exiting.
+      thread.setDaemon(false);
+      return thread;
+    };
   }
 
   @Override

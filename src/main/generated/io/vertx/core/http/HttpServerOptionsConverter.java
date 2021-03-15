@@ -71,6 +71,11 @@ public class HttpServerOptionsConverter {
             obj.setMaxChunkSize(((Number)member.getValue()).intValue());
           }
           break;
+        case "maxFormAttributeSize":
+          if (member.getValue() instanceof Number) {
+            obj.setMaxFormAttributeSize(((Number)member.getValue()).intValue());
+          }
+          break;
         case "maxHeaderSize":
           if (member.getValue() instanceof Number) {
             obj.setMaxHeaderSize(((Number)member.getValue()).intValue());
@@ -109,6 +114,11 @@ public class HttpServerOptionsConverter {
         case "webSocketAllowServerNoContext":
           if (member.getValue() instanceof Boolean) {
             obj.setWebSocketAllowServerNoContext((Boolean)member.getValue());
+          }
+          break;
+        case "webSocketClosingTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWebSocketClosingTimeout(((Number)member.getValue()).intValue());
           }
           break;
         case "webSocketCompressionLevel":
@@ -156,6 +166,7 @@ public class HttpServerOptionsConverter {
       json.put("initialSettings", obj.getInitialSettings().toJson());
     }
     json.put("maxChunkSize", obj.getMaxChunkSize());
+    json.put("maxFormAttributeSize", obj.getMaxFormAttributeSize());
     json.put("maxHeaderSize", obj.getMaxHeaderSize());
     json.put("maxInitialLineLength", obj.getMaxInitialLineLength());
     json.put("maxWebSocketFrameSize", obj.getMaxWebSocketFrameSize());
@@ -166,6 +177,7 @@ public class HttpServerOptionsConverter {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }
     json.put("webSocketAllowServerNoContext", obj.getWebSocketAllowServerNoContext());
+    json.put("webSocketClosingTimeout", obj.getWebSocketClosingTimeout());
     json.put("webSocketCompressionLevel", obj.getWebSocketCompressionLevel());
     json.put("webSocketPreferredClientNoContext", obj.getWebSocketPreferredClientNoContext());
     if (obj.getWebSocketSubProtocols() != null) {

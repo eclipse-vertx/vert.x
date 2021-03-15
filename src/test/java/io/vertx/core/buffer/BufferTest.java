@@ -23,9 +23,11 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.test.core.TestUtils.assertIndexOutOfBoundsException;
 import static org.junit.Assert.*;
 
 /**
@@ -1137,5 +1139,37 @@ public class BufferTest {
     assertEquals(1, duplicate.refCnt());
     duplicate.release();
     assertEquals(1, duplicate.refCnt());
+  }
+
+  @Test
+  public void testGetXXXUpperBound() {
+    checkGetXXXUpperBound((buff, idx) -> buff.getByte(idx), 1);
+    checkGetXXXUpperBound((buff, idx) -> buff.getUnsignedByte(idx), 1);
+    checkGetXXXUpperBound((buff, idx) -> buff.getShort(idx), 2);
+    checkGetXXXUpperBound((buff, idx) -> buff.getShortLE(idx), 2);
+    checkGetXXXUpperBound((buff, idx) -> buff.getUnsignedShort(idx), 2);
+    checkGetXXXUpperBound((buff, idx) -> buff.getUnsignedShortLE(idx), 2);
+    checkGetXXXUpperBound((buff, idx) -> buff.getMedium(idx), 3);
+    checkGetXXXUpperBound((buff, idx) -> buff.getMediumLE(idx), 3);
+    checkGetXXXUpperBound((buff, idx) -> buff.getUnsignedMedium(idx), 3);
+    checkGetXXXUpperBound((buff, idx) -> buff.getUnsignedMediumLE(idx), 3);
+    checkGetXXXUpperBound((buff, idx) -> buff.getInt(idx), 4);
+    checkGetXXXUpperBound((buff, idx) -> buff.getIntLE(idx), 4);
+    checkGetXXXUpperBound((buff, idx) -> buff.getUnsignedInt(idx), 4);
+    checkGetXXXUpperBound((buff, idx) -> buff.getUnsignedIntLE(idx), 4);
+    checkGetXXXUpperBound((buff, idx) -> buff.getLong(idx), 8);
+    checkGetXXXUpperBound((buff, idx) -> buff.getLongLE(idx), 8);
+    checkGetXXXUpperBound((buff, idx) -> buff.getFloat(idx), 4);
+    checkGetXXXUpperBound((buff, idx) -> buff.getDouble(idx), 8);
+  }
+
+  private <T> void checkGetXXXUpperBound(BiFunction<Buffer, Integer, T> f, int size) {
+    Buffer buffer = Buffer.buffer();
+    for (int i = 0;i < size;i++) {
+      buffer.appendByte((byte)0);
+    }
+    assertIndexOutOfBoundsException(() -> f.apply(buffer, -1));
+    f.apply(buffer, 0);
+    assertIndexOutOfBoundsException(() -> f.apply(buffer, 1));
   }
 }

@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensio
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -35,7 +36,6 @@ import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
-import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -69,32 +69,36 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private static final Logger log = LoggerFactory.getLogger(Http1xClientConnection.class);
 
   private static final Handler<Object> INVALID_MSG_HANDLER = msg -> {
+    ReferenceCountUtil.release(msg);
     throw new IllegalStateException("Invalid object " + msg);
   };
 
-  private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
   private final HttpClientOptions options;
   private final boolean ssl;
   private final SocketAddress server;
   public final ClientMetrics metrics;
   private final HttpVersion version;
+  private final long lowWaterMark;
+  private final long highWaterMark;
 
   private Deque<Stream> requests = new ArrayDeque<>();
   private Deque<Stream> responses = new ArrayDeque<>();
   private boolean closed;
-  private boolean shutdown;
-  private long shutdownTimerID = -1L;
+  private boolean evicted;
 
+  private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
   private Handler<Object> invalidMessageHandler = INVALID_MSG_HANDLER;
   private boolean close;
+  private boolean shutdown;
+  private long shutdownTimerID = -1L;
   private boolean isConnect;
   private int keepAliveTimeout;
   private long expirationTimestamp;
   private int seq = 1;
+  private long bytesWindow;
 
-  Http1xClientConnection(ConnectionListener<HttpClientConnection> listener,
-                         HttpVersion version,
+  Http1xClientConnection(HttpVersion version,
                          HttpClientImpl client,
                          ChannelHandlerContext channel,
                          boolean ssl,
@@ -102,19 +106,34 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
                          ContextInternal context,
                          ClientMetrics metrics) {
     super(context, channel);
-    this.listener = listener;
     this.client = client;
     this.options = client.getOptions();
     this.ssl = ssl;
     this.server = server;
     this.metrics = metrics;
     this.version = version;
+    this.bytesWindow = 0;
+    this.highWaterMark = channel.channel().config().getWriteBufferHighWaterMark();
+    this.lowWaterMark = channel.channel().config().getWriteBufferLowWaterMark();
     this.keepAliveTimeout = options.getKeepAliveTimeout();
     this.expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
   }
 
-  ConnectionListener<HttpClientConnection> listener() {
-    return listener;
+  @Override
+  public HttpClientConnection evictionHandler(Handler<Void> handler) {
+    evictionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public HttpClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+    // Never changes
+    return this;
+  }
+
+  @Override
+  public long concurrency() {
+    return options.isPipelining() ? options.getPipeliningLimit() : 1;
   }
 
   /**
@@ -124,7 +143,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     removeChannelHandlers();
     NetSocketImpl socket = new NetSocketImpl(context, chctx, client.getSslHelper(), metrics());
     socket.metric(metric());
-    listener.onEvict();
+    evictionHandler.handle(null);
     chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));
     return socket;
   }
@@ -186,9 +205,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
-        List<Map.Entry<String, String>> tags = new ArrayList<>();
-        tags.add(new AbstractMap.SimpleEntry<>("http.url", "todo"));
-        tags.add(new AbstractMap.SimpleEntry<>("http.method", request.method.name()));
         BiConsumer<String, String> headers = (key, val) -> nettyRequest.headers().add(key, val);
         stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, request.method.name(), headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
@@ -231,11 +247,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   private void endRequest(Stream s) {
     Stream next;
-    boolean recycle;
+    boolean checkLifecycle;
     synchronized (this) {
       requests.pop();
       next = requests.peek();
-      recycle = s.responseEnded;
+      checkLifecycle = s.responseEnded;
       if (metrics != null) {
         metrics.requestEnd(s.metric, s.bytesWritten);
       }
@@ -244,29 +260,47 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (next != null) {
       next.promise.complete((HttpClientStream) next);
     }
-    if (recycle) {
-      recycle();
+    if (checkLifecycle) {
+      checkLifecycle();
     }
   }
 
-  private void resetRequest(Stream stream) {
-    boolean close;
+  /**
+   * Resets the given {@code stream}.
+   *
+   * @param stream to reset
+   * @return whether the stream should be considered as closed
+   */
+  private boolean reset(Stream stream) {
+    boolean isInflight;
     synchronized (this) {
-      if (responses.remove(stream)) {
-        // Already sent
-        close = true;
-      } else if (requests.remove(stream)) {
-        // Not yet sent
-        close = false;
-      } else {
-        // Response received
-        return;
-      }
+      isInflight = responses.remove(stream) || (requests.remove(stream) && stream.responseEnded);
+      close = isInflight;
     }
-    if (close) {
-      close();
+    checkLifecycle();
+    return !isInflight;
+  }
+
+  private void receiveBytes(int len) {
+    boolean le = bytesWindow <= highWaterMark;
+    bytesWindow += len;
+    boolean gt = bytesWindow > highWaterMark;
+    if (le && gt) {
+      doPause();
+    }
+  }
+
+  private void ackBytes(int len) {
+    EventLoop eventLoop = context.nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      boolean gt = bytesWindow > lowWaterMark;
+      bytesWindow -= len;
+      boolean le = bytesWindow <= lowWaterMark;
+      if (gt && le) {
+        doResume();
+      }
     } else {
-      recycle();
+      eventLoop.execute(() -> ackBytes(len));
     }
   }
 
@@ -304,12 +338,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
   }
 
-  private void drainResponse(Stream n) {
-    if (!n.responseEnded) {
-      this.doResume();
-    }
-  }
-
   /**
    * We split the stream class in two classes so that the base {@link #Stream} class defines the (mutable)
    * state managed by the connection and this class defines the state managed by the stream implementation
@@ -327,6 +355,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private Handler<Void> drainHandler;
     private Handler<Void> continueHandler;
     private Handler<Throwable> exceptionHandler;
+    private Handler<Void> closeHandler;
 
     StreamImpl(ContextInternal context, Http1xClientConnection conn, int id) {
       super(context, id);
@@ -334,14 +363,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       this.writable = !conn.isNotWritable();
       this.conn = conn;
       this.queue = new InboundBuffer<>(context, 5)
-        .drainHandler(v -> {
-          EventLoop eventLoop = conn.context.nettyEventLoop();
-          if (eventLoop.inEventLoop()) {
-            drained();
-          } else {
-            eventLoop.execute(this::drained);
-          }
-        })
         .handler(item -> {
           if (item instanceof MultiMap) {
             Handler<MultiMap> handler = endHandler;
@@ -349,17 +370,16 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
               handler.handle((MultiMap) item);
             }
           } else {
+            Buffer buffer = (Buffer) item;
+            int len = buffer.length();
+            conn.ackBytes(len);
             Handler<Buffer> handler = chunkHandler;
             if (handler != null) {
-              handler.handle((Buffer) item);
+              handler.handle(buffer);
             }
           }
         })
         .exceptionHandler(context::reportException);
-    }
-
-    private void drained() {
-      conn.drainResponse(this);
     }
 
     @Override
@@ -380,6 +400,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     public void headHandler(Handler<HttpResponseHead> handler) {
       this.headHandler = handler;
+    }
+
+    @Override
+    public void closeHandler(Handler<Void> handler) {
+      closeHandler = handler;
     }
 
     @Override
@@ -489,17 +514,20 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         }
         reset = true;
       }
-      handleException(cause);
       EventLoop eventLoop = conn.context.nettyEventLoop();
       if (eventLoop.inEventLoop()) {
-        reset();
+        _reset(cause);
       } else {
-        eventLoop.execute(this::reset);
+        eventLoop.execute(() -> _reset(cause));
       }
     }
 
-    private void reset() {
-      conn.resetRequest(this);
+    private void _reset(Throwable cause) {
+      boolean removed = conn.reset(this);
+      context.execute(cause, this::handleException);
+      if (removed) {
+        context.execute(this::handleClosed);
+      }
     }
 
     @Override
@@ -550,13 +578,14 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     void handleChunk(Buffer buff) {
-      if (!queue.write(buff)) {
-        conn.doPause();
-      }
+      queue.write(buff);
     }
 
     void handleEnd(LastHttpContent trailer) {
       queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
 
     void handleException(Throwable cause) {
@@ -568,15 +597,29 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     void handleClosed() {
       handleException(CLOSED_EXCEPTION);
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
   }
 
   private void checkLifecycle() {
-    if (close) {
+    if (close || (shutdown && requests.isEmpty() && responses.isEmpty())) {
       close();
-    } else {
-      recycle();
+    } else if (!isConnect) {
+      expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
     }
+  }
+
+  @Override
+  public Future<Void> close() {
+    if (!evicted) {
+      evicted = true;
+      if (evictionHandler != null) {
+        evictionHandler.handle(null);
+      }
+    }
+    return super.close();
   }
 
   private Throwable validateMessage(Object msg) {
@@ -598,6 +641,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   public void handleMessage(Object msg) {
     Throwable error = validateMessage(msg);
     if (error != null) {
+      ReferenceCountUtil.release(msg);
       fail(error);
     } else if (msg instanceof HttpObject) {
       handleHttpMessage((HttpObject) msg);
@@ -614,11 +658,10 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     Stream stream;
     synchronized (this) {
       stream = responses.peekFirst();
-      if (stream == null) {
-        return;
-      }
     }
-    if (obj instanceof io.netty.handler.codec.http.HttpResponse) {
+    if (stream == null) {
+      fail(new VertxException("Received HTTP message with no request in progress"));
+    } else if (obj instanceof io.netty.handler.codec.http.HttpResponse) {
       io.netty.handler.codec.http.HttpResponse response = (io.netty.handler.codec.http.HttpResponse) obj;
       HttpVersion version;
       if (response.protocolVersion() == io.netty.handler.codec.http.HttpVersion.HTTP_1_0) {
@@ -712,7 +755,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
    *
    * @return the messages emitted by the removed handlers during their removal
    */
-  private List<Object> removeChannelHandlers() {
+  private void removeChannelHandlers() {
     ChannelPipeline pipeline = chctx.pipeline();
     ChannelHandler inflater = pipeline.get(HttpContentDecompressor.class);
     if (inflater != null) {
@@ -720,20 +763,22 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
     // removing this codec might fire pending buffers in the HTTP decoder
     // this happens when the channel reads the HTTP response and the following data in a single buffer
-    List<Object> pending = new ArrayList<>();
     Handler<Object> prev = invalidMessageHandler;
-    invalidMessageHandler = pending::add;
+    invalidMessageHandler = msg -> {
+      ReferenceCountUtil.release(msg);
+    };
     try {
       pipeline.remove("codec");
     } finally {
       invalidMessageHandler = prev;
     }
-    return pending;
   }
 
   private void handleResponseChunk(Stream stream, ByteBuf chunk) {
-    Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk, chctx.alloc()));
-    stream.bytesRead += buff.length();
+    Buffer buff = Buffer.buffer(VertxHandler.safeBuffer(chunk));
+    int len = buff.length();
+    receiveBytes(len);
+    stream.bytesRead += len;
     stream.context.execute(buff, stream::handleChunk);
   }
 
@@ -756,12 +801,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (metrics != null) {
       metrics.responseEnd(stream.metric, stream.bytesRead);
     }
-    stream.context.execute(trailer, stream::handleEnd);
-    this.doResume();
     flushBytesRead();
     if (check) {
       checkLifecycle();
     }
+    stream.context.execute(trailer, stream::handleEnd);
   }
 
   public HttpClientMetrics metrics() {
@@ -915,6 +959,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       HttpClientMetrics met = client.metrics();
       met.endpointDisconnected(metrics);
     }
+    if (!evicted) {
+      evicted = true;
+      if (evictionHandler != null) {
+        evictionHandler.handle(null);
+      }
+    }
     WebSocketImpl ws;
     VertxTracer tracer = context.tracer();
     Iterable<Stream> streams;
@@ -996,17 +1046,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
   }
 
-  private void recycle() {
-    if (shutdown) {
-      if (requests.isEmpty() && responses.isEmpty()) {
-        close();
-      }
-    } else if (!isConnect) {
-      expirationTimestamp = expirationTimestampOf(keepAliveTimeout);
-      listener.onRecycle();
-    }
-  }
-
   @Override
   public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
     shutdown(timeout, vertx.promise(handler));
@@ -1033,7 +1072,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       shutdown = true;
       closeFuture().onComplete(promise);
     }
-    listener.onEvict();
     synchronized (this) {
       if (!closed) {
         if (timeoutMs > 0L) {

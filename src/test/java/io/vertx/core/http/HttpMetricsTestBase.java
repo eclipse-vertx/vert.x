@@ -15,6 +15,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.AsyncTestBase;
@@ -70,7 +71,9 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
       assertEquals(protocol, req.version());
       FakeHttpServerMetrics serverMetrics = FakeMetricsBase.getMetrics(server);
       assertNotNull(serverMetrics);
-      serverMetric.set(serverMetrics.getRequestMetric(req));
+      HttpServerMetric metric = serverMetrics.getRequestMetric(req);
+      serverMetric.set(metric);
+      assertSame(((HttpServerRequestInternal)req).metric(), metric);
       assertNotNull(serverMetric.get());
       assertNotNull(serverMetric.get().socket);
       assertNull(serverMetric.get().response.get());

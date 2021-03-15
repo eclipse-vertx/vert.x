@@ -12,15 +12,15 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.net.impl.clientconnection.Lease;
 import io.vertx.core.net.impl.clientconnection.Pool;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
-import io.vertx.core.spi.metrics.HttpClientMetrics;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class ClientHttpStreamEndpoint extends ClientHttpEndpointBase {
+class ClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpClientConnection>> {
 
   private final Pool<HttpClientConnection> pool;
 
@@ -31,7 +31,7 @@ class ClientHttpStreamEndpoint extends ClientHttpEndpointBase {
                                   String host,
                                   int port,
                                   ContextInternal ctx,
-                                  HttpChannelConnector connector,
+                                  HttpConnectionProvider connector,
                                   Runnable dispose) {
     super(metrics, port, host, metric, dispose);
     this.pool = new Pool<>(
@@ -40,8 +40,12 @@ class ClientHttpStreamEndpoint extends ClientHttpEndpointBase {
       queueMaxSize,
       connector.weight(),
       maxSize,
-      this::connectionAdded,
-      this::connectionRemoved,
+      conn -> {
+        if (!incRefCount()) {
+          conn.close();
+        }
+      },
+      v -> decRefCount(),
       false);
   }
 
@@ -50,7 +54,7 @@ class ClientHttpStreamEndpoint extends ClientHttpEndpointBase {
   }
 
   @Override
-  public void requestConnection2(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler) {
+  public void requestConnection2(ContextInternal ctx, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
     pool.getConnection(handler);
   }
 }

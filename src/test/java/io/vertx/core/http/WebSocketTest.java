@@ -15,7 +15,7 @@ package io.vertx.core.http;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
-import io.netty.util.ReferenceCounted;
+import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -27,7 +27,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.FrameType;
 import io.vertx.core.http.impl.Http1xClientConnection;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.WebSocketInternal;
@@ -2027,7 +2026,6 @@ public class WebSocketTest extends VertxTestBase {
     await();
   }
 
-
   @Test
   public void testInvalidUnmaskedFrameRequest(){
 
@@ -2563,8 +2561,8 @@ public class WebSocketTest extends VertxTestBase {
       client = vertx.createHttpClient();
       client.webSocket(DEFAULT_HTTP_PORT, HttpTestBase.DEFAULT_HTTP_HOST, "/", onSuccess(ws -> {
         try {
-          ws.writeFrame(new WebSocketFrameImpl(FrameType.PONG, ping1.copy().getByteBuf(), false));
-          ws.writeFrame(new WebSocketFrameImpl(FrameType.PONG, ping2.copy().getByteBuf(), true));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping1.copy().getByteBuf(), false));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping2.copy().getByteBuf(), true));
         } catch(Throwable t) {
           fail(t);
         }
@@ -2583,8 +2581,8 @@ public class WebSocketTest extends VertxTestBase {
     server = vertx.createHttpServer(new HttpServerOptions().setIdleTimeout(1).setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST).setMaxWebSocketFrameSize(maxFrameSize));
     server.webSocketHandler(ws -> {
       try {
-        ws.writeFrame(new WebSocketFrameImpl(FrameType.PONG, ping1.copy().getByteBuf(), false));
-        ws.writeFrame(new WebSocketFrameImpl(FrameType.PONG, ping2.copy().getByteBuf(), true));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping1.copy().getByteBuf(), false));
+        ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PONG, ping2.copy().getByteBuf(), true));
       } catch(Throwable t) {
         fail(t);
       }
@@ -2626,8 +2624,8 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
         try {
-          ws.writeFrame(new WebSocketFrameImpl(FrameType.PING, ping1.copy().getByteBuf(), false));
-          ws.writeFrame(new WebSocketFrameImpl(FrameType.PING, ping2.copy().getByteBuf(), true));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy().getByteBuf(), false));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy().getByteBuf(), true));
         } catch(Throwable t) {
           fail(t);
         }
@@ -2658,8 +2656,8 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
         try {
-          ws.writeFrame(new WebSocketFrameImpl(FrameType.PING, ping1.copy().getByteBuf(), false));
-          ws.writeFrame(new WebSocketFrameImpl(FrameType.PING, ping2.copy().getByteBuf(), true));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping1.copy().getByteBuf(), false));
+          ws.writeFrame(new WebSocketFrameImpl(WebSocketFrameType.PING, ping2.copy().getByteBuf(), true));
         } catch(Throwable t) {
           fail(t);
         }
@@ -2905,10 +2903,7 @@ public class WebSocketTest extends VertxTestBase {
               assertEquals(reason, frame.reasonText());
               closeFrameReceived.set(true);
             }
-            if (msg instanceof ReferenceCounted) {
-              // release to avoid leaks
-              ((ReferenceCounted)msg).release();
-            }
+            ReferenceCountUtil.release(msg);
           });
           soi.closeHandler(v2 -> {
             assertTrue(closeFrameReceived.get());

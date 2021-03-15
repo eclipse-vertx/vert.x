@@ -26,22 +26,9 @@ public class RequestOptionsConverter {
             obj.setFollowRedirects((Boolean)member.getValue());
           }
           break;
-        case "headers":
-          if (member.getValue() instanceof JsonObject) {
-            ((Iterable<java.util.Map.Entry<String, Object>>)member.getValue()).forEach(entry -> {
-              if (entry.getValue() instanceof String)
-                obj.addHeader(entry.getKey(), (String)entry.getValue());
-            });
-          }
-          break;
         case "host":
           if (member.getValue() instanceof String) {
             obj.setHost((String)member.getValue());
-          }
-          break;
-        case "method":
-          if (member.getValue() instanceof String) {
-            obj.setMethod(new io.vertx.core.http.HttpMethod((java.lang.String)member.getValue()));
           }
           break;
         case "port":
@@ -78,9 +65,6 @@ public class RequestOptionsConverter {
     }
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
-    }
-    if (obj.getMethod() != null) {
-      json.put("method", obj.getMethod().toJson());
     }
     if (obj.getPort() != null) {
       json.put("port", obj.getPort());

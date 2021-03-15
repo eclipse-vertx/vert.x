@@ -32,7 +32,7 @@ public class BodyReadStream<T> implements ReadStream<T> {
   @Override
   public ReadStream<T> exceptionHandler(Handler<Throwable> handler) {
     delegate.exceptionHandler(handler);
-    return null;
+    return this;
   }
 
   @Override

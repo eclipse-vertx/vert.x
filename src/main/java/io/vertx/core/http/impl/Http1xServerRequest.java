@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.multipart.Attribute;
 import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -56,7 +57,7 @@ import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi.observability.HttpRequest {
+public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.core.spi.observability.HttpRequest {
 
   private static final Logger log = LoggerFactory.getLogger(Http1xServerRequest.class);
 
@@ -179,12 +180,17 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
     }
   }
 
-  Object metric() {
+  public Object metric() {
     return metric;
   }
 
   Object trace() {
     return trace;
+  }
+
+  @Override
+  public Context context() {
+    return context;
   }
 
   @Override
@@ -460,7 +466,9 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
           if (!HttpUtils.isValidMultipartMethod(request.method())) {
             throw new IllegalStateException("Request method must be one of POST, PUT, PATCH or DELETE to decode a multipart request");
           }
-          decoder = new HttpPostRequestDecoder(new NettyFileUploadDataFactory(context, this, () -> uploadHandler), request);
+          NettyFileUploadDataFactory factory = new NettyFileUploadDataFactory(context, this, () -> uploadHandler);
+          factory.setMaxLimit(conn.options.getMaxFormAttributeSize());
+          decoder = new HttpPostRequestDecoder(factory, request);
         }
       } else {
         decoder = null;
@@ -562,6 +570,8 @@ public class Http1xServerRequest implements HttpServerRequest, io.vertx.core.spi
           } catch (Exception e) {
             // Will never happen, anyway handle it somehow just in case
             handleException(e);
+          } finally {
+            attr.release();
           }
         }
       }

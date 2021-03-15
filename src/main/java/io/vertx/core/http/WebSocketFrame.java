@@ -88,24 +88,34 @@ public interface WebSocketFrame {
   }
 
   /**
-   * @return true if it's a text frame
+   * @return the frame type
+   */
+  WebSocketFrameType type();
+
+  /**
+   * @return whether the frame is a {@link WebSocketFrameType#TEXT} frame
    */
   boolean isText();
 
   /**
-   * @return true if it's a binary frame
+   * @return whether the frame is a {@link WebSocketFrameType#BINARY} frame
    */
   boolean isBinary();
 
   /**
-   * @return true if it's a continuation frame
+   * @return whether the frame is a {@link WebSocketFrameType#CONTINUATION} frame
    */
   boolean isContinuation();
 
   /**
-   * @return true if it's close frame
+   * @return whether the frame is a {@link WebSocketFrameType#CLOSE} frame
    */
   boolean isClose();
+
+  /**
+   * @return whether the frame is a {@link WebSocketFrameType#PING} frame
+   */
+  boolean isPing();
 
   /**
    * @return the content of this frame as a UTF-8 string and returns the

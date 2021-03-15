@@ -13,6 +13,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -65,11 +66,23 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final TCPMetrics metrics;
   private final CloseFuture closeFuture;
 
+  public NetClientImpl(VertxInternal vertx, ChannelGroup channelGroup, SSLHelper sslHelper, NetClientOptions options) {
+    this.vertx = vertx;
+    this.channelGroup = channelGroup;
+    this.options = options;
+    this.sslHelper = sslHelper;
+    this.metrics = null;
+    this.logEnabled = options.getLogActivity();
+    this.idleTimeout = options.getIdleTimeout();
+    this.idleTimeoutUnit = options.getIdleTimeoutUnit();
+    this.closeFuture = new CloseFuture();
+  }
+
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
-    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
+    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).setApplicationProtocols(options.getApplicationLayerProtocols());
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null;
     this.logEnabled = options.getLogActivity();
     this.idleTimeout = options.getIdleTimeout();
@@ -81,7 +94,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler());
     }
-    if (sslHelper.isSSL()) {
+    if (options.isSsl()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
@@ -107,9 +120,12 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
   @Override
   public Future<NetSocket> connect(SocketAddress remoteAddress, String serverName) {
-    ContextInternal ctx = vertx.getOrCreateContext();
-    Promise<NetSocket> promise = ctx.promise();
-    doConnect(remoteAddress, serverName, promise, ctx);
+    return connect(vertx.getOrCreateContext(), remoteAddress, serverName);
+  }
+
+  public Future<NetSocket> connect(ContextInternal context, SocketAddress remoteAddress, String serverName) {
+    Promise<NetSocket> promise = context.promise();
+    doConnect(remoteAddress, serverName, promise, context);
     return promise.future();
   }
 
@@ -187,31 +203,33 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   }
 
   private void doConnect(SocketAddress remoteAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal ctx) {
-    doConnect(remoteAddress, serverName, connectHandler, ctx, options.getReconnectAttempts());
-  }
-
-  private void doConnect(SocketAddress remoteAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal context, int remainingAttempts) {
-    checkClosed();
-    Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
-    sslHelper.validate(vertx);
-    Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(context.nettyEventLoop());
-
-    applyConnectionOptions(remoteAddress.isDomainSocket(), bootstrap);
-
-    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context, options.getProxyOptions());
-
     SocketAddress peerAddress = remoteAddress;
     String peerHost = peerAddress.host();
     if (peerHost != null && peerHost.endsWith(".")) {
       peerAddress = SocketAddress.inetSocketAddress(peerAddress.port(), peerHost.substring(0, peerHost.length() - 1));
     }
-    io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, sslHelper.isSSL());
+    doConnect(remoteAddress, peerAddress, serverName, connectHandler, ctx, options.getReconnectAttempts());
+  }
+
+  public void doConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal context, int remainingAttempts) {
+    checkClosed();
+    Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
+    if (sslHelper != null) {
+      sslHelper.validate(vertx);
+    }
+    Bootstrap bootstrap = new Bootstrap();
+    bootstrap.group(context.nettyEventLoop());
+
+    applyConnectionOptions(remoteAddress.isDomainSocket(), bootstrap);
+
+    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context)
+      .proxyOptions(options.getProxyOptions());
+
+    channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol()));
+
+    io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, options.isSsl());
     fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
-      if (future.isSuccess()) {
-        Channel ch = future.getNow();
-        connected(context, ch, connectHandler, remoteAddress);
-      } else {
+      if (!future.isSuccess()) {
         Throwable cause = future.cause();
         // FileNotFoundException for domain sockets
         boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
@@ -220,7 +238,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
-              doConnect(remoteAddress, serverName, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+              doConnect(remoteAddress, peerAddress, serverName, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
             );
           });
         } else {
@@ -230,10 +248,11 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     });
   }
 
-  private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress) {
+  private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress, String applicationLayerProtocol) {
     channelGroup.add(ch);
     initChannel(ch.pipeline());
-    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslHelper, metrics));
+    VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslHelper, metrics, applicationLayerProtocol));
+    handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
     handler.addHandler(sock -> {
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));

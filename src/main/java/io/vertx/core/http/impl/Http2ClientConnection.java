@@ -43,21 +43,41 @@ import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
  */
 class Http2ClientConnection extends Http2ConnectionBase implements HttpClientConnection {
 
-  private final ConnectionListener<HttpClientConnection> listener;
   private final HttpClientImpl client;
   private final ClientMetrics metrics;
+  private Handler<Void> evictionHandler = DEFAULT_EVICTION_HANDLER;
+  private Handler<Long> concurrencyChangeHandler = DEFAULT_CONCURRENCY_CHANGE_HANDLER;
   private long expirationTimestamp;
   private boolean evicted;
 
-  Http2ClientConnection(ConnectionListener<HttpClientConnection> listener,
-                        HttpClientImpl client,
+  Http2ClientConnection(HttpClientImpl client,
                         EventLoopContext context,
                         VertxHttp2ConnectionHandler connHandler,
                         ClientMetrics metrics) {
     super(context, connHandler);
     this.metrics = metrics;
     this.client = client;
-    this.listener = listener;
+  }
+
+  @Override
+  public Http2ClientConnection evictionHandler(Handler<Void> handler) {
+    evictionHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Http2ClientConnection concurrencyChangeHandler(Handler<Long> handler) {
+    concurrencyChangeHandler = handler;
+    return this;
+  }
+
+  public long concurrency() {
+    long concurrency = remoteSettings().getMaxConcurrentStreams();
+    long http2MaxConcurrency = client.getOptions().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.getOptions().getHttp2MultiplexingLimit();
+    if (http2MaxConcurrency > 0) {
+      concurrency = Math.min(concurrency, http2MaxConcurrency);
+    }
+    return concurrency;
   }
 
   @Override
@@ -88,7 +108,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   private void tryEvict() {
     if (!evicted) {
       evicted = true;
-      listener.onEvict();
+      evictionHandler.handle(null);
     }
   }
 
@@ -98,7 +118,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     if (limit > 0) {
       concurrency = Math.min(concurrency, limit);
     }
-    listener.onConcurrencyChange(concurrency);
+    concurrencyChangeHandler.handle(concurrency);
   }
 
   @Override
@@ -141,9 +161,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   private void recycle() {
     int timeout = client.getOptions().getHttp2KeepAliveTimeout();
-    long expired = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
-    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000 : 0L;
-    listener.onRecycle();
+    expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : 0L;
   }
 
   @Override
@@ -210,6 +228,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     protected Handler<HttpFrame> unknownFrameHandler;
     protected Handler<Throwable> exceptionHandler;
     protected Handler<HttpClientPush> pushHandler;
+    protected Handler<Void> closeHandler;
 
     Stream(Http2ClientConnection conn, ContextInternal context, boolean push) {
       super(conn, context);
@@ -331,6 +350,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       } /* else {
         conn.listener.onRecycle(0, disposable);
       } */
+      if (closeHandler != null) {
+        closeHandler.handle(null);
+      }
     }
   }
 
@@ -338,6 +360,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
     StreamImpl(Http2ClientConnection conn, ContextInternal context, boolean push) {
       super(conn, context, push);
+    }
+
+    @Override
+    public void closeHandler(Handler<Void> handler) {
+      closeHandler = handler;
     }
 
     @Override
@@ -562,21 +589,29 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   public static VertxHttp2ConnectionHandler<Http2ClientConnection> createHttp2ConnectionHandler(
     HttpClientImpl client,
     ClientMetrics metrics,
-    ConnectionListener<HttpClientConnection> listener,
     EventLoopContext context,
     Object socketMetric,
-    BiConsumer<Http2ClientConnection, Long> c) {
-    long http2MaxConcurrency = client.getOptions().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.getOptions().getHttp2MultiplexingLimit();
+    Handler<Http2ClientConnection> c) {
     HttpClientOptions options = client.getOptions();
+    HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
       .server(false)
       .useCompression(client.getOptions().isTryUseCompression())
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.getOptions().getInitialSettings())
-      .connectionFactory(connHandler -> new Http2ClientConnection(listener, client, context, connHandler, metrics))
+      .connectionFactory(connHandler -> {
+        Http2ClientConnection conn = new Http2ClientConnection(client, context, connHandler, metrics);
+        if (metrics != null) {
+          Object m = socketMetric;
+          if (m == null)  {
+            m = met.connected(conn.remoteAddress(), conn.remoteName());
+          }
+          conn.metric(m);
+        }
+        return conn;
+      })
       .logEnabled(options.getLogActivity())
       .build();
-    HttpClientMetrics met = client.metrics();
     handler.addHandler(conn -> {
       if (options.getHttp2ConnectionWindowSize() > 0) {
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
@@ -584,16 +619,10 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       if (metrics != null) {
         Object m = socketMetric;
         if (m == null)  {
-          m = met.connected(conn.remoteAddress(), conn.remoteName());
           met.endpointConnected(metrics);
         }
-        conn.metric(m);
       }
-      long concurrency = conn.remoteSettings().getMaxConcurrentStreams();
-      if (http2MaxConcurrency > 0) {
-        concurrency = Math.min(concurrency, http2MaxConcurrency);
-      }
-      c.accept(conn, concurrency);
+      c.handle(conn);
     });
     handler.removeHandler(conn -> {
       if (metrics != null) {
