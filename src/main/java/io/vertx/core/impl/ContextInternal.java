@@ -280,6 +280,8 @@ public interface ContextInternal extends Context {
    */
   boolean isDeployment();
 
+  CloseFuture closeFuture();
+
   /**
    * Add a close hook.
    *
@@ -288,7 +290,9 @@ public interface ContextInternal extends Context {
    *
    * @param hook the close hook
    */
-  void addCloseHook(Closeable hook);
+  default void addCloseHook(Closeable hook) {
+    closeFuture().add(hook);
+  }
 
   /**
    * Remove a close hook.
@@ -297,6 +301,8 @@ public interface ContextInternal extends Context {
    *
    * @param hook the close hook
    */
-  void removeCloseHook(Closeable hook);
+  default void removeCloseHook(Closeable hook) {
+    closeFuture().remove(hook);
+  }
 
 }

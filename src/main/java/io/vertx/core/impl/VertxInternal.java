@@ -176,6 +176,8 @@ public interface VertxInternal extends Vertx {
 
   BlockedThreadChecker blockedThreadChecker();
 
+  CloseFuture closeFuture();
+
   void addCloseHook(Closeable hook);
 
   void removeCloseHook(Closeable hook);

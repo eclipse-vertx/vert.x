@@ -218,8 +218,6 @@ abstract class AbstractContext implements ContextInternal {
     return localContextData().remove(key) != null;
   }
 
-  public abstract CloseFuture closeFuture();
-
   private static <T> void setResultHandler(ContextInternal ctx, Future<T> fut, Handler<AsyncResult<T>> resultHandler) {
     if (resultHandler != null) {
       fut.onComplete(resultHandler);

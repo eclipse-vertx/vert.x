@@ -103,25 +103,9 @@ abstract class ContextImpl extends AbstractContext {
     return closeFuture;
   }
 
-  public void addCloseHook(Closeable hook) {
-    if (closeFuture != null) {
-      closeFuture.add(hook);
-    } else {
-      owner.addCloseHook(hook);
-    }
-  }
-
   @Override
   public boolean isDeployment() {
     return deployment != null;
-  }
-
-  public void removeCloseHook(Closeable hook) {
-    if (deployment != null) {
-      closeFuture.remove(hook);
-    } else {
-      owner.removeCloseHook(hook);
-    }
   }
 
   @Override

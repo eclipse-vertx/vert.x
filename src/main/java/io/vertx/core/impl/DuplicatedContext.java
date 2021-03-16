@@ -11,7 +11,6 @@
 package io.vertx.core.impl;
 
 import io.netty.channel.EventLoop;
-import io.vertx.core.Closeable;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -96,16 +95,6 @@ class DuplicatedContext extends AbstractContext {
   @Override
   public final Handler<Throwable> exceptionHandler() {
     return delegate.exceptionHandler();
-  }
-
-  @Override
-  public final void addCloseHook(Closeable hook) {
-    delegate.addCloseHook(hook);
-  }
-
-  @Override
-  public final void removeCloseHook(Closeable hook) {
-    delegate.removeCloseHook(hook);
   }
 
   @Override

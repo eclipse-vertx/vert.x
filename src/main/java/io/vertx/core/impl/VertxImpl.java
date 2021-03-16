@@ -471,12 +471,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, null, tccl);
+    return new EventLoopContext(this, tracer, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl);
   }
 
   @Override
   public EventLoopContext createEventLoopContext() {
-    return createEventLoopContext(null, null, null, Thread.currentThread().getContextClassLoader());
+    return createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
   @Override
@@ -1153,6 +1153,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public CloseFuture closeFuture() {
+    return closeFuture;
+  }
+
+  @Override
   public void addCloseHook(Closeable hook) {
     closeFuture.add(hook);
   }
@@ -1164,10 +1169,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   private CloseFuture resolveCloseFuture() {
     AbstractContext context = getContext();
-    CloseFuture fut = context != null ? context.closeFuture() : null;
-    if (fut == null) {
-      fut = closeFuture;
-    }
-    return fut;
+    return context != null ? context.closeFuture() : closeFuture;
   }
 }
