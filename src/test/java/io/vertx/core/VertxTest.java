@@ -15,13 +15,11 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.test.core.AsyncTestBase;
 import org.junit.Test;
 import org.openjdk.jmh.runner.Runner;
@@ -140,7 +138,7 @@ public class VertxTest extends AsyncTestBase {
       AtomicBoolean closed = new AtomicBoolean();
       // No keep alive so the connection is not held in the pool ????
       CloseFuture closeFuture = new CloseFuture();
-      closeFuture.onComplete(ar -> closed.set(true));
+      closeFuture.future().onComplete(ar -> closed.set(true));
       HttpClient client = vertx.createHttpClient(new HttpClientOptions().setKeepAlive(false), closeFuture);
       vertx.addCloseHook(closeFuture);
       client.request(HttpMethod.GET, 8080, "localhost", "/")
@@ -189,7 +187,7 @@ public class VertxTest extends AsyncTestBase {
       CloseFuture closeFuture = new CloseFuture();
       NetClient client = vertx.createNetClient(new NetClientOptions(), closeFuture);
       vertx.addCloseHook(closeFuture);
-      closeFuture.onComplete(ar -> closed.set(true));
+      closeFuture.future().onComplete(ar -> closed.set(true));
       closeFuture = null;
       client.connect(1234, "localhost", onSuccess(so -> {}));
       WeakReference<NetClient> ref = new WeakReference<>(client);
@@ -260,7 +258,8 @@ public class VertxTest extends AsyncTestBase {
   @Test
   public void testCloseFutureDuplicateClose() {
     AtomicReference<Promise<Void>> ref = new AtomicReference<>();
-    CloseFuture fut = new CloseFuture(completion -> ref.set(completion));
+    CloseFuture fut = new CloseFuture();
+    fut.add(ref::set);
     Promise<Void> p1 = Promise.promise();
     fut.close(p1);
     assertNotNull(ref.get());
@@ -277,7 +276,8 @@ public class VertxTest extends AsyncTestBase {
   public void testCloseVertxShouldWaitConcurrentCloseHook() throws Exception {
     VertxInternal vertx = (VertxInternal) Vertx.vertx();
     AtomicReference<Promise<Void>> ref = new AtomicReference<>();
-    CloseFuture fut = new CloseFuture(completion -> ref.set(completion));
+    CloseFuture fut = new CloseFuture();
+    fut.add(ref::set);
     vertx.addCloseHook(fut);
     Promise<Void> p = Promise.promise();
     fut.close(p);

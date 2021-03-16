@@ -13,7 +13,6 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
@@ -75,7 +74,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.logEnabled = options.getLogActivity();
     this.idleTimeout = options.getIdleTimeout();
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
-    this.closeFuture = new CloseFuture();
+    this.closeFuture = new CloseFuture(log);
   }
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {

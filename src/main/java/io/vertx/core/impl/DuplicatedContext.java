@@ -58,8 +58,8 @@ class DuplicatedContext extends AbstractContext {
   }
 
   @Override
-  public final CloseHooks closeHooks() {
-    return delegate.closeHooks();
+  public final CloseFuture closeFuture() {
+    return delegate.closeFuture();
   }
 
   @Override

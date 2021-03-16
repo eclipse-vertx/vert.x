@@ -59,7 +59,7 @@ abstract class ContextImpl extends AbstractContext {
   protected final VertxTracer<?, ?> tracer;
   protected final JsonObject config;
   private final Deployment deployment;
-  private final CloseHooks closeHooks;
+  private final CloseFuture closeFuture;
   private final ClassLoader tccl;
   private final EventLoop eventLoop;
   private ConcurrentMap<Object, Object> data;
@@ -76,7 +76,7 @@ abstract class ContextImpl extends AbstractContext {
               WorkerPool internalBlockingPool,
               WorkerPool workerPool,
               Deployment deployment,
-              CloseHooks closeHooks,
+              CloseFuture closeFuture,
               ClassLoader tccl) {
     if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
       log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
@@ -88,7 +88,7 @@ abstract class ContextImpl extends AbstractContext {
     this.tccl = tccl;
     this.owner = vertx;
     this.workerPool = workerPool;
-    this.closeHooks = closeHooks;
+    this.closeFuture = closeFuture;
     this.internalBlockingPool = internalBlockingPool;
     this.orderedTasks = new TaskQueue();
     this.internalOrderedTasks = new TaskQueue();
@@ -99,13 +99,13 @@ abstract class ContextImpl extends AbstractContext {
   }
 
   @Override
-  public CloseHooks closeHooks() {
-    return closeHooks;
+  public CloseFuture closeFuture() {
+    return closeFuture;
   }
 
   public void addCloseHook(Closeable hook) {
-    if (closeHooks != null) {
-      closeHooks.add(hook);
+    if (closeFuture != null) {
+      closeFuture.add(hook);
     } else {
       owner.addCloseHook(hook);
     }
@@ -118,7 +118,7 @@ abstract class ContextImpl extends AbstractContext {
 
   public void removeCloseHook(Closeable hook) {
     if (deployment != null) {
-      closeHooks.remove(hook);
+      closeFuture.remove(hook);
     } else {
       owner.removeCloseHook(hook);
     }

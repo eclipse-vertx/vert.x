@@ -16,12 +16,9 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.eventbus.impl.OutboundDeliveryContext;
 import io.vertx.core.eventbus.impl.codecs.PingMessageCodec;
-import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.cluster.NodeInfo;
@@ -43,41 +40,25 @@ class ConnectionHolder {
   private final String remoteNodeId;
   private final VertxInternal vertx;
   private final EventBusMetrics metrics;
-  private final EventBusOptions busOptions;
-  private final CloseFuture clientCloseFuture;
 
-  private NetClient client;
   private Queue<OutboundDeliveryContext<?>> pending;
   private NetSocket socket;
   private boolean connected;
   private long timeoutID = -1;
   private long pingTimeoutID = -1;
 
-  ConnectionHolder(ClusteredEventBus eventBus, String remoteNodeId, EventBusOptions options) {
+  ConnectionHolder(ClusteredEventBus eventBus, String remoteNodeId) {
     this.eventBus = eventBus;
-    this.busOptions = options;
     this.remoteNodeId = remoteNodeId;
     this.vertx = eventBus.vertx();
     this.metrics = eventBus.getMetrics();
-    this.clientCloseFuture = new CloseFuture();
-  }
-
-  private NetClientOptions getClientOptions(EventBusOptions options) {
-    return new NetClientOptions(options.toJson());
   }
 
   void connect() {
-    synchronized (this) {
-      if (client != null) {
-        return;
-      }
-      NetClientOptions clientOptions = getClientOptions(busOptions);
-      client = vertx.createNetClient(clientOptions, clientCloseFuture);
-    }
     Promise<NodeInfo> promise = Promise.promise();
     eventBus.vertx().getClusterManager().getNodeInfo(remoteNodeId, promise);
     promise.future()
-      .flatMap(info -> client.connect(info.port(), info.host()))
+      .flatMap(info -> eventBus.client().connect(info.port(), info.host()))
       .onComplete(ar -> {
         if (ar.succeeded()) {
           connected(ar.result());
@@ -126,7 +107,6 @@ class ConnectionHolder {
         }
       }
     }
-    clientCloseFuture.close(Promise.promise());
     // The holder can be null or different if the target server is restarted with same nodeInfo
     // before the cleanup for the previous one has been processed
     if (eventBus.connections().remove(remoteNodeId, this)) {
@@ -180,5 +160,4 @@ class ConnectionHolder {
     }
     pending = null;
   }
-
 }
