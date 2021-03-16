@@ -24,6 +24,8 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
@@ -54,6 +56,7 @@ public class ClusteredEventBus extends EventBusImpl {
   private final ClusterManager clusterManager;
   private final NodeSelector nodeSelector;
   private final AtomicLong handlerSequence = new AtomicLong(0);
+  private final NetClient client;
 
   private final ConcurrentMap<String, ConnectionHolder> connections = new ConcurrentHashMap<>();
 
@@ -66,6 +69,11 @@ public class ClusteredEventBus extends EventBusImpl {
     this.options = options.getEventBusOptions();
     this.clusterManager = clusterManager;
     this.nodeSelector = nodeSelector;
+    this.client = vertx.createNetClient(new NetClientOptions(this.options.toJson()));
+  }
+
+  NetClient client() {
+    return client;
   }
 
   private NetServerOptions getServerOptions() {
@@ -320,7 +328,7 @@ public class ClusteredEventBus extends EventBusImpl {
     if (holder == null) {
       // When process is creating a lot of connections this can take some time
       // so increase the timeout
-      holder = new ConnectionHolder(this, remoteNodeId, options);
+      holder = new ConnectionHolder(this, remoteNodeId);
       ConnectionHolder prevHolder = connections.putIfAbsent(remoteNodeId, holder);
       if (prevHolder != null) {
         // Another one sneaked in

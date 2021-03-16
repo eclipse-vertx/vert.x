@@ -132,7 +132,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final TimeUnit maxWorkerExecTimeUnit;
   private final long maxEventLoopExecTime;
   private final TimeUnit maxEventLoopExecTimeUnit;
-  private final CloseHooks closeHooks;
+  private final CloseFuture closeFuture;
   private final Transport transport;
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<AbstractContext>> stickyContext = new ThreadLocal<>();
@@ -144,7 +144,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
     }
-    closeHooks = new CloseHooks(log);
+    closeFuture = new CloseFuture(log);
     maxEventLoopExecTime = options.getMaxEventLoopExecuteTime();
     maxEventLoopExecTimeUnit = options.getMaxEventLoopExecuteTimeUnit();
     checker = new BlockedThreadChecker(options.getBlockedThreadCheckInterval(), options.getBlockedThreadCheckIntervalUnit(), options.getWarningExceptionTime(), options.getWarningExceptionTimeUnit());
@@ -294,15 +294,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public NetClient createNetClient(NetClientOptions options, CloseFuture closeFuture) {
     NetClientImpl client = new NetClientImpl(this, options, closeFuture);
-    closeFuture.init(client);
+    closeFuture.add(client);
     return client;
   }
 
   public NetClient createNetClient(NetClientOptions options) {
-    CloseFuture closeFuture = new CloseFuture();
+    CloseFuture closeFuture = new CloseFuture(log);
     NetClient client = createNetClient(options, closeFuture);
-    CloseHooks hooks = resolveHooks();
-    hooks.add(closeFuture);
+    CloseFuture fut = resolveCloseFuture();
+    fut.add(closeFuture);
     return client;
   }
 
@@ -341,15 +341,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture) {
     HttpClientImpl client = new HttpClientImpl(this, options, closeFuture);
-    closeFuture.init(client);
+    closeFuture.add(client);
     return client;
   }
 
   public HttpClient createHttpClient(HttpClientOptions options) {
-    CloseFuture closeFuture = new CloseFuture();
+    CloseFuture closeFuture = new CloseFuture(log);
     HttpClient client = createHttpClient(options, closeFuture);
-    CloseHooks hooks = resolveHooks();
-    hooks.add(closeFuture);
+    CloseFuture fut = resolveCloseFuture();
+    fut.add(closeFuture);
     return client;
   }
 
@@ -465,8 +465,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
+  public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return new EventLoopContext(this, tracer, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
   }
 
   @Override
@@ -480,8 +480,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public WorkerContext createWorkerContext(Deployment deployment, CloseHooks closeHooks, WorkerPool workerPool, ClassLoader tccl) {
-    return new WorkerContext(this, tracer, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeHooks, tccl);
+  public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return new WorkerContext(this, tracer, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
   }
 
   @Override
@@ -576,7 +576,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       return;
     }
     closed = true;
-    closeHooks.run(ar -> {
+    closeFuture.close().onComplete(ar -> {
       deploymentManager.undeployAll().onComplete(ar1 -> {
         HAManager haManager = haManager();
         Promise<Void> haPromise = Promise.promise();
@@ -1104,13 +1104,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     SharedWorkerPool sharedWorkerPool = createSharedWorkerPool(name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
-    AbstractContext ctx = getContext();
-    CloseHooks hooks = ctx != null ? ctx.closeHooks() : null;
-    if (hooks == null) {
-      hooks = closeHooks;
-    }
-    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, closeHooks, sharedWorkerPool);
-    hooks.add(namedExec);
+    CloseFuture fut = resolveCloseFuture();
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, closeFuture, sharedWorkerPool);
+    fut.add(namedExec);
     return namedExec;
   }
 
@@ -1158,20 +1154,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public void addCloseHook(Closeable hook) {
-    closeHooks.add(hook);
+    closeFuture.add(hook);
   }
 
   @Override
   public void removeCloseHook(Closeable hook) {
-    closeHooks.remove(hook);
+    closeFuture.remove(hook);
   }
 
-  private CloseHooks resolveHooks() {
+  private CloseFuture resolveCloseFuture() {
     AbstractContext context = getContext();
-    CloseHooks hooks = context != null ? context.closeHooks() : null;
-    if (hooks == null) {
-      hooks = closeHooks;
+    CloseFuture fut = context != null ? context.closeFuture() : null;
+    if (fut == null) {
+      fut = closeFuture;
     }
-    return hooks;
+    return fut;
   }
 }

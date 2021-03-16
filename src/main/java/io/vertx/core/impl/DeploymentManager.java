@@ -182,11 +182,11 @@ public class DeploymentManager {
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
-      CloseHooks closeHooks = new CloseHooks(log);
+      CloseFuture closeFuture = new CloseFuture(log);
       WorkerPool workerPool = poolName != null ? vertx.createSharedWorkerPool(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
-      ContextImpl context = (ContextImpl) (options.isWorker() ? vertx.createWorkerContext(deployment, closeHooks, workerPool, tccl) :
-        vertx.createEventLoopContext(deployment, closeHooks, workerPool, tccl));
-      VerticleHolder holder = new VerticleHolder(verticle, context, workerPool, closeHooks);
+      ContextImpl context = (options.isWorker() ? vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl) :
+        vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl));
+      VerticleHolder holder = new VerticleHolder(verticle, context, workerPool, closeFuture);
       deployment.addVerticle(holder);
       context.runOnContext(v -> {
         try {
@@ -228,17 +228,17 @@ public class DeploymentManager {
     final Verticle verticle;
     final ContextImpl context;
     final WorkerPool workerPool;
-    final CloseHooks closeHooks;
+    final CloseFuture closeFuture;
 
-    VerticleHolder(Verticle verticle, ContextImpl context, WorkerPool workerPool, CloseHooks closeHooks) {
+    VerticleHolder(Verticle verticle, ContextImpl context, WorkerPool workerPool, CloseFuture closeFuture) {
       this.verticle = verticle;
       this.context = context;
       this.workerPool = workerPool;
-      this.closeHooks = closeHooks;
+      this.closeFuture = closeFuture;
     }
 
     void close(Handler<AsyncResult<Void>> completionHandler) {
-      closeHooks.run(ar -> {
+      closeFuture.close().onComplete(ar -> {
         if (workerPool != null) {
           workerPool.close();
         }
@@ -274,7 +274,7 @@ public class DeploymentManager {
       verticles.add(holder);
     }
 
-    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextImpl context, VerticleHolder closeHooks, Throwable cause) {
+    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextImpl context, VerticleHolder closeFuture, Throwable cause) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext).onComplete(childrenResult -> {
@@ -294,7 +294,7 @@ public class DeploymentManager {
           if (childrenResult.failed()) {
             reportFailure(cause, callingContext, completionHandler);
           } else {
-            closeHooks.close(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
+            closeFuture.close(closeHookAsyncResult -> reportFailure(cause, callingContext, completionHandler));
           }
         });
       }
