@@ -30,7 +30,7 @@ public class CloseFuture implements Closeable {
   private final Logger log;
   private final Promise<Void> promise;
   private boolean closed;
-  private Map<Closeable, CloseFuture> closeHooks;
+  private Map<Closeable, CloseFuture> hooks;
 
   public CloseFuture() {
     this(null);
@@ -56,10 +56,10 @@ public class CloseFuture implements Closeable {
       CloseFuture fut = (CloseFuture) hook;
       fut.future().onComplete(ar -> remove(fut));
     }
-    if (closeHooks == null) {
-      closeHooks = new WeakHashMap<>();
+    if (hooks == null) {
+      hooks = new WeakHashMap<>();
     }
-    closeHooks.put(hook, this);
+    hooks.put(hook, this);
   }
 
   /**
@@ -68,8 +68,8 @@ public class CloseFuture implements Closeable {
    * @param hook the hook to remove
    */
   public synchronized void remove(Closeable hook) {
-    if (closeHooks != null) {
-      closeHooks.remove(hook);
+    if (hooks != null) {
+      hooks.remove(hook);
     }
   }
 
@@ -94,20 +94,19 @@ public class CloseFuture implements Closeable {
    */
   public Future<Void> close() {
     boolean close;
-    Map<Closeable, CloseFuture> set;
+    List<Closeable> toClose;
     synchronized (this) {
       close = !closed;
-      set = closeHooks;
+      toClose = hooks != null ? new ArrayList<>(hooks.keySet()) : null;
       closed = true;
-      closeHooks = null;
+      hooks = null;
     }
     if (close) {
       // We want an immutable version of the list holding strong references to avoid racing against finalization
-      if (set != null && !set.isEmpty()) {
-        List<Closeable> list = new ArrayList<>(set.keySet());
-        int num = list.size();
+      if (toClose != null && !toClose.isEmpty()) {
+        int num = toClose.size();
         AtomicInteger count = new AtomicInteger();
-        for (Closeable hook : list) {
+        for (Closeable hook : toClose) {
           Promise<Void> closePromise = Promise.promise();
           closePromise.future().onComplete(ar -> {
             if (count.incrementAndGet() == num) {
