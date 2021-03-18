@@ -91,7 +91,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> {
       fail((ReplyException) reply.body());
     } else {
       trace(reply, null);
-      result.complete(reply);
+      result.tryComplete(reply);
     }
   }
 }
