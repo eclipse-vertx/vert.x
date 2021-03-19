@@ -11,9 +11,12 @@
 
 package io.vertx.core.http;
 
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.impl.HeadersAdaptor;
 import io.vertx.core.http.impl.headers.VertxHttpHeaders;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -140,6 +143,22 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     ArrayList<CharSequence> values = new ArrayList<>();
     values.add("somevalue");
     assertEquals(": somevalue\n", mmap.set(name, values).toString());
+  }
+
+  @Test
+  public void testSetStringNameLongValue() {
+    MultiMap mmap = newMultiMap();
+    Assume.assumeTrue(mmap instanceof HttpHeaders);
+    String name = "longvalue";
+    assertEquals("longvalue: 1234\n", ((HttpHeaders) mmap).set(name, 1234L).toString());
+  }
+
+  @Test
+  public void testSetCharSequenceNameLongValue() {
+    MultiMap mmap = newMultiMap();
+    Assume.assumeTrue(mmap instanceof HttpHeaders);
+    CharSequence name = "longvalue";
+    assertEquals("longvalue: 1234\n", ((HttpHeaders) mmap).set(name, 1234L).toString());
   }
 
   @Test

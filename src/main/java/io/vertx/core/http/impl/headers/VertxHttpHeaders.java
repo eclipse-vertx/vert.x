@@ -143,12 +143,20 @@ public final class VertxHttpHeaders extends HttpHeaders implements MultiMap {
 
   @Override
   public VertxHttpHeaders set(String name, Object value) {
-    return set((CharSequence)name, (CharSequence) value);
+    if (value == null || value instanceof CharSequence) {
+      return set((CharSequence) name, (CharSequence) value);
+    } else {
+      return set((CharSequence) name, String.valueOf(value));
+    }
   }
 
   @Override
   public VertxHttpHeaders set(CharSequence name, Object value) {
-    return set(name, (CharSequence)value);
+    if (value == null || value instanceof CharSequence) {
+      return set(name, (CharSequence) value);
+    } else {
+      return set(name, String.valueOf(value));
+    }
   }
 
   @Override
