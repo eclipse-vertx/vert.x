@@ -27,6 +27,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   private final ContextInternal context;
   private final Promise<Message<T>> result;
   private final long timeoutID;
+  private final long timeout;
   private final boolean src;
   private final String repliedAddress;
   Object trace;
@@ -39,6 +40,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
     this.src = src;
     this.repliedAddress = repliedAddress;
     this.timeoutID = eventBus.vertx.setTimer(timeout, this);
+    this.timeout = timeout;
   }
 
   private void trace(Object reply, Throwable failure) {
@@ -69,7 +71,7 @@ class ReplyHandler<T> extends HandlerRegistration<T> implements Handler<Long> {
   }
 
   @Override
-  public void handle(Long timeout) {
+  public void handle(Long id) {
     unregister();
     doFail(new ReplyException(ReplyFailure.TIMEOUT, "Timed out after waiting " + timeout + "(ms) for a reply. address: " + address + ", repliedAddress: " + repliedAddress));
   }
