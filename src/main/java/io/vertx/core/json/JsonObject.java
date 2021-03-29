@@ -795,7 +795,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
-   * Get a Stream over the entries in the JSON array. The values in the stream will follow
+   * Get a Stream over the entries in the JSON object. The values in the stream will follow
    * the same rules as defined in {@link #getValue(String)}, respecting the JSON requirements.
    *
    * To stream the raw values, use the storage object stream instead:
