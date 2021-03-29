@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1377,5 +1378,33 @@ public class JsonArrayTest {
     assertEquals(Short.MIN_VALUE + (42000 - Short.MAX_VALUE - 1), n.shortValue());
     // but not overflow if int
     assertEquals(42000, n.intValue());
+  }
+
+  @Test
+  public void testStreamRawVSJSON() {
+    JsonArray arr = new JsonArray().add(TimeUnit.DAYS).add(TimeUnit.MINUTES);
+
+    // assert that stream values are converted to String as per JSON rules
+    List <?> jsonData = arr
+      .stream()
+      .peek(t -> assertTrue(t instanceof String))
+      .collect(Collectors.toList());
+
+    for (Object o : jsonData) {
+      assertTrue(o instanceof String);
+    }
+
+    // test raw
+
+    // assert that stream values are converted to String as per JSON rules
+    List<?> rawData = (List<?>) arr
+      .getList()
+      .stream()
+      .peek(t -> assertTrue(t instanceof TimeUnit))
+      .collect(Collectors.toList());
+
+    for (Object o : rawData) {
+      assertTrue(o instanceof TimeUnit);
+    }
   }
 }

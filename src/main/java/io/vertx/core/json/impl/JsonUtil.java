@@ -17,9 +17,12 @@ import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
@@ -121,5 +124,10 @@ public final class JsonUtil {
       val = copier.apply(val);
     }
     return val;
+  }
+
+  public static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
+    Iterable<T> iterable = () -> sourceIterator;
+    return StreamSupport.stream(iterable.spliterator(), false);
   }
 }
