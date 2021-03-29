@@ -623,10 +623,21 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * If tracing is disabled, the value will be {@code null}.
+   *
+   * @return the tracing options
+   */
   public TracingOptions getTracingOptions() {
     return tracingOptions;
   }
 
+  /**
+   * Set the tracing options
+   *
+   * @param tracingOptions the options
+   * @return a reference to this, so the API can be used fluently
+   */
   public VertxOptions setTracingOptions(TracingOptions tracingOptions) {
     this.tracingOptions = tracingOptions;
     return this;
@@ -656,6 +667,7 @@ public class VertxOptions {
         ", quorumSize=" + quorumSize +
         ", haGroup='" + haGroup + '\'' +
         ", metrics=" + metricsOptions +
+        ", tracing=" + tracingOptions +
         ", fileSystemOptions=" + fileSystemOptions +
         ", addressResolver=" + addressResolverOptions.toJson() +
         ", eventbus=" + eventBusOptions.toJson() +
