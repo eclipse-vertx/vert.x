@@ -11,7 +11,6 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
@@ -19,7 +18,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
@@ -797,9 +795,17 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
-   * Get a stream of the entries in the JSON object.
+   * Get a Stream over the entries in the JSON array. The values in the stream will follow
+   * the same rules as defined in {@link #getValue(String)}, respecting the JSON requirements.
    *
-   * @return a stream of the entries.
+   * To stream the raw values, use the storage object stream instead:
+   * <pre>{@code
+   *   jsonObject
+   *     .getMap()
+   *     .stream()
+   * }</pre>
+   *
+   * @return a Stream
    */
   public Stream<Map.Entry<String, Object>> stream() {
     return asStream(iterator());
@@ -999,10 +1005,4 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
       throw new UnsupportedOperationException();
     }
   }
-
-  static <T> Stream<T> asStream(Iterator<T> sourceIterator) {
-    Iterable<T> iterable = () -> sourceIterator;
-    return StreamSupport.stream(iterable.spliterator(), false);
-  }
-
 }

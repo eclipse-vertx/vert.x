@@ -12,7 +12,6 @@
 package io.vertx.core.json;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
@@ -584,12 +583,20 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
-   * Get a Stream over the entries in the JSON array
+   * Get a Stream over the entries in the JSON array. The values in the stream will follow
+   * the same rules as defined in {@link #getValue(int)}, respecting the JSON requirements.
+   *
+   * To stream the raw values, use the storage object stream instead:
+   * <pre>{@code
+   *   jsonArray
+   *     .getList()
+   *     .stream()
+   * }</pre>
    *
    * @return a Stream
    */
   public Stream<Object> stream() {
-    return JsonObject.asStream(iterator());
+    return asStream(iterator());
   }
 
   @Override

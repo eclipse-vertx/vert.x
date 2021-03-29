@@ -22,6 +22,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1893,4 +1894,42 @@ public class JsonObjectTest {
       assertNumberEquals(n, numbers.getNumber("missingKey", n));
     }
   }
+
+  @Test
+  public void testStreamRawVSJSON() {
+    JsonObject obj = new JsonObject()
+      .put("days", TimeUnit.DAYS)
+      .put("minutes", TimeUnit.MINUTES);
+
+    // assert that stream values are converted to String as per JSON rules
+    List <Map.Entry> jsonData = obj
+      .stream()
+      .peek(t -> {
+        assertTrue(t instanceof Map.Entry);
+        assertTrue(t.getValue() instanceof String);
+      })
+      .collect(Collectors.toList());
+
+    for (Map.Entry o : jsonData) {
+      assertTrue(o.getValue() instanceof String);
+    }
+
+    // test raw
+
+    // assert that stream values are converted to String as per JSON rules
+    List<Map.Entry<String, ?>> rawData = obj
+      .getMap()
+      .entrySet()
+      .stream()
+      .peek(t -> {
+        assertTrue(t instanceof Map.Entry);
+        assertTrue(t.getValue() instanceof TimeUnit);
+      })
+      .collect(Collectors.toList());
+
+    for (Map.Entry<String, ?> o : rawData) {
+      assertTrue(o.getValue() instanceof TimeUnit);
+    }
+  }
+
 }
