@@ -11,7 +11,6 @@
 
 package io.vertx.core.spi;
 
-import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -33,13 +32,7 @@ public interface VertxTracerFactory extends VertxServiceProvider {
   @Override
   default void init(VertxBuilder builder) {
     if (builder.tracer() == null) {
-      VertxOptions options = builder.options();
-      TracingOptions tracingOptions = options.getTracingOptions();
-      if (tracingOptions == null) {
-        tracingOptions = newOptions();
-        builder.options().setTracingOptions(tracingOptions);
-      }
-      builder.tracer(tracer(tracingOptions));
+      builder.tracer(tracer(builder.options().getTracingOptions()));
     }
   }
 
