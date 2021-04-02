@@ -435,9 +435,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public <S extends TCPServerBase> Map<ServerID, S> sharedTCPServers(Class<S> type) {
-    if (type == NetServerImpl.class) {
+    if (NetServerImpl.class.isAssignableFrom(type)) {
       return (Map<ServerID, S>) sharedNetServers;
-    } else if (type == HttpServerImpl.class) {
+    } else if (HttpServerImpl.class.isAssignableFrom(type)) {
       return (Map<ServerID, S>) sharedHttpServers;
     } else {
       throw new IllegalStateException();
