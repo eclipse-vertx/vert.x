@@ -133,16 +133,16 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   @Override
-  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
-    if (!handlerHolder.isReplyHandler()) {
+  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise, boolean localOnly) {
+    if (!handlerHolder.isReplyHandler() && !localOnly) {
       RegistrationInfo registrationInfo = new RegistrationInfo(
         nodeId,
         handlerHolder.getSeq(),
         handlerHolder.isLocalOnly()
       );
       clusterManager.addRegistration(handlerHolder.getHandler().address, registrationInfo, Objects.requireNonNull(promise));
-    } else if (promise != null) {
-      promise.complete();
+    } else {
+      super.onLocalRegistration(handlerHolder, promise, localOnly);
     }
   }
 
@@ -287,7 +287,7 @@ public class ClusteredEventBus extends EventBusImpl {
   }
 
   private <T> void sendToNode(OutboundDeliveryContext<T> sendContext, String nodeId) {
-    if (nodeId != null && !nodeId.equals(this.nodeId)) {
+    if (nodeId != null && !nodeId.equals(this.nodeId) && !isAddressLocal(sendContext.message.address())) {
       sendRemote(sendContext, nodeId, sendContext.message);
     } else {
       super.sendOrPub(sendContext);

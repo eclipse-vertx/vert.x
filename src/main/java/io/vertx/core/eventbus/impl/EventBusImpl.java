@@ -237,11 +237,11 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   protected <T> HandlerHolder<T> addRegistration(String address, HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, Promise<Void> promise) {
     HandlerHolder<T> holder = addLocalRegistration(address, registration, replyHandler, localOnly);
-    onLocalRegistration(holder, promise);
+    onLocalRegistration(holder, promise, localOnly);
     return holder;
   }
 
-  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise) {
+  protected <T> void onLocalRegistration(HandlerHolder<T> handlerHolder, Promise<Void> promise, boolean localOnly) {
     if (promise != null) {
       promise.complete();
     }
@@ -398,6 +398,10 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
                                     ReplyHandler<T> handler, Promise<Void> writePromise) {
     checkStarted();
     sendOrPubInternal(newSendContext(message, options, handler, writePromise));
+  }
+
+  public boolean isAddressLocal(String address) {
+    return handlerMap.containsKey(address);
   }
 
   private Future<Void> unregisterAll() {

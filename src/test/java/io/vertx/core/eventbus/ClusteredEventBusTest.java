@@ -16,6 +16,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.NodeSelector;
+import io.vertx.core.spi.cluster.RegistrationInfo;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.core.spi.cluster.WrappedClusterManager;
 import io.vertx.core.spi.cluster.WrappedNodeSelector;
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -41,16 +43,79 @@ import java.util.stream.Stream;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
+  @Test
+  public void testLocalConsumerAddressNotFoundInCluster() throws Exception {
+    startNodes(2);
+    waitFor(2);
+
+    Consumer<Vertx> testPublishing = v -> {
+      v.eventBus().localConsumer(ADDRESS1).handler(msg -> {
+      }).completionHandler(completion -> {
+        if (completion.failed()) {
+          fail(completion.cause());
+        }
+
+        Promise<List<RegistrationInfo>> promise0 = Promise.promise();
+
+        getClusterManager().getRegistrations(ADDRESS1, promise0);
+
+        promise0.future().onComplete(registration -> {
+          if (registration.failed()) {
+            fail(completion.cause());
+          }
+
+          assertNull("Address not found in cluster", registration.result());
+          testComplete();
+        });
+      });
+    };
+
+    testPublishing.accept(vertices[0]);
+    testPublishing.accept(vertices[1]);
+  }
+
+  @Test
+  public void testConsumerAddressFoundInCluster() throws Exception {
+    startNodes(2);
+    waitFor(2);
+
+    Consumer<Vertx> testPublishing = v -> {
+      v.eventBus().consumer(ADDRESS1).handler(msg -> {
+      }).completionHandler(completion -> {
+        if (completion.failed()) {
+          fail(completion.cause());
+        }
+
+        Promise<List<RegistrationInfo>> promise0 = Promise.promise();
+
+        getClusterManager().getRegistrations(ADDRESS1, promise0);
+
+        promise0.future().onComplete(registration -> {
+          if (registration.failed()) {
+            fail(completion.cause());
+          }
+
+          assertNotNull("Address not found in cluster", registration.result());
+          testComplete();
+        });
+      });
+    };
+
+    testPublishing.accept(vertices[0]);
+    testPublishing.accept(vertices[1]);
+  }
 
   @Test
   public void testLocalHandlerNotVisibleRemotely() throws Exception {
     startNodes(2);
+
     vertices[1].eventBus().localConsumer(ADDRESS1).handler(msg -> {
       fail("Should not receive message");
-    });
-    vertices[0].eventBus().send(ADDRESS1, "foo");
-    vertices[0].eventBus().publish(ADDRESS1, "foo");
-    vertices[0].setTimer(1000, id -> testComplete());
+    }).completionHandler(h0 -> vertices[0].eventBus().localConsumer(ADDRESS1).handler(msg -> {
+      assertEquals("Should receive message", "foo", msg.body());
+      vertices[0].setTimer(1000, id -> testComplete());
+    }).completionHandler(h1 -> vertices[0].eventBus().publish(ADDRESS1, "foo")));
+
     await();
   }
 
@@ -58,12 +123,28 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testLocalHandlerClusteredSend() throws Exception {
     startNodes(2);
     waitFor(2);
-    vertices[1].eventBus().consumer(ADDRESS1, msg -> complete()).completionHandler(v1 -> {
-      vertices[0].eventBus().localConsumer(ADDRESS1, msg -> complete()).completionHandler(v2 -> {
-        vertices[0].eventBus().send(ADDRESS1, "foo");
-        vertices[0].eventBus().send(ADDRESS1, "foo");
-      });
-    });
+
+    CountDownLatch setupLatch = new CountDownLatch(2);
+
+    BiConsumer<Vertx, Boolean> setupConsumer = (v, l) -> {
+      MessageConsumer<String> consumer;
+      if (l) {
+        consumer = v.eventBus().localConsumer(ADDRESS1, msg -> complete());
+      } else {
+        consumer = v.eventBus().consumer(ADDRESS1, msg -> fail("Should not receive local messages"));
+      }
+
+      consumer.completionHandler(ar -> setupLatch.countDown());
+    };
+
+    setupConsumer.accept(vertices[0], true);
+    setupConsumer.accept(vertices[1], false);
+
+    awaitLatch(setupLatch);
+
+    vertices[0].eventBus().send(ADDRESS1, "foo");
+    vertices[0].eventBus().send(ADDRESS1, "foo");
+
     await();
   }
 
@@ -71,11 +152,28 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   public void testLocalHandlerClusteredPublish() throws Exception {
     startNodes(2);
     waitFor(2);
-    vertices[1].eventBus().consumer(ADDRESS1, msg -> complete()).completionHandler(v1 -> {
-      vertices[0].eventBus().localConsumer(ADDRESS1, msg -> complete()).completionHandler(v2 -> {
-        vertices[0].eventBus().publish(ADDRESS1, "foo");
-      });
-    });
+
+    CountDownLatch setupLatch = new CountDownLatch(2);
+
+    BiConsumer<Vertx, Boolean> setupConsumer = (v, l) -> {
+      MessageConsumer<String> consumer;
+      if (l) {
+        consumer = v.eventBus().localConsumer(ADDRESS1, msg -> complete());
+      } else {
+        consumer = v.eventBus().consumer(ADDRESS1, msg -> fail("Should not receive local messages"));
+      }
+
+      consumer.completionHandler(ar -> setupLatch.countDown());
+    };
+
+    setupConsumer.accept(vertices[0], true);
+    setupConsumer.accept(vertices[1], false);
+
+    awaitLatch(setupLatch);
+
+    vertices[0].eventBus().publish(ADDRESS1, "foo");
+    vertices[0].eventBus().publish(ADDRESS1, "foo");
+
     await();
   }
 
