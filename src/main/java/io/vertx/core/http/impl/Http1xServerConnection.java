@@ -121,7 +121,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   public void handleMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       DefaultHttpRequest request = (DefaultHttpRequest) msg;
-      if (request.decoderResult() != DecoderResult.SUCCESS) {
+      if (!request.decoderResult().isSuccess()) {
         handleError(request);
         return;
       }
@@ -171,7 +171,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void onContent(Object msg) {
     HttpContent content = (HttpContent) msg;
-    if (content.decoderResult() != DecoderResult.SUCCESS) {
+    if (!content.decoderResult().isSuccess()) {
       handleError(content);
       return;
     }
