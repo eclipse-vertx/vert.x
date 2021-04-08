@@ -93,9 +93,7 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
     long timerId = vertx.setTimer(ttl, l -> removeIfExpired(k));
     Holder<V> existing = map.putIfAbsent(k, new Holder<>(v, timerId, ttl, timestamp));
     if (existing != null) {
-      if (existing.expires()) {
-        vertx.cancelTimer(timerId);
-      }
+      vertx.cancelTimer(timerId);
       return ctx.succeededFuture(existing.value);
     } else {
       return ctx.succeededFuture();
@@ -132,6 +130,23 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
       return ctx.succeededFuture();
     }
   }
+
+  @Override
+  public Future<V> replace(K k, V v, long ttl) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    long timestamp = System.nanoTime();
+    long timerId = vertx.setTimer(ttl, l -> removeIfExpired(k));
+    Holder<V> previous = map.replace(k, new Holder<>(v, timerId, ttl, timestamp));
+    if (previous != null) {
+      if (previous.expires()) {
+        vertx.cancelTimer(previous.timerId);
+      }
+      return ctx.succeededFuture(previous.value);
+    } else {
+      return ctx.succeededFuture();
+    }
+  }
+
   @Override
   public Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue) {
     ContextInternal ctx = vertx.getOrCreateContext();
@@ -146,6 +161,29 @@ public class LocalAsyncMapImpl<K, V> implements AsyncMap<K, V> {
       return holder;
     });
     return ctx.succeededFuture(h == result);
+  }
+
+  @Override
+  public Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue, long ttl) {
+    ContextInternal ctx = vertx.getOrCreateContext();
+    long timestamp = System.nanoTime();
+    long timerId = vertx.setTimer(ttl, l -> removeIfExpired(k));
+    Holder<V> h = new Holder<>(newValue, timerId, ttl, timestamp);
+    Holder<V> result = map.computeIfPresent(k, (key, holder) -> {
+      if (holder.value.equals(oldValue)) {
+        if (holder.expires()) {
+          vertx.cancelTimer(holder.timerId);
+        }
+        return h;
+      }
+      return holder;
+    });
+    if(h == result) {
+      return ctx.succeededFuture(true);
+    } else {
+      vertx.cancelTimer(timerId);
+      return ctx.succeededFuture(false);
+    }
   }
 
   @Override

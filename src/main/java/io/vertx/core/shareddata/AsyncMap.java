@@ -17,7 +17,6 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 
 import java.util.List;
 import java.util.Map;
@@ -168,6 +167,27 @@ public interface AsyncMap<K, V> {
   Future<@Nullable V> replace(K k, V v);
 
   /**
+   * Replace the entry only if it is currently mapped to some value
+   *
+   * @param k  the key
+   * @param v  the new value
+   * @param ttl  The time to live (in ms) for the entry
+   * @param resultHandler  the result handler will be passed the previous value
+   */
+  default void replace(K k, V v, long ttl, Handler<AsyncResult<@Nullable V>> resultHandler) {
+    replace(k, v, ttl).onComplete(resultHandler);
+  }
+
+  /**
+   * Same as {@link #replace(K, V, long, Handler)} but returns a {@code Future} of the asynchronous result
+   *
+   * returns UnsupportedOperationException if the implementation does not support it
+   */
+  default Future<@Nullable V> replace(K k, V v, long ttl) {
+    return Future.failedFuture(new UnsupportedOperationException());
+  }
+
+  /**
    * Replace the entry only if it is currently mapped to a specific value
    *
    * @param k  the key
@@ -183,6 +203,28 @@ public interface AsyncMap<K, V> {
    * Same as {@link #replaceIfPresent(K, V, V, Handler)} but returns a {@code Future} of the asynchronous result
    */
   Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue);
+
+  /**
+   * Replace the entry only if it is currently mapped to a specific value
+   *
+   * @param k  the key
+   * @param oldValue  the existing value
+   * @param newValue  the new value
+   * @param ttl  The time to live (in ms) for the entry
+   * @param resultHandler the result handler
+   */
+  default void replaceIfPresent(K k, V oldValue, V newValue, long ttl, Handler<AsyncResult<Boolean>> resultHandler) {
+    replaceIfPresent(k, oldValue, newValue, ttl).onComplete(resultHandler);
+  }
+
+  /**
+   * Same as {@link #replaceIfPresent(K, V, V, long, Handler)} but returns a {@code Future} of the asynchronous result
+   *
+   * returns UnsupportedOperationException if the implementation does not support it
+   */
+  default Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue, long ttl) {
+    return Future.failedFuture(new UnsupportedOperationException());
+  }
 
   /**
    * Clear all entries in the map

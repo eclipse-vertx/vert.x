@@ -280,11 +280,26 @@ public class SharedDataImpl implements SharedData {
     }
 
     @Override
+    public Future<V> replace(K k, V v, long ttl) {
+      checkType(k);
+      checkType(v);
+      return delegate.replace(k, v, ttl);
+    }
+
+    @Override
     public Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue) {
       checkType(k);
       checkType(oldValue);
       checkType(newValue);
       return delegate.replaceIfPresent(k, oldValue, newValue);
+    }
+
+    @Override
+    public Future<Boolean> replaceIfPresent(K k, V oldValue, V newValue, long ttl) {
+      checkType(k);
+      checkType(oldValue);
+      checkType(newValue);
+      return delegate.replaceIfPresent(k, oldValue, newValue, ttl);
     }
 
     @Override
