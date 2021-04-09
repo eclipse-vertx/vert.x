@@ -30,6 +30,7 @@ import io.vertx.core.streams.impl.InboundBuffer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,16 +39,16 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *
- * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
- * However it can be used safely from other threads.
- *
- * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
- * we benefit from biased locking which makes the overhead of synchronized near zero.
+ * This class is optimised for performance when used on the same event loop that is was passed to
+ * the handler with. However it can be used safely from other threads.
+ * <p>
+ * The internal state is protected using the synchronized keyword. If always used on the same event
+ * loop, then we benefit from biased locking which makes the overhead of synchronized near zero.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -83,23 +84,44 @@ public class AsyncFileImpl implements AsyncFile {
     this.vertx = vertx;
     Path file = Paths.get(path);
     HashSet<OpenOption> opts = new HashSet<>();
-    if (options.isRead()) opts.add(StandardOpenOption.READ);
-    if (options.isWrite()) opts.add(StandardOpenOption.WRITE);
-    if (options.isCreate()) opts.add(StandardOpenOption.CREATE);
-    if (options.isCreateNew()) opts.add(StandardOpenOption.CREATE_NEW);
-    if (options.isSync()) opts.add(StandardOpenOption.SYNC);
-    if (options.isDsync()) opts.add(StandardOpenOption.DSYNC);
-    if (options.isDeleteOnClose()) opts.add(StandardOpenOption.DELETE_ON_CLOSE);
-    if (options.isSparse()) opts.add(StandardOpenOption.SPARSE);
-    if (options.isTruncateExisting()) opts.add(StandardOpenOption.TRUNCATE_EXISTING);
+    if (options.isRead()) {
+      opts.add(StandardOpenOption.READ);
+    }
+    if (options.isWrite()) {
+      opts.add(StandardOpenOption.WRITE);
+    }
+    if (options.isCreate()) {
+      opts.add(StandardOpenOption.CREATE);
+    }
+    if (options.isCreateNew()) {
+      opts.add(StandardOpenOption.CREATE_NEW);
+    }
+    if (options.isSync()) {
+      opts.add(StandardOpenOption.SYNC);
+    }
+    if (options.isDsync()) {
+      opts.add(StandardOpenOption.DSYNC);
+    }
+    if (options.isDeleteOnClose()) {
+      opts.add(StandardOpenOption.DELETE_ON_CLOSE);
+    }
+    if (options.isSparse()) {
+      opts.add(StandardOpenOption.SPARSE);
+    }
+    if (options.isTruncateExisting()) {
+      opts.add(StandardOpenOption.TRUNCATE_EXISTING);
+    }
     try {
       if (options.getPerms() != null) {
-        FileAttribute<?> attrs = PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(options.getPerms()));
+        FileAttribute<?> attrs = PosixFilePermissions
+          .asFileAttribute(PosixFilePermissions.fromString(options.getPerms()));
         ch = AsynchronousFileChannel.open(file, opts, vertx.getWorkerPool(), attrs);
       } else {
         ch = AsynchronousFileChannel.open(file, opts, vertx.getWorkerPool());
       }
-      if (options.isAppend()) writePos = ch.size();
+      if (options.isAppend()) {
+        writePos = ch.size();
+      }
     } catch (IOException e) {
       throw new FileSystemException(e);
     }
@@ -142,7 +164,8 @@ public class AsyncFileImpl implements AsyncFile {
   }
 
   @Override
-  public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler) {
+  public synchronized AsyncFile read(Buffer buffer, int offset, long position, int length,
+    Handler<AsyncResult<Buffer>> handler) {
     Objects.requireNonNull(handler, "handler");
     read(buffer, offset, position, length).onComplete(handler);
     return this;
@@ -180,7 +203,8 @@ public class AsyncFileImpl implements AsyncFile {
     return promise.future();
   }
 
-  private synchronized void doWrite(Buffer buffer, long position, Handler<AsyncResult<Void>> handler) {
+  private synchronized void doWrite(Buffer buffer, long position,
+    Handler<AsyncResult<Void>> handler) {
     Objects.requireNonNull(buffer, "buffer");
     Arguments.require(position >= 0, "position must be >= 0");
     check();
@@ -227,7 +251,7 @@ public class AsyncFileImpl implements AsyncFile {
       doWrite(buf.nioBuffers(), position, wrapped);
     } else {
       ByteBuffer bb = buf.nioBuffer();
-      doWrite(bb, position, bb.limit(),  wrapped);
+      doWrite(bb, position, bb.limit(), wrapped);
     }
   }
 
@@ -257,6 +281,31 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public synchronized AsyncFile setReadBufferSize(int readBufferSize) {
     this.readBufferSize = readBufferSize;
+    return this;
+  }
+
+  @Override
+  public synchronized AsyncFile tryLock(long position, long size, boolean shared) throws IOException {
+    ch.tryLock(position,size,shared);
+    return this;
+  }
+
+  @Override
+  public  synchronized AsyncFile tryLock() throws IOException {
+    ch.tryLock();
+    return this;
+  }
+
+  @Override
+  public synchronized AsyncFile lock(long position, long size, boolean shared)
+    throws ExecutionException, InterruptedException {
+    ch.lock(position,size,shared).get();
+    return this;
+  }
+
+  @Override
+  public synchronized AsyncFile lock() throws ExecutionException, InterruptedException {
+    ch.lock().get();
     return this;
   }
 
@@ -369,10 +418,11 @@ public class AsyncFileImpl implements AsyncFile {
     }
   }
 
-  private synchronized void doWrite(ByteBuffer[] buffers, long position, Handler<AsyncResult<Void>> handler) {
+  private synchronized void doWrite(ByteBuffer[] buffers, long position,
+    Handler<AsyncResult<Void>> handler) {
     AtomicInteger cnt = new AtomicInteger();
     AtomicBoolean sentFailure = new AtomicBoolean();
-    for (ByteBuffer b: buffers) {
+    for (ByteBuffer b : buffers) {
       int limit = b.limit();
       doWrite(b, position, limit, ar -> {
         if (ar.succeeded()) {
@@ -395,7 +445,7 @@ public class AsyncFileImpl implements AsyncFile {
 
   private synchronized void doRead(ByteBuffer bb) {
     Buffer buff = Buffer.buffer(readBufferSize);
-    int readSize = (int) Math.min((long)readBufferSize, readLength);
+    int readSize = (int) Math.min((long) readBufferSize, readLength);
     bb.limit(readSize);
     Promise<Buffer> promise = context.promise();
     promise.future().onComplete(ar -> {
@@ -450,7 +500,8 @@ public class AsyncFileImpl implements AsyncFile {
     }, handler);
   }
 
-  private void doWrite(ByteBuffer buff, long position, long toWrite, Handler<AsyncResult<Void>> handler) {
+  private void doWrite(ByteBuffer buff, long position, long toWrite,
+    Handler<AsyncResult<Void>> handler) {
     if (toWrite > 0) {
       synchronized (this) {
         writesOutstanding += toWrite;
@@ -501,7 +552,8 @@ public class AsyncFileImpl implements AsyncFile {
     });
   }
 
-  private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position, Promise<Buffer> promise) {
+  private void doRead(Buffer writeBuff, int offset, ByteBuffer buff, long position,
+    Promise<Buffer> promise) {
 
     ch.read(buff, position, null, new java.nio.channels.CompletionHandler<Integer, Object>() {
 
@@ -547,7 +599,8 @@ public class AsyncFileImpl implements AsyncFile {
 
   private void checkContext() {
     if (!vertx.getContext().equals(context)) {
-      throw new IllegalStateException("AsyncFile must only be used in the context that created it, expected: "
+      throw new IllegalStateException(
+        "AsyncFile must only be used in the context that created it, expected: "
           + context + " actual " + vertx.getContext());
     }
   }
