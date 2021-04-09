@@ -31,12 +31,6 @@ No pull request can be merged without being reviewed.
 
 It is expected that all contributors to Eclipse Vert.x organization sign the [Eclipse Contributor Agreement](http://www.eclipse.org/legal/ECA.php). In order to sign the ECA a contributor is required to have an Eclipse Foundation user id and read and digitally sign the following [document](http://www.eclipse.org/contribute/cla). Digitally signing is as simple as read the document and submit the "I agree" button.
 
-There is an additional "sign off" process for contributions to land. All commits to code in the Eclipse Vert.x organization **MUST** be signed off. This is done when committing from git passing the extra argument `-s` e.g.:
-
-```
-git commit -s -m "Shave the yak some more"
-```
-
 For non-trivial contributions, pull requests should sit for at least 36 hours to ensure that contributors in other time zones have time to review. Consideration should also be given to weekends and other holiday periods to ensure active committers all have reasonable time to become involved in the discussion and review process if they wish.
 
 The default for each contribution is that it is accepted once no committer has an objection. During review committers may also request that a specific contributor who is most versed in a particular area gives a "LGTM" before the PR can be merged.
