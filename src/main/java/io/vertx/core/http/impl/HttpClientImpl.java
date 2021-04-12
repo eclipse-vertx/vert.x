@@ -292,7 +292,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     if (ctx instanceof EventLoopContext) {
       eventLoopContext = (EventLoopContext) ctx;
     } else {
-      eventLoopContext = (EventLoopContext) vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+      eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
     }
     webSocketCM.getConnection(
       eventLoopContext,

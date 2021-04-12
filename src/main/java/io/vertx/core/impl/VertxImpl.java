@@ -389,12 +389,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler) {
     if (handler instanceof PromiseInternal) {
-      return (PromiseInternal<T>) handler;
-    } else {
-      PromiseInternal<T> promise = promise();
-      promise.future().onComplete(handler);
-      return promise;
+      PromiseInternal<T> promise = (PromiseInternal<T>) handler;
+      if (promise.context() != null) {
+        return promise;
+      }
     }
+    PromiseInternal<T> promise = promise();
+    promise.future().onComplete(handler);
+    return promise;
   }
 
   public void runOnContext(Handler<Void> task) {
