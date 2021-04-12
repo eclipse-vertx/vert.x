@@ -85,13 +85,13 @@ public final class ChannelProvider {
     return applicationProtocol;
   }
 
-  public Future<Channel> connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl) {
+  public Future<Channel> connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn) {
     Promise<Channel> p = context.nettyEventLoop().newPromise();
-    connect(handler, remoteAddress, peerAddress, serverName, ssl, p);
+    connect(handler, remoteAddress, peerAddress, serverName, ssl, useAlpn, p);
     return p;
   }
 
-  private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Promise<Channel> p) {
+  private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Promise<Channel> p) {
     try {
       bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
     } catch (Exception e) {
@@ -99,15 +99,15 @@ public final class ChannelProvider {
       return;
     }
     if (proxyOptions != null) {
-      handleProxyConnect(handler, remoteAddress, peerAddress, serverName, ssl, p);
+      handleProxyConnect(handler, remoteAddress, peerAddress, serverName, ssl, useAlpn, p);
     } else {
-      handleConnect(handler, remoteAddress, peerAddress, serverName, ssl, p);
+      handleConnect(handler, remoteAddress, peerAddress, serverName, ssl, useAlpn, p);
     }
   }
 
-  private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, Channel ch, Promise<Channel> channelHandler) {
+  private void initSSL(Handler<Channel> handler, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Channel ch, Promise<Channel> channelHandler) {
     if (ssl) {
-      SslHandler sslHandler = new SslHandler(sslHelper.createEngine(context.owner(), peerAddress, serverName));
+      SslHandler sslHandler = new SslHandler(sslHelper.createEngine(context.owner(), peerAddress, serverName, useAlpn));
       sslHandler.setHandshakeTimeout(sslHelper.getSslHandshakeTimeout(), sslHelper.getSslHandshakeTimeoutUnit());
       ChannelPipeline pipeline = ch.pipeline();
       pipeline.addLast("ssl", sslHandler);
@@ -142,13 +142,13 @@ public final class ChannelProvider {
   }
 
 
-  private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Promise<Channel> channelHandler) {
+  private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Promise<Channel> channelHandler) {
     VertxInternal vertx = context.owner();
     bootstrap.resolver(vertx.nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) {
-        initSSL(handler, peerAddress, serverName, ssl, ch, channelHandler);
+        initSSL(handler, peerAddress, serverName, ssl, useAlpn, ch, channelHandler);
       }
     });
     ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
@@ -180,7 +180,7 @@ public final class ChannelProvider {
   /**
    * A channel provider that connects via a Proxy : HTTP or SOCKS
    */
-  private void handleProxyConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, Promise<Channel> channelHandler) {
+  private void handleProxyConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Promise<Channel> channelHandler) {
 
     final VertxInternal vertx = context.owner();
     final String proxyHost = proxyOptions.getHost();
@@ -226,7 +226,7 @@ public final class ChannelProvider {
                 if (evt instanceof ProxyConnectionEvent) {
                   pipeline.remove(proxy);
                   pipeline.remove(this);
-                  initSSL(handler, peerAddress, serverName, ssl, ch, channelHandler);
+                  initSSL(handler, peerAddress, serverName, ssl, useAlpn, ch, channelHandler);
                   connected(handler, ch, ssl, channelHandler);
                 }
                 ctx.fireUserEventTriggered(evt);

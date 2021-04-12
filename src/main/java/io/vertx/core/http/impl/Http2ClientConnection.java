@@ -169,6 +169,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     return expirationTimestamp == 0 || System.currentTimeMillis() <= expirationTimestamp;
   }
 
+  @Override
+  public long lastResponseReceivedTimestamp() {
+    return 0L;
+  }
+
   protected synchronized void onHeadersRead(int streamId, Http2Headers headers, StreamPriority streamPriority, boolean endOfStream) {
     Stream stream = (Stream) stream(streamId);
     if (!stream.stream.isTrailersReceived()) {

@@ -19,7 +19,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.EventExecutor;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.*;
@@ -87,6 +86,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   @Override
   public Object metric() {
     return current.metric();
+  }
+
+  @Override
+  public long lastResponseReceivedTimestamp() {
+    return current.lastResponseReceivedTimestamp();
   }
 
   /**

@@ -30,7 +30,7 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, ClassLoader tccl) {
-    super(vertx, null, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, null, null, tccl);
+    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, null, null, tccl);
   }
 
   @Override

@@ -42,10 +42,17 @@ public class ConnectionManager<K, C> {
   public void getConnection(EventLoopContext ctx,
                             K key,
                             Handler<AsyncResult<C>> handler) {
+    getConnection(ctx, key, 0, handler);
+  }
+
+  public void getConnection(EventLoopContext ctx,
+                            K key,
+                            long timeout,
+                            Handler<AsyncResult<C>> handler) {
     Runnable dispose = () -> endpointMap.remove(key);
     while (true) {
       Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> endpointProvider.create(key, ctx, dispose));
-      if (endpoint.getConnection(ctx, handler)) {
+      if (endpoint.getConnection(ctx, timeout, handler)) {
         break;
       }
     }

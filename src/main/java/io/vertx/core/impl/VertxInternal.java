@@ -28,6 +28,7 @@ import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.VertxMetrics;
+import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.io.File;
 import java.net.InetAddress;
@@ -177,6 +178,11 @@ public interface VertxInternal extends Vertx {
   BlockedThreadChecker blockedThreadChecker();
 
   CloseFuture closeFuture();
+
+  /**
+   * @return the tracer
+   */
+  VertxTracer tracer();
 
   void addCloseHook(Closeable hook);
 

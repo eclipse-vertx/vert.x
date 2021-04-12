@@ -13,7 +13,6 @@ package io.vertx.core.http.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -33,8 +32,8 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
   private final Deque<Waiter> waiters;
   private int inflightConnections;
 
-  WebSocketEndpoint(ClientMetrics metrics, int port, String host, Object metric, int maxPoolSize, HttpChannelConnector connector, Runnable dispose) {
-    super(metrics, port, host, metric, dispose);
+  WebSocketEndpoint(ClientMetrics metrics, int maxPoolSize, HttpChannelConnector connector, Runnable dispose) {
+    super(metrics, dispose);
     this.maxPoolSize = maxPoolSize;
     this.connector = connector;
     this.waiters = new ArrayDeque<>();
@@ -88,7 +87,7 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
   }
 
   @Override
-  public void requestConnection2(ContextInternal ctx, Handler<AsyncResult<HttpClientConnection>> handler) {
+  public void requestConnection2(ContextInternal ctx, long timeout, Handler<AsyncResult<HttpClientConnection>> handler) {
     synchronized (this) {
       if (inflightConnections >= maxPoolSize) {
         waiters.add(new Waiter(handler, ctx));
@@ -97,6 +96,11 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
       inflightConnections++;
     }
     tryConnect(ctx, handler);
+  }
+
+  @Override
+  void checkExpired() {
+
   }
 
   @Override

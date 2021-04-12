@@ -36,6 +36,7 @@ import io.vertx.test.core.CheckingSender;
 import io.vertx.test.verticles.SimpleServer;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;

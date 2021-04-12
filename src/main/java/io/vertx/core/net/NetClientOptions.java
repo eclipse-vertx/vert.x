@@ -72,6 +72,15 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * Create an instance copying the values from {@code other} and using the defaults of {@link NetClientOptions}.
+   *
+   * @param other  the options to copy
+   */
+  public NetClientOptions(ClientOptionsBase other) {
+    super(other);
+  }
+
+  /**
    * Create options from JSON
    *
    * @param json  the JSON

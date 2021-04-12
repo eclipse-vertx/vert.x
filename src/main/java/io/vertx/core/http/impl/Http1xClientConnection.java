@@ -98,6 +98,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   private int seq = 1;
   private long bytesWindow;
 
+  private long lastResponseReceivedTimestamp;
+
   Http1xClientConnection(HttpVersion version,
                          HttpClientImpl client,
                          ChannelHandlerContext channel,
@@ -141,7 +143,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
    */
   public NetSocketInternal toNetSocket() {
     removeChannelHandlers();
-    NetSocketImpl socket = new NetSocketImpl(context, chctx, client.getSslHelper(), metrics());
+    NetSocketImpl socket = new NetSocketImpl(context, chctx, null, metrics());
     socket.metric(metric());
     evictionHandler.handle(null);
     chctx.pipeline().replace("handler", "handler", VertxHandler.create(ctx -> socket));
@@ -805,6 +807,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     if (check) {
       checkLifecycle();
     }
+    lastResponseReceivedTimestamp = System.currentTimeMillis();
     stream.context.execute(trailer, stream::handleEnd);
   }
 
@@ -1039,6 +1042,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         createStream(context, handler);
       });
     }
+  }
+
+  @Override
+  public long lastResponseReceivedTimestamp() {
+    return lastResponseReceivedTimestamp;
   }
 
   @Override
