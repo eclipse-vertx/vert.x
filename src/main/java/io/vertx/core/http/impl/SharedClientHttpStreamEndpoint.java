@@ -36,12 +36,12 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
   /**
    * LIFO pool selector.
    */
-  private static final BiFunction<PoolWaiter<HttpClientConnection>, List<PoolConnection<HttpClientConnection>>, PoolConnection<HttpClientConnection>> LIFO_SELECTOR = (a, b) -> {
-    int size = b.size();
+  private static final BiFunction<PoolWaiter<HttpClientConnection>, List<PoolConnection<HttpClientConnection>>, PoolConnection<HttpClientConnection>> LIFO_SELECTOR = (waiter, connections) -> {
+    int size = connections.size();
     PoolConnection<HttpClientConnection> selected = null;
     long last = 0L;
     for (int i = 0; i < size; i++) {
-      PoolConnection<HttpClientConnection> pooled = b.get(i);
+      PoolConnection<HttpClientConnection> pooled = connections.get(i);
       if (pooled.concurrency() > 0) {
         HttpClientConnection conn = pooled.get();
         if (selected == null) {
@@ -145,12 +145,8 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
       if (timeout > 0L && timerID == -1L) {
         timerID = context.setTimer(timeout, id -> {
           pool.cancel(waiter, ar -> {
-            if (ar.succeeded()) {
-              if (ar.result()) {
-                handler.handle(Future.failedFuture(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + connector.server())));
-              }
-            } else {
-              // ???
+            if (ar.succeeded() && ar.result()) {
+              handler.handle(Future.failedFuture(new NoStackTraceTimeoutException("The timeout of " + timeout + " ms has been exceeded when getting a connection to " + connector.server())));
             }
           });
         });

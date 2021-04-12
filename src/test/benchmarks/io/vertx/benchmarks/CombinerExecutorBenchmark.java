@@ -11,8 +11,7 @@
 
 package io.vertx.benchmarks;
 
-import io.vertx.core.net.impl.pool.CombinerExecutor1;
-import io.vertx.core.net.impl.pool.CombinerExecutor2;
+import io.vertx.core.net.impl.pool.CombinerExecutor;
 import io.vertx.core.net.impl.pool.Executor;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
@@ -39,34 +38,21 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @Threads(2)
 public class CombinerExecutorBenchmark extends BenchmarkBase {
 
-  private Executor<Object> exec1;
-  private Executor<Object> exec2;
+  private Executor<Object> exec;
   private Executor.Action<Object> action;
 
   private CountDownLatch latch = new CountDownLatch(1);
 
   @Setup
   public void setup() throws Exception {
-    exec1 = new CombinerExecutor1<>(new Object());
-    exec2 = new CombinerExecutor2<>(new Object());
+    exec = new CombinerExecutor<>(new Object());
     action = state -> {
       Blackhole.consumeCPU(0);
       return null;
     };
     CountDownLatch l = new CountDownLatch(2);
     new Thread(() -> {
-      exec1.submit(state -> {
-        l.countDown();
-        try {
-          latch.await();
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-        return null;
-      });
-    }).start();
-    new Thread(() -> {
-      exec2.submit(state -> {
+      exec.submit(state -> {
         l.countDown();
         try {
           latch.await();
@@ -85,12 +71,7 @@ public class CombinerExecutorBenchmark extends BenchmarkBase {
   }
 
   @Benchmark
-  public void impl1() {
-    exec1.submit(action);
-  }
-
-  @Benchmark
-  public void impl2() {
-    exec2.submit(action);
+  public void impl() {
+    exec.submit(action);
   }
 }

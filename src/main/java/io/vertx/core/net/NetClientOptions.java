@@ -72,7 +72,7 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * Copy constructor
+   * Create an instance copying the values from {@code other} and using the defaults of {@link NetClientOptions}.
    *
    * @param other  the options to copy
    */

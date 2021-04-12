@@ -217,7 +217,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     this.maxWaiters = maxWaiters;
     this.capacity = 0;
     this.maxCapacity = maxCapacity;
-    this.sync = new CombinerExecutor2<>(this);
+    this.sync = new CombinerExecutor<>(this);
     this.selector = (BiFunction) SAME_CONTEXT_SELECTOR;
     this.fallbackSelector = (BiFunction) FIRST_AVAILABLE_SELECTOR;
     this.waiters = new Waiters<>();

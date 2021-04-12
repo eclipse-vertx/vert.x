@@ -51,7 +51,7 @@ public interface ConnectionPool<C> {
    * Acquire a connection from the pool.
    *
    * @param context the context
-   * @param kind the connection kind wanted
+   * @param kind the connection kind wanted which is an index in the max size array provided when constructing the pool
    * @param handler the callback handler with the result
    */
   void acquire(EventLoopContext context, int kind, Handler<AsyncResult<Lease<C>>> handler);
@@ -61,7 +61,7 @@ public interface ConnectionPool<C> {
    *
    * @param context the context
    * @param listener the waiter event listener
-   * @param kind the connection kind wanted
+   * @param kind the connection kind wanted which is an index in the max size array provided when constructing the pool
    * @param handler the callback handler with the result
    */
   void acquire(EventLoopContext context, PoolWaiter.Listener<C> listener, int kind, Handler<AsyncResult<Lease<C>>> handler);

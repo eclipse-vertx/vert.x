@@ -38,7 +38,7 @@ public class SynchronizationTest extends AsyncTestBase {
   public void testActionReentrancy() throws Exception {
     AtomicBoolean isReentrant1 = new AtomicBoolean();
     AtomicBoolean isReentrant2 = new AtomicBoolean();
-    Executor<Object> sync = new CombinerExecutor2<>(new Object());
+    Executor<Object> sync = new CombinerExecutor<>(new Object());
     CountDownLatch latch = new CountDownLatch(2);
     sync.submit(state1 -> {
       AtomicBoolean inCallback = new AtomicBoolean();
@@ -66,7 +66,7 @@ public class SynchronizationTest extends AsyncTestBase {
   public void testPostTaskReentrancy() throws Exception {
     AtomicBoolean isReentrant1 = new AtomicBoolean();
     AtomicBoolean isReentrant2 = new AtomicBoolean();
-    Executor<Object> sync = new CombinerExecutor2<>(new Object());
+    Executor<Object> sync = new CombinerExecutor<>(new Object());
     CountDownLatch latch = new CountDownLatch(1);
     sync.submit(state1 -> () -> {
       AtomicBoolean inCallback = new AtomicBoolean();
@@ -95,7 +95,7 @@ public class SynchronizationTest extends AsyncTestBase {
 
     int numThreads = 8;
     int numIter = 1_000 * 100;
-    Executor<Object> sync = new CombinerExecutor2<>(new Object());
+    Executor<Object> sync = new CombinerExecutor<>(new Object());
     Executor.Action action = s -> {
       burnCPU(10);
       return null;

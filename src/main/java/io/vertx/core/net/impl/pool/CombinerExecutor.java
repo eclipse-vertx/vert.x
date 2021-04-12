@@ -16,15 +16,19 @@ import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Lock free executor that serialized
+ * Lock free executor.
+ *
+ * When a thread submits an action, it will enqueue the action to execute and then try to acquire
+ * a lock. When the lock is acquired it will execute all the tasks in the queue until empty and then
+ * release the lock.
  */
-public class CombinerExecutor2<S> implements Executor<S> {
+public class CombinerExecutor<S> implements Executor<S> {
 
   private final Queue<Action<S>> q = PlatformDependent.newMpscQueue();
   private final AtomicInteger s = new AtomicInteger();
   private final S state;
 
-  public CombinerExecutor2(S state) {
+  public CombinerExecutor(S state) {
     this.state = state;
   }
 
