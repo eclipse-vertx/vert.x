@@ -32,6 +32,8 @@ import io.vertx.core.streams.ReadStream;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -53,6 +55,7 @@ public class JsonParserImpl implements JsonParser {
   private boolean ended;
   private final ReadStream<Buffer> stream;
   private boolean emitting;
+  private Deque<JsonEvent> pendingEvents = new LinkedList<>();
 
   public JsonParserImpl(ReadStream<Buffer> stream) {
     this.stream = stream;
@@ -72,15 +75,18 @@ public class JsonParserImpl implements JsonParser {
 
   @Override
   public JsonParser resume() {
-    return fetch(Long.MAX_VALUE);
+    demand = Long.MAX_VALUE;
+    checkPending();
+    return this;
   }
 
   @Override
   public JsonParser fetch(long amount) {
     Arguments.require(amount > 0L, "Fetch amount must be > 0L");
-    demand += amount;
-    if (demand < 0L) {
-      demand = Long.MAX_VALUE;
+    if (demand == Long.MAX_VALUE) {
+      demand = amount;
+    } else {
+      demand += amount;
     }
     checkPending();
     return this;
@@ -114,6 +120,10 @@ public class JsonParserImpl implements JsonParser {
   }
 
   private void handleEvent(JsonEvent event) {
+    if (demand == 0L) {
+      pendingEvents.addLast(event);
+      return;
+    }
     if (demand != Long.MAX_VALUE) {
       demand--;
     }
@@ -194,6 +204,7 @@ public class JsonParserImpl implements JsonParser {
 
   @Override
   public void handle(Buffer event) {
+    checkPending();
     byte[] bytes = event.getBytes();
     try {
       parser.feedInput(bytes, 0, bytes.length);
@@ -221,6 +232,16 @@ public class JsonParserImpl implements JsonParser {
   private void checkPending() {
     if (!emitting) {
       emitting = true;
+      while (demand > 0L && !pendingEvents.isEmpty()) {
+        if (demand != Long.MAX_VALUE) {
+          demand--;
+        }
+        JsonEvent jsonEvent = pendingEvents.removeFirst();
+        Handler<JsonEvent> handler = this.eventHandler;
+        if (handler != null) {
+          handler.handle(jsonEvent);
+        }
+      }
       try {
         while (true) {
           if (currentToken == null) {
@@ -231,28 +252,22 @@ public class JsonParserImpl implements JsonParser {
           }
           if (currentToken == null) {
             if (ended) {
-              if (endHandler != null) {
+              if (endHandler != null && pendingEvents.isEmpty()) {
                 endHandler.handle(null);
               }
               return;
             }
             break;
           } else {
-            if (demand > 0L) {
-              JsonToken token = currentToken;
-              currentToken = null;
-              tokenHandler.handle(token);
-            } else {
-              break;
-            }
+            JsonToken token = currentToken;
+            currentToken = null;
+            tokenHandler.handle(token);
           }
         }
-        if (demand == 0L) {
-          if (stream != null) {
+        if (stream != null) {
+          if (demand == 0L) {
             stream.pause();
-          }
-        } else {
-          if (stream != null) {
+          } else {
             stream.resume();
           }
         }
@@ -271,8 +286,6 @@ public class JsonParserImpl implements JsonParser {
       } finally {
         emitting = false;
       }
-    } else {
-      return;
     }
   }
 
