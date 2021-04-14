@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -2310,5 +2311,29 @@ public class FileSystemTest extends VertxTestBase {
     assertTrue(Files.exists(path));
     String perms = PosixFilePermissions.toString(Files.getPosixFilePermissions(path));
     assertEquals(perms, DEFAULT_FILE_PERMS);
+  }
+
+  @Test
+  public void testFileSize() throws Exception {
+    String fileName = "some-file.dat";
+    int expected = ThreadLocalRandom.current().nextInt(1000, 2000);
+    createFileWithJunk(fileName, expected);
+    AsyncFile file = vertx.fileSystem().openBlocking(testDir + pathSep + fileName, new OpenOptions());
+    file.size(onSuccess(size -> {
+      assertEquals(expected, size.longValue());
+      file.close(onSuccess(v -> testComplete()));
+    }));
+    await();
+  }
+
+  @Test
+  public void testFileSizeBlocking() throws Exception {
+    String fileName = "some-file.dat";
+    int expected = ThreadLocalRandom.current().nextInt(1000, 2000);
+    createFileWithJunk(fileName, expected);
+    AsyncFile file = vertx.fileSystem().openBlocking(testDir + pathSep + fileName, new OpenOptions());
+    assertEquals(expected, file.sizeBlocking());
+    file.close(onSuccess(v -> testComplete()));
+    await();
   }
 }
