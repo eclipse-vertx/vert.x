@@ -587,11 +587,7 @@ public class AsyncFileImpl implements AsyncFile {
   @Override
   public Future<Long> size() {
     return vertx.getOrCreateContext().executeBlockingInternal(prom -> {
-      try {
-        prom.complete(ch.size());
-      } catch (IOException e) {
-        prom.fail(e);
-      }
+      prom.complete(sizeBlocking());
     });
   }
 }
