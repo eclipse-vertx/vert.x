@@ -200,7 +200,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   }
 
   /**
-   * @return the size of the file, or {@code -1} if not supported
+   * @return the size of the file
    */
   Future<Long> size();
 }
