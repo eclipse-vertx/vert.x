@@ -187,9 +187,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    *
    * @throws FileSystemException if an error occurs
    */
-  default long sizeBlocking() {
-    return -1;
-  }
+  long sizeBlocking();
 
   /**
    * Like {@link #size()} but the {@code handler} will be called when the operation is complete or if an error occurs.
@@ -204,7 +202,5 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   /**
    * @return the size of the file, or {@code -1} if not supported
    */
-  default Future<Long> size() {
-    return Future.succeededFuture(-1L);
-  }
+  Future<Long> size();
 }
