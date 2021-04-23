@@ -912,4 +912,21 @@ public class ContextTest extends VertxTestBase {
       assertSame(result, p1.future().result());
     }
   }
+
+  @Test
+  public void testTopLevelContextClassLoader() {
+    ClassLoader cl = new URLClassLoader(new URL[0]);
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    EventLoop el = ctx.nettyEventLoop();
+    el.execute(() -> {
+      Thread.currentThread().setContextClassLoader(cl);
+      ctx.runOnContext(v -> {
+        el.execute(() -> {
+          assertSame(cl, Thread.currentThread().getContextClassLoader());
+          testComplete();
+        });
+      });
+    });
+    await();
+  }
 }
