@@ -22,3 +22,22 @@ You unregister a message codec with {@link io.vertx.core.eventbus.EventBus#unreg
 
 Message codecs don't always have to encode and decode as the same type. For example you can write a codec that
 allows a MyPOJO class to be sent, but when that message is sent to a handler it arrives as a MyOtherPOJO class.
+
+===== Local codecs
+
+When sending messages to local consumers, you often don't need serialization and deserialization, but you still need to
+ensure no thread unsafe data is going to be shared in the message body.
+In order to do that, you can create a local codec using {@link io.vertx.core.eventbus.MessageCodec#localCodec},
+specifying either a {@link io.vertx.core.shareddata.Shareable} class, or any class and an associated function to perform the copy:
+
+[source,java]
+----
+{@link docoverride.eventbus.Examples#example12}
+----
+
+If the type is immutable, you can just use the identity function:
+
+[source,java]
+----
+{@link docoverride.eventbus.Examples#example13}
+----

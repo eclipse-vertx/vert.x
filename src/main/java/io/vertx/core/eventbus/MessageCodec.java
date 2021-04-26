@@ -11,7 +11,12 @@
 
 package io.vertx.core.eventbus;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.impl.codecs.LocalShareableCodec;
+import io.vertx.core.shareddata.Shareable;
+
+import java.util.function.Function;
 
 /**
  * A message codec allows a custom message type to be marshalled across the event bus.
@@ -75,4 +80,31 @@ public interface MessageCodec<S, R> {
    * @return -1 for a user codec.
    */
   byte systemCodecID();
+
+  /**
+   * Create a new message codec for sending {@link Shareable} objects to local consumers.
+   * <p>
+   * When sending messages to local consumers, you might not want to serialize the message.
+   * Using this method, you can create a new codec that is able to send {@link Shareable} objects to local consumers
+   * without performing any serialization: the method {@link Shareable#copy()} will be invoked instead.
+   * <p>
+   * Note: when sending to non-local consumers this codec will fail. Make sure you specify another codec for remote messages.
+   *
+   * @param clazz the shareable class
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  @SuppressWarnings("unchecked")
+  static <T extends Shareable> MessageCodec<T, T> localCodec(Class<? extends T> clazz) {
+    return new LocalShareableCodec<T>("local." + clazz.getSimpleName(), v -> (T) v.copy());
+  }
+
+  /**
+   * Like {@link #localCodec(Class)}, but specifying the copy function manually.
+   */
+  @GenIgnore
+  static <T extends Shareable> MessageCodec<T, T> localCodec(Class<T> clazz, Function<T, T> copy) {
+    return new LocalShareableCodec<T>("local." + clazz.getSimpleName(), copy);
+  }
+
 }

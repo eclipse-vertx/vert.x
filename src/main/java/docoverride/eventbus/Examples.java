@@ -14,7 +14,10 @@ package docoverride.eventbus;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageCodec;
+import io.vertx.core.shareddata.Shareable;
 import io.vertx.docgen.Source;
+
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -38,14 +41,29 @@ public class Examples {
     eventBus.send("orders", new MyPOJO());
   }
 
+  public void example12(EventBus eventBus) {
+    // Class does not implement Shareable
+    eventBus.registerDefaultCodec(MyPOJO.class, MessageCodec.localCodec(MyPOJO.class, MyPOJO::copy));
+
+    // Class implements Shareable
+    eventBus.registerDefaultCodec(MyPOJO.class, MessageCodec.localCodec(MyPOJO.class));
+  }
+
+  public void example13(EventBus eventBus) {
+    // Class is immutable, so there's no need to copy
+    eventBus.registerDefaultCodec(MyPOJO.class, MessageCodec.localCodec(MyPOJO.class, Function.identity()));
+  }
+
   public void headers(EventBus eventBus) {
     DeliveryOptions options = new DeliveryOptions();
     options.addHeader("some-header", "some-value");
     eventBus.send("news.uk.sport", "Yay! Someone kicked a ball", options);
   }
 
-  class MyPOJO {
-
+  class MyPOJO implements Shareable {
+    public MyPOJO copy() {
+      return null;
+    }
   }
 
 }
