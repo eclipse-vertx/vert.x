@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -573,5 +573,21 @@ public class AsyncFileImpl implements AsyncFile {
     } else {
       closedDeferred = () -> doClose(handler);
     }
+  }
+
+  @Override
+  public long sizeBlocking() {
+    try {
+      return ch.size();
+    } catch (IOException e) {
+      throw new FileSystemException(e);
+    }
+  }
+
+  @Override
+  public Future<Long> size() {
+    return vertx.getOrCreateContext().executeBlockingInternal(prom -> {
+      prom.complete(sizeBlocking());
+    });
   }
 }
