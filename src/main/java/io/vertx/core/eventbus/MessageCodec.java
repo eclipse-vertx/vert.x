@@ -103,7 +103,7 @@ public interface MessageCodec<S, R> {
    * Like {@link #localCodec(Class)}, but specifying the copy function manually.
    */
   @GenIgnore
-  static <T extends Shareable> MessageCodec<T, T> localCodec(Class<T> clazz, Function<T, T> copy) {
+  static <T> MessageCodec<T, T> localCodec(Class<T> clazz, Function<T, T> copy) {
     return new LocalShareableCodec<T>("local." + clazz.getSimpleName(), copy);
   }
 

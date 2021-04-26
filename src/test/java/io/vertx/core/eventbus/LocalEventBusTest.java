@@ -18,6 +18,7 @@ import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
@@ -647,6 +648,55 @@ public class LocalEventBusTest extends EventBusTestBase {
     } catch (IllegalArgumentException e) {
       testComplete();
     }
+
+    await();
+  }
+
+  @Test
+  public void testShareableLocalCodecType() {
+    class Boom implements Shareable {
+      private final int copied;
+
+      Boom(final int copied) {
+        this.copied = copied;
+      }
+
+      @Override
+      public Boom copy() {
+        return new Boom(this.copied + 1);
+      }
+    }
+    eb.registerDefaultCodec(Boom.class, MessageCodec.localCodec(Boom.class));
+    eb.<Boom>consumer("foo").handler(msg -> {
+      assertEquals(1, msg.body().copied);
+      testComplete();
+    });
+
+    eb.send("foo", new Boom(0));
+
+    await();
+  }
+
+  @Test
+  public void testLocalCodecType() {
+    class Boom {
+      private final int copied;
+
+      Boom(final int copied) {
+        this.copied = copied;
+      }
+
+      public Boom copy() {
+        return new Boom(this.copied + 1);
+      }
+    }
+    eb.registerDefaultCodec(Boom.class, MessageCodec.localCodec(Boom.class, Boom::copy));
+    eb.<Boom>consumer("foo").handler(msg -> {
+      assertEquals(1, msg.body().copied);
+      testComplete();
+    });
+
+    eb.send("foo", new Boom(0));
 
     await();
   }
