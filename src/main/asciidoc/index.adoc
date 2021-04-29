@@ -27,7 +27,7 @@ Vert.x core is small and lightweight. You just use the parts you want. It's also
 existing applications - we don't force you to structure your applications in a special way just so you can use
 Vert.x.
 
-You can use core from any of the other languages that Vert.x supports. But here'a a cool bit - we don't force
+You can use core from any of the other languages that Vert.x supports. But here's a cool bit - we don't force
 you to use the Java API directly from, say, JavaScript or Ruby - after all, different languages have different conventions
 and idioms, and it would be odd to force Java idioms on Ruby developers (for example).
 Instead, we automatically generate an *idiomatic* equivalent of the core Java APIs for each language.
