@@ -12,7 +12,6 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
@@ -24,7 +23,7 @@ import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.impl.NetClientImpl;
-import io.vertx.core.net.impl.clientconnection.ConnectionManager;
+import io.vertx.core.net.impl.pool.ConnectionManager;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -33,9 +32,8 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.SSLHelper;
-import io.vertx.core.net.impl.clientconnection.Endpoint;
-import io.vertx.core.net.impl.clientconnection.Lease;
+import io.vertx.core.net.impl.pool.Endpoint;
+import io.vertx.core.net.impl.pool.Lease;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.metrics.Metrics;

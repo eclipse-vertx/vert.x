@@ -17,8 +17,6 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.net.impl.clientconnection.ConnectResult;
-import io.vertx.core.net.impl.clientconnection.Lease;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -384,6 +382,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         pool.capacity -= w;
         pool.capacity += waiter.capacity;
         pool.slots[removed.index] = slot;
+        pool.requests++;
         return () -> {
           if (waiter.listener != null) {
             waiter.listener.onConnect(waiter);
@@ -692,6 +691,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           waiters.add(slot.initiator);
           slot.initiator = null;
         }
+        pool.capacity -= slot.capacity;
         list.add(slot.result.future());
       }
       pool.size = 0;

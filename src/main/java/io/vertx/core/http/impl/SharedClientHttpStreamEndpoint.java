@@ -17,11 +17,11 @@ import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.net.impl.clientconnection.ConnectResult;
+import io.vertx.core.net.impl.pool.ConnectResult;
 import io.vertx.core.net.impl.pool.ConnectionPool;
 import io.vertx.core.net.impl.pool.PoolConnection;
 import io.vertx.core.net.impl.pool.PoolConnector;
-import io.vertx.core.net.impl.clientconnection.Lease;
+import io.vertx.core.net.impl.pool.Lease;
 import io.vertx.core.net.impl.pool.PoolWaiter;
 import io.vertx.core.spi.metrics.ClientMetrics;
 

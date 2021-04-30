@@ -13,7 +13,6 @@ package io.vertx.core.net.impl.pool;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.net.impl.clientconnection.ConnectResult;
 
 /**
  * Defines the interactions with the actual back-end managing connections.

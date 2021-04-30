@@ -8,16 +8,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net;
+package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.net.impl.clientconnection.ConnectionManager;
-import io.vertx.core.net.impl.clientconnection.Endpoint;
-import io.vertx.core.net.impl.clientconnection.EndpointProvider;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 

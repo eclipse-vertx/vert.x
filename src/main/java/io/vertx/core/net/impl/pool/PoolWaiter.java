@@ -14,7 +14,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.net.impl.clientconnection.Lease;
 
 /**
  * A waiter for a connection.
