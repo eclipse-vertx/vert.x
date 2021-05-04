@@ -488,7 +488,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public WorkerContext createWorkerContext() {
-    return createWorkerContext(null, null, null, null);
+    return createWorkerContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
   @Override
