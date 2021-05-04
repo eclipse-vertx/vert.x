@@ -95,9 +95,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         System.getProperty("io.netty.leakDetectionLevel") == null) {
       ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
     }
-
-    // Use the JDK deflater/inflater by default
-    System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
 
   private final FileSystem fileSystem = getFileSystem();
