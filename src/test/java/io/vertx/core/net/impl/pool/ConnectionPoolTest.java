@@ -18,8 +18,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.clientconnection.ConnectResult;
-import io.vertx.core.net.impl.clientconnection.Lease;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -307,7 +305,7 @@ public class ConnectionPoolTest extends VertxTestBase {
     EventLoopContext ctx1 = vertx.createEventLoopContext();
     pool.acquire(ctx1, 0, onFailure(cause -> {
       assertSame(failure, cause);
-      assertEquals(0, pool.requests());
+      assertEquals(1, pool.requests());
       latch.countDown();
     }));
     EventLoopContext ctx2 = vertx.createEventLoopContext();

@@ -14,7 +14,6 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.net.impl.clientconnection.Lease;
 
 import java.util.List;
 import java.util.function.BiFunction;

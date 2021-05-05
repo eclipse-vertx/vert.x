@@ -248,7 +248,7 @@ supports concurrent composition (run several async operations in parallel) and s
 (chain async operations).
 
 {@link io.vertx.core.CompositeFuture#all} takes several futures arguments (up to 6) and returns a future that is
-_succeeded_ when all the futures are and _failed_ when at least one of the futures is failed:
+_succeeded_ when all the futures are _succeeded_ and _failed_ when at least one of the futures is failed:
 
 [source,$lang]
 ----

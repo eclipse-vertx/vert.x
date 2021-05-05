@@ -13,7 +13,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.impl.clientconnection.Endpoint;
+import io.vertx.core.net.impl.pool.Endpoint;
 import io.vertx.core.spi.metrics.ClientMetrics;
 
 /**

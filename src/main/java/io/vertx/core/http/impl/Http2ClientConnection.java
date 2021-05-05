@@ -25,7 +25,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.net.impl.clientconnection.ConnectionListener;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
