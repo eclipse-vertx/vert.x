@@ -736,6 +736,31 @@ public class JsonParserTest {
   }
 
   @Test
+  public void testStreamResume3886() {
+    FakeStream stream = new FakeStream();
+    JsonParser parser = JsonParser.newParser(stream);
+    stream.enableIgnoreDemand();
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(event -> {
+      events.add(event);
+    });
+    parser.pause();
+
+    int SZ = 2;
+    StringBuilder b = new StringBuilder();
+    for (int i = 0; i < SZ; i++) {
+      b.append("{ \"a\":\"y\" }");
+    }
+    stream.handle(b.toString());
+    stream.handle(b.toString());
+    parser.resume();
+    parser.end();
+
+    assertEquals(SZ * 3 * 2, events.size());
+    assertFalse(stream.isPaused());
+  }
+
+  @Test
   public void testStreamFetch() {
     FakeStream stream = new FakeStream();
     JsonParser parser = JsonParser.newParser(stream);
