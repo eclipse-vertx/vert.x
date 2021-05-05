@@ -26,12 +26,6 @@ class FakeStream implements ReadStream<Buffer> {
   private Handler<Throwable> exceptionHandler;
   private volatile int pauseCount;
   private volatile int resumeCount;
-  private boolean ignoreDemand = false;
-
-
-  void enableIgnoreDemand() {
-    ignoreDemand = true;
-  }
 
   @Override
   public ReadStream<Buffer> exceptionHandler(Handler<Throwable> handler) {
@@ -83,7 +77,7 @@ class FakeStream implements ReadStream<Buffer> {
   }
 
   void handle(Buffer buff) {
-    if (demand == 0L && !ignoreDemand) {
+    if (demand == 0L) {
       throw new IllegalStateException();
     }
     if (demand != Long.MAX_VALUE) {
