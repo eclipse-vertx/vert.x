@@ -863,4 +863,22 @@ public class JsonParserTest {
 
     assertTrue(latch.await(5, TimeUnit.SECONDS));
   }
+
+  @Test
+  public void testStreamResume3886() {
+    JsonParser parser = JsonParser.newParser();
+    List<JsonEvent> events = new ArrayList<>();
+    parser.handler(event -> {
+      events.add(event);
+    });
+    parser.pause();
+
+    Buffer b = Buffer.buffer("{ \"a\":\"y\" }");
+    parser.handle(b);
+    parser.handle(b);
+    parser.resume();
+    parser.end();
+
+    assertEquals(3 * 2, events.size());
+  }
 }
