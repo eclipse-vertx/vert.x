@@ -744,17 +744,13 @@ public class JsonParserTest {
     });
     parser.pause();
 
-    int SZ = 2;
-    StringBuilder b = new StringBuilder();
-    for (int i = 0; i < SZ; i++) {
-      b.append("{ \"a\":\"y\" }");
-    }
-    parser.handle(Buffer.buffer(b.toString()));
-    parser.handle(Buffer.buffer(b.toString()));
+    Buffer b = Buffer.buffer("{ \"a\":\"y\" }");
+    parser.handle(b);
+    parser.handle(b);
     parser.resume();
     parser.end();
 
-    assertEquals(SZ * 3 * 2, events.size());
+    assertEquals(3 * 2, events.size());
   }
 
   @Test
