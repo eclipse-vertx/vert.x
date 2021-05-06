@@ -33,7 +33,6 @@ import io.vertx.core.streams.ReadStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
@@ -387,8 +386,6 @@ public class JsonParserImpl implements JsonParser {
     protected void _closeInput() {
     }
   }
-
-  private static final EnumMap<JsonEventType, JsonToken> mm = new EnumMap<JsonEventType, JsonToken>(JsonEventType.class);
 
   private class BufferingHandler implements Handler<JsonEventImpl> {
 
