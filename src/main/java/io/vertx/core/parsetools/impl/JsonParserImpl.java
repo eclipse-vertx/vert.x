@@ -232,17 +232,17 @@ public class JsonParserImpl implements JsonParser {
   private void checkPending() {
     if (!emitting) {
       emitting = true;
-      while (demand > 0L && !pendingEvents.isEmpty()) {
-        if (demand != Long.MAX_VALUE) {
-          demand--;
-        }
-        JsonEvent jsonEvent = pendingEvents.removeFirst();
-        Handler<JsonEvent> handler = this.eventHandler;
-        if (handler != null) {
-          handler.handle(jsonEvent);
-        }
-      }
       try {
+        while (demand > 0L && !pendingEvents.isEmpty()) {
+          if (demand != Long.MAX_VALUE) {
+            demand--;
+          }
+          JsonEvent jsonEvent = pendingEvents.removeFirst();
+          Handler<JsonEvent> handler = this.eventHandler;
+          if (handler != null) {
+            handler.handle(jsonEvent);
+          }
+        }
         while (true) {
           if (currentToken == null) {
             JsonToken next = parser.nextToken();
