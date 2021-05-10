@@ -98,6 +98,11 @@ public interface Cookie {
   Cookie setMaxAge(long maxAge);
 
   /**
+   * @return the maxAge of this cookie
+   */
+  long getMaxAge();
+
+  /**
    * Sets the security getStatus of this cookie
    *
    * @param secure True if this cookie is to be secure, otherwise false

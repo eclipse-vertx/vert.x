@@ -5748,7 +5748,7 @@ public abstract class HttpTest extends HttpTestBase {
     assertEquals("foo=bar; Path=/somepath; Domain=foo.com", cookie.encode());
     long maxAge = 30 * 60;
     cookie.setMaxAge(maxAge);
-
+    assertEquals(maxAge, cookie.getMaxAge());
 
     long now = System.currentTimeMillis();
     String encoded = cookie.encode();
