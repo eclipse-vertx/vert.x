@@ -3048,6 +3048,26 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  public void testNonProxyHosts() throws Exception {
+    NetClientOptions clientOptions = new NetClientOptions()
+      .addNonProxyHost("example.com")
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.HTTP).setPort(13128));
+    NetClient client = vertx.createNetClient(clientOptions);
+    server.connectHandler(sock -> {
+
+    });
+    proxy = new HttpProxy(null);
+    proxy.start(vertx);
+    server.listen(1234, "localhost", onSuccess(s -> {
+      client.connect(1234, "example.com", onSuccess(so -> {
+        assertNull(proxy.getLastUri());
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testTLSHostnameCertCheckCorrect() {
     server.close();
     server = vertx.createNetServer(new NetServerOptions().setSsl(true).setPort(4043)

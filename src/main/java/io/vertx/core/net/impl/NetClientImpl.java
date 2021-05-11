@@ -45,6 +45,7 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 /**
  *
@@ -65,6 +66,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final ChannelGroup channelGroup;
   private final TCPMetrics metrics;
   private final CloseFuture closeFuture;
+  private final Predicate<SocketAddress> proxyFilter;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
@@ -76,6 +78,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.idleTimeout = options.getIdleTimeout();
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
     this.closeFuture = closeFuture;
+    this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
 
     sslHelper.validate(vertx);
   }
@@ -194,7 +197,13 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     if (peerHost != null && peerHost.endsWith(".")) {
       peerAddress = SocketAddress.inetSocketAddress(peerAddress.port(), peerHost.substring(0, peerHost.length() - 1));
     }
-    connectInternal(options.getProxyOptions(), remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), connectHandler, ctx, options.getReconnectAttempts());
+    ProxyOptions proxyOptions = options.getProxyOptions();
+    if (proxyFilter != null) {
+      if (!proxyFilter.test(remoteAddress)) {
+        proxyOptions = null;
+      }
+    }
+    connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), connectHandler, ctx, options.getReconnectAttempts());
   }
 
   public void connectInternal(ProxyOptions proxyOptions,

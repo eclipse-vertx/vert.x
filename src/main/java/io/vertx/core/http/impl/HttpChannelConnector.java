@@ -26,7 +26,6 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
@@ -48,6 +47,7 @@ public class HttpChannelConnector {
   private final HttpClientImpl client;
   private final NetClientImpl netClient;
   private final HttpClientOptions options;
+  private final ProxyOptions proxyOptions;
   private final ClientMetrics metrics;
   private final boolean ssl;
   private final boolean useAlpn;
@@ -57,6 +57,7 @@ public class HttpChannelConnector {
 
   public HttpChannelConnector(HttpClientImpl client,
                               NetClientImpl netClient,
+                              ProxyOptions proxyOptions,
                               ClientMetrics metrics,
                               HttpVersion version,
                               boolean ssl,
@@ -67,6 +68,7 @@ public class HttpChannelConnector {
     this.netClient = netClient;
     this.metrics = metrics;
     this.options = client.getOptions();
+    this.proxyOptions = proxyOptions;
     this.ssl = ssl;
     this.useAlpn = useAlpn;
     this.version = version;
@@ -79,11 +81,6 @@ public class HttpChannelConnector {
   }
 
   private void connect(EventLoopContext context, Promise<NetSocket> promise) {
-    ProxyOptions proxyOptions = this.options.getProxyOptions();
-    if (proxyOptions != null && !ssl && proxyOptions.getType()== ProxyType.HTTP) {
-      // http proxy requests are handled in HttpClientImpl, everything else can use netty proxy handler
-      proxyOptions = null;
-    }
     netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, promise, context, 0);
   }
 

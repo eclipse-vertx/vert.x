@@ -14,6 +14,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.ProxyOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,11 @@ import java.util.List;
 public class WebSocketConnectOptions extends RequestOptions {
 
   /**
+   * The default value for proxy options = {@code null}
+   */
+  public static final ProxyOptions DEFAULT_PROXY_OPTIONS = null;
+
+  /**
    * The default WebSocket version = {@link WebsocketVersion#V13}
    */
   public static final WebsocketVersion DEFAULT_VERSION = WebsocketVersion.V13;
@@ -36,16 +42,19 @@ public class WebSocketConnectOptions extends RequestOptions {
    */
   public static final List<String> DEFAULT_SUB_PROTOCOLS = null;
 
+  private ProxyOptions proxyOptions;
   private WebsocketVersion version;
   private List<String> subProtocols;
 
   public WebSocketConnectOptions() {
+    proxyOptions = DEFAULT_PROXY_OPTIONS;
     version = DEFAULT_VERSION;
     subProtocols = DEFAULT_SUB_PROTOCOLS;
   }
 
   public WebSocketConnectOptions(WebSocketConnectOptions other) {
     super(other);
+    this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.version = other.version;
     this.subProtocols = other.subProtocols;
   }
@@ -99,6 +108,27 @@ public class WebSocketConnectOptions extends RequestOptions {
       subProtocols = new ArrayList<>();
     }
     subProtocols.add(subprotocol);
+    return this;
+  }
+
+  /**
+   * Get the proxy options override for connections
+   *
+   * @return proxy options override
+   */
+  public ProxyOptions getProxyOptions() {
+    return proxyOptions;
+  }
+
+  /**
+   * Override the {@link HttpClientOptions#setProxyOptions(ProxyOptions)} proxy options
+   * for connections.
+   *
+   * @param proxyOptions proxy options override object
+   * @return a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setProxyOptions(ProxyOptions proxyOptions) {
+    this.proxyOptions = proxyOptions;
     return this;
   }
 

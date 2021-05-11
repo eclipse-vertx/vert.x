@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 
 final class EndpointKey {
@@ -17,8 +18,9 @@ final class EndpointKey {
   final boolean ssl;
   final SocketAddress serverAddr;
   final SocketAddress peerAddr;
+  final ProxyOptions proxyOptions;
 
-  EndpointKey(boolean ssl, SocketAddress serverAddr, SocketAddress peerAddr) {
+  EndpointKey(boolean ssl, ProxyOptions proxyOptions, SocketAddress serverAddr, SocketAddress peerAddr) {
     if (serverAddr == null) {
       throw new NullPointerException("No null server address");
     }
@@ -26,6 +28,7 @@ final class EndpointKey {
       throw new NullPointerException("No null peer address");
     }
     this.ssl = ssl;
+    this.proxyOptions = proxyOptions;
     this.peerAddr = peerAddr;
     this.serverAddr = serverAddr;
   }

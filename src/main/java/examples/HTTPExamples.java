@@ -1022,6 +1022,31 @@ public class HTTPExamples {
 
   }
 
+  public void nonProxyHosts(Vertx vertx) {
+
+    HttpClientOptions options = new HttpClientOptions()
+      .setProxyOptions(new ProxyOptions().setType(ProxyType.SOCKS5)
+        .setHost("localhost").setPort(1080)
+        .setUsername("username").setPassword("secret"))
+      .addNonProxyHost("*.foo.com")
+      .addNonProxyHost("localhost");
+    HttpClient client = vertx.createHttpClient(options);
+
+  }
+
+  public void perRequestProxyOptions(HttpClient client, ProxyOptions proxyOptions) {
+
+    client.request(new RequestOptions()
+      .setHost("example.com")
+      .setProxyOptions(proxyOptions))
+      .compose(request -> request
+        .send()
+        .compose(HttpClientResponse::body))
+      .onSuccess(body -> {
+        System.out.println("Received response");
+      });
+  }
+
   public void example60(Vertx vertx) {
 
     HttpClientOptions options = new HttpClientOptions()

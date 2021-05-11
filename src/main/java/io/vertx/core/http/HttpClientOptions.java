@@ -1139,6 +1139,16 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setNonProxyHosts(List<String> nonProxyHosts) {
+    return (HttpClientOptions) super.setNonProxyHosts(nonProxyHosts);
+  }
+
+  @Override
+  public HttpClientOptions addNonProxyHost(String nonProxyHost) {
+    return (HttpClientOptions) super.addNonProxyHost(nonProxyHost);
+  }
+
+  @Override
   public HttpClientOptions setLocalAddress(String localAddress) {
     return (HttpClientOptions) super.setLocalAddress(localAddress);
   }
