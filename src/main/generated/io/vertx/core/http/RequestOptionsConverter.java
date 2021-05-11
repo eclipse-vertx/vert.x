@@ -36,6 +36,11 @@ public class RequestOptionsConverter {
             obj.setPort(((Number)member.getValue()).intValue());
           }
           break;
+        case "proxyOptions":
+          if (member.getValue() instanceof JsonObject) {
+            obj.setProxyOptions(new io.vertx.core.net.ProxyOptions((io.vertx.core.json.JsonObject)member.getValue()));
+          }
+          break;
         case "ssl":
           if (member.getValue() instanceof Boolean) {
             obj.setSsl((Boolean)member.getValue());
@@ -68,6 +73,9 @@ public class RequestOptionsConverter {
     }
     if (obj.getPort() != null) {
       json.put("port", obj.getPort());
+    }
+    if (obj.getProxyOptions() != null) {
+      json.put("proxyOptions", obj.getProxyOptions().toJson());
     }
     if (obj.isSsl() != null) {
       json.put("ssl", obj.isSsl());

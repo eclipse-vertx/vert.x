@@ -378,6 +378,16 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setNonProxyHosts(List<String> nonProxyHosts) {
+    return (NetClientOptions) super.setNonProxyHosts(nonProxyHosts);
+  }
+
+  @Override
+  public NetClientOptions addNonProxyHost(String nonProxyHost) {
+    return (NetClientOptions) super.addNonProxyHost(nonProxyHost);
+  }
+
+  @Override
   public NetClientOptions setLocalAddress(String localAddress) {
     return (NetClientOptions) super.setLocalAddress(localAddress);
   }

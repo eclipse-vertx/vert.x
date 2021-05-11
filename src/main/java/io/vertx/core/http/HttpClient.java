@@ -20,10 +20,12 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
 
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * An asynchronous HTTP client.

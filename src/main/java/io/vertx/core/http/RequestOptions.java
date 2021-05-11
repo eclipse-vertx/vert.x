@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
 import io.vertx.core.VertxException;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 
 import java.net.MalformedURLException;
@@ -31,6 +32,11 @@ import java.util.Objects;
  */
 @DataObject(generateConverter = true)
 public class RequestOptions {
+
+  /**
+   * The default value for proxy options = {@code null}
+   */
+  public static final ProxyOptions DEFAULT_PROXY_OPTIONS = null;
 
   /**
    * The default value for server method = {@code null}
@@ -72,6 +78,7 @@ public class RequestOptions {
    */
   public static final long DEFAULT_TIMEOUT = 0;
 
+  private ProxyOptions proxyOptions;
   private SocketAddress server;
   private HttpMethod method;
   private String host;
@@ -86,6 +93,7 @@ public class RequestOptions {
    * Default constructor
    */
   public RequestOptions() {
+    proxyOptions = DEFAULT_PROXY_OPTIONS;
     server = DEFAULT_SERVER;
     method = DEFAULT_HTTP_METHOD;
     host = DEFAULT_HOST;
@@ -102,6 +110,7 @@ public class RequestOptions {
    * @param other  the options to copy
    */
   public RequestOptions(RequestOptions other) {
+    setProxyOptions(other.proxyOptions);
     setServer(other.server);
     setMethod(other.method);
     setHost(other.host);
@@ -153,6 +162,27 @@ public class RequestOptions {
         }
       }
     }
+  }
+
+  /**
+   * Get the proxy options override for connections
+   *
+   * @return proxy options override
+   */
+  public ProxyOptions getProxyOptions() {
+    return proxyOptions;
+  }
+
+  /**
+   * Override the {@link HttpClientOptions#setProxyOptions(ProxyOptions)} proxy options
+   * for connections.
+   *
+   * @param proxyOptions proxy options override object
+   * @return a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setProxyOptions(ProxyOptions proxyOptions) {
+    this.proxyOptions = proxyOptions;
+    return this;
   }
 
   /**

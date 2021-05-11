@@ -779,6 +779,14 @@ Here's an example:
 The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
 to resolve the DNS address locally.
 
+You can use {@link io.vertx.core.net.NetClientOptions#setNonProxyHosts} to configure a list of host bypassing
+the proxy. The lists accepts `*` wildcard for matching domains:
+
+[source,$lang]
+----
+{@link examples.NetExamples#nonProxyHosts}
+----
+
 
 === Using HA PROXY protocol
 

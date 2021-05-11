@@ -15,6 +15,8 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -46,6 +48,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   private String metricsName;
   private ProxyOptions proxyOptions;
   private String localAddress;
+  private List<String> nonProxyHosts;
 
   /**
    * Default constructor
@@ -176,6 +179,42 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
    */
   public ProxyOptions getProxyOptions() {
     return proxyOptions;
+  }
+
+  /**
+   * @return the list of non proxies hosts
+   */
+  public List<String> getNonProxyHosts() {
+    return nonProxyHosts;
+  }
+
+  /**
+   * Set a list of remote hosts that are not proxied when the client is configured to use a proxy. This
+   * list serves the same purpose than the JVM {@code nonProxyHosts} configuration.
+   *
+   * <p> Entries can use the <i>*</i> wildcard character for pattern matching, e.g <i>*.example.com</i> matches
+   * <i>www.example.com</i>.
+   *
+   * @param nonProxyHosts the list of non proxies hosts
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase setNonProxyHosts(List<String> nonProxyHosts) {
+    this.nonProxyHosts = nonProxyHosts;
+    return this;
+  }
+
+  /**
+   * Add a {@code host} to the {@link #getNonProxyHosts()} list.
+   *
+   * @param host the added host
+   * @return a reference to this, so the API can be used fluently
+   */
+  public ClientOptionsBase addNonProxyHost(String host) {
+    if (nonProxyHosts == null) {
+      nonProxyHosts = new ArrayList<>();
+    }
+    nonProxyHosts.add(host);
+    return this;
   }
 
   /**

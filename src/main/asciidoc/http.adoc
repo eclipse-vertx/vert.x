@@ -1828,6 +1828,24 @@ For a SOCKS5 proxy:
 The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
 to resolve the DNS address locally.
 
+Proxy options can also be set per request:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#perRequestProxyOptions}
+----
+
+NOTE: A given host should always use the same proxy options: as HTTP requests are pooled, per request proxy
+options are used when establishing the connection
+
+You can use {@link io.vertx.core.http.HttpClientOptions#setNonProxyHosts} to configure a list of host bypassing
+the proxy. The lists accepts `*` wildcard for matching domains:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#nonProxyHosts}
+----
+
 ==== Handling of other protocols
 
 The HTTP proxy implementation supports getting ftp:// urls if the proxy supports
