@@ -50,28 +50,28 @@ class FutureImpl<T> extends FutureBase<T> {
    * The result of the operation. This will be null if the operation failed.
    */
   public synchronized T result() {
-    return value instanceof Throwable ? null : value == NULL_VALUE ? null : (T) value;
+    return value instanceof CauseHolder ? null : value == NULL_VALUE ? null : (T) value;
   }
 
   /**
    * An exception describing failure. This will be null if the operation succeeded.
    */
   public synchronized Throwable cause() {
-    return value instanceof Throwable ? (Throwable) value : null;
+    return value instanceof CauseHolder ? ((CauseHolder)value).cause : null;
   }
 
   /**
    * Did it succeed?
    */
   public synchronized boolean succeeded() {
-    return value != null && !(value instanceof Throwable);
+    return value != null && !(value instanceof CauseHolder);
   }
 
   /**
    * Did it fail?
    */
   public synchronized boolean failed() {
-    return value instanceof Throwable;
+    return value instanceof CauseHolder;
   }
 
   /**
@@ -155,8 +155,8 @@ class FutureImpl<T> extends FutureBase<T> {
         return;
       }
     }
-    if (v instanceof Throwable) {
-      emitFailure((Throwable) v, listener);
+    if (v instanceof CauseHolder) {
+      emitFailure(((CauseHolder)v).cause, listener);
     } else {
       if (v == NULL_VALUE) {
         v = null;
@@ -190,7 +190,7 @@ class FutureImpl<T> extends FutureBase<T> {
       if (value != null) {
         return false;
       }
-      value = cause;
+      value = new CauseHolder(cause);
       l = listener;
       listener = null;
     }
@@ -203,8 +203,8 @@ class FutureImpl<T> extends FutureBase<T> {
   @Override
   public String toString() {
     synchronized (this) {
-      if (value instanceof Throwable) {
-        return "Future{cause=" + ((Throwable)value).getMessage() + "}";
+      if (value instanceof CauseHolder) {
+        return "Future{cause=" + ((CauseHolder)value).cause.getMessage() + "}";
       }
       if (value != null) {
         if (value == NULL_VALUE) {
@@ -235,6 +235,15 @@ class FutureImpl<T> extends FutureBase<T> {
       for (Listener<T> handler : this) {
         handler.onFailure(failure);
       }
+    }
+  }
+
+  private static class CauseHolder {
+
+    private final Throwable cause;
+
+    CauseHolder(Throwable cause) {
+      this.cause = cause;
     }
   }
 }
