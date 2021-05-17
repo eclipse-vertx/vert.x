@@ -19,6 +19,9 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.metrics.Measured;
+import io.vertx.core.shareddata.Shareable;
+
+import java.util.function.Function;
 
 /**
  * A Vert.x event-bus is a light-weight distributed messaging system which allows different parts of your application,
@@ -250,16 +253,42 @@ public interface EventBus extends Measured {
   /**
    * Unregister a default message codec.
    * <p>
-   * @param clazz  the class for which the codec was registered
+   *
+   * @param clazz the class for which the codec was registered
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
   EventBus unregisterDefaultCodec(Class clazz);
 
   /**
+   * Register a default local message codec for a shareable class.
+   * This is equivalent to creating a {@link MessageCodec#localCodec(Class)} and registering it with {@link #registerDefaultCodec(Class, MessageCodec)}.
+   *
+   * @param clazz the shareable class
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  default <T extends Shareable> EventBus registerLocalCodec(Class<T> clazz) {
+    return this.registerDefaultCodec(clazz, MessageCodec.localCodec(clazz));
+  }
+
+  /**
+   * Register a default local message codec for a class, providing a copy method.
+   * This is equivalent to creating a {@link MessageCodec#localCodec(Class, Function)} and registering it with {@link #registerDefaultCodec(Class, MessageCodec)}.
+   *
+   * @param clazz the class
+   * @param copy  the copy function to copy clazz instances
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  default <T extends Shareable> EventBus registerLocalCodec(Class<T> clazz, Function<T, T> copy) {
+    return this.registerDefaultCodec(clazz, MessageCodec.localCodec(clazz, copy));
+  }
+
+  /**
    * Add an interceptor that will be called whenever a message is sent from Vert.x
    *
-   * @param interceptor  the interceptor
+   * @param interceptor the interceptor
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent

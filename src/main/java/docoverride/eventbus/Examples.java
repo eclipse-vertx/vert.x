@@ -43,15 +43,15 @@ public class Examples {
 
   public void example12(EventBus eventBus) {
     // Class does not implement Shareable
-    eventBus.registerDefaultCodec(MyPOJO.class, MessageCodec.localCodec(MyPOJO.class, MyPOJO::copy));
+    eventBus.registerLocalCodec(MyPOJO.class, MyPOJO::copy);
 
     // Class implements Shareable
-    eventBus.registerDefaultCodec(MyPOJO.class, MessageCodec.localCodec(MyPOJO.class));
+    eventBus.registerLocalCodec(MyPOJO.class);
   }
 
   public void example13(EventBus eventBus) {
     // Class is immutable, so there's no need to copy
-    eventBus.registerDefaultCodec(MyPOJO.class, MessageCodec.localCodec(MyPOJO.class, Function.identity()));
+    eventBus.registerLocalCodec(MyPOJO.class, Function.identity());
   }
 
   public void headers(EventBus eventBus) {
