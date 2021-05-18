@@ -48,5 +48,6 @@ public interface Cert<K extends KeyCertOptions> extends Supplier<K> {
       .addKeyPath("tls/host3-key.pem").addCertPath("tls/host3-cert.pem")
       .addKeyPath("tls/host4-key.pem").addCertPath("tls/host4-cert.pem")
       .addKeyPath("tls/host5-key.pem").addCertPath("tls/host5-cert.pem");
+  Cert<JksOptions> MULTIPLE_JKS = () -> new JksOptions().setPath("tls/multiple.jks").setPassword("wibble").setAlias("precious");
 
 }

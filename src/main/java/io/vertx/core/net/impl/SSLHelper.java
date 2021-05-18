@@ -21,24 +21,14 @@ import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.ClientOptionsBase;
-import io.vertx.core.net.JdkSSLEngineOptions;
-import io.vertx.core.net.KeyCertOptions;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.OpenSSLEngineOptions;
-import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.TCPSSLOptions;
-import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.*;
 
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
-import java.security.cert.CRL;
+import java.net.Socket;
+import java.security.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -291,7 +281,18 @@ public class SSLHelper {
   }
 
   private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx) throws Exception {
-    return keyCertOptions == null ? null : keyCertOptions.getKeyManagerFactory(vertx);
+    if (keyCertOptions == null) {
+      return null;
+    }
+    KeyManagerFactory kmf = keyCertOptions.getKeyManagerFactory(vertx);
+    if (!client && keyCertOptions instanceof JksOptions) {
+      JksOptions jksOptions = (JksOptions) keyCertOptions;
+      String alias = jksOptions.getAlias();
+      if (alias != null) {
+        return new ChosenAliasKeyManagerFactory(alias, kmf);
+      }
+    }
+    return kmf;
   }
 
   private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, String serverName) throws Exception {
@@ -529,5 +530,93 @@ public class SSLHelper {
     SSLEngine engine = getContext(vertx, null).newEngine(ByteBufAllocator.DEFAULT);
     configureEngine(engine, null);
     return engine;
+  }
+
+  private static class ChosenAliasKeyManagerFactory extends KeyManagerFactory {
+    ChosenAliasKeyManagerFactory(String alias, KeyManagerFactory delegate) {
+      super(new ChosenAliasKeyManagerFactorySpi(alias, delegate), delegate.getProvider(), KeyManagerFactory.getDefaultAlgorithm());
+    }
+  }
+
+  private static class ChosenAliasKeyManagerFactorySpi extends KeyManagerFactorySpi {
+    private final String alias;
+    private final KeyManagerFactory delegate;
+
+    ChosenAliasKeyManagerFactorySpi(String alias, KeyManagerFactory delegate) {
+      this.alias = alias;
+      this.delegate = delegate;
+    }
+
+    @Override
+    protected void engineInit(KeyStore ks, char[] password) throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
+      delegate.init(ks, password);
+    }
+
+    @Override
+    protected void engineInit(ManagerFactoryParameters spec) throws InvalidAlgorithmParameterException {
+      delegate.init(spec);
+    }
+
+    @Override
+    protected KeyManager[] engineGetKeyManagers() {
+      KeyManager[] keyManagers = this.delegate.getKeyManagers();
+      for (int i = 0; i < keyManagers.length; i++) {
+        KeyManager keyManager = keyManagers[i];
+        if (keyManager instanceof X509KeyManager) {
+          keyManagers[i] = new ChosenAliasKeyManager(alias, (X509KeyManager) keyManager);
+        }
+      }
+      return keyManagers;
+    }
+  }
+
+  private static class ChosenAliasKeyManager extends X509ExtendedKeyManager {
+    private final String alias;
+    private final X509KeyManager delegate;
+
+    ChosenAliasKeyManager(String alias, X509KeyManager delegate) {
+      this.alias = alias;
+      this.delegate = delegate;
+    }
+
+    @Override
+    public String chooseEngineServerAlias(String keyType, Principal[] issuers, SSLEngine engine) {
+      return alias;
+    }
+
+    @Override
+    public String chooseEngineClientAlias(String[] keyType, Principal[] issuers, SSLEngine engine) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String[] getClientAliases(String keyType, Principal[] issuers) {
+      return delegate.getClientAliases(keyType, issuers);
+    }
+
+    @Override
+    public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+      return delegate.chooseClientAlias(keyType, issuers, socket);
+    }
+
+    @Override
+    public String[] getServerAliases(String keyType, Principal[] issuers) {
+      return delegate.getServerAliases(keyType, issuers);
+    }
+
+    @Override
+    public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+      return delegate.chooseServerAlias(keyType, issuers, socket);
+    }
+
+    @Override
+    public X509Certificate[] getCertificateChain(String alias) {
+      return delegate.getCertificateChain(alias);
+    }
+
+    @Override
+    public PrivateKey getPrivateKey(String alias) {
+      return delegate.getPrivateKey(alias);
+    }
   }
 }

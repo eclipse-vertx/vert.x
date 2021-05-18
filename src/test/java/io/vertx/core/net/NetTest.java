@@ -15,30 +15,32 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
-import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.net.impl.NetServerImpl;
+import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.test.core.*;
+import io.vertx.test.core.CheckingSender;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,7 +51,10 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -1468,6 +1473,16 @@ public class NetTest extends VertxTestBase {
     await();
     assertEquals("host2.com", cnOf(test.clientPeerCert()));
     assertEquals("host2.com", test.indicatedServerName);
+  }
+
+  @Test
+  public void testServerCertificateMultiple() throws Exception {
+    TLSTest test = new TLSTest()
+      .serverCert(Cert.MULTIPLE_JKS)
+      .clientTrustAll(true);
+    test.run(true);
+    await();
+    assertEquals("precious", cnOf(test.clientPeerCert()));
   }
 
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
