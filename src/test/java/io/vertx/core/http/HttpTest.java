@@ -3866,6 +3866,7 @@ public abstract class HttpTest extends HttpTestBase {
         });
       } else {
         assertEquals(HttpMethod.GET, req.method());
+        assertNull(req.getHeader(HttpHeaders.CONTENT_LENGTH));
         req.response().end();
       }
     });

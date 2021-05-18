@@ -461,6 +461,31 @@ public class RequestOptions {
   }
 
   /**
+   * Add a request header.
+   *
+   * @param key  the header key
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public RequestOptions removeHeader(String key) {
+    return removeHeader((CharSequence) key);
+  }
+
+  /**
+   * Add a request header.
+   *
+   * @param key  the header key
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public RequestOptions removeHeader(CharSequence key) {
+    if (headers != null) {
+      headers.remove(key);
+    }
+    return this;
+  }
+
+  /**
    * Set request headers from a multi-map.
    *
    * @param headers  the headers

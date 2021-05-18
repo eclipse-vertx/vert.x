@@ -54,6 +54,8 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
+
 /**
  *
  * This class is thread-safe.
@@ -108,6 +110,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
         options.setPort(port);
         options.setSsl(ssl);
         options.setURI(requestURI);
+        options.setHeaders(resp.request().headers());
+        options.removeHeader(CONTENT_LENGTH);
         return Future.succeededFuture(options);
       }
       return null;
