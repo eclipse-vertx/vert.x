@@ -17,6 +17,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.codec.http.multipart.Attribute;
+import io.netty.handler.codec.http.multipart.HttpPostRequestDecoder;
 import io.netty.handler.codec.http.multipart.InterfaceHttpData;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.codegen.annotations.Nullable;
@@ -36,7 +37,6 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
-import io.vertx.core.http.impl.netty.HttpPostRequestDecoder;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -52,9 +52,6 @@ import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
 import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.AbstractMap;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
