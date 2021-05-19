@@ -137,10 +137,6 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   }
 
   KeyStoreHelper getHelper(Vertx vertx) throws Exception {
-    return getHelper(vertx, false);
-  }
-
-  KeyStoreHelper getHelper(Vertx vertx, boolean filter) throws Exception {
     if (helper == null) {
       Supplier<Buffer> value;
       if (this.path != null) {
@@ -150,8 +146,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
       } else {
         return null;
       }
-      String alias = filter ? getAlias() : null;
-      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, alias), password);
+      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, getAlias()), password);
     }
     return helper;
   }
@@ -174,12 +169,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
 
   @Override
   public KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
-    return getKeyManagerFactory(vertx, false);
-  }
-
-  @Override
-  public KeyManagerFactory getKeyManagerFactory(Vertx vertx, boolean filter) throws Exception {
-    KeyStoreHelper helper = getHelper(vertx, filter);
+    KeyStoreHelper helper = getHelper(vertx);
     return helper != null ? helper.getKeyMgrFactory() : null;
   }
 

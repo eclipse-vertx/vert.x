@@ -291,7 +291,7 @@ public class SSLHelper {
   }
 
   private KeyManagerFactory getKeyMgrFactory(VertxInternal vertx) throws Exception {
-    return keyCertOptions == null ? null : keyCertOptions.getKeyManagerFactory(vertx, !client);
+    return keyCertOptions == null ? null : keyCertOptions.getKeyManagerFactory(vertx);
   }
 
   private TrustManagerFactory getTrustMgrFactory(VertxInternal vertx, String serverName) throws Exception {

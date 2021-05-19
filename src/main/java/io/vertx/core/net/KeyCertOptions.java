@@ -40,17 +40,6 @@ public interface KeyCertOptions {
   KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception;
 
   /**
-   * Like {@link #getKeyManagerFactory}, except the underlying keystore can be filtered.
-   * <p>
-   * This should be called only when creating a {@link KeyManagerFactory} for a TCP or HTTP server.
-   *
-   * @param vertx the vertx instance
-   * @return the key manager factory
-   * @see JksOptions#setAlias(String)
-   */
-  KeyManagerFactory getKeyManagerFactory(Vertx vertx, boolean filter) throws Exception;
-
-  /**
    * Returns a function that maps SNI server names to {@link X509KeyManager} instance.
    *
    * The returned {@code X509KeyManager} must satisfies these rules:

@@ -76,11 +76,6 @@ class KeyManagerFactoryOptions implements KeyCertOptions {
   }
 
   @Override
-  public KeyManagerFactory getKeyManagerFactory(Vertx vertx, boolean filter) throws Exception {
-    return keyManagerFactory;
-  }
-
-  @Override
   public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) {
     return keyManagerFactory.getKeyManagers()[0] instanceof X509KeyManager ? serverName -> (X509KeyManager) keyManagerFactory.getKeyManagers()[0] : null;
   }
