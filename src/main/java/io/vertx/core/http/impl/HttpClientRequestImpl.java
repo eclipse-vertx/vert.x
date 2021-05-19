@@ -352,6 +352,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     }
     if (headers != null) {
       next.headers().addAll(headers);
+      next.headers().remove(CONTENT_LENGTH);
     }
     endFuture.onComplete(ar -> {
       if (ar.succeeded()) {
