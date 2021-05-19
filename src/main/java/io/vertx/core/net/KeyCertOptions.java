@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -38,6 +38,17 @@ public interface KeyCertOptions {
    * @return the key manager factory
    */
   KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception;
+
+  /**
+   * Like {@link #getKeyManagerFactory}, except the underlying keystore can be filtered.
+   * <p>
+   * This should be called only when creating a {@link KeyManagerFactory} for a TCP or HTTP server.
+   *
+   * @param vertx the vertx instance
+   * @return the key manager factory
+   * @see JksOptions#setAlias(String)
+   */
+  KeyManagerFactory getKeyManagerFactory(Vertx vertx, boolean filter) throws Exception;
 
   /**
    * Returns a function that maps SNI server names to {@link X509KeyManager} instance.

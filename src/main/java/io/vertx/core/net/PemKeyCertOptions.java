@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -422,6 +422,11 @@ public class PemKeyCertOptions implements KeyCertOptions {
   public KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
     KeyStoreHelper helper = getHelper(vertx);
     return helper != null ? helper.getKeyMgrFactory() : null;
+  }
+
+  @Override
+  public KeyManagerFactory getKeyManagerFactory(Vertx vertx, boolean filter) throws Exception {
+    return getKeyManagerFactory(vertx);
   }
 
   @Override

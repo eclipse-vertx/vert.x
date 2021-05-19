@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,6 +11,7 @@
 
 package io.vertx.core.net;
 
+import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
@@ -136,18 +137,28 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   }
 
   KeyStoreHelper getHelper(Vertx vertx) throws Exception {
+    return getHelper(vertx, false);
+  }
+
+  KeyStoreHelper getHelper(Vertx vertx, boolean filter) throws Exception {
     if (helper == null) {
       Supplier<Buffer> value;
       if (this.path != null) {
-        value = () -> vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).resolveFile(path).getAbsolutePath());
+        value = () -> vertx.fileSystem().readFileBlocking(((VertxInternal) vertx).resolveFile(path).getAbsolutePath());
       } else if (this.value != null) {
         value = this::getValue;
       } else {
         return null;
       }
-      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStoreOptions(type, provider, password, value), password);
+      String alias = filter ? getAlias() : null;
+      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, alias), password);
     }
     return helper;
+  }
+
+  @GenIgnore
+  String getAlias() {
+    return null;
   }
 
   /**
@@ -163,7 +174,12 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
 
   @Override
   public KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
-    KeyStoreHelper helper = getHelper(vertx);
+    return getKeyManagerFactory(vertx, false);
+  }
+
+  @Override
+  public KeyManagerFactory getKeyManagerFactory(Vertx vertx, boolean filter) throws Exception {
+    KeyStoreHelper helper = getHelper(vertx, filter);
     return helper != null ? helper.getKeyMgrFactory() : null;
   }
 
