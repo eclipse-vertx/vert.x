@@ -16,6 +16,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponse;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
@@ -36,6 +38,15 @@ final class HttpChunkContentCompressor extends HttpContentCompressor {
       }
     }
     super.write(ctx, msg, promise);
+  }
+
+  @Override
+  protected Result beginEncode(HttpResponse httpResponse, String acceptEncoding) throws Exception {
+    Result result = super.beginEncode(httpResponse, acceptEncoding);
+    if (result == null && httpResponse.headers().contains(HttpHeaderNames.CONTENT_ENCODING, "identity", true)) {
+      httpResponse.headers().remove(HttpHeaderNames.CONTENT_ENCODING);
+    }
+    return result;
   }
 
   HttpChunkContentCompressor(int compressionLevel) {
