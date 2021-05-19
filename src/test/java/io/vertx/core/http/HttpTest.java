@@ -852,7 +852,7 @@ public abstract class HttpTest extends HttpTestBase {
     request.end("param=hello");
     await();
   }
-  
+
   @Test
   public void testAttributeSizeOverflow() {
     server.close();
@@ -4177,6 +4177,7 @@ public abstract class HttpTest extends HttpTestBase {
         });
       } else {
         assertEquals(HttpMethod.GET, req.method());
+        assertNull(req.getHeader(HttpHeaders.CONTENT_LENGTH));
         req.response().end();
       }
     });
