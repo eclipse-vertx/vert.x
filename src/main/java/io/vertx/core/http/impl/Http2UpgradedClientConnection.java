@@ -34,8 +34,10 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
+import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 
 /**
  * An HTTP/2 connection in clear text that upgraded from an HTTP/1 upgrade.
@@ -660,6 +662,11 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     return current.peerCertificateChain();
+  }
+
+  @Override
+  public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
+    return current.peerCertificates();
   }
 
   @Override

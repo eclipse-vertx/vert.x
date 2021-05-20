@@ -21,6 +21,8 @@ import io.vertx.core.net.SocketAddress;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
+import java.security.cert.Certificate;
+import java.util.List;
 
 /**
  * Represents an HTTP connection.
@@ -294,9 +296,21 @@ public interface HttpConnection {
    * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
    * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
    * @see #sslSession()
+   * @deprecated instead use {@link #peerCertificates()} or {@link #sslSession()}
    */
+  @Deprecated
   @GenIgnore
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
+
+  /**
+   * @return an ordered list of the peer certificates. Returns null if connection is
+   *         not SSL.
+   * @throws javax.net.ssl.SSLPeerUnverifiedException SSL peer's identity has not been verified.
+   * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
+   * @see #sslSession()
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  List<Certificate> peerCertificates() throws SSLPeerUnverifiedException;
 
   /**
    * Returns the SNI server name presented during the SSL handshake by the client.

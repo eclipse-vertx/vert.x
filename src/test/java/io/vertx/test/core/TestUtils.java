@@ -24,11 +24,14 @@ import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.test.netty.TestLoggerFactory;
 
 import javax.security.cert.X509Certificate;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
@@ -417,6 +420,15 @@ public class TestUtils {
       .readerIndex(padding)
       .writeBytes(buffer.getByteBuf())
     );
+  }
+
+  public static String cnOf(Certificate cert) throws Exception {
+    if (cert instanceof java.security.cert.X509Certificate) {
+      String dn = ((java.security.cert.X509Certificate)cert).getSubjectX500Principal().getName();
+      List<String> names = KeyStoreHelper.getX509CertificateCommonNames(dn);
+      return names.isEmpty() ? null : names.get(0);
+    }
+    return null;
   }
 
   public static String cnOf(X509Certificate cert) throws Exception {

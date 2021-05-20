@@ -34,6 +34,8 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
 import java.nio.channels.ClosedChannelException;
+import java.security.cert.Certificate;
+import java.util.List;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -330,6 +332,11 @@ class HttpNetSocket implements NetSocket {
   @Override
   public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
     return conn.peerCertificateChain();
+  }
+
+  @Override
+  public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
+    return conn.peerCertificates();
   }
 
   @Override

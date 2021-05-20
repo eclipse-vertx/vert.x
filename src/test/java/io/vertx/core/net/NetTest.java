@@ -18,6 +18,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
@@ -52,6 +53,7 @@ import javax.security.cert.X509Certificate;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -1281,6 +1283,7 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testTLSTrailingDotHost() throws Exception {
+    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
     // We just need a vanilla cert for this test
     SelfSignedCertificate cert = SelfSignedCertificate.create("host2.com");
     TLSTest test = new TLSTest()
@@ -1532,7 +1535,7 @@ public class NetTest extends VertxTestBase {
     SocketAddress bindAddress = SocketAddress.inetSocketAddress(4043, "localhost");
     SocketAddress connectAddress = bindAddress;
     String serverName;
-    X509Certificate clientPeerCert;
+    Certificate clientPeerCert;
     String indicatedServerName;
 
     public TLSTest clientCert(Cert<?> clientCert) {
@@ -1606,7 +1609,7 @@ public class NetTest extends VertxTestBase {
       return this;
     }
 
-    public X509Certificate clientPeerCert() {
+    public Certificate clientPeerCert() {
       return clientPeerCert;
     }
 
@@ -1634,10 +1637,10 @@ public class NetTest extends VertxTestBase {
 
       Consumer<NetSocket> certificateChainChecker = socket -> {
         try {
-          X509Certificate[] certs = socket.peerCertificateChain();
+          List<Certificate> certs = socket.peerCertificates();
           if (clientCert != Cert.NONE) {
             assertNotNull(certs);
-            assertEquals(1, certs.length);
+            assertEquals(1, certs.size());
           } else {
             assertNull(certs);
           }
@@ -1730,7 +1733,7 @@ public class NetTest extends VertxTestBase {
 
             if (socket.isSsl()) {
               try {
-                clientPeerCert = socket.peerCertificateChain()[0];
+                clientPeerCert = socket.peerCertificates().get(0);
               } catch (SSLPeerUnverifiedException ignore) {
               }
             }
@@ -1750,7 +1753,7 @@ public class NetTest extends VertxTestBase {
                   handler = onSuccess(v -> {
                     assertTrue(socket.isSsl());
                     try {
-                      clientPeerCert = socket.peerCertificateChain()[0];
+                      clientPeerCert = socket.peerCertificates().get(0);
                     } catch (SSLPeerUnverifiedException ignore) {
                     }
                     // Now send the rest
@@ -3155,6 +3158,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testSelfSignedCertificate() throws Exception {
+    Assume.assumeTrue(PlatformDependent.javaVersion() < 9);
+
     CountDownLatch latch = new CountDownLatch(2);
 
     SelfSignedCertificate certificate = SelfSignedCertificate.create();
