@@ -70,6 +70,16 @@ public class PfxOptions extends KeyStoreOptionsBase {
   }
 
   @Override
+  public String getAlias() {
+    return super.getAlias();
+  }
+
+  @Override
+  public KeyStoreOptions setAlias(String alias) {
+    return (KeyStoreOptions) super.setAlias(alias);
+  }
+
+  @Override
   public PfxOptions copy() {
     return new PfxOptions(this);
   }

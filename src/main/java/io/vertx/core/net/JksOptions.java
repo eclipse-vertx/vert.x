@@ -24,8 +24,6 @@ import io.vertx.core.json.JsonObject;
 @DataObject(generateConverter = true)
 public class JksOptions extends KeyStoreOptionsBase {
 
-  private String alias;
-
   /**
    * Default constructor
    */
@@ -41,7 +39,6 @@ public class JksOptions extends KeyStoreOptionsBase {
    */
   public JksOptions(JksOptions other) {
     super(other);
-    alias = other.alias;
   }
 
   /**
@@ -76,6 +73,16 @@ public class JksOptions extends KeyStoreOptionsBase {
   }
 
   @Override
+  public String getAlias() {
+    return super.getAlias();
+  }
+
+  @Override
+  public JksOptions setAlias(String alias) {
+    return (JksOptions) super.setAlias(alias);
+  }
+
+  @Override
   public JksOptions copy() {
     return new JksOptions(this);
   }
@@ -89,23 +96,5 @@ public class JksOptions extends KeyStoreOptionsBase {
     JsonObject json = new JsonObject();
     JksOptionsConverter.toJson(this, json);
     return json;
-  }
-
-  /**
-   * @return the alias for a server certificate when the keystore has more than one, or {@code null}
-   */
-  @Override
-  public String getAlias() {
-    return alias;
-  }
-
-  /**
-   * Set the alias for a server certificate when the keystore has more than one.
-   *
-   * @return a reference to this, so the API can be used fluently
-   */
-  public JksOptions setAlias(String alias) {
-    this.alias = alias;
-    return this;
   }
 }

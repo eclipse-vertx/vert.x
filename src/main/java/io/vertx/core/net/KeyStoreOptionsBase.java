@@ -11,7 +11,6 @@
 
 package io.vertx.core.net;
 
-import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
@@ -39,6 +38,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   private String password;
   private String path;
   private Buffer value;
+  private String alias;
 
   /**
    * Default constructor
@@ -58,6 +58,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     this.password = other.password;
     this.path = other.path;
     this.value = other.value;
+    this.alias = other.alias;
   }
 
   protected String getType() {
@@ -136,6 +137,23 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     return this;
   }
 
+  /**
+   * @return the alias for a server certificate when the keystore has more than one, or {@code null}
+   */
+  public String getAlias() {
+    return alias;
+  }
+
+  /**
+   * Set the alias for a server certificate when the keystore has more than one.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public KeyStoreOptionsBase setAlias(String alias) {
+    this.alias = alias;
+    return this;
+  }
+
   KeyStoreHelper getHelper(Vertx vertx) throws Exception {
     if (helper == null) {
       Supplier<Buffer> value;
@@ -149,11 +167,6 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
       helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, getAlias()), password);
     }
     return helper;
-  }
-
-  @GenIgnore
-  String getAlias() {
-    return null;
   }
 
   /**
