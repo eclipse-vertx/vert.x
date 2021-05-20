@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -1468,6 +1468,16 @@ public class NetTest extends VertxTestBase {
     await();
     assertEquals("host2.com", cnOf(test.clientPeerCert()));
     assertEquals("host2.com", test.indicatedServerName);
+  }
+
+  @Test
+  public void testServerCertificateMultiple() throws Exception {
+    TLSTest test = new TLSTest()
+      .serverCert(Cert.MULTIPLE_JKS)
+      .clientTrustAll(true);
+    test.run(true);
+    await();
+    assertEquals("precious", cnOf(test.clientPeerCert()));
   }
 
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,

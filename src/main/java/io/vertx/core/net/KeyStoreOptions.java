@@ -127,6 +127,16 @@ public class KeyStoreOptions extends KeyStoreOptionsBase {
   }
 
   @Override
+  public String getAlias() {
+    return super.getAlias();
+  }
+
+  @Override
+  public KeyStoreOptions setAlias(String alias) {
+    return (KeyStoreOptions) super.setAlias(alias);
+  }
+
+  @Override
   public KeyStoreOptions copy() {
     return new KeyStoreOptions(this);
   }

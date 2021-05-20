@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -38,6 +38,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   private String password;
   private String path;
   private Buffer value;
+  private String alias;
 
   /**
    * Default constructor
@@ -57,6 +58,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     this.password = other.password;
     this.path = other.path;
     this.value = other.value;
+    this.alias = other.alias;
   }
 
   protected String getType() {
@@ -135,17 +137,34 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     return this;
   }
 
+  /**
+   * @return the alias for a server certificate when the keystore has more than one, or {@code null}
+   */
+  public String getAlias() {
+    return alias;
+  }
+
+  /**
+   * Set the alias for a server certificate when the keystore has more than one.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public KeyStoreOptionsBase setAlias(String alias) {
+    this.alias = alias;
+    return this;
+  }
+
   KeyStoreHelper getHelper(Vertx vertx) throws Exception {
     if (helper == null) {
       Supplier<Buffer> value;
       if (this.path != null) {
-        value = () -> vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).resolveFile(path).getAbsolutePath());
+        value = () -> vertx.fileSystem().readFileBlocking(((VertxInternal) vertx).resolveFile(path).getAbsolutePath());
       } else if (this.value != null) {
         value = this::getValue;
       } else {
         return null;
       }
-      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStoreOptions(type, provider, password, value), password);
+      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, getAlias()), password);
     }
     return helper;
   }
