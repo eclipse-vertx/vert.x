@@ -778,6 +778,13 @@ public class WebSocketTest extends VertxTestBase {
         final List<Buffer> sent = new ArrayList<>();
         final List<Buffer> received = new ArrayList<>();
 
+        String webSocketLocation = ws.headers().get("sec-websocket-location");
+        if (version == WebsocketVersion.V00) {
+          assertEquals("ws://" + DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT + uri, webSocketLocation);
+        } else {
+          assertNull(webSocketLocation);
+        }
+
         AtomicReference<Buffer> currentReceived = new AtomicReference<>(Buffer.buffer());
         ws.frameHandler(frame -> {
           //received.appendBuffer(frame.binaryData());
