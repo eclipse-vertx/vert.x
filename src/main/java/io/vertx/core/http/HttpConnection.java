@@ -309,7 +309,7 @@ public interface HttpConnection {
    * @see javax.net.ssl.SSLSession#getPeerCertificateChain()
    * @see #sslSession()
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @GenIgnore()
   List<Certificate> peerCertificates() throws SSLPeerUnverifiedException;
 
   /**
