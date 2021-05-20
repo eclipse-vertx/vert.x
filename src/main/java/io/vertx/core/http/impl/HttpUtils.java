@@ -530,9 +530,9 @@ public final class HttpUtils {
   static String getWebSocketLocation(HttpServerRequest req, boolean ssl) throws Exception {
     String prefix;
     if (ssl) {
-      prefix = "ws://";
-    } else {
       prefix = "wss://";
+    } else {
+      prefix = "ws://";
     }
     URI uri = new URI(req.uri());
     String path = uri.getRawPath();
