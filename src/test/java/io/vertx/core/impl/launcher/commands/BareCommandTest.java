@@ -12,6 +12,7 @@
 package io.vertx.core.impl.launcher.commands;
 
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.test.fakecluster.FakeClusterManager;
 import org.junit.After;
 import org.junit.Test;
@@ -19,7 +20,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.function.BooleanSupplier;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Test the bare command.
@@ -59,8 +60,8 @@ public class BareCommandTest extends CommandTestBase {
     stop();
 
     assertThat(error.toString())
-        .contains("Starting clustering...")
-        .contains("Any deploymentIDs waiting on a quorum will now be deployed");
+      .contains("Starting clustering...")
+      .contains("Any deploymentIDs waiting on a quorum will now be deployed");
   }
 
   @Test
@@ -73,8 +74,8 @@ public class BareCommandTest extends CommandTestBase {
     stop();
 
     assertThat(error.toString())
-        .contains("Starting clustering...")
-        .contains("Any deploymentIDs waiting on a quorum will now be deployed");
+      .contains("Starting clustering...")
+      .contains("Any deploymentIDs waiting on a quorum will now be deployed");
   }
 
   @Test
@@ -87,9 +88,9 @@ public class BareCommandTest extends CommandTestBase {
     assertThatVertxInstanceHasBeenCreated();
     stop();
     assertThat(error.toString())
-        .contains("Starting clustering...")
-        .doesNotContain("No cluster-host specified")
-        .contains("Any deploymentIDs waiting on a quorum will now be deployed");
+      .contains("Starting clustering...")
+      .doesNotContain("No cluster-host specified")
+      .contains("Any deploymentIDs waiting on a quorum will now be deployed");
   }
 
   @Test
@@ -102,10 +103,42 @@ public class BareCommandTest extends CommandTestBase {
     stop();
 
     assertThat(error.toString())
-        .contains("Starting clustering...")
-        .doesNotContain("No cluster-host specified")
-        .contains("Any deploymentIDs waiting on a quorum will now be deployed");
+      .contains("Starting clustering...")
+      .doesNotContain("No cluster-host specified")
+      .contains("Any deploymentIDs waiting on a quorum will now be deployed");
   }
 
+  @Test
+  public void testOverrideOption() {
+    record();
+    System.setProperty("vertx.options.haGroup", "__VERTX__");
+    System.setProperty("vertx.eventBus.options.host", "localhost");
+    JsonObject json = new JsonObject().put("haGroup", "__XYZ__")
+      .put("eventBusOptions", new JsonObject().put("port", 3333).put("clusterPublicHost", "172.0.0.1"));
+    cli.dispatch(new String[]{"bare", "-cluster-port", "1234", "-cluster-host", "127.0.0.1", "--options", json.encode()});
 
+    assertWaitUntil(() -> error.toString().contains("A quorum has been obtained."));
+    BareCommand bare = (BareCommand) cli.getExistingCommandInstance("bare");
+    assertThat(bare.options.getEventBusOptions().getPort()).isEqualTo(1234);
+    assertThat(bare.options.getEventBusOptions().getHost()).isEqualTo("127.0.0.1");
+    assertThat(bare.options.getEventBusOptions().getClusterPublicPort()).isEqualTo(1234);
+    assertThat(bare.options.getEventBusOptions().getClusterPublicHost()).isEqualTo("172.0.0.1");
+    assertThat(bare.options.getHAGroup()).isEqualTo("__VERTX__");
+    assertThat(bare.haGroup).isEqualTo("__VERTX__");
+    assertThat(bare.quorum).isEqualTo(1);
+    assertThat(bare.clusterHost).isEqualTo("127.0.0.1");
+    assertThat(bare.clusterPort).isEqualTo(1234);
+    assertThat(bare.clusterPublicHost).isEqualTo("172.0.0.1");
+    assertThat(bare.clusterPublicPort).isEqualTo(1234);
+    assertThat(bare.quorum).isEqualTo(1);
+    assertThatVertxInstanceHasBeenCreated();
+
+    stop();
+    assertThat(error.toString())
+      .contains("Starting clustering...")
+      .doesNotContain("No cluster-host specified")
+      .contains("Any deploymentIDs waiting on a quorum will now be deployed");
+    System.clearProperty("vertx.options.haGroup");
+    System.clearProperty("vertx.eventBus.options.host");
+  }
 }

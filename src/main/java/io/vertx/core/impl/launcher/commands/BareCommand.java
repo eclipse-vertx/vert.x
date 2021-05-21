@@ -199,65 +199,15 @@ public class BareCommand extends ClasspathHandler {
    */
   @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
   protected Vertx startVertx() {
-    JsonObject optionsJson = getJsonFromFileOrString(vertxOptions, "options");
-
-    EventBusOptions eventBusOptions;
-    VertxBuilder builder;
-    if (optionsJson == null) {
-      eventBusOptions = getEventBusOptions();
-      builder = new VertxBuilder();
-    } else {
-      eventBusOptions = getEventBusOptions(optionsJson.getJsonObject("eventBusOptions"));
-      builder = new VertxBuilder(optionsJson);
-    }
-    options = builder.options();
-    options.setEventBusOptions(eventBusOptions);
+    options = buildVertxOptions();
+    VertxBuilder builder = new VertxBuilder(options);
 
     beforeStartingVertx(options);
     builder.init();
 
-    configureFromSystemProperties.set(log);
-    try {
-      configureFromSystemProperties(options, VERTX_OPTIONS_PROP_PREFIX);
-      if (options.getMetricsOptions() != null) {
-        configureFromSystemProperties(options.getMetricsOptions(), METRICS_OPTIONS_PROP_PREFIX);
-      }
-    } finally {
-      configureFromSystemProperties.set(null);
-    }
-
     Vertx instance;
     if (isClustered()) {
       log.info("Starting clustering...");
-      eventBusOptions = options.getEventBusOptions();
-      if (!Objects.equals(eventBusOptions.getHost(), EventBusOptions.DEFAULT_CLUSTER_HOST)) {
-        clusterHost = eventBusOptions.getHost();
-      }
-      if (eventBusOptions.getPort() != EventBusOptions.DEFAULT_CLUSTER_PORT) {
-        clusterPort = eventBusOptions.getPort();
-      }
-      if (!Objects.equals(eventBusOptions.getClusterPublicHost(), EventBusOptions.DEFAULT_CLUSTER_PUBLIC_HOST)) {
-        clusterPublicHost = eventBusOptions.getClusterPublicHost();
-      }
-      if (eventBusOptions.getClusterPublicPort() != EventBusOptions.DEFAULT_CLUSTER_PUBLIC_PORT) {
-        clusterPublicPort = eventBusOptions.getClusterPublicPort();
-      }
-
-      eventBusOptions.setHost(clusterHost)
-        .setPort(clusterPort)
-        .setClusterPublicHost(clusterPublicHost);
-      if (clusterPublicPort != -1) {
-        eventBusOptions.setClusterPublicPort(clusterPublicPort);
-      }
-      if (getHA()) {
-        options.setHAEnabled(true);
-        if (haGroup != null) {
-          options.setHAGroup(haGroup);
-        }
-        if (quorum != -1) {
-          options.setQuorumSize(quorum);
-        }
-      }
 
       CountDownLatch latch = new CountDownLatch(1);
       AtomicReference<AsyncResult<Vertx>> result = new AtomicReference<>();
@@ -286,6 +236,66 @@ public class BareCommand extends ClasspathHandler {
     addShutdownHook(instance, log, finalAction);
     afterStartingVertx(instance);
     return instance;
+  }
+
+  protected VertxOptions buildVertxOptions() {
+    JsonObject optionsJson = getJsonFromFileOrString(vertxOptions, "options");
+    VertxOptions vertxOptions = optionsJson == null ? new VertxOptions() : new VertxOptions(optionsJson);
+    configureFromSystemProperties(vertxOptions);
+    overrideFromCommandOption(vertxOptions);
+    return vertxOptions;
+  }
+
+  protected void configureFromSystemProperties(VertxOptions vertxOptions) {
+    configureFromSystemProperties.set(log);
+    try {
+      configureFromSystemProperties(vertxOptions, VERTX_OPTIONS_PROP_PREFIX);
+      if (vertxOptions.getEventBusOptions() == null) {
+        vertxOptions.setEventBusOptions(new EventBusOptions());
+      }
+      configureFromSystemProperties(vertxOptions.getEventBusOptions(), VERTX_EVENTBUS_PROP_PREFIX);
+      if (vertxOptions.getMetricsOptions() != null) {
+        configureFromSystemProperties(vertxOptions.getMetricsOptions(), METRICS_OPTIONS_PROP_PREFIX);
+      }
+    } finally {
+      configureFromSystemProperties.set(null);
+    }
+  }
+
+  protected void overrideFromCommandOption(VertxOptions vertxOptions) {
+    if (isClustered()) {
+      EventBusOptions eventBusOptions = vertxOptions.getEventBusOptions();
+      if (!Objects.equals(clusterHost, EventBusOptions.DEFAULT_CLUSTER_HOST)) {
+        eventBusOptions.setHost(clusterHost);
+      }
+      if (clusterPort > EventBusOptions.DEFAULT_CLUSTER_PORT) {
+        eventBusOptions.setPort(clusterPort);
+      }
+      if (!Objects.equals(clusterPublicHost, EventBusOptions.DEFAULT_CLUSTER_PUBLIC_HOST)) {
+        eventBusOptions.setClusterPublicHost(clusterPublicHost);
+      }
+      if (clusterPublicPort > EventBusOptions.DEFAULT_CLUSTER_PUBLIC_PORT) {
+        eventBusOptions.setClusterPublicPort(clusterPublicPort);
+      } else {
+        eventBusOptions.setClusterPublicPort(eventBusOptions.getPort());
+      }
+
+      if (getHA()) {
+        vertxOptions.setHAEnabled(true);
+        if (haGroup != null && !haGroup.equals(VertxOptions.DEFAULT_HA_GROUP)) {
+          vertxOptions.setHAGroup(haGroup);
+        }
+        if (quorum > VertxOptions.DEFAULT_QUORUM_SIZE) {
+          vertxOptions.setQuorumSize(quorum);
+        }
+      }
+      clusterHost = vertxOptions.getEventBusOptions().getHost();
+      clusterPort = vertxOptions.getEventBusOptions().getPort();
+      clusterPublicHost = vertxOptions.getEventBusOptions().getClusterPublicHost();
+      clusterPublicPort = vertxOptions.getEventBusOptions().getClusterPublicPort();
+      haGroup = vertxOptions.getHAGroup();
+      quorum = vertxOptions.getQuorumSize();
+    }
   }
 
   protected JsonObject getJsonFromFileOrString(String jsonFileOrString, String argName) {
@@ -338,27 +348,6 @@ public class BareCommand extends ClasspathHandler {
     }
   }
 
-  /**
-   * @return the event bus options.
-   */
-  protected EventBusOptions getEventBusOptions() {
-    return getEventBusOptions(null);
-  }
-
-  /**
-   * @return the event bus options.
-   */
-  protected EventBusOptions getEventBusOptions(JsonObject jsonObject) {
-    EventBusOptions eventBusOptions = jsonObject == null ? new EventBusOptions() : new EventBusOptions(jsonObject);
-    configureFromSystemProperties.set(log);
-    try {
-      configureFromSystemProperties(eventBusOptions, VERTX_EVENTBUS_PROP_PREFIX);
-    } finally {
-      configureFromSystemProperties.set(null);
-    }
-    return eventBusOptions;
-  }
-
   private static final ThreadLocal<Logger> configureFromSystemProperties = new ThreadLocal<>();
 
   /**
@@ -394,8 +383,8 @@ public class BareCommand extends ClasspathHandler {
             arg = Long.valueOf(propVal);
           } else if (argType.equals(boolean.class)) {
             arg = Boolean.valueOf(propVal);
-          } else if (argType.isEnum()){
-            arg = Enum.valueOf((Class<? extends Enum>)argType, propVal);
+          } else if (argType.isEnum()) {
+            arg = Enum.valueOf((Class<? extends Enum>) argType, propVal);
           } else {
             log.warn("Invalid type for setter: " + argType);
             continue;

@@ -240,13 +240,9 @@ public class RunCommand extends BareCommand {
   @Override
   public void run() {
     if (redeploy == null || redeploy.isEmpty()) {
-      JsonObject conf = getConfiguration();
-      if (conf == null) {
-        conf = new JsonObject();
-      }
-      afterConfigParsed(conf);
+      JsonObject conf = normalizeConfiguration();
 
-      super.run(this::afterStoppingVertx);
+      Vertx vertx = doRun();
       if (vertx == null) {
         // Already logged.
         ExecUtils.exitBecauseOfVertxInitializationIssue();
@@ -263,15 +259,33 @@ public class RunCommand extends BareCommand {
         });
       }
 
-      deploymentOptions = new DeploymentOptions();
-      configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
-      deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
+      deploymentOptions = buildDeploymentOptions(conf);
       beforeDeployingVerticle(deploymentOptions);
       deploy();
     } else {
       // redeploy is set, start the redeployment infrastructure (watcher).
       initializeRedeployment();
     }
+  }
+
+  protected JsonObject normalizeConfiguration() {
+    JsonObject conf = getConfiguration();
+    if (conf == null) {
+      conf = new JsonObject();
+    }
+    afterConfigParsed(conf);
+    return conf;
+  }
+
+  protected Vertx doRun() {
+    super.run(this::afterStoppingVertx);
+    return vertx();
+  }
+
+  protected DeploymentOptions buildDeploymentOptions(JsonObject conf) {
+    DeploymentOptions deploymentOptions = new DeploymentOptions();
+    configureFromSystemProperties(deploymentOptions, DEPLOYMENT_OPTIONS_PROP_PREFIX);
+    return deploymentOptions.setConfig(conf).setWorker(worker).setHa(ha).setInstances(instances);
   }
 
   /**
@@ -284,7 +298,7 @@ public class RunCommand extends BareCommand {
       throw new IllegalStateException("Redeployment already started ? The watcher already exists");
     }
     // Compute the application id. We append "-redeploy" to ease the identification in the process list.
-    vertxApplicationBackgroundId = UUID.randomUUID().toString() + "-redeploy";
+    vertxApplicationBackgroundId = UUID.randomUUID() + "-redeploy";
     watcher = new Watcher(getCwd(), redeploy,
         this::startAsBackgroundApplication,  // On deploy
         this::stopBackgroundApplication, // On undeploy
@@ -294,11 +308,7 @@ public class RunCommand extends BareCommand {
 
     // Close the watcher when the JVM is terminating.
     // Notice that the vert.x finalizer is not registered when we run in redeploy mode.
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-        shutdownRedeployment();
-      }
-    });
+    Runtime.getRuntime().addShutdownHook(new Thread(this::shutdownRedeployment));
     // Start the watching process, it triggers the initial deployment.
     watcher.watch();
   }
@@ -341,6 +351,13 @@ public class RunCommand extends BareCommand {
    * @param onCompletion an optional on-completion handler. If set it must be invoked at the end of this method.
    */
   protected void startAsBackgroundApplication(Handler<Void> onCompletion) {
+    executionContext.execute("start", buildArgs().toArray(new String[0]));
+    if (onCompletion != null) {
+      onCompletion.handle(null);
+    }
+  }
+
+  protected List<String> buildArgs() {
     // We need to copy all options and arguments.
     List<String> args = new ArrayList<>();
     // Prepend the command.
@@ -397,11 +414,7 @@ public class RunCommand extends BareCommand {
 
     // Enable stream redirection
     args.add("--redirect-output");
-
-    executionContext.execute("start", args.toArray(new String[0]));
-    if (onCompletion != null) {
-      onCompletion.handle(null);
-    }
+    return args;
   }
 
   protected void deploy() {
