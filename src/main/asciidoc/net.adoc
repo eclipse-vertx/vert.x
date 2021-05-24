@@ -43,7 +43,7 @@ Or to specify the host and port in the call to listen, ignoring what is configur
 The default host is `0.0.0.0` which means 'listen on all available addresses' and the default port is `0`, which is a
 special value that instructs the server to find a random unused local port and use that.
 
-The actual bind is asynchronous so the server might not actually be listening until some time *after* the call to
+The actual bind is asynchronous, so the server might not actually be listening until some time *after* the call to
 listen has returned.
 
 If you want to be notified when the server is actually listening you can provide a handler to the `listen` call.
@@ -154,7 +154,7 @@ classpath resolution or disabling it.
 === Streaming sockets
 
 Instances of {@link io.vertx.core.net.NetSocket} are also {@link io.vertx.core.streams.ReadStream} and
-{@link io.vertx.core.streams.WriteStream} instances so they can be used to pipe data to or from other
+{@link io.vertx.core.streams.WriteStream} instances, so they can be used to pipe data to or from other
 read and write streams.
 
 See the chapter on <<streams, streams >> for more information.
@@ -266,7 +266,7 @@ A client can be configured to automatically retry connecting to the server in th
 This is configured with {@link io.vertx.core.net.NetClientOptions#setReconnectInterval(long)} and
 {@link io.vertx.core.net.NetClientOptions#setReconnectAttempts(int)}.
 
-NOTE: Currently Vert.x will not attempt to reconnect if a connection fails, reconnect attempts and interval
+NOTE: Currently, Vert.x will not attempt to reconnect if a connection fails, reconnect attempts and interval
 only apply to creating initial connections.
 
 [source,$lang]
@@ -380,7 +380,7 @@ WARNING: Keep in mind that the keys contained in an unencrypted PKCS8 or a PKCS1
 anybody who can read the file. Thus, make sure to put proper access restrictions on such PEM files in order to
 prevent misuse.
 
-Finally you can also load generic Java keystore, it is useful for using other KeyStore implementations
+Finally, you can also load generic Java keystore, it is useful for using other KeyStore implementations
 like Bouncy Castle:
 
 [source,$lang]

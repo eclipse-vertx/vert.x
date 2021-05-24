@@ -26,7 +26,7 @@ First some theory:
 Messages are sent on the event bus to an *address*.
 
 Vert.x doesn't bother with any fancy addressing schemes. In Vert.x an address is simply a string.
-Any string is valid. However it is wise to use some kind of scheme, _e.g._ using periods to demarcate a namespace.
+Any string is valid. However, it is wise to use some kind of scheme, _e.g._ using periods to demarcate a namespace.
 
 Some examples of valid addresses are +europe.news.feed1+, +acme.games.pacman+, +sausages+, and +X+.
 
@@ -79,12 +79,12 @@ to retry after recovery.
 Out of the box Vert.x allows any primitive/simple type, String, or {@link io.vertx.core.buffer.Buffer buffers} to
 be sent as messages.
 
-However it's a convention and common practice in Vert.x to send messages as http://json.org/[JSON]
+However, it's a convention and common practice in Vert.x to send messages as http://json.org/[JSON]
 
-JSON is very easy to create, read and parse in all the languages that Vert.x supports so it has become a kind of
+JSON is very easy to create, read and parse in all the languages that Vert.x supports, so it has become a kind of
 _lingua franca_ for Vert.x.
 
-However you are not forced to use JSON if you don't want to.
+However, you are not forced to use JSON if you don't want to.
 
 The event bus is very flexible and also supports sending arbitrary objects over the event bus.
 You can do this by defining a {@link io.vertx.core.eventbus.MessageCodec codec} for the objects you want to send.

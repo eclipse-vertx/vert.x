@@ -143,7 +143,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   HttpClientRequest setMethod(HttpMethod method);
 
   /**
-   * @return the absolute URI corresponding to the the HTTP request
+   * @return the absolute URI corresponding to the HTTP request
    */
   String absoluteURI();
 
