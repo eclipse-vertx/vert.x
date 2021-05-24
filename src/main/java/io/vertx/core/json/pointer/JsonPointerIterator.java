@@ -66,7 +66,7 @@ public interface JsonPointerIterator {
   Object getObjectParameter(@Nullable Object currentValue, String key, boolean createOnMissing);
 
   /**
-   * Move the iterator the the array element at specified index
+   * Move the iterator the array element at specified index
    *
    * @param currentValue
    * @param i array index

@@ -4,17 +4,17 @@ Using User Datagram Protocol (UDP) with Vert.x is a piece of cake.
 
 UDP is a connection-less transport which basically means you have no persistent connection to a remote peer.
 
-Instead you can send and receive packages and the remote address is contained in each of them.
+Instead, you can send and receive packages and the remote address is contained in each of them.
 
 Beside this UDP is not as safe as TCP to use, which means there are no guarantees that a send Datagram packet will
 receive it's endpoint at all.
 
 The only guarantee is that it will either receive complete or not at all.
 
-Also you usually can't send data which is bigger then the MTU size of your network interface, this is because each
+Also, you usually can't send data which is bigger then the MTU size of your network interface, this is because each
 packet will be send as one packet.
 
-But be aware even if the packet size is smaller then the MTU it may still fail.
+But, be aware even if the packet size is smaller then the MTU it may still fail.
 
 At which size it will fail depends on the Operating System etc. So rule of thumb is to try to send small packets.
 
@@ -87,7 +87,7 @@ to which you can then send packets.
 
 We will look at how you can join a Multicast Group and receive packets in the next section.
 
-Sending multicast packets is not different than sending normal Datagram packets.  The difference is that you pass
+Sending multicast packets is not different from sending normal Datagram packets. The difference is that you pass
 in a multicast group address to the send method.
 
 This is show here:

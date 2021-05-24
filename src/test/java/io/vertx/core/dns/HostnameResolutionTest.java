@@ -621,7 +621,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     }));
     awaitLatch(latch2);
 
-    // "host3" resolves via the the "foo.com" search path as it is the first one
+    // "host3" resolves via the "foo.com" search path as it is the first one
     CountDownLatch latch3 = new CountDownLatch(1);
     vertx.resolveAddress("host3", onSuccess(resolved -> {
       assertEquals("127.0.0.4", resolved.getHostAddress());
