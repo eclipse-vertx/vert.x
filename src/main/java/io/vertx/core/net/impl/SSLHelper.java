@@ -338,7 +338,7 @@ public class SSLHelper {
 
   /*
   Proxy the specified trust managers with an implementation checking first the provided certificates
-  against the the Certificate Revocation List (crl) before delegating to the original trust managers.
+  against the Certificate Revocation List (crl) before delegating to the original trust managers.
    */
   private static TrustManager[] createUntrustRevokedCertTrustManager(TrustManager[] trustMgrs, ArrayList<CRL> crls) {
     trustMgrs = trustMgrs.clone();

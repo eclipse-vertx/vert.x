@@ -305,7 +305,7 @@ public interface Vertx extends Measured {
   void runOnContext(Handler<Void> action);
 
   /**
-   * Stop the the Vertx instance and release any resources held by it.
+   * Stop the Vertx instance and release any resources held by it.
    * <p>
    * The instance cannot be used after it has been closed.
    * <p>

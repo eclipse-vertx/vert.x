@@ -207,7 +207,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException;
 
   /**
-   * @return the absolute URI corresponding to the the HTTP request
+   * @return the absolute URI corresponding to the HTTP request
    */
   String absoluteURI();
 

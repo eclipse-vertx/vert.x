@@ -72,7 +72,7 @@ the command line:
 An option can be _hidden_ using the {@link io.vertx.core.cli.Option#setHidden(boolean)} method. Hidden option are
 not listed in the usage, but can still be used in the user command line (for power-users).
 
-If the option value is contrained to a fixed set, you can set the different acceptable choices:
+If the option value is constrained to a fixed set, you can set the different acceptable choices:
 
 [source,$lang]
 ----
@@ -122,7 +122,7 @@ Once your {@link io.vertx.core.cli.CLI} instance is configured, you can generate
 {@link examples.cli.CLIExamples#example6}
 ----
 
-It generates an usage message like this one:
+It generates a usage message like this one:
 
 [source]
 ----

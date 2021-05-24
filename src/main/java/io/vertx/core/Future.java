@@ -250,7 +250,7 @@ public interface Future<T> extends AsyncResult<T> {
    * and this mapper returns another future object. This returned future completion will complete the future returned
    * by this method call with the original result of the future.
    *
-   * <p>The outcome of the future returned by the {@code mapper} will not influence the the nature
+   * <p>The outcome of the future returned by the {@code mapper} will not influence the nature
    * of the returned future.
    *
    * @param mapper the function returning the future.
