@@ -930,4 +930,36 @@ public class Http2Test extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testNonUpgradedH2CConnectionIsEvictedFromThePool() {
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
+    server.close();
+    System.setProperty("vertx.disableH2c", "true");
+    server = vertx.createHttpServer();
+    try {
+      server.requestHandler(req -> req.response().end());
+      server.listen(testAddress, onSuccess(s -> {
+        Promise<Void> promise = Promise.promise();
+        client.request(requestOptions).compose(req -> {
+          req.connection().closeHandler(v -> {
+            promise.complete();
+          });
+          return req.send().compose(HttpClientResponse::body);
+        }).onSuccess(b -> {
+          server.close()
+            .compose(r -> promise.future())
+            .compose(a -> server.listen(testAddress)).onComplete(onSuccess(v -> {
+            client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).onSuccess(b2 -> {
+              testComplete();
+            });
+          }));
+        });
+      }));
+      await();
+    } finally {
+      System.clearProperty("vertx.disableH2c");
+    }
+  }
 }

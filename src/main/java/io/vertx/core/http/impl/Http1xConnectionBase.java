@@ -119,17 +119,17 @@ abstract class Http1xConnectionBase<S extends WebSocketImplBase<S>> extends Conn
 
   @Override
   public HttpConnection shutdownHandler(@Nullable Handler<Void> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+    throw new UnsupportedOperationException("HTTP/1.x connections cannot be shutdown");
   }
 
   @Override
   public void shutdown(long timeout, Handler<AsyncResult<Void>> handler) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+    throw new UnsupportedOperationException("HTTP/1.x connections cannot be shutdown");
   }
 
   @Override
   public Future<Void> shutdown(long timeoutMs) {
-    throw new UnsupportedOperationException("HTTP/1.x connections don't support GOAWAY");
+    throw new UnsupportedOperationException("HTTP/1.x connections cannot be shutdown");
   }
 
   @Override
