@@ -13,6 +13,8 @@ package io.vertx.core.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.file.impl.FileResolver;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.impl.transport.Transport;
@@ -30,6 +32,8 @@ import io.vertx.core.tracing.TracingOptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Vertx builder for creating vertx instances with SPI overrides.
@@ -37,6 +41,8 @@ import java.util.Collection;
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public class VertxBuilder {
+
+  private static final Logger log = LoggerFactory.getLogger(VertxBuilder.class);
 
   private VertxOptions options;
   private JsonObject config;
@@ -199,6 +205,7 @@ public class VertxBuilder {
    * Build and return the vertx instance
    */
   public Vertx vertx() {
+    checkBeforeInstantiating();
     VertxImpl vertx = new VertxImpl(
       options,
       null,
@@ -217,6 +224,7 @@ public class VertxBuilder {
    * Build and return the clustered vertx instance
    */
   public void clusteredVertx(Handler<AsyncResult<Vertx>> handler) {
+    checkBeforeInstantiating();
     if (clusterManager == null) {
       throw new IllegalStateException("No ClusterManagerFactory instances found on classpath");
     }
@@ -240,7 +248,7 @@ public class VertxBuilder {
   public VertxBuilder init() {
     initTransport();
     initFileResolver();
-    Collection<VertxServiceProvider> providers = new ArrayList<>();
+    Set<VertxServiceProvider> providers = new HashSet<>();
     initMetrics(options, providers);
     initTracing(options, providers);
     initClusterManager(options, providers);
@@ -322,5 +330,26 @@ public class VertxBuilder {
       return;
     }
     executorServiceFactory = ExecutorServiceFactory.INSTANCE;
+  }
+
+  private void checkBeforeInstantiating() {
+    checkTracing();
+    checkMetrics();
+  }
+
+  private void checkTracing() {
+    if (options.getTracingOptions() != null && this.tracer == null) {
+      log.warn("Tracing options are configured but no tracer is instantiated. " +
+        "Make sure you have the VertxTracerFactory in your classpath and META-INF/services/io.vertx.core.spi.VertxServiceProvider " +
+        "contains the factory FQCN, or tracingOptions.getFactory() returns a non null value");
+    }
+  }
+
+  private void checkMetrics() {
+    if (options.getMetricsOptions() != null && this.metrics == null) {
+      log.warn("Metrics options are configured but no metrics object is instantiated. " +
+        "Make sure you have the VertxMetricsFactory in your classpath and META-INF/services/io.vertx.core.spi.VertxServiceProvider " +
+        "contains the factory FQCN, or metricsOptions.getFactory() returns a non null value");
+    }
   }
 }
