@@ -50,6 +50,11 @@ import static org.junit.Assert.fail;
  */
 public class TestUtils {
 
+  /**
+   * Non routable host for testing connect timeout.
+   */
+  public static final String NON_ROUTABLE_HOST = "10.0.0.0";
+
   private static Random random = new Random();
 
   /**
