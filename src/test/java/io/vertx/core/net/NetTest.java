@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
@@ -4073,4 +4074,15 @@ public class NetTest extends VertxTestBase {
       assertEquals(address1.port(), address2.port());
     }
   }
-}
+
+  @Test
+  public void testConnectTimeout() {
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(250));
+    client.connect(1234, TestUtils.NON_ROUTABLE_HOST)
+      .onComplete(onFailure(err -> {
+        assertTrue(err instanceof ConnectTimeoutException);
+        testComplete();
+      }));
+    await();
+  }}
