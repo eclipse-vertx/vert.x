@@ -32,8 +32,6 @@ import io.vertx.core.tracing.TracingOptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Vertx builder for creating vertx instances with SPI overrides.
@@ -248,7 +246,7 @@ public class VertxBuilder {
   public VertxBuilder init() {
     initTransport();
     initFileResolver();
-    Set<VertxServiceProvider> providers = new HashSet<>();
+    Collection<VertxServiceProvider> providers = new ArrayList<>();
     initMetrics(options, providers);
     initTracing(options, providers);
     initClusterManager(options, providers);
