@@ -35,20 +35,10 @@ import java.util.concurrent.ConcurrentMap;
 class DuplicatedContext extends AbstractContext {
 
   protected final ContextImpl delegate;
-  private TaskQueue orderedTasks;
   private ConcurrentMap<Object, Object> localData;
 
   DuplicatedContext(ContextImpl delegate) {
     this.delegate = delegate;
-  }
-
-  final TaskQueue orderedTasks() {
-    synchronized (this) {
-      if (orderedTasks == null) {
-        orderedTasks = new TaskQueue();
-      }
-      return orderedTasks;
-    }
   }
 
   @Override
@@ -154,13 +144,7 @@ class DuplicatedContext extends AbstractContext {
 
   @Override
   public final <T> Future<T> executeBlocking(Handler<Promise<T>> action, boolean ordered) {
-    TaskQueue queue;
-    if (ordered) {
-      queue = orderedTasks();
-    } else {
-      queue = null;
-    }
-    return ContextImpl.executeBlocking(this, action, delegate.workerPool, queue);
+    return ContextImpl.executeBlocking(this, action, delegate.workerPool, delegate.orderedTasks);
   }
 
   @Override

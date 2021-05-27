@@ -563,47 +563,35 @@ public class ContextTest extends VertxTestBase {
   private void testDuplicateExecuteBlocking(ContextInternal ctx) throws Exception {
     ContextInternal dup1 = ctx.duplicate();
     ContextInternal dup2 = ctx.duplicate();
-    CyclicBarrier barrier = new CyclicBarrier(3);
-    dup1.executeBlocking(p -> {
+    AtomicInteger cnt = new AtomicInteger();
+    Future<Void> f1 = dup1.executeBlocking(p -> {
       assertTrue(Context.isOnWorkerThread());
+      assertEquals(1, cnt.incrementAndGet());
       try {
-        barrier.await(10, TimeUnit.SECONDS);
-      } catch (Exception e) {
+        Thread.sleep(500);
+      } catch (InterruptedException e) {
         fail(e);
+      } finally {
+        cnt.decrementAndGet();
       }
       p.complete();
     });
-    dup2.executeBlocking(p -> {
+    Future<Void> f2 = dup2.executeBlocking(p -> {
       assertTrue(Context.isOnWorkerThread());
+      assertEquals(1, cnt.incrementAndGet());
       try {
-        barrier.await(10, TimeUnit.SECONDS);
-      } catch (Exception e) {
+        Thread.sleep(500);
+      } catch (InterruptedException e) {
         fail(e);
+      } finally {
+        cnt.decrementAndGet();
       }
       p.complete();
     });
-    barrier.await(10, TimeUnit.SECONDS);
-  }
-
-  @Test
-  public void testDuplicateEventLoopExecuteBlockingOrdering() {
-    testDuplicateExecuteBlockingOrdering((ContextInternal) vertx.getOrCreateContext());
-  }
-
-  @Test
-  public void testDuplicateWorkerExecuteBlockingOrdering() {
-    testDuplicateExecuteBlockingOrdering(createWorkerContext());
-  }
-
-  private void testDuplicateExecuteBlockingOrdering(ContextInternal context) {
-    List<Consumer<Handler<Promise<Object>>>> lst = new ArrayList<>();
-    for (int i = 0;i < 2;i++) {
-      ContextInternal duplicate = context.duplicate();
-      lst.add(task -> {
-        duplicate.executeBlocking(task, ar -> {});
-      });
-    }
-    testInternalExecuteBlockingWithQueue(lst);
+    CompositeFuture.all(f1, f2).onComplete(onSuccess(v -> {
+      testComplete();
+    }));
+    await();
   }
 
   @Test
