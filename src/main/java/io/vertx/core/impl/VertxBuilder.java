@@ -344,7 +344,7 @@ public class VertxBuilder {
   }
 
   private void checkMetrics() {
-    if (options.getMetricsOptions() != null && this.metrics == null) {
+    if (options.getMetricsOptions() != null && options.getMetricsOptions().isEnabled() && this.metrics == null) {
       log.warn("Metrics options are configured but no metrics object is instantiated. " +
         "Make sure you have the VertxMetricsFactory in your classpath and META-INF/services/io.vertx.core.spi.VertxServiceProvider " +
         "contains the factory FQCN, or metricsOptions.getFactory() returns a non null value");
