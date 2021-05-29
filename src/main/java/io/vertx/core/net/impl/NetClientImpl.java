@@ -35,6 +35,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
@@ -44,6 +45,7 @@ import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 /**
  *
@@ -64,18 +66,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final ChannelGroup channelGroup;
   private final TCPMetrics metrics;
   private final CloseFuture closeFuture;
-
-  public NetClientImpl(VertxInternal vertx, ChannelGroup channelGroup, SSLHelper sslHelper, NetClientOptions options) {
-    this.vertx = vertx;
-    this.channelGroup = channelGroup;
-    this.options = options;
-    this.sslHelper = sslHelper;
-    this.metrics = null;
-    this.logEnabled = options.getLogActivity();
-    this.idleTimeout = options.getIdleTimeout();
-    this.idleTimeoutUnit = options.getIdleTimeoutUnit();
-    this.closeFuture = new CloseFuture(log);
-  }
+  private final Predicate<SocketAddress> proxyFilter;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
@@ -87,6 +78,9 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.idleTimeout = options.getIdleTimeout();
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
     this.closeFuture = closeFuture;
+    this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
+
+    sslHelper.validate(vertx);
   }
 
   protected void initChannel(ChannelPipeline pipeline) {
@@ -124,7 +118,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
   public Future<NetSocket> connect(ContextInternal context, SocketAddress remoteAddress, String serverName) {
     Promise<NetSocket> promise = context.promise();
-    doConnect(remoteAddress, serverName, promise, context);
+    connect(remoteAddress, serverName, promise, context);
     return promise.future();
   }
 
@@ -182,17 +176,13 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     }
   }
 
-  private void applyConnectionOptions(boolean domainSocket, Bootstrap bootstrap) {
-    vertx.transport().configure(options, domainSocket, bootstrap);
-  }
-
   @Override
   public NetClient connect(SocketAddress remoteAddress, String serverName, Handler<AsyncResult<NetSocket>> connectHandler) {
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
     ContextInternal ctx = vertx.getOrCreateContext();
     Promise<NetSocket> promise = ctx.promise();
     promise.future().onComplete(connectHandler);
-    doConnect(remoteAddress, serverName, promise, ctx);
+    connect(remoteAddress, serverName, promise, ctx);
     return this;
   }
 
@@ -201,32 +191,43 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     return connect(remoteAddress, null, connectHandler);
   }
 
-  private void doConnect(SocketAddress remoteAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal ctx) {
+  private void connect(SocketAddress remoteAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal ctx) {
     SocketAddress peerAddress = remoteAddress;
     String peerHost = peerAddress.host();
     if (peerHost != null && peerHost.endsWith(".")) {
       peerAddress = SocketAddress.inetSocketAddress(peerAddress.port(), peerHost.substring(0, peerHost.length() - 1));
     }
-    doConnect(remoteAddress, peerAddress, serverName, connectHandler, ctx, options.getReconnectAttempts());
+    ProxyOptions proxyOptions = options.getProxyOptions();
+    if (proxyFilter != null) {
+      if (!proxyFilter.test(remoteAddress)) {
+        proxyOptions = null;
+      }
+    }
+    connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), connectHandler, ctx, options.getReconnectAttempts());
   }
 
-  public void doConnect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, Promise<NetSocket> connectHandler, ContextInternal context, int remainingAttempts) {
+  public void connectInternal(ProxyOptions proxyOptions,
+                              SocketAddress remoteAddress,
+                              SocketAddress peerAddress,
+                              String serverName,
+                              boolean ssl,
+                              boolean useAlpn,
+                              Promise<NetSocket> connectHandler,
+                              ContextInternal context,
+                              int remainingAttempts) {
     checkClosed();
     Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
-    if (sslHelper != null) {
-      sslHelper.validate(vertx);
-    }
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(context.nettyEventLoop());
 
-    applyConnectionOptions(remoteAddress.isDomainSocket(), bootstrap);
+    vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
 
     ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context)
-      .proxyOptions(options.getProxyOptions());
+      .proxyOptions(proxyOptions);
 
     channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol()));
 
-    io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, options.isSsl());
+    io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, ssl, useAlpn);
     fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
       if (!future.isSuccess()) {
         Throwable cause = future.cause();
@@ -237,7 +238,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
-              doConnect(remoteAddress, peerAddress, serverName, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+              connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
             );
           });
         } else {

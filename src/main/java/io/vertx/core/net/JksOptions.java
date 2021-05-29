@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -51,10 +51,12 @@ public class JksOptions extends KeyStoreOptionsBase {
     JksOptionsConverter.fromJson(json, this);
   }
 
+  @Override
   public JksOptions setPassword(String password) {
     return (JksOptions) super.setPassword(password);
   }
 
+  @Override
   public JksOptions setPath(String path) {
     return (JksOptions) super.setPath(path);
   }
@@ -65,10 +67,22 @@ public class JksOptions extends KeyStoreOptionsBase {
    * @param value  the key store as a buffer
    * @return a reference to this, so the API can be used fluently
    */
+  @Override
   public JksOptions setValue(Buffer value) {
     return (JksOptions) super.setValue(value);
   }
 
+  @Override
+  public String getAlias() {
+    return super.getAlias();
+  }
+
+  @Override
+  public JksOptions setAlias(String alias) {
+    return (JksOptions) super.setAlias(alias);
+  }
+
+  @Override
   public JksOptions copy() {
     return new JksOptions(this);
   }

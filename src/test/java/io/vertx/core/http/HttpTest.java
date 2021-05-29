@@ -11,6 +11,7 @@
 
 package io.vertx.core.http;
 
+import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.compression.DecompressionException;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
@@ -3866,6 +3867,7 @@ public abstract class HttpTest extends HttpTestBase {
         });
       } else {
         assertEquals(HttpMethod.GET, req.method());
+        assertNull(req.getHeader(HttpHeaders.CONTENT_LENGTH));
         req.response().end();
       }
     });
@@ -5748,7 +5750,7 @@ public abstract class HttpTest extends HttpTestBase {
     assertEquals("foo=bar; Path=/somepath; Domain=foo.com", cookie.encode());
     long maxAge = 30 * 60;
     cookie.setMaxAge(maxAge);
-
+    assertEquals(maxAge, cookie.getMaxAge());
 
     long now = System.currentTimeMillis();
     String encoded = cookie.encode();
@@ -6426,6 +6428,18 @@ public abstract class HttpTest extends HttpTestBase {
         Buffer result = Buffer.buffer();
         list.forEach(result::appendBuffer);
         assertEquals(expected, result);
+        testComplete();
+      }));
+    await();
+  }
+
+  @Test
+  public void testConnectTimeout() {
+    client.close();
+    client = vertx.createHttpClient(createBaseClientOptions().setConnectTimeout(250));
+    client.request(new RequestOptions().setHost(TestUtils.NON_ROUTABLE_HOST).setPort(8080))
+      .onComplete(onFailure(err -> {
+        assertTrue(err instanceof ConnectTimeoutException);
         testComplete();
       }));
     await();

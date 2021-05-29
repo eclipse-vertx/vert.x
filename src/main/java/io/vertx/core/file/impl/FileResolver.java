@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.function.IntPredicate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -196,6 +195,7 @@ public class FileResolver {
       case "bundle": // Apache Felix, Knopflerfish
       case "bundleentry": // Equinox
       case "bundleresource": // Equinox
+      case "jrt": // java run-time (JEP 220)
       case "resource":  // substratevm (graal native image)
         return unpackFromBundleURL(url, isDir);
       default:

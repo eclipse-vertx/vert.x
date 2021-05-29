@@ -20,6 +20,7 @@ import org.junit.Test;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -560,47 +563,35 @@ public class ContextTest extends VertxTestBase {
   private void testDuplicateExecuteBlocking(ContextInternal ctx) throws Exception {
     ContextInternal dup1 = ctx.duplicate();
     ContextInternal dup2 = ctx.duplicate();
-    CyclicBarrier barrier = new CyclicBarrier(3);
-    dup1.executeBlocking(p -> {
+    AtomicInteger cnt = new AtomicInteger();
+    Future<Void> f1 = dup1.executeBlocking(p -> {
       assertTrue(Context.isOnWorkerThread());
+      assertEquals(1, cnt.incrementAndGet());
       try {
-        barrier.await(10, TimeUnit.SECONDS);
-      } catch (Exception e) {
+        Thread.sleep(500);
+      } catch (InterruptedException e) {
         fail(e);
+      } finally {
+        cnt.decrementAndGet();
       }
       p.complete();
     });
-    dup2.executeBlocking(p -> {
+    Future<Void> f2 = dup2.executeBlocking(p -> {
       assertTrue(Context.isOnWorkerThread());
+      assertEquals(1, cnt.incrementAndGet());
       try {
-        barrier.await(10, TimeUnit.SECONDS);
-      } catch (Exception e) {
+        Thread.sleep(500);
+      } catch (InterruptedException e) {
         fail(e);
+      } finally {
+        cnt.decrementAndGet();
       }
       p.complete();
     });
-    barrier.await(10, TimeUnit.SECONDS);
-  }
-
-  @Test
-  public void testDuplicateEventLoopExecuteBlockingOrdering() {
-    testDuplicateExecuteBlockingOrdering((ContextInternal) vertx.getOrCreateContext());
-  }
-
-  @Test
-  public void testDuplicateWorkerExecuteBlockingOrdering() {
-    testDuplicateExecuteBlockingOrdering(createWorkerContext());
-  }
-
-  private void testDuplicateExecuteBlockingOrdering(ContextInternal context) {
-    List<Consumer<Handler<Promise<Object>>>> lst = new ArrayList<>();
-    for (int i = 0;i < 2;i++) {
-      ContextInternal duplicate = context.duplicate();
-      lst.add(task -> {
-        duplicate.executeBlocking(task, ar -> {});
-      });
-    }
-    testInternalExecuteBlockingWithQueue(lst);
+    CompositeFuture.all(f1, f2).onComplete(onSuccess(v -> {
+      testComplete();
+    }));
+    await();
   }
 
   @Test
@@ -890,5 +881,40 @@ public class ContextTest extends VertxTestBase {
   public void testSticky() {
     Context ctx = vertx.getOrCreateContext();
     assertSame(ctx, vertx.getOrCreateContext());
+  }
+
+  @Test
+  public void testUnwrapPromiseWithoutContext() {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    List<Function<Promise<Object>, PromiseInternal<Object>>> suppliers = new ArrayList<>();
+    suppliers.add(ctx::promise);
+    suppliers.add(((VertxInternal)vertx)::promise);
+    for (Function<Promise<Object>, PromiseInternal<Object>> supplier : suppliers) {
+      Promise<Object> p1 = Promise.promise();
+      PromiseInternal<Object> p2 = supplier.apply(p1);
+      assertNotSame(p1, p2);
+      assertSame(ctx, p2.context());
+      Object result = new Object();
+      p2.complete(result);
+      assertWaitUntil(() -> p1.future().isComplete());
+      assertSame(result, p1.future().result());
+    }
+  }
+
+  @Test
+  public void testTopLevelContextClassLoader() {
+    ClassLoader cl = new URLClassLoader(new URL[0]);
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    EventLoop el = ctx.nettyEventLoop();
+    el.execute(() -> {
+      Thread.currentThread().setContextClassLoader(cl);
+      ctx.runOnContext(v -> {
+        el.execute(() -> {
+          assertSame(cl, Thread.currentThread().getContextClassLoader());
+          testComplete();
+        });
+      });
+    });
+    await();
   }
 }

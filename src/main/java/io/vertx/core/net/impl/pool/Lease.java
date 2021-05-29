@@ -8,12 +8,21 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.clientconnection;
+package io.vertx.core.net.impl.pool;
 
-public interface Lease<C> {
+/**
+ * A recyclable object.
+ */
+public interface Lease<T> {
 
-  C get();
+  /**
+   * @return the leased object until it is recycled
+   */
+  T get();
 
+  /**
+   * Recycle the object.
+   */
   void recycle();
 
 }

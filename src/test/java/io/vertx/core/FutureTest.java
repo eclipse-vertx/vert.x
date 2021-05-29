@@ -210,6 +210,21 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
+  public void testCompleteCause() {
+    Throwable object = new RuntimeException();
+    Promise<Throwable> promise = Promise.promise();
+    AtomicReference<Boolean> r1 = new AtomicReference<>();
+    AtomicReference<Boolean> r2 = new AtomicReference<>();
+    promise.future().onSuccess(v -> r1.set(true)).onFailure(v -> r1.set(false));
+    Checker<Throwable>  checker = new Checker<>(promise.future());
+    promise.complete(object);
+    checker.assertSucceeded(object);
+    promise.future().onSuccess(v -> r2.set(true)).onFailure(v -> r2.set(false));
+    assertTrue(r1.get());
+    assertTrue(r2.get());
+  }
+
+  @Test
   public void testComposeSuccessToSuccess() {
     AtomicReference<String> ref = new AtomicReference<>();
     Promise<Integer> p = Promise.promise();

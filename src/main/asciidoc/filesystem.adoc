@@ -111,7 +111,7 @@ In the `OpenOptions`, you can enable/disable the automatic synchronisation of th
 {@link io.vertx.core.file.OpenOptions#setDsync(boolean)}. In that case, you can manually flush any writes from the OS
 cache by calling the {@link io.vertx.core.file.AsyncFile#flush()} method.
 
-This method can also be called with an handler which will be called when the flush is complete.
+This method can also be called with a handler which will be called when the flush is complete.
 
 ==== Using AsyncFile as ReadStream and WriteStream
 
@@ -152,7 +152,7 @@ property `vertx.cacheDirBase`.
 The whole classpath resolving feature can be disabled system-wide by setting the system
 property `vertx.disableFileCPResolving` to `true`.
 
-NOTE: these system properties are evaluated once when the the `io.vertx.core.file.FileSystemOptions` class is loaded, so
+NOTE: these system properties are evaluated once when the `io.vertx.core.file.FileSystemOptions` class is loaded, so
 these properties should be set before loading this class or as a JVM system property when launching it.
 
 If you want to disable classpath resolving for a particular application but keep it enabled by default system-wide,

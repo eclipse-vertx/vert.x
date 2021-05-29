@@ -75,6 +75,7 @@ public class HttpCompressionTest extends HttpTestBase {
       .onComplete(onSuccess(req -> {
         req.putHeader(HttpHeaders.ACCEPT_ENCODING, HttpHeaders.DEFLATE_GZIP);
         req.send(onSuccess(resp -> {
+          assertNull(resp.getHeader(HttpHeaders.CONTENT_ENCODING));
           resp.body(onSuccess(responseBuffer -> {
             String responseBody = responseBuffer.toString(CharsetUtil.UTF_8);
             assertEquals(COMPRESS_TEST_STRING, responseBody);

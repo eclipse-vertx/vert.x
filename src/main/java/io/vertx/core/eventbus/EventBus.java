@@ -59,7 +59,7 @@ public interface EventBus extends Measured {
   EventBus send(String address, @Nullable Object message, DeliveryOptions options);
 
   /**
-   * Sends a message and and specify a {@code replyHandler} that will be called if the recipient
+   * Sends a message and specify a {@code replyHandler} that will be called if the recipient
    * subsequently replies to the message.
    * <p>
    * The message will be delivered to at most one of the handlers registered to the address.

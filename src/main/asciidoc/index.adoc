@@ -27,7 +27,7 @@ Vert.x core is small and lightweight. You just use the parts you want. It's also
 existing applications - we don't force you to structure your applications in a special way just so you can use
 Vert.x.
 
-You can use core from any of the other languages that Vert.x supports. But here'a a cool bit - we don't force
+You can use core from any of the other languages that Vert.x supports. But here's a cool bit - we don't force
 you to use the Java API directly from, say, JavaScript or Ruby - after all, different languages have different conventions
 and idioms, and it would be odd to force Java idioms on Ruby developers (for example).
 Instead, we automatically generate an *idiomatic* equivalent of the core Java APIs for each language.
@@ -248,7 +248,7 @@ supports concurrent composition (run several async operations in parallel) and s
 (chain async operations).
 
 {@link io.vertx.core.CompositeFuture#all} takes several futures arguments (up to 6) and returns a future that is
-_succeeded_ when all the futures are and _failed_ when at least one of the futures is failed:
+_succeeded_ when all the futures are _succeeded_ and _failed_ when at least one of the futures is failed:
 
 [source,$lang]
 ----
@@ -1057,7 +1057,7 @@ set of file to _watch_. This set can use Ant-style patterns (with `\**`, `*` and
 several sets by separating them using a comma (`,`). Patterns are relative to the current working directory.
 
 Parameters passed to the `run` command are passed to the application. Java Virtual Machine options can be
-configured using `--java-opts`. For instance, to pass the the `conf` parameter or a system property, you need to
+configured using `--java-opts`. For instance, to pass the `conf` parameter or a system property, you need to
 use: `--java-opts="-conf=my-conf.json -Dkey=value"`
 
 The `--launcher-class` option determine with with _main_ class the application is launcher. It's generally

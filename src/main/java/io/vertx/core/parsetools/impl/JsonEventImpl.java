@@ -11,6 +11,7 @@
 
 package io.vertx.core.parsetools.impl;
 
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
@@ -30,14 +31,20 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public class JsonEventImpl implements JsonEvent {
 
+  private final JsonToken token;
   private final JsonEventType type;
   private final String field;
   private final Object value;
 
-  public JsonEventImpl(JsonEventType type, String field, Object value) {
+  public JsonEventImpl(JsonToken token, JsonEventType type, String field, Object value) {
+    this.token = token;
     this.type = type;
     this.field = field;
     this.value = value;
+  }
+
+  public JsonToken token() {
+    return token;
   }
 
   @Override

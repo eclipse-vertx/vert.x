@@ -17,7 +17,6 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
@@ -36,6 +35,9 @@ import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
+import java.security.cert.Certificate;
+import java.util.Arrays;
+import java.util.List;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
@@ -529,6 +531,15 @@ public abstract class ConnectionBase {
     SSLSession session = sslSession();
     if (session != null) {
       return session.getPeerCertificateChain();
+    } else {
+      return null;
+    }
+  }
+
+  public List<Certificate> peerCertificates() throws SSLPeerUnverifiedException {
+    SSLSession session = sslSession();
+    if (session != null) {
+      return Arrays.asList(session.getPeerCertificates());
     } else {
       return null;
     }

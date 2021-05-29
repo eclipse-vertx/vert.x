@@ -26,6 +26,7 @@ import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -318,6 +319,7 @@ public class DatagramTest extends VertxTestBase {
     await();
   }
 
+  @Ignore
   @Test
   public void testBroadcast() {
     if (USE_NATIVE_TRANSPORT) {

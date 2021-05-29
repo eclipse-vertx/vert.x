@@ -356,7 +356,7 @@ of cookies are enabled using the setter: {@link io.vertx.core.http.Cookie#setSam
 Same site cookies can have one of 3 values:
 
 * None - The browser will send cookies with both cross-site requests and same-site requests.
-* Strict - he browser will only send cookies for same-site requests (requests originating from the site that set the
+* Strict - The browser will only send cookies for same-site requests (requests originating from the site that set the
   cookie). If the request originated from a different URL than the URL of the current location, none of the cookies
   tagged with the Strict attribute will be included.
 * Lax - Same-site cookies are withheld on cross-site subrequests, such as calls to load images or frames, but will be
@@ -377,7 +377,7 @@ algorithms.
 To enable decompression set {@link io.vertx.core.http.HttpServerOptions#setDecompressionSupported(boolean)} on the
 options when creating the server.
 
-By default decompression is disabled.
+By default, decompression is disabled.
 
 ==== Receiving custom HTTP/2 frames
 
@@ -392,7 +392,7 @@ this will get called every time a custom frame arrives. Here's an example:
 {@link examples.HTTP2Examples#example1}
 ----
 
-HTTP/2 frames are not subject to flow control - the frame handler will be called immediatly when a
+HTTP/2 frames are not subject to flow control - the frame handler will be called immediately when a
 custom frame is received whether the request is paused or is not
 
 === Sending back responses
@@ -443,7 +443,7 @@ result written to the wire.
 {@link examples.HTTPExamples#example18}
 ----
 
-Writing to a response is asynchronous and always returns immediately after the write has been queued.
+Writing to a response is asynchronous and always returns immediately after write has been queued.
 
 If you are just writing a single string or buffer to the HTTP response you can write it and end the response in a
 single call to the {@link io.vertx.core.http.HttpServerResponse#end(String)}
@@ -562,7 +562,7 @@ Here's a very simple web server that serves files from the file system using sen
 ----
 
 Sending a file is asynchronous and may not complete until some time after the call has returned. If you want to
-be notified when the file has been writen you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String,io.vertx.core.Handler)}
+be notified when the file has been written you can use {@link io.vertx.core.http.HttpServerResponse#sendFile(String,io.vertx.core.Handler)}
 
 Please see the chapter about <<classpath, serving files from the classpath>> for restrictions about the classpath resolution or disabling it.
 
@@ -641,7 +641,7 @@ HTTP/2 supports stream reset at any time during the request/response:
 {@link examples.HTTP2Examples#example3}
 ----
 
-By default the `NO_ERROR` (0) error code is sent, another code can sent instead:
+By default, the `NO_ERROR` (0) error code is sent, another code can sent instead:
 
 [source,$lang]
 ----
@@ -681,7 +681,7 @@ the pushed response can be written after.
 
 You can set an {@link io.vertx.core.http.HttpServer#exceptionHandler(io.vertx.core.Handler)} to receive any
 exceptions that happens before the connection is passed to the {@link io.vertx.core.http.HttpServer#requestHandler(io.vertx.core.Handler)}
-or to the {@link io.vertx.core.http.HttpServer#webSocketHandler(io.vertx.core.Handler)}, e.g during the TLS handshake.
+or to the {@link io.vertx.core.http.HttpServer#webSocketHandler(io.vertx.core.Handler)}, e.g. during the TLS handshake.
 
 === HTTP Compression
 
@@ -695,7 +695,7 @@ This allows to handle Client that support HTTP Compression and those that not su
 
 To enable compression use can configure it with {@link io.vertx.core.http.HttpServerOptions#setCompressionSupported}.
 
-By default compression is not enabled.
+By default, compression is not enabled.
 
 When HTTP compression is enabled the server will check if the client includes an `Accept-Encoding` header which
 includes the supported compressions. Commonly used are deflate and gzip. Both are supported by Vert.x.
@@ -745,7 +745,7 @@ If you want to configure options for the client, you create it as follows:
 
 Vert.x supports HTTP/2 over TLS `h2` and over TCP `h2c`.
 
-By default the http client performs HTTP/1.1 requests, to perform HTTP/2 requests the {@link io.vertx.core.http.HttpClientOptions#setProtocolVersion}
+By default, the http client performs HTTP/1.1 requests, to perform HTTP/2 requests the {@link io.vertx.core.http.HttpClientOptions#setProtocolVersion}
 must be set to {@link io.vertx.core.http.HttpVersion#HTTP_2}.
 
 For `h2` requests, TLS must be enabled with _Application-Layer Protocol Negotiation_:
@@ -762,7 +762,7 @@ For `h2c` requests, TLS must be disabled, the client will do an HTTP/1.1 request
 {@link examples.HTTP2Examples#example8}
 ----
 
-`h2c` connections can also be established directly, i.e connection started with a prior knowledge, when
+`h2c` connections can also be established directly, i.e. connection started with a prior knowledge, when
 {@link io.vertx.core.http.HttpClientOptions#setHttp2ClearTextUpgrade(boolean)} options is set to false: after the
 connection is established, the client will send the HTTP/2 connection preface and expect to receive
 the same preface from the server.
@@ -912,7 +912,7 @@ to the request, as it will be too late otherwise.
 If you are calling one of the `end` methods that take a string or buffer then Vert.x will automatically calculate
 and set the `Content-Length` header before writing the request body.
 
-If you are using HTTP chunking a a `Content-Length` header is not required, so you do not have to calculate the size
+If you are using HTTP chunking a `Content-Length` header is not required, so you do not have to calculate the size
 up-front.
 
 ==== Ending streamed HTTP requests
@@ -1311,7 +1311,7 @@ will result in the following header added:
 
  Accept-Encoding: gzip, deflate
 
-The server will choose then from one of these. You can detect if a server ompressed the body by checking for the
+The server will choose then from one of these. You can detect if a server compressed the body by checking for the
 `Content-Encoding` header in the response sent back from it.
 
 If the body of the response was compressed via gzip it will include for example the following header:
@@ -1360,7 +1360,7 @@ Pipe-lining means another request is sent on the same connection before the resp
 returned. Pipe-lining is not appropriate for all requests.
 
 To enable pipe-lining, it must be enabled using {@link io.vertx.core.http.HttpClientOptions#setPipelining(boolean)}.
-By default pipe-lining is disabled.
+By default, pipe-lining is disabled.
 
 When pipe-lining is enabled requests will be written to connections without waiting for previous responses to return.
 
@@ -1828,12 +1828,30 @@ For a SOCKS5 proxy:
 The DNS resolution is always done on the proxy server, to achieve the functionality of a SOCKS4 client, it is necessary
 to resolve the DNS address locally.
 
+Proxy options can also be set per request:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#perRequestProxyOptions}
+----
+
+NOTE: A given host should always use the same proxy options: as HTTP requests are pooled, per request proxy
+options are used when establishing the connection
+
+You can use {@link io.vertx.core.http.HttpClientOptions#setNonProxyHosts} to configure a list of host bypassing
+the proxy. The lists accept `*` wildcard for matching domains:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#nonProxyHosts}
+----
+
 ==== Handling of other protocols
 
 The HTTP proxy implementation supports getting ftp:// urls if the proxy supports
 that.
 
-When the HTTP request URI contains contains the full URL then the client will not compute a full HTTP url and instead
+When the HTTP request URI contains the full URL then the client will not compute a full HTTP url and instead
 use the full URL specified in the request URI:
 
 [source,$lang]

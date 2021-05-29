@@ -72,6 +72,15 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * Create an instance copying the values from {@code other} and using the defaults of {@link NetClientOptions}.
+   *
+   * @param other  the options to copy
+   */
+  public NetClientOptions(ClientOptionsBase other) {
+    super(other);
+  }
+
+  /**
    * Create options from JSON
    *
    * @param json  the JSON
@@ -366,6 +375,16 @@ public class NetClientOptions extends ClientOptionsBase {
 
   public NetClientOptions setProxyOptions(ProxyOptions proxyOptions) {
     return (NetClientOptions) super.setProxyOptions(proxyOptions);
+  }
+
+  @Override
+  public NetClientOptions setNonProxyHosts(List<String> nonProxyHosts) {
+    return (NetClientOptions) super.setNonProxyHosts(nonProxyHosts);
+  }
+
+  @Override
+  public NetClientOptions addNonProxyHost(String nonProxyHost) {
+    return (NetClientOptions) super.addNonProxyHost(nonProxyHost);
   }
 
   @Override

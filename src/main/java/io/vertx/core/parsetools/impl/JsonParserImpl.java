@@ -32,6 +32,7 @@ import io.vertx.core.streams.ReadStream;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
@@ -40,12 +41,11 @@ import java.util.Map;
  */
 public class JsonParserImpl implements JsonParser {
 
-  private NonBlockingJsonParser parser;
-  private JsonToken currentToken;
-  private Handler<JsonToken> tokenHandler = this::handleToken;
+  private final NonBlockingJsonParser parser;
+  private Handler<JsonEventImpl> tokenHandler = this::handleEvent;
   private Handler<JsonEvent> eventHandler;
-  private BufferingHandler arrayHandler;
-  private BufferingHandler objectHandler;
+  private boolean objectValueMode;
+  private boolean arrayValueMode;
   private Handler<Throwable> exceptionHandler;
   private String currentField;
   private Handler<Void> endHandler;
@@ -53,6 +53,7 @@ public class JsonParserImpl implements JsonParser {
   private boolean ended;
   private final ReadStream<Buffer> stream;
   private boolean emitting;
+  private final Deque<JsonEventImpl> pending = new ArrayDeque<>();
 
   public JsonParserImpl(ReadStream<Buffer> stream) {
     this.stream = stream;
@@ -88,7 +89,9 @@ public class JsonParserImpl implements JsonParser {
 
   @Override
   public JsonParser endHandler(Handler<Void> handler) {
-    endHandler = handler;
+    if (pending.size() > 0 || !ended) {
+      endHandler = handler;
+    }
     return this;
   }
 
@@ -113,90 +116,39 @@ public class JsonParserImpl implements JsonParser {
     return this;
   }
 
-  private void handleEvent(JsonEvent event) {
-    if (demand != Long.MAX_VALUE) {
-      demand--;
-    }
-    Handler<JsonEvent> handler = this.eventHandler;
-    if (handler != null) {
-      handler.handle(event);
-    }
-  }
-
-  private void handleToken(JsonToken token) {
-    try {
-      switch (token) {
-        case START_OBJECT: {
-          BufferingHandler handler = objectHandler;
-          if (handler != null) {
-            tokenHandler = handler;
-            handler.handle(token);
-          } else {
-            handleEvent(new JsonEventImpl(JsonEventType.START_OBJECT, currentField, null));
-          }
-          break;
-        }
-        case START_ARRAY: {
-          BufferingHandler handler = arrayHandler;
-          if (handler != null) {
-            tokenHandler = handler;
-            handler.handle(token);
-          } else {
-            handleEvent(new JsonEventImpl(JsonEventType.START_ARRAY, currentField, null));
-          }
-          break;
-        }
-        case FIELD_NAME: {
-          currentField = parser.getCurrentName();
-          break;
-        }
-        case VALUE_STRING: {
-          String f = currentField;
-          currentField = null;
-          handleEvent(new JsonEventImpl(JsonEventType.VALUE, f, parser.getText()));
-          break;
-        }
-        case VALUE_TRUE: {
-          handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, Boolean.TRUE));
-          break;
-        }
-        case VALUE_FALSE: {
-          handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, Boolean.FALSE));
-          break;
-        }
-        case VALUE_NULL: {
-          handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, null));
-          break;
-        }
-        case VALUE_NUMBER_INT: {
-          handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, parser.getLongValue()));
-          break;
-        }
-        case VALUE_NUMBER_FLOAT: {
-          handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, parser.getDoubleValue()));
-          break;
-        }
-        case END_OBJECT: {
-          handleEvent(new JsonEventImpl(JsonEventType.END_OBJECT, null, null));
-          break;
-        }
-        case END_ARRAY: {
-          handleEvent(new JsonEventImpl(JsonEventType.END_ARRAY, null, null));
-          break;
-        }
-        default:
-          throw new UnsupportedOperationException("Token " + token + " not implemented");
+  private void handleEvent(JsonEventImpl event) {
+    if (event.type() == JsonEventType.START_OBJECT && objectValueMode) {
+      BufferingHandler handler = new BufferingHandler();
+      handler.handler = buffer -> {
+        tokenHandler = this::handleEvent;
+        handleEvent(new JsonEventImpl(null, JsonEventType.VALUE, event.fieldName(), new JsonObject(handler.convert(Map.class))));
+      };
+      tokenHandler = handler;
+      handler.handle(new JsonEventImpl(JsonToken.START_OBJECT, JsonEventType.START_OBJECT, null, null));
+    } else if (event.type() == JsonEventType.START_ARRAY && arrayValueMode) {
+      BufferingHandler handler = new BufferingHandler();
+      handler.handler = buffer -> {
+        tokenHandler = this::handleEvent;
+        handleEvent(new JsonEventImpl(null, JsonEventType.VALUE, event.fieldName(), new JsonArray(handler.convert(List.class))));
+      };
+      tokenHandler = handler;
+      handler.handle(new JsonEventImpl(JsonToken.START_ARRAY, JsonEventType.START_ARRAY, null, null));
+    } else {
+      if (demand != Long.MAX_VALUE) {
+        demand--;
       }
-    } catch (IOException e) {
-      throw new DecodeException(e.getMessage());
+      if (eventHandler != null) {
+        eventHandler.handle(event);
+      }
     }
   }
 
   @Override
-  public void handle(Buffer event) {
-    byte[] bytes = event.getBytes();
+  public void handle(Buffer data) {
+    byte[] bytes = data.getBytes();
     try {
       parser.feedInput(bytes, 0, bytes.length);
+      checkTokens();
     } catch (IOException e) {
       if (exceptionHandler != null) {
         exceptionHandler.handle(e);
@@ -215,7 +167,78 @@ public class JsonParserImpl implements JsonParser {
     }
     ended = true;
     parser.endOfInput();
+    try {
+      checkTokens();
+    } catch (IOException e) {
+      if (exceptionHandler != null) {
+        exceptionHandler.handle(e);
+        return;
+      } else {
+        throw new DecodeException(e.getMessage(), e);
+      }
+    }
     checkPending();
+  }
+
+  private void checkTokens() throws IOException {
+    while (true) {
+      JsonToken token = parser.nextToken();
+      if (token == null || token == JsonToken.NOT_AVAILABLE) {
+        break;
+      }
+      String field = currentField;
+      currentField = null;
+      JsonEventImpl event;
+      switch (token) {
+        case START_OBJECT: {
+          event = new JsonEventImpl(token, JsonEventType.START_OBJECT, field, null);
+          break;
+        }
+        case START_ARRAY: {
+          event = new JsonEventImpl(token, JsonEventType.START_ARRAY, field, null);
+          break;
+        }
+        case FIELD_NAME: {
+          currentField = parser.getCurrentName();
+          continue;
+        }
+        case VALUE_STRING: {
+          event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getText());
+          break;
+        }
+        case VALUE_TRUE: {
+          event = new JsonEventImpl(token, JsonEventType.VALUE, field, Boolean.TRUE);
+          break;
+        }
+        case VALUE_FALSE: {
+          event = new JsonEventImpl(token, JsonEventType.VALUE, field, Boolean.FALSE);
+          break;
+        }
+        case VALUE_NULL: {
+          event = new JsonEventImpl(token, JsonEventType.VALUE, field, null);
+          break;
+        }
+        case VALUE_NUMBER_INT: {
+          event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getLongValue());
+          break;
+        }
+        case VALUE_NUMBER_FLOAT: {
+          event = new JsonEventImpl(token, JsonEventType.VALUE, field, parser.getDoubleValue());
+          break;
+        }
+        case END_OBJECT: {
+          event = new JsonEventImpl(token, JsonEventType.END_OBJECT, null, null);
+          break;
+        }
+        case END_ARRAY: {
+          event = new JsonEventImpl(token, JsonEventType.END_ARRAY, null, null);
+          break;
+        }
+        default:
+          throw new UnsupportedOperationException("Token " + token + " not implemented");
+      }
+      pending.add(event);
+    }
   }
 
   private void checkPending() {
@@ -223,44 +246,35 @@ public class JsonParserImpl implements JsonParser {
       emitting = true;
       try {
         while (true) {
-          if (currentToken == null) {
-            JsonToken next = parser.nextToken();
-            if (next != null && next != JsonToken.NOT_AVAILABLE) {
-              currentToken = next;
-            }
-          }
-          if (currentToken == null) {
-            if (ended) {
-              if (endHandler != null) {
-                endHandler.handle(null);
-              }
-              return;
-            }
-            break;
-          } else {
-            if (demand > 0L) {
-              JsonToken token = currentToken;
-              currentToken = null;
-              tokenHandler.handle(token);
-            } else {
+          if (demand > 0L) {
+            JsonEventImpl currentToken = pending.poll();
+            if (currentToken == null) {
               break;
+            } else {
+              tokenHandler.handle(currentToken);
+            }
+          } else {
+            break;
+          }
+        }
+        if (ended) {
+          if (pending.isEmpty()) {
+            Handler<Void> handler = endHandler;
+            endHandler = null;
+            if (handler != null) {
+              handler.handle(null);
             }
           }
-        }
-        if (demand == 0L) {
-          if (stream != null) {
-            stream.pause();
-          }
         } else {
-          if (stream != null) {
-            stream.resume();
+          if (demand == 0L) {
+            if (stream != null) {
+              stream.pause();
+            }
+          } else {
+            if (stream != null) {
+              stream.resume();
+            }
           }
-        }
-      } catch (IOException e) {
-        if (exceptionHandler != null) {
-          exceptionHandler.handle(e);
-        } else {
-          throw new DecodeException(e.getMessage());
         }
       } catch (Exception e) {
         if (exceptionHandler != null) {
@@ -271,50 +285,30 @@ public class JsonParserImpl implements JsonParser {
       } finally {
         emitting = false;
       }
-    } else {
-      return;
     }
   }
 
   @Override
   public JsonParser objectEventMode() {
-    if (objectHandler != null) {
-      objectHandler = null;
-      tokenHandler = this::handleToken;
-    }
+    objectValueMode = false;
     return this;
   }
 
   @Override
   public JsonParser objectValueMode() {
-    if (objectHandler == null) {
-      BufferingHandler handler = new BufferingHandler();
-      handler.handler = buffer -> {
-        handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, new JsonObject(handler.convert(Map.class))));
-      };
-      objectHandler = handler;
-    }
+    objectValueMode = true;
     return this;
   }
 
   @Override
   public JsonParser arrayEventMode() {
-    if (arrayHandler != null) {
-      arrayHandler = null;
-      tokenHandler = this::handleToken;
-    }
+    arrayValueMode = false;
     return this;
   }
 
   @Override
   public JsonParser arrayValueMode() {
-    if (arrayHandler == null) {
-      BufferingHandler handler = new BufferingHandler();
-      handler.handler = buffer -> {
-        handleEvent(new JsonEventImpl(JsonEventType.VALUE, currentField, new JsonArray(handler.convert(List.class))));
-      };
-      arrayHandler = handler;
-    }
+    arrayValueMode = true;
     return this;
   }
 
@@ -393,50 +387,40 @@ public class JsonParserImpl implements JsonParser {
     }
   }
 
-  private class BufferingHandler implements Handler<JsonToken> {
+  private class BufferingHandler implements Handler<JsonEventImpl> {
 
     Handler<Void> handler;
     int depth;
     TokenParser buffer;
 
     @Override
-    public void handle(JsonToken event) {
+    public void handle(JsonEventImpl event) {
+      String fieldName = event.fieldName();
+      if (fieldName != null) {
+        buffer.tokens.add(JsonToken.FIELD_NAME);
+        buffer.tokens.add(fieldName);
+      }
       try {
-        switch (event) {
+        switch (event.type()) {
           case START_OBJECT:
           case START_ARRAY:
             if (depth++ == 0) {
               JsonFactory factory = new JsonFactory();
               buffer = new TokenParser(new IOContext(factory._getBufferRecycler(), this, true), com.fasterxml.jackson.core.JsonParser.Feature.collectDefaults());
             }
-            buffer.tokens.add(event);
+            buffer.tokens.add(event.token());
             break;
-          case FIELD_NAME:
-            buffer.tokens.add(event);
-            buffer.tokens.add(parser.currentName());
-            break;
-          case VALUE_NUMBER_INT:
-            buffer.tokens.add(event);
-            buffer.tokens.add(parser.getLongValue());
-            break;
-          case VALUE_NUMBER_FLOAT:
-            buffer.tokens.add(event);
-            buffer.tokens.add(parser.getDoubleValue());
-            break;
-          case VALUE_STRING:
-            buffer.tokens.add(event);
-            buffer.tokens.add(parser.getText());
-            break;
-          case VALUE_FALSE:
-          case VALUE_TRUE:
-          case VALUE_NULL:
-            buffer.tokens.add(event);
+          case VALUE:
+            JsonToken token = event.token();
+            buffer.tokens.add(token);
+            if (token != JsonToken.VALUE_FALSE && token != JsonToken.VALUE_TRUE && token != JsonToken.VALUE_NULL) {
+              buffer.tokens.add(event.value());
+            }
             break;
           case END_OBJECT:
           case END_ARRAY:
-            buffer.tokens.add(event);
+            buffer.tokens.add(event.token());
             if (--depth == 0) {
-              tokenHandler = JsonParserImpl.this::handleToken;
               handler.handle(null);
               buffer.close();
               buffer = null;

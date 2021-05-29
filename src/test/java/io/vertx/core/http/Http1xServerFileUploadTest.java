@@ -17,7 +17,6 @@ import org.junit.Test;
  */
 public class Http1xServerFileUploadTest extends HttpServerFileUploadTest {
 
-
   @Ignore
   @Test
   @Override

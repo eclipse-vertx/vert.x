@@ -16,6 +16,11 @@ public class JksOptionsConverter {
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, JksOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "alias":
+          if (member.getValue() instanceof String) {
+            obj.setAlias((String)member.getValue());
+          }
+          break;
         case "password":
           if (member.getValue() instanceof String) {
             obj.setPassword((String)member.getValue());
@@ -40,6 +45,9 @@ public class JksOptionsConverter {
   }
 
   public static void toJson(JksOptions obj, java.util.Map<String, Object> json) {
+    if (obj.getAlias() != null) {
+      json.put("alias", obj.getAlias());
+    }
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }

@@ -346,7 +346,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
         }
       });
       if (remoteAddress != null) {
-        sslHandler = new SslHandler(helper.createEngine(vertx, remoteAddress, serverName));
+        sslHandler = new SslHandler(helper.createEngine(vertx, remoteAddress, serverName, false));
         ((SslHandler) sslHandler).setHandshakeTimeout(helper.getSslHandshakeTimeout(), helper.getSslHandshakeTimeoutUnit());
       } else {
         if (helper.isSNI()) {

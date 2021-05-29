@@ -131,16 +131,6 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
   }
 
   @Override
-  public SSLSession sslSession() {
-    return conn.sslSession();
-  }
-
-  @Override
-  public X509Certificate[] peerCertificateChain() throws SSLPeerUnverifiedException {
-    return conn.peerCertificateChain();
-  }
-
-  @Override
   public Future<Void> close(short statusCode, String reason) {
     synchronized (conn) {
       if (status == null) {

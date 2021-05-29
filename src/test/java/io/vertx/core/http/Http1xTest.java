@@ -33,6 +33,7 @@ import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.Repeat;
 import io.vertx.test.core.CheckingSender;
+import io.vertx.test.tls.Cert;
 import io.vertx.test.verticles.SimpleServer;
 import io.vertx.test.core.TestUtils;
 import org.junit.Assume;
@@ -4008,10 +4009,9 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testTLSDisablesH2CHandlers() throws Exception {
     server.close();
-    SelfSignedCertificate cert = SelfSignedCertificate.create("localhost");
     server = vertx.createHttpServer(createBaseServerOptions()
       .setSsl(true)
-      .setKeyCertOptions(cert.keyCertOptions())
+      .setKeyCertOptions(Cert.SERVER_JKS.get())
     ).connectionHandler(conn -> {
       Channel channel = ((Http1xServerConnection) conn).channel();
       for (Map.Entry<String, ChannelHandler> stringChannelHandlerEntry : channel.pipeline()) {

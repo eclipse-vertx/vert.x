@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -48,5 +48,6 @@ public interface Cert<K extends KeyCertOptions> extends Supplier<K> {
       .addKeyPath("tls/host3-key.pem").addCertPath("tls/host3-cert.pem")
       .addKeyPath("tls/host4-key.pem").addCertPath("tls/host4-cert.pem")
       .addKeyPath("tls/host5-key.pem").addCertPath("tls/host5-cert.pem");
+  Cert<JksOptions> MULTIPLE_JKS = () -> new JksOptions().setPath("tls/multiple.jks").setPassword("wibble").setAlias("precious");
 
 }

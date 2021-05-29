@@ -20,3 +20,4 @@ test-tmp
 *.class
 *.swp
 .vertx
+.java-version

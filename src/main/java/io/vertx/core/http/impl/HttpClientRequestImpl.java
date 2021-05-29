@@ -17,6 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.http.HttpConnection;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.RequestOptions;
@@ -296,9 +297,6 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     exceptionHandler(null);
     next.pushHandler(pushHandler());
     next.setMaxRedirects(followRedirects - 1);
-    if (headers != null) {
-      next.headers().addAll(headers);
-    }
     endFuture.onComplete(ar -> {
       if (ar.succeeded()) {
         if (timeoutMs > 0) {

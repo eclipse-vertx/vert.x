@@ -8,7 +8,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-package io.vertx.core.net.impl.clientconnection;
+package io.vertx.core.net.impl.pool;
 
 /**
  * The result of a connect operation.
@@ -17,12 +17,12 @@ public class ConnectResult<C> {
 
   private final C conn;
   private final long concurrency;
-  private final long weight;
+  private final long capacity;
 
-  public ConnectResult(C connection, long concurrency, long weight) {
+  public ConnectResult(C connection, long concurrency, long capacity) {
     this.conn = connection;
     this.concurrency = concurrency;
-    this.weight = weight;
+    this.capacity = capacity;
   }
 
   /**
@@ -43,6 +43,13 @@ public class ConnectResult<C> {
    * @return the connection weight, i.e how much the connection accounts when it is managed by a pool
    */
   public long weight() {
-    return weight;
+    return capacity;
+  }
+
+  /**
+   * @return the connection capacity, i.e how much the connection accounts when it is managed by a pool
+   */
+  public long capacity() {
+    return capacity;
   }
 }

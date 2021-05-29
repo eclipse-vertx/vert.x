@@ -9,11 +9,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl.clientconnection;
+package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 
 import java.util.*;
@@ -42,10 +41,17 @@ public class ConnectionManager<K, C> {
   public void getConnection(EventLoopContext ctx,
                             K key,
                             Handler<AsyncResult<C>> handler) {
+    getConnection(ctx, key, 0, handler);
+  }
+
+  public void getConnection(EventLoopContext ctx,
+                            K key,
+                            long timeout,
+                            Handler<AsyncResult<C>> handler) {
     Runnable dispose = () -> endpointMap.remove(key);
     while (true) {
       Endpoint<C> endpoint = endpointMap.computeIfAbsent(key, k -> endpointProvider.create(key, ctx, dispose));
-      if (endpoint.getConnection(ctx, handler)) {
+      if (endpoint.getConnection(ctx, timeout, handler)) {
         break;
       }
     }

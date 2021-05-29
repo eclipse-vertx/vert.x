@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -36,7 +37,6 @@ import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.SelfSignedCertificate;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
 import io.vertx.test.core.TestUtils;
@@ -46,7 +46,7 @@ import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
 import org.junit.Test;
 
-import javax.security.cert.X509Certificate;
+import java.security.cert.Certificate;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -73,7 +73,9 @@ import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTPS_PORT;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_HOST;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_HTTP_PORT;
 import static io.vertx.core.http.HttpTestBase.DEFAULT_TEST_URI;
-import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.test.core.TestUtils.assertIllegalStateException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
+import static io.vertx.test.core.TestUtils.randomAlphaString;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -456,8 +458,8 @@ public class WebSocketTest extends VertxTestBase {
             WebSocket ws = ar2.result();
             if (clientSsl && sni) {
               try {
-                X509Certificate clientPeerCert = ws.peerCertificateChain()[0];
-                assertEquals("host2.com", cnOf(clientPeerCert));
+                Certificate clientPeerCert = ws.peerCertificates().get(0);
+                assertEquals("host2.com", TestUtils.cnOf(clientPeerCert));
               } catch (Exception err) {
                 fail(err);
               }
@@ -778,6 +780,13 @@ public class WebSocketTest extends VertxTestBase {
         final List<Buffer> sent = new ArrayList<>();
         final List<Buffer> received = new ArrayList<>();
 
+        String webSocketLocation = ws.headers().get("sec-websocket-location");
+        if (version == WebsocketVersion.V00) {
+          assertEquals("ws://" + DEFAULT_HTTP_HOST + ":" + DEFAULT_HTTP_PORT + uri, webSocketLocation);
+        } else {
+          assertNull(webSocketLocation);
+        }
+
         AtomicReference<Buffer> currentReceived = new AtomicReference<>(Buffer.buffer());
         ws.frameHandler(frame -> {
           //received.appendBuffer(frame.binaryData());
@@ -808,7 +817,7 @@ public class WebSocketTest extends VertxTestBase {
                 frame = WebSocketFrame.continuationFrame(buff, j == frames - 1);
               }
             } else {
-              String str = TestUtils.randomAlphaString(bsize);
+              String str = randomAlphaString(bsize);
               buff = Buffer.buffer(str);
               if (j == 0) {
                 frame = WebSocketFrame.textFrame(str, false);
@@ -1606,31 +1615,31 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testNonFragmentedTextMessage2Hybi00() {
-      String messageToSend = TestUtils.randomAlphaString(256);
+      String messageToSend = randomAlphaString(256);
       testWriteSingleTextMessage(messageToSend, WebsocketVersion.V00);
   }
 
   @Test
   public void testFragmentedTextMessage2Hybi07() {
-    String messageToSend = TestUtils.randomAlphaString(65536 + 65536 + 256);
+    String messageToSend = randomAlphaString(65536 + 65536 + 256);
     testWriteSingleTextMessage(messageToSend, WebsocketVersion.V07);
   }
 
   @Test
   public void testFragmentedTextMessage2Hybi08() {
-    String messageToSend = TestUtils.randomAlphaString(65536 + 65536 + 256);
+    String messageToSend = randomAlphaString(65536 + 65536 + 256);
     testWriteSingleTextMessage(messageToSend, WebsocketVersion.V08);
   }
 
   @Test
   public void testFragmentedTextMessage2Hybi13() {
-    String messageToSend = TestUtils.randomAlphaString(65536 + 65536 + 256);
+    String messageToSend = randomAlphaString(65536 + 65536 + 256);
     testWriteSingleTextMessage(messageToSend, WebsocketVersion.V13);
   }
 
   @Test
   public void testMaxLengthFragmentedTextMessage() {
-    String messageToSend = TestUtils.randomAlphaString(HttpServerOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE);
+    String messageToSend = randomAlphaString(HttpServerOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE);
     testWriteSingleTextMessage(messageToSend, WebsocketVersion.V13);
   }
 
@@ -1654,7 +1663,7 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testTooLargeMessage() {
-    String messageToSend = TestUtils.randomAlphaString(HttpClientOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE + 1);
+    String messageToSend = randomAlphaString(HttpClientOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE + 1);
     SocketMessages socketMessages = testWriteTextMessages(Collections.singletonList(messageToSend), WebsocketVersion.V13);
     List<String> receivedMessages = socketMessages.getReceivedMessages();
     List<String> expectedMessages = Collections.emptyList();
@@ -1668,9 +1677,9 @@ public class WebSocketTest extends VertxTestBase {
   @Test
   public void testContinueAfterTooLargeMessage() {
     int shortMessageLength = HttpClientOptions.DEFAULT_MAX_WEBSOCKET_FRAME_SIZE;
-    String shortFirstMessage = TestUtils.randomAlphaString(shortMessageLength);
-    String tooLongMiddleMessage = TestUtils.randomAlphaString(HttpClientOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE * 2);
-    String shortLastMessage = TestUtils.randomAlphaString(shortMessageLength);
+    String shortFirstMessage = randomAlphaString(shortMessageLength);
+    String tooLongMiddleMessage = randomAlphaString(HttpClientOptions.DEFAULT_MAX_WEBSOCKET_MESSAGE_SIZE * 2);
+    String shortLastMessage = randomAlphaString(shortMessageLength);
     List<String> messagesToSend = Arrays.asList(shortFirstMessage, tooLongMiddleMessage, shortLastMessage);
 
     SocketMessages socketMessages = testWriteTextMessages(messagesToSend, WebsocketVersion.V13);
@@ -2384,10 +2393,9 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testClearClientSslOptions() {
-    SelfSignedCertificate certificate = SelfSignedCertificate.create();
     HttpServerOptions serverOptions = new HttpServerOptions().setPort(DEFAULT_HTTPS_PORT)
       .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOptions());
+      .setKeyCertOptions(Cert.SERVER_JKS.get());
     HttpClientOptions clientOptions = new HttpClientOptions()
       .setTrustAll(true)
       .setVerifyHost(false);
@@ -2685,10 +2693,9 @@ public class WebSocketTest extends VertxTestBase {
 
   @Test
   public void testWebSocketAbs() {
-    SelfSignedCertificate certificate = SelfSignedCertificate.create();
     HttpServerOptions serverOptions = new HttpServerOptions().setPort(DEFAULT_HTTPS_PORT)
       .setSsl(true)
-      .setKeyCertOptions(certificate.keyCertOptions());
+      .setKeyCertOptions(Cert.SERVER_JKS.get());
     HttpClientOptions clientOptions = new HttpClientOptions()
       .setTrustAll(true)
       .setVerifyHost(false);
@@ -2893,7 +2900,7 @@ public class WebSocketTest extends VertxTestBase {
           NetSocketInternal soi = conn.toNetSocket();
           soi.channelHandlerContext().pipeline().addBefore("handler", "encoder", new WebSocket13FrameEncoder(true));
           soi.channelHandlerContext().pipeline().addBefore("handler", "decoder", new WebSocket13FrameDecoder(false, false, 1000));
-          String reason = TestUtils.randomAlphaString(10);
+          String reason = randomAlphaString(10);
           soi.writeMessage(new CloseWebSocketFrame(status, reason));
           AtomicBoolean closeFrameReceived = new AtomicBoolean();
           soi.messageHandler(msg -> {
@@ -2932,7 +2939,7 @@ public class WebSocketTest extends VertxTestBase {
           }
         });
         int status = 4000 + TestUtils.randomPositiveInt() % 100;
-        String reason = TestUtils.randomAlphaString(10);
+        String reason = randomAlphaString(10);
         soi.writeMessage(new CloseWebSocketFrame(status, reason));
         soi.closeHandler(v -> {
           assertEquals(1, received.size());

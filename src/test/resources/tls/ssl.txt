@@ -335,3 +335,13 @@ rm host2-keystore.p12
 rm host3-keystore.p12
 rm host4-keystore.p12
 rm host5-keystore.p12
+
+## JKS Store with multiple entries
+
+Execute these commands, in the same order:
+
+keytool -v -genkeypair -alias precious -keyalg RSA -keysize 4096 -keystore multiple.jks -validity 36500
+keytool -v -genkeypair -alias other -keyalg RSA -keysize 4096 -keystore multiple.jks -validity 36500
+
+The generated file is used to setup a server and check we can force Vert.x to use a specific alias.
+By default the SSL engine selects the first entry in the keystore (which corresponds to the second generated key pair - "other").

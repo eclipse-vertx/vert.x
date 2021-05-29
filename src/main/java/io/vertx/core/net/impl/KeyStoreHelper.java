@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -215,11 +215,19 @@ public class KeyStoreHelper {
     return names;
   }
 
-  public static KeyStore loadKeyStoreOptions(String type, String provider, String password, Supplier<Buffer> value) throws Exception {
+  public static KeyStore loadKeyStore(String type, String provider, String password, Supplier<Buffer> value, String alias) throws Exception {
     Objects.requireNonNull(type);
     KeyStore ks = provider == null ? KeyStore.getInstance(type) : KeyStore.getInstance(type, provider);
     try (InputStream in = new ByteArrayInputStream(value.get().getBytes())) {
       ks.load(in, password != null ? password.toCharArray() : null);
+    }
+    if (alias != null) {
+      List<String> ksAliases = Collections.list(ks.aliases());
+      for (String ksAlias : ksAliases) {
+        if (!alias.equals(ksAlias)) {
+          ks.deleteEntry(ksAlias);
+        }
+      }
     }
     return ks;
   }

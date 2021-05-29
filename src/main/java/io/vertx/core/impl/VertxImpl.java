@@ -95,9 +95,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         System.getProperty("io.netty.leakDetectionLevel") == null) {
       ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.DISABLED);
     }
-
-    // Use the JDK deflater/inflater by default
-    System.setProperty("io.netty.noJdkZlibDecoder", "false");
   }
 
   private final FileSystem fileSystem = getFileSystem();
@@ -389,12 +386,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public <T> PromiseInternal<T> promise(Handler<AsyncResult<T>> handler) {
     if (handler instanceof PromiseInternal) {
-      return (PromiseInternal<T>) handler;
-    } else {
-      PromiseInternal<T> promise = promise();
-      promise.future().onComplete(handler);
-      return promise;
+      PromiseInternal<T> promise = (PromiseInternal<T>) handler;
+      if (promise.context() != null) {
+        return promise;
+      }
     }
+    PromiseInternal<T> promise = promise();
+    promise.future().onComplete(handler);
+    return promise;
   }
 
   public void runOnContext(Handler<Void> task) {
@@ -466,12 +465,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
+    return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
   }
 
   @Override
   public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, tracer, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl);
+    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl);
   }
 
   @Override
@@ -481,12 +480,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new WorkerContext(this, tracer, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
+    return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
   }
 
   @Override
   public WorkerContext createWorkerContext() {
-    return createWorkerContext(null, null, null, null);
+    return createWorkerContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
   }
 
   @Override
@@ -1155,6 +1154,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public CloseFuture closeFuture() {
     return closeFuture;
+  }
+
+  @Override
+  public VertxTracer tracer() {
+    return tracer;
   }
 
   @Override
