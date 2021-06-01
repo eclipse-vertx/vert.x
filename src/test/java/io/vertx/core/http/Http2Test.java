@@ -11,14 +11,19 @@
 
 package io.vertx.core.http;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.socket.DuplexChannel;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.Http2ServerConnection;
 import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
@@ -961,5 +966,58 @@ public class Http2Test extends HttpTest {
     } finally {
       System.clearProperty("vertx.disableH2c");
     }
+  }
+
+  /**
+   * Test that socket close (without an HTTP/2 go away frame) removes the connection from the pool
+   * before the streams are notified. Otherwise a notified stream might reuse a stale connection from
+   * the pool.
+   */
+  @Test
+  public void testConnectionCloseEvictsConnectionFromThePoolBeforeStreamsAreClosed() throws Exception {
+    Set<HttpConnection> serverConnections = new HashSet<>();
+    server.requestHandler(req -> {
+      serverConnections.add(req.connection());
+      switch (req.path()) {
+        case "/1":
+          req.response().end();
+          break;
+        case "/2":
+          assertEquals(1, serverConnections.size());
+          // Socket close without HTTP/2 go away
+          Channel ch = ((ConnectionBase) req.connection()).channel();
+          ChannelPromise promise = ch.newPromise();
+          ch.unsafe().close(promise);
+          break;
+        case "/3":
+          assertEquals(2, serverConnections.size());
+          req.response().end();
+          break;
+      }
+    });
+    startServer(testAddress);
+    Future<Buffer> f1 = client.request(new RequestOptions(requestOptions).setURI("/1"))
+      .compose(req -> req.send()
+        .compose(HttpClientResponse::body));
+    f1.onComplete(onSuccess(v -> {
+      Future<Buffer> f2 = client.request(new RequestOptions(requestOptions).setURI("/2"))
+        .compose(req -> {
+          System.out.println(req.connection());
+          return req.send()
+            .compose(HttpClientResponse::body);
+        });
+      f2.onComplete(onFailure(v2 -> {
+        Future<Buffer> f3 = client.request(new RequestOptions(requestOptions).setURI("/3"))
+          .compose(req -> {
+            System.out.println(req.connection());
+            return req.send()
+              .compose(HttpClientResponse::body);
+          });
+        f3.onComplete(onSuccess(vvv -> {
+          testComplete();
+        }));
+      }));
+    }));
+    await();
   }
 }
