@@ -20,7 +20,6 @@ import org.junit.Test;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,6 +29,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -549,24 +550,62 @@ public class ContextTest extends VertxTestBase {
     awaitLatch(latch);
   }
 
-
   @Test
-  public void testDuplicateEventLoopExecuteBlocking() throws Exception {
-    testDuplicateExecuteBlocking((ContextInternal) vertx.getOrCreateContext());
+  public void testEventLoopExecuteBlockingOrdered() {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    testDuplicateExecuteBlocking(() -> ctx, true);
   }
 
   @Test
-  public void testDuplicateWorkerExecuteBlocking() throws Exception {
-    testDuplicateExecuteBlocking(createWorkerContext());
+  public void testWorkerExecuteBlockingOrdered() {
+    ContextInternal ctx = createWorkerContext();
+    testDuplicateExecuteBlocking(() -> ctx, true);
   }
 
-  private void testDuplicateExecuteBlocking(ContextInternal ctx) throws Exception {
-    ContextInternal dup1 = ctx.duplicate();
-    ContextInternal dup2 = ctx.duplicate();
+  @Test
+  public void testEventLoopExecuteBlockingUnordered() {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    testDuplicateExecuteBlocking(() -> ctx, false);
+  }
+
+  @Test
+  public void testWorkerExecuteBlockingUnordered() {
+    ContextInternal ctx = createWorkerContext();
+    testDuplicateExecuteBlocking(() -> ctx, false);
+  }
+
+  @Test
+  public void testDuplicateEventLoopExecuteBlockingOrdered() {
+    testDuplicateExecuteBlocking(((ContextInternal) vertx.getOrCreateContext())::duplicate, true);
+  }
+
+  @Test
+  public void testDuplicateWorkerExecuteBlockingOrdered() {
+    testDuplicateExecuteBlocking(createWorkerContext()::duplicate, true);
+  }
+
+  @Test
+  public void testDuplicateEventLoopExecuteBlockingUnordered() {
+    testDuplicateExecuteBlocking(((ContextInternal) vertx.getOrCreateContext())::duplicate, false);
+  }
+
+  @Test
+  public void testDuplicateWorkerExecuteBlockingUnordered() {
+    testDuplicateExecuteBlocking(createWorkerContext()::duplicate, false);
+  }
+
+  private void testDuplicateExecuteBlocking(Supplier<ContextInternal> supplier, boolean ordered) {
+    int n = 2;
+    List<ContextInternal> dup1 = Stream.generate(supplier).limit(n).collect(Collectors.toList());
     AtomicInteger cnt = new AtomicInteger();
-    Future<Void> f1 = dup1.executeBlocking(p -> {
+    List<Future> futures = dup1.stream().map(c -> c.<Void>executeBlocking(duplicate -> {
       assertTrue(Context.isOnWorkerThread());
-      assertEquals(1, cnt.incrementAndGet());
+      int val = cnt.incrementAndGet();
+      if (ordered) {
+        assertEquals(1, val);
+      } else {
+        assertWaitUntil(() -> cnt.get() == 2, 2000);
+      }
       try {
         Thread.sleep(500);
       } catch (InterruptedException e) {
@@ -574,21 +613,9 @@ public class ContextTest extends VertxTestBase {
       } finally {
         cnt.decrementAndGet();
       }
-      p.complete();
-    });
-    Future<Void> f2 = dup2.executeBlocking(p -> {
-      assertTrue(Context.isOnWorkerThread());
-      assertEquals(1, cnt.incrementAndGet());
-      try {
-        Thread.sleep(500);
-      } catch (InterruptedException e) {
-        fail(e);
-      } finally {
-        cnt.decrementAndGet();
-      }
-      p.complete();
-    });
-    CompositeFuture.all(f1, f2).onComplete(onSuccess(v -> {
+      duplicate.complete();
+    }, ordered)).collect(Collectors.toList());
+    CompositeFuture.all(futures).onComplete(onSuccess(v -> {
       testComplete();
     }));
     await();
