@@ -144,7 +144,7 @@ class DuplicatedContext extends AbstractContext {
 
   @Override
   public final <T> Future<T> executeBlocking(Handler<Promise<T>> action, boolean ordered) {
-    return ContextImpl.executeBlocking(this, action, delegate.workerPool, delegate.orderedTasks);
+    return ContextImpl.executeBlocking(this, action, delegate.workerPool, ordered ? delegate.orderedTasks : null);
   }
 
   @Override
