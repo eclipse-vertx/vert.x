@@ -347,7 +347,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * <p> If the {@link HttpHeaders#CONTENT_LENGTH} is set then the request assumes this is the
    * length of the {stream}, otherwise the request will set a chunked {@link HttpHeaders#CONTENT_ENCODING}.
    *
-   * @param handler the completion handler 
+   * @param handler the completion handler
    */
   default void send(ReadStream<Buffer> body, Handler<AsyncResult<Void>> handler) {
     MultiMap headers = headers();
@@ -437,7 +437,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    *
    * @param filename path to the file to serve
    * @param offset the offset to serve from
-   * @param length the length to serve to
+   * @param length length the number of bytes to send
    * @param resultHandler  handler that will be called on completion
    * @return a reference to this, so the API can be used fluently
    */

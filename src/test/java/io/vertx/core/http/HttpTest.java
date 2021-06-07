@@ -2103,8 +2103,12 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         client.request(requestOptions)
           .compose(HttpClientRequest::send)
-          .compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
+          .compose(resp -> {
+            assertEquals(String.valueOf(10), resp.headers().get("Content-Length"));
+            return resp.body();
+          }).onComplete(onSuccess(body -> {
           assertTrue(body.toString().startsWith("server.net"));
+          assertEquals(10, body.toString().length());
           testComplete();
         }));
       }));
@@ -2119,8 +2123,12 @@ public abstract class HttpTest extends HttpTestBase {
     }).listen(testAddress, onSuccess(res -> {
       client.request(requestOptions)
         .compose(HttpClientRequest::send)
-        .compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
+        .compose(resp -> {
+          assertEquals(String.valueOf(10), resp.headers().get("Content-Length"));
+          return resp.body();
+        }).onComplete(onSuccess(body -> {
         assertEquals("server.net", body.toString());
+        assertEquals(10, body.toString().length());
         testComplete();
       }));
     }));
