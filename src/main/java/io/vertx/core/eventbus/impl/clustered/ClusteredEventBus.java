@@ -24,11 +24,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
+import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
@@ -144,6 +140,11 @@ public class ClusteredEventBus extends EventBusImpl {
     } else if (promise != null) {
       promise.complete();
     }
+  }
+
+  @Override
+  protected Handlers createHandlers() {
+    return new ClusteredEventBusHandlers();
   }
 
   @Override

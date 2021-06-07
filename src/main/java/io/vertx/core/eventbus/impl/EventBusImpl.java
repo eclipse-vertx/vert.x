@@ -17,7 +17,6 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -45,7 +44,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
   protected final EventBusMetrics metrics;
-  protected final ConcurrentMap<String, ConcurrentCyclicSequence<HandlerHolder>> handlerMap = new ConcurrentHashMap<>();
+  protected final ConcurrentMap<String, Handlers> handlerMap = new ConcurrentHashMap<>();
   protected final CodecManager codecManager = new CodecManager();
   protected volatile boolean started;
 
@@ -255,17 +254,18 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
     HandlerHolder<T> holder = createHandlerHolder(registration, replyHandler, localOnly, context);
 
-    ConcurrentCyclicSequence<HandlerHolder> handlers = new ConcurrentCyclicSequence<HandlerHolder>().add(holder);
-    ConcurrentCyclicSequence<HandlerHolder> actualHandlers = handlerMap.merge(
-      address,
-      handlers,
-      (old, prev) -> old.add(prev.first()));
+    Handlers handlers = createHandlers().add(holder);
+    handlerMap.merge(address, handlers, (old, prev) -> old.add(prev));
 
     if (context.isDeployment()) {
       context.addCloseHook(registration);
     }
 
     return holder;
+  }
+
+  protected Handlers createHandlers() {
+    return new EventBusHandlers();
   }
 
   protected <T> HandlerHolder<T> createHandlerHolder(HandlerRegistration<T> registration, boolean replyHandler, boolean localOnly, ContextInternal context) {
@@ -287,8 +287,8 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       if (val == null) {
         return null;
       }
-      ConcurrentCyclicSequence<HandlerHolder> next = val.remove(holder);
-      return next.size() == 0 ? null : next;
+      Handlers next = val.remove(holder);
+      return next.isEmpty() ? null : next;
     });
     if (holder.setRemoved() && holder.getContext().deploymentID() != null) {
       holder.getContext().removeCloseHook(holder.getHandler());
@@ -329,13 +329,14 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   protected ReplyException deliverMessageLocally(MessageImpl msg) {
-    ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
+    Handlers handlers = handlerMap.get(msg.address());
+    boolean messageLocal = isMessageLocal(msg);
     if (handlers != null) {
       if (msg.isSend()) {
         //Choose one
-        HandlerHolder holder = handlers.next();
+        HandlerHolder holder = handlers.next(messageLocal);
         if (metrics != null) {
-          metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), holder != null ? 1 : 0);
+          metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, holder != null ? 1 : 0);
         }
         if (holder != null) {
           holder.handler.receive(msg.copyBeforeReceive());
@@ -345,16 +346,17 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       } else {
         // Publish
         if (metrics != null) {
-          metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), handlers.size());
+          metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, handlers.count(messageLocal));
         }
-        for (HandlerHolder holder: handlers) {
+        for (Iterator<HandlerHolder> iter = handlers.iterator(messageLocal); iter.hasNext(); ) {
+          HandlerHolder holder = iter.next();
           holder.handler.receive(msg.copyBeforeReceive());
         }
       }
       return null;
     } else {
       if (metrics != null) {
-        metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), 0);
+        metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, 0);
       }
       return new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + msg.address);
     }
@@ -403,8 +405,9 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   private Future<Void> unregisterAll() {
     // Unregister all handlers explicitly - don't rely on context hooks
     List<Future> futures = new ArrayList<>();
-    for (ConcurrentCyclicSequence<HandlerHolder> handlers : handlerMap.values()) {
-      for (HandlerHolder holder : handlers) {
+    for (Handlers handlers : handlerMap.values()) {
+      for (Iterator<HandlerHolder> iter = handlers.iterator(true); iter.hasNext(); ) {
+        HandlerHolder holder = iter.next();
         futures.add(holder.getHandler().unregister());
       }
     }

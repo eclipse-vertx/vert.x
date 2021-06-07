@@ -45,13 +45,19 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   @Test
   public void testLocalHandlerNotVisibleRemotely() throws Exception {
     startNodes(2);
+    AtomicInteger received = new AtomicInteger();
+    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> {
+      if (received.incrementAndGet() == 2) {
+        vertices[1].setTimer(1000, id -> testComplete());
+      }
+    });
     vertices[1].eventBus().localConsumer(ADDRESS1).handler(msg -> {
-      fail("Should not receive message");
+      fail("Local consumer should not receive message");
     });
     vertices[0].eventBus().send(ADDRESS1, "foo");
     vertices[0].eventBus().publish(ADDRESS1, "foo");
-    vertices[0].setTimer(1000, id -> testComplete());
     await();
+    assertEquals(2, received.get());
   }
 
   @Test
