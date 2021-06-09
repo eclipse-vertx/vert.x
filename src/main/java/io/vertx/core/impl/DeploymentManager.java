@@ -79,7 +79,7 @@ public class DeploymentManager {
     if (deployment == null) {
       return ((ContextInternal) currentContext).failedFuture(new IllegalStateException("Unknown deployment"));
     } else {
-      return deployment.undeploy();
+      return deployment.doUndeploy(vertx.getOrCreateContext());
     }
   }
 
@@ -201,7 +201,7 @@ public class DeploymentManager {
                   deployment.child = true;
                 } else {
                   // Orphan
-                  deployment.undeploy(event -> promise.fail("Verticle deployment failed.Could not be added as child of parent verticle"));
+                  deployment.doUndeploy(vertx.getOrCreateContext()).onComplete(ar2 -> promise.fail("Verticle deployment failed.Could not be added as child of parent verticle"));
                   return;
                 }
               }
@@ -300,19 +300,13 @@ public class DeploymentManager {
       }
     }
 
-    @Override
-    public Future<Void> undeploy() {
-      ContextInternal currentContext = vertx.getOrCreateContext();
-      return doUndeploy(currentContext);
-    }
-
     private synchronized Future<Void> doUndeployChildren(ContextInternal undeployingContext) {
       if (!children.isEmpty()) {
         List<Future> childFuts = new ArrayList<>();
         for (Deployment childDeployment: new HashSet<>(children)) {
           Promise<Void> p = Promise.promise();
           childFuts.add(p.future());
-          childDeployment.doUndeploy(undeployingContext, ar -> {
+          childDeployment.doUndeploy(undeployingContext).onComplete(ar -> {
             children.remove(childDeployment);
             p.handle(ar);
           });
