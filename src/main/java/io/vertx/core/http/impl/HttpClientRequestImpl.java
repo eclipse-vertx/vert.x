@@ -34,7 +34,7 @@ import java.util.Objects;
 import static io.vertx.core.http.HttpHeaders.*;
 
 /**
- * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * This class is optimised for performance when used on the same event loop that is passed to the handler with.
  * However it can be used safely from other threads.
  *
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
