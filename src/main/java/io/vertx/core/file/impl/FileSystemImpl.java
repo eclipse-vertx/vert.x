@@ -615,7 +615,7 @@ public class FileSystemImpl implements FileSystem {
           Path target = vertx.resolveFile(to).toPath();
           Files.copy(source, target, copyOptions);
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileCopyErrorMessage(from, to), e);
         }
         return null;
       }
@@ -657,7 +657,7 @@ public class FileSystemImpl implements FileSystem {
             Files.copy(source, target);
           }
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileCopyErrorMessage(from, to), e);
         }
         return null;
       }
@@ -677,7 +677,7 @@ public class FileSystemImpl implements FileSystem {
           Path target = vertx.resolveFile(to).toPath();
           Files.move(source, target, copyOptions);
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileMoveErrorMessage(from, to), e);
         }
         return null;
       }
@@ -700,7 +700,7 @@ public class FileSystemImpl implements FileSystem {
             raf.setLength(len);
           }
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("truncate", p) ,e);
         }
         return null;
       }
@@ -739,7 +739,7 @@ public class FileSystemImpl implements FileSystem {
         } catch (SecurityException e) {
           throw new FileSystemException("Accessed denied for chmod on " + path);
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("chmod", path), e);
         }
         return null;
       }
@@ -769,7 +769,7 @@ public class FileSystemImpl implements FileSystem {
         } catch (SecurityException e) {
           throw new FileSystemException("Accessed denied for chown on " + path);
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("crown", path), e);
         }
         return null;
       }
@@ -798,7 +798,7 @@ public class FileSystemImpl implements FileSystem {
           }
           return new FilePropsImpl(attrs);
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("analyse", path), e);
         }
       }
     };
@@ -826,7 +826,10 @@ public class FileSystemImpl implements FileSystem {
             Files.createLink(source, target);
           }
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          final String message = "Unable to link existing file '" + existing
+            + "' to '" + link
+            + "'";
+          throw new FileSystemException(message, e);
         }
         return null;
       }
@@ -845,7 +848,7 @@ public class FileSystemImpl implements FileSystem {
           Path source = vertx.resolveFile(link).toPath();
           return Files.readSymbolicLink(source).toString();
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("read", link), e);
         }
       }
     };
@@ -863,7 +866,7 @@ public class FileSystemImpl implements FileSystem {
           Path source = vertx.resolveFile(path).toPath();
           delete(source, recursive);
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("delete", path), e);
         }
         return null;
       }
@@ -924,7 +927,7 @@ public class FileSystemImpl implements FileSystem {
             }
           }
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFolderAccessErrorMessage("create", path), e);
         }
         return null;
       }
@@ -953,7 +956,7 @@ public class FileSystemImpl implements FileSystem {
           }
           return tmpDir.toFile().getAbsolutePath();
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFolderAccessErrorMessage("create subfolder of", parentDir), e);
         }
       }
     };
@@ -981,7 +984,10 @@ public class FileSystemImpl implements FileSystem {
           }
           return tmpFile.toFile().getAbsolutePath();
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          final String message = "Unable to create temporary file with prefix '" + prefix
+            + "' and suffix '" + suffix
+            + "' at " + parentDir;
+          throw new FileSystemException(message, e);
         }
       }
     };
@@ -1026,7 +1032,7 @@ public class FileSystemImpl implements FileSystem {
             return ret;
           }
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFolderAccessErrorMessage("read", p), e);
         }
       }
     };
@@ -1042,7 +1048,7 @@ public class FileSystemImpl implements FileSystem {
           Buffer buff = Buffer.buffer(bytes);
           return buff;
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("read", path), e);
         }
       }
     };
@@ -1058,7 +1064,7 @@ public class FileSystemImpl implements FileSystem {
           Files.write(target, data.getBytes());
           return null;
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("write", path), e);
         }
       }
     };
@@ -1096,7 +1102,7 @@ public class FileSystemImpl implements FileSystem {
             Files.createFile(target);
           }
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("create", p), e);
         }
         return null;
       }
@@ -1122,7 +1128,7 @@ public class FileSystemImpl implements FileSystem {
           FileStore fs = Files.getFileStore(target);
           return new FileSystemPropsImpl(fs.getTotalSpace(), fs.getUnallocatedSpace(), fs.getUsableSpace());
         } catch (IOException e) {
-          throw new FileSystemException(e);
+          throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("analyse", path), e);
         }
       }
     };

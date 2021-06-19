@@ -211,7 +211,7 @@ public class FileResolver {
     try {
       cacheFile = cache.cache(fileName, resource, !enableCaching);
     } catch (IOException e) {
-      throw new VertxException(e);
+      throw new VertxException(FileAccessMessageGeneration.getFileAccessErrorMessage("unpack", url.toString()), e);
     }
     if (isDirectory) {
       String[] listing = resource.list();
@@ -267,7 +267,7 @@ public class FileResolver {
         }
       }
     } catch (IOException e) {
-      throw new VertxException(e);
+      throw new VertxException(FileAccessMessageGeneration.getFileAccessErrorMessage("unpack", url.toString()), e);
     } finally {
       closeQuietly(zip);
     }
@@ -317,7 +317,7 @@ public class FileResolver {
         }
       }
     } catch (IOException e) {
-      throw new VertxException(e);
+      throw new VertxException(FileAccessMessageGeneration.getFileAccessErrorMessage("unpack", url.toString()), e);
     }
     return cache.getFile(file);
   }
