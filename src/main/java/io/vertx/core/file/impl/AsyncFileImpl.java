@@ -101,7 +101,7 @@ public class AsyncFileImpl implements AsyncFile {
       }
       if (options.isAppend()) writePos = ch.size();
     } catch (IOException e) {
-      throw new FileSystemException(FileAccessMessageGeneration.getFileAccessErrorMessage("open", path), e);
+      throw new FileSystemException(FileSystemImpl.getFileAccessErrorMessage("open", path), e);
     }
     this.context = context;
     this.queue = new InboundBuffer<>(context, 0);
