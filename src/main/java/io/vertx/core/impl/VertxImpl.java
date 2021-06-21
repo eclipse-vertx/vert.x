@@ -107,8 +107,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final DeploymentManager deploymentManager;
   private final VerticleManager verticleManager;
   private final FileResolver fileResolver;
-  private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
-  private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
+  private final Map<Class<? extends TCPServerBase>, Map<ServerID, ? extends TCPServerBase>> sharedTCPServers = new ConcurrentHashMap<>();
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
   private final VertxThreadFactory threadFactory;
@@ -425,22 +424,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public Map<ServerID, HttpServerImpl> sharedHttpServers() {
-    return sharedHttpServers;
+    return sharedTCPServers(HttpServerImpl.class);
   }
 
   public Map<ServerID, NetServerImpl> sharedNetServers() {
-    return sharedNetServers;
+    return sharedTCPServers(NetServerImpl.class);
   }
 
   @Override
   public <S extends TCPServerBase> Map<ServerID, S> sharedTCPServers(Class<S> type) {
-    if (NetServerImpl.class.isAssignableFrom(type)) {
-      return (Map<ServerID, S>) sharedNetServers;
-    } else if (HttpServerImpl.class.isAssignableFrom(type)) {
-      return (Map<ServerID, S>) sharedHttpServers;
-    } else {
-      throw new IllegalStateException();
-    }
+    Map<ServerID, ? extends TCPServerBase> map = sharedTCPServers.computeIfAbsent(type, k -> new HashMap<>());
+    return (Map<ServerID, S>) map;
   }
 
   @Override
