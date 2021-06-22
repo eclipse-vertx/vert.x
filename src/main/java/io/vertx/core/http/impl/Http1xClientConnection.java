@@ -879,12 +879,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         } else {
           webSocket = (WebSocketImpl) wsRes.result();
           webSocket.registerHandler(vertx.eventBus());
-
-        }
-        log.debug("WebSocket handshake complete");
-        HttpClientMetrics metrics = client.metrics();
-        if (metrics != null) {
-          webSocket.setMetric(metrics.connected(webSocket));
+          log.debug("WebSocket handshake complete");
+          HttpClientMetrics metrics = client.metrics();
+          if (metrics != null) {
+            webSocket.setMetric(metrics.connected(webSocket));
+          }
         }
         getContext().emit(wsRes, res -> {
           if (res.succeeded()) {
