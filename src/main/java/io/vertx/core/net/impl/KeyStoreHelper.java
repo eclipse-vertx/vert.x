@@ -19,11 +19,7 @@ import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
 
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,22 +31,12 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -222,6 +208,9 @@ public class KeyStoreHelper {
       ks.load(in, password != null ? password.toCharArray() : null);
     }
     if (alias != null) {
+      if (!ks.containsAlias(alias)) {
+        throw new IllegalArgumentException("alias does not exist in the keystore: " + alias);
+      }
       List<String> ksAliases = Collections.list(ks.aliases());
       for (String ksAlias : ksAliases) {
         if (!alias.equals(ksAlias)) {
