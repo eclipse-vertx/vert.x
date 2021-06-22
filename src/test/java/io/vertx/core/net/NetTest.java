@@ -1504,6 +1504,16 @@ public class NetTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  public void testServerCertificateMultipleWithKeyPassword() throws Exception {
+    TLSTest test = new TLSTest()
+      .serverCert(Cert.MULTIPLE_JKS_ALIAS_PASSWORD)
+      .clientTrustAll(true);
+    test.run(true);
+    await();
+    assertEquals("fonky", cnOf(test.clientPeerCert()));
+  }
+
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
                Cert<?> serverCert, Trust<?> serverTrust,
     boolean requireClientAuth, boolean clientTrustAll,

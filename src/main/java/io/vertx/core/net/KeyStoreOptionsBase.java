@@ -39,6 +39,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   private String path;
   private Buffer value;
   private String alias;
+  private String aliasPassword;
 
   /**
    * Default constructor
@@ -59,6 +60,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     this.path = other.path;
     this.value = other.value;
     this.alias = other.alias;
+    this.alias = other.aliasPassword;
   }
 
   protected String getType() {
@@ -154,6 +156,23 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     return this;
   }
 
+  /**
+   * @return the alias password for a server certificate when the keystore has more than one, or {@code null}
+   */
+  public String getAliasPassword() {
+    return aliasPassword;
+  }
+
+  /**
+   * Set the alias password for a server certificate when the keystore has more than one.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public KeyStoreOptionsBase setAliasPassword(String aliasPassword) {
+    this.aliasPassword = aliasPassword;
+    return this;
+  }
+
   KeyStoreHelper getHelper(Vertx vertx) throws Exception {
     if (helper == null) {
       Supplier<Buffer> value;
@@ -164,7 +183,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
       } else {
         return null;
       }
-      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, getAlias()), password);
+      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, getAlias()), password, getAliasPassword());
     }
     return helper;
   }

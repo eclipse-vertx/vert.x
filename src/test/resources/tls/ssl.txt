@@ -345,3 +345,10 @@ keytool -v -genkeypair -alias other -keyalg RSA -keysize 4096 -keystore multiple
 
 The generated file is used to setup a server and check we can force Vert.x to use a specific alias.
 By default the SSL engine selects the first entry in the keystore (which corresponds to the second generated key pair - "other").
+
+## JKS Store with multiple entries and key passwords
+
+Same as previous one but with key passwords.
+
+keytool -v -genkeypair -alias fonky -dname "CN=fonky, OU=Vert.x, O=Eclipse" -keyalg RSA -keysize 4096 -keystore multiple-alias-password.jks -validity 36500 -storepass wibble -keypass family -storetype jks
+keytool -v -genkeypair -alias reflection -dname "CN=reflection, OU=Vert.x, O=Eclipse" -keyalg RSA -keysize 4096 -keystore multiple-alias-password.jks -validity 36500 -storepass wibble -keypass eternal -storetype jks

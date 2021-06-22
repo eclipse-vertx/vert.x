@@ -50,5 +50,6 @@ public interface Cert<K extends KeyCertOptions> extends Supplier<K> {
       .addKeyPath("tls/host5-key.pem").addCertPath("tls/host5-cert.pem");
   Cert<JksOptions> MULTIPLE_JKS = () -> new JksOptions().setPath("tls/multiple.jks").setPassword("wibble").setAlias("precious");
   Cert<JksOptions> MULTIPLE_JKS_WRONG_ALIAS = () -> new JksOptions().setPath("tls/multiple.jks").setPassword("wibble").setAlias("preciouss");
+  Cert<JksOptions> MULTIPLE_JKS_ALIAS_PASSWORD = () -> new JksOptions().setPath("tls/multiple-alias-password.jks").setPassword("wibble").setAlias("fonky").setAliasPassword("family");
 
 }

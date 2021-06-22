@@ -36,7 +36,6 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -53,16 +52,17 @@ public class KeyStoreHelper {
 
   private final String password;
   private final KeyStore store;
+  private final String aliasPassword;
   private final Map<String, X509KeyManager> wildcardMgrMap = new HashMap<>();
   private final Map<String, X509KeyManager> mgrMap = new HashMap<>();
   private final Map<String, TrustManagerFactory> trustMgrMap = new HashMap<>();
 
-  public KeyStoreHelper(KeyStore ks, String password) throws Exception {
+  public KeyStoreHelper(KeyStore ks, String password, String aliasPassword) throws Exception {
     Enumeration<String> en = ks.aliases();
     while (en.hasMoreElements()) {
       String alias = en.nextElement();
       Certificate cert = ks.getCertificate(alias);
-      if (ks.isCertificateEntry(alias) && ! alias.startsWith(DUMMY_CERT_ALIAS)){
+      if (ks.isCertificateEntry(alias) && !alias.startsWith(DUMMY_CERT_ALIAS)) {
         final KeyStore keyStore = createEmptyKeyStore();
         keyStore.setCertificateEntry("cert-1", cert);
         TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
@@ -84,16 +84,13 @@ public class KeyStoreHelper {
         String dn = x509Cert.getSubjectX500Principal().getName();
         domains.addAll(getX509CertificateCommonNames(dn));
         if (!domains.isEmpty()) {
-          PrivateKey key = (PrivateKey) ks.getKey(alias, password != null ? password.toCharArray() : null);
+          char[] keyPassword = keyPassword(aliasPassword, password);
+          PrivateKey key = (PrivateKey) ks.getKey(alias, keyPassword);
           Certificate[] tmp = ks.getCertificateChain(alias);
           if (tmp == null) {
             // It's a private key
             continue;
           }
-          List<X509Certificate> chain = Arrays.asList(tmp)
-              .stream()
-              .map(c -> (X509Certificate)c)
-              .collect(Collectors.toList());
           X509KeyManager mgr = new X509KeyManager() {
             @Override
             public String[] getClientAliases(String s, Principal[] principals) {
@@ -113,7 +110,7 @@ public class KeyStoreHelper {
             }
             @Override
             public X509Certificate[] getCertificateChain(String s) {
-              return chain.toArray(new X509Certificate[0]);
+              return Arrays.stream(tmp).map(X509Certificate.class::cast).toArray(X509Certificate[]::new);
             }
             @Override
             public PrivateKey getPrivateKey(String s) {
@@ -132,12 +129,19 @@ public class KeyStoreHelper {
     }
     this.store = ks;
     this.password = password;
+    this.aliasPassword = aliasPassword;
   }
 
   public KeyManagerFactory getKeyMgrFactory() throws Exception {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    fact.init(store, password != null ? password.toCharArray(): null);
+    char[] keyPassword = keyPassword(aliasPassword, password);
+    fact.init(store, keyPassword);
     return fact;
+  }
+
+  private char[] keyPassword(String aliasPassword, String password) {
+    if (aliasPassword != null) return aliasPassword.toCharArray();
+    return (password != null) ? password.toCharArray() : null;
   }
 
   public X509KeyManager getKeyMgr(String serverName) {
