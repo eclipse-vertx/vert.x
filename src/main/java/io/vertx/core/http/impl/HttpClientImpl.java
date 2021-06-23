@@ -628,7 +628,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
               // Maybe later ?
               req.setTimeout(timeout);
             }
-            requestPromise.complete(req);
+            requestPromise.tryComplete(req);
           } else {
             requestPromise.tryFail(ar2.cause());
           }
