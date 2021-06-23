@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
+
 /**
  * Options describing how an {@link HttpClient} will connect to make a request.
  *
@@ -372,7 +374,7 @@ public class RequestOptions {
    * @param url the uri to use
    * @return a reference to this, so the API can be used fluently
    */
-  @GenIgnore
+  @GenIgnore(PERMITTED_TYPE)
   public RequestOptions setAbsoluteURI(URL url) {
     Objects.requireNonNull(url, "Cannot set a null absolute URI");
     Boolean ssl = Boolean.FALSE;
