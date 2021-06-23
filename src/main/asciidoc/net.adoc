@@ -621,13 +621,19 @@ Buffer configuration is also supported:
 
 ==== Configuring the Cipher suite
 
-By default, the TLS configuration will use the Cipher suite of the JVM running Vert.x. This Cipher suite can be
-configured with a suite of enabled ciphers:
+By default, the TLS configuration will use the list of Cipher suites of the SSL engine:
+
+- JDK SSL engine when {@link io.vertx.core.net.JdkSSLEngineOptions} is used
+- OpenSSL engine when {@link io.vertx.core.net.OpenSSLEngineOptions} is used
+
+This Cipher suite can be configured with a suite of enabled ciphers:
 
 [source,$lang]
 ----
 {@link examples.NetExamples#example44}
 ----
+
+When the enabled cipher suites is defined (i.e not empty), it takes precedence over the default cipher suites of the SSL engine.
 
 Cipher suite can be specified on the {@link io.vertx.core.net.NetServerOptions} or {@link io.vertx.core.net.NetClientOptions} configuration.
 
