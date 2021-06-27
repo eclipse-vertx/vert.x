@@ -13,6 +13,8 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.*;
 import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.ReplyException;
+import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -51,8 +53,8 @@ public abstract class HandlerRegistration<T> implements Closeable {
     context.nettyEventLoop().execute(() -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
       // before it was received
-      if (!doReceive(msg) && bus.metrics != null) {
-        bus.metrics.discardMessage(metric, msg.isLocal(), msg);
+      if (!doReceive(msg)) {
+        discard(msg);
       }
     });
   }
@@ -107,6 +109,11 @@ public abstract class HandlerRegistration<T> implements Closeable {
   void discard(Message<T> msg) {
     if (bus.metrics != null) {
       bus.metrics.discardMessage(metric, ((MessageImpl)msg).isLocal(), msg);
+    }
+
+    String replyAddress = msg.replyAddress();
+    if (replyAddress != null) {
+      msg.reply(new ReplyException(ReplyFailure.TIMEOUT, "Discarded the request. address: " + replyAddress + ", repliedAddress: " + msg.address()));
     }
   }
 
