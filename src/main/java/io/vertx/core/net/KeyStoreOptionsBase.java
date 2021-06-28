@@ -60,7 +60,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     this.path = other.path;
     this.value = other.value;
     this.alias = other.alias;
-    this.alias = other.aliasPassword;
+    this.aliasPassword = other.aliasPassword;
   }
 
   protected String getType() {
@@ -157,14 +157,14 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   }
 
   /**
-   * @return the alias password for a server certificate when the keystore has more than one, or {@code null}
+   * @return the password for the server certificate designated by {@link #getAlias()}, or {@code null}
    */
   public String getAliasPassword() {
     return aliasPassword;
   }
 
   /**
-   * Set the alias password for a server certificate when the keystore has more than one.
+   * Set the password for the server certificate designated by {@link #getAlias()}.
    *
    * @return a reference to this, so the API can be used fluently
    */
