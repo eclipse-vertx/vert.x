@@ -75,10 +75,11 @@ public class Http1xUpgradeToH2CHandler extends ChannelInboundHandlerAdapter {
                 res.headers().add(HttpHeaderNames.UPGRADE, Http2CodecUtil.HTTP_UPGRADE_PROTOCOL_NAME);
                 ctx.writeAndFlush(res);
                 pipeline.remove("httpEncoder");
-                if(isCompressionSupported) {
+                if (isCompressionSupported) {
                   pipeline.remove("deflater");
+                  pipeline.remove("chunkedWriter");
                 }
-                if(isDecompressionSupported) {
+                if (isDecompressionSupported) {
                   pipeline.remove("inflater");
                 }
                 handler = initializer.buildHttp2ConnectionHandler(holder.context, holder.handler);
