@@ -3896,6 +3896,43 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testFollowRedirectHappensAfterResponseIsReceived() throws Exception {
+    AtomicBoolean redirected = new AtomicBoolean();
+    AtomicBoolean sent = new AtomicBoolean();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      if (redirected.compareAndSet(false, true)) {
+        resp
+          .setStatusCode(303)
+          .putHeader(HttpHeaders.CONTENT_LENGTH, "11")
+          .putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever")
+          .write("hello ");
+        vertx.setTimer(500, id -> {
+          sent.set(true);
+          resp.end("world");
+        });
+      } else {
+        assertTrue(sent.get());
+        resp.end();
+      }
+    });
+    startServer();
+    client.request(new RequestOptions()
+      .setMethod(HttpMethod.PUT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+    )
+      .onComplete(onSuccess(req -> {
+        req.setFollowRedirects(true);
+        req.send(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        }));
+      }));
+    await();
+  }
+
+  @Test
   public void testFollowRedirectWithChunkedBody() throws Exception {
     Buffer buff1 = Buffer.buffer(TestUtils.randomAlphaString(2048));
     Buffer buff2 = Buffer.buffer(TestUtils.randomAlphaString(2048));
