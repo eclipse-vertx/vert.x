@@ -4228,7 +4228,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testDefaultRedirectHandler() throws Exception {
     testFoo("http://example.com", "http://example.com");
@@ -4246,7 +4245,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testFoo(String location, String expectedAbsoluteURI) throws Exception {
     int status = 301;
-    Map<String, String> headers = Collections.singletonMap(HttpHeaders.LOCATION.toString(), location);
+    MultiMap headers = HttpHeaders.headers().add(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
     String baseURI = "https://localhost:8080";
     class MockReq implements HttpClientRequest {
@@ -4265,7 +4264,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest setURI(String uri) { throw new UnsupportedOperationException(); }
       public String path() { throw new UnsupportedOperationException(); }
       public String query() { throw new UnsupportedOperationException(); }
-      public MultiMap headers() { throw new UnsupportedOperationException(); }
+      public MultiMap headers() { return headers; }
       public HttpClientRequest putHeader(String name, String value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
