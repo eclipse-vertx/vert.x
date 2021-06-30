@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.multipart.Attribute;
@@ -639,6 +640,11 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   @Override
   public HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler) {
     return this;
+  }
+
+  @Override
+  public DecoderResult decoderResult() {
+    return request.decoderResult();
   }
 
   @Override

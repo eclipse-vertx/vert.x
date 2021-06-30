@@ -54,6 +54,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   private final boolean disableH2c;
   private final HttpStreamHandler<ServerWebSocket> wsStream = new HttpStreamHandler<>();
   private final HttpStreamHandler<HttpServerRequest> requestStream = new HttpStreamHandler<>();
+  private Handler<HttpServerRequest> invalidRequestHandler;
   private Handler<HttpConnection> connectionHandler;
 
   private Handler<Throwable> exceptionHandler;
@@ -94,6 +95,12 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   @Override
   public Handler<HttpServerRequest> requestHandler() {
     return requestStream.handler();
+  }
+
+  @Override
+  public HttpServer invalidRequestHandler(Handler<HttpServerRequest> handler) {
+    invalidRequestHandler = handler;
+    return this;
   }
 
   @Override
@@ -207,7 +214,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
     String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
 
-    HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestStream.handler, wsStream.handler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
+    HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestStream.handler, invalidRequestHandler, wsStream.handler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
     Supplier<ContextInternal> streamContextSupplier = listenContext::duplicate;
     Handler<Channel> channelHandler = childHandler(connContext, streamContextSupplier, hello, exceptionHandler, address, serverOrigin);
     io.netty.util.concurrent.Future<Channel> bindFuture = listen(address, listenContext, channelHandler);

@@ -34,6 +34,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
 
   final HttpServerImpl server;
   final Handler<HttpServerRequest> requestHandler;
+  final Handler<HttpServerRequest> invalidRequestHandler;
   final Handler<ServerWebSocket> wsHandler;
   final Handler<HttpConnection> connectionHandler;
   final Handler<Throwable> exceptionHandler;
@@ -41,11 +42,13 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
   public HttpServerConnectionHandler(
     HttpServerImpl server,
     Handler<HttpServerRequest> requestHandler,
+    Handler<HttpServerRequest> invalidRequestHandler,
     Handler<ServerWebSocket> wsHandler,
     Handler<HttpConnection> connectionHandler,
     Handler<Throwable> exceptionHandler) {
     this.server = server;
     this.requestHandler = requestHandler;
+    this.invalidRequestHandler = invalidRequestHandler == null ? HttpServerRequest.DEFAULT_INVALID_REQUEST_HANDLER : invalidRequestHandler;
     this.wsHandler = wsHandler;
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
@@ -66,6 +69,7 @@ public class HttpServerConnectionHandler implements Handler<HttpServerConnection
     }
     conn.exceptionHandler(exceptionHandler);
     conn.handler(requestHandler);
+    conn.invalidRequestHandler(invalidRequestHandler);
     if (connectionHandler != null) {
       // We hand roll event-loop execution in case of a worker context
       ContextInternal ctx = conn.getContext();

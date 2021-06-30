@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -535,6 +536,11 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
       streamPriorityHandler = handler;
     }
     return this;
+  }
+
+  @Override
+  public DecoderResult decoderResult() {
+    return DecoderResult.SUCCESS;
   }
 
   @Override
