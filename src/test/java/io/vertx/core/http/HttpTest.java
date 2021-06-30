@@ -3902,10 +3902,11 @@ public abstract class HttpTest extends HttpTestBase {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
       if (redirected.compareAndSet(false, true)) {
+        String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
         resp
           .setStatusCode(303)
           .putHeader(HttpHeaders.CONTENT_LENGTH, "11")
-          .putHeader(HttpHeaders.LOCATION, "http://localhost:8080/whatever")
+          .putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever")
           .write("hello ");
         vertx.setTimer(500, id -> {
           sent.set(true);
