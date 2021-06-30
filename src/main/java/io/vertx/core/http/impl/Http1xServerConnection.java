@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.TooLongFrameException;
@@ -85,6 +86,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private Http1xServerRequest responseInProgress;
   private boolean channelPaused;
   private Handler<HttpServerRequest> requestHandler;
+  private Handler<HttpServerRequest> invalidRequestHandler;
 
   final HttpServerMetrics metrics;
   final boolean handle100ContinueAutomatically;
@@ -114,6 +116,12 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   }
 
   @Override
+  public HttpServerConnection invalidRequestHandler(Handler<HttpServerRequest> handler) {
+    invalidRequestHandler = handler;
+    return this;
+  }
+
+  @Override
   public HttpServerMetrics metrics() {
     return metrics;
   }
@@ -121,10 +129,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   public void handleMessage(Object msg) {
     if (msg instanceof HttpRequest) {
       DefaultHttpRequest request = (DefaultHttpRequest) msg;
-      if (!request.decoderResult().isSuccess()) {
-        handleError(request);
-        return;
-      }
       ContextInternal requestCtx = streamContextSupplier.get();
       Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
       requestInProgress = req;
@@ -137,7 +141,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         reportRequestBegin(req);
       }
       req.handleBegin();
-      req.context.emit(req, requestHandler);
+      Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
+      req.context.emit(req, handler);
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
       onEnd();
     } else {
@@ -207,10 +212,17 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       }
       Http1xServerRequest request = responseInProgress;
       responseInProgress = null;
-      Http1xServerRequest next = request.next();
-      if (next != null) {
-        // Handle pipelined request
-        handleNext(next);
+      DecoderResult result = request.decoderResult();
+      if (result.isSuccess()) {
+        Http1xServerRequest next = request.next();
+        if (next != null) {
+          // Handle pipelined request
+          handleNext(next);
+        }
+      } else {
+        ChannelPromise channelFuture = channelFuture();
+        writeToChannel(Unpooled.EMPTY_BUFFER, channelFuture);
+        channelFuture.addListener(fut -> fail(result.cause()));
       }
     } else {
       eventLoop.execute(this::responseComplete);
@@ -222,7 +234,8 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     next.handleBegin();
     context.emit(next, next_ -> {
       next_.resume();
-      requestHandler.handle(next_);
+      Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
+      handler.handle(next_);
     });
   }
 
@@ -498,36 +511,10 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     return super.supportsFileRegion() && chctx.pipeline().get(HttpChunkContentCompressor.class) == null;
   }
 
-  private void handleError(HttpRequest request) {
-    DecoderResult result = request.decoderResult();
-    Throwable cause = result.cause();
-    HttpResponseStatus status = null;
-    if (cause instanceof TooLongFrameException) {
-      String causeMsg = cause.getMessage();
-      if (causeMsg.startsWith("An HTTP line is larger than")) {
-        status = HttpResponseStatus.REQUEST_URI_TOO_LONG;
-      } else if (causeMsg.startsWith("HTTP header is larger than")) {
-        status = HttpResponseStatus.REQUEST_HEADER_FIELDS_TOO_LARGE;
-      }
-    }
-    if (status == null && HttpMethod.GET == request.method() &&
-      HttpVersion.HTTP_1_0 == request.protocolVersion() && "/bad-request".equals(request.uri())) {
-      // Matches Netty's specific HttpRequest for invalid messages
-      status = HttpResponseStatus.BAD_REQUEST;
-    }
-    if (status != null) {
-      DefaultFullHttpResponse resp = new DefaultFullHttpResponse(request.protocolVersion(), status);
-      ChannelPromise fut = chctx.newPromise();
-      writeToChannel(resp, fut);
-      fut.addListener(res -> fail(result.cause()));
-    } else {
-      handleError((HttpObject) request);
-    }
-  }
-
   private void handleError(HttpObject obj) {
     DecoderResult result = obj.decoderResult();
     ReferenceCountUtil.release(obj);
     fail(result.cause());
   }
+
 }

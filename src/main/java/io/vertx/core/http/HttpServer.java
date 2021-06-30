@@ -61,6 +61,20 @@ public interface HttpServer extends Measured {
   Handler<HttpServerRequest> requestHandler();
 
   /**
+   * Set a {@code handler} for handling invalid requests. When an invalid request is received by the server
+   * this handler will be called with the request. The handler can send any HTTP response, when the response
+   * ends, the server shall close the connection. {@link HttpServerRequest#decoderResult()} can be used
+   * to obtain the Netty decoder result and the failure cause reported by the decoder.
+   *
+   * <p> Currently this handler is only used for HTTP/1.x requests.
+   *
+   * <p> When no specific handler is set, the {@link HttpServerRequest#DEFAULT_INVALID_REQUEST_HANDLER} is used.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  HttpServer invalidRequestHandler(Handler<HttpServerRequest> handler);
+
+  /**
    * Set a connection handler for the server.
    * <br/>
    * The handler will always be called on the event-loop thread.

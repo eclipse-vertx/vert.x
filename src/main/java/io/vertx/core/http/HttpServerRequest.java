@@ -11,6 +11,9 @@
 
 package io.vertx.core.http;
 
+import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.TooLongFrameException;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
@@ -42,6 +45,44 @@ import java.util.Map;
  */
 @VertxGen
 public interface HttpServerRequest extends ReadStream<Buffer> {
+
+  /**
+   * The default invalid request handler, it uses uses the {@link #decoderResult()} cause and the request information
+   * to determine the status code of the response to be sent.
+   *
+   * <ul>
+   *   <li>When the cause is an instance of {@code io.netty.handler.codec.TooLongFrameException} and the error message
+   *   starts with <i>An HTTP line is larger than</i> the {@code REQUEST_URI_TOO_LONG} status is sent </li>
+   *   <li>Otherwise when the cause is an instance of {@code io.netty.handler.codec.TooLongFrameException} and the error message
+   *   starts with <i>HTTP header is larger than</i> the {@code REQUEST_HEADER_FIELDS_TOO_LARGE} status is sent</li>
+   *   <li>Otherwise when the request is a {@link HttpVersion#HTTP_1_0} {@code GET} {@code /bad-request} then {@code BAD_REQUEST} status is sent</li>
+   *   <li>Otherwise the connection is closed</li>
+   * </ul>
+   */
+  @GenIgnore
+  Handler<HttpServerRequest> DEFAULT_INVALID_REQUEST_HANDLER = request -> {
+    DecoderResult result = request.decoderResult();
+    Throwable cause = result.cause();
+    HttpResponseStatus status = null;
+    if (cause instanceof TooLongFrameException) {
+      String causeMsg = cause.getMessage();
+      if (causeMsg.startsWith("An HTTP line is larger than")) {
+        status = HttpResponseStatus.REQUEST_URI_TOO_LONG;
+      } else if (causeMsg.startsWith("HTTP header is larger than")) {
+        status = HttpResponseStatus.REQUEST_HEADER_FIELDS_TOO_LARGE;
+      }
+    }
+    if (status == null && HttpMethod.GET == request.method() &&
+      HttpVersion.HTTP_1_0 == request.version() && "/bad-request".equals(request.uri())) {
+      // Matches Netty's specific HttpRequest for invalid messages
+      status = HttpResponseStatus.BAD_REQUEST;
+    }
+    if (status != null) {
+      request.response().setStatusCode(status.code()).end();
+    } else {
+      request.connection().close();
+    }
+  };
 
   @Override
   HttpServerRequest exceptionHandler(Handler<Throwable> handler);
@@ -413,6 +454,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    */
   @Fluent
   HttpServerRequest streamPriorityHandler(Handler<StreamPriority> handler);
+
+  /**
+   * @return Netty's decoder result useful for handling invalid requests with {@link HttpServer#invalidRequestHandler}
+   */
+  @GenIgnore
+  DecoderResult decoderResult();
 
   /**
    * Get the cookie with the specified name.

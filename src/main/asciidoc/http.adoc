@@ -683,6 +683,14 @@ You can set an {@link io.vertx.core.http.HttpServer#exceptionHandler(io.vertx.co
 exceptions that happens before the connection is passed to the {@link io.vertx.core.http.HttpServer#requestHandler(io.vertx.core.Handler)}
 or to the {@link io.vertx.core.http.HttpServer#webSocketHandler(io.vertx.core.Handler)}, e.g. during the TLS handshake.
 
+==== Handling invalid requests
+
+Vert.x will handle invalid HTTP requests and provides a default handler that will handle the common case
+appropriately, e.g. it does respond with `REQUEST_HEADER_FIELDS_TOO_LARGE` when a request header is too long.
+
+You can set your own {@link io.vertx.core.http.HttpServer#invalidRequestHandler(io.vertx.core.Handler)} to process
+invalid requests. Your implementation can handle specific cases and delegate other cases to to {@link io.vertx.core.http.HttpServerRequest#DEFAULT_INVALID_REQUEST_HANDLER}.
+
 === HTTP Compression
 
 Vert.x comes with support for HTTP Compression out of the box.
