@@ -21,6 +21,11 @@ public class KeyStoreOptionsConverter {
             obj.setAlias((String)member.getValue());
           }
           break;
+        case "aliasPassword":
+          if (member.getValue() instanceof String) {
+            obj.setAliasPassword((String)member.getValue());
+          }
+          break;
         case "password":
           if (member.getValue() instanceof String) {
             obj.setPassword((String)member.getValue());
@@ -57,6 +62,9 @@ public class KeyStoreOptionsConverter {
   public static void toJson(KeyStoreOptions obj, java.util.Map<String, Object> json) {
     if (obj.getAlias() != null) {
       json.put("alias", obj.getAlias());
+    }
+    if (obj.getAliasPassword() != null) {
+      json.put("aliasPassword", obj.getAliasPassword());
     }
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
