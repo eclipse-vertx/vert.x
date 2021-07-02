@@ -19,15 +19,15 @@ import java.util.Objects;
  */
 public class ServerID implements Serializable {
 
-  public int port;
-  public String host;
+  public final int port;
+  public final String host;
+  public final boolean ssl;
 
-  public ServerID(int port, String host) {
+
+  public ServerID(int port, String host, boolean ssl) {
     this.port = port;
     this.host = host;
-  }
-
-  public ServerID() {
+    this.ssl = ssl;
   }
 
   @Override
@@ -36,13 +36,16 @@ public class ServerID implements Serializable {
     if (!(o instanceof ServerID)) return false;
 
     ServerID that = (ServerID) o;
-    return port == that.port && Objects.equals(host, that.host);
+    return port == that.port && ssl == that.ssl && Objects.equals(host, that.host);
   }
 
   @Override
   public int hashCode() {
     int result = port;
     result = 31 * result + host.hashCode();
+    if (ssl) {
+      result *= 2;
+    }
     return result;
   }
 

@@ -99,16 +99,16 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       TCPServerBase main;
       boolean shared;
       if (actualPort != 0) {
-        id = new ServerID(actualPort, hostOrPath);
+        id = new ServerID(actualPort, hostOrPath, options.isSsl());
         main = sharedNetServers.get(id);
         shared = true;
       } else {
         if (creatingContext != null && creatingContext.deploymentID() != null) {
-          id = new ServerID(actualPort, hostOrPath + "/" + creatingContext.deploymentID());
+          id = new ServerID(actualPort, hostOrPath + "/" + creatingContext.deploymentID(), options.isSsl());
           main = sharedNetServers.get(id);
           shared = true;
         } else {
-          id = new ServerID(actualPort, hostOrPath);
+          id = new ServerID(actualPort, hostOrPath, options.isSsl());
           main = null;
           shared = false;
         }
@@ -136,7 +136,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
               if (actualPort != -1) {
                 actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
               }
-              id = new ServerID(TCPServerBase.this.actualPort, id.host);
+              id = new ServerID(TCPServerBase.this.actualPort, id.host, options.isSsl());
               listenContext.addCloseHook(this);
               metrics = createMetrics(localAddress);
             } else {
