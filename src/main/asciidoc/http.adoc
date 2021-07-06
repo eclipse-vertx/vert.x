@@ -1619,6 +1619,15 @@ Consequently the servers can scale over available cores while each Vert.x vertic
 single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your
 server on your multi-core machine.
 
+You can bind on a shared random ports using a negative port value, the first bind will pick a port randomly, subsequent binds
+on the same port value will share this random port.
+
+.io.vertx.examples.http.sharing.HttpServerVerticle
+[source,$lang]
+----
+{@link examples.HTTPExamples#randomServersharing(io.vertx.core.Vertx)}
+----
+
 === Using HTTPS with Vert.x
 
 Vert.x http servers and clients can be configured to use HTTPS in exactly the same way as net servers.

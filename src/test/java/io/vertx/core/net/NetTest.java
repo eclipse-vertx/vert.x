@@ -316,7 +316,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(0, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
-    assertIllegalArgumentException(() -> options.setPort(-1));
     assertIllegalArgumentException(() -> options.setPort(65536));
 
     assertEquals("0.0.0.0", options.getHost());
