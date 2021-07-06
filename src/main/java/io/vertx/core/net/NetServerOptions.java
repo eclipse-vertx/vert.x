@@ -349,8 +349,8 @@ public class NetServerOptions extends TCPSSLOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public NetServerOptions setPort(int port) {
-    if (port < 0 || port > 65535) {
-      throw new IllegalArgumentException("port p must be in range 0 <= p <= 65535");
+    if (port > 65535) {
+      throw new IllegalArgumentException("port must be <= 65535");
     }
     this.port = port;
     return this;

@@ -14,6 +14,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.CacheReturn;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
+import io.vertx.core.impl.Arguments;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.InetSocketAddress;
@@ -42,6 +43,7 @@ public interface SocketAddress {
    * @return the created socket address
    */
   static SocketAddress inetSocketAddress(int port, String host) {
+    Arguments.requireInRange(port, 0, 65535, "port p must be in range 0 <= p <= 65535");
     return new SocketAddressImpl(port, host);
   }
 
@@ -67,7 +69,7 @@ public interface SocketAddress {
   static SocketAddress inetSocketAddress(InetSocketAddress address) {
     return new SocketAddressImpl(address);
   }
-  
+
   /**
    * Returns the host name when available or the IP address in string representation.
    * <br/>

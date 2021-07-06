@@ -52,7 +52,6 @@ public class SocketAddressImpl implements SocketAddress{
   }
 
   public SocketAddressImpl(int port, String host) {
-    Arguments.requireInRange(port, 0, 65535, "port p must be in range 0 <= p <= 65535");
     this.path = null;
     this.port = port;
     if (NetUtil.isValidIpV4Address(host)) {

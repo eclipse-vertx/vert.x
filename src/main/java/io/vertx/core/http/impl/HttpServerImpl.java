@@ -147,7 +147,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   @Override
   public Future<HttpServer> listen(int port, String host) {
-    return listen(SocketAddress.inetSocketAddress(port, host));
+    return listen(new SocketAddressImpl(port, host));
   }
 
   @Override
