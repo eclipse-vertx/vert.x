@@ -203,7 +203,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         proxyOptions = null;
       }
     }
-    connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), connectHandler, ctx, options.getReconnectAttempts());
+    connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), true, connectHandler, ctx, options.getReconnectAttempts());
   }
 
   public void connectInternal(ProxyOptions proxyOptions,
@@ -212,6 +212,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
                               String serverName,
                               boolean ssl,
                               boolean useAlpn,
+                              boolean registerWriteHandlers,
                               Promise<NetSocket> connectHandler,
                               ContextInternal context,
                               int remainingAttempts) {
@@ -225,7 +226,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context)
       .proxyOptions(proxyOptions);
 
-    channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol()));
+    channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol(), registerWriteHandlers));
 
     io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, ssl, useAlpn);
     fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
@@ -238,7 +239,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
             log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
             //Set a timer to retry connection
             vertx.setTimer(options.getReconnectInterval(), tid ->
-              connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+              connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
             );
           });
         } else {
@@ -248,16 +249,20 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     });
   }
 
-  private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress, String applicationLayerProtocol) {
+  private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress, String applicationLayerProtocol, boolean registerWriteHandlers) {
     channelGroup.add(ch);
     initChannel(ch.pipeline());
     VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, remoteAddress, sslHelper, metrics, applicationLayerProtocol));
-    handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
+    if (registerWriteHandlers) {
+      handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
+    }
     handler.addHandler(sock -> {
       if (metrics != null) {
         sock.metric(metrics.connected(sock.remoteAddress(), sock.remoteName()));
       }
-      sock.registerEventBusHandler();
+      if (registerWriteHandlers) {
+        sock.registerEventBusHandler();
+      }
       connectHandler.complete(sock);
     });
     ch.pipeline().addLast("handler", handler);
