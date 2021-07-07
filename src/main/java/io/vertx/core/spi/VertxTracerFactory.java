@@ -31,7 +31,7 @@ public interface VertxTracerFactory extends VertxServiceProvider {
 
   @Override
   default void init(VertxBuilder builder) {
-    if (builder.tracer() == null) {
+    if (builder.options().getTracingOptions() != null && builder.tracer() == null) {
       builder.tracer(tracer(builder.options().getTracingOptions()));
     }
   }
