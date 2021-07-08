@@ -320,6 +320,24 @@ public class NamedWorkerPoolTest extends VertxTestBase {
   }
 
   @Test
+  public void testDeployUsingNamedWorkerDoesNotCreateExtraEventLoop() {
+    int instances = getOptions().getEventLoopPoolSize();
+    Set<Thread> threads = Collections.synchronizedSet(new HashSet<>());
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start() {
+        threads.add(Thread.currentThread());
+      }
+    }, new DeploymentOptions().setInstances(instances).setWorkerPoolName("the-pool"), onSuccess(id -> {
+      vertx.undeploy(id, onSuccess(v -> {
+        assertEquals(instances, threads.size());
+        testComplete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testDeployWorkerUsingNamedPool() throws Exception {
     AtomicReference<Thread> thread = new AtomicReference<>();
     AtomicReference<String> deployment = new AtomicReference<>();

@@ -91,6 +91,8 @@ public interface VertxInternal extends Vertx {
   @Override
   WorkerExecutorInternal createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit);
 
+  WorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit);
+
   void simulateKill();
 
   Deployment getDeployment(String deploymentID);

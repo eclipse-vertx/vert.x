@@ -42,4 +42,8 @@ public class WorkerPool {
     }
     pool.shutdownNow();
   }
+
+  void release() {
+
+  }
 }

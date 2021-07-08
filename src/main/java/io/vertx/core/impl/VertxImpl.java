@@ -1114,7 +1114,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+  public WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
+    SharedWorkerPool sharedWorkerPool = createSharedWorkerPool(name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
+    ContextImpl context = getOrCreateContext();
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(context, sharedWorkerPool);
+    context.addCloseHook(namedExec);
+    return namedExec;
+  }
+
+  @Override
+  public synchronized SharedWorkerPool createSharedWorkerPool(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     if (poolSize < 1) {
       throw new IllegalArgumentException("poolSize must be > 0");
     }
@@ -1130,10 +1139,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       sharedWorkerPool.refCount++;
     }
-    ContextImpl context = getOrCreateContext();
-    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(context, sharedWorkerPool);
-    context.addCloseHook(namedExec);
-    return namedExec;
+    return sharedWorkerPool;
   }
 
   @Override

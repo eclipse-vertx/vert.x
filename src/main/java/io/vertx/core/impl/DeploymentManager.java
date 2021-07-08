@@ -539,13 +539,9 @@ public class DeploymentManager {
     AtomicInteger deployCount = new AtomicInteger();
     AtomicBoolean failureReported = new AtomicBoolean();
     for (Verticle verticle: verticles) {
-      WorkerExecutorInternal workerExec = poolName != null ? vertx.createSharedWorkerExecutor(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
-      WorkerPool pool = workerExec != null ? workerExec.getPool() : null;
+      WorkerPool pool = poolName != null ? vertx.createSharedWorkerPool(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
       ContextImpl context = (ContextImpl) (options.isWorker() ? vertx.createWorkerContext(options.isMultiThreaded(), deploymentID, pool, conf, tccl) :
         vertx.createEventLoopContext(deploymentID, pool, conf, tccl));
-      if (workerExec != null) {
-        context.addCloseHook(workerExec);
-      }
       context.setDeployment(deployment);
       deployment.addVerticle(new VerticleHolder(verticle, context));
       context.runOnContext(v -> {
@@ -718,6 +714,10 @@ public class DeploymentManager {
                       }
                     }
                   }
+                }
+                WorkerPool workerPool = context.workerPool;
+                if (workerPool != null) {
+                  workerPool.release();
                 }
                 if (ar.succeeded() && undeployCount.incrementAndGet() == numToUndeploy) {
                   reportSuccess(null, undeployingContext, completionHandler);
