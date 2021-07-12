@@ -216,18 +216,20 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void createHaManager(VertxOptions options, Promise<Void> initPromise) {
-    this.<HAManager>executeBlocking(fut -> {
-      Map<String, String> syncMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
-      HAManager haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, syncMap, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
-      fut.complete(haManager);
-    }, false, ar -> {
-      if (ar.succeeded()) {
-        haManager = ar.result();
-        startEventBus(initPromise);
-      } else {
-        initPromise.fail(ar.cause());
-      }
-    });
+    if (options.isHAEnabled()) {
+      this.<HAManager>executeBlocking(fut -> {
+        haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterManager.getSyncMap(CLUSTER_MAP_NAME), options.getQuorumSize(), options.getHAGroup());
+        fut.complete(haManager);
+      }, false, ar -> {
+        if (ar.succeeded()) {
+          startEventBus(initPromise);
+        } else {
+          initPromise.fail(ar.cause());
+        }
+      });
+    } else {
+      startEventBus(initPromise);
+    }
   }
 
   private void startEventBus(Promise<Void> initPromise) {
@@ -243,13 +245,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void initializeHaManager(Promise<Void> initPromise) {
-    this.executeBlocking(fut -> {
-      // Init the manager (i.e register listener and check the quorum)
-      // after the event bus has been fully started and updated its state
-      // it will have also set the clustered changed view handler on the ha manager
-      haManager.init();
-      fut.complete();
-    }, false, initPromise);
+    if (null != haManager()) {
+      this.executeBlocking(fut -> {
+        haManager().init();
+        fut.complete();
+      }, false, initPromise);
+    } else {
+      initPromise.complete();
+    }
   }
 
   /**
@@ -615,7 +618,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public Future<String> deployVerticle(String name, DeploymentOptions options) {
-    if (options.isHa() && haManager() != null && haManager().isEnabled()) {
+    if (options.isHa() && haManager() != null) {
       Promise<String> promise = getOrCreateContext().promise();
       haManager().deployVerticle(name, options, promise);
       return promise.future();
@@ -704,7 +707,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public Future<Void> undeploy(String deploymentID) {
     Future<Void> future;
     HAManager haManager = haManager();
-    if (haManager != null && haManager.isEnabled()) {
+    if (haManager != null) {
       future = this.executeBlocking(fut -> {
         haManager.removeFromHA(deploymentID);
         fut.complete();
