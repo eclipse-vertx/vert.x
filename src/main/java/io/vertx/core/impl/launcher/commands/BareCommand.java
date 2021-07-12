@@ -214,7 +214,6 @@ public class BareCommand extends ClasspathHandler {
     options.setEventBusOptions(eventBusOptions);
 
     beforeStartingVertx(options);
-    builder.init();
 
     configureFromSystemProperties.set(log);
     try {
@@ -222,6 +221,7 @@ public class BareCommand extends ClasspathHandler {
       if (options.getMetricsOptions() != null) {
         configureFromSystemProperties(options.getMetricsOptions(), METRICS_OPTIONS_PROP_PREFIX);
       }
+      builder.init();
     } finally {
       configureFromSystemProperties.set(null);
     }

@@ -513,6 +513,7 @@ public class LauncherTest extends VertxTestBase {
     VertxOptions opts = launcher.getVertxOptions();
     CustomMetricsOptions custom = (CustomMetricsOptions) opts.getMetricsOptions();
     assertEquals("customPropertyValue", custom.getCustomProperty());
+    assertTrue(launcher.getVertx().isMetricsEnabled());
   }
 
   @Test
