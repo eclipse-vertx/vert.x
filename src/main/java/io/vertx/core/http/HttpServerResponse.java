@@ -437,7 +437,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    *
    * @param filename path to the file to serve
    * @param offset the offset to serve from
-   * @param length length the number of bytes to send
+   * @param length the number of bytes to send
    * @param resultHandler  handler that will be called on completion
    * @return a reference to this, so the API can be used fluently
    */
