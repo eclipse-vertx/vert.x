@@ -496,7 +496,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
 
   private void prepareHeaders() {
     headers.status(Integer.toString(status.code())); // Could be optimized for usual case ?
-    if (contentEncoding != null) {
+    if (contentEncoding != null && headers.get(HttpHeaderNames.CONTENT_ENCODING) == null) {
       headers.set(HttpHeaderNames.CONTENT_ENCODING, contentEncoding);
     }
     // Sanitize

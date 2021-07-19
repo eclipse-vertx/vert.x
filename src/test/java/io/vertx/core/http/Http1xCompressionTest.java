@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -8,26 +8,21 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
-
 package io.vertx.core.http;
 
-/**
- * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
- * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
- */
-public class Http2CompressionTest extends HttpCompressionTest {
+public class Http1xCompressionTest extends HttpCompressionTest {
 
-  public Http2CompressionTest(int compressionLevel) {
+  public Http1xCompressionTest(int compressionLevel) {
     super(compressionLevel);
   }
 
   @Override
   protected HttpServerOptions createBaseServerOptions() {
-    return Http2TestBase.createHttp2ServerOptions(HttpTestBase.DEFAULT_HTTPS_PORT, HttpTestBase.DEFAULT_HTTPS_HOST);
+    return new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(DEFAULT_HTTP_HOST);
   }
 
   @Override
   protected HttpClientOptions createBaseClientOptions() {
-    return Http2TestBase.createHttp2ClientOptions().setDefaultPort(DEFAULT_HTTPS_PORT).setDefaultHost(DEFAULT_HTTPS_HOST);
+    return new HttpClientOptions().setDefaultPort(DEFAULT_HTTP_PORT).setDefaultHost(DEFAULT_HTTP_HOST);
   }
 }
