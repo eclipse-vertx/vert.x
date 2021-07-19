@@ -420,6 +420,18 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
+  void completeHandshake() {
+    if (conn.metrics != null) {
+      conn.metrics.responseBegin(requestMetric, this);
+    }
+    setStatusCode(101);
+    synchronized (conn) {
+      headWritten = true;
+      written = true;
+    }
+    conn.responseComplete();
+  }
+
   @Override
   public void close() {
     synchronized (conn) {
