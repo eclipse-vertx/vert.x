@@ -101,3 +101,41 @@ The parser also parses json streams:
 - line delimited json streams: `{"an":"object"}\r\n3\r\n"a string"\r\nnull`
 
 For more details, check out the {@link io.vertx.core.parsetools.JsonParser} class.
+
+== Length Field Parser
+
+The length field parser splits the received {@link io.vertx.core.buffer.Buffer} dynamically by the value of
+the length field in the frame. It is convenient when you parse a binary data which has an header field
+`byte(1)`, `short(2)`, `medium(3)`, `int(4)` or `long(8)` that represents the length of the frame.
+
+The parser has configurable parameters, you can configure to skip prior fields *"offset and header"*
+to receive the body of the frame or to receive the whole frame conveniently.
+
+In addition, you can configure the maximum length of the frame body.
+
+=== Parsing the frame
+
+In the below example the frame has two fields the `byte(1)` length and body as `String`
+
+[source, $lang]
+----
+{@link examples.ParseToolsExamples#lengthFieldParserBuffer}
+----
+
+Now, you can parse the frame body without the prior fields by configuring `skip` parameter to `true`
+
+The `offset` parameter is `0` because the prior field is the header only
+
+[source, $lang]
+----
+{@link examples.ParseToolsExamples#lengthFieldParser1}
+----
+
+Or parse the whole frame by configuring `skip` parameter to `false`
+
+[source, $lang]
+----
+{@link examples.ParseToolsExamples#lengthFieldParser2}
+----
+
+For more details, check out the {@link io.vertx.core.parsetools.LengthFieldParser} class.
