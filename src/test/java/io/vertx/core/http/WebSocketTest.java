@@ -1956,6 +1956,18 @@ public class WebSocketTest extends VertxTestBase {
     server.requestHandler(request -> {
       Runnable runner = () -> {
         request.toWebSocket().onComplete(onSuccess(ws -> {
+          HttpServerResponse response = request.response();
+          assertTrue(response.ended());
+          try {
+            response.putHeader("foo", "bar");
+            fail();
+          } catch (IllegalStateException ignore) {
+          }
+          try {
+            response.end();
+            fail();
+          } catch (IllegalStateException ignore) {
+          }
           ws.handler(buff -> {
             ws.write(Buffer.buffer("helloworld"));
             ws.close();
