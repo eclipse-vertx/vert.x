@@ -19,14 +19,17 @@ import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
+import java.io.IOException;
+import java.nio.channels.FileLock;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Represents a file on the file-system which can be read from, or written to asynchronously.
  * <p>
- * This class also implements {@link io.vertx.core.streams.ReadStream} and
- * {@link io.vertx.core.streams.WriteStream}. This allows the data to be piped to and from
- * other streams, e.g. an {@link io.vertx.core.http.HttpClientRequest} instance,
- * using the {@link io.vertx.core.streams.Pipe} class
+ * This class also implements {@link io.vertx.core.streams.ReadStream} and {@link
+ * io.vertx.core.streams.WriteStream}. This allows the data to be piped to and from other streams,
+ * e.g. an {@link io.vertx.core.http.HttpClientRequest} instance, using the {@link
+ * io.vertx.core.streams.Pipe} class
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -65,64 +68,72 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<Void> close();
 
   /**
-   * Close the file. The actual close happens asynchronously.
-   * The handler will be called when the close is complete, or an error occurs.
+   * Close the file. The actual close happens asynchronously. The handler will be called when the
+   * close is complete, or an error occurs.
    *
-   * @param handler  the handler
+   * @param handler the handler
    */
   void close(Handler<AsyncResult<Void>> handler);
 
   /**
-   * Write a {@link io.vertx.core.buffer.Buffer} to the file at position {@code position} in the file, asynchronously.
+   * Write a {@link io.vertx.core.buffer.Buffer} to the file at position {@code position} in the
+   * file, asynchronously.
    * <p>
-   * If {@code position} lies outside of the current size
-   * of the file, the file will be enlarged to encompass it.
+   * If {@code position} lies outside of the current size of the file, the file will be enlarged to
+   * encompass it.
    * <p>
-   * When multiple writes are invoked on the same file
-   * there are no guarantees as to order in which those writes actually occur
+   * When multiple writes are invoked on the same file there are no guarantees as to order in which
+   * those writes actually occur
    * <p>
    * The handler will be called when the write is complete, or if an error occurs.
    *
-   * @param buffer  the buffer to write
-   * @param position  the position in the file to write it at
+   * @param buffer   the buffer to write
+   * @param position the position in the file to write it at
    * @param handler  the handler to call when the write is complete
    */
   void write(Buffer buffer, long position, Handler<AsyncResult<Void>> handler);
 
   /**
-   * Like {@link #write(Buffer, long, Handler)} but returns a {@code Future} of the asynchronous result
+   * Like {@link #write(Buffer, long, Handler)} but returns a {@code Future} of the asynchronous
+   * result
    */
   Future<Void> write(Buffer buffer, long position);
 
   /**
-   * Reads {@code length} bytes of data from the file at position {@code position} in the file, asynchronously.
+   * Reads {@code length} bytes of data from the file at position {@code position} in the file,
+   * asynchronously.
    * <p>
-   * The read data will be written into the specified {@code Buffer buffer} at position {@code offset}.
+   * The read data will be written into the specified {@code Buffer buffer} at position {@code
+   * offset}.
    * <p>
-   * If data is read past the end of the file then zero bytes will be read.<p>
-   * When multiple reads are invoked on the same file there are no guarantees as to order in which those reads actually occur.
+   * If data is read past the end of the file then zero bytes will be read.<p> When multiple reads
+   * are invoked on the same file there are no guarantees as to order in which those reads actually
+   * occur.
    * <p>
    * The handler will be called when the close is complete, or if an error occurs.
    *
-   * @param buffer  the buffer to read into
-   * @param offset  the offset into the buffer where the data will be read
-   * @param position  the position in the file where to start reading
-   * @param length  the number of bytes to read
+   * @param buffer   the buffer to read into
+   * @param offset   the offset into the buffer where the data will be read
+   * @param position the position in the file where to start reading
+   * @param length   the number of bytes to read
    * @param handler  the handler to call when the write is complete
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
-  AsyncFile read(Buffer buffer, int offset, long position, int length, Handler<AsyncResult<Buffer>> handler);
+  AsyncFile read(Buffer buffer, int offset, long position, int length,
+    Handler<AsyncResult<Buffer>> handler);
 
   /**
-   * Like {@link #read(Buffer, int, long, int, Handler)} but returns a {@code Future} of the asynchronous result
+   * Like {@link #read(Buffer, int, long, int, Handler)} but returns a {@code Future} of the
+   * asynchronous result
    */
   Future<Buffer> read(Buffer buffer, int offset, long position, int length);
 
   /**
    * Flush any writes made to this file to underlying persistent storage.
    * <p>
-   * If the file was opened with {@code flush} set to {@code true} then calling this method will have no effect.
+   * If the file was opened with {@code flush} set to {@code true} then calling this method will
+   * have no effect.
    * <p>
    * The actual flush will happen asynchronously.
    *
@@ -131,22 +142,25 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   Future<Void> flush();
 
   /**
-   * Same as {@link #flush} but the handler will be called when the flush is complete or if an error occurs
+   * Same as {@link #flush} but the handler will be called when the flush is complete or if an error
+   * occurs
    */
   @Fluent
   AsyncFile flush(Handler<AsyncResult<Void>> handler);
 
   /**
-   * Sets the position from which data will be read from when using the file as a {@link io.vertx.core.streams.ReadStream}.
+   * Sets the position from which data will be read from when using the file as a {@link
+   * io.vertx.core.streams.ReadStream}.
    *
-   * @param readPos  the position in the file
+   * @param readPos the position in the file
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   AsyncFile setReadPos(long readPos);
 
   /**
-   * Sets the number of bytes that will be read when using the file as a {@link io.vertx.core.streams.ReadStream}.
+   * Sets the number of bytes that will be read when using the file as a {@link
+   * io.vertx.core.streams.ReadStream}.
    *
    * @param readLength the bytes that will be read from the file
    * @return a reference to this, so the API can be used fluently
@@ -155,14 +169,16 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   AsyncFile setReadLength(long readLength);
 
   /**
-   * @return the number of bytes that will be read when using the file as a {@link io.vertx.core.streams.ReadStream}
+   * @return the number of bytes that will be read when using the file as a {@link
+   * io.vertx.core.streams.ReadStream}
    */
   long getReadLength();
 
   /**
-   * Sets the position from which data will be written when using the file as a {@link io.vertx.core.streams.WriteStream}.
+   * Sets the position from which data will be written when using the file as a {@link
+   * io.vertx.core.streams.WriteStream}.
    *
-   * @param writePos  the position in the file
+   * @param writePos the position in the file
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -174,13 +190,40 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   long getWritePos();
 
   /**
-   * Sets the buffer size that will be used to read the data from the file. Changing this value will impact how much
-   * the data will be read at a time from the file system.
+   * Sets the buffer size that will be used to read the data from the file. Changing this value will
+   * impact how much the data will be read at a time from the file system.
+   *
    * @param readBufferSize the buffer size
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   AsyncFile setReadBufferSize(int readBufferSize);
+
+  /**
+   * Attempts to acquire a lock
+   */
+  @Fluent
+  AsyncFile tryLock(long position, long size, boolean shared) throws IOException;
+
+  /**
+   * Attempts to acquire a lock
+   */
+  @Fluent
+  AsyncFile tryLock() throws IOException;
+
+  /**
+   * Acquires a lock
+   */
+  @Fluent
+  AsyncFile lock(long position, long size, boolean shared)
+    throws ExecutionException, InterruptedException;
+
+  /**
+   * Acquires an exclusive lock
+   */
+  @Fluent
+  AsyncFile lock() throws ExecutionException, InterruptedException;
+
 
   /**
    * Like {@link #size()} but blocking.
