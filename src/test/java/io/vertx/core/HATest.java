@@ -237,16 +237,14 @@ public class HATest extends VertxTestBase {
     });
     awaitLatch(latch1);
 
-    ((VertxInternal) vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
-      fail("Should not failover here 2");
-    });
-    ((VertxInternal) vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> {
-      fail("Should not failover here 1");
-    });
+    ((VertxInternal) vertx2).failoverCompleteHandler((nodeID, haInfo, succeeded) -> fail("Should not failover here 2"));
+    ((VertxInternal) vertx1).failoverCompleteHandler((nodeID, haInfo, succeeded) -> fail("Should not failover here 1"));
     ((VertxInternal) vertx1).simulateKill();
     vertx2.close(ar -> {
       vertx.setTimer(500, tid -> {
         // Wait a bit in case failover happens
+        assertEquals("Verticle should still be deployed here 1", 1, vertx1.deploymentIDs().size());
+        assertTrue("Verticle should not failover here 2", vertx2.deploymentIDs().isEmpty());
         testComplete();
       });
     });
