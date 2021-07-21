@@ -28,11 +28,11 @@ public class WorkerPool {
     this.metrics = metrics;
   }
 
-  ExecutorService executor() {
+  public ExecutorService executor() {
     return pool;
   }
 
-  PoolMetrics metrics() {
+  public PoolMetrics metrics() {
     return metrics;
   }
 
