@@ -107,7 +107,6 @@ public class HAManager {
   private final Map<String, String> clusterMap;
   private final String nodeID;
   private final Queue<Runnable> toDeployOnQuorum = new ConcurrentLinkedQueue<>();
-  private final boolean enabled;
 
   private long quorumTimerID;
   private long checkQuorumTimerID = -1L;
@@ -116,18 +115,16 @@ public class HAManager {
   private volatile boolean failDuringFailover;
   private volatile boolean stopped;
   private volatile boolean killed;
-  private Consumer<Set<String>> clusterViewChangedHandler;
 
   public HAManager(VertxInternal vertx, DeploymentManager deploymentManager, VerticleManager verticleFactoryManager, ClusterManager clusterManager,
-                   Map<String, String> clusterMap, int quorumSize, String group, boolean enabled) {
+                   Map<String, String> clusterMap, int quorumSize, String group) {
     this.vertx = vertx;
     this.deploymentManager = deploymentManager;
     this.verticleFactoryManager = verticleFactoryManager;
     this.clusterManager = clusterManager;
     this.clusterMap = clusterMap;
-    this.quorumSize = enabled ? quorumSize : 0;
-    this.group = enabled ? group : "__DISABLED__";
-    this.enabled = enabled;
+    this.quorumSize = quorumSize;
+    this.group = group;
     this.haInfo = new JsonObject().put("verticles", new JsonArray()).put("group", this.group);
     this.nodeID = clusterManager.getNodeId();
   }
@@ -256,10 +253,6 @@ public class HAManager {
 
   public boolean isKilled() {
     return killed;
-  }
-
-  public boolean isEnabled() {
-    return enabled;
   }
 
   // For testing:
