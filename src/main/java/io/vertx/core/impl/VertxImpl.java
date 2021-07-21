@@ -222,22 +222,26 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         fut.complete(haManager);
       }, false, ar -> {
         if (ar.succeeded()) {
-          startEventBus(initPromise);
+          startEventBus(true, initPromise);
         } else {
           initPromise.fail(ar.cause());
         }
       });
     } else {
-      startEventBus(initPromise);
+      startEventBus(false, initPromise);
     }
   }
 
-  private void startEventBus(Promise<Void> initPromise) {
+  private void startEventBus(boolean haEnabled, Promise<Void> initPromise) {
     Promise<Void> promise = Promise.promise();
     eventBus.start(promise);
     promise.future().onComplete(ar -> {
       if (ar.succeeded()) {
-        initializeHaManager(initPromise);
+        if (haEnabled) {
+          initializeHaManager(initPromise);
+        } else {
+          initPromise.complete();
+        }
       } else {
         initPromise.fail(ar.cause());
       }
@@ -245,14 +249,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void initializeHaManager(Promise<Void> initPromise) {
-    if (null != haManager()) {
-      this.executeBlocking(fut -> {
-        haManager().init();
-        fut.complete();
-      }, false, initPromise);
-    } else {
-      initPromise.complete();
-    }
+    this.executeBlocking(fut -> {
+      // Init the manager (i.e register listener and check the quorum)
+      // after the event bus has been fully started and updated its state
+      // it will have also set the clustered changed view handler on the ha manager
+      haManager.init();
+      fut.complete();
+    }, false, initPromise);
   }
 
   /**
