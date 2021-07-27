@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 VMware, Inc. and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -355,9 +355,12 @@ public class KeyStoreHelper {
   }
 
   /**
-   * Creates a empty key store using the industry standard PCKS12.
+   * Creates an empty keystore. The keystore uses the default keystore type set in
+   * the file 'lib/security/security.java' (located in the JRE) by the 'keystore.type' property.
+   * However, if the default is set to the 'JKS' format, the this function will instead attempt to
+   * use the newer 'PKCS12' format, if it exists.
    *
-   * The format is the default format for keystores for Java >=9 and available on GraalVM.
+   * The PKCS12 format is the default format for keystores for Java >=9 and available on GraalVM.
    *
    * PKCS12 is an extensible, standard, and widely-supported format for storing cryptographic keys.
    * As of JDK 8, PKCS12 keystores can store private keys, trusted public key certificates, and
@@ -372,7 +375,15 @@ public class KeyStoreHelper {
    * @throws KeyStoreException if the underlying engine cannot create an instance
    */
   private static KeyStore createEmptyKeyStore() throws KeyStoreException {
-    final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+    final KeyStore keyStore;
+    String defaultKeyStoreType = KeyStore.getDefaultType();
+
+    if(defaultKeyStoreType.equalsIgnoreCase("jks") && Security.getAlgorithms("KeyStore").contains("PKCS12")) {
+      keyStore = KeyStore.getInstance("PKCS12");
+    } else {
+      keyStore = KeyStore.getInstance(defaultKeyStoreType);
+    }
+
     try {
       keyStore.load(null, null);
     } catch (CertificateException | NoSuchAlgorithmException | IOException e) {
