@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 @DataObject(generateConverter = true, publicConverter = false)
 public class VertxOptions {
 
+  private static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
+
   /**
    * The default number of event loop threads to be used  = 2 * number of cores on the machine
    */
@@ -109,6 +111,8 @@ public class VertxOptions {
    */
   public static final TimeUnit DEFAULT_WARNING_EXCEPTION_TIME_UNIT = TimeUnit.NANOSECONDS;
 
+  public static final boolean DEFAULT_DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
+
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -130,6 +134,7 @@ public class VertxOptions {
   private TimeUnit maxWorkerExecuteTimeUnit = DEFAULT_MAX_WORKER_EXECUTE_TIME_UNIT;
   private TimeUnit warningExceptionTimeUnit = DEFAULT_WARNING_EXCEPTION_TIME_UNIT;
   private TimeUnit blockedThreadCheckIntervalUnit = DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL_UNIT;
+  private boolean disableTCCL = DEFAULT_DISABLE_TCCL;
 
   /**
    * Default constructor
@@ -163,6 +168,7 @@ public class VertxOptions {
     this.warningExceptionTimeUnit = other.warningExceptionTimeUnit;
     this.blockedThreadCheckIntervalUnit = other.blockedThreadCheckIntervalUnit;
     this.tracingOptions = other.tracingOptions != null ? other.tracingOptions.copy() : null;
+    this.disableTCCL = other.disableTCCL;
   }
 
   /**
@@ -643,6 +649,32 @@ public class VertxOptions {
     return this;
   }
 
+  /**
+   * @return whether Vert.x sets the {@link Context} classloader as the thread context classloader on actions executed on that {@link Context}
+   */
+  public boolean getDisableTCCL() {
+    return disableTCCL;
+  }
+
+  /**
+   * Configures whether Vert.x sets the {@link Context} classloader as the thread context classloader on actions executed on that {@link Context}.
+   *
+   * When a {@link Context} is created the current thread classloader is captured and associated with this classloader.
+   *
+   * Likewise when a Verticle is created, the Verticle's {@link Context} classloader is set to the current thread classloader
+   * unless this classloader is overriden by {@link DeploymentOptions#getClassLoader()}.
+   *
+   * This setting overrides the (legacy) system property {@code vertx.disableTCCL} and provides control at the
+   * Vertx instance level.
+   *
+   * @param disableTCCL {@code true} to disable thread context classloader update by Vertx
+   * @return a reference to this, so the API can be used fluently
+   */
+  public VertxOptions setDisableTCCL(boolean disableTCCL) {
+    this.disableTCCL = disableTCCL;
+    return this;
+  }
+
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     VertxOptionsConverter.toJson(this, json);
@@ -673,6 +705,7 @@ public class VertxOptions {
         ", eventbus=" + eventBusOptions.toJson() +
         ", warningExceptionTimeUnit=" + warningExceptionTimeUnit +
         ", warningExceptionTime=" + warningExceptionTime +
+        ", disableTCCL=" + disableTCCL +
         '}';
   }
 }
