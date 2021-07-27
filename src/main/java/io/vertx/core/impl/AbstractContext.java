@@ -19,8 +19,6 @@ import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
 import java.util.List;
 
-import static io.vertx.core.impl.VertxThread.DISABLE_TCCL;
-
 /**
  * A context implementation that does not hold any specific state.
  *
@@ -28,6 +26,12 @@ import static io.vertx.core.impl.VertxThread.DISABLE_TCCL;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 abstract class AbstractContext implements ContextInternal {
+
+  final boolean disableTCCL;
+
+  public AbstractContext(boolean disableTCCL) {
+    this.disableTCCL = disableTCCL;
+  }
 
   @Override
   public abstract boolean isEventLoopContext();
@@ -63,7 +67,7 @@ abstract class AbstractContext implements ContextInternal {
     ContextInternal prev;
     VertxThread th = (VertxThread) Thread.currentThread();
     prev = th.beginEmission(this);
-    if (!DISABLE_TCCL) {
+    if (!disableTCCL) {
       th.setContextClassLoader(classLoader());
     }
     return prev;
@@ -71,7 +75,7 @@ abstract class AbstractContext implements ContextInternal {
 
   public final void endDispatch(ContextInternal previous) {
     VertxThread th = (VertxThread) Thread.currentThread();
-    if (!DISABLE_TCCL) {
+    if (!disableTCCL) {
       th.setContextClassLoader(previous != null ? previous.classLoader() : null);
     }
     th.endEmission(previous);
