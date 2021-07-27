@@ -378,12 +378,11 @@ public class KeyStoreHelper {
     final KeyStore keyStore;
     String defaultKeyStoreType = KeyStore.getDefaultType();
 
-    if(defaultKeyStoreType.equalsIgnoreCase("jks") && Security.getAlgorithms("KeyStore").contains("PKCS12")) {
+    if (defaultKeyStoreType.equalsIgnoreCase("jks") && Security.getAlgorithms("KeyStore").contains("PKCS12")) {
       keyStore = KeyStore.getInstance("PKCS12");
     } else {
       keyStore = KeyStore.getInstance(defaultKeyStoreType);
     }
-
     try {
       keyStore.load(null, null);
     } catch (CertificateException | NoSuchAlgorithmException | IOException e) {
