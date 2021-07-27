@@ -40,6 +40,7 @@ import org.apache.mina.transport.socket.DatagramSessionConfig;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -48,7 +49,10 @@ import java.util.stream.Collectors;
 public final class FakeDNSServer extends DnsServer {
 
   public static RecordStore A_store(Map<String, String> entries) {
-    return questionRecord -> entries.entrySet().stream().map(entry -> {
+    return questionRecord -> entries.entrySet()
+      .stream()
+      .filter(s -> s.getKey().equals(questionRecord.getDomainName()))
+      .map(entry -> {
       ResourceRecordModifier rm = new ResourceRecordModifier();
       rm.setDnsClass(RecordClass.IN);
       rm.setDnsName(entry.getKey());
@@ -94,7 +98,7 @@ public final class FakeDNSServer extends DnsServer {
     return this;
   }
 
-  public FakeDNSServer testResolveA(final String ipAddress) {
+  public FakeDNSServer testResolveA(String ipAddress) {
     return testResolveA(Collections.singletonMap("dns.vertx.io", ipAddress));
   }
 
