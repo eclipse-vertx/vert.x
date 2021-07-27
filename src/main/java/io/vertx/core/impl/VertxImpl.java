@@ -133,6 +133,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Transport transport;
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<AbstractContext>> stickyContext = new ThreadLocal<>();
+  private final boolean disableTCCL;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, VertxThreadFactory threadFactory,
@@ -165,6 +166,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     maxWorkerExecTime = options.getMaxWorkerExecuteTime();
     maxWorkerExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
+    disableTCCL = options.getDisableTCCL();
 
     this.executorServiceFactory = executorServiceFactory;
     this.threadFactory = threadFactory;
@@ -465,12 +467,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
+    return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl, disableTCCL);
   }
 
   @Override
   public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl);
+    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl, disableTCCL);
   }
 
   @Override
@@ -480,7 +482,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
+    return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl, disableTCCL);
   }
 
   @Override

@@ -31,6 +31,11 @@ public class VertxOptionsConverter {
             obj.setBlockedThreadCheckIntervalUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
           }
           break;
+        case "disableTCCL":
+          if (member.getValue() instanceof Boolean) {
+            obj.setDisableTCCL((Boolean)member.getValue());
+          }
+          break;
         case "eventBusOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setEventBusOptions(new io.vertx.core.eventbus.EventBusOptions((io.vertx.core.json.JsonObject)member.getValue()));
@@ -132,6 +137,7 @@ public class VertxOptionsConverter {
     if (obj.getBlockedThreadCheckIntervalUnit() != null) {
       json.put("blockedThreadCheckIntervalUnit", obj.getBlockedThreadCheckIntervalUnit().name());
     }
+    json.put("disableTCCL", obj.getDisableTCCL());
     if (obj.getEventBusOptions() != null) {
       json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }

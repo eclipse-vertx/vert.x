@@ -26,6 +26,8 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.lang.ref.WeakReference;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -289,5 +291,31 @@ public class VertxTest extends AsyncTestBase {
     assertFalse(closed.get());
     ref.get().complete();
     assertWaitUntil(closed::get);
+  }
+
+  @Test
+  public void testEnableTCCL() {
+    testTCCL(false);
+  }
+
+  @Test
+  public void testDisableTCCL() {
+    testTCCL(true);
+  }
+
+  private void testTCCL(boolean disable) {
+    VertxOptions options = new VertxOptions().setDisableTCCL(disable);
+    Vertx vertx = Vertx.vertx(options);
+    ClassLoader orig = Thread.currentThread().getContextClassLoader();
+    ClassLoader cl = new URLClassLoader(new URL[0], orig);
+    Thread.currentThread().setContextClassLoader(cl);
+    Context ctx = vertx.getOrCreateContext();
+    Thread.currentThread().setContextClassLoader(orig);
+    ctx.runOnContext(v -> {
+      ClassLoader expected = disable ? orig : cl;
+      assertSame(expected, Thread.currentThread().getContextClassLoader());
+      testComplete();
+    });
+    await();
   }
 }
