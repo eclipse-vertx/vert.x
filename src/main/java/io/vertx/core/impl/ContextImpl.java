@@ -75,10 +75,9 @@ abstract class ContextImpl extends AbstractContext {
               WorkerPool workerPool,
               Deployment deployment,
               CloseFuture closeFuture,
-              ClassLoader tccl) {
-    if (VertxThread.DISABLE_TCCL && tccl != ClassLoader.getSystemClassLoader()) {
-      log.warn("You have disabled TCCL checks but you have a custom TCCL to set.");
-    }
+              ClassLoader tccl,
+              boolean disableTCCL) {
+    super(disableTCCL);
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
     this.eventLoop = eventLoop;
