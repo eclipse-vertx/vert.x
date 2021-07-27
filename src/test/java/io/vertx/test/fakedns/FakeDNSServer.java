@@ -40,6 +40,7 @@ import org.apache.mina.transport.socket.DatagramSessionConfig;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -57,6 +58,23 @@ public final class FakeDNSServer extends DnsServer {
       rm.put(DnsAttribute.IP_ADDRESS, entry.getValue());
       return rm.getEntry();
     }).collect(Collectors.toSet());
+  }
+
+  public static RecordStore A_store(Function<String, String> entries) {
+    return questionRecord -> {
+      String res = entries.apply(questionRecord.getDomainName());
+      if (res != null) {
+        ResourceRecordModifier rm = new ResourceRecordModifier();
+        rm.setDnsClass(RecordClass.IN);
+        rm.setDnsName(questionRecord.getDomainName());
+        rm.setDnsTtl(100);
+        rm.setDnsType(RecordType.A);
+        rm.put(DnsAttribute.IP_ADDRESS, res);
+        rm.getEntry();
+        return Collections.singleton(rm.getEntry());
+      }
+      return Collections.emptySet();
+    };
   }
 
   public static final int PORT = 53530;
@@ -99,6 +117,10 @@ public final class FakeDNSServer extends DnsServer {
   }
 
   public FakeDNSServer testResolveA(Map<String, String> entries) {
+    return store(A_store(entries));
+  }
+
+  public FakeDNSServer testResolveA(Function<String, String> entries) {
     return store(A_store(entries));
   }
 

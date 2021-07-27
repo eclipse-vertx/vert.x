@@ -501,7 +501,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     records.put("host7.sub.sub.foo.com", addr_host7_sub_sub_foo_com);
     records.put("host7.sub.sub", addr_host7_sub_sub);
 
-    dnsServer.testResolveA(records);
+    dnsServer.testResolveA(records::get);
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
@@ -676,7 +676,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     records.put("host1", "127.0.0.2");
     records.put("host1.foo.com", "127.0.0.3");
 
-    dnsServer.testResolveA(records);
+    dnsServer.testResolveA(records::get);
     VertxInternal vertx = (VertxInternal) vertx(new VertxOptions().setAddressResolverOptions(
         new AddressResolverOptions().
             addServer(dnsServerAddress.getAddress().getHostAddress() + ":" + dnsServerAddress.getPort()).
