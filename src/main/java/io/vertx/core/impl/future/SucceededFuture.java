@@ -58,7 +58,11 @@ public final class SucceededFuture<T> extends FutureBase<T> {
 
   @Override
   public Future<T> onSuccess(Handler<T> handler) {
-    emit(result, handler);
+    if (context != null) {
+      context.emit(result, handler);
+    } else {
+      handler.handle(result);
+    }
     return this;
   }
 
@@ -71,8 +75,10 @@ public final class SucceededFuture<T> extends FutureBase<T> {
   public Future<T> onComplete(Handler<AsyncResult<T>> handler) {
     if (handler instanceof Listener) {
       emitSuccess(result ,(Listener<T>) handler);
+    } else if (context != null) {
+      context.emit(this, handler);
     } else {
-      emit(this, handler);
+      handler.handle(this);
     }
     return this;
   }
