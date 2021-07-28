@@ -76,23 +76,6 @@ abstract class FutureBase<T> implements FutureInternal<T> {
     }
   }
 
-  protected final <U> void emit(U value, Handler<U> handler) {
-    if (context != null && !context.isRunningOnContext()) {
-      context.execute(() -> {
-        ContextInternal prev = context.beginDispatch();
-        try {
-          handler.handle(value);
-        } catch (Throwable t) {
-          context.reportException(t);
-        } finally {
-          context.endDispatch(prev);
-        }
-      });
-    } else {
-      handler.handle(value);
-    }
-  }
-
   @Override
   public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) {
     Objects.requireNonNull(successMapper, "No null success mapper accepted");
