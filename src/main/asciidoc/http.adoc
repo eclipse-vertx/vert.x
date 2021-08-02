@@ -287,13 +287,17 @@ Multi-part forms can also contain file uploads.
 
 If you want to retrieve the attributes of a multi-part form you should tell Vert.x that you expect to receive
 such a form *before* any of the body is read by calling {@link io.vertx.core.http.HttpServerRequest#setExpectMultipart}
-with true, and then you should retrieve the actual attributes using {@link io.vertx.core.http.HttpServerRequest#formAttributes}
+with `true`, and then you should retrieve the actual attributes using {@link io.vertx.core.http.HttpServerRequest#formAttributes}
 once the entire body has been read:
 
 [source,$lang]
 ----
 {@link examples.HTTPExamples#example12}
 ----
+
+Form attributes have a maximum size of `8192` bytes. When the client submits a form with an attribute
+size greater than this value, the file upload triggers an exception on `HttpServerRequest` exception handler. You
+can set a different maximum size with {@link io.vertx.core.http.HttpServerOptions#setMaxFormAttributeSize}.
 
 ==== Handling form file uploads
 
