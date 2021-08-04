@@ -75,5 +75,11 @@ public class BlockedThreadChecker {
 
   public void close() {
     timer.cancel();
+    synchronized (this) {
+      //Not strictly necessary, but it helps GC to break it all down
+      //when Vert.x is embedded and restarted multiple times
+      threads.clear();
+    }
   }
+
 }
