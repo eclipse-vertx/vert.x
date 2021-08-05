@@ -83,7 +83,6 @@ public abstract class HandlerRegistration<T> implements Closeable {
         registered = null;
         if (bus.metrics != null) {
           bus.metrics.handlerUnregistered(metric);
-          metric = null;
         }
       } else {
         promise.complete();
