@@ -82,8 +82,7 @@ class WebSocketEndpoint extends ClientHttpEndpointBase<HttpClientConnection> {
     }
 
     connector
-      .httpConnect((EventLoopContext) ctx)
-      .onComplete(new Listener());
+      .httpConnect((EventLoopContext) ctx, new Listener());
   }
 
   @Override

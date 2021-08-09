@@ -28,14 +28,11 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AsciiString;
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
-import io.vertx.core.Verticle;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientConnection;
@@ -991,7 +988,6 @@ public class Http2ClientTest extends Http2TestBase {
     server.connectionHandler(HttpConnection::shutdown);
     server.requestHandler(req -> fail());
     startServer();
-    AtomicInteger count = new AtomicInteger();
     client.connectionHandler(conn -> {
       Context ctx = Vertx.currentContext();
       conn.goAwayHandler(ga -> {
@@ -1000,11 +996,7 @@ public class Http2ClientTest extends Http2TestBase {
       });
     });
     client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send(onFailure(err -> {
-        if (count.getAndIncrement() == 0) {
-          complete();
-        }
-      }));
+      req.send(onFailure(err -> complete()));
     }));
     await();
   }
