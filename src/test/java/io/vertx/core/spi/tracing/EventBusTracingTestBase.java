@@ -14,6 +14,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.tracing.TracingPolicy;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.faketracer.FakeTracer;
 import io.vertx.test.faketracer.Span;
@@ -21,6 +22,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class EventBusTracingTestBase extends VertxTestBase {
 
@@ -50,9 +52,9 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
   }
 
   private void testSend(TracingPolicy policy, boolean create, int expected) throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
+    AtomicInteger received = new AtomicInteger();
     vertx2.eventBus().consumer("the-address", msg -> {
-      vertx2.runOnContext(v -> latch.countDown()); // make sure span is finished
+      received.incrementAndGet();
     });
     Context ctx = vertx1.getOrCreateContext();
     ctx.runOnContext(v -> {
@@ -61,9 +63,9 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
       }
       vertx1.eventBus().send("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy));
     });
-    awaitLatch(latch);
+    assertWaitUntil(() -> tracer.getFinishedSpans().size() == expected);
+    assertWaitUntil(() -> received.get() == 1);
     List<Span> finishedSpans = tracer.getFinishedSpans();
-    assertEquals(expected, finishedSpans.size());
     assertSingleTrace(finishedSpans);
     finishedSpans.forEach(span -> {
       assertEquals("send", span.operation);
