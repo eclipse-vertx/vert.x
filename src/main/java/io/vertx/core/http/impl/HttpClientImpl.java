@@ -284,8 +284,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
    */
   public Future<HttpClientConnection> connect(SocketAddress server, SocketAddress peer) {
     EventLoopContext context = (EventLoopContext) vertx.getOrCreateContext();
+    Promise<HttpClientConnection> promise = context.promise();
     HttpChannelConnector connector = new HttpChannelConnector(this, netClient, null, null, options.getProtocolVersion(), options.isSsl(), options.isUseAlpn(), peer, server);
-    return connector.httpConnect(context);
+    connector.httpConnect(context, promise);
+    return promise.future();
   }
 
   @Override
