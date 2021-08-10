@@ -729,7 +729,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
-   * Encode this JSON object a a string, with whitespace to make the object easier to read by a human, or other
+   * Encode this JSON object as a string, with whitespace to make the object easier to read by a human, or other
    * sentient organism.
    *
    * @return the pretty string encoding.
