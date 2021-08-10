@@ -88,12 +88,9 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
   }
 
   private void testPublish(TracingPolicy policy, boolean create, int expected, boolean singleTrace) throws Exception {
-    CountDownLatch latch = new CountDownLatch(2);
     vertx2.eventBus().consumer("the-address", msg -> {
-      vertx2.runOnContext(v -> latch.countDown()); // make sure span is finished
     });
     vertx2.eventBus().consumer("the-address", msg -> {
-      vertx2.runOnContext(v -> latch.countDown()); // make sure span is finished
     });
     Context ctx = vertx1.getOrCreateContext();
     ctx.runOnContext(v -> {
@@ -102,9 +99,8 @@ public abstract class EventBusTracingTestBase extends VertxTestBase {
       }
       vertx1.eventBus().publish("the-address", "ping", new DeliveryOptions().setTracingPolicy(policy));
     });
-    awaitLatch(latch);
+    assertWaitUntil(() -> tracer.getFinishedSpans().size() == expected);
     List<Span> finishedSpans = tracer.getFinishedSpans();
-    assertEquals(expected, finishedSpans.size());
     if (singleTrace) {
       assertSingleTrace(finishedSpans);
     }
