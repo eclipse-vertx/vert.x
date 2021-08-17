@@ -219,8 +219,8 @@ public interface ContextInternal extends Context {
 
   /**
    * @return the {@link ConcurrentMap} used to store context data
-   * @see Context#get(String)
-   * @see Context#put(String, Object)
+   * @see Context#get(Object)
+   * @see Context#put(Object, Object)
    */
   ConcurrentMap<Object, Object> contextData();
 

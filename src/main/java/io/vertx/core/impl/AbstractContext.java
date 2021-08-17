@@ -194,33 +194,33 @@ abstract class AbstractContext implements ContextInternal {
 
   @SuppressWarnings("unchecked")
   @Override
-  public final <T> T get(String key) {
+  public final <T> T get(Object key) {
     return (T) contextData().get(key);
   }
 
   @Override
-  public final void put(String key, Object value) {
+  public final void put(Object key, Object value) {
     contextData().put(key, value);
   }
 
   @Override
-  public final boolean remove(String key) {
+  public final boolean remove(Object key) {
     return contextData().remove(key) != null;
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public final <T> T getLocal(String key) {
+  public final <T> T getLocal(Object key) {
     return (T) localContextData().get(key);
   }
 
   @Override
-  public final void putLocal(String key, Object value) {
+  public final void putLocal(Object key, Object value) {
     localContextData().put(key, value);
   }
 
   @Override
-  public final boolean removeLocal(String key) {
+  public final boolean removeLocal(Object key) {
     return localContextData().remove(key) != null;
   }
 
