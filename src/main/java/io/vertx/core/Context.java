@@ -196,7 +196,7 @@ public interface Context {
    * @param <T>  the type of the data
    * @return the data
    */
-  <T> T get(String key);
+  <T> T get(Object key);
 
   /**
    * Put some data in the context.
@@ -206,7 +206,7 @@ public interface Context {
    * @param key  the key of the data
    * @param value  the data
    */
-  void put(String key, Object value);
+  void put(Object key, Object value);
 
   /**
    * Remove some data from the context.
@@ -214,7 +214,7 @@ public interface Context {
    * @param key  the key to remove
    * @return true if removed successfully, false otherwise
    */
-  boolean remove(String key);
+  boolean remove(Object key);
 
   /**
    * Get some local data from the context.
@@ -223,7 +223,7 @@ public interface Context {
    * @param <T>  the type of the data
    * @return the data
    */
-  <T> T getLocal(String key);
+  <T> T getLocal(Object key);
 
   /**
    * Put some local data in the context.
@@ -233,7 +233,7 @@ public interface Context {
    * @param key  the key of the data
    * @param value  the data
    */
-  void putLocal(String key, Object value);
+  void putLocal(Object key, Object value);
 
   /**
    * Remove some local data from the context.
@@ -241,7 +241,7 @@ public interface Context {
    * @param key  the key to remove
    * @return true if removed successfully, false otherwise
    */
-  boolean removeLocal(String key);
+  boolean removeLocal(Object key);
 
   /**
    * @return The Vertx instance that created the context
