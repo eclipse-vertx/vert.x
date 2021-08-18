@@ -17,6 +17,7 @@ import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.Objects;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -28,7 +29,7 @@ public class WorkerContext extends ContextImpl {
                 WorkerPool workerPool,
                 Deployment deployment,
                 CloseFuture closeFuture,
-                ClassLoader tccl,
+                Supplier<ClassLoader> tccl,
                 boolean disableTCCL) {
     super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeFuture, tccl, disableTCCL);
   }

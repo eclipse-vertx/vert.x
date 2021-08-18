@@ -44,6 +44,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
+import io.vertx.core.impl.utils.ConstantSupplier;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -134,10 +135,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<AbstractContext>> stickyContext = new ThreadLocal<>();
   private final boolean disableTCCL;
+  private final Supplier<ClassLoader> defaultClassLoaderSupplier;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, VertxThreadFactory threadFactory,
-            ExecutorServiceFactory executorServiceFactory) {
+            ExecutorServiceFactory executorServiceFactory, Supplier<ClassLoader> defaultClassLoaderSupplier) {
+    this.defaultClassLoaderSupplier = defaultClassLoaderSupplier;
     // Sanity check
     if (Vertx.currentContext() != null) {
       log.warn("You're already on a Vert.x context, are you sure you want to create a new Vertx instance?");
@@ -167,6 +170,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     maxWorkerExecTime = options.getMaxWorkerExecuteTime();
     maxWorkerExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
     disableTCCL = options.getDisableTCCL();
+    if (disableTCCL && defaultClassLoaderSupplier != null) {
+      throw new IllegalStateException("Cannot set disableTCCL and provide a ClassLoader");
+    }
 
     this.executorServiceFactory = executorServiceFactory;
     this.threadFactory = threadFactory;
@@ -472,28 +478,28 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl, disableTCCL);
+  public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, Supplier<ClassLoader> tccl) {
+    return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl != null ? tccl : defaultClassLoaderSupplier, disableTCCL);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl, disableTCCL);
+  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, Supplier<ClassLoader> tccl) {
+    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl != null ? tccl : defaultClassLoaderSupplier, disableTCCL);
   }
 
   @Override
   public EventLoopContext createEventLoopContext() {
-    return createEventLoopContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
+    return createEventLoopContext(null, closeFuture, null, defaultClassLoaderSupplier != null ? defaultClassLoaderSupplier : new ConstantSupplier<>(Thread.currentThread().getContextClassLoader()));
   }
 
   @Override
-  public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl, disableTCCL);
+  public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, Supplier<ClassLoader> tccl) {
+    return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl != null ? tccl : defaultClassLoaderSupplier, disableTCCL);
   }
 
   @Override
   public WorkerContext createWorkerContext() {
-    return createWorkerContext(null, closeFuture, null, Thread.currentThread().getContextClassLoader());
+    return createWorkerContext(null, closeFuture, null, defaultClassLoaderSupplier != null ? defaultClassLoaderSupplier : new ConstantSupplier<>(Thread.currentThread().getContextClassLoader()));
   }
 
   @Override

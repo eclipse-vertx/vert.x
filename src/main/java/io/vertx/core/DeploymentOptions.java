@@ -19,6 +19,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * Options for configuring a verticle deployment.
@@ -46,6 +47,7 @@ public class DeploymentOptions {
   private List<String> isolatedClasses;
   private TimeUnit maxWorkerExecuteTimeUnit;
   private ClassLoader classLoader;
+  private Supplier<ClassLoader> classLoaderSupplier;
 
   /**
    * Default constructor
@@ -76,6 +78,7 @@ public class DeploymentOptions {
     this.instances = other.instances;
     this.isolatedClasses = other.getIsolatedClasses() == null ? null : new ArrayList<>(other.getIsolatedClasses());
     this.workerPoolName = other.workerPoolName;
+    this.classLoaderSupplier = other.classLoaderSupplier;
     setWorkerPoolSize(other.workerPoolSize);
     setMaxWorkerExecuteTime(other.maxWorkerExecuteTime);
     this.maxWorkerExecuteTimeUnit = other.maxWorkerExecuteTimeUnit;
@@ -383,6 +386,27 @@ public class DeploymentOptions {
    */
   public DeploymentOptions setClassLoader(ClassLoader classLoader) {
     this.classLoader = classLoader;
+    return this;
+  }
+
+  /**
+   * @return the classloader supplier used for deploying the Verticle
+   */
+  public Supplier<ClassLoader> getClassLoaderSupplier() {
+    return classLoaderSupplier;
+  }
+
+  /**
+   * Set the classloader supplier to use for deploying the Verticle.
+   *
+   * This is an advanced option, it is intended for use in environments with hot reload capability,
+   * where the current ClassLoader may change
+   *
+   * @param classLoaderSupplier the loader to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DeploymentOptions setClassLoaderSupplier(Supplier<ClassLoader> classLoaderSupplier) {
+    this.classLoaderSupplier = classLoaderSupplier;
     return this;
   }
 

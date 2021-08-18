@@ -19,6 +19,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Verticle;
+import io.vertx.core.impl.utils.ConstantSupplier;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -37,6 +38,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -62,14 +64,17 @@ public class DeploymentManager {
     }
     options.checkIsolationNotDefined();
     ContextInternal currentContext = vertx.getOrCreateContext();
-    ClassLoader cl = options.getClassLoader();
-    if (cl == null) {
-      cl = Thread.currentThread().getContextClassLoader();
-      if (cl == null) {
-        cl = getClass().getClassLoader();
+    if (options.getClassLoader() != null && options.getClassLoaderSupplier() != null) {
+      return Future.failedFuture("Cannot set both ClassLoader and ClassLoaderSupplier");
+    }
+    Supplier<ClassLoader> supplier = options.getClassLoaderSupplier();
+    if (supplier == null) {
+      ClassLoader cl = options.getClassLoader();
+      if (cl != null) {
+        supplier = new ConstantSupplier<>(cl);
       }
     }
-    return doDeploy(options, v -> "java:" + v.getClass().getName(), currentContext, currentContext, cl, verticleSupplier)
+    return doDeploy(options, v -> "java:" + v.getClass().getName(), currentContext, currentContext, supplier, verticleSupplier)
       .map(Deployment::deploymentID);
   }
 
@@ -145,7 +150,7 @@ public class DeploymentManager {
                                   Function<Verticle, String> identifierProvider,
                                   ContextInternal parentContext,
                                   ContextInternal callingContext,
-                                  ClassLoader tccl, Callable<Verticle> verticleSupplier) {
+                                  Supplier<ClassLoader> tccl, Callable<Verticle> verticleSupplier) {
     int nbInstances = options.getInstances();
     Set<Verticle> verticles = Collections.newSetFromMap(new IdentityHashMap<>());
     for (int i = 0; i < nbInstances; i++) {
@@ -168,10 +173,10 @@ public class DeploymentManager {
   }
 
   private Future<Deployment> doDeploy(String identifier,
-                        DeploymentOptions options,
-                        ContextInternal parentContext,
-                        ContextInternal callingContext,
-                        ClassLoader tccl, Verticle... verticles) {
+                                      DeploymentOptions options,
+                                      ContextInternal parentContext,
+                                      ContextInternal callingContext,
+                                      Supplier<ClassLoader> tccl, Verticle... verticles) {
     Promise<Deployment> promise = callingContext.promise();
     String poolName = options.getWorkerPoolName();
 

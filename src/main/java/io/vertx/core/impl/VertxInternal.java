@@ -20,6 +20,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.impl.HttpServerImpl;
 import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.impl.utils.ConstantSupplier;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.impl.NetServerImpl;
@@ -36,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /**
  * This interface provides services for vert.x core internal use only
@@ -107,16 +109,30 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
+  default EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createEventLoopContext(deployment, closeFuture, workerPool, new ConstantSupplier<>(tccl));
+  }
 
-  EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+  default EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createEventLoopContext(eventLoop, workerPool, new ConstantSupplier<>(tccl));
+  }
+
+  EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, Supplier<ClassLoader> tccl);
+
+  EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, Supplier<ClassLoader> tccl);
 
   EventLoopContext createEventLoopContext();
 
   /**
    * @return worker loop context
    */
-  WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl);
+  default WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl) {
+    return createWorkerContext(deployment, closeFuture, pool, new ConstantSupplier<>(tccl));
+  }
+  /**
+   * @return worker loop context
+   */
+  WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, Supplier<ClassLoader> tccl);
 
   WorkerContext createWorkerContext();
 
