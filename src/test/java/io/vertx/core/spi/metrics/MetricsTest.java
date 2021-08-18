@@ -1010,8 +1010,8 @@ public class MetricsTest extends VertxTestBase {
 
     awaitLatch(counter);
 
-    assertEquals(metrics.numberOfSubmittedTask(), 100);
-    assertEquals(metrics.numberOfCompletedTasks(), 100);
+    assertWaitUntil(() -> metrics.numberOfSubmittedTask() == 100);
+    assertWaitUntil(() -> metrics.numberOfCompletedTasks() == 100);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());
