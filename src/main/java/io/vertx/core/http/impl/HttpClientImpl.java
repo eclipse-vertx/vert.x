@@ -11,8 +11,6 @@
 
 package io.vertx.core.http.impl;
 
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.DefaultChannelGroup;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -28,8 +26,6 @@ import io.vertx.core.net.impl.pool.ConnectionManager;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
@@ -120,12 +116,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     }
   };
 
-  private static final Logger log = LoggerFactory.getLogger(HttpClientImpl.class);
   private static final Consumer<Endpoint<Lease<HttpClientConnection>>> EXPIRED_CHECKER = endpoint -> ((ClientHttpEndpointBase)endpoint).checkExpired();
 
 
   private final VertxInternal vertx;
-  private final ChannelGroup channelGroup;
   private final HttpClientOptions options;
   private final ConnectionManager<EndpointKey, HttpClientConnection> webSocketCM;
   private final ConnectionManager<EndpointKey, Lease<HttpClientConnection>> httpCM;
@@ -143,7 +137,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     this.vertx = vertx;
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createHttpClientMetrics(options) : null;
     this.options = new HttpClientOptions(options);
-    this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.closeFuture = closeFuture;
     List<HttpVersion> alpnVersions = options.getAlpnVersions();
     if (alpnVersions == null || alpnVersions.isEmpty()) {
