@@ -85,7 +85,7 @@ public class VertxThread extends FastThreadLocalThread implements BlockedThreadC
       executeStart();
     }
     ContextInternal prev = this.context;
-    if (prev == null) {
+    if (prev == null && !ContextImpl.DISABLE_TCCLSWAPPING) {
       topLevelTCCL = Thread.currentThread().getContextClassLoader();
     }
     this.context = context;
@@ -102,7 +102,7 @@ public class VertxThread extends FastThreadLocalThread implements BlockedThreadC
    */
   void endEmission(ContextInternal prev) {
     context = prev;
-    if (prev == null) {
+    if (prev == null && !ContextImpl.DISABLE_TCCLSWAPPING) {
       Thread.currentThread().setContextClassLoader(topLevelTCCL);
       topLevelTCCL = null;
     }

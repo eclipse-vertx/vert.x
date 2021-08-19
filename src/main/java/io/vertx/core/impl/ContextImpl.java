@@ -55,6 +55,9 @@ abstract class ContextImpl extends AbstractContext {
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
   static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
 
+  private static final String DISABLE_TCCLSWAPPING_PROP_NAME = "vertx.disableTCCLSwapping";
+  static final boolean DISABLE_TCCLSWAPPING = Boolean.getBoolean(DISABLE_TCCLSWAPPING_PROP_NAME);
+
   protected final VertxInternal owner;
   protected final JsonObject config;
   private final Deployment deployment;
