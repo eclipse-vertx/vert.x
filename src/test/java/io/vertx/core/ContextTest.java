@@ -91,20 +91,49 @@ public class ContextTest extends VertxTestBase {
   class SomeObject {
   }
 
+  class LocalObject {
+  }
+
   @Test
   public void testPutGetRemoveData() throws Exception {
     SomeObject obj = new SomeObject();
+    LocalObject loc = new LocalObject();
     vertx.runOnContext(v -> {
       Context ctx = Vertx.currentContext();
+      // check that put and putLocal use different hashes
       ctx.put("foo", obj);
+      ctx.putLocal("foo", loc);
       ctx.runOnContext(v2 -> {
         assertEquals(obj, ctx.get("foo"));
+        assertEquals(loc, ctx.getLocal("foo"));
         assertTrue(ctx.remove("foo"));
+        assertTrue(ctx.removeLocal("foo"));
         ctx.runOnContext(v3 -> {
           assertNull(ctx.get("foo"));
+          assertNull(ctx.getLocal("foo"));
           testComplete();
         });
       });
+    });
+    await();
+  }
+
+  @Test
+  public void testNullData() throws Exception {
+    LocalObject obj = new LocalObject();
+    LocalObject loc = new LocalObject();
+    vertx.runOnContext(v -> {
+      Context ctx = Vertx.currentContext();
+      ctx.put("foo", obj);
+      ctx.putLocal("foo", loc);
+      ctx.put("foo", null);  // null should remove
+      assertNull(ctx.get("foo"));
+      assertFalse(ctx.remove("foo"));  // should already have been removed
+      assertEquals(loc, ctx.getLocal("foo"));
+      ctx.putLocal("foo", null);  // null should remove
+      assertNull(ctx.getLocal("foo"));
+      assertFalse(ctx.removeLocal("foo"));  // should already have been removed
+      testComplete();
     });
     await();
   }
