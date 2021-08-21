@@ -371,7 +371,7 @@ public class KeyStoreHelper {
    *
    * @throws KeyStoreException if the underlying engine cannot create an instance
    */
-  private static KeyStore createEmptyKeyStore() throws KeyStoreException {
+  public static KeyStore createEmptyKeyStore() throws KeyStoreException {
     final KeyStore keyStore = KeyStore.getInstance("PKCS12");
     try {
       keyStore.load(null, null);
