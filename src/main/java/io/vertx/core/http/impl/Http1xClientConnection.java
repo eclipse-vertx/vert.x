@@ -350,6 +350,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private final InboundBuffer<Object> queue;
     private boolean reset;
     private boolean writable;
+    private boolean closed;
     private HttpRequestHead request;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -585,9 +586,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     void handleEnd(LastHttpContent trailer) {
       queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
-      if (closeHandler != null) {
-        closeHandler.handle(null);
-      }
+      tryClose();
     }
 
     void handleException(Throwable cause) {
@@ -599,8 +598,18 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     void handleClosed() {
       handleException(CLOSED_EXCEPTION);
-      if (closeHandler != null) {
-        closeHandler.handle(null);
+      tryClose();
+    }
+
+    /**
+     * Attempt to close the stream.
+     */
+    private void tryClose() {
+      if (!closed) {
+        closed = true;
+        if (closeHandler != null) {
+          closeHandler.handle(null);
+        }
       }
     }
   }
