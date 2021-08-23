@@ -76,33 +76,31 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
 
   @Override
   public void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<HttpClientConnection>>> handler) {
-    connector
-      .httpConnect(context)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          incRefCount();
-          HttpClientConnection connection = ar.result();
-          connection.evictionHandler(v -> {
-            decRefCount();
-            listener.onRemove();
-          });
-          connection.concurrencyChangeHandler(listener::onConcurrencyChange);
-          long capacity = connection.concurrency();
-          Handler<HttpConnection> connectionHandler = client.connectionHandler();
-          if (connectionHandler != null) {
-            context.emit(connection, connectionHandler);
-          }
-          int idx;
-          if (connection instanceof Http1xClientConnection) {
-            idx = 0;
-          } else {
-            idx = 1;
-          }
-          handler.handle(Future.succeededFuture(new ConnectResult<>(connection, capacity, idx)));
-        } else {
-          handler.handle(Future.failedFuture(ar.cause()));
+    connector.httpConnect(context, ar -> {
+      if (ar.succeeded()) {
+        incRefCount();
+        HttpClientConnection connection = ar.result();
+        connection.evictionHandler(v -> {
+          decRefCount();
+          listener.onRemove();
+        });
+        connection.concurrencyChangeHandler(listener::onConcurrencyChange);
+        long capacity = connection.concurrency();
+        Handler<HttpConnection> connectionHandler = client.connectionHandler();
+        if (connectionHandler != null) {
+          context.emit(connection, connectionHandler);
         }
-      });
+        int idx;
+        if (connection instanceof Http1xClientConnection) {
+          idx = 0;
+        } else {
+          idx = 1;
+        }
+        handler.handle(Future.succeededFuture(new ConnectResult<>(connection, capacity, idx)));
+      } else {
+        handler.handle(Future.failedFuture(ar.cause()));
+      }
+    });
   }
 
   @Override
