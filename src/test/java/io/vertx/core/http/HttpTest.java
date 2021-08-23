@@ -5394,6 +5394,34 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testUpgradeTunnelNoSwitch() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      resp.write("chunk-1")
+        .compose(v -> resp.write("chunk-2"))
+        .compose(v -> resp.end("chunk-3"));
+    });
+
+    startServer();
+
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(req -> {
+      req.connect(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        List<String> chunks = new ArrayList<>();
+        resp.handler(chunk -> {
+          chunks.add(chunk.toString());
+        });
+        resp.endHandler(v -> {
+          assertEquals(Arrays.asList("chunk-1", "chunk-2", "chunk-3"), chunks);
+          testComplete();
+        });
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testEndFromAnotherThread() throws Exception {
     waitFor(2);
     disableThreadChecks();
