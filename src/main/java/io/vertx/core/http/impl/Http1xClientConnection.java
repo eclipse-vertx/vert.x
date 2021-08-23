@@ -747,6 +747,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
              request.headers != null && request.headers.contains("connection", "Upgrade", false) &&
              response.statusCode == 101)) {
           removeChannelHandlers();
+        } else {
+          isConnect = false;
         }
       }
     }
