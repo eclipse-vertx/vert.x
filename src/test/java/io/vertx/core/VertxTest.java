@@ -21,6 +21,9 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.Repeat;
+import io.vertx.test.core.RepeatRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -40,6 +43,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class VertxTest extends AsyncTestBase {
 
   private final org.openjdk.jmh.runner.Runner RUNNER = new Runner(new OptionsBuilder().shouldDoGC(true).build());
+
+  @Rule
+  public RepeatRule repeatRule = new RepeatRule();
 
   @Test
   public void testCloseHooksCalled() {
@@ -317,5 +323,22 @@ public class VertxTest extends AsyncTestBase {
       testComplete();
     });
     await();
+  }
+
+  @Repeat(times = 100)
+  @Test
+  public void testWorkerExecutorConcurrentCloseWithVertx() throws InterruptedException {
+    Vertx vertx = Vertx.vertx();
+    try {
+      CountDownLatch latch = new CountDownLatch(1);
+      WorkerExecutor workerExecutor = vertx.createSharedWorkerExecutor("test");
+      vertx.runOnContext(v -> {
+        latch.countDown();
+        workerExecutor.close();
+      });
+      latch.await();
+    } finally {
+      vertx.close();
+    }
   }
 }
