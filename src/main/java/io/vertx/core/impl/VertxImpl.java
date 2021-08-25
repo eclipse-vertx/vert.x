@@ -1085,11 +1085,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     @Override
     void close() {
       synchronized (VertxImpl.this) {
-        if (--refCount == 0) {
-          namedWorkerPools.remove(name);
-          super.close();
+        if (--refCount > 0) {
+          return;
         }
+        namedWorkerPools.remove(name);
       }
+      super.close();
     }
   }
 
