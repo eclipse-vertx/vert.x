@@ -40,6 +40,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.http.impl.SharedHttpClient;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -71,7 +72,10 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -355,6 +359,31 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     HttpClient client = createHttpClient(options, closeFuture);
     CloseFuture fut = resolveCloseFuture();
     fut.add(closeFuture);
+    return client;
+  }
+
+  @Override
+  public HttpClient createSharedHttpClient() {
+    return createSharedHttpClient(SharedHttpClient.DEFAULT_CLIENT_NAME, new HttpClientOptions());
+  }
+
+  @Override
+  public HttpClient createSharedHttpClient(HttpClientOptions options) {
+    return createSharedHttpClient(SharedHttpClient.DEFAULT_CLIENT_NAME, options);
+  }
+
+  @Override
+  public HttpClient createSharedHttpClient(String name) {
+    return createSharedHttpClient(name, new HttpClientOptions());
+  }
+
+  @Override
+  public HttpClient createSharedHttpClient(String name, HttpClientOptions options) {
+    CloseFuture closeFuture = new CloseFuture(log);
+    SharedHttpClient client = SharedHttpClient.create(this, name, options);
+    closeFuture.add(client);
+    CloseFuture parentCloseFuture = resolveCloseFuture();
+    parentCloseFuture.add(closeFuture);
     return client;
   }
 
