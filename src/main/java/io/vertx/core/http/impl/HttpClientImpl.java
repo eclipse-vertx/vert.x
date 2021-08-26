@@ -172,7 +172,8 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     httpCM = httpConnectionManager();
     if (options.getPoolCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       PoolChecker checker = new PoolChecker(this);
-      timerID = vertx.setTimer(options.getPoolCleanerPeriod(), checker);
+      ContextInternal timerContext = vertx.createEventLoopContext();
+      timerID = timerContext.setTimer(options.getPoolCleanerPeriod(), checker);
     }
     int eventLoopSize = options.getPoolEventLoopSize();
     if (eventLoopSize > 0) {
