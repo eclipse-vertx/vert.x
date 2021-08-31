@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -187,7 +187,7 @@ public class PemTrustOptions implements TrustOptions, Cloneable {
         map(path -> ((VertxInternal)vertx).resolveFile(path).getAbsolutePath()).
         map(vertx.fileSystem()::readFileBlocking);
       certValues = Stream.concat(certValues, this.certValues.stream());
-      helper = new KeyStoreHelper(KeyStoreHelper.loadCA(certValues), null);
+      helper = new KeyStoreHelper(KeyStoreHelper.loadCA(certValues), null, null);
     }
     return helper;
   }

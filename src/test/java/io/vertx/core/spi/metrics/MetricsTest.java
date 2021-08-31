@@ -301,6 +301,24 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
+  public void testSignalMetricEventAfterUnregistration() {
+    FakeEventBusMetrics toMetrics = FakeMetricsBase.getMetrics(vertx.eventBus());
+    int nums = 1000;
+    List<HandlerMetric> metrics = new ArrayList<>();
+    for (int i = 0;i < nums;i++) {
+      String addr = ADDRESS1 + "-" + i;
+      MessageConsumer<Object> consumer = vertx.eventBus().consumer(addr);
+      consumer.handler(msg -> {
+      });
+      HandlerMetric metric = toMetrics.getRegistrations().stream().filter(m -> m.address.equals(addr)).findFirst().get();
+      metrics.add(metric);
+      vertx.eventBus().send(addr, "the-msg");
+      consumer.unregister();
+    }
+    assertWaitUntil(() -> metrics.stream().noneMatch(metric -> metric.discardCount.get() == 0 && metric.localDeliveredCount.get() == 0));
+  }
+
+  @Test
   public void testHandlerRegistration() throws Exception {
     FakeEventBusMetrics metrics = FakeMetricsBase.getMetrics(vertx.eventBus());
     MessageConsumer<Object> consumer = vertx.eventBus().consumer(ADDRESS1, msg -> {
@@ -992,8 +1010,8 @@ public class MetricsTest extends VertxTestBase {
 
     awaitLatch(counter);
 
-    assertEquals(metrics.numberOfSubmittedTask(), 100);
-    assertEquals(metrics.numberOfCompletedTasks(), 100);
+    assertWaitUntil(() -> metrics.numberOfSubmittedTask() == 100);
+    assertWaitUntil(() -> metrics.numberOfCompletedTasks() == 100);
     assertTrue(hadIdle.get());
     assertTrue(hadWaitingQueue.get());
     assertTrue(hadRunning.get());

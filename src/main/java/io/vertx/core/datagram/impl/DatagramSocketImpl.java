@@ -25,6 +25,7 @@ import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -43,6 +44,7 @@ import io.vertx.core.streams.WriteStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Objects;
 
@@ -98,11 +100,32 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     return this;
   }
 
+  private NetworkInterface determineMulticastNetworkIface() throws Exception {
+    NetworkInterface iface = null;
+    InetSocketAddress localAddr = channel.localAddress();
+    if (localAddr != null) {
+      iface = NetworkInterface.getByInetAddress(localAddr.getAddress());
+    }
+    if (iface == null) {
+      iface = channel.config().getNetworkInterface();
+    }
+    return iface;
+  }
+
   @Override
   public Future<Void> listenMulticastGroup(String multicastAddress) {
+    NetworkInterface iface;
+    try {
+      iface = determineMulticastNetworkIface();
+    } catch (Exception e) {
+      return context.failedFuture(e);
+    }
+    if (iface == null) {
+      return context.failedFuture("A valid network interface could not be determined from the socket bind address or multicast interface");
+    }
     ChannelFuture fut;
     try {
-      fut = channel.joinGroup(InetAddress.getByName(multicastAddress));
+      fut = channel.joinGroup(InetAddress.getByName(multicastAddress), iface, null);
     } catch (UnknownHostException e) {
       return context.failedFuture(e);
     }
@@ -150,9 +173,18 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
 
   @Override
   public Future<Void> unlistenMulticastGroup(String multicastAddress) {
+    NetworkInterface iface;
+    try {
+      iface = determineMulticastNetworkIface();
+    } catch (Exception e) {
+      return context.failedFuture(e);
+    }
+    if (iface == null) {
+      return context.failedFuture("A valid network interface could not be determined from the socket bind address or multicast interface");
+    }
     ChannelFuture fut;
     try {
-      fut = channel.leaveGroup(InetAddress.getByName(multicastAddress));
+      fut = channel.leaveGroup(InetAddress.getByName(multicastAddress), iface, null);
     } catch (Exception e) {
       return context.failedFuture(e);
     }

@@ -55,7 +55,7 @@ public interface NetSocketInternal extends NetSocket {
    * When a read operation is in progress, the flush operation is delayed until the read operation completes.
    *
    * @param message the message to write, it should be handled by one of the channel pipeline handlers
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the result
    */
   Future<Void> writeMessage(Object message);
 

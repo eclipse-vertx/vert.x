@@ -21,11 +21,16 @@ import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.Repeat;
+import io.vertx.test.core.RepeatRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.lang.ref.WeakReference;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,6 +43,9 @@ import java.util.concurrent.atomic.AtomicReference;
 public class VertxTest extends AsyncTestBase {
 
   private final org.openjdk.jmh.runner.Runner RUNNER = new Runner(new OptionsBuilder().shouldDoGC(true).build());
+
+  @Rule
+  public RepeatRule repeatRule = new RepeatRule();
 
   @Test
   public void testCloseHooksCalled() {
@@ -289,5 +297,48 @@ public class VertxTest extends AsyncTestBase {
     assertFalse(closed.get());
     ref.get().complete();
     assertWaitUntil(closed::get);
+  }
+
+  @Test
+  public void testEnableTCCL() {
+    testTCCL(false);
+  }
+
+  @Test
+  public void testDisableTCCL() {
+    testTCCL(true);
+  }
+
+  private void testTCCL(boolean disable) {
+    VertxOptions options = new VertxOptions().setDisableTCCL(disable);
+    Vertx vertx = Vertx.vertx(options);
+    ClassLoader orig = Thread.currentThread().getContextClassLoader();
+    ClassLoader cl = new URLClassLoader(new URL[0], orig);
+    Thread.currentThread().setContextClassLoader(cl);
+    Context ctx = vertx.getOrCreateContext();
+    Thread.currentThread().setContextClassLoader(orig);
+    ctx.runOnContext(v -> {
+      ClassLoader expected = disable ? orig : cl;
+      assertSame(expected, Thread.currentThread().getContextClassLoader());
+      testComplete();
+    });
+    await();
+  }
+
+  @Repeat(times = 100)
+  @Test
+  public void testWorkerExecutorConcurrentCloseWithVertx() throws InterruptedException {
+    Vertx vertx = Vertx.vertx();
+    try {
+      CountDownLatch latch = new CountDownLatch(1);
+      WorkerExecutor workerExecutor = vertx.createSharedWorkerExecutor("test");
+      vertx.runOnContext(v -> {
+        latch.countDown();
+        workerExecutor.close();
+      });
+      latch.await();
+    } finally {
+      vertx.close();
+    }
   }
 }

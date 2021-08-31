@@ -857,6 +857,32 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testGetParamDefaultValue() {
+    String paramName1 = "foo";
+    String paramName1Value = "bar";
+    String paramName2 = "notPresentParam";
+    String paramName2DefaultValue = "defaultValue";
+    String reqUri = DEFAULT_TEST_URI + "/?" + paramName1 + "=" + paramName1Value;
+
+    server.requestHandler(req -> {
+      assertTrue(req.params().contains(paramName1));
+      assertEquals(paramName1Value, req.getParam(paramName1, paramName2DefaultValue));
+      assertFalse(req.params().contains(paramName2));
+      assertEquals(paramName2DefaultValue, req.getParam(paramName2, paramName2DefaultValue));
+      req.response().end();
+    });
+
+    server.listen(testAddress, onSuccess(server -> {
+      client.request(new RequestOptions(requestOptions).setURI(reqUri))
+        .onComplete(onSuccess(req -> {
+          req.send(onSuccess(resp -> testComplete()));
+        }));
+    }));
+
+    await();
+  }
+
+  @Test
   public void testMissingContentTypeMultipartRequest() throws Exception {
     testInvalidMultipartRequest(null, HttpMethod.POST);
   }
@@ -3896,6 +3922,44 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testFollowRedirectHappensAfterResponseIsReceived() throws Exception {
+    AtomicBoolean redirected = new AtomicBoolean();
+    AtomicBoolean sent = new AtomicBoolean();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      if (redirected.compareAndSet(false, true)) {
+        String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
+        resp
+          .setStatusCode(303)
+          .putHeader(HttpHeaders.CONTENT_LENGTH, "11")
+          .putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever")
+          .write("hello ");
+        vertx.setTimer(500, id -> {
+          sent.set(true);
+          resp.end("world");
+        });
+      } else {
+        assertTrue(sent.get());
+        resp.end();
+      }
+    });
+    startServer();
+    client.request(new RequestOptions()
+      .setMethod(HttpMethod.PUT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+    )
+      .onComplete(onSuccess(req -> {
+        req.setFollowRedirects(true);
+        req.send(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        }));
+      }));
+    await();
+  }
+
+  @Test
   public void testFollowRedirectWithChunkedBody() throws Exception {
     Buffer buff1 = Buffer.buffer(TestUtils.randomAlphaString(2048));
     Buffer buff2 = Buffer.buffer(TestUtils.randomAlphaString(2048));
@@ -4191,7 +4255,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testDefaultRedirectHandler() throws Exception {
     testFoo("http://example.com", "http://example.com");
@@ -4209,7 +4272,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testFoo(String location, String expectedAbsoluteURI) throws Exception {
     int status = 301;
-    Map<String, String> headers = Collections.singletonMap(HttpHeaders.LOCATION.toString(), location);
+    MultiMap headers = HttpHeaders.headers().add(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
     String baseURI = "https://localhost:8080";
     class MockReq implements HttpClientRequest {
@@ -4228,7 +4291,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest setURI(String uri) { throw new UnsupportedOperationException(); }
       public String path() { throw new UnsupportedOperationException(); }
       public String query() { throw new UnsupportedOperationException(); }
-      public MultiMap headers() { throw new UnsupportedOperationException(); }
+      public MultiMap headers() { return headers; }
       public HttpClientRequest putHeader(String name, String value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
@@ -5327,6 +5390,34 @@ public abstract class HttpTest extends HttpTestBase {
         }));
     }));
 
+    await();
+  }
+
+  @Test
+  public void testUpgradeTunnelNoSwitch() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      resp.write("chunk-1")
+        .compose(v -> resp.write("chunk-2"))
+        .compose(v -> resp.end("chunk-3"));
+    });
+
+    startServer();
+
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(req -> {
+      req.connect(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        List<String> chunks = new ArrayList<>();
+        resp.handler(chunk -> {
+          chunks.add(chunk.toString());
+        });
+        resp.endHandler(v -> {
+          assertEquals(Arrays.asList("chunk-1", "chunk-2", "chunk-3"), chunks);
+          testComplete();
+        });
+      }));
+    }));
     await();
   }
 

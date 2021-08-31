@@ -327,20 +327,23 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
       Future<RequestOptions> next = client.redirectHandler().apply(resp);
       if (next != null) {
-        next.onComplete(ar1 -> {
-          if (ar1.succeeded()) {
-            RequestOptions options = ar1.result();
-            Future<HttpClientRequest> f = client.request(options);
-            f.onComplete(ar2 -> {
-              if (ar2.succeeded()) {
-                handleNextRequest(ar2.result(), promise, timeoutMs);
-              } else {
-                fail(ar2.cause());
-              }
-            });
-          } else {
-            fail(ar1.cause());
-          }
+        resp
+          .end()
+          .compose(v -> next, err -> next)
+          .onComplete(ar1 -> {
+            if (ar1.succeeded()) {
+              RequestOptions options = ar1.result();
+              Future<HttpClientRequest> f = client.request(options);
+              f.onComplete(ar2 -> {
+                if (ar2.succeeded()) {
+                  handleNextRequest(ar2.result(), promise, timeoutMs);
+                } else {
+                  fail(ar2.cause());
+                }
+              });
+            } else {
+              fail(ar1.cause());
+            }
         });
         return;
       }

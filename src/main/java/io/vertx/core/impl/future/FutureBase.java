@@ -52,8 +52,6 @@ abstract class FutureBase<T> implements FutureInternal<T> {
         ContextInternal prev = context.beginDispatch();
         try {
           listener.onSuccess(value);
-        } catch (Throwable t) {
-          context.reportException(t);
         } finally {
           context.endDispatch(prev);
         }
@@ -69,31 +67,12 @@ abstract class FutureBase<T> implements FutureInternal<T> {
         ContextInternal prev = context.beginDispatch();
         try {
           listener.onFailure(cause);
-        } catch (Throwable t) {
-          context.reportException(t);
         } finally {
           context.endDispatch(prev);
         }
       });
     } else {
       listener.onFailure(cause);
-    }
-  }
-
-  protected final <U> void emit(U value, Handler<U> handler) {
-    if (context != null && !context.isRunningOnContext()) {
-      context.execute(() -> {
-        ContextInternal prev = context.beginDispatch();
-        try {
-          handler.handle(value);
-        } catch (Throwable t) {
-          context.reportException(t);
-        } finally {
-          context.endDispatch(prev);
-        }
-      });
-    } else {
-      handler.handle(value);
     }
   }
 

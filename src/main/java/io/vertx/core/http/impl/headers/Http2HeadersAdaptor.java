@@ -211,6 +211,7 @@ public class Http2HeadersAdaptor implements MultiMap {
 
   @Override
   public MultiMap setAll(Map<String, String> headers) {
+    clear();
     for (Map.Entry<String, String> entry: headers.entrySet()) {
       add(entry.getKey(), entry.getValue());
     }

@@ -16,9 +16,9 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ConnectTimeoutException;
-import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -26,21 +26,23 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
-import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.net.impl.NetServerImpl;
+import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.streams.ReadStream;
-import io.vertx.test.core.*;
+import io.vertx.test.core.CheckingSender;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.core.VertxTestBase;
+import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.*;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import io.vertx.test.netty.TestLoggerFactory;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,8 +52,10 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
@@ -64,6 +68,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static io.vertx.test.core.TestUtils.*;
+import static org.hamcrest.CoreMatchers.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -311,7 +316,6 @@ public class NetTest extends VertxTestBase {
     assertEquals(0, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
-    assertIllegalArgumentException(() -> options.setPort(-1));
     assertIllegalArgumentException(() -> options.setPort(65536));
 
     assertEquals("0.0.0.0", options.getHost());
@@ -1484,6 +1488,31 @@ public class NetTest extends VertxTestBase {
     assertEquals("precious", cnOf(test.clientPeerCert()));
   }
 
+  @Test
+  public void testServerCertificateMultipleWrongAlias() throws Exception {
+    TLSTest test = new TLSTest()
+      .serverCert(Cert.MULTIPLE_JKS_WRONG_ALIAS)
+      .clientTrustAll(true);
+    test.setupServer(true);
+    server.listen(test.bindAddress, onFailure(t -> {
+      assertThat(t, is(instanceOf(VertxException.class)));
+      assertThat(t.getCause(), is(instanceOf(IllegalArgumentException.class)));
+      assertThat(t.getCause().getMessage(), containsString("alias does not exist in the keystore"));
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testServerCertificateMultipleWithKeyPassword() throws Exception {
+    TLSTest test = new TLSTest()
+      .serverCert(Cert.MULTIPLE_JKS_ALIAS_PASSWORD)
+      .clientTrustAll(true);
+    test.run(true);
+    await();
+    assertEquals("fonky", cnOf(test.clientPeerCert()));
+  }
+
   void testTLS(Cert<?> clientCert, Trust<?> clientTrust,
                Cert<?> serverCert, Trust<?> serverTrust,
     boolean requireClientAuth, boolean clientTrustAll,
@@ -1614,7 +1643,7 @@ public class NetTest extends VertxTestBase {
       return clientPeerCert;
     }
 
-    void run(boolean shouldPass) {
+    void setupServer(boolean shouldPass) {
       server.close();
       NetServerOptions options = new NetServerOptions();
       if (!startTLS) {
@@ -1693,7 +1722,12 @@ public class NetTest extends VertxTestBase {
           }
         });
       };
-      server.connectHandler(serverHandler).listen(bindAddress, onSuccess(ar -> {
+      server.connectHandler(serverHandler);
+    }
+
+    void run(boolean shouldPass) {
+      setupServer(shouldPass);
+      server.listen(bindAddress, onSuccess(ar -> {
         client.close();
         NetClientOptions clientOptions = new NetClientOptions();
         if (!startTLS) {

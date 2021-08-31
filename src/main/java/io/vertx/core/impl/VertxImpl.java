@@ -133,6 +133,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final Transport transport;
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<AbstractContext>> stickyContext = new ThreadLocal<>();
+  private final boolean disableTCCL;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, VertxThreadFactory threadFactory,
@@ -165,6 +166,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     defaultWorkerPoolSize = options.getWorkerPoolSize();
     maxWorkerExecTime = options.getMaxWorkerExecuteTime();
     maxWorkerExecTimeUnit = options.getMaxWorkerExecuteTimeUnit();
+    disableTCCL = options.getDisableTCCL();
 
     this.executorServiceFactory = executorServiceFactory;
     this.threadFactory = threadFactory;
@@ -216,26 +218,32 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   private void createHaManager(VertxOptions options, Promise<Void> initPromise) {
-    this.<HAManager>executeBlocking(fut -> {
-      Map<String, String> syncMap = clusterManager.getSyncMap(CLUSTER_MAP_NAME);
-      HAManager haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, syncMap, options.getQuorumSize(), options.getHAGroup(), options.isHAEnabled());
-      fut.complete(haManager);
-    }, false, ar -> {
-      if (ar.succeeded()) {
-        haManager = ar.result();
-        startEventBus(initPromise);
-      } else {
-        initPromise.fail(ar.cause());
-      }
-    });
+    if (options.isHAEnabled()) {
+      this.<HAManager>executeBlocking(fut -> {
+        haManager = new HAManager(this, deploymentManager, verticleManager, clusterManager, clusterManager.getSyncMap(CLUSTER_MAP_NAME), options.getQuorumSize(), options.getHAGroup());
+        fut.complete(haManager);
+      }, false, ar -> {
+        if (ar.succeeded()) {
+          startEventBus(true, initPromise);
+        } else {
+          initPromise.fail(ar.cause());
+        }
+      });
+    } else {
+      startEventBus(false, initPromise);
+    }
   }
 
-  private void startEventBus(Promise<Void> initPromise) {
+  private void startEventBus(boolean haEnabled, Promise<Void> initPromise) {
     Promise<Void> promise = Promise.promise();
     eventBus.start(promise);
     promise.future().onComplete(ar -> {
       if (ar.succeeded()) {
-        initializeHaManager(initPromise);
+        if (haEnabled) {
+          initializeHaManager(initPromise);
+        } else {
+          initPromise.complete();
+        }
       } else {
         initPromise.fail(ar.cause());
       }
@@ -465,12 +473,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
+    return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl, disableTCCL);
   }
 
   @Override
   public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl);
+    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl, disableTCCL);
   }
 
   @Override
@@ -480,7 +488,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
-    return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl);
+    return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl, disableTCCL);
   }
 
   @Override
@@ -615,7 +623,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public Future<String> deployVerticle(String name, DeploymentOptions options) {
-    if (options.isHa() && haManager() != null && haManager().isEnabled()) {
+    if (options.isHa() && haManager() != null) {
       Promise<String> promise = getOrCreateContext().promise();
       haManager().deployVerticle(name, options, promise);
       return promise.future();
@@ -704,7 +712,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public Future<Void> undeploy(String deploymentID) {
     Future<Void> future;
     HAManager haManager = haManager();
-    if (haManager != null && haManager.isEnabled()) {
+    if (haManager != null) {
       future = this.executeBlocking(fut -> {
         haManager.removeFromHA(deploymentID);
         fut.complete();
@@ -1077,11 +1085,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     @Override
     void close() {
       synchronized (VertxImpl.this) {
-        if (--refCount == 0) {
-          namedWorkerPools.remove(name);
-          super.close();
+        if (--refCount > 0) {
+          return;
         }
+        namedWorkerPools.remove(name);
       }
+      super.close();
     }
   }
 

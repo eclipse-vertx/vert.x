@@ -72,9 +72,9 @@ public class HttpServerOptions extends NetServerOptions {
   public static final int DEFAULT_MAX_HEADER_SIZE = 8192;
 
   /**
-   * Default max length of all headers = 2048
+   * Default max length of all headers = 8192
    */
-  public static final int DEFAULT_MAX_FORM_ATTRIBUTE_SIZE = 2048;
+  public static final int DEFAULT_MAX_FORM_ATTRIBUTE_SIZE = 8192;
 
   /**
    * Default value of whether 100-Continue should be handled automatically = {@code false}

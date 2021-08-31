@@ -287,13 +287,17 @@ Multi-part forms can also contain file uploads.
 
 If you want to retrieve the attributes of a multi-part form you should tell Vert.x that you expect to receive
 such a form *before* any of the body is read by calling {@link io.vertx.core.http.HttpServerRequest#setExpectMultipart}
-with true, and then you should retrieve the actual attributes using {@link io.vertx.core.http.HttpServerRequest#formAttributes}
+with `true`, and then you should retrieve the actual attributes using {@link io.vertx.core.http.HttpServerRequest#formAttributes}
 once the entire body has been read:
 
 [source,$lang]
 ----
 {@link examples.HTTPExamples#example12}
 ----
+
+Form attributes have a maximum size of `8192` bytes. When the client submits a form with an attribute
+size greater than this value, the file upload triggers an exception on `HttpServerRequest` exception handler. You
+can set a different maximum size with {@link io.vertx.core.http.HttpServerOptions#setMaxFormAttributeSize}.
 
 ==== Handling form file uploads
 
@@ -682,6 +686,14 @@ the pushed response can be written after.
 You can set an {@link io.vertx.core.http.HttpServer#exceptionHandler(io.vertx.core.Handler)} to receive any
 exceptions that happens before the connection is passed to the {@link io.vertx.core.http.HttpServer#requestHandler(io.vertx.core.Handler)}
 or to the {@link io.vertx.core.http.HttpServer#webSocketHandler(io.vertx.core.Handler)}, e.g. during the TLS handshake.
+
+==== Handling invalid requests
+
+Vert.x will handle invalid HTTP requests and provides a default handler that will handle the common case
+appropriately, e.g. it does respond with `REQUEST_HEADER_FIELDS_TOO_LARGE` when a request header is too long.
+
+You can set your own {@link io.vertx.core.http.HttpServer#invalidRequestHandler(io.vertx.core.Handler)} to process
+invalid requests. Your implementation can handle specific cases and delegate other cases to to {@link io.vertx.core.http.HttpServerRequest#DEFAULT_INVALID_REQUEST_HANDLER}.
 
 === HTTP Compression
 
@@ -1610,6 +1622,15 @@ Hello from i.v.e.h.s.HttpServerVerticle@2
 Consequently the servers can scale over available cores while each Vert.x verticle instance remains strictly
 single threaded, and you don't have to do any special tricks like writing load-balancers in order to scale your
 server on your multi-core machine.
+
+You can bind on a shared random ports using a negative port value, the first bind will pick a port randomly, subsequent binds
+on the same port value will share this random port.
+
+.io.vertx.examples.http.sharing.HttpServerVerticle
+[source,$lang]
+----
+{@link examples.HTTPExamples#randomServersharing(io.vertx.core.Vertx)}
+----
 
 === Using HTTPS with Vert.x
 
