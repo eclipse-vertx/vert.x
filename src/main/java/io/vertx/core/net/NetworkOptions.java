@@ -74,7 +74,7 @@ public abstract class NetworkOptions {
     reuseAddress = DEFAULT_REUSE_ADDRESS;
     trafficClass = DEFAULT_TRAFFIC_CLASS;
     logActivity = DEFAULT_LOG_ENABLED;
-    hexDumpEnabled = DEFAULT_HEXDUMP_ENABLED
+    hexDumpEnabled = DEFAULT_HEXDUMP_ENABLED;
     reusePort = DEFAULT_REUSE_PORT;
   }
 
