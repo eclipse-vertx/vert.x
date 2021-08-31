@@ -2543,18 +2543,25 @@ public class Http2ServerTest extends Http2TestBase {
 
   @Test
   public void testUpgradeToClearTextGet() throws Exception {
-    testUpgradeToClearText(HttpMethod.GET, Buffer.buffer());
+    testUpgradeToClearText(HttpMethod.GET, Buffer.buffer(), options -> {});
   }
 
   @Test
   public void testUpgradeToClearTextPut() throws Exception {
     Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(8192));
-    testUpgradeToClearText(HttpMethod.PUT, expected);
+    testUpgradeToClearText(HttpMethod.PUT, expected, options -> {});
   }
 
-  private void testUpgradeToClearText(HttpMethod method, Buffer expected) throws Exception {
+  @Test
+  public void testUpgradeToClearTextWithCompression() throws Exception {
+    Buffer expected = Buffer.buffer(TestUtils.randomAlphaString(8192));
+    testUpgradeToClearText(HttpMethod.PUT, expected, options -> options.setCompressionSupported(true));
+  }
+
+  private void testUpgradeToClearText(HttpMethod method, Buffer expected, Handler<HttpServerOptions> optionsConfig) throws Exception {
     server.close();
     AtomicInteger serverConnectionCount = new AtomicInteger();
+    optionsConfig.handle(serverOptions);
     server = vertx.createHttpServer(serverOptions
       .setHost(DEFAULT_HTTP_HOST)
       .setPort(DEFAULT_HTTP_PORT)
@@ -2570,7 +2577,9 @@ public class Http2ServerTest extends Http2TestBase {
       assertFalse(req.isSSL());
       req.bodyHandler(body -> {
         assertEquals(expected, body);
-        req.response().end();
+        vertx.setTimer(10, id -> {
+          req.response().end();
+        });
       });
     }).connectionHandler(conn -> {
       assertNotNull(conn);
