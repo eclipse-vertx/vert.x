@@ -242,6 +242,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setHexDumpEnabled(boolean hexDumpEnabled) {
+    return (ClientOptionsBase) super.setHexDumpEnabled(hexDumpEnabled);
+  }
+
+  @Override
   public ClientOptionsBase setTcpNoDelay(boolean tcpNoDelay) {
     return (ClientOptionsBase) super.setTcpNoDelay(tcpNoDelay);
   }

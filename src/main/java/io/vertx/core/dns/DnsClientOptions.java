@@ -42,6 +42,11 @@ public class DnsClientOptions {
    * The default log enabled = false
    */
   public static final boolean DEFAULT_LOG_ENABLED = false;
+  
+  /**
+   * The default hexdump enabled = true
+   */
+  public static final boolean DEFAULT_HEXDUMP_ENABLED = true;
 
   /**
   * The default value for the recursion desired flag (RD) = {@code true}
@@ -52,6 +57,7 @@ public class DnsClientOptions {
   private String host = DEFAULT_HOST;
   private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
   private boolean logActivity = DEFAULT_LOG_ENABLED;
+  private boolean hexDumpEnabled = DEFAULT_HEXDUMP_ENABLED;
   private boolean recursionDesired = DEFAULT_RECURSION_DESIRED;
 
   public DnsClientOptions() {
@@ -66,6 +72,7 @@ public class DnsClientOptions {
     host = other.host;
     queryTimeout = other.queryTimeout;
     logActivity = other.logActivity;
+    hexDumpEnabled = other.hexDumpEnabled;
     recursionDesired = other.recursionDesired;
   }
 
@@ -139,7 +146,14 @@ public class DnsClientOptions {
   }
 
   /**
-   * Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
+   * @return {@code true} when hex dumping of netty ByteBuff is enabled
+   */
+  public boolean isHexDumpEnabled() {
+    return hexDumpEnabled;
+  }
+
+  /**
+   * Set to true to enable network activity logging: Netty's pipeline is configured for logging on Netty's logger.
    *
    * @param logActivity true for logging the network activity
    * @return a reference to this, so the API can be used fluently
@@ -148,6 +162,17 @@ public class DnsClientOptions {
     this.logActivity = logActivity;
     return this;
   }
+
+  /**
+   * Set to true to enable hex dumping of netty's ByteBufs: Netty's pipeline is configured for logging on Netty's logger.
+   *
+   * @param hexDumpEnabled true for logging the network activity
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DnsClientOptions setHexDumpEnabled(boolean hexDumpEnabled) {
+    this.hexDumpEnabled = hexDumpEnabled;
+    return this;
+  }  
 
   /**
    * Return whether or not recursion is desired

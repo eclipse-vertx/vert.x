@@ -373,6 +373,10 @@ public class NetClientOptions extends ClientOptionsBase {
     return (NetClientOptions) super.setLogActivity(logEnabled);
   }
 
+  @Override
+  public NetClientOptions setHexDumpEnabled(boolean hexDumpEnabled) {
+    return (NetClientOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  }
   public NetClientOptions setProxyOptions(ProxyOptions proxyOptions) {
     return (NetClientOptions) super.setProxyOptions(proxyOptions);
   }

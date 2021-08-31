@@ -1158,6 +1158,11 @@ public class HttpClientOptions extends ClientOptionsBase {
     return (HttpClientOptions) super.setLogActivity(logEnabled);
   }
 
+  @Override
+  public HttpClientOptions setHexDumpEnabled(boolean hexDumpEnabled) {
+    return (HttpClientOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  }
+
   /**
    * Set whether the client will offer the WebSocket per-frame deflate compression extension.
    *

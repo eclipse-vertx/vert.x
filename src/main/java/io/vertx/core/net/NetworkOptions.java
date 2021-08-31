@@ -51,12 +51,18 @@ public abstract class NetworkOptions {
    * The default log enabled = false
    */
   public static final boolean DEFAULT_LOG_ENABLED = false;
+  
+  /**
+   * The default hexdump enabled = true
+   */
+  public static final boolean DEFAULT_HEXDUMP_ENABLED = true;
 
   private int sendBufferSize;
   private int receiveBufferSize;
   private int trafficClass;
   private boolean reuseAddress;
   private boolean logActivity;
+  private boolean hexDumpEnabled;
   private boolean reusePort;
 
   /**
@@ -68,6 +74,7 @@ public abstract class NetworkOptions {
     reuseAddress = DEFAULT_REUSE_ADDRESS;
     trafficClass = DEFAULT_TRAFFIC_CLASS;
     logActivity = DEFAULT_LOG_ENABLED;
+    hexDumpEnabled = DEFAULT_HEXDUMP_ENABLED
     reusePort = DEFAULT_REUSE_PORT;
   }
 
@@ -83,6 +90,7 @@ public abstract class NetworkOptions {
     this.reusePort = other.isReusePort();
     this.trafficClass = other.getTrafficClass();
     this.logActivity = other.logActivity;
+    this.hexDumpEnabled = other.hexDumpEnabled;
   }
 
   /**
@@ -190,6 +198,13 @@ public abstract class NetworkOptions {
   public boolean getLogActivity() {
     return logActivity;
   }
+ 
+  /**
+   * @return true when network activity hexdump is enabled
+   */
+  public boolean isHexDumpEnabled() {
+    return hexDumpEnabled;
+  }
 
   /**
    * Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
@@ -199,6 +214,17 @@ public abstract class NetworkOptions {
    */
   public NetworkOptions setLogActivity(boolean logActivity) {
     this.logActivity = logActivity;
+    return this;
+  }
+
+  /**
+   * Set to true to enblae hexdump of netty's ByteBufs: Netty's pipeline is configured for logging on Netty's logger.
+   *
+   * @param logActivity true for logging the network activity
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetworkOptions setHexDumpEnabled(boolean hexDumpEnabled) {
+    this.hexDumpEnabled = hexDumpEnabled;
     return this;
   }
 

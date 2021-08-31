@@ -244,4 +244,10 @@ public class DatagramSocketOptions extends NetworkOptions {
   public DatagramSocketOptions setLogActivity(boolean logEnabled) {
     return (DatagramSocketOptions) super.setLogActivity(logEnabled);
   }
+
+  @Override
+  public DatagramSocketOptions setHexDumpEnabled(boolean hexDumpEnabled) {
+    return (DatagramSocketOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  }
+  
 }

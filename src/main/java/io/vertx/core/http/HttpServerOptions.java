@@ -769,6 +769,11 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setHexDumpEnabled(boolean hexDumpEnabled) {
+    return (HttpServerOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  }
+
+  @Override
   public HttpServerOptions setSni(boolean sni) {
     return (HttpServerOptions) super.setSni(sni);
   }

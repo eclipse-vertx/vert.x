@@ -396,6 +396,11 @@ public class NetServerOptions extends TCPSSLOptions {
     return (NetServerOptions) super.setLogActivity(logEnabled);
   }
 
+  @Override
+  public NetServerOptions setHexDumpEnabled(boolean hexDumpEnabled) {
+    return (NetServerOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  }
+
   /**
    * @return whether the server supports Server Name Indication
    */

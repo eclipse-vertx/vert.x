@@ -725,6 +725,10 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   @Override
+  public TCPSSLOptions setHexDumpEnabled(boolean hexDumpEnabled) {
+    return (TCPSSLOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  }
+  @Override
   public TCPSSLOptions setSendBufferSize(int sendBufferSize) {
     return (TCPSSLOptions) super.setSendBufferSize(sendBufferSize);
   }
