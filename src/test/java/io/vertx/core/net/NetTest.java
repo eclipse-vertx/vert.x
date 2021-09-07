@@ -1895,8 +1895,11 @@ public class NetTest extends VertxTestBase {
     client.close();
     client = vertx.createNetClient(new NetClientOptions());
     CountDownLatch latchClient = new CountDownLatch(numConnections);
+    AtomicInteger connecting = new AtomicInteger(10);
     for (int i = 0; i < numConnections; i++) {
+      connecting.decrementAndGet();
       client.connect(testAddress, res -> {
+        connecting.incrementAndGet();
         if (res.succeeded()) {
           latchClient.countDown();
         } else {
@@ -1904,6 +1907,7 @@ public class NetTest extends VertxTestBase {
           fail("Failed to connect");
         }
       });
+      assertWaitUntil(() -> connecting.get() >= 0);
     }
 
     awaitLatch(latchClient);
