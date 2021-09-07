@@ -26,7 +26,7 @@
       
     <artifactId>vertx-core</artifactId>
       
-    <version>3.9.9</version>
+    <version>3.9.10-SNAPSHOT</version>
       
     <name>Vert.x Core</name>
       
@@ -80,7 +80,7 @@
             
         <generated.dir>${project.basedir}/src/main/generated</generated.dir>
             
-        <stack.version>3.9.9</stack.version>
+        <stack.version>3.9.10-SNAPSHOT</stack.version>
             
         <jetty.alpnAgent.argLine/>
             
