@@ -602,12 +602,12 @@ public class FileSystemImpl implements FileSystem {
     return createTempFileInternal(dir, prefix, suffix, perms).perform();
   }
 
-  static String getFileAccessErrorMessage(String verb, String path) {
-    return "Unable to " + verb + " file at path '" + path + "'";
+  static String getFileAccessErrorMessage(String action, String path) {
+    return "Unable to " + action + " file at path '" + path + "'";
   }
 
-  static String getFolderAccessErrorMessage(String verb, String path) {
-    return "Unable to " + verb + " folder at path '" + path + "'";
+  static String getFolderAccessErrorMessage(String action, String path) {
+    return "Unable to " + action + " folder at path '" + path + "'";
   }
 
   static String getFileCopyErrorMessage(String from, String to) {
@@ -618,8 +618,8 @@ public class FileSystemImpl implements FileSystem {
     return getFileDualOperationErrorMessage("move", from, to);
   }
 
-  static String getFileDualOperationErrorMessage(String verb, String from, String to) {
-    return "Unable to " + verb + " file from '" + from + "' to '" + to + "'";
+  static String getFileDualOperationErrorMessage(String action, String from, String to) {
+    return "Unable to " + action + " file from '" + from + "' to '" + to + "'";
   }
 
   private BlockingAction<Void> copyInternal(String from, String to, CopyOptions options) {
