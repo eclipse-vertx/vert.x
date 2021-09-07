@@ -1853,7 +1853,7 @@ public class NetTest extends VertxTestBase {
   public void testSharedServersRoundRobin() throws Exception {
 
     boolean domainSocket = testAddress.path() != null;
-    int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2- 1;
+    int numServers = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE / 2 - 1;
     int numConnections = numServers * (domainSocket ? 10 : 20);
 
     List<NetServer> servers = new ArrayList<>();
@@ -1881,8 +1881,11 @@ public class NetTest extends VertxTestBase {
     client.close();
     client = vertx.createNetClient(new NetClientOptions());
     CountDownLatch latchClient = new CountDownLatch(numConnections);
+    AtomicInteger connecting = new AtomicInteger(10);
     for (int i = 0; i < numConnections; i++) {
+      connecting.decrementAndGet();
       client.connect(testAddress, res -> {
+        connecting.incrementAndGet();
         if (res.succeeded()) {
           latchClient.countDown();
         } else {
@@ -1890,6 +1893,7 @@ public class NetTest extends VertxTestBase {
           fail("Failed to connect");
         }
       });
+      assertWaitUntil(() -> connecting.get() >= 0);
     }
 
     awaitLatch(latchClient);
