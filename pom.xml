@@ -11,820 +11,1559 @@
   ~ SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
   ~
   --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-
-  <parent>
-    <groupId>io.vertx</groupId>
-    <artifactId>vertx-parent</artifactId>
-    <version>19</version>
-  </parent>
-
-  <artifactId>vertx-core</artifactId>
-  <version>3.9.9-SNAPSHOT</version>
-
-  <name>Vert.x Core</name>
-
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-    <license>
-      <name>Eclipse Public License - v 2.0</name>
-      <url>http://www.eclipse.org/legal/epl-v20.html</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
-  <scm>
-    <connection>scm:git:git@github.com:eclipse/vert.x.git</connection>
-    <developerConnection>scm:git:git@github.com:eclipse/vert.x.git</developerConnection>
-    <url>git@github.com:eclipse/vert.x.git</url>
-  </scm>
-
-  <properties>
-    <log4j.version>1.2.17</log4j.version>
-    <slf4j.version>1.7.21</slf4j.version>
-    <log4j2.version>2.8.2</log4j2.version>
-    <junit.version>4.13.1</junit.version>
-    <assertj.version>3.4.1</assertj.version>
-    <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
-    <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>3.9.9-SNAPSHOT</stack.version>
-    <jetty.alpnAgent.argLine/>
-    <jmh.version>1.19</jmh.version>
-    <vertx.testNativeTransport>false</vertx.testNativeTransport>
-    <vertx.testDomainSockets>false</vertx.testDomainSockets>
-  </properties>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
+      
+    <modelVersion>4.0.0</modelVersion>
+      
+    <parent>
+            
         <groupId>io.vertx</groupId>
-        <artifactId>vertx-dependencies</artifactId>
-        <version>${stack.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
+            
+        <artifactId>vertx-parent</artifactId>
+            
+        <version>19</version>
+          
+    </parent>
+      
+    <artifactId>vertx-core</artifactId>
+      
+    <version>3.9.9</version>
+      
+    <name>Vert.x Core</name>
+      
+    <licenses>
+            
+        <license>
+                  
+            <name>The Apache Software License, Version 2.0</name>
+                  
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+                  
+            <distribution>repo</distribution>
+                
+        </license>
+            
+        <license>
+                  
+            <name>Eclipse Public License - v 2.0</name>
+                  
+            <url>http://www.eclipse.org/legal/epl-v20.html</url>
+                  
+            <distribution>repo</distribution>
+                
+        </license>
+          
+    </licenses>
+      
+    <scm>
+            
+        <connection>scm:git:git@github.com:eclipse/vert.x.git</connection>
+            
+        <developerConnection>scm:git:git@github.com:eclipse/vert.x.git</developerConnection>
+            
+        <url>git@github.com:eclipse/vert.x.git</url>
+          
+    </scm>
+      
+    <properties>
+            
+        <log4j.version>1.2.17</log4j.version>
+            
+        <slf4j.version>1.7.21</slf4j.version>
+            
+        <log4j2.version>2.8.2</log4j2.version>
+            
+        <junit.version>4.13.1</junit.version>
+            
+        <assertj.version>3.4.1</assertj.version>
+            
+        <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
+            
+        <generated.dir>${project.basedir}/src/main/generated</generated.dir>
+            
+        <stack.version>3.9.9</stack.version>
+            
+        <jetty.alpnAgent.argLine/>
+            
+        <jmh.version>1.19</jmh.version>
+            
+        <vertx.testNativeTransport>false</vertx.testNativeTransport>
+            
+        <vertx.testDomainSockets>false</vertx.testDomainSockets>
+          
+    </properties>
+      
+    <dependencyManagement>
+            
+        <dependencies>
+                  
+            <dependency>
+                        
+                <groupId>io.vertx</groupId>
+                        
+                <artifactId>vertx-dependencies</artifactId>
+                        
+                <version>${stack.version}</version>
+                        
+                <type>pom</type>
+                        
+                <scope>import</scope>
+                      
+            </dependency>
+                
+        </dependencies>
+          
+    </dependencyManagement>
+      
+    <dependencies>
+            
+        <!-- We depend on the specific Netty dependencies not netty-all to reduce the size of fatjars -->
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-common</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-buffer</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-transport</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-handler</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-handler-proxy</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-codec-http</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-codec-http2</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-resolver</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-resolver-dns</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-transport-native-epoll</artifactId>
+                  
+            <optional>true</optional>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-transport-native-kqueue</artifactId>
+                  
+            <optional>true</optional>
+                
+        </dependency>
+            
+        <!-- Jackson -->
+            
+        <dependency>
+                  
+            <groupId>com.fasterxml.jackson.core</groupId>
+                  
+            <artifactId>jackson-core</artifactId>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>com.fasterxml.jackson.core</groupId>
+                  
+            <artifactId>jackson-databind</artifactId>
+                
+        </dependency>
+            
+        <!-- Loggers -->
+            
+        <dependency>
+                  
+            <groupId>log4j</groupId>
+                  
+            <artifactId>log4j</artifactId>
+                  
+            <version>${log4j.version}</version>
+                  
+            <scope>provided</scope>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>org.apache.logging.log4j</groupId>
+                  
+            <artifactId>log4j-api</artifactId>
+                  
+            <version>${log4j2.version}</version>
+                  
+            <scope>provided</scope>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>org.apache.logging.log4j</groupId>
+                  
+            <artifactId>log4j-core</artifactId>
+                  
+            <version>${log4j2.version}</version>
+                  
+            <scope>provided</scope>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>org.slf4j</groupId>
+                  
+            <artifactId>slf4j-api</artifactId>
+                  
+            <version>${slf4j.version}</version>
+                  
+            <scope>provided</scope>
+                
+        </dependency>
+            
+        <!-- Generators -->
+            
+        <dependency>
+                  
+            <groupId>io.vertx</groupId>
+                  
+            <artifactId>vertx-codegen</artifactId>
+                  
+            <optional>true</optional>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.vertx</groupId>
+                  
+            <artifactId>vertx-docgen</artifactId>
+                  
+            <optional>true</optional>
+                
+        </dependency>
+            
+        <!-- Testing -->
+            
+        <dependency>
+                  
+            <groupId>junit</groupId>
+                  
+            <artifactId>junit</artifactId>
+                  
+            <version>${junit.version}</version>
+                  
+            <scope>test</scope>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>org.apache.directory.server</groupId>
+                  
+            <artifactId>apacheds-protocol-dns</artifactId>
+                  
+            <version>${apacheds-protocol-dns.version}</version>
+                  
+            <scope>test</scope>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>org.assertj</groupId>
+                  
+            <artifactId>assertj-core</artifactId>
+                  
+            <version>${assertj.version}</version>
+                  
+            <scope>test</scope>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>org.slf4j</groupId>
+                  
+            <artifactId>slf4j-simple</artifactId>
+                  
+            <version>${slf4j.version}</version>
+                  
+            <scope>test</scope>
+                
+        </dependency>
+            
+        <dependency>
+                  
+            <groupId>io.netty</groupId>
+                  
+            <artifactId>netty-tcnative-boringssl-static</artifactId>
+                  
+            <scope>test</scope>
+                
+        </dependency>
+            
+        <!-- JMH -->
+            
+        <dependency>
+                  
+            <groupId>org.openjdk.jmh</groupId>
+                  
+            <artifactId>jmh-core</artifactId>
+                  
+            <version>${jmh.version}</version>
+                  
+            <scope>test</scope>
+                
+        </dependency>
+          
     </dependencies>
-  </dependencyManagement>
-
-  <dependencies>
-
-    <!-- We depend on the specific Netty dependencies not netty-all to reduce the size of fatjars -->
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-common</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-buffer</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-transport</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-handler</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-handler-proxy</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-codec-http</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-codec-http2</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-resolver</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-resolver-dns</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-transport-native-epoll</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-transport-native-kqueue</artifactId>
-      <optional>true</optional>
-    </dependency>
-
-    <!-- Jackson -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
-
-    <!-- Loggers -->
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>${log4j.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>${log4j2.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>${log4j2.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!-- Generators -->
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-codegen</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-docgen</artifactId>
-      <optional>true</optional>
-    </dependency>
-
-    <!-- Testing -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.directory.server</groupId>
-      <artifactId>apacheds-protocol-dns</artifactId>
-      <version>${apacheds-protocol-dns.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <version>${assertj.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>${slf4j.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- JMH -->
-    <dependency>
-      <groupId>org.openjdk.jmh</groupId>
-      <artifactId>jmh-core</artifactId>
-      <version>${jmh.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
-
-  <build>
-    <pluginManagement>
-      <plugins>
-
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>${maven.surefire.plugin.version}</version>
-          <configuration>
-            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-            <additionalClasspathElements>
-              <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
-              <additionalClasspathElement>${basedir}/src/test/resources/webroot2.jar</additionalClasspathElement>
-              <additionalClasspathElement>${basedir}/src/test/resources/webroot5.zip</additionalClasspathElement>
-            </additionalClasspathElements>
-            <systemPropertyVariables>
-              <!--<javax.net.debug>ssl</javax.net.debug>-->
-              <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
-              <io.netty.leakDetection.targetRecords>20</io.netty.leakDetection.targetRecords>
-              <buildDirectory>${project.build.directory}</buildDirectory>
-              <vertx.version>${project.version}</vertx.version>
-              <vertx.handle100Continue>true</vertx.handle100Continue>
-              <vertx.useNativeTransport>${vertx.testNativeTransport}</vertx.useNativeTransport>
-              <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
-              <vertx.threadChecks>true</vertx.threadChecks>
-            </systemPropertyVariables>
-            <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
-            <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->
-            <argLine>-Xmx1200M ${jetty.alpnAgent.argLine}</argLine>
-            <forkCount>1</forkCount>
-            <reuseForks>true</reuseForks>
-            <excludes>
-              <exclude>io/vertx/it/**</exclude>
-            </excludes>
-          </configuration>
-        </plugin>
-
-        <plugin>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <configuration>
-            <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>
-          </configuration>
-        </plugin>
-
-        <plugin>
-          <artifactId>maven-clean-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>default-clean</id>
-              <configuration>
-                <filesets>
-                  <fileset>
-                    <directory>${generated.dir}</directory>
-                  </fileset>
-                </filesets>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
-
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-source-plugin</artifactId>
-          <configuration>
-            <excludes>
-              <exclude>docoverride/**</exclude>
-            </excludes>
-          </configuration>
-        </plugin>
-
-      </plugins>
-    </pluginManagement>
-    <plugins>
-
-      <plugin>
-        <groupId>org.bsc.maven</groupId>
-        <artifactId>maven-processor-plugin</artifactId>
-        <version>3.1.0</version>
-        <configuration>
-          <systemProperties>
-            <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
-          </systemProperties>
-        </configuration>
-        <executions>
-          <execution>
-            <id>generate-sources</id>
-            <goals>
-              <goal>process</goal>
-            </goals>
-            <phase>generate-sources</phase>
-            <configuration>
-              <processors>
-                <processor>io.vertx.codegen.CodeGenProcessor</processor>
-                <processor>io.vertx.docgen.JavaDocGenProcessor</processor>
-              </processors>
-              <optionMap>
-                <codegen.output>${project.basedir}/src/main</codegen.output>
-                <codegen.output.data_object_converters>generated</codegen.output.data_object_converters>
-                <docgen.source>${asciidoc.dir}</docgen.source>
-                <docgen.output>${project.build.directory}/asciidoc/java</docgen.output>
-                <maven.groupId>${project.groupId}</maven.groupId>
-                <maven.artifactId>${project.artifactId}</maven.artifactId>
-                <maven.version>${project.version}</maven.version>
-              </optionMap>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>3.0.0</version>
-        <executions>
-          <execution>
-            <id>add-source</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${generated.dir}</source>
-                <source>${asciidoc.dir}</source>
-              </sources>
-            </configuration>
-          </execution>
-          <execution>
-            <id>add-test-source</id>
-            <phase>generate-test-sources</phase>
-            <goals>
-              <goal>add-test-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>${project.basedir}/src/test/benchmarks</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- Tests that require to run with different JVM settings -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.19.1</version>
-        <executions>
-          <execution>
-            <id>ssl-engine:default</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/SSLEngineTest.java</include>
-              </includes>
-              <systemProperties>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>ssl-engine:openssl</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/SSLEngineTest.java</include>
-              </includes>
-              <systemProperties>
-                <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
-              </systemProperties>
-            </configuration>
-          </execution>
-          <execution>
-            <id>ssl-engine:agent</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <argLine>${jetty.alpnAgent.argLine}</argLine>
-              <includes>
-                <include>io/vertx/it/SSLEngineTest.java</include>
-              </includes>
-              <systemProperties>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>ssl-engine:openssl+agent</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <argLine>${jetty.alpnAgent.argLine}</argLine>
-              <includes>
-                <include>io/vertx/it/SSLEngineTest.java</include>
-              </includes>
-              <systemProperties>
-                <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
-              </systemProperties>
-            </configuration>
-          </execution>
-          <execution>
-            <id>no-native</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/TransportTest.java</include>
-              </includes>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
-                <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>slf4j</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/SLF4JLogDelegateTest.java</include>
-              </includes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>jul</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/JULLogDelegateTest.java</include>
-              </includes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>log4j2</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/Log4J2LogDelegateTest.java</include>
-              </includes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>no-jackson</id>
-            <goals>
-              <goal>integration-test</goal>
-            </goals>
-            <phase>integration-test</phase>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/JsonTest.java</include>
-              </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
-                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>json-codec</id>
-            <goals>
-              <goal>integration-test</goal>
-            </goals>
-            <phase>integration-test</phase>
-            <configuration>
-              <includes>
-                <include>io/vertx/it/JsonCodecTest.java</include>
-              </includes>
-              <systemProperties>
-                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
-                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-              <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsoncodec</additionalClasspathElement>
-              </additionalClasspathElements>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>assemble-docs</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <attach>true</attach>
-              <descriptors>
-                <descriptor>src/main/assembly/docs.xml</descriptor>
-              </descriptors>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <configuration>
-              <archive>
-                <!-- Generate a jar INDEX.LIST -->
-                <index>true</index>
-                <!-- A manifest containing the OSGi metadata has been generated using the maven-bundle-plugin -->
-                <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                <!-- Add the Maven coordinates in the manifest -->
-                <manifestEntries>
-                  <Maven-Group-Id>${project.groupId}</Maven-Group-Id>
-                  <Maven-Artifact-Id>${project.artifactId}</Maven-Artifact-Id>
-                  <Maven-Version>${project.version}</Maven-Version>
-                </manifestEntries>
-              </archive>
-              <!-- Remove examples and docoverride -->
-              <excludes>
-                <exclude>/docoverride/**</exclude>
-                <exclude>/examples/**</exclude>
-              </excludes>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.5.3</version>
-        <executions>
-          <execution>
-            <id>bundle-manifest</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>manifest</goal>
-            </goals>
-            <configuration>
-              <instructions>
-                <Export-Package>io.vertx.core*</Export-Package>
-                <Private-Package>!docoverride*, !examples*</Private-Package>
-                <Import-Package>org.slf4j*;resolution:=optional,
+      
+    <build>
+            
+        <pluginManagement>
+                  
+            <plugins>
+                        
+                <plugin>
+                              
+                    <groupId>org.apache.maven.plugins</groupId>
+                              
+                    <artifactId>maven-surefire-plugin</artifactId>
+                              
+                    <version>${maven.surefire.plugin.version}</version>
+                              
+                    <configuration>
+                                    
+                        <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+                                    
+                        <additionalClasspathElements>
+                                          
+                            <additionalClasspathElement>${project.build.testSourceDirectory}</additionalClasspathElement>
+                                          
+                            <additionalClasspathElement>${basedir}/src/test/resources/webroot2.jar</additionalClasspathElement>
+                                          
+                            <additionalClasspathElement>${basedir}/src/test/resources/webroot5.zip</additionalClasspathElement>
+                                        
+                        </additionalClasspathElements>
+                                    
+                        <systemPropertyVariables>
+                                          
+                            <!--<javax.net.debug>ssl</javax.net.debug>-->
+                                          
+                            <io.netty.leakDetectionLevel>PARANOID</io.netty.leakDetectionLevel>
+                                          
+                            <io.netty.leakDetection.targetRecords>20</io.netty.leakDetection.targetRecords>
+                                          
+                            <buildDirectory>${project.build.directory}</buildDirectory>
+                                          
+                            <vertx.version>${project.version}</vertx.version>
+                                          
+                            <vertx.handle100Continue>true</vertx.handle100Continue>
+                                          
+                            <vertx.useNativeTransport>${vertx.testNativeTransport}</vertx.useNativeTransport>
+                                          
+                            <vertx.useDomainSockets>${vertx.testDomainSockets}</vertx.useDomainSockets>
+                                          
+                            <vertx.threadChecks>true</vertx.threadChecks>
+                                        
+                        </systemPropertyVariables>
+                                    
+                        <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
+                                    
+                        <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->
+                                    
+                        <argLine>-Xmx1200M ${jetty.alpnAgent.argLine}</argLine>
+                                    
+                        <forkCount>1</forkCount>
+                                    
+                        <reuseForks>true</reuseForks>
+                                    
+                        <excludes>
+                                          
+                            <exclude>io/vertx/it/**</exclude>
+                                        
+                        </excludes>
+                                  
+                    </configuration>
+                            
+                </plugin>
+                        
+                <plugin>
+                              
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                              
+                    <configuration>
+                                    
+                        <reportOutputDirectory>${project.build.directory}/docs</reportOutputDirectory>
+                                  
+                    </configuration>
+                            
+                </plugin>
+                        
+                <plugin>
+                              
+                    <artifactId>maven-clean-plugin</artifactId>
+                              
+                    <executions>
+                                    
+                        <execution>
+                                          
+                            <id>default-clean</id>
+                                          
+                            <configuration>
+                                                
+                                <filesets>
+                                                      
+                                    <fileset>
+                                                            
+                                        <directory>${generated.dir}</directory>
+                                                          
+                                    </fileset>
+                                                    
+                                </filesets>
+                                              
+                            </configuration>
+                                        
+                        </execution>
+                                  
+                    </executions>
+                            
+                </plugin>
+                        
+                <plugin>
+                              
+                    <groupId>org.apache.maven.plugins</groupId>
+                              
+                    <artifactId>maven-source-plugin</artifactId>
+                              
+                    <configuration>
+                                    
+                        <excludes>
+                                          
+                            <exclude>docoverride/**</exclude>
+                                        
+                        </excludes>
+                                  
+                    </configuration>
+                            
+                </plugin>
+                      
+            </plugins>
+                
+        </pluginManagement>
+            
+        <plugins>
+                  
+            <plugin>
+                        
+                <groupId>org.bsc.maven</groupId>
+                        
+                <artifactId>maven-processor-plugin</artifactId>
+                        
+                <version>3.1.0</version>
+                        
+                <configuration>
+                              
+                    <systemProperties>
+                                    
+                        <java.util.logging.SimpleFormatter.format>%4$s: %3$s - %5$s %6$s%n</java.util.logging.SimpleFormatter.format>
+                                  
+                    </systemProperties>
+                            
+                </configuration>
+                        
+                <executions>
+                              
+                    <execution>
+                                    
+                        <id>generate-sources</id>
+                                    
+                        <goals>
+                                          
+                            <goal>process</goal>
+                                        
+                        </goals>
+                                    
+                        <phase>generate-sources</phase>
+                                    
+                        <configuration>
+                                          
+                            <processors>
+                                                
+                                <processor>io.vertx.codegen.CodeGenProcessor</processor>
+                                                
+                                <processor>io.vertx.docgen.JavaDocGenProcessor</processor>
+                                              
+                            </processors>
+                                          
+                            <optionMap>
+                                                
+                                <codegen.output>${project.basedir}/src/main</codegen.output>
+                                                
+                                <codegen.output.data_object_converters>generated</codegen.output.data_object_converters>
+                                                
+                                <docgen.source>${asciidoc.dir}</docgen.source>
+                                                
+                                <docgen.output>${project.build.directory}/asciidoc/java</docgen.output>
+                                                
+                                <maven.groupId>${project.groupId}</maven.groupId>
+                                                
+                                <maven.artifactId>${project.artifactId}</maven.artifactId>
+                                                
+                                <maven.version>${project.version}</maven.version>
+                                              
+                            </optionMap>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                            
+                </executions>
+                      
+            </plugin>
+                  
+            <plugin>
+                        
+                <groupId>org.codehaus.mojo</groupId>
+                        
+                <artifactId>build-helper-maven-plugin</artifactId>
+                        
+                <version>3.0.0</version>
+                        
+                <executions>
+                              
+                    <execution>
+                                    
+                        <id>add-source</id>
+                                    
+                        <phase>generate-sources</phase>
+                                    
+                        <goals>
+                                          
+                            <goal>add-source</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <sources>
+                                                
+                                <source>${generated.dir}</source>
+                                                
+                                <source>${asciidoc.dir}</source>
+                                              
+                            </sources>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>add-test-source</id>
+                                    
+                        <phase>generate-test-sources</phase>
+                                    
+                        <goals>
+                                          
+                            <goal>add-test-source</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <sources>
+                                                
+                                <source>${project.basedir}/src/test/benchmarks</source>
+                                              
+                            </sources>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                            
+                </executions>
+                      
+            </plugin>
+                  
+            <!-- Tests that require to run with different JVM settings -->
+                  
+            <plugin>
+                        
+                <groupId>org.apache.maven.plugins</groupId>
+                        
+                <artifactId>maven-failsafe-plugin</artifactId>
+                        
+                <version>2.19.1</version>
+                        
+                <executions>
+                              
+                    <execution>
+                                    
+                        <id>ssl-engine:default</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                          
+                            <goal>verify</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/SSLEngineTest.java</include>
+                                              
+                            </includes>
+                                          
+                            <systemProperties>
+                                                
+                                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+                                              
+                            </systemProperties>
+                                          
+                            <classpathDependencyExcludes>
+                                                
+                                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
+                                              
+                            </classpathDependencyExcludes>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>ssl-engine:openssl</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                          
+                            <goal>verify</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/SSLEngineTest.java</include>
+                                              
+                            </includes>
+                                          
+                            <systemProperties>
+                                                
+                                <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
+                                              
+                            </systemProperties>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>ssl-engine:agent</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                          
+                            <goal>verify</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <argLine>${jetty.alpnAgent.argLine}</argLine>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/SSLEngineTest.java</include>
+                                              
+                            </includes>
+                                          
+                            <systemProperties>
+                                                
+                                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+                                              
+                            </systemProperties>
+                                          
+                            <classpathDependencyExcludes>
+                                                
+                                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
+                                              
+                            </classpathDependencyExcludes>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>ssl-engine:openssl+agent</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                          
+                            <goal>verify</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <argLine>${jetty.alpnAgent.argLine}</argLine>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/SSLEngineTest.java</include>
+                                              
+                            </includes>
+                                          
+                            <systemProperties>
+                                                
+                                <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
+                                              
+                            </systemProperties>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>no-native</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                          
+                            <goal>verify</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/TransportTest.java</include>
+                                              
+                            </includes>
+                                          
+                            <classpathDependencyExcludes>
+                                                
+                                <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
+                                                
+                                <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
+                                              
+                            </classpathDependencyExcludes>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>slf4j</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                          
+                            <goal>verify</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/SLF4JLogDelegateTest.java</include>
+                                              
+                            </includes>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>jul</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                          
+                            <goal>verify</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/JULLogDelegateTest.java</include>
+                                              
+                            </includes>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>log4j2</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                          
+                            <goal>verify</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/Log4J2LogDelegateTest.java</include>
+                                              
+                            </includes>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>no-jackson</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                        
+                        </goals>
+                                    
+                        <phase>integration-test</phase>
+                                    
+                        <configuration>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/JsonTest.java</include>
+                                              
+                            </includes>
+                                          
+                            <systemProperties>
+                                                
+                                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                                                
+                                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+                                              
+                            </systemProperties>
+                                          
+                            <classpathDependencyExcludes>
+                                                
+                                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                                                
+                                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                                              
+                            </classpathDependencyExcludes>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>json-codec</id>
+                                    
+                        <goals>
+                                          
+                            <goal>integration-test</goal>
+                                        
+                        </goals>
+                                    
+                        <phase>integration-test</phase>
+                                    
+                        <configuration>
+                                          
+                            <includes>
+                                                
+                                <include>io/vertx/it/JsonCodecTest.java</include>
+                                              
+                            </includes>
+                                          
+                            <systemProperties>
+                                                
+                                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                                                
+                                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+                                              
+                            </systemProperties>
+                                          
+                            <classpathDependencyExcludes>
+                                                
+                                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
+                                                
+                                <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-databind</classpathDependencyExclude>
+                                              
+                            </classpathDependencyExcludes>
+                                          
+                            <additionalClasspathElements>
+                                                
+                                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsoncodec</additionalClasspathElement>
+                                              
+                            </additionalClasspathElements>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                            
+                </executions>
+                      
+            </plugin>
+                  
+            <plugin>
+                        
+                <artifactId>maven-assembly-plugin</artifactId>
+                        
+                <executions>
+                              
+                    <execution>
+                                    
+                        <id>assemble-docs</id>
+                                    
+                        <phase>package</phase>
+                                    
+                        <goals>
+                                          
+                            <goal>single</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <attach>true</attach>
+                                          
+                            <descriptors>
+                                                
+                                <descriptor>src/main/assembly/docs.xml</descriptor>
+                                              
+                            </descriptors>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                            
+                </executions>
+                      
+            </plugin>
+                  
+            <plugin>
+                        
+                <artifactId>maven-jar-plugin</artifactId>
+                        
+                <executions>
+                              
+                    <execution>
+                                    
+                        <id>default-jar</id>
+                                    
+                        <configuration>
+                                          
+                            <archive>
+                                                
+                                <!-- Generate a jar INDEX.LIST -->
+                                                
+                                <index>true</index>
+                                                
+                                <!-- A manifest containing the OSGi metadata has been generated using the maven-bundle-plugin -->
+                                                
+                                <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                                                
+                                <!-- Add the Maven coordinates in the manifest -->
+                                                
+                                <manifestEntries>
+                                                      
+                                    <Maven-Group-Id>${project.groupId}</Maven-Group-Id>
+                                                      
+                                    <Maven-Artifact-Id>${project.artifactId}</Maven-Artifact-Id>
+                                                      
+                                    <Maven-Version>${project.version}</Maven-Version>
+                                                    
+                                </manifestEntries>
+                                              
+                            </archive>
+                                          
+                            <!-- Remove examples and docoverride -->
+                                          
+                            <excludes>
+                                                
+                                <exclude>/docoverride/**</exclude>
+                                                
+                                <exclude>/examples/**</exclude>
+                                              
+                            </excludes>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                            
+                </executions>
+                      
+            </plugin>
+                  
+            <plugin>
+                        
+                <groupId>org.apache.felix</groupId>
+                        
+                <artifactId>maven-bundle-plugin</artifactId>
+                        
+                <version>2.5.3</version>
+                        
+                <executions>
+                              
+                    <execution>
+                                    
+                        <id>bundle-manifest</id>
+                                    
+                        <phase>process-classes</phase>
+                                    
+                        <goals>
+                                          
+                            <goal>manifest</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <instructions>
+                                                
+                                <Export-Package>io.vertx.core*</Export-Package>
+                                                
+                                <Private-Package>!docoverride*, !examples*</Private-Package>
+                                                
+                                <Import-Package>org.slf4j*;resolution:=optional,
                   org.apache.log4j;resolution:=optional,
                   org.apache.logging.log4*;resolution:=optional,
                   *
                 </Import-Package>
-              </instructions>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>test-service-helper</id>
-            <phase>test-compile</phase>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-            <configuration>
-              <compileSourceRoots>
-                <compileSourceRoot>src/test/classpath/servicehelper</compileSourceRoot>
-              </compileSourceRoots>
-              <outputDirectory>${project.build.directory}/classpath/servicehelper</outputDirectory>
-            </configuration>
-          </execution>
-          <execution>
-            <id>test-classpath-handler</id>
-            <phase>test-compile</phase>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-            <configuration>
-              <compileSourceRoots>
-                  <compileSourceRoot>src/test/classpath/verticle</compileSourceRoot>
-              </compileSourceRoots>
-              <outputDirectory>${project.build.directory}/classpath/verticle</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>copy-service-helper</id>
-            <phase>generate-test-resources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/classpath</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>src/test/classpath</directory>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-        <filtering>true</filtering>
-        <includes>
-          <include>**/vertx-version.txt</include>
-        </includes>
-      </resource>
-      <resource>
-        <directory>src/main/resources</directory>
-        <filtering>false</filtering>
-        <excludes>
-          <exclude>**/vertx-version.txt</exclude>
-        </excludes>
-      </resource>
-    </resources>
-  </build>
-
-  <profiles>
-    <profile>
-      <id>coverage</id>
-      <build>
-        <pluginManagement>
-          <plugins>
-            <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-surefire-plugin</artifactId>
-              <configuration>
-                <argLine>-Xmx1200M ${jetty.alpnAgent.argLine}</argLine>
-              </configuration>
+                                              
+                            </instructions>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                            
+                </executions>
+                      
             </plugin>
-          </plugins>
-        </pluginManagement>
-      </build>
-    </profile>
-
-    <profile>
-      <id>java-8</id>
-      <properties>
-        <jetty.alpnAgent.version>2.0.10</jetty.alpnAgent.version>
-        <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
-        <jetty.alpnAgent.argLine>-javaagent:"${jetty.alpnAgent.path}"</jetty.alpnAgent.argLine>
-      </properties>
-      <activation>
-        <jdk>1.8</jdk>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.mortbay.jetty.alpn</groupId>
-          <artifactId>jetty-alpn-agent</artifactId>
-          <version>${jetty.alpnAgent.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-
-    <!-- Run tests with native transport -->
-    <profile>
-      <id>testNativeTransport</id>
-      <properties>
-        <vertx.testNativeTransport>true</vertx.testNativeTransport>
-        <vertx.testDomainSockets>false</vertx.testDomainSockets>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-transport-native-epoll</artifactId>
-          <optional>true</optional>
-          <classifier>linux-x86_64</classifier>
-        </dependency>
-        <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-transport-native-kqueue</artifactId>
-          <optional>true</optional>
-          <classifier>osx-x86_64</classifier>
-        </dependency>
-      </dependencies>
-    </profile>
-
-    <!-- Run tests with native transport and domain sockets -->
-    <profile>
-      <id>testDomainSockets</id>
-      <properties>
-        <vertx.testNativeTransport>true</vertx.testNativeTransport>
-        <vertx.testDomainSockets>true</vertx.testDomainSockets>
-      </properties>
-      <dependencies>
-        <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-transport-native-epoll</artifactId>
-          <optional>true</optional>
-          <classifier>linux-x86_64</classifier>
-        </dependency>
-        <dependency>
-          <groupId>io.netty</groupId>
-          <artifactId>netty-transport-native-kqueue</artifactId>
-          <optional>true</optional>
-          <classifier>osx-x86_64</classifier>
-        </dependency>
-      </dependencies>
-    </profile>
-
-    <!-- Documentation generation : activate with -Pdocs -->
-    <profile>
-      <id>docs</id>
-      <build>
-        <plugins>
-          <!-- Transform the Asciidoctor to html -->
-          <plugin>
-            <groupId>org.asciidoctor</groupId>
-            <artifactId>asciidoctor-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>process-asciidoc</goal>
-                </goals>
-                <configuration>
-                  <sourceDirectory>${project.build.directory}/asciidoc</sourceDirectory>
-                </configuration>
-                <phase>package</phase>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>package</phase>
-                <goals>
-                  <goal>javadoc</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
+                  
+            <plugin>
+                        
+                <artifactId>maven-compiler-plugin</artifactId>
+                        
+                <executions>
+                              
+                    <execution>
+                                    
+                        <id>test-service-helper</id>
+                                    
+                        <phase>test-compile</phase>
+                                    
+                        <goals>
+                                          
+                            <goal>testCompile</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <compileSourceRoots>
+                                                
+                                <compileSourceRoot>src/test/classpath/servicehelper</compileSourceRoot>
+                                              
+                            </compileSourceRoots>
+                                          
+                            <outputDirectory>${project.build.directory}/classpath/servicehelper</outputDirectory>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                              
+                    <execution>
+                                    
+                        <id>test-classpath-handler</id>
+                                    
+                        <phase>test-compile</phase>
+                                    
+                        <goals>
+                                          
+                            <goal>testCompile</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <compileSourceRoots>
+                                                  
+                                <compileSourceRoot>src/test/classpath/verticle</compileSourceRoot>
+                                              
+                            </compileSourceRoots>
+                                          
+                            <outputDirectory>${project.build.directory}/classpath/verticle</outputDirectory>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                            
+                </executions>
+                      
+            </plugin>
+                  
+            <plugin>
+                        
+                <artifactId>maven-resources-plugin</artifactId>
+                        
+                <executions>
+                              
+                    <execution>
+                                    
+                        <id>copy-service-helper</id>
+                                    
+                        <phase>generate-test-resources</phase>
+                                    
+                        <goals>
+                                          
+                            <goal>copy-resources</goal>
+                                        
+                        </goals>
+                                    
+                        <configuration>
+                                          
+                            <outputDirectory>${project.build.directory}/classpath</outputDirectory>
+                                          
+                            <resources>
+                                                
+                                <resource>
+                                                      
+                                    <directory>src/test/classpath</directory>
+                                                    
+                                </resource>
+                                              
+                            </resources>
+                                        
+                        </configuration>
+                                  
+                    </execution>
+                            
+                </executions>
+                      
+            </plugin>
+                
         </plugins>
-      </build>
-    </profile>
-
-    <profile>
-      <id>benchmarks</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>assemble-benchmarks</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>single</goal>
-                </goals>
-                <configuration>
-                  <archive>
-                    <manifest>
-                      <mainClass>org.openjdk.jmh.Main</mainClass>
-                    </manifest>
-                  </archive>
-                  <descriptors>
-                    <descriptor>src/test/assembly/benchmarks.xml</descriptor>
-                  </descriptors>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-      <dependencies>
-        <dependency>
-          <groupId>org.openjdk.jmh</groupId>
-          <artifactId>jmh-generator-annprocess</artifactId>
-          <version>${jmh.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
-
+            
+        <resources>
+                  
+            <resource>
+                        
+                <directory>src/main/resources</directory>
+                        
+                <filtering>true</filtering>
+                        
+                <includes>
+                              
+                    <include>**/vertx-version.txt</include>
+                            
+                </includes>
+                      
+            </resource>
+                  
+            <resource>
+                        
+                <directory>src/main/resources</directory>
+                        
+                <filtering>false</filtering>
+                        
+                <excludes>
+                              
+                    <exclude>**/vertx-version.txt</exclude>
+                            
+                </excludes>
+                      
+            </resource>
+                
+        </resources>
+          
+    </build>
+      
+    <profiles>
+            
+        <profile>
+                  
+            <id>coverage</id>
+                  
+            <build>
+                        
+                <pluginManagement>
+                              
+                    <plugins>
+                                    
+                        <plugin>
+                                          
+                            <groupId>org.apache.maven.plugins</groupId>
+                                          
+                            <artifactId>maven-surefire-plugin</artifactId>
+                                          
+                            <configuration>
+                                                
+                                <argLine>-Xmx1200M ${jetty.alpnAgent.argLine}</argLine>
+                                              
+                            </configuration>
+                                        
+                        </plugin>
+                                  
+                    </plugins>
+                            
+                </pluginManagement>
+                      
+            </build>
+                
+        </profile>
+            
+        <profile>
+                  
+            <id>java-8</id>
+                  
+            <properties>
+                        
+                <jetty.alpnAgent.version>2.0.10</jetty.alpnAgent.version>
+                        
+                <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
+                        
+                <jetty.alpnAgent.argLine>-javaagent:"${jetty.alpnAgent.path}"</jetty.alpnAgent.argLine>
+                      
+            </properties>
+                  
+            <activation>
+                        
+                <jdk>1.8</jdk>
+                      
+            </activation>
+                  
+            <dependencies>
+                        
+                <dependency>
+                              
+                    <groupId>org.mortbay.jetty.alpn</groupId>
+                              
+                    <artifactId>jetty-alpn-agent</artifactId>
+                              
+                    <version>${jetty.alpnAgent.version}</version>
+                              
+                    <scope>test</scope>
+                            
+                </dependency>
+                      
+            </dependencies>
+                
+        </profile>
+            
+        <!-- Run tests with native transport -->
+            
+        <profile>
+                  
+            <id>testNativeTransport</id>
+                  
+            <properties>
+                        
+                <vertx.testNativeTransport>true</vertx.testNativeTransport>
+                        
+                <vertx.testDomainSockets>false</vertx.testDomainSockets>
+                      
+            </properties>
+                  
+            <dependencies>
+                        
+                <dependency>
+                              
+                    <groupId>io.netty</groupId>
+                              
+                    <artifactId>netty-transport-native-epoll</artifactId>
+                              
+                    <optional>true</optional>
+                              
+                    <classifier>linux-x86_64</classifier>
+                            
+                </dependency>
+                        
+                <dependency>
+                              
+                    <groupId>io.netty</groupId>
+                              
+                    <artifactId>netty-transport-native-kqueue</artifactId>
+                              
+                    <optional>true</optional>
+                              
+                    <classifier>osx-x86_64</classifier>
+                            
+                </dependency>
+                      
+            </dependencies>
+                
+        </profile>
+            
+        <!-- Run tests with native transport and domain sockets -->
+            
+        <profile>
+                  
+            <id>testDomainSockets</id>
+                  
+            <properties>
+                        
+                <vertx.testNativeTransport>true</vertx.testNativeTransport>
+                        
+                <vertx.testDomainSockets>true</vertx.testDomainSockets>
+                      
+            </properties>
+                  
+            <dependencies>
+                        
+                <dependency>
+                              
+                    <groupId>io.netty</groupId>
+                              
+                    <artifactId>netty-transport-native-epoll</artifactId>
+                              
+                    <optional>true</optional>
+                              
+                    <classifier>linux-x86_64</classifier>
+                            
+                </dependency>
+                        
+                <dependency>
+                              
+                    <groupId>io.netty</groupId>
+                              
+                    <artifactId>netty-transport-native-kqueue</artifactId>
+                              
+                    <optional>true</optional>
+                              
+                    <classifier>osx-x86_64</classifier>
+                            
+                </dependency>
+                      
+            </dependencies>
+                
+        </profile>
+            
+        <!-- Documentation generation : activate with -Pdocs -->
+            
+        <profile>
+                  
+            <id>docs</id>
+                  
+            <build>
+                        
+                <plugins>
+                              
+                    <!-- Transform the Asciidoctor to html -->
+                              
+                    <plugin>
+                                    
+                        <groupId>org.asciidoctor</groupId>
+                                    
+                        <artifactId>asciidoctor-maven-plugin</artifactId>
+                                    
+                        <executions>
+                                          
+                            <execution>
+                                                
+                                <goals>
+                                                      
+                                    <goal>process-asciidoc</goal>
+                                                    
+                                </goals>
+                                                
+                                <configuration>
+                                                      
+                                    <sourceDirectory>${project.build.directory}/asciidoc</sourceDirectory>
+                                                    
+                                </configuration>
+                                                
+                                <phase>package</phase>
+                                              
+                            </execution>
+                                        
+                        </executions>
+                                  
+                    </plugin>
+                              
+                    <plugin>
+                                    
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                                    
+                        <executions>
+                                          
+                            <execution>
+                                                
+                                <phase>package</phase>
+                                                
+                                <goals>
+                                                      
+                                    <goal>javadoc</goal>
+                                                    
+                                </goals>
+                                              
+                            </execution>
+                                        
+                        </executions>
+                                  
+                    </plugin>
+                            
+                </plugins>
+                      
+            </build>
+                
+        </profile>
+            
+        <profile>
+                  
+            <id>benchmarks</id>
+                  
+            <build>
+                        
+                <plugins>
+                              
+                    <plugin>
+                                    
+                        <artifactId>maven-assembly-plugin</artifactId>
+                                    
+                        <executions>
+                                          
+                            <execution>
+                                                
+                                <id>assemble-benchmarks</id>
+                                                
+                                <phase>package</phase>
+                                                
+                                <goals>
+                                                      
+                                    <goal>single</goal>
+                                                    
+                                </goals>
+                                                
+                                <configuration>
+                                                      
+                                    <archive>
+                                                            
+                                        <manifest>
+                                                                  
+                                            <mainClass>org.openjdk.jmh.Main</mainClass>
+                                                                
+                                        </manifest>
+                                                          
+                                    </archive>
+                                                      
+                                    <descriptors>
+                                                            
+                                        <descriptor>src/test/assembly/benchmarks.xml</descriptor>
+                                                          
+                                    </descriptors>
+                                                    
+                                </configuration>
+                                              
+                            </execution>
+                                        
+                        </executions>
+                                  
+                    </plugin>
+                            
+                </plugins>
+                      
+            </build>
+                  
+            <dependencies>
+                        
+                <dependency>
+                              
+                    <groupId>org.openjdk.jmh</groupId>
+                              
+                    <artifactId>jmh-generator-annprocess</artifactId>
+                              
+                    <version>${jmh.version}</version>
+                              
+                    <scope>test</scope>
+                            
+                </dependency>
+                      
+            </dependencies>
+                
+        </profile>
+          
+    </profiles>
+    
 </project>
