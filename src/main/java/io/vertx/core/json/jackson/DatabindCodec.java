@@ -49,18 +49,7 @@ public class DatabindCodec extends JacksonCodec {
     prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
     prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
 
-    SimpleModule module = new SimpleModule();
-    // custom types
-    module.addSerializer(JsonObject.class, new JsonObjectSerializer());
-    module.addSerializer(JsonArray.class, new JsonArraySerializer());
-    // he have 2 extensions: RFC-7493
-    module.addSerializer(Instant.class, new InstantSerializer());
-    module.addDeserializer(Instant.class, new InstantDeserializer());
-    module.addSerializer(byte[].class, new ByteArraySerializer());
-    module.addDeserializer(byte[].class, new ByteArrayDeserializer());
-    module.addSerializer(Buffer.class, new BufferSerializer());
-    module.addDeserializer(Buffer.class, new BufferDeserializer());
-
+    VertxModule module = new VertxModule();
     mapper.registerModule(module);
     prettyMapper.registerModule(module);
   }
