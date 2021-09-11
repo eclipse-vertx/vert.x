@@ -131,15 +131,15 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       DefaultHttpRequest request = (DefaultHttpRequest) msg;
       ContextInternal requestCtx = streamContextSupplier.get();
       Http1xServerRequest req = new Http1xServerRequest(this, request, requestCtx);
+      if (METRICS_ENABLED) {
+        reportRequestBegin(req);
+      }
       requestInProgress = req;
       if (responseInProgress != null) {
         enqueueRequest(req);
         return;
       }
       responseInProgress = requestInProgress;
-      if (METRICS_ENABLED) {
-        reportRequestBegin(req);
-      }
       req.handleBegin();
       Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
       req.context.emit(req, handler);
