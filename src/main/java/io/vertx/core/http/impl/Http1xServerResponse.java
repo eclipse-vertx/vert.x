@@ -689,7 +689,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       headers.remove(HttpHeaders.TRANSFER_ENCODING);
     } else {
       // Set content-length header automatically
-      if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH) && contentLength >= 0) {
+      if (contentLength >= 0 && !headers.contains(HttpHeaders.CONTENT_LENGTH) && !headers.contains(HttpHeaders.TRANSFER_ENCODING)) {
         String value = contentLength == 0 ? "0" : String.valueOf(contentLength);
         headers.set(HttpHeaders.CONTENT_LENGTH, value);
       }
