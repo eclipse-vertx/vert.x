@@ -35,6 +35,8 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -151,6 +153,9 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
     response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric);
     if (conn.handle100ContinueAutomatically) {
       check100();
+    }
+    if (METRICS_ENABLED) {
+      reportRequestBegin(this);
     }
   }
 
@@ -545,6 +550,9 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   }
 
   private void onEnd() {
+    if (METRICS_ENABLED) {
+      reportRequestComplete(this);
+    }
     HttpEventHandler handler;
     synchronized (conn) {
       if (decoder != null) {
@@ -555,6 +563,25 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
       handler.handleEnd();
+    }
+  }
+
+  private void reportRequestComplete(Http1xServerRequest request) {
+    HttpServerMetrics metrics = conn.metrics;
+    if (metrics != null) {
+      metrics.requestEnd(request.metric(), request, request.bytesRead());
+      conn.flushBytesRead();
+    }
+  }
+
+  private void reportRequestBegin(Http1xServerRequest request) {
+    HttpServerMetrics metrics = conn.metrics;
+    if (metrics != null) {
+      request.metric = metrics.requestBegin(metric(), request);
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      request.trace = tracer.receiveRequest(request.context, SpanKind.RPC, conn.tracingPolicy(), request, request.method().name(), request.headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
   }
 
