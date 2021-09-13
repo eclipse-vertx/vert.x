@@ -150,12 +150,12 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   }
 
   void handleBegin() {
+    if (METRICS_ENABLED) {
+      reportRequestBegin();
+    }
     response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric);
     if (conn.handle100ContinueAutomatically) {
       check100();
-    }
-    if (METRICS_ENABLED) {
-      reportRequestBegin(this);
     }
   }
 
@@ -551,7 +551,7 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
 
   private void onEnd() {
     if (METRICS_ENABLED) {
-      reportRequestComplete(this);
+      reportRequestComplete();
     }
     HttpEventHandler handler;
     synchronized (conn) {
@@ -566,22 +566,22 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
     }
   }
 
-  private void reportRequestComplete(Http1xServerRequest request) {
+  private void reportRequestComplete() {
     HttpServerMetrics metrics = conn.metrics;
     if (metrics != null) {
-      metrics.requestEnd(request.metric(), request, request.bytesRead());
+      metrics.requestEnd(metric, this, bytesRead);
       conn.flushBytesRead();
     }
   }
 
-  private void reportRequestBegin(Http1xServerRequest request) {
+  private void reportRequestBegin() {
     HttpServerMetrics metrics = conn.metrics;
     if (metrics != null) {
-      request.metric = metrics.requestBegin(metric(), request);
+      metric = metrics.requestBegin(conn.metric(), this);
     }
     VertxTracer tracer = context.tracer();
     if (tracer != null) {
-      request.trace = tracer.receiveRequest(request.context, SpanKind.RPC, conn.tracingPolicy(), request, request.method().name(), request.headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
+      trace = tracer.receiveRequest(context, SpanKind.RPC, conn.tracingPolicy(), this, request.method().name(), request.headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
   }
 
