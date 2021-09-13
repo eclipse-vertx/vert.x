@@ -172,6 +172,85 @@ public class MetricsContextTest extends VertxTestBase {
   }
 
   @Test
+  public void testHttpServerRequestPipelining() throws Exception {
+    waitFor(2);
+    AtomicInteger count = new AtomicInteger();
+    VertxMetricsFactory factory = (options) -> new DummyVertxMetrics() {
+      @Override
+      public HttpServerMetrics createHttpServerMetrics(HttpServerOptions options, SocketAddress localAddress) {
+        return new DummyHttpServerMetrics() {
+          @Override
+          public Void requestBegin(Void socketMetric, HttpRequest request) {
+            switch (request.uri()) {
+              case "/1":
+                assertEquals(0, count.get());
+                break;
+              case "/2":
+                assertEquals(1, count.get());
+                break;
+            }
+            return null;
+          }
+          @Override
+          public void requestEnd(Void requestMetric, HttpRequest request, long bytesRead) {
+            switch (request.uri()) {
+              case "/1":
+                assertEquals(1, count.get());
+                break;
+              case "/2":
+                assertEquals(2, count.get());
+                break;
+            }
+          }
+          @Override
+          public void responseEnd(Void requestMetric, HttpResponse response, long bytesWritten) {
+          }
+          @Override
+          public Void connected(SocketAddress remoteAddress, String remoteName) {
+            return null;
+          }
+          @Override
+          public void disconnected(Void socketMetric, SocketAddress remoteAddress) {
+          }
+          @Override
+          public void bytesRead(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          }
+          @Override
+          public void bytesWritten(Void socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
+          }
+          @Override
+          public void close() {
+          }
+        };
+      }
+    };
+    CountDownLatch latch = new CountDownLatch(1);
+    Vertx vertx = vertx(new VertxOptions().setMetricsOptions(new MetricsOptions().setEnabled(true).setFactory(factory)));
+    HttpServer server = vertx.createHttpServer().requestHandler(req -> {
+      count.incrementAndGet();
+      vertx.setTimer(10, id -> {
+        HttpServerResponse response = req.response();
+        response.end();
+      });
+    });
+    server.listen(8080, "localhost", onSuccess(s -> {
+      latch.countDown();
+    }));
+    awaitLatch(latch);
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setPipelining(true).setMaxPoolSize(1));
+    vertx.runOnContext(v -> {
+      for (int i = 0;i < 2;i++) {
+        client.request(HttpMethod.GET, 8080, "localhost", "/" + (i + 1), onSuccess(req -> {
+          req.send().compose(HttpClientResponse::body).onComplete(onSuccess(body -> {
+            complete();
+          }));
+        }));
+      }
+    });
+    await();
+  }
+
+  @Test
   public void testHttpServerWebSocketEventLoop() throws Exception {
     testHttpServerWebSocket(eventLoopContextFactory);
   }
