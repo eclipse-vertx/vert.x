@@ -35,6 +35,8 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.spi.metrics.HttpServerMetrics;
+import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -148,6 +150,9 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   }
 
   void handleBegin() {
+    if (METRICS_ENABLED) {
+      reportRequestBegin();
+    }
     response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric);
     if (conn.handle100ContinueAutomatically) {
       check100();
@@ -545,6 +550,9 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   }
 
   private void onEnd() {
+    if (METRICS_ENABLED) {
+      reportRequestComplete();
+    }
     HttpEventHandler handler;
     synchronized (conn) {
       if (decoder != null) {
@@ -555,6 +563,25 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
     // If there have been uploads then we let the last one call the end handler once any fileuploads are complete
     if (handler != null) {
       handler.handleEnd();
+    }
+  }
+
+  private void reportRequestComplete() {
+    HttpServerMetrics metrics = conn.metrics;
+    if (metrics != null) {
+      metrics.requestEnd(metric, this, bytesRead);
+      conn.flushBytesRead();
+    }
+  }
+
+  private void reportRequestBegin() {
+    HttpServerMetrics metrics = conn.metrics;
+    if (metrics != null) {
+      metric = metrics.requestBegin(conn.metric(), this);
+    }
+    VertxTracer tracer = context.tracer();
+    if (tracer != null) {
+      trace = tracer.receiveRequest(context, SpanKind.RPC, conn.tracingPolicy(), this, request.method().name(), request.headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
   }
 
