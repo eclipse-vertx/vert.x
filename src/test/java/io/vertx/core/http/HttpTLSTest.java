@@ -12,7 +12,10 @@
 package io.vertx.core.http;
 
 import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.*;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.TrustAllTrustManager;
@@ -20,20 +23,20 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
-import org.hamcrest.Matcher;
-import org.hamcrest.MatcherAssert;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.*;
-import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.Collections;
