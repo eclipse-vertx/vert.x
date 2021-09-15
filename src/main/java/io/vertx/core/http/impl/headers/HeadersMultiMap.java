@@ -224,16 +224,52 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   }
 
   @Override
+  public boolean containsValue(CharSequence name, CharSequence value, boolean ignoreCase) {
+    return containsInternal(name, value, false, ignoreCase);
+  }
+
+  @Override
   public boolean contains(CharSequence name, CharSequence value, boolean ignoreCase) {
+    return containsInternal(name, value, true, ignoreCase);
+  }
+
+  private boolean containsInternal(CharSequence name, CharSequence value, boolean equals, boolean ignoreCase) {
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
     HeadersMultiMap.MapEntry e = entries[i];
-    HashingStrategy<CharSequence> strategy = ignoreCase ? CASE_INSENSITIVE_HASHER : CASE_SENSITIVE_HASHER;
     while (e != null) {
       CharSequence key = e.key;
       if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
-        if (strategy.equals(value, e.getValue())) {
-          return true;
+        CharSequence other = e.getValue();
+        if (equals) {
+          if ((ignoreCase && AsciiString.contentEqualsIgnoreCase(value, other)) || (!ignoreCase && AsciiString.contentEquals(value, other))) {
+            return true;
+          }
+        } else {
+          int prev = 0;
+          while (true) {
+            final int idx = AsciiString.indexOf(other, ',', prev);
+            int to;
+            if (idx == -1) {
+              to = other.length();
+            } else {
+              to = idx;
+            }
+            while (to > prev && other.charAt(to - 1) == ' ') {
+              to--;
+            }
+            int from = prev;
+            while (from < to && other.charAt(from) == ' ') {
+              from++;
+            }
+            int len = to - from;
+            if (len > 0 && AsciiString.regionMatches(other, ignoreCase, from, value, 0, len)) {
+              return true;
+            } else if (idx == -1) {
+              break;
+            }
+            prev = idx + 1;
+          }
         }
       }
       e = e.next;
