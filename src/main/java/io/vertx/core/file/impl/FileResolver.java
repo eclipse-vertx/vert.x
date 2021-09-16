@@ -14,6 +14,7 @@ package io.vertx.core.file.impl;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.file.FileSystemOptions;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
 
 import java.io.Closeable;
 import java.io.File;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -53,22 +55,42 @@ public class FileResolver {
   private final boolean enableCaching;
   private final boolean closeCache;
   private final FileCache cache;
+  private final ClassLoaderSupplier classLoaderSupplier;
 
   public FileResolver() {
     this(new FileSystemOptions());
   }
 
   public FileResolver(FileSystemOptions fileSystemOptions) {
+    this(fileSystemOptions, null);
+  }
+
+  public FileResolver(FileSystemOptions fileSystemOptions,ClassLoaderSupplier classLoaderSupplier) {
     this(
       fileSystemOptions.isFileCachingEnabled(),
       fileSystemOptions.isClassPathResolvingEnabled() ? FileCache.setupCache(fileSystemOptions.getFileCacheDir()) : null,
-      fileSystemOptions.isClassPathResolvingEnabled());
+      fileSystemOptions.isClassPathResolvingEnabled(), classLoaderSupplier);
   }
 
   public FileResolver(boolean enableCaching, FileCache cache, boolean closeCache) {
+    this(enableCaching, cache, closeCache, null);
+  }
+
+  public FileResolver(boolean enableCaching, FileCache cache, boolean closeCache, ClassLoaderSupplier classLoaderSupplier) {
     this.enableCaching = enableCaching;
     this.cache = cache;
     this.closeCache = closeCache;
+    this.classLoaderSupplier = classLoaderSupplier;
+    if (classLoaderSupplier != null) {
+      classLoaderSupplier.addListener(new Consumer<ClassLoader>() {
+        @Override
+        public void accept(ClassLoader classLoader) {
+          if (cache != null) {
+            cache.clear();
+          }
+        }
+      });
+    }
 
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
@@ -324,6 +346,12 @@ public class FileResolver {
 
 
   private ClassLoader getClassLoader() {
+    if (classLoaderSupplier != null) {
+      ClassLoader classLoader = classLoaderSupplier.get();
+      if (classLoader != null) {
+        return classLoader;
+      }
+    }
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     if (cl == null) {
       cl = getClass().getClassLoader();

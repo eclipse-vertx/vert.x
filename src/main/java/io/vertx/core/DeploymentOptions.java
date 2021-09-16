@@ -19,7 +19,7 @@ import io.vertx.core.json.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
 
 /**
  * Options for configuring a verticle deployment.
@@ -47,7 +47,7 @@ public class DeploymentOptions {
   private List<String> isolatedClasses;
   private TimeUnit maxWorkerExecuteTimeUnit;
   private ClassLoader classLoader;
-  private Supplier<ClassLoader> classLoaderSupplier;
+  private ClassLoaderSupplier classLoaderSupplier;
 
   /**
    * Default constructor
@@ -392,7 +392,7 @@ public class DeploymentOptions {
   /**
    * @return the classloader supplier used for deploying the Verticle
    */
-  public Supplier<ClassLoader> getClassLoaderSupplier() {
+  public ClassLoaderSupplier getClassLoaderSupplier() {
     return classLoaderSupplier;
   }
 
@@ -405,7 +405,7 @@ public class DeploymentOptions {
    * @param classLoaderSupplier the loader to use
    * @return a reference to this, so the API can be used fluently
    */
-  public DeploymentOptions setClassLoaderSupplier(Supplier<ClassLoader> classLoaderSupplier) {
+  public DeploymentOptions setClassLoaderSupplier(ClassLoaderSupplier classLoaderSupplier) {
     this.classLoaderSupplier = classLoaderSupplier;
     return this;
   }

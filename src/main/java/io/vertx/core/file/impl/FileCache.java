@@ -176,4 +176,16 @@ class FileCache {
     File file = new File(cacheDir, fileName);
     file.mkdirs();
   }
+
+  public void clear() {
+    if (cacheDir != null) {
+      for (File i : cacheDir.listFiles()) {
+        try {
+          FileSystemImpl.delete(i.toPath(), true);
+        } catch (IOException e) {
+          throw new IllegalStateException("Failed to clear cache dir: " + cacheDir, e);
+        }
+      }
+    }
+  }
 }

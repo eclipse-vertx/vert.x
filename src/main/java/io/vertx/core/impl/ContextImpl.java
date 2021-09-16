@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.function.Supplier;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -60,7 +60,7 @@ abstract class ContextImpl extends AbstractContext {
   protected final JsonObject config;
   private final Deployment deployment;
   private final CloseFuture closeFuture;
-  private final Supplier<ClassLoader> tccl;
+  private final ClassLoaderSupplier tccl;
   private final EventLoop eventLoop;
   private ConcurrentMap<Object, Object> data;
   private ConcurrentMap<Object, Object> localData;
@@ -76,7 +76,7 @@ abstract class ContextImpl extends AbstractContext {
               WorkerPool workerPool,
               Deployment deployment,
               CloseFuture closeFuture,
-              Supplier<ClassLoader> tcclSupplier,
+              ClassLoaderSupplier tcclSupplier,
               boolean disableTCCL) {
     super(disableTCCL);
     this.deployment = deployment;

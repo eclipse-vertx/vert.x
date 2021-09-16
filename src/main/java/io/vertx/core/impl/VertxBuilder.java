@@ -15,7 +15,6 @@ import io.vertx.core.*;
 import io.vertx.core.file.impl.FileResolver;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.impl.utils.ConstantSupplier;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
 import io.vertx.core.net.impl.transport.Transport;
@@ -24,6 +23,7 @@ import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxServiceProvider;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
@@ -33,7 +33,6 @@ import io.vertx.core.tracing.TracingOptions;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.function.Supplier;
 
 /**
  * Vertx builder for creating vertx instances with SPI overrides.
@@ -54,7 +53,7 @@ public class VertxBuilder {
   private ExecutorServiceFactory executorServiceFactory;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
-  private Supplier<ClassLoader> defaultClassLoaderSupplier;
+  private ClassLoaderSupplier defaultClassLoaderSupplier;
 
   public VertxBuilder(JsonObject config) {
     this(new VertxOptions(config));
@@ -203,21 +202,21 @@ public class VertxBuilder {
   }
 
   /**
-   * @return the {@code Supplier<ClassLoader>} to use
+   * @return the {@code ClassLoaderSupplier} to use
    */
-  public Supplier<ClassLoader> defaultClassLoaderSupplier() {
+  public ClassLoaderSupplier defaultClassLoaderSupplier() {
     return defaultClassLoaderSupplier;
   }
 
   /**
-   * Set the {@code Supplier<ClassLoader>} instance to use. This supplier will be consulted before every operation
+   * Set the {@code ClassLoaderSupplier} instance to use. This supplier will be consulted before every operation
    * to determine the correct {@link ClassLoader} to use, unless a {@code ClassLoader} has been specified by another
    * means.
    *
    * @param defaultClassLoaderSupplier the supplier
    * @return this builder instance
    */
-  public VertxBuilder defaultClassLoaderSupplier(Supplier<ClassLoader> defaultClassLoaderSupplier) {
+  public VertxBuilder defaultClassLoaderSupplier(ClassLoaderSupplier defaultClassLoaderSupplier) {
     this.defaultClassLoaderSupplier = defaultClassLoaderSupplier;
     return this;
   }
@@ -230,7 +229,7 @@ public class VertxBuilder {
    * @return this builder instance
    */
   public VertxBuilder defaultClassLoader(ClassLoader defaultClassLoader) {
-    this.defaultClassLoaderSupplier = new ConstantSupplier<>(defaultClassLoader);
+    this.defaultClassLoaderSupplier = new ClassLoaderSupplier(defaultClassLoader);
     return this;
   }
 
@@ -348,7 +347,7 @@ public class VertxBuilder {
     if (fileResolver != null) {
       return;
     }
-    fileResolver = new FileResolver(options.getFileSystemOptions());
+    fileResolver = new FileResolver(options.getFileSystemOptions(), defaultClassLoaderSupplier);
   }
 
   private void initThreadFactory() {

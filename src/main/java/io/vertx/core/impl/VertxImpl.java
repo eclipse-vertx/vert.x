@@ -44,7 +44,6 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
-import io.vertx.core.impl.utils.ConstantSupplier;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetServer;
@@ -59,6 +58,7 @@ import io.vertx.core.shareddata.impl.SharedDataImpl;
 import io.vertx.core.spi.ExecutorServiceFactory;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxThreadFactory;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.metrics.Metrics;
@@ -135,11 +135,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final VertxTracer tracer;
   private final ThreadLocal<WeakReference<AbstractContext>> stickyContext = new ThreadLocal<>();
   private final boolean disableTCCL;
-  private final Supplier<ClassLoader> defaultClassLoaderSupplier;
+  private final ClassLoaderSupplier defaultClassLoaderSupplier;
 
   VertxImpl(VertxOptions options, ClusterManager clusterManager, NodeSelector nodeSelector, VertxMetrics metrics,
             VertxTracer<?, ?> tracer, Transport transport, FileResolver fileResolver, VertxThreadFactory threadFactory,
-            ExecutorServiceFactory executorServiceFactory, Supplier<ClassLoader> defaultClassLoaderSupplier) {
+            ExecutorServiceFactory executorServiceFactory, ClassLoaderSupplier defaultClassLoaderSupplier) {
     this.defaultClassLoaderSupplier = defaultClassLoaderSupplier;
     // Sanity check
     if (Vertx.currentContext() != null) {
@@ -478,28 +478,28 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, Supplier<ClassLoader> tccl) {
+  public EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoaderSupplier tccl) {
     return new EventLoopContext(this, eventLoopGroup.next(), internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl != null ? tccl : defaultClassLoaderSupplier, disableTCCL);
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, Supplier<ClassLoader> tccl) {
+  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoaderSupplier tccl) {
     return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, tccl != null ? tccl : defaultClassLoaderSupplier, disableTCCL);
   }
 
   @Override
   public EventLoopContext createEventLoopContext() {
-    return createEventLoopContext(null, closeFuture, null, defaultClassLoaderSupplier != null ? defaultClassLoaderSupplier : new ConstantSupplier<>(Thread.currentThread().getContextClassLoader()));
+    return createEventLoopContext(null, closeFuture, null, defaultClassLoaderSupplier != null ? defaultClassLoaderSupplier : new ClassLoaderSupplier(Thread.currentThread().getContextClassLoader()));
   }
 
   @Override
-  public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, Supplier<ClassLoader> tccl) {
+  public WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoaderSupplier tccl) {
     return new WorkerContext(this, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, deployment, closeFuture, tccl != null ? tccl : defaultClassLoaderSupplier, disableTCCL);
   }
 
   @Override
   public WorkerContext createWorkerContext() {
-    return createWorkerContext(null, closeFuture, null, defaultClassLoaderSupplier != null ? defaultClassLoaderSupplier : new ConstantSupplier<>(Thread.currentThread().getContextClassLoader()));
+    return createWorkerContext(null, closeFuture, null, defaultClassLoaderSupplier != null ? defaultClassLoaderSupplier : new ClassLoaderSupplier(Thread.currentThread().getContextClassLoader()));
   }
 
   @Override

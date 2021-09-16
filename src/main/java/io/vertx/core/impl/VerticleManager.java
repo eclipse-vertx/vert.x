@@ -15,7 +15,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.ServiceHelper;
 import io.vertx.core.Verticle;
-import io.vertx.core.impl.utils.ConstantSupplier;
 import io.vertx.core.spi.VerticleFactory;
 
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -149,7 +148,7 @@ public class VerticleManager {
     ContextInternal callingContext = vertx.getOrCreateContext();
     ClassLoaderHolder holder;
 
-    Supplier<ClassLoader> supplier = options.getClassLoaderSupplier();
+    ClassLoaderSupplier supplier = options.getClassLoaderSupplier();
     if (supplier == null) {
       ClassLoader cl = options.getClassLoader();
       if (cl == null) {
@@ -159,7 +158,7 @@ public class VerticleManager {
         holder = null;
       }
       if (cl != null) {
-        supplier = new ConstantSupplier<>(cl);
+        supplier = new ClassLoaderSupplier(cl);
       }
     } else {
       holder = null;
@@ -185,7 +184,7 @@ public class VerticleManager {
                                           DeploymentOptions options,
                                           ContextInternal parentContext,
                                           ContextInternal callingContext,
-                                          Supplier<ClassLoader> cl) {
+                                          ClassLoaderSupplier cl) {
     List<VerticleFactory> verticleFactories = resolveFactories(identifier);
     Iterator<VerticleFactory> iter = verticleFactories.iterator();
     return doDeployVerticle(iter, null, identifier, options, parentContext, callingContext, cl);
@@ -198,7 +197,7 @@ public class VerticleManager {
                                               DeploymentOptions options,
                                               ContextInternal parentContext,
                                               ContextInternal callingContext,
-                                              Supplier<ClassLoader> cl) {
+                                              ClassLoaderSupplier cl) {
     if (iter.hasNext()) {
       VerticleFactory verticleFactory = iter.next();
       return doDeployVerticle(verticleFactory, identifier, options, parentContext, callingContext, cl)
@@ -222,7 +221,7 @@ public class VerticleManager {
                                               DeploymentOptions options,
                                               ContextInternal parentContext,
                                               ContextInternal callingContext,
-                                              Supplier<ClassLoader> cl) {
+                                              ClassLoaderSupplier cl) {
     Promise<Callable<Verticle>> p = callingContext.promise();
     try {
       verticleFactory.createVerticle(identifier, cl.get(), p);
