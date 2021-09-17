@@ -56,7 +56,7 @@ class FileCache {
         Files.createDirectories(cacheDir.toPath(), PosixFilePermissions.asFileAttribute(perms));
       }
     } catch (IOException e) {
-      throw new IllegalStateException("Failed to create cache dir: " + cacheDirName, e);
+      throw new IllegalStateException(FileSystemImpl.getFolderAccessErrorMessage("create", fileCacheDir), e);
     }
     return cacheDir;
   }
