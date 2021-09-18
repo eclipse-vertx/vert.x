@@ -11,10 +11,7 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -28,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -46,7 +44,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
           .setClusterNodeMetadata(new JsonObject().put("rack", i % 2 == 0 ? "foo" : "bar"));
         return vertxOptions;
       })
-      .map(options -> {
+      .map((Function<? super VertxOptions, Future<?>>) options -> {
         VertxBuilder factory = new VertxBuilder(options).init().clusterNodeSelector(new CustomNodeSelector());
         Promise promise = Promise.promise();
         factory.clusteredVertx(promise);
@@ -66,7 +64,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
         received.merge(i, Collections.singleton(msg.body()), (s1, s2) -> Stream.concat(s1.stream(), s2.stream()).collect(toSet()));
         latch.countDown();
       }))
-      .map(consumer -> {
+      .map((Function<? super MessageConsumer<String>, Future<?>>)  consumer -> {
         Promise promise = Promise.promise();
         consumer.completionHandler(promise);
         return promise.future();
@@ -122,7 +120,7 @@ public class CustomNodeSelectorTest extends VertxTestBase {
     public void selectForPublish(Message<?> message, Promise<Iterable<String>> promise) {
       List<String> nodes = clusterManager.getNodes();
       CompositeFuture future = nodes.stream()
-        .map(nodeId -> {
+        .map((Function<String, Future<?>>) nodeId -> {
           Promise nodeInfo = Promise.promise();
           clusterManager.getNodeInfo(nodeId, nodeInfo);
           return nodeInfo.future();

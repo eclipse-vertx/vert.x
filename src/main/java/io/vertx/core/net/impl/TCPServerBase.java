@@ -247,7 +247,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
    * Internal method that closes all servers when Vert.x is closing
    */
   public void closeAll(Handler<AsyncResult<Void>> handler) {
-    List<Future> futures = new ArrayList<>(actualServer.servers)
+    List<Future<?>> futures = new ArrayList<>(actualServer.servers)
       .stream()
       .map(TCPServerBase::close)
       .collect(Collectors.toList());
