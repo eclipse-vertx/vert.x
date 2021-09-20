@@ -136,8 +136,9 @@ public class FileResolver {
         //Cache all elements in the parent directory if it exists
         //this is so that listing the directory after an individual file has
         //been read works.
-        String parentFileName = file.getParent();
-        if (parentFileName != null) {
+        File parentFile = file.getParentFile();
+        while (parentFile != null) {
+          String parentFileName = parentFile.getPath();
           if (NON_UNIX_FILE_SEP) {
             parentFileName = parentFileName.replace(File.separatorChar, '/');
           }
@@ -145,6 +146,10 @@ public class FileResolver {
           if (directoryContents != null) {
             unpackUrlResource(directoryContents, parentFileName, cl, true);
           }
+          // https://github.com/eclipse-vertx/vert.x/issues/3654
+          // go up one level until we reach the top, this way we ensure we extract the whole tree
+          // not just a branch so directory listing will be correct
+          parentFile = parentFile.getParentFile();
         }
 
         if (NON_UNIX_FILE_SEP) {

@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -420,5 +421,19 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     assertTrue(somefile.exists());
     assertTrue(somefile.getPath().startsWith(cacheBaseDir + "-"));
     assertTrue(somefile.isDirectory());
+  }
+
+  @Test
+  public void testReadFileInDirThenReadDirMultipleLevels() {
+    Buffer buff = vertx.fileSystem().readFileBlocking("tree/a/b/c.txt");
+    assertNotNull(buff);
+    Function<List<String>, Set<String>> fx = l -> l.stream().map(path -> {
+      int idx = path.lastIndexOf(File.separator);
+      return idx == -1 ? path : path.substring(idx + 1);
+    }).collect(Collectors.toSet());
+    Set<String> names = fx.apply(vertx.fileSystem().readDirBlocking("tree/a/b"));
+    assertEquals(new HashSet<>(Arrays.asList("c.txt")), names);
+    names = fx.apply(vertx.fileSystem().readDirBlocking("tree/a"));
+    assertEquals(new HashSet<>(Arrays.asList("b", "b.txt")), names);
   }
 }
