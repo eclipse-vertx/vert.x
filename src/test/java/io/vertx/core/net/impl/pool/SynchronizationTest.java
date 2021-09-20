@@ -18,6 +18,7 @@ import java.lang.management.ThreadMXBean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class SynchronizationTest extends AsyncTestBase {
 
@@ -47,42 +48,18 @@ public class SynchronizationTest extends AsyncTestBase {
         sync.submit(state2 -> {
           isReentrant1.set(inCallback.get());
           latch.countDown();
-          return () -> {
-            isReentrant2.set(inCallback.get());
-            latch.countDown();
+          return new Task() {
+            @Override
+            public void run() {
+              isReentrant2.set(inCallback.get());
+              latch.countDown();
+            }
           };
         });
       } finally {
         inCallback.set(false);
       }
       return null;
-    });
-    awaitLatch(latch);
-    assertFalse(isReentrant1.get());
-    assertFalse(isReentrant2.get());
-  }
-
-  @Test
-  public void testPostTaskReentrancy() throws Exception {
-    AtomicBoolean isReentrant1 = new AtomicBoolean();
-    AtomicBoolean isReentrant2 = new AtomicBoolean();
-    Executor<Object> sync = new CombinerExecutor<>(new Object());
-    CountDownLatch latch = new CountDownLatch(1);
-    sync.submit(state1 -> () -> {
-      AtomicBoolean inCallback = new AtomicBoolean();
-      inCallback.set(true);
-      try {
-        sync.submit(state2 -> {
-          isReentrant1.set(inCallback.get());
-          latch.countDown();
-          return () -> {
-            isReentrant2.set(inCallback.get());
-            latch.countDown();
-          };
-        });
-      } finally {
-        inCallback.set(false);
-      }
     });
     awaitLatch(latch);
     assertFalse(isReentrant1.get());
@@ -165,5 +142,32 @@ public class SynchronizationTest extends AsyncTestBase {
       // estimate the number of iterations for 1 milli
       return Math.round(Math.ceil((ONE_MILLI_IN_NANO*1.0/timing)*iters[i]));
     }
+  }
+
+  @Test
+  public void testOrdering() throws Exception {
+    Executor<Object> sync = new CombinerExecutor<>(new Object());
+    AtomicInteger order = new AtomicInteger();
+    sync.submit(s -> {
+      sync.submit(s_ -> new Task() {
+        @Override
+        public void run() {
+          order.compareAndSet(1, 2);
+        }
+      });
+      sync.submit(s_ -> new Task() {
+        @Override
+        public void run() {
+          order.compareAndSet(2, 3);
+        }
+      });
+      return new Task() {
+        @Override
+        public void run() {
+          order.compareAndSet(0, 1);
+        }
+      };
+    });
+    assertEquals(3, order.get());
   }
 }
