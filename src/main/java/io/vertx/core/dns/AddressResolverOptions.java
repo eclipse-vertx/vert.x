@@ -39,12 +39,12 @@ public class AddressResolverOptions {
   public static final boolean DEFAULT_OPT_RESOURCE_ENABLED = false;
 
   /**
-   * The default value for the negative cache min TTL = 0
+   * The default value for the cache min TTL = 0
    */
   public static final int DEFAULT_CACHE_MIN_TIME_TO_LIVE = 0;
 
   /**
-   * The default value for the negative cache max TTL = 0x7fffffff
+   * The default value for the cache max TTL = 0x7fffffff
    */
   public static final int DEFAULT_CACHE_MAX_TIME_TO_LIVE = Integer.MAX_VALUE;
 
