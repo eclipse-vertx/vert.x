@@ -13,6 +13,7 @@ package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 
 import java.util.*;
@@ -38,13 +39,13 @@ public class ConnectionManager<K, C> {
     endpointMap.values().forEach(consumer);
   }
 
-  public void getConnection(EventLoopContext ctx,
+  public void getConnection(ContextInternal ctx,
                             K key,
                             Handler<AsyncResult<C>> handler) {
     getConnection(ctx, key, 0, handler);
   }
 
-  public void getConnection(EventLoopContext ctx,
+  public void getConnection(ContextInternal ctx,
                             K key,
                             long timeout,
                             Handler<AsyncResult<C>> handler) {
