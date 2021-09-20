@@ -27,6 +27,7 @@ import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -45,11 +46,19 @@ import java.util.stream.Collectors;
  */
 public abstract class FileResolverTestBase extends VertxTestBase {
 
-  private final String cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getAbsolutePath();
+  private final String cacheBaseDir;
 
   protected FileResolver resolver;
 
   private ClassLoader testCL;
+
+  public FileResolverTestBase() {
+    try {
+      cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getCanonicalPath();
+    } catch (IOException e) {
+      throw new IllegalStateException("Cannot resolve the canonical path to the cache dir", e);
+    }
+  }
 
   @Override
   public void setUp() throws Exception {
