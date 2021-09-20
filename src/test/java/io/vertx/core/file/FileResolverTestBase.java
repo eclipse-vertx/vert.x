@@ -21,7 +21,6 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -245,7 +244,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testCacheDirDeletedOnVertxClose() {
-    VertxInternal vertx2 = (VertxInternal)vertx();
+    VertxInternal vertx2 = (VertxInternal) vertx();
     File file = vertx2.resolveFile("webroot/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
@@ -307,7 +306,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     CountDownLatch start = new CountDownLatch(1);
     List<Exception> errors = new ArrayList<>();
     for (int i = 0; i < count; i++) {
-        Runnable runnable = () -> {
+      Runnable runnable = () -> {
         try {
           start.await();
           File file = resolver.resolveFile("temp");
@@ -389,5 +388,28 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     } catch (IllegalStateException e) {
       // OK
     }
+  }
+
+  @Test
+  public void testResolveRelativeFileInDirectoryFromClasspath() {
+    File somefile = resolver.resolveFile("a/a.txt");
+    assertTrue(somefile.exists());
+    assertTrue(somefile.getPath().startsWith(cacheBaseDir + "-"));
+    assertFalse(somefile.isDirectory());
+    // resolve a relative file
+    File someotherfile = new File(new File(somefile.getParentFile().getParentFile(), "b"), "b.txt");
+    assertFalse(someotherfile.exists()); // is hasn't been extracted yet
+    someotherfile = resolver.resolveFile(someotherfile.getAbsolutePath());
+    assertTrue(someotherfile.exists()); // is should be rebased and extracted now
+    assertTrue(someotherfile.getPath().startsWith(cacheBaseDir + "-"));
+    assertFalse(someotherfile.isDirectory());
+  }
+
+  @Test
+  public void testResolveCacheDir() {
+    File somefile = resolver.resolveFile("");
+    assertTrue(somefile.exists());
+    assertTrue(somefile.getPath().startsWith(cacheBaseDir + "-"));
+    assertTrue(somefile.isDirectory());
   }
 }

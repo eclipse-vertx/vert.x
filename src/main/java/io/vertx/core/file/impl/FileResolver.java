@@ -29,12 +29,12 @@ import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
 /**
  * Sometimes the file resources of an application are bundled into jars, or are somewhere on the classpath but not
  * available on the file system, e.g. in the case of a Vert.x webapp bundled as a fat jar.
- *
+ * <p>
  * In this case we want the application to access the resource from the classpath as if it was on the file system.
- *
+ * <p>
  * We can do this by looking for the file on the classpath, and if found, copying it to a temporary cache directory
  * on disk and serving it from there.
- *
+ * <p>
  * There is one cache dir per Vert.x instance and they are deleted on Vert.x shutdown.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -46,8 +46,7 @@ public class FileResolver {
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
   public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
 
-  private static final String FILE_SEP = System.getProperty("file.separator");
-  private static final boolean NON_UNIX_FILE_SEP = !FILE_SEP.equals("/");
+  private static final boolean NON_UNIX_FILE_SEP = File.separatorChar != '/';
 
   private final File cwd;
   private final boolean enableCaching;
@@ -90,20 +89,45 @@ public class FileResolver {
   public File resolveFile(String fileName) {
     // First look for file with that name on disk
     File file = new File(fileName);
-    if (cwd != null && !file.isAbsolute()) {
-      file = new File(cwd, fileName);
+    File resolved;
+    boolean absolute = file.isAbsolute();
+
+    if (cwd != null && !absolute) {
+      resolved = new File(cwd, fileName);
+    } else {
+      resolved = file;
     }
     if (this.cache == null) {
-      return file;
+      return resolved;
     }
     // We need to synchronized here to avoid 2 different threads to copy the file to the cache directory and so
     // corrupting the content.
-    synchronized (cache) {
-      if (!file.exists()) {
+    if (!resolved.exists()) {
+      synchronized (cache) {
         // Look for it in local file cache
-        File cacheFile = cache.getFile(fileName);
-        if (this.enableCaching && cacheFile.exists()) {
-          return cacheFile;
+        if (this.enableCaching) {
+          // When an absolute file is here, if it falls under the cache directory, then it should be made relative as it
+          // could mean that a previous resolution has been used to resolve a non local file system resource
+          File cacheFile = cache.getCanonicalFile(file);
+          // the file may or may not be in the cache dir after canonicalization
+          if (cacheFile == null) {
+            // the given file cannot be resolved to the real FS
+            return file;
+          }
+          // compute the difference of the path
+          String relativize = cache.relativize(cacheFile.getPath());
+          if (relativize != null) {
+            // file is inside the cache dir, we can continue with the search
+            if (cacheFile.exists()) {
+              return cacheFile;
+            }
+            // as it wasn't found, maybe it hasn't been extracted yet
+            // adjust the name and absolute references if needed
+            if (absolute) {
+              fileName = relativize;
+              file = new File(relativize);
+            }
+          }
         }
         // Look for file on classpath
         ClassLoader cl = getClassLoader();
@@ -115,7 +139,7 @@ public class FileResolver {
         String parentFileName = file.getParent();
         if (parentFileName != null) {
           if (NON_UNIX_FILE_SEP) {
-            parentFileName = parentFileName.replace(FILE_SEP, "/");
+            parentFileName = parentFileName.replace(File.separatorChar, '/');
           }
           URL directoryContents = getValidClassLoaderResource(cl, parentFileName);
           if (directoryContents != null) {
@@ -124,7 +148,7 @@ public class FileResolver {
         }
 
         if (NON_UNIX_FILE_SEP) {
-          fileName = fileName.replace(FILE_SEP, "/");
+          fileName = fileName.replace(File.separatorChar, '/');
         }
         URL url = getValidClassLoaderResource(cl, fileName);
         if (url != null) {
@@ -156,7 +180,7 @@ public class FileResolver {
   private static boolean isValidCachePath(String fileName) {
     if (PlatformDependent.isWindows()) {
       int len = fileName.length();
-      for (int i = 0;i < len;i++) {
+      for (int i = 0; i < len; i++) {
         char c = fileName.charAt(i);
         if (!isValidWindowsCachePath(c)) {
           return false;
@@ -174,7 +198,7 @@ public class FileResolver {
 
   /**
    * Get a class loader resource that can unpack to a valid cache path.
-   *
+   * <p>
    * Some valid entries are avoided purposely when we cannot create the corresponding file in the file cache.
    */
   private static URL getValidClassLoaderResource(ClassLoader cl, String fileName) {
@@ -209,14 +233,14 @@ public class FileResolver {
     boolean isDirectory = resource.isDirectory();
     File cacheFile;
     try {
-      cacheFile = cache.cache(fileName, resource, !enableCaching);
+      cacheFile = cache.cacheFile(fileName, resource, !enableCaching);
     } catch (IOException e) {
       throw new VertxException(FileSystemImpl.getFileAccessErrorMessage("unpack", url.toString()), e);
     }
     if (isDirectory) {
       String[] listing = resource.list();
       if (listing != null) {
-        for (String file: listing) {
+        for (String file : listing) {
           String subResource = fileName + "/" + file;
           URL url2 = getValidClassLoaderResource(cl, subResource);
           if (url2 == null) {
@@ -289,7 +313,7 @@ public class FileResolver {
    * It is possible to determine if a resource from a bundle is a directory based on whether or not the ClassLoader
    * returns null for a path (which does not already contain a trailing '/') *and* that path with an added trailing '/'
    *
-   * @param url      the url
+   * @param url the url
    * @return if the bundle resource represented by the bundle URL is a directory
    */
   private boolean isBundleUrlDirectory(URL url) {
@@ -302,13 +326,13 @@ public class FileResolver {
    * is not much we can do to get the file from it, except reading it from the url. This method copies the files by
    * reading it from the url.
    *
-   * @param url      the url
+   * @param url the url
    * @return the extracted file
    */
   private File unpackFromBundleURL(URL url, boolean isDir) {
     String file = url.getHost() + File.separator + url.getFile();
     try {
-      if ((getClassLoader() != null && isBundleUrlDirectory(url))  || isDir) {
+      if ((getClassLoader() != null && isBundleUrlDirectory(url)) || isDir) {
         // Directory
         cache.cacheDir(file);
       } else {
