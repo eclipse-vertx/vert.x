@@ -52,6 +52,7 @@ public class FileResolver {
   private final boolean enableCaching;
   private final boolean closeCache;
   private final FileCache cache;
+  private final BloomFilter filter;
 
   public FileResolver() {
     this(new FileSystemOptions());
@@ -64,9 +65,17 @@ public class FileResolver {
       fileSystemOptions.isClassPathResolvingEnabled());
   }
 
-  public FileResolver(boolean enableCaching, FileCache cache, boolean closeCache) {
+  private FileResolver(boolean enableCaching, FileCache cache, boolean closeCache) {
     this.enableCaching = enableCaching;
     this.cache = cache;
+    if (cache != null) {
+      // jar files are zip files. Zip allows a max of 64k files, so we create a filter
+      // that can accommodate 64k wrong resolutions.
+      int maxEntries = Integer.getInteger("vertx.fileBloomFilterMaxEntries", 64 * 1024);
+      this.filter = new BloomFilter(maxEntries, maxEntries * 8);
+    } else {
+      this.filter = null;
+    }
     this.closeCache = closeCache;
 
     String cwdOverride = System.getProperty("vertx.cwd");
@@ -82,7 +91,10 @@ public class FileResolver {
    */
   public void close() throws IOException {
     if (closeCache) {
-      cache.close();
+      synchronized (cache) {
+        cache.close();
+        filter.clear();
+      }
     }
   }
 
@@ -104,60 +116,70 @@ public class FileResolver {
     // corrupting the content.
     if (!resolved.exists()) {
       synchronized (cache) {
-        // Look for it in local file cache
-        if (this.enableCaching) {
-          // When an absolute file is here, if it falls under the cache directory, then it should be made relative as it
-          // could mean that a previous resolution has been used to resolve a non local file system resource
-          File cacheFile = cache.getCanonicalFile(file);
-          // the file may or may not be in the cache dir after canonicalization
-          if (cacheFile == null) {
-            // the given file cannot be resolved to the real FS
+        // When an absolute file is here, if it falls under the cache directory, then it should be made relative as it
+        // could mean that a previous resolution has been used to resolve a non local file system resource
+        File cacheFile = cache.getCanonicalFile(file);
+        // the file may or may not be in the cache dir after canonicalization
+        if (cacheFile == null) {
+          // the given file cannot be resolved to the real FS
+          return file;
+        }
+        // compute the difference of the path
+        String relativize = cache.relativize(cacheFile.getPath());
+        if (relativize != null) {
+          // file is inside the cache dir, we can continue with the search
+          if (this.enableCaching && cacheFile.exists()) {
+            return cacheFile;
+          }
+          // as it wasn't found, maybe it hasn't been extracted yet
+          // adjust the name and absolute references if needed
+          if (absolute) {
+            fileName = relativize;
+            file = new File(relativize);
+            absolute = false;
+          }
+        }
+        // https://vertx.io/docs/vertx-core/java/#classpath
+        // if a resource is still absolute, it means it's outside the cache, we don't need to handle it.
+        // otherwise, we need to go over the classpath resources
+        if (!absolute) {
+          // the resource has been seen, there's no need to resolve again
+          if (filter.contains(fileName)) {
             return file;
           }
-          // compute the difference of the path
-          String relativize = cache.relativize(cacheFile.getPath());
-          if (relativize != null) {
-            // file is inside the cache dir, we can continue with the search
-            if (cacheFile.exists()) {
-              return cacheFile;
-            }
-            // as it wasn't found, maybe it hasn't been extracted yet
-            // adjust the name and absolute references if needed
-            if (absolute) {
-              fileName = relativize;
-              file = new File(relativize);
-            }
-          }
-        }
-        // Look for file on classpath
-        ClassLoader cl = getClassLoader();
 
-        //https://github.com/eclipse/vert.x/issues/2126
-        //Cache all elements in the parent directory if it exists
-        //this is so that listing the directory after an individual file has
-        //been read works.
-        File parentFile = file.getParentFile();
-        while (parentFile != null) {
-          String parentFileName = parentFile.getPath();
+          // Look for file on classpath
+          ClassLoader cl = getClassLoader();
+
+          //https://github.com/eclipse/vert.x/issues/2126
+          //Cache all elements in the parent directory if it exists
+          //this is so that listing the directory after an individual file has
+          //been read works.
+          File parentFile = file.getParentFile();
+          while (parentFile != null) {
+            String parentFileName = parentFile.getPath();
+            if (NON_UNIX_FILE_SEP) {
+              parentFileName = parentFileName.replace(File.separatorChar, '/');
+            }
+            URL directoryContents = getValidClassLoaderResource(cl, parentFileName);
+            if (directoryContents != null) {
+              unpackUrlResource(directoryContents, parentFileName, cl, true);
+            }
+            // https://github.com/eclipse-vertx/vert.x/issues/3654
+            // go up one level until we reach the top, this way we ensure we extract the whole tree
+            // not just a branch so directory listing will be correct
+            parentFile = parentFile.getParentFile();
+          }
+
           if (NON_UNIX_FILE_SEP) {
-            parentFileName = parentFileName.replace(File.separatorChar, '/');
+            fileName = fileName.replace(File.separatorChar, '/');
           }
-          URL directoryContents = getValidClassLoaderResource(cl, parentFileName);
-          if (directoryContents != null) {
-            unpackUrlResource(directoryContents, parentFileName, cl, true);
+          URL url = getValidClassLoaderResource(cl, fileName);
+          if (url != null) {
+            return unpackUrlResource(url, fileName, cl, false);
           }
-          // https://github.com/eclipse-vertx/vert.x/issues/3654
-          // go up one level until we reach the top, this way we ensure we extract the whole tree
-          // not just a branch so directory listing will be correct
-          parentFile = parentFile.getParentFile();
-        }
-
-        if (NON_UNIX_FILE_SEP) {
-          fileName = fileName.replace(File.separatorChar, '/');
-        }
-        URL url = getValidClassLoaderResource(cl, fileName);
-        if (url != null) {
-          return unpackUrlResource(url, fileName, cl, false);
+          // add this filename to the filter this will avoid future resolutions on misses.
+          filter.add(fileName);
         }
       }
     }

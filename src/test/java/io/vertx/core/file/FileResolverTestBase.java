@@ -436,4 +436,27 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     names = fx.apply(vertx.fileSystem().readDirBlocking("tree/a"));
     assertEquals(new HashSet<>(Arrays.asList("b", "b.txt")), names);
   }
+
+  @Test
+  public void testReadFileInDirThenReadDirMultipleLevelsMissingResource() {
+    Buffer buff = vertx.fileSystem().readFileBlocking("tree/a/b/c.txt");
+    assertNotNull(buff);
+    Function<List<String>, Set<String>> fx = l -> l.stream().map(path -> {
+      int idx = path.lastIndexOf(File.separator);
+      return idx == -1 ? path : path.substring(idx + 1);
+    }).collect(Collectors.toSet());
+    // "tree/a/d" doesn't exist
+    try {
+      vertx.fileSystem().readDirBlocking("tree/a/d");
+      fail("should fail as it doesn't exist");
+    } catch (RuntimeException e) {
+      // OK
+    }
+    try {
+      vertx.fileSystem().readDirBlocking("tree/a/d");
+      fail("should fail as it doesn't exist");
+    } catch (RuntimeException e) {
+      // OK
+    }
+  }
 }
