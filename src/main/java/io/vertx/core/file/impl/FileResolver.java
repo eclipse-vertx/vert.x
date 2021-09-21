@@ -52,7 +52,6 @@ public class FileResolver {
   private final boolean enableCaching;
   private final boolean closeCache;
   private final FileCache cache;
-  private final BloomFilter filter;
 
   public FileResolver() {
     this(new FileSystemOptions());
@@ -68,14 +67,6 @@ public class FileResolver {
   private FileResolver(boolean enableCaching, FileCache cache, boolean closeCache) {
     this.enableCaching = enableCaching;
     this.cache = cache;
-    if (cache != null) {
-      // jar files are zip files. Zip allows a max of 64k files, so we create a filter
-      // that can accommodate 64k wrong resolutions.
-      int maxEntries = Integer.getInteger("vertx.fileBloomFilterMaxEntries", 64 * 1024);
-      this.filter = new BloomFilter(maxEntries, maxEntries * 8);
-    } else {
-      this.filter = null;
-    }
     this.closeCache = closeCache;
 
     String cwdOverride = System.getProperty("vertx.cwd");
@@ -93,7 +84,6 @@ public class FileResolver {
     if (closeCache) {
       synchronized (cache) {
         cache.close();
-        filter.clear();
       }
     }
   }
@@ -144,7 +134,8 @@ public class FileResolver {
         // otherwise, we need to go over the classpath resources
         if (!absolute) {
           // the resource has been seen, there's no need to resolve again
-          if (filter.contains(fileName)) {
+          // this is only valid when the cache is read only
+          if (this.enableCaching && cache.isMissingResource(fileName)) {
             return file;
           }
 
@@ -178,8 +169,8 @@ public class FileResolver {
           if (url != null) {
             return unpackUrlResource(url, fileName, cl, false);
           }
-          // add this filename to the filter this will avoid future resolutions on misses.
-          filter.add(fileName);
+          // add this filename to the filter. This will avoid future resolutions on misses.
+          cache.addMissingResource(fileName);
         }
       }
     }

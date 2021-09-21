@@ -64,10 +64,15 @@ class FileCache {
 
   private Thread shutdownHook;
   private File cacheDir;
+  private BloomFilter missingResources;
 
   public FileCache(File cacheDir) {
     try {
       this.cacheDir = cacheDir.getCanonicalFile();
+      // jar files are zip files. Zip allows a max of 64k files, so we create a filter
+      // that can accommodate 64k wrong resolutions.
+      int maxEntries = Integer.getInteger("vertx.fileBloomFilterMaxEntries", 64 * 1024);
+      this.missingResources = new BloomFilter(maxEntries, maxEntries * 8);
     } catch (IOException e) {
       throw new VertxException("Cannot get canonical name of cacheDir", e);
     }
@@ -107,6 +112,9 @@ class FileCache {
       hook = shutdownHook;
       // disable the shutdown hook thread
       shutdownHook = null;
+      // clean the missing resources filter
+      missingResources.clear();
+      missingResources = null;
     }
     if (hook != null) {
       // May throw IllegalStateException if called from other shutdown hook so ignore that
@@ -253,5 +261,23 @@ class FileCache {
       }
     }
     throw new VertxException("File is outside of the cacheDir dir: " + file);
+  }
+
+  void addMissingResource(String resourceName) {
+    // if missingResources is null, the delete cache dir was already called.
+    // only in this case the resolver is working in an unexpected state
+    if (missingResources == null) {
+      throw new IllegalStateException("missingResources is null");
+    }
+    missingResources.add(resourceName);
+  }
+
+  boolean isMissingResource(String resourceName) {
+    // if missingResources is null, the delete cache dir was already called.
+    // only in this case the resolver is working in an unexpected state
+    if (missingResources == null) {
+      throw new IllegalStateException("missingResources is null");
+    }
+    return missingResources.contains(resourceName);
   }
 }

@@ -45,11 +45,13 @@ public class BloomFilter {
   }
 
   /**
-   * If the element is in the container, returns true.
-   * If the element is not in the container, returns true with a probability ≈ e^(-ln(2)² * m/n), otherwise false.
+   * If the element is in the container, returns {@code true}.
+   * If the element is not in the container, returns {@code true} with a {@code probability ≈ e^(-ln(2)² * m/n)}, otherwise {@code false}.
    * So, when m is large enough, the return value can be interpreted as:
-   * - true  : the element is probably in the container
-   * - false : the element is definitely not in the container
+   * <ul>
+   *   <li>{@code true}  : the element is probably in the container</li>
+   *   <li>{@code false} : the element is definitely not in the container</li>
+   * </ul>
    **/
   public boolean contains(Object o) {
     prng.init(o);
@@ -67,7 +69,7 @@ public class BloomFilter {
 
   private static class RandomInRange implements Iterable<RandomInRange>, Iterator<RandomInRange> {
 
-    private final Random prng;
+    private final Random prng; // We want something fast
     private final int max; // Maximum value returned + 1
     private final int count; // Number of random elements to generate
     private int i = 0; // Number of elements generated
