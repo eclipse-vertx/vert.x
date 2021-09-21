@@ -70,7 +70,9 @@ class FileCache {
     try {
       this.cacheDir = cacheDir.getCanonicalFile();
       int invertedBloomFilterSize = Integer.getInteger("vertx.fileCache.invertedBloomFilterSize", 4 * 1024);
-      this.missingResources = new InvertedBloomFilter<>(invertedBloomFilterSize);
+      if (invertedBloomFilterSize > 0) {
+        this.missingResources = new InvertedBloomFilter<>(invertedBloomFilterSize);
+      }
     } catch (IOException e) {
       throw new VertxException("Cannot get canonical name of cacheDir", e);
     }
@@ -261,20 +263,18 @@ class FileCache {
   }
 
   void addMissingResource(String resourceName) {
-    // if missingResources is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
-    if (missingResources == null) {
-      throw new IllegalStateException("missingResources is null");
+    // check if either the filter is disabled it, or delete has been called
+    if (missingResources != null) {
+      missingResources.add(resourceName);
     }
-    missingResources.add(resourceName);
   }
 
   boolean isMissingResource(String resourceName) {
-    // if missingResources is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
+    // check if either the filter is disabled it, or delete has been called
     if (missingResources == null) {
-      throw new IllegalStateException("missingResources is null");
+      return false;
     }
+    // the filter is active, so return the real check
     return missingResources.test(resourceName);
   }
 }
