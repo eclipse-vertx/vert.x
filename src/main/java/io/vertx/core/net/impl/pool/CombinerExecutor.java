@@ -46,15 +46,9 @@ public class CombinerExecutor<S> implements Executor<S> {
         s.set(0);
       }
     } while (!q.isEmpty() && s.compareAndSet(0, 1));
-    if (head != null) {
-      Task t = head;
-      while (true) {
-        t.run();
-        if (t.next == head) {
-          break;
-        }
-        t = t.next;
-      }
+    while (head != null) {
+      head.run();
+      head = head.next;
     }
   }
 
@@ -65,9 +59,8 @@ public class CombinerExecutor<S> implements Executor<S> {
       if (action != null) {
         if (head == null) {
           head = action;
-          head.prev = head.next = head;
+          head.prev = head;
         } else {
-          action.next = head;
           action.prev = head.prev;
           head.prev.next = action;
           head.prev = action;
