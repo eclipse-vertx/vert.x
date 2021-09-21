@@ -70,7 +70,7 @@ class FileCache {
     try {
       this.cacheDir = cacheDir.getCanonicalFile();
       int invertedBloomFilterSize = Integer.getInteger("vertx.fileCache.invertedBloomFilterSize", 4 * 1024);
-      if (invertedBloomFilterSize > 0) {
+      if (invertedBloomFilterSize >= 0) {
         this.missingResources = new InvertedBloomFilter<>(invertedBloomFilterSize);
       }
     } catch (IOException e) {

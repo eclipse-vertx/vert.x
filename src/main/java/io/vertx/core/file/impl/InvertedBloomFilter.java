@@ -55,4 +55,8 @@ public class InvertedBloomFilter<T> {
     }
     return false;
   }
+
+  public int size() {
+    return array.length();
+  }
 }

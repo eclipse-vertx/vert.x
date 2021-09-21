@@ -27,7 +27,7 @@ public class FileResolverNoInverseBloomFilterTest extends FileResolverTestBase {
 
   @Override
   public void setUp() throws Exception {
-    System.setProperty("vertx.fileCache.invertedBloomFilterSize", "0");
+    System.setProperty("vertx.fileCache.invertedBloomFilterSize", "-1");
     super.setUp();
   }
 
