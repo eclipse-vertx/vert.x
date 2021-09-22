@@ -106,6 +106,15 @@ class FileCache {
     }
   }
 
+  String cacheDir() {
+    // if cacheDir is null, the delete cache dir was already called.
+    // only in this case the resolver is working in an unexpected state
+    if (cacheDir == null) {
+      throw new IllegalStateException("cacheDir is null");
+    }
+    return cacheDir.getPath();
+  }
+
   void close() throws IOException {
     final Thread hook;
     synchronized (this) {

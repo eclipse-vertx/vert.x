@@ -32,12 +32,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -457,6 +452,22 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       fail("should fail as it doesn't exist");
     } catch (RuntimeException e) {
       // OK
+    }
+  }
+
+  @Test
+  public void testGetTheCacheDirWithoutHacks() {
+    String cacheDir = resolver.cacheDir();
+    if (cacheDir != null) {
+      assertTrue(cacheDir.startsWith(cacheBaseDir + "-"));
+      // strip the remaining
+      String uuid = cacheDir.substring(cacheBaseDir.length() + 1);
+      try {
+        UUID.fromString(uuid);
+        // OK
+      } catch (Exception e) {
+        fail("Expected a UUID");
+      }
     }
   }
 }

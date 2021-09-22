@@ -841,6 +841,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
+  public String cacheDir() {
+    return fileResolver.cacheDir();
+  }
+
+  @Override
   public void resolveAddress(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
     addressResolver.resolveHostname(hostname, resultHandler);
   }

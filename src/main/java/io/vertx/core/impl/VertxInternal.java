@@ -147,6 +147,12 @@ public interface VertxInternal extends Vertx {
   File resolveFile(String fileName);
 
   /**
+   * Vert.x uses a file cache to extract class path resources. This method will return the location of this cache
+   * or {@code null} if the cache isn't active.
+   */
+  String cacheDir();
+
+  /**
    * Like {@link #executeBlocking(Handler, Handler)} but using the internal worker thread pool.
    */
   <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);

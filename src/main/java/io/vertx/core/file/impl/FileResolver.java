@@ -50,7 +50,7 @@ public class FileResolver {
 
   private final File cwd;
   private final boolean enableCaching;
-  private final boolean closeCache;
+  private final boolean enableCPResolving;
   private final FileCache cache;
 
   public FileResolver() {
@@ -58,16 +58,14 @@ public class FileResolver {
   }
 
   public FileResolver(FileSystemOptions fileSystemOptions) {
-    this(
-      fileSystemOptions.isFileCachingEnabled(),
-      fileSystemOptions.isClassPathResolvingEnabled() ? FileCache.setupCache(fileSystemOptions.getFileCacheDir()) : null,
-      fileSystemOptions.isClassPathResolvingEnabled());
-  }
+    enableCaching = fileSystemOptions.isFileCachingEnabled();
+    enableCPResolving = fileSystemOptions.isClassPathResolvingEnabled();
 
-  private FileResolver(boolean enableCaching, FileCache cache, boolean closeCache) {
-    this.enableCaching = enableCaching;
-    this.cache = cache;
-    this.closeCache = closeCache;
+    if (enableCPResolving) {
+      cache = FileCache.setupCache(fileSystemOptions.getFileCacheDir());
+    } else {
+      cache = null;
+    }
 
     String cwdOverride = System.getProperty("vertx.cwd");
     if (cwdOverride != null) {
@@ -77,11 +75,18 @@ public class FileResolver {
     }
   }
 
+  public String cacheDir() {
+    if (cache != null) {
+      return cache.cacheDir();
+    }
+    return null;
+  }
+
   /**
    * Close this file resolver, this is a blocking operation.
    */
   public void close() throws IOException {
-    if (closeCache) {
+    if (enableCPResolving) {
       synchronized (cache) {
         cache.close();
       }
