@@ -40,6 +40,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.List;
 import java.util.Map;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
@@ -63,7 +64,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private boolean headWritten;
   private boolean ended;
   private boolean closed;
-  private Map<String, ServerCookie> cookies;
+  private List<ServerCookie> cookies;
   private HttpResponseStatus status = HttpResponseStatus.OK;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
@@ -512,7 +513,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void setCookies() {
-    for (ServerCookie cookie: cookies.values()) {
+    for (ServerCookie cookie: cookies) {
       if (cookie.isChanged()) {
         headers.add(SET_COOKIE, cookie.encode());
       }
@@ -705,7 +706,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     return this;
   }
 
-  Map<String, ServerCookie> cookies() {
+  List<ServerCookie> cookies() {
     if (cookies == null) {
       cookies = CookieImpl.extractCookies(stream.headers != null ? stream.headers.get(io.vertx.core.http.HttpHeaders.COOKIE) : null);
     }
@@ -716,16 +717,24 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse addCookie(Cookie cookie) {
     synchronized (conn) {
       checkHeadWritten();
-      cookies().put(cookie.getName(), (ServerCookie) cookie);
+      CookieImpl.addCookie(cookies(), (ServerCookie) cookie);
     }
     return this;
   }
 
   @Override
-  public @Nullable Cookie removeCookie(String name, boolean invalidate) {
+  public @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
-      return CookieImpl.removeCookie(cookies(), name, invalidate);
+      return CookieImpl.removeCookie(cookies(), name, domain, path, invalidate);
+    }
+  }
+
+  @Override
+  public @Nullable List<Cookie> removeCookies(String name, boolean invalidate) {
+    synchronized (conn) {
+      checkHeadWritten();
+      return CookieImpl.removeCookies(cookies(), name, invalidate);
     }
   }
 }

@@ -16,7 +16,6 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -28,8 +27,11 @@ import io.vertx.core.streams.ReadStream;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Represents a server-side HTTP request.
@@ -478,24 +480,58 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Get the cookie with the specified name.
    *
+   * NOTE: this will return just the 1st {@link Cookie} that matches the given name, to get all cookies for this name see:
+   * {@link #cookies(String)}
+   *
    * @param name  the cookie name
    * @return the cookie
    */
   default @Nullable Cookie getCookie(String name) {
-    return cookieMap().get(name);
+    for (Cookie cookie : cookies()) {
+      if (name.equals(cookie.getName())) {
+        return cookie;
+      }
+    }
+    return null;
   }
 
   /**
    * @return the number of cookieMap.
    */
   default int cookieCount() {
-    return cookieMap().size();
+    return cookies().size();
   }
 
   /**
+   * @deprecated the implementation made a wrong assumption that cookies could be identified only by its name. The RFC
+   * states that the tupple of {@code <name, domain, path>} is the unique identifier.
+   *
    * @return a map of all the cookies.
    */
-  Map<String, Cookie> cookieMap();
+  @Deprecated
+  default Map<String, Cookie> cookieMap() {
+    return cookies()
+      .stream()
+      .collect(Collectors.toMap(Cookie::getName, cookie -> cookie));
+  }
+
+  default @Nullable List<Cookie> cookies(String name) {
+    List<Cookie> found = null;
+    for (Cookie cookie : cookies()) {
+      if (name.equals(cookie.getName())) {
+        if (found == null) {
+          found = new ArrayList<>(4);
+        }
+        found.add(cookie);
+      }
+    }
+    return found;
+  }
+
+  /**
+   * @return a list with all cookies.
+   */
+  List<Cookie> cookies();
 
   /**
    * Marks this request as being routed to the given route. This is purely informational and is

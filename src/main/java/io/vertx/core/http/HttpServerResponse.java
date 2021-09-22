@@ -20,6 +20,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import java.util.List;
+
 /**
  * Represents a server-side HTTP response.
  * <p>
@@ -643,11 +645,58 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Expire a cookie, notifying a User Agent to remove it from its cookie jar.
    *
+   * NOTE: This method will only remove the first occurrence of the given name. Users probably may want to use:
+   * {@link #removeCookies(String)}
+   *
    * @param name  the name of the cookie
    * @return the cookie, if it existed, or null
    */
   default @Nullable Cookie removeCookie(String name) {
-    return removeCookie(name, true);
+    return removeCookie(name, null, null, true);
+  }
+
+  /**
+   * Remove a cookie from the cookie set. If invalidate is true then it will expire a cookie, notifying a User Agent to
+   * remove it from its cookie jar.
+   *
+   * NOTE: This method will only expire the first occurrence of the given name. Users probably may want to use:
+   * {@link #removeCookies(String,boolean)}
+   *
+   * @param name  the name of the cookie
+   * @return the cookie, if it existed, or null
+   */
+  default @Nullable Cookie removeCookie(String name, boolean invalidate) {
+    return removeCookie(name, null, null, invalidate);
+  }
+
+  /**
+   * Expire all cookies, notifying a User Agent to remove it from its cookie jar.
+   *
+   * @param name  the name of the cookie
+   * @return the list of cookies, if they existed, or null
+   */
+  default @Nullable List<Cookie> removeCookies(String name) {
+    return removeCookies(name, true);
+  }
+
+  /**
+   * Remove all cookies from the cookie list. If invalidate is true then it will expire a cookie, notifying a User Agent
+   * to remove it from its cookie jar.
+   *
+   * @param name  the name of the cookie
+   * @return the list of cookies, if they existed, or null
+   */
+  @Nullable List<Cookie> removeCookies(String name, boolean invalidate);
+
+  /**
+   * Expires a cookie from the cookie set. If invalidate is true then it will expire a cookie, notifying a User Agent to
+   * remove it from its cookie jar.
+   *
+   * @param name  the name of the cookie
+   * @return the cookie, if it existed, or null
+   */
+  default @Nullable Cookie removeCookie(String name, String domain, String path) {
+    return removeCookie(name, domain, path, true);
   }
 
   /**
@@ -657,5 +706,5 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @param name  the name of the cookie
    * @return the cookie, if it existed, or null
    */
-  @Nullable Cookie removeCookie(String name, boolean invalidate);
+  @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate);
 }
