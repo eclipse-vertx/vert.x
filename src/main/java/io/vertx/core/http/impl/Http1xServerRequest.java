@@ -44,8 +44,7 @@ import io.vertx.core.streams.impl.InboundBuffer;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
@@ -676,8 +675,8 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   }
 
   @Override
-  public List<Cookie> cookies() {
-    return (List) response.cookies();
+  public Set<Cookie> cookies() {
+    return (Set) response.cookies();
   }
 
   @Override

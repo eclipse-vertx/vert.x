@@ -20,6 +20,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
@@ -27,10 +28,7 @@ import io.vertx.core.streams.ReadStream;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -496,6 +494,21 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   }
 
   /**
+   * Get the cookie with the specified identifier.
+   *
+   * @param name  the cookie name
+   * @return the cookie
+   */
+  default @Nullable Cookie getCookie(String name, String domain, String path) {
+    for (Cookie cookie : cookies()) {
+      if (((ServerCookie) cookie).compareTo(name, domain, path) == 0) {
+        return cookie;
+      }
+    }
+    return null;
+  }
+
+  /**
    * @return the number of cookieMap.
    */
   default int cookieCount() {
@@ -504,7 +517,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
 
   /**
    * @deprecated the implementation made a wrong assumption that cookies could be identified only by its name. The RFC
-   * states that the tupple of {@code <name, domain, path>} is the unique identifier.
+   * states that the tuple of {@code <name, domain, path>} is the unique identifier.
    *
    * @return a map of all the cookies.
    */
@@ -515,12 +528,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
       .collect(Collectors.toMap(Cookie::getName, cookie -> cookie));
   }
 
-  default @Nullable List<Cookie> cookies(String name) {
-    List<Cookie> found = null;
+  default @Nullable Set<Cookie> cookies(String name) {
+    Set<Cookie> found = null;
     for (Cookie cookie : cookies()) {
       if (name.equals(cookie.getName())) {
         if (found == null) {
-          found = new ArrayList<>(4);
+          found = new TreeSet<>();
         }
         found.add(cookie);
       }
@@ -529,9 +542,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   }
 
   /**
-   * @return a list with all cookies.
+   * @return a list with all cookies in the cookie jar.
    */
-  List<Cookie> cookies();
+  Set<Cookie> cookies();
 
   /**
    * Marks this request as being routed to the given route. This is purely informational and is

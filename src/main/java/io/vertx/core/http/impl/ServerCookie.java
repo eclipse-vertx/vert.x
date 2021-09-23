@@ -39,4 +39,10 @@ public interface ServerCookie extends Cookie {
    */
   boolean isFromUserAgent();
 
-}
+  /**
+   * Compare this Cookie to the identity tuple.
+   *
+   * @return the same semantics as the comparator interface
+   */
+  int compareTo(String name, String domain, String path);
+  }

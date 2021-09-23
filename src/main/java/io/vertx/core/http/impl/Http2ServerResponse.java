@@ -40,8 +40,7 @@ import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 
@@ -64,7 +63,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private boolean headWritten;
   private boolean ended;
   private boolean closed;
-  private List<ServerCookie> cookies;
+  private Set<ServerCookie> cookies;
   private HttpResponseStatus status = HttpResponseStatus.OK;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
@@ -706,7 +705,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     return this;
   }
 
-  List<ServerCookie> cookies() {
+  Set<ServerCookie> cookies() {
     if (cookies == null) {
       cookies = CookieImpl.extractCookies(stream.headers != null ? stream.headers.get(io.vertx.core.http.HttpHeaders.COOKIE) : null);
     }
@@ -717,9 +716,17 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse addCookie(Cookie cookie) {
     synchronized (conn) {
       checkHeadWritten();
-      CookieImpl.addCookie(cookies(), (ServerCookie) cookie);
+      cookies().add((ServerCookie) cookie);
     }
     return this;
+  }
+
+  @Override
+  public @Nullable Cookie removeCookie(String name, boolean invalidate) {
+    synchronized (conn) {
+      checkHeadWritten();
+      return CookieImpl.removeCookie(cookies(), name, invalidate);
+    }
   }
 
   @Override
@@ -731,7 +738,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   @Override
-  public @Nullable List<Cookie> removeCookies(String name, boolean invalidate) {
+  public @Nullable Set<Cookie> removeCookies(String name, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
       return CookieImpl.removeCookies(cookies(), name, invalidate);

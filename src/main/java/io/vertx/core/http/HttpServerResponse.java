@@ -20,7 +20,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * Represents a server-side HTTP response.
@@ -652,7 +652,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @return the cookie, if it existed, or null
    */
   default @Nullable Cookie removeCookie(String name) {
-    return removeCookie(name, null, null, true);
+    return removeCookie(name, true);
   }
 
   /**
@@ -665,9 +665,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @param name  the name of the cookie
    * @return the cookie, if it existed, or null
    */
-  default @Nullable Cookie removeCookie(String name, boolean invalidate) {
-    return removeCookie(name, null, null, invalidate);
-  }
+  @Nullable Cookie removeCookie(String name, boolean invalidate);
 
   /**
    * Expire all cookies, notifying a User Agent to remove it from its cookie jar.
@@ -675,7 +673,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @param name  the name of the cookie
    * @return the list of cookies, if they existed, or null
    */
-  default @Nullable List<Cookie> removeCookies(String name) {
+  default @Nullable Set<Cookie> removeCookies(String name) {
     return removeCookies(name, true);
   }
 
@@ -686,7 +684,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * @param name  the name of the cookie
    * @return the list of cookies, if they existed, or null
    */
-  @Nullable List<Cookie> removeCookies(String name, boolean invalidate);
+  @Nullable Set<Cookie> removeCookies(String name, boolean invalidate);
 
   /**
    * Expires a cookie from the cookie set. If invalidate is true then it will expire a cookie, notifying a User Agent to

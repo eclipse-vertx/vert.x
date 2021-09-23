@@ -5834,7 +5834,6 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/")));
       assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub")));
       assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub").setDomain("www.vertx.io")));
-      // will remove the first one only
       req.response().removeCookies("foo");
       req.response().end();
     }, resp -> {

@@ -20,9 +20,12 @@ import io.vertx.core.http.impl.CookieImpl;
  * Represents an HTTP Cookie.
  * <p>
  * All cookies must have a name and a value and can optionally have other fields set such as path, domain, etc.
+ *
+ * Cookies can be uniquely identified by the tuple {@code <name, domain, path>} as defined by the cookie specification,
+ * for this reason the Cookie interface extends the {@link Comparable} interface.
  */
 @VertxGen
-public interface Cookie {
+public interface Cookie extends Comparable<Cookie> {
 
   /**
    * Create a new cookie

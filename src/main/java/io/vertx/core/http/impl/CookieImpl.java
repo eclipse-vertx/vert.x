@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.CookieSameSite;
+import io.vertx.core.http.HttpServerResponse;
 
 import java.util.*;
 
@@ -28,50 +29,31 @@ import java.util.*;
  */
 public class CookieImpl implements ServerCookie {
 
-  static List<ServerCookie> extractCookies(CharSequence cookieHeader) {
+  static Set<ServerCookie> extractCookies(CharSequence cookieHeader) {
+    Set<ServerCookie> cookies = new TreeSet<>();
     if (cookieHeader != null) {
       Set<io.netty.handler.codec.http.cookie.Cookie> nettyCookies = ServerCookieDecoder.STRICT.decode(cookieHeader.toString());
-      List<ServerCookie> cookies = new ArrayList<>(nettyCookies.size());
       for (io.netty.handler.codec.http.cookie.Cookie cookie : nettyCookies) {
-        ServerCookie ourCookie = new CookieImpl(cookie);
-        cookies.add(ourCookie);
-      }
-      return cookies;
-    } else {
-      return new ArrayList<>(4);
-    }
-  }
-
-  private static boolean equalsOrNull(String lhs, String rhs) {
-    if (lhs == null && rhs == null) {
-      return true;
-    }
-    if (lhs != null) {
-      return lhs.equals(rhs);
-    }
-    return false;
-  }
-
-  static void addCookie(List<ServerCookie> serverCookies, ServerCookie cookieToAdd) {
-    for (int i = 0; i < serverCookies.size(); i++) {
-      ServerCookie cookie = serverCookies.get(i);
-      if (cookie.getName().equals(cookieToAdd.getName()) && equalsOrNull(cookie.getDomain(), cookieToAdd.getDomain()) && equalsOrNull(cookie.getPath(), cookieToAdd.getPath())) {
-        serverCookies.set(i, cookieToAdd);
-        return;
+        cookies.add(new CookieImpl(cookie));
       }
     }
-
-    serverCookies.add(cookieToAdd);
+    return cookies;
   }
 
-  static Cookie removeCookie(List<ServerCookie> serverCookies, String name, String domain, String path, boolean invalidate) {
-    for (int i = 0; i < serverCookies.size(); i++) {
-      ServerCookie cookie = serverCookies.get(i);
-      if (
-        name.equals(cookie.getName()) &&
-          (domain == null || domain.equals(cookie.getDomain())) &&
-          (path == null || path.equals(cookie.getPath()))) {
+  static void addCookie(Set<ServerCookie> serverCookies, ServerCookie cookie) {
+    // given the semantics of a set, an existing cookie would not be replaced.
+    // we ensure that we remove any existing same key cookie before we add
+    // the updated value.
+    serverCookies.remove(cookie);
+    serverCookies.add(cookie);
+  }
 
+
+  static Cookie removeCookie(Set<ServerCookie> serverCookies, String name, String domain, String path, boolean invalidate) {
+    Iterator<ServerCookie> it = serverCookies.iterator();
+    while (it.hasNext()) {
+      ServerCookie cookie = it.next();
+      if (cookie.compareTo(name, domain, path) == 0) {
         if (invalidate && cookie.isFromUserAgent()) {
           // in the case the cookie was passed from the User Agent
           // we need to expire it and sent it back to it can be
@@ -81,23 +63,44 @@ public class CookieImpl implements ServerCookie {
           cookie.setValue("");
         } else {
           // this was a temporary cookie so we can safely remove it
-          serverCookies.remove(i);
+          it.remove();
         }
         return cookie;
       }
     }
-
     return null;
   }
 
-  static List<Cookie> removeCookies(List<ServerCookie> serverCookies, String name, boolean invalidate) {
-    List<Cookie> found = null;
+  public static Cookie removeCookie(Set<ServerCookie> serverCookies, String name, boolean invalidate) {
     Iterator<ServerCookie> it = serverCookies.iterator();
+    while (it.hasNext()) {
+      ServerCookie cookie = it.next();
+      if (cookie.getName().equals(name)) {
+        if (invalidate && cookie.isFromUserAgent()) {
+          // in the case the cookie was passed from the User Agent
+          // we need to expire it and sent it back to it can be
+          // invalidated
+          cookie.setMaxAge(0L);
+          // void the value for user-agents that still read the cookie
+          cookie.setValue("");
+        } else {
+          // this was a temporary cookie so we can safely remove it
+          it.remove();
+        }
+        return cookie;
+      }
+    }
+    return null;
+  }
+
+  static Set<Cookie> removeCookies(Set<ServerCookie> serverCookies, String name, boolean invalidate) {
+    Iterator<ServerCookie> it = serverCookies.iterator();
+    Set<Cookie> found = null;
     while (it.hasNext()) {
       ServerCookie cookie = it.next();
       if (name.equals(cookie.getName())) {
         if (found == null) {
-          found = new ArrayList<>(4);
+          found = new TreeSet<>();
         }
         found.add(cookie);
         if (invalidate && cookie.isFromUserAgent()) {
@@ -113,7 +116,6 @@ public class CookieImpl implements ServerCookie {
         }
       }
     }
-
     return found;
   }
 
@@ -241,5 +243,44 @@ public class CookieImpl implements ServerCookie {
 
   public boolean isFromUserAgent() {
     return fromUserAgent;
+  }
+
+  @Override
+  public int compareTo(Cookie c) {
+    return compareTo(c.getName(), c.getDomain(), c.getPath());
+  }
+
+  @Override
+  public int compareTo(String name, String domain, String path) {
+    int v = getName().compareTo(name);
+    if (v != 0) {
+      return v;
+    }
+
+    if (getPath() == null) {
+      if (path != null) {
+        return -1;
+      }
+    } else if (path == null) {
+      return 1;
+    } else {
+      v = getPath().compareTo(path);
+      if (v != 0) {
+        return v;
+      }
+    }
+
+    if (getDomain() == null) {
+      if (domain != null) {
+        return -1;
+      }
+    } else if (domain == null) {
+      return 1;
+    } else {
+      v = getDomain().compareToIgnoreCase(domain);
+      return v;
+    }
+
+    return 0;
   }
 }
