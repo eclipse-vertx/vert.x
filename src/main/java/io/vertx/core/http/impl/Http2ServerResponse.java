@@ -716,7 +716,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse addCookie(Cookie cookie) {
     synchronized (conn) {
       checkHeadWritten();
-      cookies().add((ServerCookie) cookie);
+      CookieImpl.addCookie(cookies(), (ServerCookie) cookie);
     }
     return this;
   }
