@@ -16,7 +16,6 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.CookieSameSite;
-import io.vertx.core.http.HttpServerResponse;
 
 import java.util.*;
 
@@ -54,17 +53,7 @@ public class CookieImpl implements ServerCookie {
     while (it.hasNext()) {
       ServerCookie cookie = it.next();
       if (cookie.compareTo(name, domain, path) == 0) {
-        if (invalidate && cookie.isFromUserAgent()) {
-          // in the case the cookie was passed from the User Agent
-          // we need to expire it and sent it back to it can be
-          // invalidated
-          cookie.setMaxAge(0L);
-          // void the value for user-agents that still read the cookie
-          cookie.setValue("");
-        } else {
-          // this was a temporary cookie so we can safely remove it
-          it.remove();
-        }
+        removeOrInvalidateCookie(it, cookie, invalidate);
         return cookie;
       }
     }
@@ -76,17 +65,7 @@ public class CookieImpl implements ServerCookie {
     while (it.hasNext()) {
       ServerCookie cookie = it.next();
       if (cookie.getName().equals(name)) {
-        if (invalidate && cookie.isFromUserAgent()) {
-          // in the case the cookie was passed from the User Agent
-          // we need to expire it and sent it back to it can be
-          // invalidated
-          cookie.setMaxAge(0L);
-          // void the value for user-agents that still read the cookie
-          cookie.setValue("");
-        } else {
-          // this was a temporary cookie so we can safely remove it
-          it.remove();
-        }
+        removeOrInvalidateCookie(it, cookie, invalidate);
         return cookie;
       }
     }
@@ -103,20 +82,24 @@ public class CookieImpl implements ServerCookie {
           found = new TreeSet<>();
         }
         found.add(cookie);
-        if (invalidate && cookie.isFromUserAgent()) {
-          // in the case the cookie was passed from the User Agent
-          // we need to expire it and sent it back to it can be
-          // invalidated
-          cookie.setMaxAge(0L);
-          // void the value for user-agents that still read the cookie
-          cookie.setValue("");
-        } else {
-          // this was a temporary cookie so we can safely remove it
-          it.remove();
-        }
+        removeOrInvalidateCookie(it, cookie, invalidate);
       }
     }
     return found;
+  }
+
+  private static void removeOrInvalidateCookie(Iterator<ServerCookie> it, ServerCookie cookie, boolean invalidate) {
+    if (invalidate && cookie.isFromUserAgent()) {
+      // in the case the cookie was passed from the User Agent
+      // we need to expire it and sent it back to it can be
+      // invalidated
+      cookie.setMaxAge(0L);
+      // void the value for user-agents that still read the cookie
+      cookie.setValue("");
+    } else {
+      // this was a temporary cookie, we can safely remove it
+      it.remove();
+    }
   }
 
   private final io.netty.handler.codec.http.cookie.Cookie nettyCookie;
