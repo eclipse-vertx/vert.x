@@ -11,6 +11,8 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
@@ -122,7 +124,11 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-        bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+        if (sslHelper.isSSL()) {
+          bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+        } else {
+          bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true));
+        }
 
         bootstrap.childHandler(channelBalancer);
         applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
