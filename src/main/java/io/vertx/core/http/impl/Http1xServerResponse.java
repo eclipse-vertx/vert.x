@@ -98,7 +98,12 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   private long bytesWritten;
   private Future<NetSocket> netSocket;
 
-  Http1xServerResponse(final VertxInternal vertx, ContextInternal context, Http1xServerConnection conn, HttpRequest request, Object requestMetric) {
+  Http1xServerResponse(VertxInternal vertx,
+                       ContextInternal context,
+                       Http1xServerConnection conn,
+                       HttpRequest request,
+                       Object requestMetric,
+                       boolean writable) {
     this.vertx = vertx;
     this.conn = conn;
     this.context = context;
@@ -107,7 +112,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     this.request = request;
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
-    this.writable = !conn.isNotWritable();
+    this.writable = writable;
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
