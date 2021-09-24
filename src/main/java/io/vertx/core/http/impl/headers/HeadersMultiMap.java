@@ -16,12 +16,12 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
-import io.netty.util.HashingStrategy;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.impl.HttpUtils;
 
 import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,7 +34,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static io.netty.handler.codec.http.HttpConstants.*;
-import static io.netty.util.AsciiString.*;
 
 /**
  * A case-insensitive {@link MultiMap} implementation that extends Netty {@link HttpHeaders}
@@ -307,20 +306,21 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   @Override
   public List<String> getAll(CharSequence name) {
     Objects.requireNonNull(name, "name");
-
-    LinkedList<String> values = new LinkedList<>();
-
+    LinkedList<String> values = null;
     int h = AsciiString.hashCode(name);
     int i = h & 0x0000000F;
     HeadersMultiMap.MapEntry e = entries[i];
     while (e != null) {
       CharSequence key = e.key;
       if (e.hash == h && (name == key || AsciiString.contentEqualsIgnoreCase(name, key))) {
+        if (values == null) {
+          values = new LinkedList<>();
+        }
         values.addFirst(e.getValue().toString());
       }
       e = e.next;
     }
-    return values;
+    return values == null ? Collections.emptyList() : Collections.unmodifiableList(values);
   }
 
   @Override
