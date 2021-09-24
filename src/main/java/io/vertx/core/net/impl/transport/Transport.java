@@ -248,7 +248,6 @@ public class Transport {
       bootstrap.option(ChannelOption.IP_TOS, options.getTrafficClass());
     }
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, options.getConnectTimeout());
-    bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
   }
 
   public void configure(NetServerOptions options, boolean domainSocket, ServerBootstrap bootstrap) {
@@ -270,7 +269,6 @@ public class Transport {
     if (options.getTrafficClass() != -1) {
       bootstrap.childOption(ChannelOption.IP_TOS, options.getTrafficClass());
     }
-    bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
     if (options.getAcceptBacklog() != -1) {
       bootstrap.option(ChannelOption.SO_BACKLOG, options.getAcceptBacklog());
     }
