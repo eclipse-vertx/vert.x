@@ -31,7 +31,7 @@ public abstract class VertxByteBufAllocator extends AbstractByteBufAllocator {
     }
   };
 
-  static final VertxByteBufAllocator DEFAULT = PlatformDependent.hasUnsafe() ? UNSAFE_IMPL : IMPL;
+  public static final VertxByteBufAllocator DEFAULT = PlatformDependent.hasUnsafe() ? UNSAFE_IMPL : IMPL;
 
   @Override
   protected ByteBuf newDirectBuffer(int initialCapacity, int maxCapacity) {
