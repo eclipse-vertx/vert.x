@@ -656,14 +656,14 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   }
 
   /**
-   * Remove a cookie from the cookie set. If invalidate is true then it will expire a cookie, notifying a User Agent to
-   * remove it from its cookie jar.
+   * Remove a cookie from the cookie set. If invalidate is {@code true} then it will expire a cookie, notifying a User
+   * Agent to remove it from its cookie jar.
    *
    * NOTE: This method will only expire the first occurrence of the given name. Users probably may want to use:
    * {@link #removeCookies(String,boolean)}
    *
    * @param name  the name of the cookie
-   * @return the cookie, if it existed, or null
+   * @return the cookie, if it existed, or {@code null}
    */
   @Nullable Cookie removeCookie(String name, boolean invalidate);
 
@@ -671,27 +671,27 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Expire all cookies, notifying a User Agent to remove it from its cookie jar.
    *
    * @param name  the name of the cookie
-   * @return the list of cookies, if they existed, or null
+   * @return the set of cookies, if they existed, or an empty
    */
-  default @Nullable Set<Cookie> removeCookies(String name) {
+  default Set<Cookie> removeCookies(String name) {
     return removeCookies(name, true);
   }
 
   /**
-   * Remove all cookies from the cookie list. If invalidate is true then it will expire a cookie, notifying a User Agent
+   * Remove all cookies from the cookie set. If invalidate is true then it will expire a cookie, notifying a User Agent
    * to remove it from its cookie jar.
    *
    * @param name  the name of the cookie
-   * @return the list of cookies, if they existed, or null
+   * @return the set of cookies, if they existed, or an empty set.
    */
-  @Nullable Set<Cookie> removeCookies(String name, boolean invalidate);
+  Set<Cookie> removeCookies(String name, boolean invalidate);
 
   /**
    * Expires a cookie from the cookie set. If invalidate is true then it will expire a cookie, notifying a User Agent to
    * remove it from its cookie jar.
    *
    * @param name  the name of the cookie
-   * @return the cookie, if it existed, or null
+   * @return the cookie, if it existed, or {@code null}
    */
   default @Nullable Cookie removeCookie(String name, String domain, String path) {
     return removeCookie(name, domain, path, true);
@@ -702,7 +702,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * remove it from its cookie jar.
    *
    * @param name  the name of the cookie
-   * @return the cookie, if it existed, or null
+   * @return the cookie, if it existed, or {@code null}
    */
   @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate);
 }

@@ -150,38 +150,4 @@ public class CookieImpl implements ServerCookie {
   public boolean isFromUserAgent() {
     return fromUserAgent;
   }
-
-  @Override
-  public int compareTo(String name, String domain, String path) {
-    int v = getName().compareTo(name);
-    if (v != 0) {
-      return v;
-    }
-
-    if (getPath() == null) {
-      if (path != null) {
-        return -1;
-      }
-    } else if (path == null) {
-      return 1;
-    } else {
-      v = getPath().compareTo(path);
-      if (v != 0) {
-        return v;
-      }
-    }
-
-    if (getDomain() == null) {
-      if (domain != null) {
-        return -1;
-      }
-    } else if (domain == null) {
-      return 1;
-    } else {
-      v = getDomain().compareToIgnoreCase(domain);
-      return v;
-    }
-
-    return 0;
-  }
 }

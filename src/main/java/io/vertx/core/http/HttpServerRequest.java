@@ -483,14 +483,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param name  the cookie name
    * @return the cookie
    */
-  default @Nullable Cookie getCookie(String name) {
-    for (Cookie cookie : cookies()) {
-      if (name.equals(cookie.getName())) {
-        return cookie;
-      }
-    }
-    return null;
-  }
+  @Nullable Cookie getCookie(String name);
 
   /**
    * Get the cookie with the specified identifier.
@@ -521,16 +514,19 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   }
 
   /**
-   * Returns a set of parsed cookies that match the given name, or an empty set. Several cookies may share the same name
-   * but have different keys. A cookie is unique by its {@code <name, domain, path>} tuple.
+   * Returns a read only set of parsed cookies that match the given name, or an empty set. Several cookies may share the
+   * same name but have different keys. A cookie is unique by its {@code <name, domain, path>} tuple.
+   *
+   * The set entries are references to the request original set. This means that performing property changes in the
+   * cookie objects will affect the original object too.
    *
    * @param name the name to be matches
-   * @return the matching cookies or {@code null}
+   * @return the matching cookies or empty set
    */
-  @Nullable Set<Cookie> cookies(String name);
+  Set<Cookie> cookies(String name);
 
   /**
-   * @return a list with all cookies in the cookie jar.
+   * @return a set with all cookies in the cookie jar.
    */
   Set<Cookie> cookies();
 

@@ -562,7 +562,13 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public Set<Cookie> cookies(String name) {
-    return (Set) response.cookies().get(name);
+    return (Set) response.cookies().getAll(name);
+  }
+
+  @Override
+  public Cookie getCookie(String name) {
+    return response.cookies()
+      .get(name);
   }
 
   @Override

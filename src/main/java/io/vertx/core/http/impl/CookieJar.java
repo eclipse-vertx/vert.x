@@ -23,8 +23,12 @@ import java.util.*;
  *
  * @author <a href="http://pmlopes@gmail.com">Paulo Lopes</a>
  */
-public class CookieJar implements Set<ServerCookie> {
+public class CookieJar extends AbstractSet<ServerCookie> {
 
+  // keep a shortcut to an empty jar to avoid unnecessary allocations
+  private static final CookieJar EMPTY = new CookieJar(Collections.emptyList());
+
+  // the real holder
   private List<ServerCookie> list;
 
   public CookieJar() {
@@ -44,12 +48,9 @@ public class CookieJar implements Set<ServerCookie> {
     this.list = list;
   }
 
-  private void initIfNeeded() {
-    if (list == null) {
-      list = new ArrayList<>(4);
-    }
-  }
-
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int size() {
     if (list == null) {
@@ -58,14 +59,12 @@ public class CookieJar implements Set<ServerCookie> {
     return list.size();
   }
 
-  @Override
-  public boolean isEmpty() {
-    if (list == null) {
-      return true;
-    }
-    return list.isEmpty();
-  }
-
+  /**
+   * {@inheritDoc}
+   *
+   * A Subtle difference here is that matching of cookies is done against the cookie unique identifier, not
+   * the {@link #equals(Object)} method.
+   */
   @Override
   public boolean contains(Object o) {
     if (list == null) {
@@ -79,7 +78,7 @@ public class CookieJar implements Set<ServerCookie> {
     ServerCookie needle = (ServerCookie) o;
 
     for (ServerCookie cookie : list) {
-      if (cookie.compareTo(needle.getName(), needle.getDomain(), needle.getPath()) == 0) {
+      if (cookieUniqueIdComparator(cookie, needle.getName(), needle.getDomain(), needle.getPath()) == 0) {
         return true;
       }
     }
@@ -89,20 +88,11 @@ public class CookieJar implements Set<ServerCookie> {
 
   @Override
   public Iterator<ServerCookie> iterator() {
-    initIfNeeded();
+    if (list == null) {
+      return Collections.emptyIterator();
+    }
+
     return list.iterator();
-  }
-
-  @Override
-  public Object[] toArray() {
-    initIfNeeded();
-    return list.toArray();
-  }
-
-  @Override
-  public <T> T[] toArray(T[] a) {
-    initIfNeeded();
-    return list.toArray(a);
   }
 
   @Override
@@ -111,10 +101,12 @@ public class CookieJar implements Set<ServerCookie> {
       return false;
     }
 
-    initIfNeeded();
+    if (list == null) {
+      list = new ArrayList<>(4);
+    }
 
     for (int i = 0; i < list.size(); i++) {
-      int cmp = list.get(i).compareTo(cookie.getName(), cookie.getDomain(), cookie.getPath());
+      int cmp = cookieUniqueIdComparator(list.get(i), cookie.getName(), cookie.getDomain(), cookie.getPath());
 
       if (cmp > 0) {
         // insert
@@ -133,16 +125,112 @@ public class CookieJar implements Set<ServerCookie> {
   }
 
   @Override
-  public boolean remove(Object o) {
-    if (list == null) {
-      return false;
+  public void clear() {
+    if (list != null) {
+      list.clear();
     }
-    return list.remove(o);
+  }
+
+  /**
+   * Follows the {@link Comparator} interface guidelines to compare how the given cookie differs from the unique
+   * identifier, the tupple {@code name, domain, path}.
+   *
+   * @param cookie base cookie
+   * @param name name to compare (not null)
+   * @param domain maybe nullable domain
+   * @param path maybe nullable path
+   */
+  private static int cookieUniqueIdComparator(ServerCookie cookie, String name, String domain, String path) {
+    Objects.requireNonNull(cookie);
+    Objects.requireNonNull(name);
+
+    int v = cookie.getName().compareTo(name);
+    if (v != 0) {
+      return v;
+    }
+
+    if (cookie.getPath() == null) {
+      if (path != null) {
+        return -1;
+      }
+    } else if (path == null) {
+      return 1;
+    } else {
+      v = cookie.getPath().compareTo(path);
+      if (v != 0) {
+        return v;
+      }
+    }
+
+    if (cookie.getDomain() == null) {
+      if (domain != null) {
+        return -1;
+      }
+    } else if (domain == null) {
+      return 1;
+    } else {
+      v = cookie.getDomain().compareToIgnoreCase(domain);
+      return v;
+    }
+
+    return 0;
+  }
+
+
+  public ServerCookie get(String name) {
+    if (list == null) {
+      return null;
+    }
+
+    for (ServerCookie cookie : list) {
+      if (cookie.getName().equals(name)) {
+        return cookie;
+      }
+    }
+
+    return null;
+  }
+
+  public CookieJar getAll(String name) {
+    if (list == null) {
+      return EMPTY;
+    }
+
+    List<ServerCookie> subList = null;
+
+    for (ServerCookie cookie : list) {
+      if (subList == null) {
+        subList = new ArrayList<>(Math.min(4, list.size()));
+      }
+      if (cookie.getName().equals(name)) {
+        subList.add(cookie);
+      }
+    }
+
+    if (subList != null) {
+      return new CookieJar(Collections.unmodifiableList(subList));
+    }
+
+    return EMPTY;
+  }
+
+  public ServerCookie get(String name, String domain, String path) {
+    if (list == null) {
+      return null;
+    }
+
+    for (ServerCookie cookie : list) {
+      if (cookieUniqueIdComparator(cookie, name, domain, path) == 0) {
+        return cookie;
+      }
+    }
+
+    return null;
   }
 
   public CookieJar removeOrInvalidateAll(String name, boolean invalidate) {
     if (list == null) {
-      return null;
+      return EMPTY;
     }
 
     Iterator<ServerCookie> it = list.iterator();
@@ -160,9 +248,9 @@ public class CookieJar implements Set<ServerCookie> {
     }
 
     if (collector != null) {
-      return new CookieJar(collector);
+      return new CookieJar(Collections.unmodifiableList(collector));
     }
-    return null;
+    return EMPTY;
   }
 
   public ServerCookie removeOrInvalidate(String name, String domain, String path, boolean invalidate) {
@@ -173,7 +261,7 @@ public class CookieJar implements Set<ServerCookie> {
     Iterator<ServerCookie> it = list.iterator();
     while (it.hasNext()) {
       ServerCookie cookie = it.next();
-      if (cookie.compareTo(name, domain, path) == 0) {
+      if (cookieUniqueIdComparator(cookie, name, domain, path) == 0) {
         removeOrInvalidateCookie(it, cookie, invalidate);
         return cookie;
       }
@@ -211,84 +299,5 @@ public class CookieJar implements Set<ServerCookie> {
       // this was a temporary cookie, we can safely remove it
       it.remove();
     }
-  }
-
-  @Override
-  public boolean containsAll(Collection<?> c) {
-    initIfNeeded();
-    return list.containsAll(c);
-  }
-
-  @Override
-  public boolean addAll(Collection<? extends ServerCookie> c) {
-    boolean modified = false;
-    for (ServerCookie e : c)
-      if (add(e))
-        modified = true;
-    return modified;
-  }
-
-  @Override
-  public boolean retainAll(Collection<?> c) {
-    initIfNeeded();
-    return list.retainAll(c);
-  }
-
-  @Override
-  public boolean removeAll(Collection<?> c) {
-    if (list == null) {
-      return false;
-    }
-    return list.removeAll(c);
-  }
-
-  @Override
-  public void clear() {
-    if (list != null) {
-      list.clear();
-    }
-  }
-
-  @Override
-  public String toString() {
-    if (list == null) {
-      return "[]";
-    }
-    return list.toString();
-  }
-
-  public CookieJar get(String name) {
-    if (list == null) {
-      return null;
-    }
-    List<ServerCookie> subList = null;
-
-    for (ServerCookie cookie : list) {
-      if (subList == null) {
-        subList = new ArrayList<>(Math.min(4, list.size()));
-      }
-      if (cookie.getName().equals(name)) {
-        subList.add(cookie);
-      }
-    }
-
-    if (subList != null) {
-      return new CookieJar(subList);
-    }
-    return null;
-  }
-
-  public ServerCookie get(String name, String domain, String path) {
-    if (list == null) {
-      return null;
-    }
-
-    for (ServerCookie cookie : list) {
-      if (cookie.compareTo(name, domain, path) == 0) {
-        return cookie;
-      }
-    }
-
-    return null;
   }
 }
