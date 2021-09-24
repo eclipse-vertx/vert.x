@@ -11,8 +11,11 @@
 
 package io.vertx.core.net.impl;
 
+import io.netty.buffer.AbstractReferenceCountedByteBuf;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -45,8 +48,9 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
   /**
    * Copy and release the {@code buf} when necessary.
    *
-   * <p> This methods assuming the buffer is created by {@link PartialPooledByteBufAllocator} and
-   * caller has full ownership of the buffer.
+   * <p> This methods assuming the has full ownership of the buffer.
+   *
+   * <p> This method assumes that pooled buffers are allocated by {@code PooledByteBufAllocator}
    *
    * <p> The returned buffer will not need to be released and can be wrapped by a {@link io.vertx.core.buffer.Buffer}.
    *
@@ -54,9 +58,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
    * @return a safe buffer to use
    */
   public static ByteBuf safeBuffer(ByteBuf buf) {
-    // PartialPooledByteBufAllocator only pool direct buffers
-    // => we only need to copy and release those buffers
-    if (buf != Unpooled.EMPTY_BUFFER && (buf.isDirect() || buf instanceof CompositeByteBuf)) {
+    if (buf != Unpooled.EMPTY_BUFFER && (buf.alloc() instanceof PooledByteBufAllocator || buf instanceof CompositeByteBuf)) {
       try {
         if (buf.isReadable()) {
           ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());

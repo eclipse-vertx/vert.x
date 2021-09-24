@@ -2916,13 +2916,16 @@ public class WebSocketTest extends VertxTestBase {
           soi.writeMessage(new CloseWebSocketFrame(status, reason));
           AtomicBoolean closeFrameReceived = new AtomicBoolean();
           soi.messageHandler(msg -> {
-            if (msg instanceof CloseWebSocketFrame) {
-              CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
-              assertEquals(status, frame.statusCode());
-              assertEquals(reason, frame.reasonText());
-              closeFrameReceived.set(true);
+            try {
+              if (msg instanceof CloseWebSocketFrame) {
+                CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
+                assertEquals(status, frame.statusCode());
+                assertEquals(reason, frame.reasonText());
+                closeFrameReceived.set(true);
+              }
+            } finally {
+              ReferenceCountUtil.release(msg);
             }
-            ReferenceCountUtil.release(msg);
           });
           soi.closeHandler(v2 -> {
             assertTrue(closeFrameReceived.get());
@@ -2958,8 +2961,12 @@ public class WebSocketTest extends VertxTestBase {
           Object msg = received.getFirst();
           assertEquals(msg.getClass(), CloseWebSocketFrame.class);
           CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
-          assertEquals(status, frame.statusCode());
-          assertEquals(reason, frame.reasonText());
+          try {
+            assertEquals(status, frame.statusCode());
+            assertEquals(reason, frame.reasonText());
+          } finally {
+            ReferenceCountUtil.release(msg);
+          }
           complete();
         });
       }));
@@ -3016,7 +3023,12 @@ public class WebSocketTest extends VertxTestBase {
         ws.exceptionHandler(err -> fail());
         ws.closeHandler(v -> {
           assertEquals(1, received.size());
-          assertEquals(received.get(0).getClass(), CloseWebSocketFrame.class);
+          Object msg = received.get(0);
+          try {
+            assertEquals(msg.getClass(), CloseWebSocketFrame.class);
+          } finally {
+            ReferenceCountUtil.release(msg);
+          }
           complete();
         });
         // Client sends a close frame but server will not close the TCP connection as expected
