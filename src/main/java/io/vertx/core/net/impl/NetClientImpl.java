@@ -13,6 +13,7 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.channel.group.ChannelGroup;
@@ -225,6 +226,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
       Bootstrap bootstrap = new Bootstrap();
       bootstrap.group(eventLoop);
+      bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
 
       vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
 
