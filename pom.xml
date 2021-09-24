@@ -224,7 +224,14 @@
               <additionalClasspathElement>${project.basedir}/src/test/classpath/jul</additionalClasspathElement>
             </additionalClasspathElements>
             <systemPropertyVariables>
-              <!--<javax.net.debug>ssl</javax.net.debug>-->
+              <!-- Uncomment to debug SSL -->
+              <!--
+              <javax.net.debug>ssl</javax.net.debug>
+              -->
+              <!-- Uncomment to run with leak detection -->
+              <!--
+              <io.netty.leakDetection.level>PARANOID</io.netty.leakDetection.level>
+              -->
               <buildDirectory>${project.build.directory}</buildDirectory>
               <vertx.version>${project.version}</vertx.version>
               <vertx.handle100Continue>true</vertx.handle100Continue>

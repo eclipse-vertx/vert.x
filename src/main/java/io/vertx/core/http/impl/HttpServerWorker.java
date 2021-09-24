@@ -167,7 +167,7 @@ public class HttpServerWorker implements Handler<Channel> {
           }
 
           @Override
-          public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+          public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
               ctx.close();
             }
