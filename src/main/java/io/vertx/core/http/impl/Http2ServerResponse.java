@@ -63,7 +63,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private boolean headWritten;
   private boolean ended;
   private boolean closed;
-  private Set<ServerCookie> cookies;
+  private CookieJar cookies;
   private HttpResponseStatus status = HttpResponseStatus.OK;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
@@ -705,9 +705,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     return this;
   }
 
-  Set<ServerCookie> cookies() {
+  CookieJar cookies() {
     if (cookies == null) {
-      cookies = CookieImpl.extractCookies(stream.headers != null ? stream.headers.get(io.vertx.core.http.HttpHeaders.COOKIE) : null);
+      cookies = new CookieJar(stream.headers != null ? stream.headers.get(io.vertx.core.http.HttpHeaders.COOKIE) : null);
     }
     return cookies;
   }
@@ -716,7 +716,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse addCookie(Cookie cookie) {
     synchronized (conn) {
       checkHeadWritten();
-      CookieImpl.addCookie(cookies(), (ServerCookie) cookie);
+      cookies().add((ServerCookie) cookie);
     }
     return this;
   }
@@ -725,7 +725,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
-      return CookieImpl.removeCookie(cookies(), name, invalidate);
+      return cookies().removeOrInvalidate(name, invalidate);
     }
   }
 
@@ -733,7 +733,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
-      return CookieImpl.removeCookie(cookies(), name, domain, path, invalidate);
+      return cookies().removeOrInvalidate(name, domain, path, invalidate);
     }
   }
 
@@ -741,7 +741,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   public @Nullable Set<Cookie> removeCookies(String name, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
-      return CookieImpl.removeCookies(cookies(), name, invalidate);
+      return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
 }

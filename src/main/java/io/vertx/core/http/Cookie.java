@@ -25,7 +25,7 @@ import io.vertx.core.http.impl.CookieImpl;
  * for this reason the Cookie interface extends the {@link Comparable} interface.
  */
 @VertxGen
-public interface Cookie extends Comparable<Cookie> {
+public interface Cookie {
 
   /**
    * Create a new cookie

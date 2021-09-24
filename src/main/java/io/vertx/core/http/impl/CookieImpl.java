@@ -12,12 +12,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.cookie.DefaultCookie;
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.CookieSameSite;
-
-import java.util.*;
 
 
 /**
@@ -27,80 +24,6 @@ import java.util.*;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class CookieImpl implements ServerCookie {
-
-  static Set<ServerCookie> extractCookies(CharSequence cookieHeader) {
-    Set<ServerCookie> cookies = new TreeSet<>();
-    if (cookieHeader != null) {
-      Set<io.netty.handler.codec.http.cookie.Cookie> nettyCookies = ServerCookieDecoder.STRICT.decode(cookieHeader.toString());
-      for (io.netty.handler.codec.http.cookie.Cookie cookie : nettyCookies) {
-        cookies.add(new CookieImpl(cookie));
-      }
-    }
-    return cookies;
-  }
-
-  static void addCookie(Set<ServerCookie> serverCookies, ServerCookie cookie) {
-    // given the semantics of a set, an existing cookie would not be replaced.
-    // we ensure that we remove any existing same key cookie before we add
-    // the updated value.
-    serverCookies.remove(cookie);
-    serverCookies.add(cookie);
-  }
-
-
-  static Cookie removeCookie(Set<ServerCookie> serverCookies, String name, String domain, String path, boolean invalidate) {
-    Iterator<ServerCookie> it = serverCookies.iterator();
-    while (it.hasNext()) {
-      ServerCookie cookie = it.next();
-      if (cookie.compareTo(name, domain, path) == 0) {
-        removeOrInvalidateCookie(it, cookie, invalidate);
-        return cookie;
-      }
-    }
-    return null;
-  }
-
-  public static Cookie removeCookie(Set<ServerCookie> serverCookies, String name, boolean invalidate) {
-    Iterator<ServerCookie> it = serverCookies.iterator();
-    while (it.hasNext()) {
-      ServerCookie cookie = it.next();
-      if (cookie.getName().equals(name)) {
-        removeOrInvalidateCookie(it, cookie, invalidate);
-        return cookie;
-      }
-    }
-    return null;
-  }
-
-  static Set<Cookie> removeCookies(Set<ServerCookie> serverCookies, String name, boolean invalidate) {
-    Iterator<ServerCookie> it = serverCookies.iterator();
-    Set<Cookie> found = null;
-    while (it.hasNext()) {
-      ServerCookie cookie = it.next();
-      if (name.equals(cookie.getName())) {
-        if (found == null) {
-          found = new TreeSet<>();
-        }
-        found.add(cookie);
-        removeOrInvalidateCookie(it, cookie, invalidate);
-      }
-    }
-    return found;
-  }
-
-  private static void removeOrInvalidateCookie(Iterator<ServerCookie> it, ServerCookie cookie, boolean invalidate) {
-    if (invalidate && cookie.isFromUserAgent()) {
-      // in the case the cookie was passed from the User Agent
-      // we need to expire it and sent it back to it can be
-      // invalidated
-      cookie.setMaxAge(0L);
-      // void the value for user-agents that still read the cookie
-      cookie.setValue("");
-    } else {
-      // this was a temporary cookie, we can safely remove it
-      it.remove();
-    }
-  }
 
   private final io.netty.handler.codec.http.cookie.Cookie nettyCookie;
   private boolean changed;
@@ -226,11 +149,6 @@ public class CookieImpl implements ServerCookie {
 
   public boolean isFromUserAgent() {
     return fromUserAgent;
-  }
-
-  @Override
-  public int compareTo(Cookie c) {
-    return compareTo(c.getName(), c.getDomain(), c.getPath());
   }
 
   @Override

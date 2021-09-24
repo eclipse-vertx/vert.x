@@ -20,7 +20,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.streams.ReadStream;
@@ -499,14 +498,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    * @param name  the cookie name
    * @return the cookie
    */
-  default @Nullable Cookie getCookie(String name, String domain, String path) {
-    for (Cookie cookie : cookies()) {
-      if (((ServerCookie) cookie).compareTo(name, domain, path) == 0) {
-        return cookie;
-      }
-    }
-    return null;
-  }
+  @Nullable Cookie getCookie(String name, String domain, String path);
 
   /**
    * @return the number of cookieMap.
@@ -528,18 +520,14 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
       .collect(Collectors.toMap(Cookie::getName, cookie -> cookie));
   }
 
-  default @Nullable Set<Cookie> cookies(String name) {
-    Set<Cookie> found = null;
-    for (Cookie cookie : cookies()) {
-      if (name.equals(cookie.getName())) {
-        if (found == null) {
-          found = new TreeSet<>();
-        }
-        found.add(cookie);
-      }
-    }
-    return found;
-  }
+  /**
+   * Returns a set of parsed cookies that match the given name, or an empty set. Several cookies may share the same name
+   * but have different keys. A cookie is unique by its {@code <name, domain, path>} tuple.
+   *
+   * @param name the name to be matches
+   * @return the matching cookies or {@code null}
+   */
+  @Nullable Set<Cookie> cookies(String name);
 
   /**
    * @return a list with all cookies in the cookie jar.

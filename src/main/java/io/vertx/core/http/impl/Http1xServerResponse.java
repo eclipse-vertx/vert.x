@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.List;
 import java.util.Set;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
@@ -91,7 +92,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   private boolean writable;
   private boolean closed;
   private final HeadersMultiMap headers;
-  private Set<ServerCookie> cookies;
+  private CookieJar cookies;
   private MultiMap trailers;
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
@@ -788,9 +789,9 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     return this;
   }
 
-  Set<ServerCookie> cookies() {
+  CookieJar cookies() {
     if (cookies == null) {
-      cookies = CookieImpl.extractCookies(request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE));
+      cookies = new CookieJar(request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE));
     }
     return cookies;
   }
@@ -799,7 +800,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse addCookie(Cookie cookie) {
     synchronized (conn) {
       checkHeadWritten();
-      CookieImpl.addCookie(cookies(), (ServerCookie) cookie);
+      cookies().add((ServerCookie) cookie);
     }
     return this;
   }
@@ -808,7 +809,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
-      return CookieImpl.removeCookie(cookies(), name, invalidate);
+      return cookies().removeOrInvalidate(name, invalidate);
     }
   }
 
@@ -816,7 +817,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
-      return CookieImpl.removeCookie(cookies(), name, domain, path, invalidate);
+      return cookies().removeOrInvalidate(name, domain, path, invalidate);
     }
   }
 
@@ -824,7 +825,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public @Nullable Set<Cookie> removeCookies(String name, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
-      return CookieImpl.removeCookies(cookies(), name, invalidate);
+      return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
 }

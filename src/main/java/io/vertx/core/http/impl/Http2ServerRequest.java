@@ -52,6 +52,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -557,6 +558,17 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   @Override
   public Set<Cookie> cookies() {
     return (Set) response.cookies();
+  }
+
+  @Override
+  public Set<Cookie> cookies(String name) {
+    return (Set) response.cookies().get(name);
+  }
+
+  @Override
+  public Cookie getCookie(String name, String domain, String path) {
+    return response.cookies()
+      .get(name, domain, path);
   }
 
   @Override
