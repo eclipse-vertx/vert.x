@@ -63,21 +63,6 @@ public class HttpTestBase extends VertxTestBase {
   }
 
   protected void tearDown() throws Exception {
-    if (client != null) {
-      try {
-        client.close();
-      } catch (IllegalStateException ignore) {
-        // Client was already closed by the test
-      }
-    }
-    if (server != null) {
-      CountDownLatch latch = new CountDownLatch(1);
-      server.close((asyncResult) -> {
-        assertTrue(asyncResult.succeeded());
-        latch.countDown();
-      });
-      awaitLatch(latch);
-    }
     if (proxy != null) {
       proxy.stop();
     }

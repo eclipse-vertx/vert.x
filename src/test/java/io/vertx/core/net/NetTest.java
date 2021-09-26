@@ -122,12 +122,6 @@ public class NetTest extends VertxTestBase {
     if (tmp != null) {
       tmp.delete();
     }
-    if (client != null) {
-      client.close();
-    }
-    if (server != null) {
-      awaitClose(server);
-    }
     if (proxy != null) {
       proxy.stop();
     }
