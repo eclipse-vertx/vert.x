@@ -3733,10 +3733,13 @@ public class Http1xTest extends HttpTest {
   public void testReceiveResponseWithNoRequestInProgress() throws Exception {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
+    Promise<Void> promise = Promise.promise();
     server.connectHandler(so -> {
-      so.write("HTTP/1.1 200 OK\r\n" +
-        "Transfer-Encoding: chunked\r\n" +
-        "\r\n");
+      promise.future().onSuccess(v -> {
+        so.write("HTTP/1.1 200 OK\r\n" +
+          "Transfer-Encoding: chunked\r\n" +
+          "\r\n");
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     client.connectionHandler(conn -> {
@@ -3751,6 +3754,7 @@ public class Http1xTest extends HttpTest {
     });
     client.request(requestOptions)
       .onComplete(onSuccess(req -> {
+        promise.complete();
       }));
     await();
   }
