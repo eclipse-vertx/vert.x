@@ -1771,8 +1771,13 @@ public class Http1xTest extends HttpTest {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.connectHandler(so -> {
-      so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
-      so.close();
+      Buffer content = Buffer.buffer();
+      so.handler(buff -> {
+        content.appendBuffer(buff);
+        if (content.toString().endsWith("\r\n\r\n")) {
+          so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
+        }
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     AtomicBoolean a = new AtomicBoolean();
