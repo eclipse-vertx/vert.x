@@ -149,11 +149,11 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
     }
   }
 
-  void handleBegin() {
+  void handleBegin(boolean writable) {
     if (METRICS_ENABLED) {
       reportRequestBegin();
     }
-    response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric);
+    response = new Http1xServerResponse((VertxInternal) conn.vertx(), context, conn, request, metric, writable);
     if (conn.handle100ContinueAutomatically) {
       check100();
     }
