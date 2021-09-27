@@ -15,16 +15,16 @@ jobs:
     name: Run tests
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-18.04, windows-latest]
         profile: [""]
         jdk: [8]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-18.04
             jdk: 17
-          - os: ubuntu-latest
+          - os: ubuntu-18.04
             jdk: 8
             profile: '-PtestNativeTransport'
-          - os: ubuntu-latest
+          - os: ubuntu-18.04
             jdk: 8
             profile: '-PtestDomainSockets'
     runs-on: ${{ matrix.os }}
@@ -42,7 +42,7 @@ jobs:
     name: Deploy to OSSRH
     if: ${{ github.repository_owner == 'eclipse-vertx' && (github.event_name == 'push' || github.event_name == 'schedule') }}
     needs: Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env:
       VERTX_NEXUS_USERNAME: ${{ secrets.VERTX_NEXUS_USERNAME }}
       VERTX_NEXUS_PASSWORD: ${{ secrets.VERTX_NEXUS_PASSWORD }}
