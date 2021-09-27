@@ -25,6 +25,7 @@ import io.vertx.core.net.OpenSSLEngineOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.test.core.AsyncTestBase;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Ignore;
@@ -35,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -937,30 +939,39 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testNonUpgradedH2CConnectionIsEvictedFromThePool() {
+  public void testNonUpgradedH2CConnectionIsEvictedFromThePool() throws Exception {
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2));
     server.close();
     System.setProperty("vertx.disableH2c", "true");
     server = vertx.createHttpServer();
     try {
-      server.requestHandler(req -> req.response().end());
-      server.listen(testAddress, onSuccess(s -> {
-        Promise<Void> promise = Promise.promise();
-        client.request(requestOptions).compose(req -> {
-          req.connection().closeHandler(v -> {
-            promise.complete();
+      Promise<Void> p = Promise.promise();
+      AtomicBoolean first = new AtomicBoolean(true);
+      server.requestHandler(req -> {
+        if (first.compareAndSet(true, false)) {
+          HttpConnection conn = req.connection();
+          p.future().onComplete(ar -> {
+            conn.close();
           });
-          return req.send().compose(HttpClientResponse::body);
-        }).onSuccess(b -> {
-          server.close()
-            .compose(r -> promise.future())
-            .compose(a -> server.listen(testAddress)).onComplete(onSuccess(v -> {
-            client.request(requestOptions).compose(req -> req.send().compose(HttpClientResponse::body)).onSuccess(b2 -> {
+        }
+        req.response().end();
+      });
+      startServer(testAddress);
+      client.request(requestOptions).compose(req1 -> {
+        req1.connection().closeHandler(v1 -> {
+          vertx.runOnContext(v2 -> {
+            client.request(requestOptions).compose(req2 -> req2.send().compose(HttpClientResponse::body)).onComplete(onSuccess(b2 -> {
               testComplete();
-            });
-          }));
+            }));
+          });
         });
+        return req1.send().compose(resp -> {
+          assertEquals(HttpVersion.HTTP_1_1, resp.version());
+          return resp.body();
+        });
+      }).onComplete(onSuccess(b -> {
+        p.complete();
       }));
       await();
     } finally {
