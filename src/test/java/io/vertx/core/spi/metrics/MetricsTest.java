@@ -929,7 +929,6 @@ public class MetricsTest extends VertxTestBase {
 
     Handler<Promise<Void>> job = getSomeDumbTask();
 
-    CountDownLatch counter = new CountDownLatch(100);
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
@@ -946,12 +945,9 @@ public class MetricsTest extends VertxTestBase {
             if (metrics.numberOfRunningTasks() > 0) {
               hadRunning.set(true);
             }
-            counter.countDown();
           }
       );
     }
-
-    awaitLatch(counter);
 
     assertWaitUntil(() -> metrics.numberOfSubmittedTask() == 100);
     assertWaitUntil(() -> metrics.numberOfCompletedTasks() == 100);
@@ -965,7 +961,7 @@ public class MetricsTest extends VertxTestBase {
   }
 
   @Test
-  public void testThreadPoolMetricsWithInternalExecuteBlocking() throws InterruptedException {
+  public void testThreadPoolMetricsWithInternalExecuteBlocking() {
     Map<String, PoolMetrics> all = FakePoolMetrics.getPoolMetrics();
     FakePoolMetrics metrics = (FakePoolMetrics) all.get("vert.x-internal-blocking");
 
@@ -975,7 +971,6 @@ public class MetricsTest extends VertxTestBase {
     int num = VertxOptions.DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
     int count = num * 5;
 
-    CountDownLatch counter = new CountDownLatch(count);
     AtomicBoolean hadWaitingQueue = new AtomicBoolean();
     AtomicBoolean hadIdle = new AtomicBoolean();
     AtomicBoolean hadRunning = new AtomicBoolean();
@@ -1004,11 +999,8 @@ public class MetricsTest extends VertxTestBase {
         if (metrics.numberOfIdleThreads() > 0) {
           hadIdle.set(true);
         }
-        counter.countDown();
       });
     }
-
-    awaitLatch(counter);
 
     assertWaitUntil(() -> metrics.numberOfSubmittedTask() == 100);
     assertWaitUntil(() -> metrics.numberOfCompletedTasks() == 100);
