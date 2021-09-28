@@ -1019,8 +1019,8 @@ public class Http2ClientTest extends Http2TestBase {
       }
     });
     startServer(testAddress);
-    client.connectionHandler(conn -> {
-      AtomicInteger gaCount = new AtomicInteger();
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      HttpConnection conn = req.connection();
       conn.goAwayHandler(ga -> {
         vertx.runOnContext(v -> {
           client.request(new RequestOptions(requestOptions).setTimeout(5000))
@@ -1031,9 +1031,8 @@ public class Http2ClientTest extends Http2TestBase {
             }));
         });
       });
-    });
-    client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send(onFailure(resp -> {}));
+      req.send(onFailure(resp -> {
+      }));
     }));
     await();
   }
