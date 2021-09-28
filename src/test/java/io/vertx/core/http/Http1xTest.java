@@ -1685,8 +1685,8 @@ public class Http1xTest extends HttpTest {
         .onComplete(res -> latchClient.countDown());
     }
 
-    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
-    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
+    assertTrue(latchClient.await(30, TimeUnit.SECONDS));
+    assertTrue(latchConns.await(30, TimeUnit.SECONDS));
 
     assertEquals(numServers, connectedServers.size());
     for (HttpServer server : servers) {
