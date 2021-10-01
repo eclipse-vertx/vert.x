@@ -58,8 +58,8 @@ public class BufferImpl implements Buffer {
     return new BufferImpl(bytes);
   }
 
-  public static Buffer buffer(ByteBuf byteBuffer) {
-    return new BufferImpl(byteBuffer);
+  public static Buffer buffer(ByteBuf byteBuf) {
+    return new BufferImpl(byteBuf);
   }
 
   private ByteBuf buffer;
@@ -262,16 +262,14 @@ public class BufferImpl implements Buffer {
     return new String(bytes, StandardCharsets.UTF_8);
   }
 
-  public Buffer appendBuffer(Buffer buff) {
-    BufferImpl impl = (BufferImpl) buff;
-    ByteBuf byteBuf = impl.buffer;
-    buffer.writeBytes(impl.buffer, byteBuf.readerIndex(), impl.buffer.readableBytes());
+  public Buffer appendBuffer(Buffer b) {
+    ByteBuf byteBuf = b instanceof BufferImpl ? ((BufferImpl) b).byteBuf() : b.getByteBuf();
+    buffer.writeBytes(byteBuf, byteBuf.readerIndex(), byteBuf.readableBytes());
     return this;
   }
 
-  public Buffer appendBuffer(Buffer buff, int offset, int len) {
-    BufferImpl impl = (BufferImpl) buff;
-    ByteBuf byteBuf = impl.buffer;
+  public Buffer appendBuffer(Buffer b, int offset, int len) {
+    ByteBuf byteBuf = b instanceof BufferImpl ? ((BufferImpl) b).byteBuf() : b.getByteBuf();
     int from = byteBuf.readerIndex() + offset;
     buffer.writeBytes(byteBuf, from, len);
     return this;
@@ -471,25 +469,23 @@ public class BufferImpl implements Buffer {
     return this;
   }
 
-  public Buffer setBuffer(int pos, Buffer buff) {
-    ensureLength(pos + buff.length());
-    BufferImpl impl = (BufferImpl) buff;
-    ByteBuf byteBuf = impl.buffer;
+  public Buffer setBuffer(int pos, Buffer b) {
+    ensureLength(pos + b.length());
+    ByteBuf byteBuf = b instanceof BufferImpl ? ((BufferImpl) b).byteBuf() : b.getByteBuf();
     buffer.setBytes(pos, byteBuf, byteBuf.readerIndex(), byteBuf.readableBytes());
     return this;
   }
 
-  public Buffer setBuffer(int pos, Buffer buffer, int offset, int len) {
+  public Buffer setBuffer(int pos, Buffer b, int offset, int len) {
     ensureLength(pos + len);
-    BufferImpl impl = (BufferImpl) buffer;
-    ByteBuf byteBuf = impl.buffer;
+    ByteBuf byteBuf = b instanceof BufferImpl ? ((BufferImpl) b).byteBuf() : b.getByteBuf();
     this.buffer.setBytes(pos, byteBuf, byteBuf.readerIndex() + offset, len);
     return this;
   }
 
-  public BufferImpl setBytes(int pos, ByteBuffer b) {
-    ensureLength(pos + b.limit());
-    buffer.setBytes(pos, b);
+  public BufferImpl setBytes(int pos, ByteBuffer byteBuf) {
+    ensureLength(pos + byteBuf.limit());
+    buffer.setBytes(pos, byteBuf);
     return this;
   }
 
@@ -611,16 +607,15 @@ public class BufferImpl implements Buffer {
   }
 
   @Override
-  public void writeToBuffer(Buffer buff) {
-    buff.appendInt(this.length());
-    buff.appendBuffer(this);
+  public void writeToBuffer(Buffer b) {
+    b.appendInt(this.length());
+    b.appendBuffer(this);
   }
 
   @Override
-  public int readFromBuffer(int pos, Buffer buffer) {
-    int len = buffer.getInt(pos);
-    BufferImpl impl = (BufferImpl)buffer.getBuffer(pos + 4, pos + 4 + len);
-    this.buffer = impl.getByteBuf();
+  public int readFromBuffer(int pos, Buffer b) {
+    int len = b.getInt(pos);
+    this.buffer = b.getBuffer(pos + 4, pos + 4 + len).getByteBuf();
     return pos + 4 + len;
   }
 }
