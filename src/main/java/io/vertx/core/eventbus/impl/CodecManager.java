@@ -123,7 +123,7 @@ public class CodecManager {
     userCodecMap.remove(name);
   }
 
-  public <T> void registerDefaultCodec(Class<T> clazz, MessageCodec<T, ?> codec) {
+  public <T> void registerDefaultCodec(Class<T> clazz, MessageCodec<? super T, ?> codec) {
     Objects.requireNonNull(clazz);
     Objects.requireNonNull(codec, "codec");
     Objects.requireNonNull(codec.name(), "code.name()");

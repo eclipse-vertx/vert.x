@@ -142,7 +142,7 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   @Test
-  public void testDefaultDecoderSendSymetric() throws Exception {
+  public void testDefaultDecoderSendSymmetric() throws Exception {
     startNodes(2);
     MessageCodec codec = new MyPOJOEncoder2();
     vertices[0].eventBus().registerDefaultCodec(MyPOJO.class, codec);
@@ -153,7 +153,21 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   }
 
   @Test
-  public void testDefaultDecoderReplySymetric() throws Exception {
+  public void testDefaultDecoderSendSubSymmetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertices[0].eventBus().registerDefaultCodec(MySubPOJO.class, codec);
+    vertices[1].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MySubPOJO(str);
+    testSend(pojo, pojo, recPojo -> {
+      assertEquals(recPojo.getStr(), pojo.getStr());
+      assertTrue(recPojo.getClass() != MySubPOJO.class);
+    }, null);
+  }
+
+  @Test
+  public void testDefaultDecoderReplySymmetric() throws Exception {
     startNodes(2);
     MessageCodec codec = new MyPOJOEncoder2();
     vertices[0].eventBus().registerDefaultCodec(MyPOJO.class, codec);
@@ -161,6 +175,20 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
     testReply(pojo, pojo, null, null);
+  }
+
+  @Test
+  public void testDefaultDecoderReplySubSymmetric() throws Exception {
+    startNodes(2);
+    MessageCodec codec = new MyPOJOEncoder2();
+    vertices[0].eventBus().registerDefaultCodec(MyPOJO.class, codec);
+    vertices[1].eventBus().registerDefaultCodec(MySubPOJO.class, codec);
+    String str = TestUtils.randomAlphaString(100);
+    MyPOJO pojo = new MySubPOJO(str);
+    testReply(pojo, pojo, recPojo -> {
+      assertEquals(recPojo.getStr(), pojo.getStr());
+      assertTrue(recPojo.getClass() != MySubPOJO.class);
+    }, null);
   }
 
   @Test

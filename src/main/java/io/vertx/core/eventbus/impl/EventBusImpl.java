@@ -192,7 +192,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   @Override
-  public <T> EventBus registerDefaultCodec(Class<T> clazz, MessageCodec<T, ?> codec) {
+  public <T> EventBus registerDefaultCodec(Class<T> clazz, MessageCodec<? super T, ?> codec) {
     codecManager.registerDefaultCodec(clazz, codec);
     return this;
   }

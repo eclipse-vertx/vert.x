@@ -245,7 +245,7 @@ public interface EventBus extends Measured {
    * @return a reference to this, so the API can be used fluently
    */
   @GenIgnore
-  <T> EventBus registerDefaultCodec(Class<T> clazz, MessageCodec<T, ?> codec);
+  <T> EventBus registerDefaultCodec(Class<T> clazz, MessageCodec<? super T, ?> codec);
 
   /**
    * Unregister a default message codec.
