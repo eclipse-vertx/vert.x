@@ -702,6 +702,16 @@ public interface Buffer extends ClusterSerializable, Shareable {
   Buffer slice(int start, int end);
 
   /**
+   * Returns a read-only version of this buffer.
+   */
+  Buffer asReadOnly();
+
+  /**
+   * Returns {@code true} if and only if this buffer is read-only.
+   */
+  boolean isReadOnly();
+
+  /**
    * Returns the Buffer as a Netty {@code ByteBuf}.
    *
    * <p> The returned buffer is a duplicate that maintain its own indices.

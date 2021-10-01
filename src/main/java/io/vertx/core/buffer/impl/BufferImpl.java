@@ -525,6 +525,14 @@ public class BufferImpl implements Buffer {
     return new BufferImpl(buffer.slice(start, end - start));
   }
 
+  public Buffer asReadOnly() {
+    return new BufferImpl(buffer.asReadOnly());
+  }
+
+  public boolean isReadOnly() {
+    return buffer.isReadOnly();
+  }
+
   /**
    * @return the buffer as is
    */

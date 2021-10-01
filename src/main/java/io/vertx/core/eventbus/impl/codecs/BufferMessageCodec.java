@@ -34,7 +34,7 @@ public class BufferMessageCodec implements MessageCodec<Buffer, Buffer> {
 
   @Override
   public Buffer transform(Buffer b) {
-    return b.copy();
+    return b.isReadOnly() ? b : b.copy();
   }
 
   @Override

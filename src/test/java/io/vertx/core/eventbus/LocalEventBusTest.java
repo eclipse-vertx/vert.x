@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.MessageConsumerImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
@@ -1477,6 +1478,37 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testCloseSender() {
     MessageProducer<String> producer = eb.sender(ADDRESS1);
     producer.close(onSuccess(v -> testComplete()));
+    await();
+  }
+
+  @Test
+  public void testLocalBuffer() {
+    Buffer b = TestUtils.randomBuffer(100);
+    eb.<Buffer>localConsumer(ADDRESS1).handler((Message<Buffer> msg) -> {
+      Buffer rb = msg.body();
+      assertEquals(b, rb);
+      assertNotSame(b, rb);
+      assertFalse(rb.isReadOnly());
+      testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      eb.send(ADDRESS1, b);
+    });
+    await();
+  }
+
+  @Test
+  public void testReadOnlyLocalBuffer() {
+    Buffer b = TestUtils.randomBuffer(100).asReadOnly();
+    eb.<Buffer>localConsumer(ADDRESS1).handler((Message<Buffer> msg) -> {
+      Buffer rb = msg.body();
+      assertSame(b, rb);
+      assertTrue(rb.isReadOnly());
+      testComplete();
+    }).completionHandler(ar -> {
+      assertTrue(ar.succeeded());
+      eb.send(ADDRESS1, b);
+    });
     await();
   }
 }

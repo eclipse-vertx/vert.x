@@ -22,6 +22,7 @@ import io.vertx.test.core.TestUtils;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
+import java.nio.ReadOnlyBufferException;
 import java.nio.charset.StandardCharsets;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -1171,5 +1172,19 @@ public class BufferTest {
     assertIndexOutOfBoundsException(() -> f.apply(buffer, -1));
     f.apply(buffer, 0);
     assertIndexOutOfBoundsException(() -> f.apply(buffer, 1));
+  }
+
+  @Test
+  public void testReadOnly() {
+    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    assertFalse(b.isReadOnly());
+    Buffer b2 = b.asReadOnly();
+    assertFalse(b.isReadOnly());
+    assertTrue(b2.isReadOnly());
+    assertEquals(b, b2);
+
+    b.appendByte(TestUtils.randomByte());
+    assertThrows(ReadOnlyBufferException.class, () -> b2.appendByte(TestUtils.randomByte()));
+    assertThrows(ReadOnlyBufferException.class, () -> b2.appendBuffer(b));
   }
 }

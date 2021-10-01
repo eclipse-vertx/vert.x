@@ -13,7 +13,6 @@ package io.vertx.core.buffer.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledHeapByteBuf;
-import io.netty.buffer.UnpooledUnsafeHeapByteBuf;
 
 /**
  * An un-releasable, un-pooled, un-instrumented heap {@code ByteBuf}.
