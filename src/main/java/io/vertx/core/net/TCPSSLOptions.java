@@ -474,6 +474,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    *
    * @param suite  the suite
    * @return a reference to this, so the API can be used fluently
+   * @see #getEnabledCipherSuites()
    */
   public TCPSSLOptions addEnabledCipherSuite(String suite) {
     enabledCipherSuites.add(suite);
@@ -481,6 +482,12 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * Return an ordered set of the cipher suites.
+   *
+   * <p> The set is initially empty and suite should be added to this set in the desired order.
+   *
+   * <p> When suites are added and therefore the list is not empty, it takes precedence over the
+   * default suite defined by the {@link SSLEngineOptions} in use.
    *
    * @return the enabled cipher suites
    */

@@ -185,22 +185,16 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
 
   private void doHandshake() {
     Channel channel = conn.channel();
-    Object metric;
     Http1xServerResponse response = request.response();
     try {
       handshaker.handshake(channel, request.nettyRequest());
-      metric = request.metric;
     } catch (Exception e) {
       response.setStatusCode(BAD_REQUEST.code()).end();
       throw e;
     } finally {
       request = null;
     }
-    response.setStatusCode(101);
-    if (conn.metrics != null) {
-      conn.metrics.responseBegin(metric, response);
-    }
-    conn.responseComplete();
+    response.completeHandshake();
     status = SWITCHING_PROTOCOLS.code();
     subProtocol(handshaker.selectedSubprotocol());
     // remove compressor as its not needed anymore once connection was upgraded to websockets

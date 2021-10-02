@@ -13,10 +13,12 @@ package io.vertx.core.net.impl.pool;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -46,6 +48,8 @@ public interface ConnectionPool<C> {
    */
   ConnectionPool<C> connectionSelector(BiFunction<PoolWaiter<C>, List<PoolConnection<C>>, PoolConnection<C>> selector);
 
+  ConnectionPool<C> contextProvider(Function<ContextInternal, EventLoopContext> contextProvider);
+
   /**
    * Acquire a connection from the pool.
    *
@@ -53,7 +57,7 @@ public interface ConnectionPool<C> {
    * @param kind the connection kind wanted which is an index in the max size array provided when constructing the pool
    * @param handler the callback handler with the result
    */
-  void acquire(EventLoopContext context, int kind, Handler<AsyncResult<Lease<C>>> handler);
+  void acquire(ContextInternal context, int kind, Handler<AsyncResult<Lease<C>>> handler);
 
   /**
    * Acquire a connection from the pool.
@@ -63,7 +67,7 @@ public interface ConnectionPool<C> {
    * @param kind the connection kind wanted which is an index in the max size array provided when constructing the pool
    * @param handler the callback handler with the result
    */
-  void acquire(EventLoopContext context, PoolWaiter.Listener<C> listener, int kind, Handler<AsyncResult<Lease<C>>> handler);
+  void acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int kind, Handler<AsyncResult<Lease<C>>> handler);
 
   /**
    * Cancel a waiter.

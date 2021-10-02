@@ -18,8 +18,8 @@ import java.util.LinkedList;
 import java.util.concurrent.Executor;
 
 /**
- * A task queue that always run all tasks in order. The executor to run the tasks is passed when
- * the tasks when the tasks are executed, this executor is not guaranteed to be used, as if several
+ * A task queue that always run all tasks in order. The executor to run the tasks is passed
+ * when the tasks are executed, this executor is not guaranteed to be used, as if several
  * tasks are queued, the original thread will be used.
  *
  * More specifically, any call B to the {@link #execute(Runnable, Executor)} method that happens-after another call A to the

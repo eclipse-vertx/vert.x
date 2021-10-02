@@ -91,6 +91,16 @@ public interface MessageConsumer<T> extends ReadStream<Message<T>> {
   void completionHandler(Handler<AsyncResult<Void>> completionHandler);
 
   /**
+   * @return a future completed
+   */
+  void registration(Handler<AsyncResult<MessageConsumer<T>>> handler);
+
+  /**
+   * @return a future completed
+   */
+  Future<MessageConsumer<T>> registration();
+
+  /**
    * Unregisters the handler which created this registration
    */
   Future<Void> unregister();

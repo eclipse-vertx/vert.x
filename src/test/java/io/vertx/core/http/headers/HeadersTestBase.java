@@ -11,8 +11,12 @@
 
 package io.vertx.core.http.headers;
 
+import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.http.impl.headers.HeadersAdaptor;
+import io.vertx.core.http.impl.headers.HeadersMultiMap;
+import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -25,8 +29,8 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -593,5 +597,77 @@ public abstract class HeadersTestBase {
     mmap = newMultiMap();
     mmap.set("header", Arrays.asList(HttpHeaders.createOptimized("value1"), HttpHeaders.createOptimized("value2")));
     assertEquals(Arrays.asList("value1", "value2"), mmap.getAll("header"));
+  }
+  
+  @Test
+  public void testSetAllOnExistingMapUsingMultiMapHttp1() {
+    MultiMap mainMap = new HeadersAdaptor(HeadersMultiMap.httpHeaders());
+    mainMap.add("originalKey", "originalValue");
+    
+    MultiMap setAllMap = newMultiMap();
+    
+    setAllMap.add("originalKey", "newValue");
+    setAllMap.add("anotherKey", "anotherValue");
+    
+    MultiMap result = mainMap.setAll(setAllMap);
+    assertNotNull(result);
+    assertFalse(result.isEmpty());
+    assertEquals(2, result.size());
+    assertEquals("newValue",result.get("originalKey"));
+    assertEquals("anotherValue",result.get("anotherKey"));
+  }
+  
+  @Test
+  public void testSetAllOnExistingMapUsingHashMapHttp1() {
+    MultiMap mainMap = new HeadersAdaptor(HeadersMultiMap.httpHeaders());
+    mainMap.add("originalKey", "originalValue");
+    
+    Map<String,String> setAllMap = new HashMap<>();
+    
+    setAllMap.put("originalKey", "newValue");
+    setAllMap.put("anotherKey", "anotherValue");
+    
+    MultiMap result = mainMap.setAll(setAllMap);
+    assertNotNull(result);
+    assertFalse(result.isEmpty());
+    assertEquals(2, result.size());
+    assertEquals("newValue",result.get("originalKey"));
+    assertEquals("anotherValue",result.get("anotherKey"));
+  }
+  
+  @Test
+  public void testSetAllOnExistingMapUsingMultiMapHttp2() {
+    MultiMap mainMap = new Http2HeadersAdaptor(new DefaultHttp2Headers());
+    mainMap.add("originalKey", "originalValue");
+    
+    MultiMap setAllMap = newMultiMap();
+    
+    setAllMap.add("originalKey", "newValue");
+    setAllMap.add("anotherKey", "anotherValue");
+    
+    MultiMap result = mainMap.setAll(setAllMap);
+    assertNotNull(result);
+    assertFalse(result.isEmpty());
+    assertEquals(2, result.size());
+    assertEquals("newValue",result.get("originalKey"));
+    assertEquals("anotherValue",result.get("anotherKey"));
+  }
+  
+  @Test
+  public void testSetAllOnExistingMapUsingHashMapHttp2() {
+    MultiMap mainMap = new Http2HeadersAdaptor(new DefaultHttp2Headers());
+    mainMap.add("originalKey", "originalValue");
+    
+    Map<String,String> setAllMap = new HashMap<>();
+    
+    setAllMap.put("originalKey", "newValue");
+    setAllMap.put("anotherKey", "anotherValue");
+    
+    MultiMap result = mainMap.setAll(setAllMap);
+    assertNotNull(result);
+    assertFalse(result.isEmpty());
+    assertEquals(2, result.size());
+    assertEquals("newValue",result.get("originalKey"));
+    assertEquals("anotherValue",result.get("anotherKey"));
   }
 }

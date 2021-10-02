@@ -28,8 +28,9 @@ public class WorkerContext extends ContextImpl {
                 WorkerPool workerPool,
                 Deployment deployment,
                 CloseFuture closeFuture,
-                ClassLoader tccl) {
-    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeFuture, tccl);
+                ClassLoader tccl,
+                boolean disableTCCL) {
+    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeFuture, tccl, disableTCCL);
   }
 
   @Override

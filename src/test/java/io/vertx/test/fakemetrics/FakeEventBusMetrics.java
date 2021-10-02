@@ -99,14 +99,18 @@ public class FakeEventBusMetrics extends FakeMetricsBase implements EventBusMetr
 
   @Override
   public void discardMessage(HandlerMetric handler, boolean local, Message<?> msg) {
-    handler.discardCount.incrementAndGet();
+    if (handler != null) {
+      handler.discardCount.incrementAndGet();
+    }
   }
 
   @Override
   public void messageDelivered(HandlerMetric handler, boolean local) {
-    handler.deliveredCount.incrementAndGet();
-    if (local) {
-      handler.localDeliveredCount.incrementAndGet();
+    if (handler != null) {
+      handler.deliveredCount.incrementAndGet();
+      if (local) {
+        handler.localDeliveredCount.incrementAndGet();
+      }
     }
   }
 

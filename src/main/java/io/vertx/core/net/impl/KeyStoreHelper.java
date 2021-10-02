@@ -19,11 +19,7 @@ import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
 
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,20 +31,9 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -67,16 +52,17 @@ public class KeyStoreHelper {
 
   private final String password;
   private final KeyStore store;
+  private final String aliasPassword;
   private final Map<String, X509KeyManager> wildcardMgrMap = new HashMap<>();
   private final Map<String, X509KeyManager> mgrMap = new HashMap<>();
   private final Map<String, TrustManagerFactory> trustMgrMap = new HashMap<>();
 
-  public KeyStoreHelper(KeyStore ks, String password) throws Exception {
+  public KeyStoreHelper(KeyStore ks, String password, String aliasPassword) throws Exception {
     Enumeration<String> en = ks.aliases();
     while (en.hasMoreElements()) {
       String alias = en.nextElement();
       Certificate cert = ks.getCertificate(alias);
-      if (ks.isCertificateEntry(alias) && ! alias.startsWith(DUMMY_CERT_ALIAS)){
+      if (ks.isCertificateEntry(alias) && !alias.startsWith(DUMMY_CERT_ALIAS)) {
         final KeyStore keyStore = createEmptyKeyStore();
         keyStore.setCertificateEntry("cert-1", cert);
         TrustManagerFactory fact = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
@@ -98,16 +84,13 @@ public class KeyStoreHelper {
         String dn = x509Cert.getSubjectX500Principal().getName();
         domains.addAll(getX509CertificateCommonNames(dn));
         if (!domains.isEmpty()) {
-          PrivateKey key = (PrivateKey) ks.getKey(alias, password != null ? password.toCharArray() : null);
+          char[] keyPassword = keyPassword(aliasPassword, password);
+          PrivateKey key = (PrivateKey) ks.getKey(alias, keyPassword);
           Certificate[] tmp = ks.getCertificateChain(alias);
           if (tmp == null) {
             // It's a private key
             continue;
           }
-          List<X509Certificate> chain = Arrays.asList(tmp)
-              .stream()
-              .map(c -> (X509Certificate)c)
-              .collect(Collectors.toList());
           X509KeyManager mgr = new X509KeyManager() {
             @Override
             public String[] getClientAliases(String s, Principal[] principals) {
@@ -127,7 +110,7 @@ public class KeyStoreHelper {
             }
             @Override
             public X509Certificate[] getCertificateChain(String s) {
-              return chain.toArray(new X509Certificate[0]);
+              return Arrays.stream(tmp).map(X509Certificate.class::cast).toArray(X509Certificate[]::new);
             }
             @Override
             public PrivateKey getPrivateKey(String s) {
@@ -146,12 +129,19 @@ public class KeyStoreHelper {
     }
     this.store = ks;
     this.password = password;
+    this.aliasPassword = aliasPassword;
   }
 
   public KeyManagerFactory getKeyMgrFactory() throws Exception {
     KeyManagerFactory fact = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    fact.init(store, password != null ? password.toCharArray(): null);
+    char[] keyPassword = keyPassword(aliasPassword, password);
+    fact.init(store, keyPassword);
     return fact;
+  }
+
+  private char[] keyPassword(String aliasPassword, String password) {
+    if (aliasPassword != null) return aliasPassword.toCharArray();
+    return (password != null) ? password.toCharArray() : null;
   }
 
   public X509KeyManager getKeyMgr(String serverName) {
@@ -222,6 +212,9 @@ public class KeyStoreHelper {
       ks.load(in, password != null ? password.toCharArray() : null);
     }
     if (alias != null) {
+      if (!ks.containsAlias(alias)) {
+        throw new IllegalArgumentException("alias does not exist in the keystore: " + alias);
+      }
       List<String> ksAliases = Collections.list(ks.aliases());
       for (String ksAlias : ksAliases) {
         if (!alias.equals(ksAlias)) {
@@ -362,9 +355,12 @@ public class KeyStoreHelper {
   }
 
   /**
-   * Creates a empty key store using the industry standard PCKS12.
+   * Creates an empty keystore. The keystore uses the default keystore type set in
+   * the file 'lib/security/security.java' (located in the JRE) by the 'keystore.type' property.
+   * However, if the default is set to the 'JKS' format, the this function will instead attempt to
+   * use the newer 'PKCS12' format, if it exists.
    *
-   * The format is the default format for keystores for Java >=9 and available on GraalVM.
+   * The PKCS12 format is the default format for keystores for Java >=9 and available on GraalVM.
    *
    * PKCS12 is an extensible, standard, and widely-supported format for storing cryptographic keys.
    * As of JDK 8, PKCS12 keystores can store private keys, trusted public key certificates, and
@@ -379,7 +375,14 @@ public class KeyStoreHelper {
    * @throws KeyStoreException if the underlying engine cannot create an instance
    */
   private static KeyStore createEmptyKeyStore() throws KeyStoreException {
-    final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+    final KeyStore keyStore;
+    String defaultKeyStoreType = KeyStore.getDefaultType();
+
+    if (defaultKeyStoreType.equalsIgnoreCase("jks") && Security.getAlgorithms("KeyStore").contains("PKCS12")) {
+      keyStore = KeyStore.getInstance("PKCS12");
+    } else {
+      keyStore = KeyStore.getInstance(defaultKeyStoreType);
+    }
     try {
       keyStore.load(null, null);
     } catch (CertificateException | NoSuchAlgorithmException | IOException e) {

@@ -13,10 +13,13 @@ package io.vertx.core;
 
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.NoStackTraceThrowable;
+import io.vertx.core.impl.future.PromiseInternal;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -25,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -1534,5 +1538,93 @@ public class FutureTest extends FutureTestBase {
     });
 
     await();
+  }
+
+  private final RuntimeException failure = new RuntimeException();
+
+  @Test
+  public void testOnXXXReportsFailureOnContext() {
+    testListenersReportFailureOnContext((ctx, task) -> ctx.runOnContext(v -> task.run()), (fut, task) -> fut.onComplete(ignore -> task.run()), Promise::complete);
+    testListenersReportFailureOnContext((ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onComplete(ignore -> task.run()), Promise::complete);
+    testListenersReportFailureOnContext((ctx, task) -> ctx.runOnContext(v -> task.run()), (fut, task) -> fut.onSuccess(ignore -> task.run()), Promise::complete);
+    testListenersReportFailureOnContext((ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onSuccess(ignore -> task.run()), Promise::complete);
+    testListenersReportFailureOnContext((ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onComplete(ignore -> task.run()), promise -> promise.fail("failure"));
+    testListenersReportFailureOnContext((ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onComplete(ignore -> task.run()), promise -> promise.fail("failure"));
+    testListenersReportFailureOnContext((ctx, task) -> ctx.runOnContext(v -> task.run()), (fut, task) -> fut.onFailure(ignore -> task.run()), promise -> promise.fail("failure"));
+    testListenersReportFailureOnContext((ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onFailure(ignore -> task.run()), promise -> promise.fail("failure"));
+  }
+
+  private void testListenersReportFailureOnContext(BiConsumer<ContextInternal, Runnable> runner, BiConsumer<Future<String>, Runnable> subscriber, Consumer<Promise<?>> completer) {
+    testListenersReportFailureOnContext(runner, subscriber, completer, 1);
+    testListenersReportFailureOnContext(runner, subscriber, completer, 2);
+  }
+
+  private void testListenersReportFailureOnContext(BiConsumer<ContextInternal, Runnable> runner, BiConsumer<Future<String>, Runnable> subscriber, Consumer<Promise<?>> completer, int size) {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    List<Throwable> caught = Collections.synchronizedList(new ArrayList<>());
+    ctx.exceptionHandler(caught::add);
+    runner.accept(ctx, () -> {
+      PromiseInternal<String> promise = ctx.promise();
+      for (int i = 0;i < size;i++) {
+        subscriber.accept(promise.future(), () -> {
+          throw failure;
+        });
+      }
+      try {
+        completer.accept(promise);
+      } catch (Exception e) {
+        fail("Was not expecting exception to bubble up");
+      }
+    });
+    waitUntil(() -> caught.size() == size && caught.get(0) == failure);
+  }
+
+  @Test
+  public void testCompletedFutureOnXXXReportsFailureOnContext() {
+    Function<ContextInternal, Future<String>> succeededFutureProvider1 = ContextInternal::succeededFuture;
+    testListenersReportFailureOnContextAfterCompletion(succeededFutureProvider1, (ctx, task) -> ctx.runOnContext(v -> task.run()), (fut, task) -> fut.onComplete(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(succeededFutureProvider1, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onComplete(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(succeededFutureProvider1, (ctx, task) -> ctx.runOnContext(v -> task.run()), (fut, task) -> fut.onSuccess(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(succeededFutureProvider1, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onSuccess(ignore -> task.run()));
+    Function<ContextInternal, Future<String>> succeededFutureProvider2 = ctx -> {
+      PromiseInternal<String> promise = ctx.promise();
+      promise.complete();
+      return promise.future();
+    };
+    testListenersReportFailureOnContextAfterCompletion(succeededFutureProvider2, (ctx, task) -> ctx.runOnContext(v -> task.run()), (fut, task) -> fut.onComplete(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(succeededFutureProvider2, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onComplete(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(succeededFutureProvider2, (ctx, task) -> ctx.runOnContext(v -> task.run()), (fut, task) -> fut.onSuccess(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(succeededFutureProvider2, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onSuccess(ignore -> task.run()));
+    Function<ContextInternal, Future<String>> failedFutureProvider1 = ctx -> ctx.failedFuture("failure");
+    testListenersReportFailureOnContextAfterCompletion(failedFutureProvider1, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onComplete(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(failedFutureProvider1, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onComplete(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(failedFutureProvider1, (ctx, task) -> ctx.runOnContext(v -> task.run()), (fut, task) -> fut.onFailure(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(failedFutureProvider1, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onFailure(ignore -> task.run()));
+    Function<ContextInternal, Future<String>> failedFutureProvider2 = ctx -> {
+      PromiseInternal<String> promise = ctx.promise();
+      promise.fail("failure");
+      return promise.future();
+    };
+    testListenersReportFailureOnContextAfterCompletion(failedFutureProvider2, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onComplete(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(failedFutureProvider2, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onComplete(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(failedFutureProvider2, (ctx, task) -> ctx.runOnContext(v -> task.run()), (fut, task) -> fut.onFailure(ignore -> task.run()));
+    testListenersReportFailureOnContextAfterCompletion(failedFutureProvider2, (ctx, task) -> new Thread(task).start(), (fut, task) -> fut.onFailure(ignore -> task.run()));
+  }
+
+  private void testListenersReportFailureOnContextAfterCompletion(Function<ContextInternal, Future<String>> provider, BiConsumer<ContextInternal, Runnable> runner, BiConsumer<Future<String>, Runnable> subscriber) {
+    ContextInternal ctx = (ContextInternal) vertx.getOrCreateContext();
+    List<Throwable> caught = Collections.synchronizedList(new ArrayList<>());
+    ctx.exceptionHandler(caught::add);
+    runner.accept(ctx, () -> {
+      Future<String> future = provider.apply(ctx);
+      try {
+        subscriber.accept(future, () -> {
+          throw failure;
+        });
+      } catch (Exception e) {
+        fail("Was not expecting exception to bubble up");
+      }
+    });
+    waitUntil(() -> caught.size() == 1 && caught.get(0) == failure);
   }
 }

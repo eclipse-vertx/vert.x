@@ -350,6 +350,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private final InboundBuffer<Object> queue;
     private boolean reset;
     private boolean writable;
+    private boolean closed;
     private HttpRequestHead request;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -585,9 +586,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     void handleEnd(LastHttpContent trailer) {
       queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
-      if (closeHandler != null) {
-        closeHandler.handle(null);
-      }
+      tryClose();
     }
 
     void handleException(Throwable cause) {
@@ -599,8 +598,18 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     void handleClosed() {
       handleException(CLOSED_EXCEPTION);
-      if (closeHandler != null) {
-        closeHandler.handle(null);
+      tryClose();
+    }
+
+    /**
+     * Attempt to close the stream.
+     */
+    private void tryClose() {
+      if (!closed) {
+        closed = true;
+        if (closeHandler != null) {
+          closeHandler.handle(null);
+        }
       }
     }
   }
@@ -744,9 +753,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         if ((request.method == HttpMethod.CONNECT &&
              response.statusCode == 200) || (
              request.method == HttpMethod.GET &&
-             request.headers.contains("connection", "Upgrade", false) &&
+             request.headers != null && request.headers.contains("connection", "Upgrade", false) &&
              response.statusCode == 101)) {
           removeChannelHandlers();
+        } else {
+          isConnect = false;
         }
       }
     }
@@ -879,12 +890,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         } else {
           webSocket = (WebSocketImpl) wsRes.result();
           webSocket.registerHandler(vertx.eventBus());
-
-        }
-        log.debug("WebSocket handshake complete");
-        HttpClientMetrics metrics = client.metrics();
-        if (metrics != null) {
-          webSocket.setMetric(metrics.connected(webSocket));
+          log.debug("WebSocket handshake complete");
+          HttpClientMetrics metrics = client.metrics();
+          if (metrics != null) {
+            webSocket.setMetric(metrics.connected(webSocket));
+          }
         }
         getContext().emit(wsRes, res -> {
           if (res.succeeded()) {

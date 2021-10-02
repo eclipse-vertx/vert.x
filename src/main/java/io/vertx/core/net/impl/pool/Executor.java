@@ -28,7 +28,7 @@ public interface Executor<S> {
      * @param state the state to update
      * @return the post action to execute or {@code null} if nothing should happen
      */
-    Runnable execute(S state);
+    Task execute(S state);
   }
 
   /**

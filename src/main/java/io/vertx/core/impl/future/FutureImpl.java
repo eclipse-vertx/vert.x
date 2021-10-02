@@ -87,7 +87,15 @@ class FutureImpl<T> extends FutureBase<T> {
     addListener(new Listener<T>() {
       @Override
       public void onSuccess(T value) {
-        handler.handle(value);
+        try {
+          handler.handle(value);
+        } catch (Throwable t) {
+          if (context != null) {
+            context.reportException(t);
+          } else {
+            throw t;
+          }
+        }
       }
       @Override
       public void onFailure(Throwable failure) {
@@ -105,7 +113,15 @@ class FutureImpl<T> extends FutureBase<T> {
       }
       @Override
       public void onFailure(Throwable failure) {
-        handler.handle(failure);
+        try {
+          handler.handle(failure);
+        } catch (Throwable t) {
+          if (context != null) {
+            context.reportException(t);
+          } else {
+            throw t;
+          }
+        }
       }
     });
     return this;
@@ -121,11 +137,27 @@ class FutureImpl<T> extends FutureBase<T> {
       listener = new Listener<T>() {
         @Override
         public void onSuccess(T value) {
-          handler.handle(FutureImpl.this);
+          try {
+            handler.handle(FutureImpl.this);
+          } catch (Throwable t) {
+            if (context != null) {
+              context.reportException(t);
+            } else {
+              throw t;
+            }
+          }
         }
         @Override
         public void onFailure(Throwable failure) {
-          handler.handle(FutureImpl.this);
+          try {
+            handler.handle(FutureImpl.this);
+          } catch (Throwable t) {
+            if (context != null) {
+              context.reportException(t);
+            } else {
+              throw t;
+            }
+          }
         }
       };
     }

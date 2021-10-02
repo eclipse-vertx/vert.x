@@ -38,6 +38,7 @@ class DuplicatedContext extends AbstractContext {
   private ConcurrentMap<Object, Object> localData;
 
   DuplicatedContext(ContextImpl delegate) {
+    super(delegate.disableTCCL);
     this.delegate = delegate;
   }
 
@@ -144,7 +145,7 @@ class DuplicatedContext extends AbstractContext {
 
   @Override
   public final <T> Future<T> executeBlocking(Handler<Promise<T>> action, boolean ordered) {
-    return ContextImpl.executeBlocking(this, action, delegate.workerPool, delegate.orderedTasks);
+    return ContextImpl.executeBlocking(this, action, delegate.workerPool, ordered ? delegate.orderedTasks : null);
   }
 
   @Override

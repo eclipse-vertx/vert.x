@@ -356,7 +356,6 @@ public class Http1xTest extends HttpTest {
     assertEquals(80, options.getPort());
     assertEquals(options, options.setPort(1234));
     assertEquals(1234, options.getPort());
-    assertIllegalArgumentException(() -> options.setPort(-1));
     assertIllegalArgumentException(() -> options.setPort(65536));
 
     assertEquals("0.0.0.0", options.getHost());
@@ -1686,8 +1685,8 @@ public class Http1xTest extends HttpTest {
         .onComplete(res -> latchClient.countDown());
     }
 
-    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
-    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
+    assertTrue(latchClient.await(30, TimeUnit.SECONDS));
+    assertTrue(latchConns.await(30, TimeUnit.SECONDS));
 
     assertEquals(numServers, connectedServers.size());
     for (HttpServer server : servers) {
@@ -1771,8 +1770,13 @@ public class Http1xTest extends HttpTest {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.connectHandler(so -> {
-      so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
-      so.close();
+      Buffer content = Buffer.buffer();
+      so.handler(buff -> {
+        content.appendBuffer(buff);
+        if (content.toString().endsWith("\r\n\r\n")) {
+          so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
+        }
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     AtomicBoolean a = new AtomicBoolean();
@@ -3734,10 +3738,13 @@ public class Http1xTest extends HttpTest {
   public void testReceiveResponseWithNoRequestInProgress() throws Exception {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
+    Promise<Void> promise = Promise.promise();
     server.connectHandler(so -> {
-      so.write("HTTP/1.1 200 OK\r\n" +
-        "Transfer-Encoding: chunked\r\n" +
-        "\r\n");
+      promise.future().onSuccess(v -> {
+        so.write("HTTP/1.1 200 OK\r\n" +
+          "Transfer-Encoding: chunked\r\n" +
+          "\r\n");
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     client.connectionHandler(conn -> {
@@ -3752,6 +3759,7 @@ public class Http1xTest extends HttpTest {
     });
     client.request(requestOptions)
       .onComplete(onSuccess(req -> {
+        promise.complete();
       }));
     await();
   }
@@ -4789,26 +4797,53 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
-  public void testRandomPortsSameVerticle() throws Exception{
-    int numServers = 3;
-    waitFor(numServers);
+  public void testRandomSharedPortInVerticle() {
+    testRandomPortInVerticle(3, new int[]{-1}, 1);
+  }
+
+  @Test
+  public void testRandomSharedPortsInVerticle() {
+    testRandomPortInVerticle(3, new int[]{-1, -2}, 2);
+  }
+
+  @Test
+  public void testRandomPortsInVerticle1() {
+    testRandomPortInVerticle(3, new int[]{0}, 3);
+  }
+
+  @Test
+  public void testRandomPortsInVerticle2() {
+    testRandomPortInVerticle(3, new int[]{0, 0}, 6);
+  }
+
+  private void testRandomPortInVerticle(int instances, int[] bindPorts, int expectedPorts) {
+    Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
+    waitFor(instances);
     Set<Integer> ports = Collections.synchronizedSet(new HashSet<>());
     vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start(Promise<Void> startFuture) {
-        server = vertx.createHttpServer().requestHandler(req -> {
-          req.response().end();
-        }).listen(0, DEFAULT_HTTP_HOST, onSuccess(s -> {
-          int port = s.actualPort();
-          assertTrue(port > 0);
-          ports.add(port);
+        List<Future<HttpServer>> futures = new ArrayList<>();
+        for (int bindPort : bindPorts) {
+          futures.add(vertx.createHttpServer().requestHandler(req -> {
+            req.response().end();
+          }).listen(bindPort, DEFAULT_HTTP_HOST));
+        }
+        CompositeFuture.all((List)futures).onComplete(onSuccess(cf -> {
+          futures.stream()
+            .map(Future::result)
+            .map(HttpServer::actualPort)
+            .forEach(port -> {
+            assertTrue(port > 0);
+            ports.add(port);
+          });
           startFuture.complete();
         }));
       }
-    }, new DeploymentOptions().setInstances(numServers), event -> {
-      assertEquals(1, ports.size());
+    }, new DeploymentOptions().setInstances(instances), onSuccess(id -> {
+      assertEquals(expectedPorts, ports.size());
       int port = ports.iterator().next();
-      for (int i = 0;i < numServers;i++) {
+      for (int i = 0;i < instances;i++) {
         client.request(new RequestOptions()
           .setHost(DEFAULT_HTTP_HOST)
           .setPort(port)).onComplete(onSuccess(req -> {
@@ -4817,7 +4852,7 @@ public class Http1xTest extends HttpTest {
           }));
         }));
       }
-    });
+    }));
     await();
   }
 

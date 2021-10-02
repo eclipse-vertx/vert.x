@@ -92,25 +92,29 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     this.eventLoop = context.nettyEventLoop();
     this.worker = worker;
 
+    SocketAddress bindAddress;
     Map<ServerID, TCPServerBase> sharedNetServers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
     synchronized (sharedNetServers) {
       actualPort = localAddress.port();
       String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
       TCPServerBase main;
       boolean shared;
-      if (actualPort != 0) {
+      if (actualPort > 0 || localAddress.isDomainSocket()) {
         id = new ServerID(actualPort, hostOrPath);
         main = sharedNetServers.get(id);
         shared = true;
+        bindAddress = localAddress;
       } else {
-        if (creatingContext != null && creatingContext.deploymentID() != null) {
-          id = new ServerID(actualPort, hostOrPath + "/" + creatingContext.deploymentID());
+        if (actualPort < 0) {
+          id = new ServerID(actualPort, hostOrPath + "/" + -actualPort);
           main = sharedNetServers.get(id);
           shared = true;
+          bindAddress = SocketAddress.inetSocketAddress(0, localAddress.host());
         } else {
           id = new ServerID(actualPort, hostOrPath);
           main = null;
           shared = false;
+          bindAddress = localAddress;
         }
       }
       if (main == null) {
@@ -127,13 +131,13 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
         try {
           sslHelper.validate(vertx);
-          bindFuture = AsyncResolveConnectHelper.doBind(vertx, localAddress, bootstrap);
+          bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
           bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
             if (res.isSuccess()) {
               Channel ch = res.getNow();
               log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
               // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
-              if (actualPort != -1) {
+              if (bindAddress.isInetSocket()) {
                 actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
               }
               id = new ServerID(TCPServerBase.this.actualPort, id.host);

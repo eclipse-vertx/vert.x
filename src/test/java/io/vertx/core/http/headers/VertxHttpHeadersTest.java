@@ -243,4 +243,51 @@ public class VertxHttpHeadersTest extends HeadersTestBase {
     mmap.add((CharSequence) "key9", Arrays.asList(4, 5));
     assertEquals("4", mmap.get("key9"));
   }
+
+  @Test
+  public void testContainsValue1() {
+    HeadersMultiMap mmap = newMultiMap();
+    mmap.add("foo", "val1,val2,val3");
+    assertTrue(mmap.containsValue("foo", "val1", true));
+    assertTrue(mmap.containsValue("foo", "val2", true));
+    assertTrue(mmap.containsValue("foo", "val3", true));
+    assertTrue(mmap.containsValue("foo", "VAL1", true));
+    assertTrue(mmap.containsValue("foo", "VAL2", true));
+    assertTrue(mmap.containsValue("foo", "VAL3", true));
+    assertFalse(mmap.containsValue("foo", "val4", true));
+    assertFalse(mmap.containsValue("foo", "helloworld", true));
+  }
+
+  @Test
+  public void testContainsValue2() {
+    HeadersMultiMap mmap = newMultiMap();
+    mmap.add("foo", "val1 , val2 , val3");
+    assertTrue(mmap.containsValue("foo", "val1", true));
+    assertTrue(mmap.containsValue("foo", "val2", true));
+    assertTrue(mmap.containsValue("foo", "val3", true));
+    assertFalse(mmap.containsValue("foo", "val4", true));
+    assertFalse(mmap.containsValue("foo", "helloworld", true));
+  }
+
+  @Test
+  public void testContainsValue3() {
+    HeadersMultiMap mmap = newMultiMap();
+    mmap.add("foo", "val1,,val3");
+    assertTrue(mmap.containsValue("foo", "val1", true));
+    assertFalse(mmap.containsValue("foo", "val2", true));
+    assertTrue(mmap.containsValue("foo", "val3", true));
+    assertFalse(mmap.containsValue("foo", "val4", true));
+    assertFalse(mmap.containsValue("foo", "helloworld", true));
+  }
+
+  @Test
+  public void testContainsValue4() {
+    HeadersMultiMap mmap = newMultiMap();
+    mmap.add("foo", "val1, ,val3");
+    assertTrue(mmap.containsValue("foo", "val1", true));
+    assertFalse(mmap.containsValue("foo", "val2", true));
+    assertTrue(mmap.containsValue("foo", "val3", true));
+    assertFalse(mmap.containsValue("foo", "val4", true));
+    assertFalse(mmap.containsValue("foo", "helloworld", true));
+  }
 }

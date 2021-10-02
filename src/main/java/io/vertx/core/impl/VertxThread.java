@@ -20,9 +20,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class VertxThread extends FastThreadLocalThread implements BlockedThreadChecker.Task {
 
-  static final String DISABLE_TCCL_PROP_NAME = "vertx.disableTCCL";
-  static final boolean DISABLE_TCCL = Boolean.getBoolean(DISABLE_TCCL_PROP_NAME);
-
   private final boolean worker;
   private final long maxExecTime;
   private final TimeUnit maxExecTimeUnit;

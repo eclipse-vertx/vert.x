@@ -1105,6 +1105,12 @@ public class HTTPExamples {
     });
   }
 
+  public void randomServersharing(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      request.response().end("Hello from server " + this);
+    }).listen(-1);
+  }
+
   public void setSSLPerRequest(HttpClient client) {
     client.request(new RequestOptions()
         .setHost("localhost")

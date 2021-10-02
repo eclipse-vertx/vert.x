@@ -76,33 +76,31 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
 
   @Override
   public void connect(EventLoopContext context, Listener listener, Handler<AsyncResult<ConnectResult<HttpClientConnection>>> handler) {
-    connector
-      .httpConnect(context)
-      .onComplete(ar -> {
-        if (ar.succeeded()) {
-          incRefCount();
-          HttpClientConnection connection = ar.result();
-          connection.evictionHandler(v -> {
-            decRefCount();
-            listener.onRemove();
-          });
-          connection.concurrencyChangeHandler(listener::onConcurrencyChange);
-          long capacity = connection.concurrency();
-          Handler<HttpConnection> connectionHandler = client.connectionHandler();
-          if (connectionHandler != null) {
-            context.emit(connection, connectionHandler);
-          }
-          int idx;
-          if (connection instanceof Http1xClientConnection) {
-            idx = 0;
-          } else {
-            idx = 1;
-          }
-          handler.handle(Future.succeededFuture(new ConnectResult<>(connection, capacity, idx)));
-        } else {
-          handler.handle(Future.failedFuture(ar.cause()));
+    connector.httpConnect(context, ar -> {
+      if (ar.succeeded()) {
+        incRefCount();
+        HttpClientConnection connection = ar.result();
+        connection.evictionHandler(v -> {
+          decRefCount();
+          listener.onRemove();
+        });
+        connection.concurrencyChangeHandler(listener::onConcurrencyChange);
+        long capacity = connection.concurrency();
+        Handler<HttpConnection> connectionHandler = client.connectionHandler();
+        if (connectionHandler != null) {
+          context.emit(connection, connectionHandler);
         }
-      });
+        int idx;
+        if (connection instanceof Http1xClientConnection) {
+          idx = 0;
+        } else {
+          idx = 1;
+        }
+        handler.handle(Future.succeededFuture(new ConnectResult<>(connection, capacity, idx)));
+      } else {
+        handler.handle(Future.failedFuture(ar.cause()));
+      }
+    });
   }
 
   @Override
@@ -121,13 +119,13 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
 
   private class Request implements PoolWaiter.Listener<HttpClientConnection>, Handler<AsyncResult<Lease<HttpClientConnection>>> {
 
-    private final EventLoopContext context;
+    private final ContextInternal context;
     private final HttpVersion protocol;
     private final long timeout;
     private final Handler<AsyncResult<Lease<HttpClientConnection>>> handler;
     private long timerID;
 
-    Request(EventLoopContext context, HttpVersion protocol, long timeout, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
+    Request(ContextInternal context, HttpVersion protocol, long timeout, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
       this.context = context;
       this.protocol = protocol;
       this.timeout = timeout;
@@ -168,7 +166,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
 
   @Override
   public void requestConnection2(ContextInternal ctx, long timeout, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
-    Request request = new Request((EventLoopContext) ctx, client.getOptions().getProtocolVersion(), timeout, handler);
+    Request request = new Request(ctx, client.getOptions().getProtocolVersion(), timeout, handler);
     request.acquire();
   }
 }

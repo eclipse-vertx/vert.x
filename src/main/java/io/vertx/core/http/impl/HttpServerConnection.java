@@ -31,4 +31,5 @@ public interface HttpServerConnection extends HttpConnection {
 
   HttpServerConnection handler(Handler<HttpServerRequest> handler);
 
+  HttpServerConnection invalidRequestHandler(Handler<HttpServerRequest> handler);
 }

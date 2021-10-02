@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http.impl;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -42,6 +43,7 @@ import io.vertx.core.http.UpgradeRejectedException;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V00;
 import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V07;
@@ -112,7 +114,12 @@ class WebSocketHandshakeInboundHandler extends ChannelInboundHandlerAdapter {
   private Future<HeadersAdaptor> handshakeComplete(FullHttpResponse response) {
     int sc = response.status().code();
     if (sc != 101) {
-      UpgradeRejectedException failure = new UpgradeRejectedException("WebSocket connection attempt returned HTTP status code " + sc, sc);
+      String msg = "WebSocket upgrade failure: " + sc;
+      ByteBuf content = response.content();
+      if (content != null && content.readableBytes() > 0) {
+        msg += " (" + content.toString(StandardCharsets.UTF_8) + ")";
+      }
+      UpgradeRejectedException failure = new UpgradeRejectedException(msg, sc);
       return Future.failedFuture(failure);
     } else {
       try {

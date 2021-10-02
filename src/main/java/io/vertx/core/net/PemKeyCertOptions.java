@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -402,7 +402,7 @@ public class PemKeyCertOptions implements KeyCertOptions {
         certs.add(vertx.fileSystem().readFileBlocking(((VertxInternal)vertx).resolveFile(certPath).getAbsolutePath()));
       }
       certs.addAll(certValues);
-      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyCert(keys, certs), KeyStoreHelper.DUMMY_PASSWORD);
+      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyCert(keys, certs), KeyStoreHelper.DUMMY_PASSWORD, null);
     }
     return helper;
   }

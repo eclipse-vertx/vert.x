@@ -12,7 +12,10 @@
 package io.vertx.core.http;
 
 import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.*;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.TrustAllTrustManager;
@@ -26,12 +29,14 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import javax.net.ssl.*;
-import javax.security.cert.X509Certificate;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +45,8 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+
+import static org.hamcrest.core.StringEndsWith.endsWith;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -1294,7 +1301,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testJKSInvalidPath() {
-    testInvalidKeyStore(Cert.SERVER_JKS.get().setPath("/invalid.jks"), "java.nio.file.NoSuchFileException: ", "invalid.jks");
+    testInvalidKeyStore(Cert.SERVER_JKS.get().setPath("/invalid.jks"), "Unable to read file at path", "invalid.jks'");
   }
 
   @Test
@@ -1309,7 +1316,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testPKCS12InvalidPath() {
-    testInvalidKeyStore(Cert.SERVER_PKCS12.get().setPath("/invalid.p12"), "java.nio.file.NoSuchFileException: ", "invalid.p12");
+    testInvalidKeyStore(Cert.SERVER_PKCS12.get().setPath("/invalid.p12"), "Unable to read file at path", "invalid.p12'");
   }
 
   @Test
@@ -1337,7 +1344,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testKeyCertInvalidKeyPath() {
-    testInvalidKeyStore(Cert.SERVER_PEM.get().setKeyPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
+    testInvalidKeyStore(Cert.SERVER_PEM.get().setKeyPath("/invalid.pem"), "Unable to read file at path", "invalid.pem'");
   }
 
   @Test
@@ -1347,7 +1354,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testKeyCertInvalidCertPath() {
-    testInvalidKeyStore(Cert.SERVER_PEM.get().setCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
+    testInvalidKeyStore(Cert.SERVER_PEM.get().setCertPath("/invalid.pem"), "Unable to read file at path", "invalid.pem'");
   }
 
   @Test
@@ -1385,7 +1392,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testCaInvalidPath() {
-    testInvalidTrustStore(new PemTrustOptions().addCertPath("/invalid.pem"), "java.nio.file.NoSuchFileException: ", "invalid.pem");
+    testInvalidTrustStore(new PemTrustOptions().addCertPath("/invalid.pem"), "Unable to read file at path", "invalid.pem'");
   }
 
   @Test
@@ -1438,23 +1445,24 @@ public abstract class HttpTLSTest extends HttpTestBase {
     server.listen(onFailure(failure::set));
     assertWaitUntil(() -> failure.get() != null);
     Throwable cause = failure.get().getCause();
+    String exceptionMessage = cause.getMessage();
     if(expectedSuffix == null) {
       boolean ok = expectedPossiblePrefixes.isEmpty();
       for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
-        ok |= expectedPossiblePrefix.equals(cause.getMessage());
+        ok |= expectedPossiblePrefix.equals(exceptionMessage);
       }
       if (!ok) {
-        fail("Was expecting <" + cause.getMessage() + ">  to be equals to one of " + expectedPossiblePrefixes);
+        fail("Was expecting <" + exceptionMessage + ">  to be equals to one of " + expectedPossiblePrefixes);
       }
     } else {
       boolean ok = expectedPossiblePrefixes.isEmpty();
       for (String expectedPossiblePrefix : expectedPossiblePrefixes) {
-        ok |= cause.getMessage().startsWith(expectedPossiblePrefix);
+        ok |= exceptionMessage.startsWith(expectedPossiblePrefix);
       }
       if (!ok) {
-        fail("Was expecting <" + cause.getMessage() + "> e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
+        fail("Was expecting <" + exceptionMessage + "> e.getCause().getMessage() to be prefixed by one of " + expectedPossiblePrefixes);
       }
-      assertTrue(cause.getMessage().endsWith(expectedSuffix));
+      assertThat(exceptionMessage, endsWith(expectedSuffix));
     }
   }
 

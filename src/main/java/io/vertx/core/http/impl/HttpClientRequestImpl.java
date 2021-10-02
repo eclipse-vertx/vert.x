@@ -34,7 +34,7 @@ import java.util.Objects;
 import static io.vertx.core.http.HttpHeaders.*;
 
 /**
- * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
+ * This class is optimised for performance when used on the same event loop that is passed to the handler with.
  * However it can be used safely from other threads.
  *
  * The internal state is protected using the synchronized keyword. If always used on the same event loop, then
@@ -327,20 +327,23 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (followRedirects > 0 && statusCode >= 300 && statusCode < 400) {
       Future<RequestOptions> next = client.redirectHandler().apply(resp);
       if (next != null) {
-        next.onComplete(ar1 -> {
-          if (ar1.succeeded()) {
-            RequestOptions options = ar1.result();
-            Future<HttpClientRequest> f = client.request(options);
-            f.onComplete(ar2 -> {
-              if (ar2.succeeded()) {
-                handleNextRequest(ar2.result(), promise, timeoutMs);
-              } else {
-                fail(ar2.cause());
-              }
-            });
-          } else {
-            fail(ar1.cause());
-          }
+        resp
+          .end()
+          .compose(v -> next, err -> next)
+          .onComplete(ar1 -> {
+            if (ar1.succeeded()) {
+              RequestOptions options = ar1.result();
+              Future<HttpClientRequest> f = client.request(options);
+              f.onComplete(ar2 -> {
+                if (ar2.succeeded()) {
+                  handleNextRequest(ar2.result(), promise, timeoutMs);
+                } else {
+                  fail(ar2.cause());
+                }
+              });
+            } else {
+              fail(ar1.cause());
+            }
         });
         return;
       }

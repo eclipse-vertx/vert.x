@@ -18,7 +18,9 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpVersion;
@@ -81,7 +83,7 @@ public class HttpChannelConnector {
   }
 
   private void connect(EventLoopContext context, Promise<NetSocket> promise) {
-    netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, promise, context, 0);
+    netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, false, promise, context, 0);
   }
 
   public Future<HttpClientConnection> wrap(EventLoopContext context, NetSocket so_) {
@@ -134,11 +136,11 @@ public class HttpChannelConnector {
     return promise.future();
   }
 
-  public Future<HttpClientConnection> httpConnect(EventLoopContext context) {
+  public void httpConnect(EventLoopContext context, Handler<AsyncResult<HttpClientConnection>> handler) {
     Promise<NetSocket> promise = context.promise();
     Future<HttpClientConnection> fut = promise.future().flatMap(so -> wrap(context, so));
+    fut.onComplete(handler);
     connect(context, promise);
-    return fut;
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
