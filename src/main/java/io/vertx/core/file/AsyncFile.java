@@ -233,7 +233,8 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
   long sizeBlocking();
 
   /**
-   * Like {@link #size()} but the {@code handler} will be called when the operation is complete or if an error occurs.
+   * Like {@link #size()} but the {@code handler} will be called when the operation is complete or
+   * if an error occurs.
    */
   default void size(Handler<AsyncResult<Long>> handler) {
     Future<Long> future = size();
