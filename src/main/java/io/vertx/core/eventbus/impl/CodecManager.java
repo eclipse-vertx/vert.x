@@ -18,6 +18,8 @@ import io.vertx.core.eventbus.impl.codecs.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -46,103 +48,113 @@ public class CodecManager {
   public static final MessageCodec<ReplyException, ReplyException> REPLY_EXCEPTION_MESSAGE_CODEC = new ReplyExceptionMessageCodec();
 
   private final MessageCodec[] systemCodecs;
-  private final ConcurrentMap<String, MessageCodec> userCodecMap = new ConcurrentHashMap<>();
-  private final ConcurrentMap<Class, MessageCodec> defaultCodecMap = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, MessageCodec> codecsByName = new ConcurrentHashMap<>();
+  private final ConcurrentMap<Class, MessageCodec> codecsByClass = new ConcurrentHashMap<>();
 
   public CodecManager() {
-    this.systemCodecs = codecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
+    MessageCodec[] codecs = {NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
       BYTE_ARRAY_MESSAGE_CODEC, INT_MESSAGE_CODEC, LONG_MESSAGE_CODEC, FLOAT_MESSAGE_CODEC, DOUBLE_MESSAGE_CODEC,
-      BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC);
+      BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC};
+    Arrays.sort(codecs, Comparator.comparingInt(MessageCodec::systemCodecID));
+    this.systemCodecs = codecs;
   }
 
   public MessageCodec lookupCodec(Object body, String codecName) {
-    MessageCodec codec;
     if (codecName != null) {
-      codec = userCodecMap.get(codecName);
+      MessageCodec codec;
+      codec = codecsByName.get(codecName);
       if (codec == null) {
         throw new IllegalArgumentException("No message codec for name: " + codecName);
       }
-    } else if (body == null) {
-      codec = NULL_MESSAGE_CODEC;
-    } else if (body instanceof String) {
-      codec = STRING_MESSAGE_CODEC;
-    } else if (body instanceof Buffer) {
-      codec = BUFFER_MESSAGE_CODEC;
-    } else if (body instanceof JsonObject) {
-      codec = JSON_OBJECT_MESSAGE_CODEC;
-    } else if (body instanceof JsonArray) {
-      codec = JSON_ARRAY_MESSAGE_CODEC;
-    } else if (body instanceof byte[]) {
-      codec = BYTE_ARRAY_MESSAGE_CODEC;
-    } else if (body instanceof Integer) {
-      codec = INT_MESSAGE_CODEC;
-    } else if (body instanceof Long) {
-      codec = LONG_MESSAGE_CODEC;
-    } else if (body instanceof Float) {
-      codec = FLOAT_MESSAGE_CODEC;
-    } else if (body instanceof Double) {
-      codec = DOUBLE_MESSAGE_CODEC;
-    } else if (body instanceof Boolean) {
-      codec = BOOLEAN_MESSAGE_CODEC;
-    } else if (body instanceof Short) {
-      codec = SHORT_MESSAGE_CODEC;
-    } else if (body instanceof Character) {
-      codec = CHAR_MESSAGE_CODEC;
-    } else if (body instanceof Byte) {
-      codec = BYTE_MESSAGE_CODEC;
-    } else if (body instanceof ReplyException) {
-      codec = defaultCodecMap.get(body.getClass());
-      if (codec == null) {
-        codec = REPLY_EXCEPTION_MESSAGE_CODEC;
-      }
+      return codec;
     } else {
-      codec = defaultCodecMap.get(body.getClass());
-      if (codec == null) {
-        throw new IllegalArgumentException("No message codec for type: " + body.getClass());
+      if (body == null) {
+        return NULL_MESSAGE_CODEC;
+      } else {
+        Class<?> clazz = body.getClass();
+        if (clazz == String.class) {
+          return STRING_MESSAGE_CODEC;
+        } else if (Buffer.class.isAssignableFrom(clazz)) {
+          return BUFFER_MESSAGE_CODEC;
+        } else if (clazz == JsonObject.class) {
+          return JSON_OBJECT_MESSAGE_CODEC;
+        } else if (clazz == JsonArray.class) {
+          return JSON_ARRAY_MESSAGE_CODEC;
+        } else if (clazz == byte[].class) {
+          return BYTE_ARRAY_MESSAGE_CODEC;
+        } else if (clazz == Integer.class) {
+          return INT_MESSAGE_CODEC;
+        } else if (clazz == Long.class) {
+          return LONG_MESSAGE_CODEC;
+        } else if (clazz == Float.class) {
+          return FLOAT_MESSAGE_CODEC;
+        } else if (clazz == Double.class) {
+          return DOUBLE_MESSAGE_CODEC;
+        } else if (clazz == Boolean.class) {
+          return BOOLEAN_MESSAGE_CODEC;
+        } else if (clazz == Short.class) {
+          return SHORT_MESSAGE_CODEC;
+        } else if (clazz == Character.class) {
+          return CHAR_MESSAGE_CODEC;
+        } else if (clazz == Byte.class) {
+          return BYTE_MESSAGE_CODEC;
+        } else if (ReplyException.class.isAssignableFrom(clazz)) {
+          return codecsByClass.getOrDefault(clazz, REPLY_EXCEPTION_MESSAGE_CODEC);
+        } else {
+          MessageCodec codec = resolveCodec(clazz);
+          if (codec == null) {
+            throw new IllegalArgumentException("No message codec for type: " + clazz);
+          }
+          return codec;
+        }
+      }
+    }
+  }
+
+  private MessageCodec resolveCodec(Class<?> clazz) {
+    MessageCodec codec;
+    codec = codecsByClass.get(clazz);
+    if (codec == null) {
+      Class<?> parent = clazz.getSuperclass();
+      if (parent != Object.class && parent != null) {
+        codec = resolveCodec(parent);
       }
     }
     return codec;
   }
 
   public MessageCodec getCodec(String codecName) {
-    return userCodecMap.get(codecName);
+    return codecsByName.get(codecName);
   }
 
-  public void registerCodec(MessageCodec codec) {
+  public <T> void registerCodec(Class<T> clazz, MessageCodec<T, ?> codec) {
     Objects.requireNonNull(codec, "codec");
     Objects.requireNonNull(codec.name(), "code.name()");
     checkSystemCodec(codec);
-    if (userCodecMap.containsKey(codec.name())) {
+    if (codecsByName.containsKey(codec.name())) {
       throw new IllegalStateException("Already a codec registered with name " + codec.name());
     }
-    userCodecMap.put(codec.name(), codec);
+    if (clazz != null) {
+      if (clazz == Object.class) {
+        throw new IllegalArgumentException("Registering a default codec for class java.lang.Object is not supported");
+      }
+      if (codecsByClass.putIfAbsent(clazz, codec) != null) {
+        throw new IllegalStateException("Already a default codec registered for class " + clazz);
+      }
+    }
+    codecsByName.put(codec.name(), codec);
   }
 
   public void unregisterCodec(String name) {
     Objects.requireNonNull(name);
-    userCodecMap.remove(name);
+    codecsByName.remove(name);
   }
 
-  public <T> void registerDefaultCodec(Class<T> clazz, MessageCodec<T, ?> codec) {
+  public void unregisterCodec(Class<?> clazz) {
     Objects.requireNonNull(clazz);
-    Objects.requireNonNull(codec, "codec");
-    Objects.requireNonNull(codec.name(), "code.name()");
-    checkSystemCodec(codec);
-    if (defaultCodecMap.containsKey(clazz)) {
-      throw new IllegalStateException("Already a default codec registered for class " + clazz);
-    }
-    if (userCodecMap.containsKey(codec.name())) {
-      throw new IllegalStateException("Already a codec registered with name " + codec.name());
-    }
-    defaultCodecMap.put(clazz, codec);
-    userCodecMap.put(codec.name(), codec);
-  }
-
-  public void unregisterDefaultCodec(Class clazz) {
-    Objects.requireNonNull(clazz);
-    MessageCodec codec = defaultCodecMap.remove(clazz);
+    MessageCodec<?, ?> codec = codecsByClass.remove(clazz);
     if (codec != null) {
-      userCodecMap.remove(codec.name());
+      codecsByName.remove(codec.name());
     }
   }
 
@@ -155,14 +167,4 @@ public class CodecManager {
       throw new IllegalArgumentException("Can't register a system codec");
     }
   }
-
-  private MessageCodec[] codecs(MessageCodec... codecs) {
-    MessageCodec[] arr = new MessageCodec[codecs.length];
-    for (MessageCodec codec: codecs) {
-      arr[codec.systemCodecID()] = codec;
-    }
-    return arr;
-  }
-
-
 }

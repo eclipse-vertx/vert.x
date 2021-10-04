@@ -181,7 +181,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public EventBus registerCodec(MessageCodec codec) {
-    codecManager.registerCodec(codec);
+    codecManager.registerCodec(null, codec);
     return this;
   }
 
@@ -193,13 +193,14 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public <T> EventBus registerDefaultCodec(Class<T> clazz, MessageCodec<T, ?> codec) {
-    codecManager.registerDefaultCodec(clazz, codec);
+    Objects.requireNonNull(clazz);
+    codecManager.registerCodec(clazz, codec);
     return this;
   }
 
   @Override
   public EventBus unregisterDefaultCodec(Class clazz) {
-    codecManager.unregisterDefaultCodec(clazz);
+    codecManager.unregisterCodec(clazz);
     return this;
   }
 

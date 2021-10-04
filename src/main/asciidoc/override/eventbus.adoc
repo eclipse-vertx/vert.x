@@ -18,6 +18,14 @@ you don't have to specify the codec on each send in the delivery options:
 {@link docoverride.eventbus.Examples#example11}
 ----
 
+Default message codec performs a lookup based on the class of the body.
+
+This lookup happens after the system codecs are examined, i.e a default codec
+for `io.vertx.core.buffer.Buffer` will not be used.
+
+Since Vert.x 4.2, the lookup resolves on the super class of the body class when the body class does not have a codec, recursively yet
+excluding `java.lang.Object`.
+
 You unregister a message codec with {@link io.vertx.core.eventbus.EventBus#unregisterCodec}.
 
 Message codecs don't always have to encode and decode as the same type. For example you can write a codec that

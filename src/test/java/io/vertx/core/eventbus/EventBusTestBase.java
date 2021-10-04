@@ -601,7 +601,6 @@ public abstract class EventBusTestBase extends VertxTestBase {
     }
   }
 
-
   public static class MyPOJO {
     private String str;
 
@@ -710,6 +709,132 @@ public abstract class EventBusTestBase extends VertxTestBase {
     @Override
     public byte systemCodecID() {
       return -1;
+    }
+  }
+
+  public interface Flying {
+  }
+
+  public static class Vehicle {
+    final String name;
+    public Vehicle(String name) {
+      this.name = name;
+    }
+  }
+
+  public static class Car extends Vehicle {
+    final int wheels;
+    public Car(String name, int wheels) {
+      super(name);
+      this.wheels = wheels;
+    }
+  }
+
+  public static class Plane extends Vehicle implements Flying {
+    final int wings;
+    public Plane(String name, int wings) {
+      super(name);
+      this.wings = wings;
+    }
+  }
+
+  public static class Bird implements Flying {
+    final String name;
+    public Bird(String name) {
+      this.name = name;
+    }
+  }
+
+  public static class VehicleCodec implements MessageCodec<Vehicle, Vehicle> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, Vehicle vehicle) {
+      JsonObject json = new JsonObject().put("name", vehicle.name);
+      if (vehicle instanceof Car) {
+        Car car = (Car) vehicle;
+        json.put("type", "Car");
+        json.put("wheels", car.wheels);
+      } else if (vehicle instanceof Plane) {
+        Plane plane = (Plane) vehicle;
+        json.put("type", "Plane");
+        json.put("wheels", plane.wings);
+      }
+      Buffer payload = json.toBuffer();
+      buffer.appendInt(payload.length());
+      buffer.appendBuffer(payload);
+    }
+
+    @Override
+    public Vehicle decodeFromWire(int pos, Buffer buffer) {
+      int len = buffer.getInt(pos);
+      JsonObject json = buffer.slice(pos + 4, pos + 4 + len).toJsonObject();
+      String name = json.getString("name");
+      Vehicle vehicle;
+      if ("Car".equals(json.getString(("type")))) {
+        int wheels = json.getInteger("wheels");
+        vehicle = new Car(name, wheels);
+      } else if ("Plane".equals(json.getString(("type")))) {
+        int wings = json.getInteger("wings");
+        vehicle = new Plane(name, wings);
+      } else {
+        vehicle = new Vehicle(name);
+      }
+      return vehicle;
+    }
+
+    @Override
+    public Vehicle transform(Vehicle vehicle) {
+      return vehicle;
+    }
+
+    @Override
+    public String name() {
+      return "vehicle";
+    }
+
+  }
+
+  public static class FlyingCodec implements MessageCodec<Flying, Flying> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, Flying flying) {
+      JsonObject json = new JsonObject();
+      if (flying instanceof Bird) {
+        Bird bird = (Bird) flying;
+        json.put("type", "Bird");
+        json.put("name", bird.name);
+      } else if (flying instanceof Plane) {
+        Plane plane = (Plane) flying;
+        json.put("type", "Plane");
+        json.put("name", plane.name);
+        json.put("wings", plane.wings);
+      }
+      Buffer payload = json.toBuffer();
+      buffer.appendInt(payload.length());
+      buffer.appendBuffer(payload);
+    }
+
+    @Override
+    public Flying decodeFromWire(int pos, Buffer buffer) {
+      int len = buffer.getInt(pos);
+      JsonObject json = buffer.slice(pos + 4, pos + 4 + len).toJsonObject();
+      Flying flying = null;
+      if ("Bird".equals(json.getString(("type")))) {
+        flying = new Bird(json.getString("name"));
+      } else if ("Plane".equals(json.getString(("type")))) {
+        flying = new Plane(json.getString("name"), json.getInteger("wings"));
+      }
+      return flying;
+    }
+
+    @Override
+    public Flying transform(Flying vehicle) {
+      return vehicle;
+    }
+
+    @Override
+    public String name() {
+      return "flying";
     }
   }
 }

@@ -74,5 +74,7 @@ public interface MessageCodec<S, R> {
    *
    * @return -1 for a user codec.
    */
-  byte systemCodecID();
+  default byte systemCodecID() {
+    return -1;
+  }
 }

@@ -12,13 +12,14 @@
 package io.vertx.core.eventbus;
 
 import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.MessageConsumerImpl;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.streams.Pump;
+import io.vertx.core.json.JsonObject;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
@@ -29,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -78,7 +80,7 @@ public class LocalEventBusTest extends EventBusTestBase {
   }
 
   @Test
-  public void testArgumentValidation() throws Exception {
+  public void testArgumentValidation() {
     assertNullPointerException(() -> eb.send(null, ""));
     assertNullPointerException(() -> eb.request(null, "", handler -> {}));
     assertNullPointerException(() -> eb.send(null, "", new DeliveryOptions()));
@@ -99,6 +101,12 @@ public class LocalEventBusTest extends EventBusTestBase {
     assertNullPointerException(() -> eb.publisher("", null));
     assertNullPointerException(() -> eb.publisher(null, new DeliveryOptions()));
     assertNullPointerException(() -> eb.registerCodec(null));
+    assertIllegalArgumentException(() -> eb.registerDefaultCodec(Object.class, new MessageCodec<Object, Object>() {
+      public void encodeToWire(Buffer buffer, Object o) { throw new UnsupportedOperationException(); }
+      public Object decodeFromWire(int pos, Buffer buffer) { throw new UnsupportedOperationException(); }
+      public Object transform(Object o) { throw new UnsupportedOperationException(); }
+      public String name() { return "object"; }
+    }));
     assertNullPointerException(() -> eb.unregisterCodec(null));
     assertNullPointerException(() -> eb.registerDefaultCodec(null, new MyPOJOEncoder1()));
     assertNullPointerException(() -> eb.registerDefaultCodec(Object.class, null));
@@ -885,6 +893,96 @@ public class LocalEventBusTest extends EventBusTestBase {
     String str = TestUtils.randomAlphaString(100);
     MyPOJO pojo = new MyPOJO(str);
     testReply(pojo, pojo, null, null);
+  }
+
+  @Test
+  public void testCodecClassInheritanceResolvesClassCodec() {
+    vertx.eventBus().registerDefaultCodec(Vehicle.class, new VehicleCodec());
+    String name = TestUtils.randomAlphaString(100);
+    testSend(new Vehicle(name), null, msg -> {
+      assertEquals(name, msg.name);
+      assertEquals(Vehicle.class, msg.getClass());
+    }, null);
+  }
+
+  @Test
+  public void testCodecClassInheritanceResolvesSuperClassCodec() {
+    vertx.eventBus().registerDefaultCodec(Vehicle.class, new VehicleCodec());
+    String name = TestUtils.randomAlphaString(100);
+    int wheels = TestUtils.randomPositiveInt();
+    testSend(new Car(name, wheels), null, msg -> {
+      assertEquals(name, msg.name);
+      assertEquals(wheels, msg.wheels);
+    }, null);
+  }
+
+  @Test
+  public void testCodecClassInheritanceResolvesSameClassCodecInsteadOfSuperClassCodec() {
+    AtomicReference<Car> transformations = new AtomicReference<>();
+    vertx.eventBus().registerDefaultCodec(Car.class, new MessageCodec<Car, Car>() {
+      @Override
+      public void encodeToWire(Buffer buffer, Car car) {
+        JsonObject json = new JsonObject().put("name", car.name);
+        json.put("wheels", car.wheels);
+        Buffer payload = json.toBuffer();
+        buffer.appendInt(payload.length());
+        buffer.appendBuffer(payload);
+      }
+      @Override
+      public Car decodeFromWire(int pos, Buffer buffer) {
+        int len = buffer.getInt(pos);
+        JsonObject json = buffer.slice(pos + 4, pos + 4 + len).toJsonObject();
+        String name = json.getString("name");
+        int wheels = json.getInteger("wheels");
+        return new Car(name, wheels);
+      }
+      @Override
+      public Car transform(Car car) {
+        transformations.set(car);
+        return car;
+      }
+      @Override
+      public String name() {
+        return "car";
+      }
+    });
+    vertx.eventBus().registerDefaultCodec(Vehicle.class, new VehicleCodec());
+    String name = TestUtils.randomAlphaString(100);
+    int wheels = TestUtils.randomPositiveInt();
+    Car car = new Car(name, wheels);
+    testSend(car, null, msg -> {
+      assertEquals(name, msg.name);
+      assertEquals(wheels, msg.wheels);
+      assertSame(car, transformations.get());
+    }, null);
+  }
+
+  @Test
+  public void testCodecInterfaceInheritance1() {
+    vertx.eventBus().registerDefaultCodec(Flying.class, new FlyingCodec());
+    vertx.eventBus().registerDefaultCodec(Vehicle.class, new VehicleCodec());
+    String name = TestUtils.randomAlphaString(100);
+    int wings = TestUtils.randomPositiveInt();
+    testSend(new Plane(name, wings), null, msg -> {
+      assertEquals(name, msg.name);
+      assertEquals(Plane.class, msg.getClass());
+    }, null);
+  }
+
+  @Test
+  public void testCodecInterfaceInheritance2() {
+    vertx.eventBus().registerDefaultCodec(Flying.class, new FlyingCodec());
+    String name = TestUtils.randomAlphaString(100);
+    int wings = TestUtils.randomPositiveInt();
+    Plane plane = new Plane(name, wings);
+    vertx.eventBus().consumer(ADDRESS1, msg -> {
+      fail();
+    });
+    try {
+      vertx.eventBus().send(ADDRESS1, plane);
+      fail();
+    } catch (IllegalArgumentException ignore) {
+    }
   }
 
   @Test
