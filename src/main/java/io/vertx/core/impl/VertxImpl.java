@@ -413,6 +413,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public boolean cancelTimer(long id) {
     InternalTimerHandler handler = timeouts.remove(id);
     if (handler != null) {
+      if (handler.periodic) {
+        log.warn("Cancelled periodic " + id + " " + handler.handler);
+      }
       handler.cancel();
       return true;
     } else {
