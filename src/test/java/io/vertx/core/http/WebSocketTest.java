@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
@@ -3574,6 +3575,77 @@ public class WebSocketTest extends VertxTestBase {
               });
             }));
         }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testSetOriginHeaderV13() {
+    testOriginHeader(WebsocketVersion.V13, true, "http://www.example.com", HttpHeaders.ORIGIN, "http://www.example.com");
+  }
+
+  @Test
+  public void testEnableOriginHeaderV13() {
+    testOriginHeader(WebsocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://localhost:8080");
+  }
+
+  @Test
+  public void testDisableOriginHeaderV13() {
+    testOriginHeader(WebsocketVersion.V13, false, null, HttpHeaders.ORIGIN, null);
+  }
+
+  @Test
+  public void testSetOriginHeaderV08() {
+    testOriginHeader(WebsocketVersion.V08, true, "http://www.example.com", HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://www.example.com");
+  }
+
+  @Test
+  public void testEnableOriginHeaderV08() {
+    testOriginHeader(WebsocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:8080");
+  }
+
+  @Test
+  public void testDisableOriginHeaderV08() {
+    testOriginHeader(WebsocketVersion.V08, false, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, null);
+  }
+
+  @Test
+  public void testSetOriginHeaderV07() {
+    testOriginHeader(WebsocketVersion.V07, true, "http://www.example.com", HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://www.example.com");
+  }
+
+  @Test
+  public void testEnableOriginHeaderV07() {
+    testOriginHeader(WebsocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:8080");
+  }
+
+  @Test
+  public void testDisableOriginHeaderV07() {
+    testOriginHeader(WebsocketVersion.V07, false, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, null);
+  }
+
+  private void testOriginHeader(WebsocketVersion version, boolean allow, String origin, CharSequence header, String expected) {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST));
+    server.webSocketHandler(ws -> {
+      if (expected != null) {
+        assertEquals(expected, ws.headers().get(header));
+      } else {
+        assertNull(ws.headers().get(header));
+      }
+    }).listen(onSuccess(v -> {
+      client = vertx.createHttpClient();
+      WebSocketConnectOptions options = new WebSocketConnectOptions()
+        .setVersion(version)
+        .setAllowOriginHeader(allow)
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/");
+      if (origin != null) {
+        options.addHeader(header, origin);
+      }
+      client.webSocket(options, onSuccess(ws -> {
+        testComplete();
       }));
     }));
     await();

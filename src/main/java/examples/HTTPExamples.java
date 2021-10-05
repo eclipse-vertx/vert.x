@@ -956,6 +956,34 @@ public class HTTPExamples {
     });
   }
 
+  public void exampleWebSocketDisableOriginHeader(HttpClient client, String host, int port, String requestUri) {
+    WebSocketConnectOptions options = new WebSocketConnectOptions()
+      .setHost(host)
+      .setPort(port)
+      .setURI(requestUri)
+      .setAllowOriginHeader(false);
+    client.webSocket(options, res -> {
+      if (res.succeeded()) {
+        WebSocket ws = res.result();
+        System.out.println("Connected!");
+      }
+    });
+  }
+
+  public void exampleWebSocketSetOriginHeader(HttpClient client, String host, int port, String requestUri, String origin) {
+    WebSocketConnectOptions options = new WebSocketConnectOptions()
+      .setHost(host)
+      .setPort(port)
+      .setURI(requestUri)
+      .addHeader(HttpHeaders.ORIGIN, origin);
+    client.webSocket(options, res -> {
+      if (res.succeeded()) {
+        WebSocket ws = res.result();
+        System.out.println("Connected!");
+      }
+    });
+  }
+
   public void example55(WebSocket webSocket) {
     // Write a simple binary message
     Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
