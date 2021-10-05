@@ -16,6 +16,11 @@ public class WebSocketConnectOptionsConverter {
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, WebSocketConnectOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "allowOriginHeader":
+          if (member.getValue() instanceof Boolean) {
+            obj.setAllowOriginHeader((Boolean)member.getValue());
+          }
+          break;
         case "subProtocols":
           if (member.getValue() instanceof JsonArray) {
             java.util.ArrayList<java.lang.String> list =  new java.util.ArrayList<>();
@@ -40,6 +45,7 @@ public class WebSocketConnectOptionsConverter {
   }
 
   public static void toJson(WebSocketConnectOptions obj, java.util.Map<String, Object> json) {
+    json.put("allowOriginHeader", obj.getAllowOriginHeader());
     if (obj.getSubProtocols() != null) {
       JsonArray array = new JsonArray();
       obj.getSubProtocols().forEach(item -> array.add(item));

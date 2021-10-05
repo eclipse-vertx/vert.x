@@ -1725,6 +1725,23 @@ The handler will be called with an instance of {@link io.vertx.core.http.WebSock
 {@link examples.HTTPExamples#example54}
 ----
 
+By default, the client sets the `origin` header to the server host, e.g http://www.example.com. Some servers will refuse
+such request, you can configure the client to not set this header.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleWebSocketDisableOriginHeader}
+----
+
+You can also set a different header:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleWebSocketSetOriginHeader}
+----
+
+NOTE: older versions of the WebSocket protocol use `sec-websocket-origin` instead
+
 ==== Writing messages to WebSockets
 
 If you wish to write a single WebSocket message to the WebSocket you can do this with
