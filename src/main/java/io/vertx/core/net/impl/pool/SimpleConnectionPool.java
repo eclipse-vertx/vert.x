@@ -11,14 +11,12 @@
 package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.impl.VertxInternal;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -65,7 +63,7 @@ import java.util.function.Predicate;
  *
  * <h3>Waiter lifecycle</h3>
  *
- * Connection requests are done with {@link ConnectionPool#acquire(EventLoopContext, int, Handler)}. Such request
+ * Connection requests are done with {@link ConnectionPool#acquire(ContextInternal, int, Handler)}. Such request
  * creates a {@link PoolWaiter}. When such request is made
  *
  * <ul>
@@ -109,18 +107,6 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       }
     }
     return null;
-  };
-
-  /**
-   * Provides an event-loop context that reuses the event-loop of the argument.
-   */
-  private static final Function<ContextInternal, EventLoopContext> EVENT_LOOP_CONTEXT_PROVIDER = ctx -> {
-    if (ctx instanceof EventLoopContext) {
-      return (EventLoopContext)ctx;
-    } else {
-      VertxInternal vertx = ctx.owner();
-      return vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
-    }
   };
 
   /**
