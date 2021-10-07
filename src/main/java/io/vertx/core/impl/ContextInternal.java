@@ -305,4 +305,12 @@ public interface ContextInternal extends Context {
     closeFuture().remove(hook);
   }
 
+  /**
+   * Returns the original context, a duplicate context returns the wrapped context otherwise this instance is returned.
+   *
+   * @return the wrapped context
+   */
+  default ContextInternal unwrap() {
+    return this;
+  }
 }
