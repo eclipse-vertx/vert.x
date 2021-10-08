@@ -87,6 +87,17 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     return list.iterator();
   }
 
+  /**
+   * Adds a non {@code null} cookie to the cookie jar. Adding cookies is only allowed if the cookie jar is not a slice
+   * view of the original cookie jar. In other words if this object was acquired from {@link #getAll(String)} or
+   * {@link #removeOrInvalidateAll(String, boolean)} adding cookies will not be allowed.
+   *
+   * @throws UnsupportedOperationException if cookie jar is a slice view of the http exchange cookies
+   * @throws NullPointerException if cookie is {@code null}
+   *
+   * @param cookie the cookie to add.
+   * @return {@code true} if cookie was added or replaced.
+   */
   @Override
   public boolean add(ServerCookie cookie) {
     if (cookie == null) {
@@ -112,6 +123,13 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     return true;
   }
 
+  /**
+   * Clears the cookie jar. Clearing the cookie jar is only allowed if the cookie jar is not a slice
+   * view of the original cookie jar. In other words if this object was acquired from {@link #getAll(String)} or
+   * {@link #removeOrInvalidateAll(String, boolean)} adding cookies will not be allowed.
+   *
+   * @throws UnsupportedOperationException if cookie jar is a slice view of the http exchange cookies
+   */
   @Override
   public void clear() {
     list.clear();
@@ -119,7 +137,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
 
   /**
    * Follows the {@link Comparator} interface guidelines to compare how the given cookie differs from the unique
-   * identifier, the tupple {@code name, domain, path}.
+   * identifier, the tuple {@code name, domain, path}.
    *
    * @param cookie base cookie
    * @param name name to compare (not null)
@@ -163,6 +181,12 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   }
 
 
+  /**
+   * Get the first cookie that matches by name.
+   *
+   * @param name name to search in the cookie jar
+   * @return cookie or {@code null}.
+   */
   public ServerCookie get(String name) {
     for (ServerCookie cookie : list) {
       if (cookie.getName().equals(name)) {
@@ -173,6 +197,13 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     return null;
   }
 
+  /**
+   * Get a read only slice of the cookie jar, with all cookies that matches by name.
+   *
+   * @throws UnsupportedOperationException of this cookie jar is a slice view
+   * @param name name to search in the cookie jar
+   * @return read only cookie jar or an empty jar.
+   */
   public CookieJar getAll(String name) {
     List<ServerCookie> subList = null;
 
@@ -192,6 +223,14 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     return EMPTY;
   }
 
+  /**
+   * Get a unique cookie by the cookie unique identifier tuple.
+
+   * @param name cookie name
+   * @param domain cookie domain
+   * @param path cookie path
+   * @return a cookie or {@code null}
+   */
   public ServerCookie get(String name, String domain, String path) {
     for (ServerCookie cookie : list) {
       if (cookieUniqueIdComparator(cookie, name, domain, path) == 0) {
@@ -202,6 +241,14 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     return null;
   }
 
+  /**
+   * Get a read only slice of the cookie jar, with all removed or invalidated cookies that matches by name.
+   *
+   * @param name name to search in the cookie jar
+   * @param invalidate {@code true} to invalidate the cookie, {@code false} to remove from the jar.
+   * @return read only cookie jar or an empty jar of cookies that were affected by the operation
+   * @throws UnsupportedOperationException of this cookie jar is a slice view
+   */
   public CookieJar removeOrInvalidateAll(String name, boolean invalidate) {
     Iterator<ServerCookie> it = list.iterator();
     List<ServerCookie> collector = null;
@@ -223,6 +270,16 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     return EMPTY;
   }
 
+  /**
+   * Removes a unique cookie from the cookie jar using the cookies unique cookie identifier.
+
+   * @param name cookie name
+   * @param domain cookie domain
+   * @param path cookie path
+   * @param invalidate {@code true} to invalidate the cookie, {@code false} to remove from the jar.
+   * @return the matched cookie
+   * @throws UnsupportedOperationException of this cookie jar is a slice view
+   */
   public ServerCookie removeOrInvalidate(String name, String domain, String path, boolean invalidate) {
     Iterator<ServerCookie> it = list.iterator();
     while (it.hasNext()) {
@@ -236,6 +293,14 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     return null;
   }
 
+  /**
+   * Removes the first cookie from the cookie jar that matches the cookies name.
+
+   * @param name cookie name
+   * @param invalidate {@code true} to invalidate the cookie, {@code false} to remove from the jar.
+   * @return the matched cookie
+   * @throws UnsupportedOperationException of this cookie jar is a slice view
+   */
   public ServerCookie removeOrInvalidate(String name, boolean invalidate) {
     Iterator<ServerCookie> it = list.iterator();
     while (it.hasNext()) {
