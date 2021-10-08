@@ -671,7 +671,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * Expire all cookies, notifying a User Agent to remove it from its cookie jar.
    *
    * @param name  the name of the cookie
-   * @return the set of cookies, if they existed, or an empty
+   * @return a read only set of affected cookies, if they existed, or an empty set.
    */
   default Set<Cookie> removeCookies(String name) {
     return removeCookies(name, true);
@@ -682,7 +682,7 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
    * to remove it from its cookie jar.
    *
    * @param name  the name of the cookie
-   * @return the set of cookies, if they existed, or an empty set.
+   * @return a read only set of affected cookies, if they existed, or an empty set.
    */
   Set<Cookie> removeCookies(String name, boolean invalidate);
 

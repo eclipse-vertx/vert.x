@@ -29,9 +29,10 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   private static final CookieJar EMPTY = new CookieJar(Collections.emptyList());
 
   // the real holder
-  private List<ServerCookie> list;
+  private final List<ServerCookie> list;
 
   public CookieJar() {
+    list = new ArrayList<>(4);
   }
 
   public CookieJar(CharSequence cookieHeader) {
@@ -41,6 +42,8 @@ public class CookieJar extends AbstractSet<ServerCookie> {
       for (io.netty.handler.codec.http.cookie.Cookie cookie : nettyCookies) {
         list.add(new CookieImpl(cookie));
       }
+    } else {
+      list = new ArrayList<>(4);
     }
   }
 
@@ -53,9 +56,6 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    */
   @Override
   public int size() {
-    if (list == null) {
-      return 0;
-    }
     return list.size();
   }
 
@@ -67,14 +67,6 @@ public class CookieJar extends AbstractSet<ServerCookie> {
    */
   @Override
   public boolean contains(Object o) {
-    if (list == null) {
-      return false;
-    }
-
-    if (!(o instanceof ServerCookie)) {
-      return false;
-    }
-
     ServerCookie needle = (ServerCookie) o;
 
     for (ServerCookie cookie : list) {
@@ -88,21 +80,13 @@ public class CookieJar extends AbstractSet<ServerCookie> {
 
   @Override
   public Iterator<ServerCookie> iterator() {
-    if (list == null) {
-      return Collections.emptyIterator();
-    }
-
     return list.iterator();
   }
 
   @Override
   public boolean add(ServerCookie cookie) {
     if (cookie == null) {
-      return false;
-    }
-
-    if (list == null) {
-      list = new ArrayList<>(4);
+      throw new NullPointerException("cookie cannot be null");
     }
 
     for (int i = 0; i < list.size(); i++) {
@@ -126,9 +110,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
 
   @Override
   public void clear() {
-    if (list != null) {
-      list.clear();
-    }
+    list.clear();
   }
 
   /**
@@ -178,10 +160,6 @@ public class CookieJar extends AbstractSet<ServerCookie> {
 
 
   public ServerCookie get(String name) {
-    if (list == null) {
-      return null;
-    }
-
     for (ServerCookie cookie : list) {
       if (cookie.getName().equals(name)) {
         return cookie;
@@ -192,10 +170,6 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   }
 
   public CookieJar getAll(String name) {
-    if (list == null) {
-      return EMPTY;
-    }
-
     List<ServerCookie> subList = null;
 
     for (ServerCookie cookie : list) {
@@ -215,10 +189,6 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   }
 
   public ServerCookie get(String name, String domain, String path) {
-    if (list == null) {
-      return null;
-    }
-
     for (ServerCookie cookie : list) {
       if (cookieUniqueIdComparator(cookie, name, domain, path) == 0) {
         return cookie;
@@ -229,10 +199,6 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   }
 
   public CookieJar removeOrInvalidateAll(String name, boolean invalidate) {
-    if (list == null) {
-      return EMPTY;
-    }
-
     Iterator<ServerCookie> it = list.iterator();
     List<ServerCookie> collector = null;
 
@@ -254,10 +220,6 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   }
 
   public ServerCookie removeOrInvalidate(String name, String domain, String path, boolean invalidate) {
-    if (list == null) {
-      return null;
-    }
-
     Iterator<ServerCookie> it = list.iterator();
     while (it.hasNext()) {
       ServerCookie cookie = it.next();
@@ -271,10 +233,6 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   }
 
   public ServerCookie removeOrInvalidate(String name, boolean invalidate) {
-    if (list == null) {
-      return null;
-    }
-
     Iterator<ServerCookie> it = list.iterator();
     while (it.hasNext()) {
       ServerCookie cookie = it.next();

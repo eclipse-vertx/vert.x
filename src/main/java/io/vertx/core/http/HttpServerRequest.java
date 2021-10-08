@@ -526,6 +526,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   Set<Cookie> cookies(String name);
 
   /**
+   * Returns a modifiable set of parsed cookies from the {@code COOKIE} header. Several cookies may share the
+   * same name but have different keys. A cookie is unique by its {@code <name, domain, path>} tuple.
+   *
    * @return a set with all cookies in the cookie jar.
    */
   Set<Cookie> cookies();
