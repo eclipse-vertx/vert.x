@@ -26,7 +26,7 @@ import java.util.*;
 public class CookieJar extends AbstractSet<ServerCookie> {
 
   // keep a shortcut to an empty jar to avoid unnecessary allocations
-  private static final CookieJar EMPTY = new CookieJar(Collections.emptyList());
+  private static final CookieJar EMPTY = new CookieJar((List<ServerCookie>) null);
 
   // the real holder
   private final List<ServerCookie> list;
@@ -48,7 +48,11 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   }
 
   private CookieJar(List<ServerCookie> list) {
-    this.list = list;
+    if (list == null) {
+      this.list = Collections.emptyList();
+    } else {
+      this.list = Collections.unmodifiableList(list);
+    }
   }
 
   /**
@@ -182,7 +186,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     }
 
     if (subList != null) {
-      return new CookieJar(Collections.unmodifiableList(subList));
+      return new CookieJar(subList);
     }
 
     return EMPTY;
@@ -214,7 +218,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     }
 
     if (collector != null) {
-      return new CookieJar(Collections.unmodifiableList(collector));
+      return new CookieJar(collector);
     }
     return EMPTY;
   }
