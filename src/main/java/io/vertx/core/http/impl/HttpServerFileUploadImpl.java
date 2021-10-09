@@ -70,7 +70,9 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
     Handler<Buffer> h;
     synchronized (HttpServerFileUploadImpl.this) {
       h = dataHandler;
-      size += data.length();
+      if (lazyCalculateSize) {
+        size += data.length();
+      }
     }
     if (h != null) {
       h.handle(data);
