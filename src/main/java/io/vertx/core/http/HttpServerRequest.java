@@ -501,8 +501,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   }
 
   /**
-   * @deprecated the implementation made a wrong assumption that cookies could be identified only by its name. The RFC
+   * @deprecated the implementation made a wrong assumption that cookies could be identified only by their name. The RFC
    * states that the tuple of {@code <name, domain, path>} is the unique identifier.
+   *
+   * When more than one cookie has the same name, the map will hold that lost one to be parsed and any previously parsed
+   * value will be silently overwritten.
    *
    * @return a map of all the cookies.
    */
@@ -528,6 +531,10 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Returns a modifiable set of parsed cookies from the {@code COOKIE} header. Several cookies may share the
    * same name but have different keys. A cookie is unique by its {@code <name, domain, path>} tuple.
+   *
+   * Request cookies are directly linked to response cookies. Any modification to a cookie object in the returned set
+   * will mark the cookie to be included in the HTTP response. Removing a cookie from the set, will also mean that it
+   * will be removed from the response, regardless if it was modified or not.
    *
    * @return a set with all cookies in the cookie jar.
    */
