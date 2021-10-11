@@ -14,14 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -31,7 +24,7 @@ import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
 
-import static io.vertx.core.http.HttpHeaders.*;
+import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 
 /**
  * This class is optimised for performance when used on the same event loop that is passed to the handler with.
@@ -84,7 +77,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (this) {
       handler = exceptionHandler;
       if (handler == null || endFuture.isComplete()) {
-        log.error(t);
+        log.error(t.getMessage(), t);
         return;
       }
     }
