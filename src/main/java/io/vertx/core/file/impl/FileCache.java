@@ -64,15 +64,10 @@ class FileCache {
 
   private Thread shutdownHook;
   private File cacheDir;
-  private InvertedBloomFilter<String> missingResources;
 
   public FileCache(File cacheDir) {
     try {
       this.cacheDir = cacheDir.getCanonicalFile();
-      int invertedBloomFilterSize = Integer.getInteger("vertx.fileCache.invertedBloomFilterSize", 4 * 1024);
-      if (invertedBloomFilterSize >= 0) {
-        this.missingResources = new InvertedBloomFilter<>(invertedBloomFilterSize);
-      }
     } catch (IOException e) {
       throw new VertxException("Cannot get canonical name of cacheDir", e);
     }
@@ -121,8 +116,6 @@ class FileCache {
       hook = shutdownHook;
       // disable the shutdown hook thread
       shutdownHook = null;
-      // clean the missing resources filter
-      missingResources = null;
     }
     if (hook != null) {
       // May throw IllegalStateException if called from other shutdown hook so ignore that
@@ -269,21 +262,5 @@ class FileCache {
       }
     }
     throw new VertxException("File is outside of the cacheDir dir: " + file);
-  }
-
-  void addMissingResource(String resourceName) {
-    // check if either the filter is disabled it, or delete has been called
-    if (missingResources != null) {
-      missingResources.add(resourceName);
-    }
-  }
-
-  boolean isMissingResource(String resourceName) {
-    // check if either the filter is disabled it, or delete has been called
-    if (missingResources == null) {
-      return false;
-    }
-    // the filter is active, so return the real check
-    return missingResources.test(resourceName);
   }
 }

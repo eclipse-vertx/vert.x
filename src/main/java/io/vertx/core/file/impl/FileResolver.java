@@ -138,12 +138,6 @@ public class FileResolver {
         // if a resource is still absolute, it means it's outside the cache, we don't need to handle it.
         // otherwise, we need to go over the classpath resources
         if (!absolute) {
-          // the resource has been seen, there's no need to resolve again
-          // this is only valid when the cache is read only
-          if (this.enableCaching && cache.isMissingResource(fileName)) {
-            return file;
-          }
-
           // Look for file on classpath
           ClassLoader cl = getClassLoader();
 
@@ -174,8 +168,6 @@ public class FileResolver {
           if (url != null) {
             return unpackUrlResource(url, fileName, cl, false);
           }
-          // add this filename to the filter. This will avoid future resolutions on misses.
-          cache.addMissingResource(fileName);
         }
       }
     }
