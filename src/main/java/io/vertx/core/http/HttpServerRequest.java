@@ -494,7 +494,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   @Nullable Cookie getCookie(String name, String domain, String path);
 
   /**
-   * @return the number of cookieMap.
+   * @return the number of cookies in the cookie jar.
    */
   default int cookieCount() {
     return cookies().size();
