@@ -57,15 +57,17 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
 
   @Override
   public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    if (closed) {
-      throw new IllegalStateException("Worker executor closed");
+    synchronized (this) {
+      if (closed) {
+        throw new IllegalStateException("Worker executor closed");
+      }
     }
     ContextInternal context = (ContextInternal) vertx.getOrCreateContext();
     ContextImpl impl = context instanceof DuplicatedContext ? ((DuplicatedContext)context).delegate : (ContextImpl) context;
     return ContextImpl.executeBlocking(context, blockingCodeHandler, pool, ordered ? impl.orderedTasks : null);
   }
 
-  public synchronized <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
+  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> asyncResultHandler) {
     Future<T> fut = executeBlocking(blockingCodeHandler, ordered);
     if (asyncResultHandler != null) {
       fut.onComplete(asyncResultHandler);
