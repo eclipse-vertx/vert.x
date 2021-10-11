@@ -102,12 +102,7 @@ class FileCache {
   }
 
   String cacheDir() {
-    // if cacheDir is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
-    if (cacheDir == null) {
-      throw new IllegalStateException("cacheDir is null");
-    }
-    return cacheDir.getPath();
+    return getCacheDir().getPath();
   }
 
   void close() throws IOException {
@@ -146,12 +141,7 @@ class FileCache {
   }
 
   File getFile(String fileName) {
-    // if cacheDir is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
-    if (cacheDir == null) {
-      throw new IllegalStateException("cacheDir is null");
-    }
-    return new File(cacheDir, fileName);
+    return new File(getCacheDir(), fileName);
   }
 
   File getCanonicalFile(File file) {
@@ -168,12 +158,8 @@ class FileCache {
   }
 
   String relativize(String fileName) {
-    // if cacheDir is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
-    if (cacheDir == null) {
-      throw new IllegalStateException("cacheDir is null");
-    }
-    String cachePath = cacheDir.getPath();
+    String cachePath = getCacheDir().getPath();
+
     if (fileName.startsWith(cachePath)) {
       int cachePathLen = cachePath.length();
       if (fileName.length() == cachePathLen) {
@@ -188,12 +174,7 @@ class FileCache {
   }
 
   File cacheFile(String fileName, File resource, boolean overwrite) throws IOException {
-    // if cacheDir is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
-    if (cacheDir == null) {
-      throw new IllegalStateException("cacheDir is null");
-    }
-    File cacheFile = new File(cacheDir, fileName);
+    File cacheFile = new File(getCacheDir(), fileName);
     fileNameCheck(cacheFile);
     boolean isDirectory = resource.isDirectory();
     if (!isDirectory) {
@@ -213,12 +194,7 @@ class FileCache {
   }
 
   void cacheFile(String fileName, InputStream is, boolean overwrite) throws IOException {
-    // if cacheDir is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
-    if (cacheDir == null) {
-      throw new IllegalStateException("cacheDir is null");
-    }
-    File cacheFile = new File(cacheDir, fileName);
+    File cacheFile = new File(getCacheDir(), fileName);
     fileNameCheck(cacheFile);
     cacheFile.getParentFile().mkdirs();
     if (!overwrite) {
@@ -232,25 +208,14 @@ class FileCache {
   }
 
   void cacheDir(String fileName) throws IOException {
-    // if cacheDir is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
-    if (cacheDir == null) {
-      throw new IllegalStateException("cacheDir is null");
-    }
-    File file = new File(cacheDir, fileName);
+    File file = new File(getCacheDir(), fileName);
     fileNameCheck(file);
     file.mkdirs();
   }
 
   private void fileNameCheck(File file) throws IOException {
-    // if cacheDir is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
-    if (cacheDir == null) {
-      throw new IllegalStateException("cacheDir is null");
-    }
     String fileName = file.getCanonicalPath();
-
-    String cachePath = cacheDir.getPath();
+    String cachePath = getCacheDir().getPath();
     if (fileName.startsWith(cachePath)) {
       int cachePathLen = cachePath.length();
       if (fileName.length() == cachePathLen) {
@@ -262,5 +227,13 @@ class FileCache {
       }
     }
     throw new VertxException("File is outside of the cacheDir dir: " + file);
+  }
+
+  private File getCacheDir() {
+    File currentCacheDir = cacheDir;
+    if (currentCacheDir == null) {
+      throw new IllegalStateException("cacheDir has been removed. FileResolver is closing?");
+    }
+    return currentCacheDir;
   }
 }
