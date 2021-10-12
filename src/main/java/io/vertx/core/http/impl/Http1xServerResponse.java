@@ -92,7 +92,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   private boolean writable;
   private boolean closed;
   private final HeadersMultiMap headers;
-  private CookieJar cookies;
+  private volatile CookieJar cookies;
   private MultiMap trailers;
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
@@ -791,7 +791,17 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
 
   CookieJar cookies() {
     if (cookies == null) {
-      cookies = new CookieJar(request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE));
+      synchronized (conn) {
+        // avoid double parsing
+        if (cookies == null) {
+          String cookieHeader = request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE);
+          if (cookieHeader == null) {
+            cookies = new CookieJar();
+          } else {
+            cookies = new CookieJar(cookieHeader);
+          }
+        }
+      }
     }
     return cookies;
   }

@@ -26,7 +26,7 @@ import java.util.*;
 public class CookieJar extends AbstractSet<ServerCookie> {
 
   // keep a shortcut to an empty jar to avoid unnecessary allocations
-  private static final CookieJar EMPTY = new CookieJar((List<ServerCookie>) null);
+  private static final CookieJar EMPTY = new CookieJar(Collections.emptyList());
 
   // the real holder
   private final List<ServerCookie> list;
@@ -36,23 +36,17 @@ public class CookieJar extends AbstractSet<ServerCookie> {
   }
 
   public CookieJar(CharSequence cookieHeader) {
-    if (cookieHeader != null) {
-      Set<io.netty.handler.codec.http.cookie.Cookie> nettyCookies = ServerCookieDecoder.STRICT.decode(cookieHeader.toString());
-      list = new ArrayList<>(nettyCookies.size());
-      for (io.netty.handler.codec.http.cookie.Cookie cookie : nettyCookies) {
-        list.add(new CookieImpl(cookie));
-      }
-    } else {
-      list = new ArrayList<>(4);
+    Objects.requireNonNull(cookieHeader, "cookie header cannot be null");
+    Set<io.netty.handler.codec.http.cookie.Cookie> nettyCookies = ServerCookieDecoder.STRICT.decode(cookieHeader.toString());
+    list = new ArrayList<>(nettyCookies.size());
+    for (io.netty.handler.codec.http.cookie.Cookie cookie : nettyCookies) {
+      list.add(new CookieImpl(cookie));
     }
   }
 
   private CookieJar(List<ServerCookie> list) {
-    if (list == null) {
-      this.list = Collections.emptyList();
-    } else {
-      this.list = Collections.unmodifiableList(list);
-    }
+    Objects.requireNonNull(list, "list cannot be null");
+    this.list = list;
   }
 
   /**
@@ -217,7 +211,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     }
 
     if (subList != null) {
-      return new CookieJar(subList);
+      return new CookieJar(Collections.unmodifiableList(subList));
     }
 
     return EMPTY;
@@ -265,7 +259,7 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     }
 
     if (collector != null) {
-      return new CookieJar(collector);
+      return new CookieJar(Collections.unmodifiableList(collector));
     }
     return EMPTY;
   }
