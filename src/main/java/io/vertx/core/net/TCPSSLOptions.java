@@ -58,6 +58,16 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final TimeUnit DEFAULT_IDLE_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
 
   /**
+   * Default read idle timeout = 0
+   */
+  public static final int DEFAULT_READ_IDLE_TIMEOUT = 0;
+
+  /**
+   * Default write idle timeout = 0
+   */
+  public static final int DEFAULT_WRITE_IDLE_TIMEOUT = 0;
+
+  /**
    * Default use alpn = false
    */
   public static final boolean DEFAULT_USE_ALPN = false;
@@ -105,6 +115,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean tcpKeepAlive;
   private int soLinger;
   private int idleTimeout;
+  private int readIdleTimeout;
+  private int writeIdleTimeout;
   private TimeUnit idleTimeoutUnit;
   private boolean ssl;
   private long sslHandshakeTimeout;
@@ -141,6 +153,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.soLinger = other.getSoLinger();
     this.idleTimeout = other.getIdleTimeout();
     this.idleTimeoutUnit = other.getIdleTimeoutUnit() != null ? other.getIdleTimeoutUnit() : DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
+    this.readIdleTimeout = other.getReadIdleTimeout();
+    this.writeIdleTimeout = other.getWriteIdleTimeout();
     this.ssl = other.isSsl();
     this.sslHandshakeTimeout = other.sslHandshakeTimeout;
     this.sslHandshakeTimeoutUnit = other.getSslHandshakeTimeoutUnit() != null ? other.getSslHandshakeTimeoutUnit() : DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
@@ -184,6 +198,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
     soLinger = DEFAULT_SO_LINGER;
     idleTimeout = DEFAULT_IDLE_TIMEOUT;
+    readIdleTimeout = DEFAULT_READ_IDLE_TIMEOUT;
+    writeIdleTimeout = DEFAULT_WRITE_IDLE_TIMEOUT;
     idleTimeoutUnit = DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
     ssl = DEFAULT_SSL;
     sslHandshakeTimeout = DEFAULT_SSL_HANDSHAKE_TIMEOUT;
@@ -259,11 +275,11 @@ public abstract class TCPSSLOptions extends NetworkOptions {
 
   /**
    * Set the idle timeout, default time unit is seconds. Zero means don't timeout.
-   * This determines if a connection will timeout and be closed if no data is received within the timeout.
+   * This determines if a connection will timeout and be closed if no data is received nor sent within the timeout.
    *
    * If you want change default time unit, use {@link #setIdleTimeoutUnit(TimeUnit)}
    *
-   * @param idleTimeout  the timeout, in seconds
+   * @param idleTimeout  the timeout
    * @return a reference to this, so the API can be used fluently
    */
   public TCPSSLOptions setIdleTimeout(int idleTimeout) {
@@ -279,6 +295,54 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public int getIdleTimeout() {
     return idleTimeout;
+  }
+
+  /**
+   * Set the read idle timeout, default time unit is seconds. Zero means don't timeout.
+   * This determines if a connection will timeout and be closed if no data is received within the timeout.
+   *
+   * If you want change default time unit, use {@link #setIdleTimeoutUnit(TimeUnit)}
+   *
+   * @param idleTimeout  the read timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setReadIdleTimeout(int idleTimeout) {
+    if (idleTimeout < 0) {
+      throw new IllegalArgumentException("idleTimeout must be >= 0");
+    }
+    this.readIdleTimeout = idleTimeout;
+    return this;
+  }
+
+  /**
+   * @return the read idle timeout, in time unit specified by {@link #getIdleTimeoutUnit()}.
+   */
+  public int getReadIdleTimeout() {
+    return readIdleTimeout;
+  }
+
+  /**
+   * Set the write idle timeout, default time unit is seconds. Zero means don't timeout.
+   * This determines if a connection will timeout and be closed if no data is sent within the timeout.
+   *
+   * If you want change default time unit, use {@link #setIdleTimeoutUnit(TimeUnit)}
+   *
+   * @param idleTimeout  the write timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setWriteIdleTimeout(int idleTimeout) {
+    if (idleTimeout < 0) {
+      throw new IllegalArgumentException("idleTimeout must be >= 0");
+    }
+    this.writeIdleTimeout = idleTimeout;
+    return this;
+  }
+
+  /**
+   * @return the write idle timeout, in time unit specified by {@link #getIdleTimeoutUnit()}.
+   */
+  public int getWriteIdleTimeout() {
+    return writeIdleTimeout;
   }
 
   /**

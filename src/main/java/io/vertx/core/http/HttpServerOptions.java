@@ -314,6 +314,18 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setReadIdleTimeout(int idleTimeout) {
+    super.setReadIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public HttpServerOptions setWriteIdleTimeout(int idleTimeout) {
+    super.setWriteIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
     super.setIdleTimeoutUnit(idleTimeoutUnit);
     return this;

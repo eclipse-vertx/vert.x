@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensio
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
@@ -1091,13 +1092,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
   }
 
-  protected void handleIdle() {
+  protected void handleIdle(IdleStateEvent event) {
     synchronized (this) {
       if (webSocket == null && responses.isEmpty() && requests.isEmpty()) {
         return;
       }
     }
-    super.handleIdle();
+    super.handleIdle(event);
   }
 
   @Override

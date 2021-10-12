@@ -95,6 +95,11 @@ public class TCPSSLOptionsConverter {
             obj.setPfxTrustOptions(new io.vertx.core.net.PfxOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
+        case "readIdleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setReadIdleTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
         case "soLinger":
           if (member.getValue() instanceof Number) {
             obj.setSoLinger(((Number)member.getValue()).intValue());
@@ -148,6 +153,11 @@ public class TCPSSLOptionsConverter {
         case "useAlpn":
           if (member.getValue() instanceof Boolean) {
             obj.setUseAlpn((Boolean)member.getValue());
+          }
+          break;
+        case "writeIdleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWriteIdleTimeout(((Number)member.getValue()).intValue());
           }
           break;
       }
@@ -204,6 +214,7 @@ public class TCPSSLOptionsConverter {
     if (obj.getPfxTrustOptions() != null) {
       json.put("pfxTrustOptions", obj.getPfxTrustOptions().toJson());
     }
+    json.put("readIdleTimeout", obj.getReadIdleTimeout());
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
     json.put("sslHandshakeTimeout", obj.getSslHandshakeTimeout());
@@ -219,5 +230,6 @@ public class TCPSSLOptionsConverter {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
     json.put("useAlpn", obj.isUseAlpn());
+    json.put("writeIdleTimeout", obj.getWriteIdleTimeout());
   }
 }

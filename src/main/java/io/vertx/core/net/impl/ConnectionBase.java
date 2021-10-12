@@ -15,6 +15,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -396,8 +397,9 @@ public abstract class ConnectionBase {
    * <p/>
    * Subclasses can override it to prevent the idle event to happen (e.g when the connection is pooled) or
    * perform extra work when the idle event happens.
+   * @param event
    */
-  protected void handleIdle() {
+  protected void handleIdle(IdleStateEvent event) {
     chctx.close();
   }
 
