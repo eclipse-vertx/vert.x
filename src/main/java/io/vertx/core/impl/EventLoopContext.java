@@ -15,6 +15,7 @@ import io.netty.channel.EventLoop;
 import io.vertx.core.Handler;
 
 import java.util.concurrent.RejectedExecutionException;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -27,7 +28,7 @@ public class EventLoopContext extends ContextImpl {
                    WorkerPool workerPool,
                    Deployment deployment,
                    CloseFuture closeFuture,
-                   ClassLoader tccl,
+                   ClassLoaderSupplier tccl,
                    boolean disableTCCL) {
     super(vertx, eventLoop, internalBlockingPool, workerPool, deployment, closeFuture, tccl, disableTCCL);
   }

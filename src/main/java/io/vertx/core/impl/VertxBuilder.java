@@ -23,6 +23,7 @@ import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.VertxServiceProvider;
 import io.vertx.core.spi.VertxThreadFactory;
 import io.vertx.core.spi.VertxTracerFactory;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.impl.DefaultNodeSelector;
@@ -52,6 +53,7 @@ public class VertxBuilder {
   private ExecutorServiceFactory executorServiceFactory;
   private VertxMetrics metrics;
   private FileResolver fileResolver;
+  private ClassLoaderSupplier defaultClassLoaderSupplier;
 
   public VertxBuilder(JsonObject config) {
     this(new VertxOptions(config));
@@ -200,6 +202,38 @@ public class VertxBuilder {
   }
 
   /**
+   * @return the {@code ClassLoaderSupplier} to use
+   */
+  public ClassLoaderSupplier defaultClassLoaderSupplier() {
+    return defaultClassLoaderSupplier;
+  }
+
+  /**
+   * Set the {@code ClassLoaderSupplier} instance to use. This supplier will be consulted before every operation
+   * to determine the correct {@link ClassLoader} to use, unless a {@code ClassLoader} has been specified by another
+   * means.
+   *
+   * @param defaultClassLoaderSupplier the supplier
+   * @return this builder instance
+   */
+  public VertxBuilder defaultClassLoaderSupplier(ClassLoaderSupplier defaultClassLoaderSupplier) {
+    this.defaultClassLoaderSupplier = defaultClassLoaderSupplier;
+    return this;
+  }
+
+  /**
+   * Set the {@code ClassLoader} instance to use. This will be used for every operation, unless a {@code ClassLoader}
+   * has been specified by another means.
+   *
+   * @param defaultClassLoader the supplier
+   * @return this builder instance
+   */
+  public VertxBuilder defaultClassLoader(ClassLoader defaultClassLoader) {
+    this.defaultClassLoaderSupplier = new ClassLoaderSupplier(defaultClassLoader);
+    return this;
+  }
+
+  /**
    * Build and return the vertx instance
    */
   public Vertx vertx() {
@@ -213,7 +247,7 @@ public class VertxBuilder {
       transport,
       fileResolver,
       threadFactory,
-      executorServiceFactory);
+      executorServiceFactory, defaultClassLoaderSupplier);
     vertx.init();
     return vertx;
   }
@@ -235,7 +269,7 @@ public class VertxBuilder {
       transport,
       fileResolver,
       threadFactory,
-      executorServiceFactory);
+      executorServiceFactory, defaultClassLoaderSupplier);
     vertx.initClustered(options, handler);
   }
 
@@ -313,7 +347,7 @@ public class VertxBuilder {
     if (fileResolver != null) {
       return;
     }
-    fileResolver = new FileResolver(options.getFileSystemOptions());
+    fileResolver = new FileResolver(options.getFileSystemOptions(), defaultClassLoaderSupplier);
   }
 
   private void initThreadFactory() {

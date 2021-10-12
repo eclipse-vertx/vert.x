@@ -26,6 +26,7 @@ import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
@@ -107,16 +108,30 @@ public interface VertxInternal extends Vertx {
   /**
    * @return event loop context
    */
-  EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl);
+  default EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoader tccl) {
+    return createEventLoopContext(deployment, closeFuture, workerPool, new ClassLoaderSupplier(tccl));
+  }
 
-  EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl);
+  default EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return createEventLoopContext(eventLoop, workerPool, new ClassLoaderSupplier(tccl));
+  }
+
+  EventLoopContext createEventLoopContext(Deployment deployment, CloseFuture closeFuture, WorkerPool workerPool, ClassLoaderSupplier tccl);
+
+  EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoaderSupplier tccl);
 
   EventLoopContext createEventLoopContext();
 
   /**
    * @return worker loop context
    */
-  WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl);
+  default WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoader tccl) {
+    return createWorkerContext(deployment, closeFuture, pool, new ClassLoaderSupplier(tccl));
+  }
+  /**
+   * @return worker loop context
+   */
+  WorkerContext createWorkerContext(Deployment deployment, CloseFuture closeFuture, WorkerPool pool, ClassLoaderSupplier tccl);
 
   WorkerContext createWorkerContext();
 

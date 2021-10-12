@@ -13,6 +13,8 @@ package io.vertx.core.impl;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.spi.classloading.ClassLoaderSupplier;
+
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -25,11 +27,11 @@ public class BenchmarkContext extends ContextImpl {
       impl,
       impl.internalWorkerPool,
       impl.workerPool,
-      Thread.currentThread().getContextClassLoader()
+      new ClassLoaderSupplier(Thread.currentThread().getContextClassLoader())
     );
   }
 
-  public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, ClassLoader tccl) {
+  public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, ClassLoaderSupplier tccl) {
     super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, null, null, tccl, false);
   }
 
