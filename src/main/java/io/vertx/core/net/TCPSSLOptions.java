@@ -308,7 +308,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public TCPSSLOptions setReadIdleTimeout(int idleTimeout) {
     if (idleTimeout < 0) {
-      throw new IllegalArgumentException("idleTimeout must be >= 0");
+      throw new IllegalArgumentException("readIdleTimeout must be >= 0");
     }
     this.readIdleTimeout = idleTimeout;
     return this;
@@ -332,7 +332,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public TCPSSLOptions setWriteIdleTimeout(int idleTimeout) {
     if (idleTimeout < 0) {
-      throw new IllegalArgumentException("idleTimeout must be >= 0");
+      throw new IllegalArgumentException("writeIdleTimeout must be >= 0");
     }
     this.writeIdleTimeout = idleTimeout;
     return this;
