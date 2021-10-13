@@ -477,19 +477,21 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Get the cookie with the specified name.
    *
-   * NOTE: this will return just the 1st {@link Cookie} that matches the given name, to get all cookies for this name see:
-   * {@link #cookies(String)}
+   * NOTE: this will return just the 1st {@link Cookie} that matches the given name, to get all cookies for this name
+   * see: {@link #cookies(String)}
    *
    * @param name  the cookie name
-   * @return the cookie
+   * @return the cookie or {@code null} if not found.
    */
   @Nullable Cookie getCookie(String name);
 
   /**
-   * Get the cookie with the specified identifier.
+   * Get the cookie with the specified {@code <name, domain, path>}.
    *
    * @param name  the cookie name
-   * @return the cookie
+   * @param domain the cookie domain
+   * @param path the cookie path
+   * @return the cookie or {@code null} if not found.
    */
   @Nullable Cookie getCookie(String name, String domain, String path);
 
@@ -522,6 +524,9 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    *
    * The set entries are references to the request original set. This means that performing property changes in the
    * cookie objects will affect the original object too.
+   *
+   * NOTE: the returned {@link Set} is read-only. This means any attempt to modify (add or remove to the set), will
+   * throw {@link UnsupportedOperationException}.
    *
    * @param name the name to be matches
    * @return the matching cookies or empty set
