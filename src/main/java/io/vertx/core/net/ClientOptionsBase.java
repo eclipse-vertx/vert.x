@@ -262,6 +262,16 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setReadIdleTimeout(int idleTimeout) {
+    return (ClientOptionsBase) super.setReadIdleTimeout(idleTimeout);
+  }
+
+  @Override
+  public ClientOptionsBase setWriteIdleTimeout(int idleTimeout) {
+    return (ClientOptionsBase) super.setWriteIdleTimeout(idleTimeout);
+  }
+
+  @Override
   public ClientOptionsBase setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
     return (ClientOptionsBase) super.setIdleTimeoutUnit(idleTimeoutUnit);
   }

@@ -150,6 +150,11 @@ public class EventBusOptionsConverter {
             obj.setPort(((Number)member.getValue()).intValue());
           }
           break;
+        case "readIdleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setReadIdleTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
         case "receiveBufferSize":
           if (member.getValue() instanceof Number) {
             obj.setReceiveBufferSize(((Number)member.getValue()).intValue());
@@ -245,6 +250,11 @@ public class EventBusOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
+        case "writeIdleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWriteIdleTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
       }
     }
   }
@@ -318,6 +328,7 @@ public class EventBusOptionsConverter {
       json.put("pfxTrustOptions", obj.getPfxTrustOptions().toJson());
     }
     json.put("port", obj.getPort());
+    json.put("readIdleTimeout", obj.getReadIdleTimeout());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
     json.put("reconnectAttempts", obj.getReconnectAttempts());
     json.put("reconnectInterval", obj.getReconnectInterval());
@@ -341,5 +352,6 @@ public class EventBusOptionsConverter {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
     json.put("useAlpn", obj.isUseAlpn());
+    json.put("writeIdleTimeout", obj.getWriteIdleTimeout());
   }
 }

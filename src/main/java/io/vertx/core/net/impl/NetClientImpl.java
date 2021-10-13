@@ -58,6 +58,8 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
   protected final int idleTimeout;
+  protected final int readIdleTimeout;
+  protected final int writeIdleTimeout;
   private final TimeUnit idleTimeoutUnit;
   protected final boolean logEnabled;
 
@@ -77,6 +79,8 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null;
     this.logEnabled = options.getLogActivity();
     this.idleTimeout = options.getIdleTimeout();
+    this.readIdleTimeout = options.getReadIdleTimeout();
+    this.writeIdleTimeout = options.getWriteIdleTimeout();
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
     this.closeFuture = closeFuture;
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
@@ -92,8 +96,8 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
-    if (idleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, idleTimeout, idleTimeoutUnit));
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, idleTimeoutUnit));
     }
   }
 
