@@ -12,7 +12,8 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.*;
-import io.vertx.core.file.impl.FileResolver;
+import io.vertx.core.spi.file.FileResolver;
+import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
@@ -166,6 +167,23 @@ public class VertxBuilder {
   }
 
   /**
+   * @return the file resolver instance to use
+   */
+  public FileResolver fileResolver() {
+    return fileResolver;
+  }
+
+  /**
+   * Set the file resolver instance to use.
+   * @param resolver the file resolver
+   * @return this builder instance
+   */
+  public VertxBuilder fileResolver(FileResolver resolver) {
+    this.fileResolver = resolver;
+    return this;
+  }
+
+  /**
    * @return the {@code VertxThreadFactory} to use
    */
   public VertxThreadFactory threadFactory() {
@@ -245,7 +263,6 @@ public class VertxBuilder {
    */
   public VertxBuilder init() {
     initTransport();
-    initFileResolver();
     Collection<VertxServiceProvider> providers = new ArrayList<>();
     initMetrics(options, providers);
     initTracing(options, providers);
@@ -254,6 +271,7 @@ public class VertxBuilder {
     initProviders(providers);
     initThreadFactory();
     initExecutorServiceFactory();
+    initFileResolver();
     return this;
   }
 
@@ -313,7 +331,7 @@ public class VertxBuilder {
     if (fileResolver != null) {
       return;
     }
-    fileResolver = new FileResolver(options.getFileSystemOptions());
+    fileResolver = new FileResolverImpl(options.getFileSystemOptions());
   }
 
   private void initThreadFactory() {

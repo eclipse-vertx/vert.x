@@ -31,7 +31,7 @@ import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.impl.FileResolver;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
 import io.vertx.core.http.HttpClient;
@@ -841,11 +841,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public String cacheDir() {
-    return fileResolver.cacheDir();
-  }
-
-  @Override
   public void resolveAddress(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
     addressResolver.resolveHostname(hostname, resultHandler);
   }
@@ -858,6 +853,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return addressResolver.nettyAddressResolverGroup();
+  }
+
+  @Override
+  public FileResolver fileResolver() {
+    return fileResolver;
   }
 
   @Override
