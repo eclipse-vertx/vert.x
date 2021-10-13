@@ -262,7 +262,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     if (handler != null) {
       handler.handleException(e);
     } else {
-      log.error(e);
+      log.error(e.getMessage(), e);
     }
   }
 
