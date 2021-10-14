@@ -43,14 +43,16 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private Handler<Buffer> dataHandler;
+  private final long size;
 
-  NettyFileUpload(Context context, HttpServerRequest request, String name, String filename, String contentType, String contentTransferEncoding, Charset charset) {
+  NettyFileUpload(Context context, HttpServerRequest request, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
     this.name = name;
     this.filename = filename;
     this.contentType = contentType;
     this.contentTransferEncoding = contentTransferEncoding;
     this.charset = charset;
     this.request = request;
+    this.size = size;
     this.pending = new InboundBuffer<>(context)
       .drainHandler(v -> request.resume())
       .handler(buff -> {
@@ -166,7 +168,7 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
 
   @Override
   public long length() {
-    throw new UnsupportedOperationException();
+    return size;
   }
 
   @Override
@@ -176,7 +178,7 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
 
   @Override
   public long definedLength() {
-    throw new UnsupportedOperationException();
+    return size;
   }
 
   @Override
