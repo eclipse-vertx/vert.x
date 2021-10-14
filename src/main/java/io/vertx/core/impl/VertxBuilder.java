@@ -167,14 +167,14 @@ public class VertxBuilder {
   }
 
   /**
-   * @return the file resolver instance to use
+   * @return the {@code FileResolver} instance to use
    */
   public FileResolver fileResolver() {
     return fileResolver;
   }
 
   /**
-   * Set the file resolver instance to use.
+   * Set the {@code FileResolver} instance to use.
    * @param resolver the file resolver
    * @return this builder instance
    */

@@ -24,7 +24,7 @@ import java.io.IOException;
  * We can do this by looking for the file on the classpath, and if found, copying it to a temporary cache directory
  * on disk and serving it from there.
  * <p>
- * There is one cache dir per Vert.x instance and they are deleted on Vert.x shutdown.
+ * There is one cache dir per Vert.x instance which is deleted on Vert.x shutdown.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="https://github.com/rworsnop/">Rob Worsnop</a>
@@ -32,7 +32,7 @@ import java.io.IOException;
 public interface FileResolver extends Closeable {
 
   /**
-   * Resolve the file for the specified {@code filename}.
+   * Resolve the file for the specified {@code fileName}.
    *
    * This method should never return {@code null}, it can return a file that does not exist.
    *

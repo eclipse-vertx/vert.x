@@ -33,7 +33,7 @@ public interface FileResolverFactory extends VertxServiceProvider {
   /**
    * Create a new {@link FileResolver} object.<p/>
    *
-   * @param options the vertx configuration option
+   * @param options the vertx configuration options
    * @return the file resolver
    */
   FileResolver resolver(VertxOptions options);
