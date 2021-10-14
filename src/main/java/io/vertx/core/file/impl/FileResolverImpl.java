@@ -14,6 +14,7 @@ package io.vertx.core.file.impl;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.VertxException;
 import io.vertx.core.file.FileSystemOptions;
+import io.vertx.core.spi.file.FileResolver;
 
 import java.io.Closeable;
 import java.io.File;
@@ -39,13 +40,13 @@ import static io.vertx.core.net.impl.URIDecoder.decodeURIComponent;
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  * @author <a href="https://github.com/rworsnop/">Rob Worsnop</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FileResolver {
+public class FileResolverImpl implements FileResolver {
 
   public static final String DISABLE_FILE_CACHING_PROP_NAME = "vertx.disableFileCaching";
   public static final String DISABLE_CP_RESOLVING_PROP_NAME = "vertx.disableFileCPResolving";
   public static final String CACHE_DIR_BASE_PROP_NAME = "vertx.cacheDirBase";
-
   private static final boolean NON_UNIX_FILE_SEP = File.separatorChar != '/';
 
   private final File cwd;
@@ -53,11 +54,11 @@ public class FileResolver {
   private final boolean enableCPResolving;
   private final FileCache cache;
 
-  public FileResolver() {
+  public FileResolverImpl() {
     this(new FileSystemOptions());
   }
 
-  public FileResolver(FileSystemOptions fileSystemOptions) {
+  public FileResolverImpl(FileSystemOptions fileSystemOptions) {
     enableCaching = fileSystemOptions.isFileCachingEnabled();
     enableCPResolving = fileSystemOptions.isClassPathResolvingEnabled();
 

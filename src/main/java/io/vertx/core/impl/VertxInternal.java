@@ -30,6 +30,7 @@ import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -160,12 +161,6 @@ public interface VertxInternal extends Vertx {
   File resolveFile(String fileName);
 
   /**
-   * Vert.x uses a file cache to extract class path resources. This method will return the location of this cache
-   * or {@code null} if the cache isn't active.
-   */
-  String cacheDir();
-
-  /**
    * Like {@link #executeBlocking(Handler, Handler)} but using the internal worker thread pool.
    */
   <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
@@ -188,6 +183,11 @@ public interface VertxInternal extends Vertx {
    * @return the address resolver
    */
   AddressResolver addressResolver();
+
+  /**
+   * @return the file resolver
+   */
+  FileResolver fileResolver();
 
   /**
    * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}

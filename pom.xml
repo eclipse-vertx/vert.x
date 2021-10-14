@@ -633,7 +633,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>json-codec</id>
+            <id>custom-json-codec</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -647,7 +647,7 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsoncodec</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customjsoncodec</additionalClasspathElement>
               </additionalClasspathElements>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
@@ -656,7 +656,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>vertx-thread-factory</id>
+            <id>custom-vertx-thread-factory</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -670,12 +670,12 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/threadfactory</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customthreadfactory</additionalClasspathElement>
               </additionalClasspathElements>
             </configuration>
           </execution>
           <execution>
-            <id>executor-service-factory</id>
+            <id>custom-executor-service-factory</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -689,12 +689,12 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/executorservicefactory</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customexecutorservicefactory</additionalClasspathElement>
               </additionalClasspathElements>
             </configuration>
           </execution>
           <execution>
-            <id>vertx-tracer-factory</id>
+            <id>custom-vertx-tracer-factory</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -709,6 +709,21 @@
               </systemProperties>
               <additionalClasspathElements>
                 <additionalClasspathElement>${project.basedir}/src/test/classpath/tracerfactory</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
+          <execution>
+            <id>custom-file-resolver-factory</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/FileResolverFactoryTest.java</include>
+              </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customfileresolver</additionalClasspathElement>
               </additionalClasspathElements>
             </configuration>
           </execution>
