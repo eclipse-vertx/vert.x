@@ -3484,7 +3484,6 @@ public class NetTest extends VertxTestBase {
   public void testNetSocketInternalBuffer() throws Exception {
     server.connectHandler(so -> {
       NetSocketInternal soi = (NetSocketInternal) so;
-      soi.messageHandler(msg -> fail("Unexpected"));
       soi.handler(msg -> {
         ByteBuf byteBuf = msg.getByteBuf();
         assertFalse(byteBuf.isDirect());
@@ -3498,7 +3497,6 @@ public class NetTest extends VertxTestBase {
     client.connect(testAddress, onSuccess(so -> {
       NetSocketInternal soi = (NetSocketInternal) so;
       soi.write(Buffer.buffer("Hello World"));
-      soi.messageHandler(msg -> fail("Unexpected"));
       soi.handler(msg -> {
         ByteBuf byteBuf = msg.getByteBuf();
         assertFalse(byteBuf.isDirect());
@@ -3507,6 +3505,39 @@ public class NetTest extends VertxTestBase {
         assertEquals(1, byteBuf.refCnt());
         assertEquals("Hello World", msg.toString());
         testComplete();
+      });
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetSocketInternalDirectBuffer() throws Exception {
+    waitFor(2);
+    server.connectHandler(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.messageHandler(msg -> {
+        ByteBuf byteBuf = (ByteBuf) msg;
+        assertTrue(byteBuf.isDirect());
+        assertEquals(1, byteBuf.refCnt());
+        soi.writeMessage(msg).onSuccess(v -> {
+          assertEquals(0, byteBuf.refCnt());
+          complete();
+        });
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.write(Buffer.buffer("Hello World"));
+      // soi.messageHandler(msg -> fail("Unexpected"));
+      soi.messageHandler(msg -> {
+        ByteBuf byteBuf = (ByteBuf) msg;
+        assertTrue(byteBuf.isDirect());
+        assertEquals(1, byteBuf.refCnt());
+        assertEquals("Hello World", byteBuf.toString(StandardCharsets.UTF_8));
+        assertTrue(byteBuf.release());
+        assertEquals(0, byteBuf.refCnt());
+        complete();
       });
     }));
     await();

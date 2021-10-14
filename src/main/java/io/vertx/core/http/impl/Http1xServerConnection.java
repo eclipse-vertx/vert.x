@@ -82,6 +82,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
   private boolean channelPaused;
+  private boolean writable;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
 
@@ -104,6 +105,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     this.metrics = metrics;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
+    this.writable = true;
   }
 
   TracingPolicy tracingPolicy() {
@@ -138,7 +140,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         return;
       }
       responseInProgress = requestInProgress;
-      req.handleBegin();
+      req.handleBegin(writable);
       Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
       req.context.emit(req, handler);
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
@@ -216,7 +218,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void handleNext(Http1xServerRequest next) {
     responseInProgress = next;
-    next.handleBegin();
+    next.handleBegin(writable);
     context.emit(next, next_ -> {
       next_.resume();
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
@@ -413,6 +415,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   @Override
   public void handleInterestedOpsChanged() {
+    writable = !isNotWritable();
     ContextInternal context;
     Handler<Boolean> handler;
     synchronized (this) {
@@ -426,7 +429,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         return;
       }
     }
-    boolean writable = !isNotWritable();
     context.execute(writable, handler);
   }
 
