@@ -6509,7 +6509,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testConnectTimeout() {
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setConnectTimeout(250));
+    client = vertx.createHttpClient(createBaseClientOptions().setConnectTimeout(1));
     client.request(new RequestOptions().setHost(TestUtils.NON_ROUTABLE_HOST).setPort(8080))
       .onComplete(onFailure(err -> {
         assertTrue(err instanceof ConnectTimeoutException);

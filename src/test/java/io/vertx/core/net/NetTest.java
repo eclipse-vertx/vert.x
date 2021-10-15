@@ -4111,7 +4111,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testConnectTimeout() {
     client.close();
-    client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(250));
+    client = vertx.createNetClient(new NetClientOptions().setConnectTimeout(1));
     client.connect(1234, TestUtils.NON_ROUTABLE_HOST)
       .onComplete(onFailure(err -> {
         assertTrue(err instanceof ConnectTimeoutException);
