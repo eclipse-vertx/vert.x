@@ -412,6 +412,12 @@ public abstract class FileResolverTestBase extends VertxTestBase {
   }
 
   @Test
+  public void testDoNotResolveAbsoluteFileInDirectoryFromClasspath() {
+    File somefile = resolver.resolveFile("/a/a.txt");
+    assertFalse(somefile.exists());
+  }
+
+  @Test
   public void testResolveCacheDir() {
     File somefile = resolver.resolveFile("");
     assertTrue(somefile.exists());
