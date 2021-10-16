@@ -1172,4 +1172,12 @@ public class BufferTest {
     f.apply(buffer, 0);
     assertIndexOutOfBoundsException(() -> f.apply(buffer, 1));
   }
+
+  @Test
+  public void testReadOnlyByteBuf() {
+    String s = "Hello World";
+    ByteBuf byteBuf = Unpooled.buffer(0, s.length() - 1);
+    Buffer buff = Buffer.buffer(byteBuf.asReadOnly());
+    assertSame(buff, buff.copy());
+  }
 }

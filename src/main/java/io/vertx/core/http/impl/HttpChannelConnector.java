@@ -144,14 +144,20 @@ public class HttpChannelConnector {
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+    int idleTimeout = options.getIdleTimeout();
+    int readIdleTimeout = options.getReadIdleTimeout();
+    int writeIdleTimeout = options.getWriteIdleTimeout();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
   }
 
   private void applyHttp1xConnectionOptions(ChannelPipeline pipeline) {
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+    int idleTimeout = options.getIdleTimeout();
+    int readIdleTimeout = options.getReadIdleTimeout();
+    int writeIdleTimeout = options.getWriteIdleTimeout();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
     if (options.getLogActivity()) {
       pipeline.addLast("logging", new LoggingHandler());

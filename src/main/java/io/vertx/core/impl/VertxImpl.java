@@ -11,6 +11,9 @@
 
 package io.vertx.core.impl;
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
@@ -31,7 +34,7 @@ import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.impl.FileResolver;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
 import io.vertx.core.http.HttpClient;
@@ -853,6 +856,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return addressResolver.nettyAddressResolverGroup();
+  }
+
+  @Override
+  public FileResolver fileResolver() {
+    return fileResolver;
   }
 
   @Override

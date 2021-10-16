@@ -1598,7 +1598,7 @@ public class DeploymentTest extends VertxTestBase {
     ClassLoader cl = new ClassLoader(Thread.currentThread().getContextClassLoader()) {
       @Override
       public URL getResource(String name) {
-        if (name.equals("/foo.txt")) {
+        if (name.equals("foo.txt")) {
           used.set(true);
           return url;
         }
@@ -1610,7 +1610,7 @@ public class DeploymentTest extends VertxTestBase {
       public void start() {
         assertSame(cl, Thread.currentThread().getContextClassLoader());
         assertSame(cl, ((ContextInternal)context).classLoader());
-        vertx.fileSystem().props("/foo.txt", onSuccess(props -> {
+        vertx.fileSystem().props("foo.txt", onSuccess(props -> {
           assertEquals(5, props.size());
           assertTrue(used.get());
           vertx.undeploy(context.deploymentID(), onSuccess(v -> {

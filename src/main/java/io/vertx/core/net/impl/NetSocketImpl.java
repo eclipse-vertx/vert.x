@@ -51,7 +51,6 @@ import java.util.UUID;
  */
 public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
-  private static final Handler<Object> DEFAULT_MSG_HANDLER = new InvalidMessageHandler();
   private static final Logger log = LoggerFactory.getLogger(NetSocketImpl.class);
 
   private final String writeHandlerID;
@@ -63,6 +62,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private Handler<Void> endHandler;
   private Handler<Void> drainHandler;
   private MessageConsumer registration;
+  private Handler<Buffer> handler;
   private Handler<Object> messageHandler;
 
   public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SSLHelper helper, TCPMetrics metrics) {
@@ -80,21 +80,21 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.writeHandlerID = "__vertx.net." + UUID.randomUUID().toString();
     this.remoteAddress = remoteAddress;
     this.metrics = metrics;
-    this.messageHandler = DEFAULT_MSG_HANDLER;
+    this.messageHandler = new DataMessageHandler();
     this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
     pending = new InboundBuffer<>(context);
     pending.drainHandler(v -> doResume());
     pending.exceptionHandler(context::reportException);
-    pending.handler(obj -> {
-      if (obj == InboundBuffer.END_SENTINEL) {
+    pending.handler(msg -> {
+      if (msg == InboundBuffer.END_SENTINEL) {
         Handler<Void> handler = endHandler();
         if (handler != null) {
           handler.handle(null);
         }
       } else {
-        Handler<Object> handler = messageHandler();
+        Handler<Buffer> handler = handler();
         if (handler != null) {
-          handler.handle(obj);
+          handler.handle((Buffer) msg);
         }
       }
     });
@@ -191,13 +191,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     writeMessage(buff, handler);
   }
 
+  private synchronized Handler<Buffer> handler() {
+    return handler;
+  }
+
   @Override
   public synchronized NetSocket handler(Handler<Buffer> dataHandler) {
-    if (dataHandler != null) {
-      messageHandler(new DataMessageHandler(dataHandler));
-    } else {
-      messageHandler(null);
-    }
+    this.handler = dataHandler;
     return this;
   }
 
@@ -207,7 +207,11 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
-    messageHandler = handler;
+    if (handler == null) {
+      messageHandler = new DataMessageHandler();
+    } else {
+      messageHandler = handler;
+    }
     return this;
   }
 
@@ -383,37 +387,26 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   public void handleMessage(Object msg) {
-    if (msg instanceof ByteBuf) {
-      msg = VertxHandler.safeBuffer((ByteBuf) msg);
-    }
-    context.emit(msg, elt -> {
-      if (!pending.write(elt)) {
-        doPause();
-      }
-    });
+    context.emit(msg, messageHandler());
   }
 
-  private static class DataMessageHandler implements Handler<Object> {
-
-    private final Handler<Buffer> dataHandler;
-
-    DataMessageHandler(Handler<Buffer> dataHandler) {
-      this.dataHandler = dataHandler;
-    }
+  private class DataMessageHandler implements Handler<Object> {
 
     @Override
     public void handle(Object msg) {
       if (msg instanceof ByteBuf) {
+        msg = VertxHandler.safeBuffer((ByteBuf) msg);
         ByteBuf byteBuf = (ByteBuf) msg;
-        Buffer data = Buffer.buffer(byteBuf);
-        dataHandler.handle(data);
+        Buffer buffer = Buffer.buffer(byteBuf);
+        if (!pending.write(buffer)) {
+          doPause();
+        }
+      } else {
+        handleInvalid(msg);
       }
     }
-  }
 
-  private static class InvalidMessageHandler implements Handler<Object> {
-    @Override
-    public void handle(Object msg) {
+    private void handleInvalid(Object msg) {
       // ByteBuf are eagerly released when the message is processed
       if (msg instanceof ReferenceCounted && (!(msg instanceof ByteBuf))) {
         ReferenceCounted refCounter = (ReferenceCounted) msg;

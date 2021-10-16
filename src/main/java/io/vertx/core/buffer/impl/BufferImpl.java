@@ -518,7 +518,7 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer copy() {
-    return new BufferImpl(buffer.copy());
+    return buffer.isReadOnly() ? this : new BufferImpl(buffer.copy());
   }
 
   public Buffer slice() {

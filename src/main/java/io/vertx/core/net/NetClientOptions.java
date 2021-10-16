@@ -152,6 +152,18 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions setReadIdleTimeout(int idleTimeout) {
+    super.setReadIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public NetClientOptions setWriteIdleTimeout(int idleTimeout) {
+    super.setWriteIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
   public NetClientOptions setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
     super.setIdleTimeoutUnit(idleTimeoutUnit);
     return this;

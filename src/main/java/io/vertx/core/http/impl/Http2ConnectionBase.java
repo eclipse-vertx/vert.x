@@ -23,6 +23,7 @@ import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -30,10 +31,10 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.http.GoAway;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.StreamPriority;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -53,15 +54,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
 
   private static final Logger log = LoggerFactory.getLogger(Http2ConnectionBase.class);
 
-  /**
-   * Return a buffer from HTTP/2 codec that Vert.x can use:
-   *
-   * - if it's a direct buffer (coming likely from OpenSSL) : we get a heap buffer version
-   * - if it's a composite buffer we do the same
-   * - otherwise we increase the ref count
-   */
-  static ByteBuf safeBuffer(ByteBuf buf, ByteBufAllocator allocator) {
-    ByteBuf buffer = allocator.heapBuffer(buf.readableBytes());
+  private static ByteBuf safeBuffer(ByteBuf buf) {
+    ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
     buffer.writeBytes(buf);
     return buffer;
   }
@@ -106,8 +100,8 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   }
 
   @Override
-  protected void handleIdle() {
-    super.handleIdle();
+  protected void handleIdle(IdleStateEvent event) {
+    super.handleIdle(event);
   }
 
   synchronized void onConnectionError(Throwable cause) {
@@ -292,7 +286,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
                              Http2Flags flags, ByteBuf payload) {
     VertxHttp2Stream stream = stream(streamId);
     if (stream != null) {
-      Buffer buff = Buffer.buffer(safeBuffer(payload, ctx.alloc()));
+      Buffer buff = Buffer.buffer(safeBuffer(payload));
       stream.onCustomFrame(new HttpFrameImpl(frameType, flags.value(), buff));
     }
   }
@@ -309,7 +303,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) {
     VertxHttp2Stream stream = stream(streamId);
     if (stream != null) {
-      data = safeBuffer(data, ctx.alloc());
+      data = safeBuffer(data);
       Buffer buff = Buffer.buffer(data);
       stream.onData(buff);
       if (endOfStream) {

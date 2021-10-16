@@ -312,7 +312,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
       ar -> {
         if (ar.succeeded()) {
           Http1xClientConnection conn = (Http1xClientConnection) ar.result();
-          conn.toWebSocket(ctx, connectOptions.getURI(), connectOptions.getHeaders(), connectOptions.getVersion(), connectOptions.getSubProtocols(), HttpClientImpl.this.options.getMaxWebSocketFrameSize(), promise);
+          conn.toWebSocket(ctx, connectOptions.getURI(), connectOptions.getHeaders(), connectOptions.getAllowOriginHeader(), connectOptions.getVersion(), connectOptions.getSubProtocols(), HttpClientImpl.this.options.getMaxWebSocketFrameSize(), promise);
         } else {
           promise.fail(ar.cause());
         }
@@ -596,13 +596,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     PromiseInternal<HttpClientRequest> requestPromise) {
     ContextInternal ctx = requestPromise.context();
     EndpointKey key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
-    EventLoopContext eventLoopContext;
-    if (ctx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext) ctx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
-    }
-    httpCM.getConnection(eventLoopContext, key, timeout, ar1 -> {
+    httpCM.getConnection(ctx, key, timeout, ar1 -> {
       if (ar1.succeeded()) {
         Lease<HttpClientConnection> lease = ar1.result();
         HttpClientConnection conn = lease.get();

@@ -20,6 +20,7 @@ import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -584,9 +585,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  protected void handleIdle() {
+  protected void handleIdle(IdleStateEvent event) {
     if (handler.connection().local().numActiveStreams() > 0) {
-      super.handleIdle();
+      super.handleIdle(event);
     }
   }
 

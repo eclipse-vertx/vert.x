@@ -1685,8 +1685,8 @@ public class Http1xTest extends HttpTest {
         .onComplete(res -> latchClient.countDown());
     }
 
-    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
-    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
+    assertTrue(latchClient.await(30, TimeUnit.SECONDS));
+    assertTrue(latchConns.await(30, TimeUnit.SECONDS));
 
     assertEquals(numServers, connectedServers.size());
     for (HttpServer server : servers) {
@@ -1770,8 +1770,13 @@ public class Http1xTest extends HttpTest {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.connectHandler(so -> {
-      so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
-      so.close();
+      Buffer content = Buffer.buffer();
+      so.handler(buff -> {
+        content.appendBuffer(buff);
+        if (content.toString().endsWith("\r\n\r\n")) {
+          so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
+        }
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     AtomicBoolean a = new AtomicBoolean();
@@ -3733,10 +3738,13 @@ public class Http1xTest extends HttpTest {
   public void testReceiveResponseWithNoRequestInProgress() throws Exception {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
+    Promise<Void> promise = Promise.promise();
     server.connectHandler(so -> {
-      so.write("HTTP/1.1 200 OK\r\n" +
-        "Transfer-Encoding: chunked\r\n" +
-        "\r\n");
+      promise.future().onSuccess(v -> {
+        so.write("HTTP/1.1 200 OK\r\n" +
+          "Transfer-Encoding: chunked\r\n" +
+          "\r\n");
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     client.connectionHandler(conn -> {
@@ -3751,6 +3759,7 @@ public class Http1xTest extends HttpTest {
     });
     client.request(requestOptions)
       .onComplete(onSuccess(req -> {
+        promise.complete();
       }));
     await();
   }

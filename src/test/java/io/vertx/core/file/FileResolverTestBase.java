@@ -14,31 +14,28 @@ package io.vertx.core.file;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.file.impl.FileResolver;
+import io.vertx.core.spi.file.FileResolver;
+import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -46,11 +43,19 @@ import java.util.stream.Collectors;
  */
 public abstract class FileResolverTestBase extends VertxTestBase {
 
-  private final String cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getAbsolutePath();
+  private final String cacheBaseDir;
 
-  protected FileResolver resolver;
+  protected FileResolverImpl resolver;
 
   private ClassLoader testCL;
+
+  public FileResolverTestBase() {
+    try {
+      cacheBaseDir = new File(System.getProperty("java.io.tmpdir", ".") + File.separator + "vertx-cache").getCanonicalPath();
+    } catch (IOException e) {
+      throw new IllegalStateException("Cannot resolve the canonical path to the cache dir", e);
+    }
+  }
 
   @Override
   public void setUp() throws Exception {
@@ -60,7 +65,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     assertTrue(baseDir.exists() && baseDir.isDirectory());
     ClassLoader resourcesLoader = resourcesLoader(baseDir);
     Thread.currentThread().setContextClassLoader(resourcesLoader);
-    resolver = new FileResolver();
+    resolver = new FileResolverImpl();
   }
 
   protected ClassLoader resourcesLoader(File baseDir) throws Exception {
@@ -234,7 +239,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testDeleteCacheDir() throws Exception {
-    FileResolver resolver2 = new FileResolver();
+    FileResolver resolver2 = new FileResolverImpl();
     File file = resolver2.resolveFile("webroot/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
@@ -245,7 +250,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testCacheDirDeletedOnVertxClose() {
-    VertxInternal vertx2 = (VertxInternal)vertx();
+    VertxInternal vertx2 = (VertxInternal) vertx();
     File file = vertx2.resolveFile("webroot/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
@@ -307,7 +312,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
     CountDownLatch start = new CountDownLatch(1);
     List<Exception> errors = new ArrayList<>();
     for (int i = 0; i < count; i++) {
-        Runnable runnable = () -> {
+      Runnable runnable = () -> {
         try {
           start.await();
           File file = resolver.resolveFile("temp");
@@ -376,7 +381,7 @@ public abstract class FileResolverTestBase extends VertxTestBase {
 
   @Test
   public void testResolveAfterCloseThrowsISE() throws Exception {
-    FileResolver resolver2 = new FileResolver();
+    FileResolver resolver2 = new FileResolverImpl();
     File file = resolver2.resolveFile("webroot/somefile.html");
     assertTrue(file.exists());
     File cacheDir = file.getParentFile().getParentFile();
@@ -388,6 +393,88 @@ public abstract class FileResolverTestBase extends VertxTestBase {
       fail("Should fail");
     } catch (IllegalStateException e) {
       // OK
+    }
+  }
+
+  @Test
+  public void testResolveRelativeFileInDirectoryFromClasspath() {
+    File somefile = resolver.resolveFile("a/a.txt");
+    assertTrue(somefile.exists());
+    assertTrue(somefile.getPath().startsWith(cacheBaseDir + "-"));
+    assertFalse(somefile.isDirectory());
+    // resolve a relative file
+    File someotherfile = new File(new File(somefile.getParentFile().getParentFile(), "b"), "b.txt");
+    assertFalse(someotherfile.exists()); // is hasn't been extracted yet
+    someotherfile = resolver.resolveFile(someotherfile.getAbsolutePath());
+    assertTrue(someotherfile.exists()); // is should be rebased and extracted now
+    assertTrue(someotherfile.getPath().startsWith(cacheBaseDir + "-"));
+    assertFalse(someotherfile.isDirectory());
+  }
+
+  @Test
+  public void testDoNotResolveAbsoluteFileInDirectoryFromClasspath() {
+    File somefile = resolver.resolveFile("/a/a.txt");
+    assertFalse(somefile.exists());
+  }
+
+  @Test
+  public void testResolveCacheDir() {
+    File somefile = resolver.resolveFile("");
+    assertTrue(somefile.exists());
+    assertTrue(somefile.getPath().startsWith(cacheBaseDir + "-"));
+    assertTrue(somefile.isDirectory());
+  }
+
+  @Test
+  public void testReadFileInDirThenReadDirMultipleLevels() {
+    Buffer buff = vertx.fileSystem().readFileBlocking("tree/a/b/c.txt");
+    assertNotNull(buff);
+    Function<List<String>, Set<String>> fx = l -> l.stream().map(path -> {
+      int idx = path.lastIndexOf(File.separator);
+      return idx == -1 ? path : path.substring(idx + 1);
+    }).collect(Collectors.toSet());
+    Set<String> names = fx.apply(vertx.fileSystem().readDirBlocking("tree/a/b"));
+    assertEquals(new HashSet<>(Arrays.asList("c.txt")), names);
+    names = fx.apply(vertx.fileSystem().readDirBlocking("tree/a"));
+    assertEquals(new HashSet<>(Arrays.asList("b", "b.txt")), names);
+  }
+
+  @Test
+  public void testReadFileInDirThenReadDirMultipleLevelsMissingResource() {
+    Buffer buff = vertx.fileSystem().readFileBlocking("tree/a/b/c.txt");
+    assertNotNull(buff);
+    Function<List<String>, Set<String>> fx = l -> l.stream().map(path -> {
+      int idx = path.lastIndexOf(File.separator);
+      return idx == -1 ? path : path.substring(idx + 1);
+    }).collect(Collectors.toSet());
+    // "tree/a/d" doesn't exist
+    try {
+      vertx.fileSystem().readDirBlocking("tree/a/d");
+      fail("should fail as it doesn't exist");
+    } catch (RuntimeException e) {
+      // OK
+    }
+    try {
+      vertx.fileSystem().readDirBlocking("tree/a/d");
+      fail("should fail as it doesn't exist");
+    } catch (RuntimeException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testGetTheCacheDirWithoutHacks() {
+    String cacheDir = resolver.cacheDir();
+    if (cacheDir != null) {
+      assertTrue(cacheDir.startsWith(cacheBaseDir + "-"));
+      // strip the remaining
+      String uuid = cacheDir.substring(cacheBaseDir.length() + 1);
+      try {
+        UUID.fromString(uuid);
+        // OK
+      } catch (Exception e) {
+        fail("Expected a UUID");
+      }
     }
   }
 }

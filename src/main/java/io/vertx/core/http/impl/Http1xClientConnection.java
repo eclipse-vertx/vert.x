@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensio
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
@@ -53,6 +54,10 @@ import java.net.URI;
 import java.util.*;
 import java.util.function.BiConsumer;
 
+import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V00;
+import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V07;
+import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V08;
+import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V13;
 import static io.vertx.core.http.HttpHeaders.*;
 
 /**
@@ -830,6 +835,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     ContextInternal context,
     String requestURI,
     MultiMap headers,
+    boolean allowOriginHeader,
     WebsocketVersion vers,
     List<String> subProtocols,
     int maxWebSocketFrameSize,
@@ -864,11 +870,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       if (subProtocols != null) {
         subp = String.join(",", subProtocols);
       }
-      WebSocketClientHandshaker handshaker = WebSocketHandshakeInboundHandler.newHandshaker(
+      WebSocketClientHandshaker handshaker = newHandshaker(
         wsuri,
         version,
         subp,
         !extensionHandshakers.isEmpty(),
+        allowOriginHeader,
         nettyHeaders,
         maxWebSocketFrameSize,
         !options.isSendUnmaskedFrames());
@@ -911,6 +918,91 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     } catch (Exception e) {
       handleException(e);
     }
+  }
+
+  static WebSocketClientHandshaker newHandshaker(
+    URI webSocketURL, WebSocketVersion version, String subprotocol,
+    boolean allowExtensions, boolean allowOriginHeader, HttpHeaders customHeaders, int maxFramePayloadLength,
+    boolean performMasking) {
+    WebSocketDecoderConfig config = WebSocketDecoderConfig.newBuilder()
+      .expectMaskedFrames(false)
+      .allowExtensions(allowExtensions)
+      .maxFramePayloadLength(maxFramePayloadLength)
+      .allowMaskMismatch(false)
+      .closeOnProtocolViolation(false)
+      .build();
+    if (version == V13) {
+      return new WebSocketClientHandshaker13(
+        webSocketURL, V13, subprotocol, allowExtensions, customHeaders,
+        maxFramePayloadLength, performMasking, false, -1) {
+        @Override
+        protected WebSocketFrameDecoder newWebsocketDecoder() {
+          return new WebSocket13FrameDecoder(config);
+        }
+
+        @Override
+        protected FullHttpRequest newHandshakeRequest() {
+          FullHttpRequest request = super.newHandshakeRequest();
+          if (!allowOriginHeader) {
+            request.headers().remove(ORIGIN);
+          }
+          return request;
+        }
+      };
+    }
+    if (version == V08) {
+      return new WebSocketClientHandshaker08(
+        webSocketURL, V08, subprotocol, allowExtensions, customHeaders,
+        maxFramePayloadLength, performMasking, false, -1) {
+        @Override
+        protected WebSocketFrameDecoder newWebsocketDecoder() {
+          return new WebSocket08FrameDecoder(config);
+        }
+
+        @Override
+        protected FullHttpRequest newHandshakeRequest() {
+          FullHttpRequest request = super.newHandshakeRequest();
+          if (!allowOriginHeader) {
+            request.headers().remove(HttpHeaderNames.SEC_WEBSOCKET_ORIGIN);
+          }
+          return request;
+        }
+      };
+    }
+    if (version == V07) {
+      return new WebSocketClientHandshaker07(
+        webSocketURL, V07, subprotocol, allowExtensions, customHeaders,
+        maxFramePayloadLength, performMasking, false, -1) {
+        @Override
+        protected WebSocketFrameDecoder newWebsocketDecoder() {
+          return new WebSocket07FrameDecoder(config);
+        }
+
+        @Override
+        protected FullHttpRequest newHandshakeRequest() {
+          FullHttpRequest request = super.newHandshakeRequest();
+          if (!allowOriginHeader) {
+            request.headers().remove(HttpHeaderNames.SEC_WEBSOCKET_ORIGIN);
+          }
+          return request;
+        }
+      };
+    }
+    if (version == V00) {
+      return new WebSocketClientHandshaker00(
+        webSocketURL, V00, subprotocol, customHeaders, maxFramePayloadLength, -1) {
+        @Override
+        protected FullHttpRequest newHandshakeRequest() {
+          FullHttpRequest request = super.newHandshakeRequest();
+          if (!allowOriginHeader) {
+            request.headers().remove(ORIGIN);
+          }
+          return request;
+        }
+      };
+    }
+
+    throw new WebSocketHandshakeException("Protocol version " + version + " not supported.");
   }
 
   ArrayList<WebSocketClientExtensionHandshaker> initializeWebSocketExtensionHandshakers(HttpClientOptions options) {
@@ -1000,13 +1092,13 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
   }
 
-  protected void handleIdle() {
+  protected void handleIdle(IdleStateEvent event) {
     synchronized (this) {
       if (webSocket == null && responses.isEmpty() && requests.isEmpty()) {
         return;
       }
     }
-    super.handleIdle();
+    super.handleIdle(event);
   }
 
   @Override

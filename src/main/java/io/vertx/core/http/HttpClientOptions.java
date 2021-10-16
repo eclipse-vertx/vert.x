@@ -417,6 +417,18 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setReadIdleTimeout(int idleTimeout) {
+    super.setReadIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions setWriteIdleTimeout(int idleTimeout) {
+    super.setWriteIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
   public HttpClientOptions setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
     super.setIdleTimeoutUnit(idleTimeoutUnit);
     return this;

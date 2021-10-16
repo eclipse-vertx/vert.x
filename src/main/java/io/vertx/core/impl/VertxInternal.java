@@ -12,6 +12,9 @@
 package io.vertx.core.impl;
 
 
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
@@ -27,6 +30,7 @@ import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -47,6 +51,16 @@ import java.util.concurrent.TimeUnit;
 public interface VertxInternal extends Vertx {
 
   /**
+   * Vert.x pooled allocator.
+   */
+  ByteBufAllocator POOLED_ALLOCATOR = new PooledByteBufAllocator(true);
+
+  /**
+   * Vert.x shared unpooled allocator.
+   */
+  ByteBufAllocator UNPOOLED_ALLOCATOR = new UnpooledByteBufAllocator(false);
+
+    /**
    * @return a promise associated with the context returned by {@link #getOrCreateContext()}.
    */
   <T> PromiseInternal<T> promise();
@@ -169,6 +183,11 @@ public interface VertxInternal extends Vertx {
    * @return the address resolver
    */
   AddressResolver addressResolver();
+
+  /**
+   * @return the file resolver
+   */
+  FileResolver fileResolver();
 
   /**
    * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}

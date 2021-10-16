@@ -1,10 +1,10 @@
 ## Microbenchmarks
 
-A few JMH benchmarks are available to measure performance of some Vert.x sensistive parts.
+A few JMH benchmarks are available to measure performance of some Vert.x sensitive parts.
 
 The benchmarks are executed with biased locking enabled.
 
-The benchmarks configures a JMH executor that uses `VertxThread`.
+The benchmarks configurations a JMH executor that uses `VertxThread`.
 
 Benchmarks are located in the `src/test/benchmarks` folder.
 

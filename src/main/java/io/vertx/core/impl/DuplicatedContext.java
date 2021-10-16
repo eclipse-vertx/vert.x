@@ -183,4 +183,8 @@ class DuplicatedContext extends AbstractContext {
     return new DuplicatedContext(delegate);
   }
 
+  @Override
+  public ContextInternal unwrap() {
+    return delegate;
+  }
 }

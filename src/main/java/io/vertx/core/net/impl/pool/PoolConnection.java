@@ -10,7 +10,7 @@
  */
 package io.vertx.core.net.impl.pool;
 
-import io.vertx.core.Context;
+import io.vertx.core.impl.ContextInternal;
 
 /**
  * A wrapper for the actual connection.
@@ -22,7 +22,7 @@ public interface PoolConnection<C> {
   /**
    * @return the connection context
    */
-  Context context();
+  ContextInternal context();
 
   /**
    * @return the connection

@@ -18,6 +18,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.WorkerContext;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -701,6 +702,62 @@ public class ConnectionPoolTest extends VertxTestBase {
       testComplete();
     }));
     await();
+  }
+
+  @Test
+  public void testDefaultSelector() throws Exception {
+    EventLoopContext context1 = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 10 }, 10);
+    CountDownLatch latch1 = new CountDownLatch(1);
+    pool.acquire(context1, 0, onSuccess(lease -> {
+      lease.recycle();
+      latch1.countDown();
+    }));
+    Connection expected = new Connection();
+    assertEquals(1, pool.requests());
+    ConnectionRequest request = mgr.assertRequest();
+    request.connect(expected, 0);
+    awaitLatch(latch1);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    pool.acquire(context1, 0, onSuccess(lease -> {
+      assertEquals(expected, lease.get());
+      lease.recycle();
+      latch2.countDown();
+    }));
+    awaitLatch(latch2);
+    CountDownLatch latch3 = new CountDownLatch(1);
+    EventLoopContext context2 = vertx.createEventLoopContext(context1.nettyEventLoop(), context1.workerPool(), context1.classLoader());
+    pool.acquire(context2, 0, onSuccess(lease -> {
+      assertEquals(expected, lease.get());
+      lease.recycle();
+      latch3.countDown();
+    }));
+    awaitLatch(latch3);
+  }
+
+  @Test
+  public void testDefaultContextProviderUnwrap() {
+    EventLoopContext context = vertx.createEventLoopContext();
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 10 }, 10);
+    pool.acquire(context.duplicate(), 0, onSuccess(lease -> {
+    }));
+    assertEquals(1, pool.requests());
+    ConnectionRequest request = mgr.assertRequest();
+    assertSame(context, request.context);
+  }
+
+  @Test
+  public void testDefaultContextProviderReusesSameEventLoop() {
+    WorkerContext context = vertx.createWorkerContext();
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 10 }, 10);
+    pool.acquire(context.duplicate(), 0, onSuccess(lease -> {
+    }));
+    assertEquals(1, pool.requests());
+    ConnectionRequest request = mgr.assertRequest();
+    assertSame(context.nettyEventLoop(), request.context.nettyEventLoop());
   }
 
   static class Connection {
