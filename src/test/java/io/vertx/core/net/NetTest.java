@@ -13,6 +13,7 @@ package io.vertx.core.net;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ConnectTimeoutException;
@@ -3608,6 +3609,33 @@ public class NetTest extends VertxTestBase {
       vertx.setTimer(1000, id -> {
         so.close();
       });
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetSocketInternalEvent() throws Exception {
+    server.connectHandler(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      Object expectedEvent = new Object();
+      soi.eventHandler(event -> {
+        assertSame(expectedEvent, event);
+        soi.close();
+      });
+      ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
+      pipeline.addFirst(new ChannelHandlerAdapter() {
+        @Override
+        public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+          super.handlerAdded(ctx);
+          ctx.executor().schedule(() -> {
+            ctx.fireUserEventTriggered(expectedEvent);
+          }, 10, TimeUnit.MILLISECONDS);
+        }
+      });
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      so.closeHandler(v -> testComplete());
     }));
     await();
   }

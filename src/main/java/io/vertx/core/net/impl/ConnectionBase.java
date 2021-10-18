@@ -391,13 +391,17 @@ public abstract class ConnectionBase {
     }
   }
 
+  protected void handleEvent(Object evt) {
+    // Will release the event if needed
+    ReferenceCountUtil.release(evt);
+  }
+
   /**
    * Called by the Netty handler when the connection becomes idle. The default implementation closes the
    * connection.
    * <p/>
    * Subclasses can override it to prevent the idle event to happen (e.g when the connection is pooled) or
    * perform extra work when the idle event happens.
-   * @param event
    */
   protected void handleIdle(IdleStateEvent event) {
     chctx.close();

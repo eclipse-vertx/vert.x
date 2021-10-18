@@ -11,16 +11,13 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.buffer.AbstractReferenceCountedByteBuf;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.impl.VertxByteBufAllocator;
@@ -165,8 +162,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
     if (evt instanceof IdleStateEvent) {
       conn.handleIdle((IdleStateEvent) evt);
-    } else {
-      ctx.fireUserEventTriggered(evt);
     }
+    conn.handleEvent(evt);
   }
 }

@@ -64,6 +64,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   private MessageConsumer registration;
   private Handler<Buffer> handler;
   private Handler<Object> messageHandler;
+  private Handler<Object> eventHandler;
 
   public NetSocketImpl(ContextInternal context, ChannelHandlerContext channel, SSLHelper helper, TCPMetrics metrics) {
     this(context, channel, null, helper, metrics, null);
@@ -207,11 +208,13 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
 
   @Override
   public synchronized NetSocketInternal messageHandler(Handler<Object> handler) {
-    if (handler == null) {
-      messageHandler = new DataMessageHandler();
-    } else {
-      messageHandler = handler;
-    }
+    messageHandler = handler == null ? new DataMessageHandler() : handler;
+    return this;
+  }
+
+  @Override
+  public synchronized NetSocketInternal eventHandler(Handler<Object> handler) {
+    eventHandler = handler;
     return this;
   }
 
@@ -386,8 +389,22 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     super.handleClosed();
   }
 
+  @Override
   public void handleMessage(Object msg) {
     context.emit(msg, messageHandler());
+  }
+
+  @Override
+  protected void handleEvent(Object evt) {
+    Handler<Object> handler;
+    synchronized (this) {
+      handler = eventHandler;
+    }
+    if (handler != null) {
+      context.emit(evt, handler);
+    } else {
+      super.handleEvent(evt);
+    }
   }
 
   private class DataMessageHandler implements Handler<Object> {
