@@ -63,7 +63,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   private boolean headWritten;
   private boolean ended;
   private boolean closed;
-  private volatile CookieJar cookies;
+  private CookieJar cookies;
   private HttpResponseStatus status = HttpResponseStatus.OK;
   private String statusMessage; // Not really used but we keep the message for the getStatusMessage()
   private Handler<Void> drainHandler;
@@ -706,16 +706,14 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   CookieJar cookies() {
-    if (cookies == null) {
-      synchronized (conn) {
-        // avoid double parsing
-        if (cookies == null) {
-          CharSequence cookieHeader = stream.headers != null ? stream.headers.get(io.vertx.core.http.HttpHeaders.COOKIE) : null;
-          if (cookieHeader == null) {
-            cookies = new CookieJar();
-          } else {
-            cookies = new CookieJar(cookieHeader);
-          }
+    synchronized (conn) {
+      // avoid double parsing
+      if (cookies == null) {
+        CharSequence cookieHeader = stream.headers != null ? stream.headers.get(io.vertx.core.http.HttpHeaders.COOKIE) : null;
+        if (cookieHeader == null) {
+          cookies = new CookieJar();
+        } else {
+          cookies = new CookieJar(cookieHeader);
         }
       }
     }
