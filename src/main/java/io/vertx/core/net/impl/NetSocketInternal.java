@@ -78,4 +78,14 @@ public interface NetSocketInternal extends NetSocket {
    */
   NetSocketInternal messageHandler(Handler<Object> handler);
 
+  /**
+   * Set an handler to process pipeline user events.
+   *
+   * The handler should take care of releasing event, e.g calling {@code ReferenceCountUtil.release(evt)}.
+   *
+   * @param handler the handler to set
+   * @return a reference to this, so the API can be used fluently
+   */
+  NetSocketInternal eventHandler(Handler<Object> handler);
+
 }
