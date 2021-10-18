@@ -48,7 +48,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Map;
+import java.util.List;
+import java.util.Set;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 
@@ -91,7 +92,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   private boolean writable;
   private boolean closed;
   private final HeadersMultiMap headers;
-  private Map<String, ServerCookie> cookies;
+  private CookieJar cookies;
   private MultiMap trailers;
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
@@ -713,7 +714,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void setCookies() {
-    for (ServerCookie cookie: cookies.values()) {
+    for (ServerCookie cookie: cookies) {
       if (cookie.isChanged()) {
         headers.add(SET_COOKIE, cookie.encode());
       }
@@ -793,9 +794,17 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     return this;
   }
 
-  Map<String, ServerCookie> cookies() {
-    if (cookies == null) {
-      cookies = CookieImpl.extractCookies(request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE));
+  CookieJar cookies() {
+    synchronized (conn) {
+      // avoid double parsing
+      if (cookies == null) {
+        String cookieHeader = request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE);
+        if (cookieHeader == null) {
+          cookies = new CookieJar();
+        } else {
+          cookies = new CookieJar(cookieHeader);
+        }
+      }
     }
     return cookies;
   }
@@ -804,7 +813,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse addCookie(Cookie cookie) {
     synchronized (conn) {
       checkHeadWritten();
-      cookies().put(cookie.getName(), (ServerCookie) cookie);
+      cookies().add((ServerCookie) cookie);
     }
     return this;
   }
@@ -813,7 +822,23 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
-      return CookieImpl.removeCookie(cookies(), name, invalidate);
+      return cookies().removeOrInvalidate(name, invalidate);
+    }
+  }
+
+  @Override
+  public @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate) {
+    synchronized (conn) {
+      checkHeadWritten();
+      return cookies().removeOrInvalidate(name, domain, path, invalidate);
+    }
+  }
+
+  @Override
+  public @Nullable Set<Cookie> removeCookies(String name, boolean invalidate) {
+    synchronized (conn) {
+      checkHeadWritten();
+      return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
 }

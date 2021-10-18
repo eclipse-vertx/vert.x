@@ -12,14 +12,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.handler.codec.http.cookie.DefaultCookie;
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.CookieSameSite;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 
 /**
@@ -29,39 +24,6 @@ import java.util.Set;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class CookieImpl implements ServerCookie {
-
-  static Map<String, ServerCookie> extractCookies(CharSequence cookieHeader) {
-    if (cookieHeader != null) {
-      Set<io.netty.handler.codec.http.cookie.Cookie> nettyCookies = ServerCookieDecoder.STRICT.decode(cookieHeader.toString());
-      Map<String, ServerCookie> cookies = new HashMap<>(nettyCookies.size());
-      for (io.netty.handler.codec.http.cookie.Cookie cookie : nettyCookies) {
-        ServerCookie ourCookie = new CookieImpl(cookie);
-        cookies.put(ourCookie.getName(), ourCookie);
-      }
-      return cookies;
-    } else {
-      return new HashMap<>(4);
-    }
-  }
-
-
-  static Cookie removeCookie(Map<String, ServerCookie> cookieMap, String name, boolean invalidate) {
-    ServerCookie cookie = cookieMap.get(name);
-    if (cookie != null) {
-      if (invalidate && cookie.isFromUserAgent()) {
-        // in the case the cookie was passed from the User Agent
-        // we need to expire it and sent it back to it can be
-        // invalidated
-        cookie.setMaxAge(0L);
-        // void the value for user-agents that still read the cookie
-        cookie.setValue("");
-      } else {
-        // this was a temporary cookie so we can safely remove it
-        cookieMap.remove(name);
-      }
-    }
-    return cookie;
-  }
 
   private final io.netty.handler.codec.http.cookie.Cookie nettyCookie;
   private boolean changed;

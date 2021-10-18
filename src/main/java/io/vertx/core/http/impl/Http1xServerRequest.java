@@ -44,17 +44,17 @@ import io.vertx.core.streams.impl.InboundBuffer;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
-import java.util.Map;
+import java.util.Set;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
 
 /**
  * This class is optimised for performance when used on the same event loop that is was passed to the handler with.
  * However it can be used safely from other threads.
- *
+ * <p>
  * The internal state is protected by using the connection as a lock. If always used on the same event loop, then
  * we benefit from biased locking which makes the overhead of synchronized near zero.
- *
+ * <p>
  * It's important we don't have different locks for connection and request/response to avoid deadlock conditions
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -633,7 +633,7 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
       resp.handleException(t);
     }
     if (upload instanceof NettyFileUpload) {
-      ((NettyFileUpload)upload).handleException(t);
+      ((NettyFileUpload) upload).handleException(t);
     }
     if (handler != null) {
       handler.handleException(t);
@@ -675,8 +675,25 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   }
 
   @Override
-  public Map<String, Cookie> cookieMap() {
-    return (Map)response.cookies();
+  public Set<Cookie> cookies() {
+    return (Set) response.cookies();
+  }
+
+  @Override
+  public Set<Cookie> cookies(String name) {
+    return (Set) response.cookies().getAll(name);
+  }
+
+  @Override
+  public Cookie getCookie(String name) {
+    return response.cookies()
+      .get(name);
+  }
+
+  @Override
+  public Cookie getCookie(String name, String domain, String path) {
+    return response.cookies()
+      .get(name, domain, path);
   }
 
   @Override

@@ -21,6 +21,7 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.http.impl.CookieImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.net.*;
@@ -5791,6 +5792,71 @@ public abstract class HttpTest extends HttpTestBase {
       assertEquals(1, cookies.size());
       assertTrue(cookies.get(0).contains("Max-Age=0"));
       assertTrue(cookies.get(0).contains("Expires="));
+    });
+  }
+
+  @Test
+  public void testGetCookiesSameIdentity() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub").setDomain("www.vertx.io")));
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(3, cookies.size());
+      assertTrue(cookies.contains("foo=bar; Path=/"));
+      assertTrue(cookies.contains("foo=bar; Path=/sub"));
+      assertTrue(cookies.contains("foo=bar; Path=/sub; Domain=www.vertx.io"));
+    });
+  }
+
+  @Test
+  public void testGetCookiesSameIdentityRemoveOne() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub").setDomain("www.vertx.io")));
+      // will remove the first one only
+      req.response().removeCookie("foo");
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(2, cookies.size());
+      assertTrue(cookies.contains("foo=bar; Path=/sub"));
+      assertTrue(cookies.contains("foo=bar; Path=/sub; Domain=www.vertx.io"));
+    });
+  }
+
+  @Test
+  public void testGetCookiesSameIdentityRemoveAll() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub").setDomain("www.vertx.io")));
+      req.response().removeCookies("foo");
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(0, cookies.size());
+    });
+  }
+
+  @Test
+  public void testGetCookiesSameIdentityReplace() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub").setDomain("www.vertx.io")));
+      // will replace the last only
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "barista").setPath("/sub").setDomain("www.vertx.io")));
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(3, cookies.size());
+      assertTrue(cookies.contains("foo=bar; Path=/"));
+      assertTrue(cookies.contains("foo=bar; Path=/sub"));
+      assertTrue(cookies.contains("foo=barista; Path=/sub; Domain=www.vertx.io"));
     });
   }
 
