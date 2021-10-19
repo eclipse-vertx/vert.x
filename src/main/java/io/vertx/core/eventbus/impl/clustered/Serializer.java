@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,13 +11,10 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
-import io.netty.channel.EventLoop;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxInternal;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -29,16 +26,22 @@ import java.util.function.BiConsumer;
 /**
  * @author Thomas Segismont
  */
-public class Serializer {
+public class Serializer implements Closeable {
 
-  private final ContextInternal context;
+  private final ContextInternal ctx;
   private final Map<String, SerializerQueue> queues;
 
   private Serializer(ContextInternal context) {
-    this.context = context;
+    ContextInternal unwrapped = context.unwrap();
+    if (unwrapped.isEventLoopContext()) {
+      ctx = unwrapped;
+    } else {
+      VertxInternal vertx = unwrapped.owner();
+      ctx = vertx.createEventLoopContext(unwrapped.nettyEventLoop(), unwrapped.workerPool(), unwrapped.classLoader());
+    }
     queues = new HashMap<>();
-    if (context.isDeployment()) {
-      context.addCloseHook(this::close);
+    if (unwrapped.isDeployment()) {
+      unwrapped.addCloseHook(this);
     }
   }
 
@@ -58,19 +61,25 @@ public class Serializer {
   }
 
   public <T> void queue(Message<?> message, BiConsumer<Message<?>, Promise<T>> selectHandler, Promise<T> promise) {
-    EventLoop eventLoop = context.nettyEventLoop();
-    if (eventLoop.inEventLoop()) {
-      String address = message.address();
-      SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
-      queue.add(message, selectHandler, promise);
-    } else {
-      eventLoop.execute(() -> queue(message, selectHandler, promise));
+    if (!ctx.isRunningOnContext()) {
+      ctx.runOnContext(v -> queue(message, selectHandler, promise));
+      return;
     }
+    String address = message.address();
+    SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
+    queue.add(message, selectHandler, promise);
   }
 
-  private void close(Promise<Void> promise) {
-    queues.forEach((address, queue) -> queue.close());
-    promise.complete();
+  @Override
+  public void close(Promise<Void> completion) {
+    if (!ctx.isRunningOnContext()) {
+      ctx.runOnContext(v -> close(completion));
+      return;
+    }
+    for (SerializerQueue queue : queues.values()) {
+      queue.close();
+    }
+    completion.complete();
   }
 
   private class SerializerQueue {
@@ -106,7 +115,7 @@ public class Serializer {
     }
 
     <U> void add(Message<?> msg, BiConsumer<Message<?>, Promise<U>> selectHandler, Promise<U> promise) {
-      SerializedTask<U> serializedTask = new SerializedTask<>(context, msg, selectHandler);
+      SerializedTask<U> serializedTask = new SerializedTask<>(ctx, msg, selectHandler);
       Future<U> fut = serializedTask.internalPromise.future();
       fut.onComplete(promise);
       fut.onComplete(serializedTask);
