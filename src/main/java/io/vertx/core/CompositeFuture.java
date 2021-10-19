@@ -72,8 +72,8 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture all(List<Future<?>> futures) {
-    return CompositeFutureImpl.all(futures.toArray(new Future<?>[0]));
+  static CompositeFuture all(List<Future> futures) {
+    return CompositeFutureImpl.all(futures.toArray(new Future[0]));
   }
 
   /**
@@ -122,8 +122,8 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture any(List<Future<?>> futures) {
-    return CompositeFutureImpl.any(futures.toArray(new Future<?>[0]));
+  static CompositeFuture any(List<Future> futures) {
+    return CompositeFutureImpl.any(futures.toArray(new Future[0]));
   }
 
   /**
@@ -172,8 +172,8 @@ public interface CompositeFuture extends Future<CompositeFuture> {
    *
    * When the list is empty, the returned future will be already completed.
    */
-  static CompositeFuture join(List<Future<?>> futures) {
-    return CompositeFutureImpl.join(futures.toArray(new Future<?>[0]));
+  static CompositeFuture join(List<Future> futures) {
+    return CompositeFutureImpl.join(futures.toArray(new Future[0]));
   }
 
   @Override

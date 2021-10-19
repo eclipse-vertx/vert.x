@@ -765,9 +765,9 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   protected void loadData(Map<JsonObject, Buffer> map, BiConsumer<Vertx, AsyncMap<JsonObject, Buffer>> test) {
-    List<Future<?>> futures = new ArrayList<>(map.size());
+    List<Future> futures = new ArrayList<>(map.size());
     map.forEach((key, value) -> {
-      Promise<Void> future = Promise.promise();
+      Promise future = Promise.promise();
       getVertx().sharedData().getAsyncMap("foo", onSuccess(asyncMap -> {
         asyncMap.put(key, value, future);
       }));
