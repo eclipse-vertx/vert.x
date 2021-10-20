@@ -61,25 +61,21 @@ public class Serializer implements Closeable {
   }
 
   public <T> void queue(Message<?> message, BiConsumer<Message<?>, Promise<T>> selectHandler, Promise<T> promise) {
-    if (!ctx.isRunningOnContext()) {
-      ctx.runOnContext(v -> queue(message, selectHandler, promise));
-      return;
-    }
-    String address = message.address();
-    SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
-    queue.add(message, selectHandler, promise);
+    ctx.emit(v -> {
+      String address = message.address();
+      SerializerQueue queue = queues.computeIfAbsent(address, SerializerQueue::new);
+      queue.add(message, selectHandler, promise);
+    });
   }
 
   @Override
   public void close(Promise<Void> completion) {
-    if (!ctx.isRunningOnContext()) {
-      ctx.runOnContext(v -> close(completion));
-      return;
-    }
-    for (SerializerQueue queue : queues.values()) {
-      queue.close();
-    }
-    completion.complete();
+    ctx.emit(v -> {
+      for (SerializerQueue queue : queues.values()) {
+        queue.close();
+      }
+      completion.complete();
+    });
   }
 
   private class SerializerQueue {
