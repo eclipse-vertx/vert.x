@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
+
 /**
  * Options describing how an {@link HttpClient} will connect to make a request.
  *
@@ -363,7 +365,19 @@ public class RequestOptions {
   public RequestOptions setAbsoluteURI(String absoluteURI) {
     Objects.requireNonNull(absoluteURI, "Cannot set a null absolute URI");
     URL url = parseUrl(absoluteURI);
-    Boolean ssl = false;
+    return setAbsoluteURI(url);
+  }
+
+  /**
+   * Like {@link #setAbsoluteURI(String)} but using an {@link URL} parameter.
+   *
+   * @param url the uri to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore(PERMITTED_TYPE)
+  public RequestOptions setAbsoluteURI(URL url) {
+    Objects.requireNonNull(url, "Cannot set a null absolute URI");
+    Boolean ssl = Boolean.FALSE;
     int port = url.getPort();
     String relativeUri = url.getPath().isEmpty() ? "/" + url.getFile() : url.getFile();
     String protocol = url.getProtocol();
@@ -374,7 +388,7 @@ public class RequestOptions {
         }
         break;
       case "https": {
-        ssl = true;
+        ssl = Boolean.TRUE;
         if (port == -1) {
           port = 443;
         }
