@@ -51,16 +51,6 @@ import java.util.concurrent.TimeUnit;
 public interface VertxInternal extends Vertx {
 
   /**
-   * Vert.x pooled allocator.
-   */
-  ByteBufAllocator POOLED_ALLOCATOR = new PooledByteBufAllocator(true);
-
-  /**
-   * Vert.x shared unpooled allocator.
-   */
-  ByteBufAllocator UNPOOLED_ALLOCATOR = new UnpooledByteBufAllocator(false);
-
-    /**
    * @return a promise associated with the context returned by {@link #getOrCreateContext()}.
    */
   <T> PromiseInternal<T> promise();

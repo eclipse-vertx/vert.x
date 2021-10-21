@@ -9,11 +9,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.net.impl;
+package io.vertx.core.buffer.impl;
 
 
 import io.netty.buffer.*;
-import io.vertx.core.impl.VertxInternal;
 
 /**
  * A {@link io.netty.buffer.ByteBufAllocator} which is partial pooled. Which means only direct {@link io.netty.buffer.ByteBuf}s are pooled. The rest
@@ -32,92 +31,92 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
   @Override
   public ByteBuf buffer() {
-    return VertxInternal.UNPOOLED_ALLOCATOR.heapBuffer();
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.heapBuffer();
   }
 
   @Override
   public ByteBuf buffer(int initialCapacity) {
-    return VertxInternal.UNPOOLED_ALLOCATOR.heapBuffer(initialCapacity);
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.heapBuffer(initialCapacity);
   }
 
   @Override
   public ByteBuf buffer(int initialCapacity, int maxCapacity) {
-    return VertxInternal.UNPOOLED_ALLOCATOR.heapBuffer(initialCapacity, maxCapacity);
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.heapBuffer(initialCapacity, maxCapacity);
   }
 
   @Override
   public ByteBuf ioBuffer() {
-    return VertxInternal.POOLED_ALLOCATOR.directBuffer();
+    return VertxByteBufAllocator.POOLED_ALLOCATOR.directBuffer();
   }
 
   @Override
   public ByteBuf ioBuffer(int initialCapacity) {
-    return VertxInternal.POOLED_ALLOCATOR.directBuffer(initialCapacity);
+    return VertxByteBufAllocator.POOLED_ALLOCATOR.directBuffer(initialCapacity);
   }
 
   @Override
   public ByteBuf ioBuffer(int initialCapacity, int maxCapacity) {
-    return VertxInternal.POOLED_ALLOCATOR.directBuffer(initialCapacity, maxCapacity);
+    return VertxByteBufAllocator.POOLED_ALLOCATOR.directBuffer(initialCapacity, maxCapacity);
   }
 
   @Override
   public ByteBuf heapBuffer() {
-    return VertxInternal.UNPOOLED_ALLOCATOR.heapBuffer();
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.heapBuffer();
   }
 
   @Override
   public ByteBuf heapBuffer(int initialCapacity) {
-    return VertxInternal.UNPOOLED_ALLOCATOR.heapBuffer(initialCapacity);
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.heapBuffer(initialCapacity);
   }
 
   @Override
   public ByteBuf heapBuffer(int initialCapacity, int maxCapacity) {
-    return VertxInternal.UNPOOLED_ALLOCATOR.heapBuffer(initialCapacity, maxCapacity);
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.heapBuffer(initialCapacity, maxCapacity);
   }
 
   @Override
   public ByteBuf directBuffer() {
-    return VertxInternal.POOLED_ALLOCATOR.directBuffer();
+    return VertxByteBufAllocator.POOLED_ALLOCATOR.directBuffer();
   }
 
   @Override
   public ByteBuf directBuffer(int initialCapacity) {
-    return VertxInternal.POOLED_ALLOCATOR.directBuffer(initialCapacity);
+    return VertxByteBufAllocator.POOLED_ALLOCATOR.directBuffer(initialCapacity);
   }
 
   @Override
   public ByteBuf directBuffer(int initialCapacity, int maxCapacity) {
-    return VertxInternal.POOLED_ALLOCATOR.directBuffer(initialCapacity, maxCapacity);
+    return VertxByteBufAllocator.POOLED_ALLOCATOR.directBuffer(initialCapacity, maxCapacity);
   }
 
   @Override
   public CompositeByteBuf compositeBuffer() {
-    return VertxInternal.UNPOOLED_ALLOCATOR.compositeHeapBuffer();
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.compositeHeapBuffer();
   }
 
   @Override
   public CompositeByteBuf compositeBuffer(int maxNumComponents) {
-    return VertxInternal.UNPOOLED_ALLOCATOR.compositeHeapBuffer(maxNumComponents);
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.compositeHeapBuffer(maxNumComponents);
   }
 
   @Override
   public CompositeByteBuf compositeHeapBuffer() {
-    return VertxInternal.UNPOOLED_ALLOCATOR.compositeHeapBuffer();
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.compositeHeapBuffer();
   }
 
   @Override
   public CompositeByteBuf compositeHeapBuffer(int maxNumComponents) {
-    return VertxInternal.UNPOOLED_ALLOCATOR.compositeHeapBuffer(maxNumComponents);
+    return VertxByteBufAllocator.UNPOOLED_ALLOCATOR.compositeHeapBuffer(maxNumComponents);
   }
 
   @Override
   public CompositeByteBuf compositeDirectBuffer() {
-    return VertxInternal.POOLED_ALLOCATOR.compositeDirectBuffer();
+    return VertxByteBufAllocator.POOLED_ALLOCATOR.compositeDirectBuffer();
   }
 
   @Override
   public CompositeByteBuf compositeDirectBuffer(int maxNumComponents) {
-    return VertxInternal.POOLED_ALLOCATOR.compositeDirectBuffer();
+    return VertxByteBufAllocator.POOLED_ALLOCATOR.compositeDirectBuffer();
   }
 
   @Override
@@ -127,6 +126,6 @@ public final class PartialPooledByteBufAllocator implements ByteBufAllocator {
 
   @Override
   public int calculateNewCapacity(int minNewCapacity, int maxCapacity) {
-    return VertxInternal.POOLED_ALLOCATOR.calculateNewCapacity(minNewCapacity, maxCapacity);
+    return VertxByteBufAllocator.POOLED_ALLOCATOR.calculateNewCapacity(minNewCapacity, maxCapacity);
   }
 }

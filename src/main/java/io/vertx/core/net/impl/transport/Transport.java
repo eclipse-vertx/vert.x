@@ -23,7 +23,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
 import java.net.InetAddress;

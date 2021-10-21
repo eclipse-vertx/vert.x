@@ -18,9 +18,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
-
-import java.util.List;
 
 /**
  * {@link io.netty.handler.codec.http.HttpResponseEncoder} which forces the usage of direct buffers for max performance.

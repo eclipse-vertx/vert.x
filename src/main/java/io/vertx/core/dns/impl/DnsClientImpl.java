@@ -26,7 +26,7 @@ import io.vertx.core.dns.impl.decoder.RecordDecoder;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.net.impl.transport.Transport;
 
 import java.net.Inet4Address;
