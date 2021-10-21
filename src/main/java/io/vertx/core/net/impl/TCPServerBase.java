@@ -14,6 +14,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.GenericFutureListener;
@@ -62,7 +63,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   private Handler<Channel> worker;
   private volatile boolean listening;
   private ContextInternal listenContext;
-  private ServerID id;
   private TCPServerBase actualServer;
 
   // Main
@@ -101,6 +101,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
       TCPServerBase main;
       boolean shared;
+      ServerID id;
       if (actualPort > 0 || localAddress.isDomainSocket()) {
         id = new ServerID(actualPort, hostOrPath);
         main = sharedNetServers.get(id);
@@ -143,11 +144,17 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
             if (res.isSuccess()) {
               Channel ch = res.getNow();
               log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
+              if (shared) {
+                ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
+                  synchronized (sharedNetServers) {
+                    sharedNetServers.remove(id);
+                  }
+                });
+              }
               // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
               if (bindAddress.isInetSocket()) {
                 actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
               }
-              id = new ServerID(TCPServerBase.this.actualPort, id.host);
               listenContext.addCloseHook(this);
               metrics = createMetrics(localAddress);
             } else {
@@ -225,10 +232,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         // The actual server still has handlers so we don't actually close it
         completion.complete();
       } else {
-        // No worker left so close the actual server
-        // The done handler needs to be executed on the context that calls close, NOT the context
-        // of the actual server
-        servers.remove(id);
         actualServer.actualClose(completion);
       }
     }
