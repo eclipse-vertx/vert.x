@@ -51,6 +51,11 @@ import static org.junit.Assert.fail;
 public class TestUtils {
 
   /**
+   * Maven target directory.
+   */
+  public static final File MAVEN_TARGET_DIR = new File(System.getProperty("buildDirectory"));
+
+  /**
    * Non routable host for testing connect timeout.
    */
   public static final String NON_ROUTABLE_HOST = "10.0.0.0";
