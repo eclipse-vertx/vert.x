@@ -308,7 +308,7 @@
             </goals>
             <configuration>
               <compileSourceRoots>
-                <compileSourceRoot>src/main/java11</compileSourceRoot>
+                <compileSourceRoot>>${project.basedir}/src/main/java11</compileSourceRoot>
               </compileSourceRoots>
               <outputDirectory>${project.build.outputDirectory}/META-INF/versions/11/</outputDirectory>
             </configuration>
@@ -321,7 +321,7 @@
             </goals>
             <configuration>
               <compileSourceRoots>
-                <compileSourceRoot>src/test/classpath/servicehelper</compileSourceRoot>
+                <compileSourceRoot>${project.basedir}/src/test/classpath/servicehelper</compileSourceRoot>
               </compileSourceRoots>
               <outputDirectory>${project.build.directory}/classpath/servicehelper</outputDirectory>
             </configuration>
