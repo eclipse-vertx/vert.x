@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.dns.AddressResolverOptions}.
@@ -12,6 +13,9 @@ import java.time.format.DateTimeFormatter;
  */
 public class AddressResolverOptionsConverter {
 
+
+  private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
+  private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, AddressResolverOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -38,7 +42,7 @@ public class AddressResolverOptionsConverter {
           break;
         case "hostsValue":
           if (member.getValue() instanceof String) {
-            obj.setHostsValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)member.getValue())));
+            obj.setHostsValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
           }
           break;
         case "maxQueries":
@@ -112,7 +116,7 @@ public class AddressResolverOptionsConverter {
       json.put("hostsPath", obj.getHostsPath());
     }
     if (obj.getHostsValue() != null) {
-      json.put("hostsValue", JsonUtil.BASE64_ENCODER.encodeToString(obj.getHostsValue().getBytes()));
+      json.put("hostsValue", BASE64_ENCODER.encodeToString(obj.getHostsValue().getBytes()));
     }
     json.put("maxQueries", obj.getMaxQueries());
     json.put("ndots", obj.getNdots());
