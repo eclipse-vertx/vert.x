@@ -11,6 +11,7 @@
 
 package io.vertx.core;
 
+import io.vertx.test.core.TestUtils;
 import io.vertx.test.spi.FakeFactory;
 import io.vertx.test.spi.NotImplementedSPI;
 import io.vertx.test.spi.SomeFactory;
@@ -30,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author <a href="http://escoffier.me">Clement Escoffier</a>
  */
 public class ServiceHelperTest {
+
+  private final File serviceHelperFile = new File(new File(TestUtils.MAVEN_TARGET_DIR, "classpath"), "servicehelper");
 
   @Test
   public void loadFactory() {
@@ -67,7 +70,7 @@ public class ServiceHelperTest {
 
   @Test
   public void loadFactoriesWithClassloader() throws Exception {
-    ClassLoader custom = new URLClassLoader(new URL[]{new File("target/classpath/servicehelper").toURI().toURL()});
+    ClassLoader custom = new URLClassLoader(new URL[]{serviceHelperFile.toURI().toURL()});
 
     // Try without the custom classloader.
     Collection<SomeFactory> factories = ServiceHelper.loadFactories(SomeFactory.class);
@@ -85,7 +88,7 @@ public class ServiceHelperTest {
 
   @Test
   public void loadFactoriesFromTCCL() throws Exception {
-    ClassLoader custom = new URLClassLoader(new URL[]{new File("target/classpath/servicehelper").toURI().toURL()});
+    ClassLoader custom = new URLClassLoader(new URL[]{serviceHelperFile.toURI().toURL()});
 
     // Try without the TCCL classloader.
     Collection<SomeFactory> factories = ServiceHelper.loadFactories(SomeFactory.class);
@@ -112,9 +115,9 @@ public class ServiceHelperTest {
   public void loadFactoriesWithVertxClassloader() throws Exception {
     // This test is a bit more tricky as we need to load the ServiceHelper class from a custom classloader.
     ClassLoader custom = new URLClassLoader(new URL[]{
-        new File("target/classes").toURI().toURL(),
-        new File("target/test-classes").toURI().toURL(),
-        new File("target/classpath/servicehelper").toURI().toURL(),
+        new File(TestUtils.MAVEN_TARGET_DIR, "classes").toURI().toURL(),
+        new File(TestUtils.MAVEN_TARGET_DIR, "test-classes").toURI().toURL(),
+        serviceHelperFile.toURI().toURL(),
     }, null);
 
     Class serviceHelperClass = custom.loadClass(ServiceHelper.class.getName());
