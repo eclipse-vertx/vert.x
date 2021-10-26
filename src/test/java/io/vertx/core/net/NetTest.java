@@ -644,7 +644,7 @@ public class NetTest extends VertxTestBase {
   @Test
   public void testServerOptionsJson() {
     int sendBufferSize = TestUtils.randomPositiveInt();
-    int receiverBufferSize = TestUtils.randomPortInt();
+    int receiverBufferSize = TestUtils.randomPositiveInt();
     Random rand = new Random();
     boolean reuseAddress = rand.nextBoolean();
     int trafficClass = TestUtils.randomByte() + 128;
