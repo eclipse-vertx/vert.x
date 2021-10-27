@@ -12,6 +12,7 @@
 package io.vertx.core.impl;
 
 import io.vertx.core.VertxException;
+import io.vertx.core.VertxThread;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
@@ -37,7 +38,7 @@ public class BlockedThreadChecker {
 
   private static final Logger log = LoggerFactory.getLogger(BlockedThreadChecker.class);
 
-  private final Map<Thread, Task> threads = new WeakHashMap<>();
+  private final Map<VertxThread, Task> threads = new WeakHashMap<>();
   private final Timer timer; // Need to use our own timer - can't use event loop for this
 
   BlockedThreadChecker(long interval, TimeUnit intervalUnit, long warningExceptionTime, TimeUnit warningExceptionTimeUnit) {
@@ -47,7 +48,7 @@ public class BlockedThreadChecker {
       public void run() {
         synchronized (BlockedThreadChecker.this) {
           long now = System.nanoTime();
-          for (Map.Entry<Thread, Task> entry : threads.entrySet()) {
+          for (Map.Entry<VertxThread, Task> entry : threads.entrySet()) {
             long execStart = entry.getValue().startTime();
             long dur = now - execStart;
             final long timeLimit = entry.getValue().maxExecTime();
@@ -69,7 +70,7 @@ public class BlockedThreadChecker {
     }, intervalUnit.toMillis(interval), intervalUnit.toMillis(interval));
   }
 
-  synchronized void registerThread(Thread thread, Task checked) {
+  synchronized void registerThread(VertxThread thread, Task checked) {
     threads.put(thread, checked);
   }
 

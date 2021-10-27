@@ -45,7 +45,7 @@ public class ContextTest extends VertxTestBase {
 
   @Override
   public void setUp() throws Exception {
-    workerExecutor = Executors.newFixedThreadPool(2, r -> new VertxThread(r, "vert.x-worker-thread", true, 10, TimeUnit.SECONDS));
+    workerExecutor = Executors.newFixedThreadPool(2, r -> new VertxThreadImpl(r, "vert.x-worker-thread", true, 10, TimeUnit.SECONDS));
     super.setUp();
   }
 

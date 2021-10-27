@@ -11,7 +11,6 @@
 
 package io.vertx.core;
 
-import io.vertx.core.impl.VertxThread;
 import io.vertx.test.core.BlockedThreadWarning;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;

@@ -10,6 +10,7 @@
  */
 package io.vertx.core.impl;
 
+import static io.vertx.core.impl.jvm.JavaCompatUtil.isVirtual;
 import io.vertx.core.*;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
@@ -64,21 +65,30 @@ abstract class AbstractContext implements ContextInternal {
   }
 
   public final ContextInternal beginDispatch() {
-    ContextInternal prev;
-    VertxThread th = (VertxThread) Thread.currentThread();
-    prev = th.beginEmission(this);
-    if (!disableTCCL) {
-      th.setContextClassLoader(classLoader());
+    Thread t = Thread.currentThread();
+    if (!isVirtual(t)) {
+      ContextInternal prev;
+      VertxThreadImpl th = (VertxThreadImpl) Thread.currentThread();
+      prev = th.beginEmission(this);
+      if (!disableTCCL) {
+        th.setContextClassLoader(classLoader());
+      }
+      return prev;
     }
-    return prev;
+    // TODO Handle usage of virtual threads
+    return null;
   }
 
   public final void endDispatch(ContextInternal previous) {
-    VertxThread th = (VertxThread) Thread.currentThread();
-    if (!disableTCCL) {
-      th.setContextClassLoader(previous != null ? previous.classLoader() : null);
+    Thread t = Thread.currentThread();
+    if (!isVirtual(t)) {
+      VertxThreadImpl th = (VertxThreadImpl) Thread.currentThread();
+      if (!disableTCCL) {
+        th.setContextClassLoader(previous != null ? previous.classLoader() : null);
+      }
+      th.endEmission(previous);
     }
-    th.endEmission(previous);
+    // TODO Handle usage of virtual threads
   }
 
   @Override

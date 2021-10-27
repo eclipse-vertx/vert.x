@@ -12,7 +12,7 @@ package io.vertx.core;
 
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.VertxThread;
+import io.vertx.core.impl.VertxThreadImpl;
 import io.vertx.core.impl.WorkerPool;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class ContextTaskTest extends VertxTestBase {
 
   @Override
   public void setUp() throws Exception {
-    workerExecutor = Executors.newFixedThreadPool(2, r -> new VertxThread(r, "vert.x-worker-thread", true, 10, TimeUnit.SECONDS));
+    workerExecutor = Executors.newFixedThreadPool(2, r -> new VertxThreadImpl(r, "vert.x-worker-thread", true, 10, TimeUnit.SECONDS));
     super.setUp();
   }
 

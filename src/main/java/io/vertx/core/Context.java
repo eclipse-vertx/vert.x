@@ -15,7 +15,7 @@ import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
-import io.vertx.core.impl.VertxThread;
+import io.vertx.core.VertxThread;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;

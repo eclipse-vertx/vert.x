@@ -12,13 +12,14 @@
 package io.vertx.core.impl;
 
 import io.netty.util.concurrent.FastThreadLocalThread;
+import io.vertx.core.VertxThread;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class VertxThread extends FastThreadLocalThread implements BlockedThreadChecker.Task {
+public class VertxThreadImpl extends FastThreadLocalThread implements VertxThread {
 
   private final boolean worker;
   private final long maxExecTime;
@@ -27,17 +28,15 @@ public class VertxThread extends FastThreadLocalThread implements BlockedThreadC
   private ContextInternal context;
   private ClassLoader topLevelTCCL;
 
-  public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
+  public VertxThreadImpl(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
     super(target, name);
     this.worker = worker;
     this.maxExecTime = maxExecTime;
     this.maxExecTimeUnit = maxExecTimeUnit;
   }
 
-  /**
-   * @return the current context of this thread, this method must be called from the current thread
-   */
-  ContextInternal context() {
+  @Override
+  public ContextInternal context() {
     return context;
   }
 
@@ -57,6 +56,7 @@ public class VertxThread extends FastThreadLocalThread implements BlockedThreadC
     return execStart;
   }
 
+  @Override
   public boolean isWorker() {
     return worker;
   }
@@ -69,6 +69,16 @@ public class VertxThread extends FastThreadLocalThread implements BlockedThreadC
   @Override
   public TimeUnit maxExecTimeUnit() {
     return maxExecTimeUnit;
+  }
+
+  @Override
+  public boolean isTrackable() {
+    return true;
+  }
+
+  @Override
+  public Thread getThread() {
+    return this;
   }
 
   /**

@@ -1149,11 +1149,13 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     AtomicInteger threadCount = new AtomicInteger(0);
     return runnable -> {
       VertxThread thread = threadFactory.newVertxThread(runnable, prefix + threadCount.getAndIncrement(), worker, maxExecuteTime, maxExecuteTimeUnit);
-      checker.registerThread(thread, thread);
+      if (thread.isTrackable()) {
+        checker.registerThread(thread, thread);
+      }
       // Vert.x threads are NOT daemons - we want them to prevent JVM exit so embedded user doesn't
       // have to explicitly prevent JVM from exiting.
       thread.setDaemon(false);
-      return thread;
+      return thread.getThread();
     };
   }
 

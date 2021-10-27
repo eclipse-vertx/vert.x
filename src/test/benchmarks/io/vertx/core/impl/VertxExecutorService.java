@@ -26,6 +26,7 @@ public class VertxExecutorService extends ThreadPoolExecutor {
     super(maxThreads, maxThreads,
       0L, TimeUnit.MILLISECONDS,
       new LinkedBlockingQueue<>(),
-      r -> VertxThreadFactory.INSTANCE.newVertxThread(r, prefix, false, 10000, TimeUnit.NANOSECONDS));
+      // TODO Add type check of find a better way to expose wrapped thread
+      r -> (Thread)VertxThreadFactory.INSTANCE.newVertxThread(r, prefix, false, 10000, TimeUnit.NANOSECONDS));
   }
 }

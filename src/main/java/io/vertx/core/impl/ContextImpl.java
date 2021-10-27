@@ -19,6 +19,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.metrics.PoolMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
+import static io.vertx.core.impl.jvm.JavaCompatUtil.isVirtual;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -37,8 +39,12 @@ abstract class ContextImpl extends AbstractContext {
    */
   static void executeIsolated(Handler<Void> task) {
     Thread currentThread = Thread.currentThread();
-    if (currentThread instanceof VertxThread) {
-      VertxThread vertxThread = (VertxThread) currentThread;
+    if (isVirtual(currentThread)) {
+      // TODO Handle usage of virtual threads
+      return;
+    }
+    if (currentThread instanceof VertxThreadImpl) {
+      VertxThreadImpl vertxThread = (VertxThreadImpl) currentThread;
       ContextInternal prev = vertxThread.beginEmission(null);
       try {
         task.handle(null);

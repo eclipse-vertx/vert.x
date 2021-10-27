@@ -10,6 +10,7 @@
  */
 package io.vertx.core.streams.impl;
 
+import static io.vertx.core.impl.jvm.JavaCompatUtil.isVirtual;
 import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.Context;
 import io.vertx.core.Handler;
@@ -100,6 +101,10 @@ public class InboundBuffer<E> {
 
   private void checkThread() {
     Thread thread = Thread.currentThread();
+    if (isVirtual(thread)) {
+      // TODO Check impact of potentially lacking FastThreadLocalThread support
+      return;
+    }
     if (!(thread instanceof FastThreadLocalThread)) {
       throw new IllegalStateException("This operation must be called from a Vert.x thread");
     }
