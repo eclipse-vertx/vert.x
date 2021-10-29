@@ -47,6 +47,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private long currentTimeoutTimerId = -1;
   private long currentTimeoutMs;
   private long lastDataReceived;
+  private String traceOperationName;
 
   HttpClientRequestBase(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method, SocketAddress server, String host, int port, String uri) {
     this.client = client;
@@ -154,6 +155,18 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
     currentTimeoutMs = timeoutMs;
     currentTimeoutTimerId = context.setTimer(timeoutMs, id -> handleTimeout(timeoutMs));
     return this;
+  }
+
+  @Override
+  public synchronized String getTraceOperationName() {
+    return traceOperationName != null ? traceOperationName : method.name();
+  }
+
+  @Override
+  public synchronized HttpClientRequest setTraceOperationName(String operationName) {
+    Objects.requireNonNull(operationName);
+    this.traceOperationName=operationName;
+    return null;
   }
 
   void handleException(Throwable t) {

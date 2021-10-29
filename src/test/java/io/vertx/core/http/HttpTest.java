@@ -4341,6 +4341,8 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest setMethod(HttpMethod method) { throw new UnsupportedOperationException(); }
       public HttpClientRequest response(Handler<AsyncResult<HttpClientResponse>> handler) { throw new UnsupportedOperationException(); }
       public Future<HttpClientResponse> response() { throw new UnsupportedOperationException(); }
+      public String getTraceOperationName() { throw new UnsupportedOperationException();  }
+      public HttpClientRequest setTraceOperationName(String operationName) { throw new UnsupportedOperationException(); }
     }
     HttpClientRequest req = new MockReq();
     class MockResp implements HttpClientResponse {

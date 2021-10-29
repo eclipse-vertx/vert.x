@@ -172,6 +172,21 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   String query();
 
   /**
+   * @return the operation name used for distributed tracing. Defaults to {{@link #getMethod()}} if not explicitly set.
+   */
+  String getTraceOperationName();
+
+  /**
+   * Set the operation name used for distributed tracing which should concisely represent the work done by this request.
+   * A good example of a name is get_account, save_user, etc.
+   *
+   * @param operationName the operation name
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpClientRequest setTraceOperationName(String operationName);
+
+  /**
    * @return The HTTP headers
    */
   @CacheReturn

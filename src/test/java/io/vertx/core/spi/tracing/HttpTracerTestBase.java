@@ -161,6 +161,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         headers.accept("header-key","header-value");
         assertNotNull(request);
         assertTrue(request instanceof HttpRequest);
+        assertEquals("operation-name", operation);
         return request;
       }
       @Override
@@ -186,6 +187,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
       client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+        req.setTraceOperationName("operation-name");
         req.send(onSuccess(resp -> {
           resp.endHandler(v2 -> {
             // Updates are done on the HTTP client context, so we need to run task on this context
