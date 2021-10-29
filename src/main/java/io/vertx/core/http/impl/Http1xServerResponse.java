@@ -754,9 +754,9 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     synchronized (conn) {
       if (netSocket == null) {
         if (headWritten) {
-          return context.failedFuture("Response for CONNECT already sent");
+          return context.failedFuture("Response already sent");
         }
-        status = HttpResponseStatus.OK;
+
         prepareHeaders(-1);
         conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
         written = true;

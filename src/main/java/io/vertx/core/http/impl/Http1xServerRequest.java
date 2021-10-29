@@ -375,9 +375,6 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
 
   @Override
   public Future<NetSocket> toNetSocket() {
-    if (method() != HttpMethod.CONNECT) {
-      return context.failedFuture("HTTP method must be CONNECT to upgrade the connection to a net socket");
-    }
     return response.netSocket();
   }
 
