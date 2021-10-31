@@ -367,6 +367,7 @@
         </configuration>
         <executions>
           <execution>
+            <?m2e ignore ?>
             <id>generate-sources</id>
             <goals>
               <goal>process</goal>

@@ -1155,7 +1155,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       // Vert.x threads are NOT daemons - we want them to prevent JVM exit so embedded user doesn't
       // have to explicitly prevent JVM from exiting.
       thread.setDaemon(false);
-      return thread.getThread();
+      return thread.unwrap();
     };
   }
 

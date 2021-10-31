@@ -77,7 +77,7 @@ public class VertxThreadImpl extends FastThreadLocalThread implements VertxThrea
   }
 
   @Override
-  public Thread getThread() {
+  public Thread unwrap() {
     return this;
   }
 

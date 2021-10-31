@@ -15,9 +15,7 @@ public final class JavaCompatUtil {
    * 
    * @param thread
    * @return true if the provided thread is a virtual one.
-   * @deprecated Use Thread#isVirtual instead
    */
-  @Deprecated
   public static boolean isVirtual(Thread thread) {
     if (thread == null) {
       return false;

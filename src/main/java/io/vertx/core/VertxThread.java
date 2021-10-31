@@ -27,6 +27,6 @@ public interface VertxThread extends BlockedThreadChecker.Task {
 	 * Return the actual {@link Thread} that corresponds to the {@link VertxThread}.
 	 * @return
 	 */
-	Thread getThread();
+	Thread unwrap();
 
 }
