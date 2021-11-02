@@ -5075,6 +5075,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHttpConnect() {
+    testHttpConnect(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT), 200);
+  }
+
+  protected void testHttpConnect(RequestOptions options, int sc) {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
     CompletableFuture<Void> closeSocket = new CompletableFuture<>();
@@ -5087,7 +5091,7 @@ public abstract class HttpTest extends HttpTestBase {
       server.requestHandler(req -> {
         vertx.createNetClient(new NetClientOptions()).connect(1235, "localhost", onSuccess(dst -> {
 
-          req.response().setStatusCode(200);
+          req.response().setStatusCode(sc);
           req.response().setStatusMessage("Connection established");
 
           // Now create a NetSocket
@@ -5104,10 +5108,10 @@ public abstract class HttpTest extends HttpTestBase {
         }));
       });
       server.listen(testAddress, onSuccess(s -> {
-        client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
+        client.request(options).onComplete(onSuccess(req -> {
           req
             .connect(onSuccess(resp -> {
-              assertEquals(200, resp.statusCode());
+              assertEquals(sc, resp.statusCode());
               NetSocket socket = resp.netSocket();
               socket.handler(buff -> {
                 received.appendBuffer(buff);

@@ -14,6 +14,9 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
@@ -48,7 +51,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
@@ -750,15 +753,19 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  Future<NetSocket> netSocket() {
+  Future<NetSocket> netSocket(HttpMethod requestMethod, MultiMap requestHeaders) {
     synchronized (conn) {
       if (netSocket == null) {
         if (headWritten) {
-          return context.failedFuture("Response for CONNECT already sent");
+          return context.failedFuture("Response already sent");
         }
-        status = HttpResponseStatus.OK;
+        if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
+          return context.failedFuture("HTTP method must be CONNECT or an HTTP upgrade to upgrade the connection to a TCP socket");
+        }
+        status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
-        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
+        PromiseInternal<Void> upgradePromise = context.promise();
+        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers), upgradePromise);
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();

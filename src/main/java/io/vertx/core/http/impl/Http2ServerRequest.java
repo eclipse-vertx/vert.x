@@ -52,7 +52,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
-import java.util.List;
 import java.util.Set;
 
 /**

@@ -25,7 +25,6 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
 import io.vertx.core.http.Cookie;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.headers.HeadersAdaptor;
 import io.vertx.core.impl.ContextInternal;
@@ -375,10 +374,7 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
 
   @Override
   public Future<NetSocket> toNetSocket() {
-    if (method() != HttpMethod.CONNECT) {
-      return context.failedFuture("HTTP method must be CONNECT to upgrade the connection to a net socket");
-    }
-    return response.netSocket();
+    return response.netSocket(method(), headers());
   }
 
   @Override

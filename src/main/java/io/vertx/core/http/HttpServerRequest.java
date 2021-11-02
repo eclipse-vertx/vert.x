@@ -314,11 +314,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Establish a TCP <a href="https://tools.ietf.org/html/rfc7231#section-4.3.6">tunnel<a/> with the client.
    *
-   * <p> This must be called only for {@code CONNECT} HTTP method and before any response is sent.
+   * <p> This must be called only for {@code CONNECT} HTTP method or for HTTP connection upgrade, before any response is sent.
    *
-   * <p> Calling this sends a {@code 200} response with no {@code content-length} header set and
-   * then provides the {@code NetSocket} for handling the created tunnel. Any HTTP header set on the
-   * response before calling this method will be sent.
+   * <p> Calling this sends a {@code 200} response for a {@code CONNECT} or a {@code 101} for a connection upgrade wit
+   * no {@code content-length} header set and then provides the {@code NetSocket} for handling the created tunnel.
+   * Any HTTP header set on the response before calling this method will be sent.
    *
    * <pre>
    * server.requestHandler(req -> {
