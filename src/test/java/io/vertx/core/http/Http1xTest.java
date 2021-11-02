@@ -5110,6 +5110,11 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testHttpUpgrade() {
+    testHttpConnect(new RequestOptions(requestOptions).setMethod(HttpMethod.GET).addHeader(HttpHeaders.CONNECTION, "UpGrAdE"), 101);
+  }
+
+  @Test
   public void testServerResponseReset() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {

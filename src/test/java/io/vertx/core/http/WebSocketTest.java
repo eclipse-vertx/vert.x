@@ -656,13 +656,13 @@ public class WebSocketTest extends VertxTestBase {
     String secHeader = req.headers().get("Sec-WebSocket-Key");
     String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     String encoded = sha1(tmp);
-    return ((Http1xServerConnection)req.connection()).netSocket().onSuccess(sock -> {
-      sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
-        "Upgrade: WebSocket\r\n" +
-        "Connection: upgrade\r\n" +
-        "Sec-WebSocket-Accept: " + encoded + "\r\n" +
-        "\r\n");
-    });
+    HttpServerResponse resp = req.response();
+    MultiMap headers = resp.headers();
+    headers.set(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE);
+    headers.set("upgrade", "WebSocket");
+    headers.set("connection", "upgrade");
+    headers.set("sec-websocket-accept", encoded);
+    return req.toNetSocket();
   }
 
   private void testWSWriteStream(WebsocketVersion version) throws Exception {
