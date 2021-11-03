@@ -155,6 +155,7 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
     if (err != null) {
       AssertionFailedError afe = new AssertionFailedError();
       afe.initCause(err);
+      unexpectedError = null;
       throw afe;
     }
   }

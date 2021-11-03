@@ -10,10 +10,31 @@
  */
 package io.vertx.core.http;
 
+import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
+import org.junit.Test;
+
+import java.util.concurrent.CountDownLatch;
+
 public class Http1xMetricsTest extends HttpMetricsTestBase {
 
   public Http1xMetricsTest() {
     super(HttpVersion.HTTP_1_1);
   }
 
+  @Test
+  public void testAllocatedStreamResetShouldNotCallMetricsLifecycle() throws Exception {
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer();
+    CountDownLatch latch = new CountDownLatch(1);
+    client = vertx.createHttpClient(createBaseClientOptions().setIdleTimeout(2));
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.exceptionHandler(err -> {
+        latch.countDown();
+      });
+      req.connection().close();
+    }));
+    awaitLatch(latch);
+  }
 }
