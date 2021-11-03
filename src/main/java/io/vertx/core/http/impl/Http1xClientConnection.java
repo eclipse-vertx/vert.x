@@ -1041,17 +1041,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     context.execute(writable, handler);
   }
 
-  /**
-   * @return a list of all pending streams
-   */
-  private Iterable<Stream> pendingStreams() {
-    // There might be duplicate between the requets list and the responses list
-    LinkedHashSet<Stream> list = new LinkedHashSet<>();
-    list.addAll(requests);
-    list.addAll(responses);
-    return list;
-  }
-
   protected void handleClosed() {
     super.handleClosed();
     long timerID = shutdownTimerID;
@@ -1072,15 +1061,21 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
     WebSocketImpl ws;
     VertxTracer tracer = context.tracer();
-    Iterable<Stream> streams;
+    List<Stream> allocatedStreams;
+    List<Stream> sentStreams;
     synchronized (this) {
       ws = webSocket;
-      streams = pendingStreams();
+      sentStreams = new ArrayList<>(responses);
+      allocatedStreams = new ArrayList<>(requests);
+      allocatedStreams.removeAll(responses);
     }
     if (ws != null) {
       ws.handleConnectionClosed();
     }
-    for (Stream stream : streams) {
+    for (Stream stream : allocatedStreams) {
+      stream.context.execute(null, v -> stream.handleClosed());
+    }
+    for (Stream stream : sentStreams) {
       if (metrics != null) {
         metrics.requestReset(stream.metric);
       }
@@ -1105,15 +1100,16 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
   protected void handleException(Throwable e) {
     super.handleException(e);
     WebSocketImpl ws;
-    Iterable<Stream> streams;
+    LinkedHashSet<Stream> allStreams = new LinkedHashSet<>();
     synchronized (this) {
       ws = webSocket;
-      streams = pendingStreams();
+      allStreams.addAll(requests);
+      allStreams.addAll(responses);
     }
     if (ws != null) {
       ws.handleException(e);
     }
-    for (Stream stream : streams) {
+    for (Stream stream : allStreams) {
       stream.handleException(e);
     }
   }
