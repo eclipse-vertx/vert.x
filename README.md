@@ -28,6 +28,12 @@ Vert.x supports native transport on BSD and Linux, to run the tests with native 
 > mvn test -PtestNativeTransport
 ```
 
+Vert.x experimental supports native [IO_URING](https://github.com/netty/netty-incubator-transport-io_uring/) transport on Linux, to run the tests with IO_URING transport
+
+```
+> mvn test -PtestIoUringTransport
+```
+
 Vert.x supports domain sockets on Linux exclusively, to run the tests with domain sockets
 
 ```

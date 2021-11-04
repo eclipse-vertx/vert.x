@@ -14,7 +14,7 @@ package io.vertx.core.net.impl;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.stream.ChunkedNioFile;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
@@ -409,7 +409,7 @@ public abstract class ConnectionBase {
   protected abstract void handleInterestedOpsChanged();
 
   protected boolean supportsFileRegion() {
-    return !isSsl();
+    return vertx.transport().supportFileRegion() && !isSsl();
   }
 
   protected void reportBytesRead(Object msg) {
@@ -505,7 +505,7 @@ public abstract class ConnectionBase {
     ChannelPromise writeFuture = chctx.newPromise();
     if (!supportsFileRegion()) {
       // Cannot use zero-copy
-      writeToChannel(new ChunkedFile(raf, offset, length, 8192), writeFuture);
+      writeToChannel(new ChunkedNioFile(raf.getChannel(), offset, length, 8192), writeFuture);
     } else {
       // No encryption - use zero-copy.
       sendFileRegion(raf, offset, length, writeFuture);
