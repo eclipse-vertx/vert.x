@@ -55,6 +55,7 @@
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
     <jar.manifest>${project.basedir}/src/main/resources/META-INF/MANIFEST.MF</jar.manifest>
+    <netty.iouring.version>0.0.9.Final</netty.iouring.version>
   </properties>
 
   <dependencyManagement>
@@ -111,6 +112,15 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-codec-haproxy</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.netty.incubator</groupId>
+      <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+      <!-- TODO this should be handled on https://github.com/vert-x3/vertx-dependencies -->
+      <!-- 0.0.9.Final is compatible with Netty 4.1.69.Final https://github.com/netty/netty-incubator-transport-io_uring/blob/netty-incubator-transport-native-io_uring-0.0.9.Final/pom.xml#L89 -->
+      <!-- that's perfect according to https://github.com/vert-x3/vertx-dependencies/blob/4.2.1/pom.xml#L51 -->
+      <version>${netty.iouring.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -476,6 +486,7 @@
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty.incubator:netty-incubator-transport-native-io_uring</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -776,6 +787,29 @@
           <artifactId>netty-transport-native-kqueue</artifactId>
           <optional>true</optional>
           <classifier>osx-x86_64</classifier>
+        </dependency>
+      </dependencies>
+    </profile>
+
+    <!-- Run tests with IO_URING transport -->
+
+    <profile>
+      <id>testIoUringTransport</id>
+      <properties>
+        <vertx.testNativeTransport>true</vertx.testNativeTransport>
+        <vertx.testDomainSockets>false</vertx.testDomainSockets>
+      </properties>
+      <dependencies>
+        <dependency>
+          <groupId>io.netty.incubator</groupId>
+          <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+          <version>${netty.iouring.version}</version>
+          <classifier>linux-x86_64</classifier>
+        </dependency>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport-native-epoll</artifactId>
+          <scope>provided</scope>
         </dependency>
       </dependencies>
     </profile>

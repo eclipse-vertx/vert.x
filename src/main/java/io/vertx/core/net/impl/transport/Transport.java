@@ -49,6 +49,10 @@ public class Transport {
    */
   public static Transport JDK = new Transport();
 
+  public boolean supportFileRegion() {
+    return true;
+  }
+
   /**
    * The native transport, it may be {@code null} or failed.
    */
@@ -60,6 +64,16 @@ public class Transport {
         return epoll;
       } else {
         transport = epoll;
+      }
+    } catch (Throwable ignore) {
+      // Jar not here
+    }
+    try {
+      Transport ioUring = new IOUringTransport();
+      if (ioUring.isAvailable()) {
+        return ioUring;
+      } else {
+        transport = ioUring;
       }
     } catch (Throwable ignore) {
       // Jar not here
