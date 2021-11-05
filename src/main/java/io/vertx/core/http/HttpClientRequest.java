@@ -281,7 +281,7 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
   /**
    * Create an HTTP tunnel to the server.
    *
-   * <p> Send an HTTP request to the server, then configures the transport to exchange
+   * <p> Send HTTP request headers to the server, then configures the transport to exchange
    * raw buffers when the server replies with an appropriate response:
    *
    * <ul>
@@ -289,12 +289,14 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *   <li>{@code 101} for HTTP/1.1 {@code GET} with {@code Upgrade} {@code connection} header</li>
    * </ul>
    *
+   * <p> The rest of the request should be performed,
+   *
    * <p> The {@code handler} is called after response headers are received.
    *
-   * <p> Use {@link HttpClientResponse#netSocket} to get a {@link NetSocket} for the interacting
+   * <p> Use {@link HttpClientResponse#netSocket} to get a {@link NetSocket} for interacting
    * more conveniently with the server.
    *
-   * <p> HTTP/1.1 pipe-lined requests are not supported.
+   * <p> HTTP/1.1 pipe-lined requests are not supported.f
    *
    * @param handler the response completion handler
    */
