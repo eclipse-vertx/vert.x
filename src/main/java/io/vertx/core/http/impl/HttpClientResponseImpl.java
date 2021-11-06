@@ -81,7 +81,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public NetSocket netSocket() {
     if (netSocket == null) {
-      netSocket = HttpNetSocket.netSocket((ConnectionBase) conn, request.context, this, request);
+      netSocket = HttpNetSocket.netSocket((ConnectionBase) conn, request.context, this, stream);
     }
     return netSocket;
   }
