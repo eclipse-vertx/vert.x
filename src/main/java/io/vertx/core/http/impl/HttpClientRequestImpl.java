@@ -449,6 +449,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private void doWrite(ByteBuf buff, boolean end, boolean connect, Handler<AsyncResult<Void>> completionHandler) {
     boolean writeHead;
+    boolean writeEnd;
     synchronized (this) {
       if (ended) {
         completionHandler.handle(Future.failedFuture(new IllegalStateException("Request already complete")));
@@ -462,6 +463,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         writeHead = false;
       }
+      writeEnd = !isConnect && end;
       ended = end;
     }
 
@@ -469,12 +471,12 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       HttpMethod method = getMethod();
       String uri = getURI();
       HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI());
-      stream.writeHead(head, chunked, buff, ended, priority, connect, completionHandler);
+      stream.writeHead(head, chunked, buff, writeEnd, priority, connect, completionHandler);
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();
       }
-      stream.writeBuffer(buff, end, completionHandler);
+      stream.writeBuffer(buff, writeEnd, completionHandler);
     }
     if (end) {
       tryComplete();

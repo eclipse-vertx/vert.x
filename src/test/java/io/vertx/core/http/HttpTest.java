@@ -5216,7 +5216,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
   }
 
-  public void testNetSocketConnectSuccess(Handler<NetSocket> clientHandler, Handler<NetSocket> serverHandler) {
+  private void testNetSocketConnectSuccess(Handler<NetSocket> clientHandler, Handler<NetSocket> serverHandler) {
     waitFor(2);
 
     server.requestHandler(req -> {

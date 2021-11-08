@@ -289,8 +289,6 @@ public interface HttpClientRequest extends WriteStream<Buffer> {
    *   <li>{@code 101} for HTTP/1.1 {@code GET} with {@code Upgrade} {@code connection} header</li>
    * </ul>
    *
-   * <p> The rest of the request should be performed,
-   *
    * <p> The {@code handler} is called after response headers are received.
    *
    * <p> Use {@link HttpClientResponse#netSocket} to get a {@link NetSocket} for interacting
