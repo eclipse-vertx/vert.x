@@ -5128,4 +5128,57 @@ public class Http1xTest extends HttpTest {
     }));
     await();
   }
+
+  @Test
+  public void testNetSocketUpgradeSuccess() {
+    testNetSocketUpgradeSuccess(null);
+  }
+
+  @Test
+  public void testNetSocketUpgradeSuccessWithPayload() {
+    testNetSocketUpgradeSuccess(Buffer.buffer("the-payload"));
+  }
+
+  private void testNetSocketUpgradeSuccess(Buffer payload) {
+    server.requestHandler(req -> {
+      req.body(onSuccess(body -> {
+        if (payload != null) {
+          assertEquals(payload, body);
+        }
+        req.response().headers().set("HTTP/1.1", "101 Upgrade");
+        req.toNetSocket().onComplete(onSuccess(so -> {
+          so.handler(buff -> {
+            assertEquals("ping", buff.toString());
+            so.write("pong");
+            so.close();
+          });
+        }));
+      }));
+    });
+    server.listen(testAddress, onSuccess(s -> {
+      RequestOptions request = new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.GET)
+        .addHeader(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE);
+      if (payload != null) {
+        request.addHeader(HttpHeaders.CONTENT_LENGTH, "" + payload.length());
+      }
+      client.request(request
+      ).onComplete(onSuccess(req -> {
+        req.connect(onSuccess(resp -> {
+          NetSocket so = resp.netSocket();
+          so.write("ping");
+          so.handler(buff -> {
+            assertEquals("pong", buff.toString());
+            so.close(onSuccess(v -> {
+              testComplete();
+            }));
+          });
+        }));
+        if (payload != null) {
+          req.end(payload);
+        }
+      }));
+    }));
+    await();
+  }
 }

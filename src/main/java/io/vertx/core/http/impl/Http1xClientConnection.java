@@ -48,6 +48,7 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.streams.WriteStream;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.net.URI;
@@ -396,13 +397,25 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public void drainHandler(Handler<Void> handler) {
+    public StreamImpl drainHandler(Handler<Void> handler) {
       drainHandler = handler;
+      return this;
     }
 
     @Override
-    public void exceptionHandler(Handler<Throwable> handler) {
+    public StreamImpl exceptionHandler(Handler<Throwable> handler) {
       exceptionHandler = handler;
+      return this;
+    }
+
+    @Override
+    public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+      return null;
+    }
+
+    @Override
+    public boolean writeQueueFull() {
+      return false;
     }
 
     @Override

@@ -30,6 +30,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -387,23 +388,43 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public void drainHandler(Handler<Void> handler) {
+    public UpgradingStream drainHandler(Handler<Void> handler) {
       if (upgradedStream != null) {
         upgradedStream.drainHandler(handler);
       } else {
         upgradingStream.drainHandler(handler);
         drainHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public void exceptionHandler(Handler<Throwable> handler) {
+    public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+      if (upgradedStream != null) {
+        upgradedStream.setWriteQueueMaxSize(maxSize);
+      } else {
+
+      }
+      return this;
+    }
+
+    @Override
+    public boolean writeQueueFull() {
+      if (upgradedStream != null) {
+        return upgradedStream.writeQueueFull();
+      }
+      return false;
+    }
+
+    @Override
+    public UpgradingStream exceptionHandler(Handler<Throwable> handler) {
       if (upgradedStream != null) {
         upgradedStream.exceptionHandler(handler);
       } else {
         upgradingStream.exceptionHandler(handler);
         exceptionHandler = handler;
       }
+      return this;
     }
 
     @Override

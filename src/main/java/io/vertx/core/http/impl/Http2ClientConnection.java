@@ -32,6 +32,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.streams.WriteStream;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -388,13 +389,25 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void drainHandler(Handler<Void> handler) {
+    public StreamImpl drainHandler(Handler<Void> handler) {
       drainHandler = handler;
+      return this;
     }
 
     @Override
-    public void exceptionHandler(Handler<Throwable> handler) {
+    public StreamImpl exceptionHandler(Handler<Throwable> handler) {
       exceptionHandler = handler;
+      return this;
+    }
+
+    @Override
+    public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+      return this;
+    }
+
+    @Override
+    public boolean writeQueueFull() {
+      return isNotWritable();
     }
 
     @Override
