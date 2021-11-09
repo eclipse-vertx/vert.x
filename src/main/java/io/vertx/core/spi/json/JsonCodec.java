@@ -14,14 +14,44 @@ package io.vertx.core.spi.json;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.JsonArray;
 
 /**
+ * JsonCodec SPI interface. Implementations of this interface provide custom JSON encoding and decoding support for the
+ * running vert.x application.
+ *
+ * The SPI consists of 3 main features:
+ *
+ * <ol>
+ *   <li>{@link #fromString(String, Class)}, {@link #fromBuffer(Buffer, Class)} - Parse a given test or binary input and
+ *   return a object representation of the input for the given {@link Class} type</li>
+ *   <li>{@link #fromValue(Object, Class)} - Given an object, use the mapping features if available to convert to the desired target POJO of {@link Class}</li>
+ *   <li>{@link #toString(Object)}, {@link #toBuffer(Object)} - Encodes a given object to either a textual or binary representation.</li>
+ * </ol>
+ *
+ * The SPI assumes the following decoding rules (when mapping to POJO):
+ *
+ * <ul>
+ *   <li>When the target class is {@link java.time.Instant}, the input is expected to be in {@link java.time.format.DateTimeFormatter#ISO_DATE} format.</li>
+ *   <li>When the target class is {@code byte[]} or {@link Buffer}, the input is expected to be in {@code Base64URL} string format.</li>
+ * </ul>
+ *
+ * The following rules are expected when encoding:
+ *
+ * <ul>
+ *   <li>When {@code object} is of type {@link java.time.Instant}, the output is expected to be in {@link java.time.format.DateTimeFormatter#ISO_DATE} format.</li>
+ *   <li>When {@code object} is of type {@code byte[]} or {@link Buffer}, the output is expected to be in {@code Base64URL} format.</li>
+ *   <li>When {@code object} is of type {@link JsonObject}, the output is expected to be the object internal map {@link JsonObject#getMap()}.</li>
+ *   <li>When {@code object} is of type {@link JsonArray}, the output is expected to be the object internal list {@link JsonArray#getList()}.</li>
+ * </ul>
+ *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
 public interface JsonCodec {
 
   /**
-   * Decode the provide {@code json} string to an object extending {@code clazz}.
+   * Decode the provided {@code json} string to an object extending {@code clazz}.
    *
    * @param json the json string
    * @param clazz the required object's class
@@ -41,7 +71,13 @@ public interface JsonCodec {
   <T> T fromValue(Object json, Class<T> toValueType);
 
   /**
-   * Encode the specified {@code object} to a string.
+   * Encode the specified {@code object} to a compact (non-pretty) string.
+   *
+   * See {@link #toString(Object, boolean)}.
+   *
+   * @param object the object to encode
+   * @return the json encoded string
+   * @throws DecodeException anything preventing the encoding
    */
   default String toString(Object object) throws EncodeException {
     return toString(object, false);
@@ -49,6 +85,15 @@ public interface JsonCodec {
 
   /**
    * Encode the specified {@code object} to a string.
+   *
+   * Implementations <b>MUST</b> follow the requirements:
+   *
+   * <ul>
+   *   <li>When {@code object} is of type {@link java.time.Instant}, the output is expected to be in {@link java.time.format.DateTimeFormatter#ISO_DATE} format.</li>
+   *   <li>When {@code object} is of type {@code byte[]} or {@link Buffer}, the output is expected to be in {@code Base64URL} format.</li>
+   *   <li>When {@code object} is of type {@link JsonObject}, the output is expected to be the object internal map {@link JsonObject#getMap()}.</li>
+   *   <li>When {@code object} is of type {@link JsonArray}, the output is expected to be the object internal list {@link JsonArray#getList()}.</li>
+   * </ul>
    *
    * @param object the object to encode
    * @param pretty {@code true} to format the string prettily
@@ -58,12 +103,32 @@ public interface JsonCodec {
   String toString(Object object, boolean pretty) throws EncodeException;
 
   /**
-   * Like {@link #toString(Object, boolean)} but with a json {@link Buffer}
+   * Encode the specified {@code object} to a {@link Buffer}.
+   *
+   * Implementations <b>MUST</b> follow the requirements:
+   *
+   * <ul>
+   *   <li>When {@code object} is of type {@link java.time.Instant}, the output is expected to be in {@link java.time.format.DateTimeFormatter#ISO_DATE} format.</li>
+   *   <li>When {@code object} is of type {@code byte[]} or {@link Buffer}, the output is expected to be in {@code Base64URL} format.</li>
+   *   <li>When {@code object} is of type {@link JsonObject}, the output is expected to be the object internal map {@link JsonObject#getMap()}.</li>
+   *   <li>When {@code object} is of type {@link JsonArray}, the output is expected to be the object internal list {@link JsonArray#getList()}.</li>
+   * </ul>
+   *
+   * @param object the object to encode
+   * @param pretty {@code true} to format the string prettily
+   * @return the json encoded string
+   * @throws DecodeException anything preventing the encoding
    */
   Buffer toBuffer(Object object, boolean pretty) throws EncodeException;
 
   /**
-   * Like {@link #toString(Object)} but with a json {@link Buffer}
+   * Encode the specified {@code object} to a compact (non-pretty) {@link Buffer}.
+   *
+   * See {@link #toBuffer(Object, boolean)}.
+   *
+   * @param object the object to encode
+   * @return the json encoded string
+   * @throws DecodeException anything preventing the encoding
    */
   default Buffer toBuffer(Object object) throws EncodeException {
     return toBuffer(object, false);
