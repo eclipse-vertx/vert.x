@@ -214,7 +214,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers = (key, val) -> nettyRequest.headers().add(key, val);
-        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, request.method.name(), headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        String operation = request.traceOperation;
+        if (operation == null) {
+          operation = request.method.name();
+        }
+        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
     writeToChannel(nettyRequest, handler == null ? null : context.promise(handler));

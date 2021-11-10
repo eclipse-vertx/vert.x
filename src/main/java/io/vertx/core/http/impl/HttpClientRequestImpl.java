@@ -55,14 +55,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private StreamPriority priority;
   private boolean headWritten;
   private boolean isConnect;
+  private String traceOperation;
 
   HttpClientRequestImpl(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method,
-                        SocketAddress server, String host, int port, String requestURI) {
+                        SocketAddress server, String host, int port, String requestURI, String traceOperation) {
     super(client, stream, responsePromise, ssl, method, server, host, port, requestURI);
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
+    this.traceOperation = traceOperation;
 
     //
     stream.continueHandler(this::handleContinue);
@@ -470,7 +472,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     if (writeHead) {
       HttpMethod method = getMethod();
       String uri = getURI();
-      HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI());
+      HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI(), traceOperation);
       stream.writeHead(head, chunked, buff, writeEnd, priority, connect, completionHandler);
     } else {
       if (buff == null && !end) {

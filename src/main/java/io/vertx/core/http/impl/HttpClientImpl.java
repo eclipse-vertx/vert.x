@@ -578,7 +578,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
       peerHost = peerHost.substring(0, peerHost.length() -  1);
     }
     SocketAddress peerAddress = SocketAddress.inetSocketAddress(port, peerHost);
-    doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, timeout, followRedirects, proxyOptions, promise);
+    doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, promise);
   }
 
   private void doRequest(
@@ -590,6 +590,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     Boolean useSSL,
     String requestURI,
     MultiMap headers,
+    String traceOperation,
     long timeout,
     Boolean followRedirects,
     ProxyOptions proxyOptions,
@@ -606,7 +607,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
             stream.closeHandler(v -> {
               lease.recycle();
             });
-            HttpClientRequestImpl req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, server, host, port, requestURI);
+            HttpClientRequestImpl req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, server, host, port, requestURI, traceOperation);
             if (headers != null) {
               req.headers().setAll(headers);
             }

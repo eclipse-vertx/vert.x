@@ -55,6 +55,11 @@ public class RequestOptionsConverter {
             obj.setTimeout(((Number)member.getValue()).longValue());
           }
           break;
+        case "traceOperation":
+          if (member.getValue() instanceof String) {
+            obj.setTraceOperation((String)member.getValue());
+          }
+          break;
         case "uri":
           if (member.getValue() instanceof String) {
             obj.setURI((String)member.getValue());
@@ -85,6 +90,9 @@ public class RequestOptionsConverter {
       json.put("ssl", obj.isSsl());
     }
     json.put("timeout", obj.getTimeout());
+    if (obj.getTraceOperation() != null) {
+      json.put("traceOperation", obj.getTraceOperation());
+    }
     if (obj.getURI() != null) {
       json.put("uri", obj.getURI());
     }

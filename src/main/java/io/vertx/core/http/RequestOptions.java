@@ -90,6 +90,7 @@ public class RequestOptions {
   private MultiMap headers;
   private boolean followRedirects;
   private long timeout;
+  private String traceOperation;
 
   /**
    * Default constructor
@@ -104,6 +105,7 @@ public class RequestOptions {
     uri = DEFAULT_URI;
     followRedirects = DEFAULT_FOLLOW_REDIRECTS;
     timeout = DEFAULT_TIMEOUT;
+    traceOperation = null;
   }
 
   /**
@@ -124,6 +126,7 @@ public class RequestOptions {
     if (other.headers != null) {
       setHeaders(MultiMap.caseInsensitiveMultiMap().setAll(other.headers));
     }
+    setTraceOperation(other.traceOperation);
   }
 
   /**
@@ -525,6 +528,25 @@ public class RequestOptions {
     if (headers == null) {
       headers = MultiMap.caseInsensitiveMultiMap();
     }
+  }
+
+  /**
+   * @return the trace operation override
+   */
+  public String getTraceOperation() {
+    return traceOperation;
+  }
+
+  /**
+   * Override the operation the tracer use for this request. When no operation is set, the HTTP method is used
+   * instead.
+   *
+   * @param op the override
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setTraceOperation(String op) {
+    this.traceOperation = op;
+    return this;
   }
 
   public JsonObject toJson() {

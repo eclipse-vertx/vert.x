@@ -27,13 +27,15 @@ public class HttpRequestHead implements HttpRequest {
   public final MultiMap headers;
   public final String authority;
   public final String absoluteURI;
+  public final String traceOperation;
 
-  public HttpRequestHead(HttpMethod method, String uri, MultiMap headers, String authority, String absoluteURI) {
+  public HttpRequestHead(HttpMethod method, String uri, MultiMap headers, String authority, String absoluteURI, String traceOperation) {
     this.method = method;
     this.uri = uri;
     this.headers = headers;
     this.authority = authority;
     this.absoluteURI = absoluteURI;
+    this.traceOperation = traceOperation;
   }
 
   @Override
@@ -65,4 +67,5 @@ public class HttpRequestHead implements HttpRequest {
   public HttpMethod method() {
     return method;
   }
+
 }
