@@ -24,7 +24,7 @@ import io.vertx.core.json.JsonArray;
  * The SPI consists of 3 main features:
  *
  * <ol>
- *   <li>{@link #fromString(String, Class)}, {@link #fromBuffer(Buffer, Class)} - Parse a given test or binary input and
+ *   <li>{@link #fromString(String, Class)}, {@link #fromBuffer(Buffer, Class)} - Parse a given text or binary input and
  *   return a object representation of the input for the given {@link Class} type</li>
  *   <li>{@link #fromValue(Object, Class)} - Given an object, use the mapping features if available to convert to the desired target POJO of {@link Class}</li>
  *   <li>{@link #toString(Object)}, {@link #toBuffer(Object)} - Encodes a given object to either a textual or binary representation.</li>
