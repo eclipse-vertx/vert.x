@@ -709,4 +709,25 @@ public class NetExamples {
         }
       });
   }
+
+  public void configureTrafficShapingForNetServer(Vertx vertx) {
+    NetServerOptions options = new NetServerOptions()
+                                 .setHost("localhost")
+                                 .setPort(1234)
+                                 .setTrafficShapingOptions(new TrafficShapingOptions()
+                                                             .setInboundGlobalBandwidth(64 * 1024)
+                                                             .setOutboundGlobalBandwidth(128 * 1024));
+    NetServer server = vertx.createNetServer(options);
+  }
+
+  public void configureTrafficShapingForHttpServer(Vertx vertx) {
+    HttpServerOptions options = new HttpServerOptions()
+                                  .setHost("localhost")
+                                  .setPort(1234)
+                                  .setTrafficShapingOptions(new TrafficShapingOptions()
+                                                              .setInboundGlobalBandwidth(64 * 1024)
+                                                              .setOutboundGlobalBandwidth(128 * 1024));
+
+    HttpServer server = vertx.createHttpServer(options);
+  }
 }

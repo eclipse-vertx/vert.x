@@ -17,6 +17,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Closeable;
 import io.vertx.core.Context;
@@ -32,6 +34,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.SSLOptions;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
@@ -66,6 +69,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   // Main
   private SSLHelper sslHelper;
   private volatile Future<SslContextUpdate> sslChannelProvider;
+  private GlobalTrafficShapingHandler trafficShapingHandler;
   private ServerChannelLoadBalancer channelBalancer;
   private Future<Channel> bindFuture;
   private Set<TCPServerBase> servers;
@@ -92,10 +96,35 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     return server != null ? server.actualPort : actualPort;
   }
 
-  protected abstract BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress socketAddress);
+  protected abstract BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress socketAddress, GlobalTrafficShapingHandler trafficShapingHandler);
 
   protected SSLHelper createSSLHelper() {
     return new SSLHelper(options, null);
+  }
+
+  protected GlobalTrafficShapingHandler createTrafficShapingHandler() {
+    return createTrafficShapingHandler(vertx.getEventLoopGroup(), options.getTrafficShapingOptions());
+  }
+
+  private GlobalTrafficShapingHandler createTrafficShapingHandler(EventLoopGroup eventLoopGroup, TrafficShapingOptions options) {
+    if (options == null) {
+      return null;
+    }
+    GlobalTrafficShapingHandler trafficShapingHandler;
+    if (options.getMaxDelayToWait() != 0 && options.getCheckIntervalForStats() != 0) {
+      long maxDelayToWaitInSeconds = options.getMaxDelayToWaitTimeUnit().toSeconds(options.getMaxDelayToWait());
+      long checkIntervalForStatsInSeconds = options.getCheckIntervalForStatsTimeUnit().toSeconds(options.getCheckIntervalForStats());
+      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInSeconds, maxDelayToWaitInSeconds);
+    } else if (options.getCheckIntervalForStats() != 0) {
+      long checkIntervalForStatsInSeconds = options.getCheckIntervalForStatsTimeUnit().toSeconds(options.getCheckIntervalForStats());
+      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth(), checkIntervalForStatsInSeconds);
+    } else {
+      trafficShapingHandler = new GlobalTrafficShapingHandler(eventLoopGroup, options.getOutboundGlobalBandwidth(), options.getInboundGlobalBandwidth());
+    }
+    if (options.getPeakOutboundGlobalBandwidth() != 0) {
+      trafficShapingHandler.setMaxGlobalWriteSize(options.getPeakOutboundGlobalBandwidth());
+    }
+    return trafficShapingHandler;
   }
 
   public Future<Void> updateSSLOptions(SSLOptions options) {
@@ -164,7 +193,8 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         actualServer = this;
         bindFuture = promise;
         sslHelper = createSSLHelper();
-        childHandler =  childHandler(listenContext, localAddress);
+        trafficShapingHandler = createTrafficShapingHandler();
+        childHandler =  childHandler(listenContext, localAddress, trafficShapingHandler);
         worker = ch -> childHandler.accept(ch, sslChannelProvider.result().sslChannelProvider());
         servers = new HashSet<>();
         servers.add(this);
@@ -236,7 +266,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         // Server already exists with that host/port - we will use that
         actualServer = main;
         metrics = main.metrics;
-        childHandler =  childHandler(listenContext, localAddress);
+        childHandler =  childHandler(listenContext, localAddress, main.trafficShapingHandler);
         worker = ch -> childHandler.accept(ch, actualServer.sslChannelProvider.result().sslChannelProvider());
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
