@@ -12,6 +12,7 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.Channel;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ContextInternal;
@@ -134,7 +135,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
   }
 
   @Override
-  protected BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress address) {
+  protected BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress address, GlobalTrafficShapingHandler trafficShapingHandler) {
     EventLoopContext connContext;
     if (context instanceof EventLoopContext) {
       connContext = (EventLoopContext) context;
@@ -155,7 +156,8 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
       serverOrigin,
       disableH2c,
       hello,
-      hello.exceptionHandler);
+      hello.exceptionHandler,
+      trafficShapingHandler);
   }
 
   @Override

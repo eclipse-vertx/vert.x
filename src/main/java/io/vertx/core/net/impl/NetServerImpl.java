@@ -14,10 +14,12 @@ package io.vertx.core.net.impl;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
+import io.netty.channel.EventLoopGroup;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.Closeable;
 import io.vertx.core.Future;
@@ -29,6 +31,7 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -119,8 +122,8 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
-  protected BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress socketAddress) {
-    return new NetServerWorker(context, handler, exceptionHandler);
+  protected BiConsumer<Channel, SslChannelProvider> childHandler(ContextInternal context, SocketAddress socketAddress, GlobalTrafficShapingHandler trafficShapingHandler) {
+    return new NetServerWorker(context, handler, exceptionHandler, trafficShapingHandler);
   }
 
   @Override
@@ -158,11 +161,13 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     private final ContextInternal context;
     private final Handler<NetSocket> connectionHandler;
     private final Handler<Throwable> exceptionHandler;
+    private final GlobalTrafficShapingHandler trafficShapingHandler;
 
-    NetServerWorker(ContextInternal context, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler) {
+    NetServerWorker(ContextInternal context, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler, GlobalTrafficShapingHandler trafficShapingHandler) {
       this.context = context;
       this.connectionHandler = connectionHandler;
       this.exceptionHandler = exceptionHandler;
+      this.trafficShapingHandler = trafficShapingHandler;
     }
 
     @Override
@@ -212,6 +217,9 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
       } else {
         connected(ch, sslChannelProvider);
       }
+      if (trafficShapingHandler != null) {
+        ch.pipeline().addFirst("globalTrafficShaping", trafficShapingHandler);
+      }
     }
 
     private void handleException(Throwable cause) {
@@ -240,8 +248,8 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     if (options.getLogActivity()) {
       pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
-    if (ssl || !vertx.transport().supportFileRegion()) {
-      // only add ChunkedWriteHandler when SSL is enabled or FileRegion isn't supported
+    if (ssl || !vertx.transport().supportFileRegion() || (options.getTrafficShapingOptions() != null && options.getTrafficShapingOptions().getOutboundGlobalBandwidth() > 0)) {
+      // only add ChunkedWriteHandler when SSL is enabled or FileRegion isn't supported or when outbound traffic shaping is enabled
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
     int idleTimeout = options.getIdleTimeout();

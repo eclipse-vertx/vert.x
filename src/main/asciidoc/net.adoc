@@ -349,6 +349,16 @@ name. When using network activity logging there are a few things to keep in mind
 
 You should read the <<netty-logging>> section.
 
+=== Throttling inbound and outbound bandwidth of TCP connections
+
+TCP server (Net/Http) can be configured with traffic shaping options to enable bandwidth limiting. Both inbound and outbound
+bandwidth can be limited through {@link io.vertx.core.net.TrafficShapingOptions}. For NetServer, traffic shaping options can be set
+through {@link io.vertx.core.net.NetServerOptions} and for HttpServer it can be set through {@link io.vertx.core.http.HttpServerOptions}.
+
+{@link examples.NetExamples#configureTrafficShapingForNetServer}
+
+{@link examples.NetExamples#configureTrafficShapingForHttpServer}
+
 [[ssl]]
 === Configuring servers and clients to work with SSL/TLS
 

@@ -28,6 +28,7 @@ import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.TrafficShapingOptions;
 import io.vertx.core.net.TrustOptions;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -1033,6 +1034,11 @@ public class HttpServerOptions extends NetServerOptions {
   public HttpServerOptions setWebSocketClosingTimeout(int webSocketClosingTimeout) {
     this.webSocketClosingTimeout = webSocketClosingTimeout;
     return this;
+  }
+
+  @Override
+  public HttpServerOptions setTrafficShapingOptions(TrafficShapingOptions trafficShapingOptions) {
+    return (HttpServerOptions) super.setTrafficShapingOptions(trafficShapingOptions);
   }
 
   /**
