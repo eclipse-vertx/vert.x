@@ -661,6 +661,12 @@ public interface Vertx extends Measured {
   boolean isNativeTransportEnabled();
 
   /**
+   * @return the error (if any) that cause the unavailability of native transport when {@link #isNativeTransportEnabled()}  returns {@code false}.
+   */
+  @CacheReturn
+  Throwable unavailableNativeTransportCause();
+
+  /**
    * Set a default exception handler for {@link Context}, set on {@link Context#exceptionHandler(Handler)} at creation.
    *
    * @param handler the exception handler
