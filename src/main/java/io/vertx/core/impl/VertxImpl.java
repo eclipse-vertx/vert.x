@@ -329,6 +329,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return transport != Transport.JDK;
   }
 
+  @Override
+  public Throwable unavailableNativeTransportCause() {
+    if (isNativeTransportEnabled()) {
+      return null;
+    }
+    return transport.unavailabilityCause();
+  }
+
   public FileSystem fileSystem() {
     return fileSystem;
   }
