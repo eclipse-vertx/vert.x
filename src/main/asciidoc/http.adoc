@@ -1415,7 +1415,7 @@ You can also create a shared HTTP client in each verticle:
 ----
 
 The first time {@link io.vertx.core.Vertx#createSharedHttpClient(java.lang.String)} is called it will create the
-client. Subsequent calls will reuse this client and create a lease to this client. The client exists until all leases are closed.
+client. Subsequent calls will reuse this client and create a lease to this client. The client is closed after all leases have been closed.
 
 By default, a client reuses the current event-loop when it needs to create a TCP connection. The HTTP client will
 therefore randomly use event-loops of verticles using it.
