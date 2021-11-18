@@ -156,25 +156,17 @@ The URI is as defined in http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html[S
 
 Use {@link io.vertx.core.http.HttpServerRequest#path} to return the path part of the URI
 
-For example, if the request URI was:
+For example, if the request URI was `a/b/c/page.html?param1=abc&param2=xyz
 
- a/b/c/page.html?param1=abc&param2=xyz
-
-Then the path would be
-
- /a/b/c/page.html
+Then the path would be `/a/b/c/page.html`
 
 ==== Request query
 
 Use {@link io.vertx.core.http.HttpServerRequest#query} to return the query part of the URI
 
-For example, if the request URI was:
+For example, if the request URI was `a/b/c/page.html?param1=abc&param2=xyz`
 
- a/b/c/page.html?param1=abc&param2=xyz
-
-Then the query would be
-
- param1=abc&param2=xyz
+Then the query would be  `param1=abc&param2=xyz`
 
 ==== Request headers
 
@@ -203,9 +195,7 @@ Use {@link io.vertx.core.http.HttpServerRequest#params} to return the parameters
 Just like {@link io.vertx.core.http.HttpServerRequest#headers} this returns an instance of {@link io.vertx.core.MultiMap}
 as there can be more than one parameter with the same name.
 
-Request parameters are sent on the request URI, after the path. For example if the URI was:
-
- /page.html?param1=abc&param2=xyz
+Request parameters are sent on the request URI, after the path. For example if the URI was `/page.html?param1=abc&param2=xyz`
 
 Then the parameters would contain the following:
 
