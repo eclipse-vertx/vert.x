@@ -1355,7 +1355,7 @@ public class HttpClientOptions extends ClientOptionsBase {
    * @return a reference to this, so the API can be used fluently
    */
   public HttpClientOptions setPoolEventLoopSize(int poolEventLoopSize) {
-    Arguments.require(decoderInitialBufferSize >= 0, "eventLoopPoolSize must be >= 0");
+    Arguments.require(poolEventLoopSize >= 0, "poolEventLoopSize must be >= 0");
     this.poolEventLoopSize = poolEventLoopSize;
     return this;
   }
