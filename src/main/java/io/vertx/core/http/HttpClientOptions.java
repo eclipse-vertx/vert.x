@@ -199,6 +199,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_POOL_CLEANER_PERIOD = 1000;
 
   /**
+   * Default pool event loop size = 0 (reuse current event-loop)
+   */
+  public static final int DEFAULT_POOL_EVENT_LOOP_SIZE = 0;
+
+  /**
    * Default WebSocket closing timeout = 10 second
    */
   public static final int DEFAULT_WEBSOCKET_CLOSING_TIMEOUT = 10;
@@ -219,6 +224,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int http2ConnectionWindowSize;
   private int http2KeepAliveTimeout;
   private int poolCleanerPeriod;
+  private int poolEventLoopSize;
 
   private boolean tryUseCompression;
   private int maxWebSocketFrameSize;
@@ -292,6 +298,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
     this.poolCleanerPeriod = other.getPoolCleanerPeriod();
+    this.poolEventLoopSize = other.getPoolEventLoopSize();
     this.tryUsePerFrameWebSocketCompression = other.tryUsePerFrameWebSocketCompression;
     this.tryUsePerMessageWebSocketCompression = other.tryUsePerMessageWebSocketCompression;
     this.webSocketAllowClientNoContext = other.webSocketAllowClientNoContext;
@@ -359,6 +366,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     webSocketRequestServerNoContext = DEFAULT_WEBSOCKET_REQUEST_SERVER_NO_CONTEXT;
     webSocketClosingTimeout = DEFAULT_WEBSOCKET_CLOSING_TIMEOUT;
     poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
+    poolEventLoopSize = DEFAULT_POOL_EVENT_LOOP_SIZE;
     tracingPolicy = DEFAULT_TRACING_POLICY;
   }
 
@@ -1322,6 +1330,33 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setPoolCleanerPeriod(int poolCleanerPeriod) {
     this.poolCleanerPeriod = poolCleanerPeriod;
+    return this;
+  }
+
+  /**
+   * @return the max number of event-loop a pool will use, the default value is {@code 0} which implies
+   * to reuse the current event-loop
+   */
+  public int getPoolEventLoopSize() {
+    return poolEventLoopSize;
+  }
+
+  /**
+   * Set the number of event-loop the pool use.
+   *
+   * <ul>
+   *   <li>when the size is {@code 0}, the client pool will use the current event-loop</li>
+   *   <li>otherwise the client will create and use its own event loop</li>
+   * </ul>
+   *
+   * The default size is {@code 0}.
+   *
+   * @param poolEventLoopSize  the new size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setPoolEventLoopSize(int poolEventLoopSize) {
+    Arguments.require(decoderInitialBufferSize >= 0, "eventLoopPoolSize must be >= 0");
+    this.poolEventLoopSize = poolEventLoopSize;
     return this;
   }
 

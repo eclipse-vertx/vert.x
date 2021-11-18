@@ -68,10 +68,13 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
                                         HttpChannelConnector connector,
                                         Runnable dispose) {
     super(metrics, dispose);
+
+    ConnectionPool<HttpClientConnection> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
+      .connectionSelector(LIFO_SELECTOR).contextProvider(client.contextProvider());
+
     this.client = client;
     this.connector = connector;
-    this.pool = ConnectionPool.pool(this, new int[] { http1MaxSize, http2MaxSize }, queueMaxSize)
-      .connectionSelector(LIFO_SELECTOR);
+    this.pool = pool;
   }
 
   @Override
