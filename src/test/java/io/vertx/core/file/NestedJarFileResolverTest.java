@@ -11,6 +11,8 @@
 
 package io.vertx.core.file;
 
+import io.vertx.test.core.TestUtils;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.MalformedURLException;
@@ -26,16 +28,14 @@ public class NestedJarFileResolverTest extends FileResolverTestBase {
 
   @Override
   protected ClassLoader resourcesLoader(File baseDir) throws Exception {
-    File nestedFiles = new File("target/nested-files.jar");
-    if (!nestedFiles.exists()) {
-      File files = JarFileResolverTest.getFiles(baseDir);
-      try (JarOutputStream jar = new JarOutputStream(new FileOutputStream(nestedFiles))) {
-        jar.putNextEntry(new JarEntry("lib/"));
-        jar.closeEntry();
-        jar.putNextEntry(new JarEntry("lib/nested.jar"));
-        jar.write(Files.readAllBytes(files.toPath()));
-        jar.closeEntry();
-      }
+    File nestedFiles = Files.createTempFile(TestUtils.MAVEN_TARGET_DIR.toPath(), "", "nested-files.jar").toFile();
+    File files = JarFileResolverTest.getFiles(baseDir);
+    try (JarOutputStream jar = new JarOutputStream(new FileOutputStream(nestedFiles))) {
+      jar.putNextEntry(new JarEntry("lib/"));
+      jar.closeEntry();
+      jar.putNextEntry(new JarEntry("lib/nested.jar"));
+      jar.write(Files.readAllBytes(files.toPath()));
+      jar.closeEntry();
     }
     URL webrootURL = nestedFiles.toURI().toURL();
     return new ClassLoader(Thread.currentThread().getContextClassLoader()) {

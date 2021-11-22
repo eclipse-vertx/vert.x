@@ -11,10 +11,14 @@
 
 package io.vertx.core.file;
 
+import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
@@ -24,9 +28,11 @@ import java.util.jar.JarOutputStream;
 public class JarFileResolverTest extends FileResolverTestBase {
 
   static File getFiles(File baseDir) throws Exception {
+    File file = Files.createTempFile(TestUtils.MAVEN_TARGET_DIR.toPath(), "", "files.jar").toFile();
+    Assert.assertTrue(file.delete());
     return ZipFileResolverTest.getFiles(
       baseDir,
-      new File("target", "files.jar"),
+      file,
       out -> {
         try {
           return new JarOutputStream(out);
