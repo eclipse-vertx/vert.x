@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.Future;
@@ -5178,6 +5179,36 @@ public class Http1xTest extends HttpTest {
           req.end(payload);
         }
       }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testClientEventLoopSize() throws Exception {
+    Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    int size = 4;
+    int maxPoolSize = size + 2;
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setMaxPoolSize(maxPoolSize)
+      .setPoolEventLoopSize(size));
+    List<EventLoop> eventLoops = Collections.synchronizedList(new ArrayList<>());
+    client.connectionHandler(conn -> eventLoops.add(((ContextInternal)Vertx.currentContext()).nettyEventLoop()));
+    List<Future> futures = new ArrayList<>();
+    for (int i = 0;i < size * 2;i++) {
+      futures.add(client
+        .request(requestOptions)
+        .compose(HttpClientRequest::send)
+        .compose(HttpClientResponse::body));
+    }
+    CompositeFuture.all(futures).onComplete(onSuccess(v -> {
+      assertEquals(maxPoolSize, eventLoops.size());
+      assertEquals(size, new HashSet<>(eventLoops).size());
+      testComplete();
     }));
     await();
   }

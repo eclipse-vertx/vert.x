@@ -29,6 +29,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.pool.ConnectionPool;
 import io.vertx.core.net.impl.pool.Endpoint;
 import io.vertx.core.net.impl.pool.Lease;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -44,6 +45,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -132,6 +134,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   private Predicate<SocketAddress> proxyFilter;
   private volatile Handler<HttpConnection> connectionHandler;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
+  private final Function<ContextInternal, EventLoopContext> contextProvider;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
@@ -169,7 +172,22 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     httpCM = httpConnectionManager();
     if (options.getPoolCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       PoolChecker checker = new PoolChecker(this);
-      timerID = vertx.setTimer(options.getPoolCleanerPeriod(), checker);
+      ContextInternal timerContext = vertx.createEventLoopContext();
+      timerID = timerContext.setTimer(options.getPoolCleanerPeriod(), checker);
+    }
+    int eventLoopSize = options.getPoolEventLoopSize();
+    if (eventLoopSize > 0) {
+      EventLoopContext[] eventLoops = new EventLoopContext[eventLoopSize];
+      for (int i = 0;i < eventLoopSize;i++) {
+        eventLoops[i] = vertx.createEventLoopContext();
+      }
+      AtomicInteger idx = new AtomicInteger();
+      contextProvider = ctx -> {
+        int i = idx.getAndIncrement();
+        return eventLoops[i % eventLoopSize];
+      };
+    } else {
+      contextProvider = ConnectionPool.EVENT_LOOP_CONTEXT_PROVIDER;
     }
 
     closeFuture.add(netClient);
@@ -228,6 +246,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
       HttpChannelConnector connector = new HttpChannelConnector(this, netClient, key.proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, key.peerAddr, key.serverAddr);
       return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
     });
+  }
+
+  Function<ContextInternal, EventLoopContext> contextProvider() {
+    return contextProvider;
   }
 
   private int getPort(RequestOptions request) {

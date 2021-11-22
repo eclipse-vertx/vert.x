@@ -177,6 +177,30 @@ public interface Vertx extends Measured {
   HttpClient createHttpClient(HttpClientOptions options);
 
   /**
+   * Like {@link #createSharedHttpClient(HttpClientOptions)}, using default options.
+   */
+  HttpClient createSharedHttpClient();
+
+  /**
+   * Like {@link #createSharedHttpClient(String, HttpClientOptions)}, using the default shared client name.
+   */
+  HttpClient createSharedHttpClient(HttpClientOptions options);
+
+  /**
+   * Like {@link #createSharedHttpClient(String, HttpClientOptions)}, using default options.
+   */
+  HttpClient createSharedHttpClient(String name);
+
+  /**
+   * Create a HTTP/HTTPS client using the specified name and options.
+   *
+   * @param name    the shared client name
+   * @param options the options to use
+   * @return the client
+   */
+  HttpClient createSharedHttpClient(String name, HttpClientOptions options);
+
+  /**
    * Create a HTTP/HTTPS client using default options
    *
    * @return the client
