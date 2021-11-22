@@ -13,7 +13,10 @@ package io.vertx.core.http.impl;
 
 import io.vertx.core.*;
 import io.vertx.core.http.*;
+import io.vertx.core.impl.CloseFuture;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.shareddata.LocalMap;
 
 import java.util.List;
@@ -25,16 +28,20 @@ public class SharedHttpClient implements HttpClient, Closeable {
   public static final String DEFAULT_CLIENT_NAME = "SharedHttpClient.DEFAULT";
 
   private final VertxInternal vertx;
+  private final CloseFuture closeFuture;
   private final String name;
   private final HttpClient delegate;
 
-  private SharedHttpClient(VertxInternal vertx, String name, HttpClient delegate) {
+  private SharedHttpClient(VertxInternal vertx, CloseFuture closeFuture, String name, HttpClient delegate) {
     this.vertx = vertx;
+    this.closeFuture = closeFuture;
     this.name = name;
     this.delegate = delegate;
+
+    closeFuture.add(this);
   }
 
-  public static SharedHttpClient create(VertxInternal vertx, String name, HttpClientOptions options) {
+  public static SharedHttpClient create(VertxInternal vertx, CloseFuture closeFuture, String name, HttpClientOptions options) {
     LocalMap<String, HttpClientHolder> localMap = vertx.sharedData().getLocalMap(MAP_NAME);
     HttpClient client;
     HttpClientHolder current, candidate;
@@ -56,20 +63,25 @@ public class SharedHttpClient implements HttpClient, Closeable {
         }
       }
     }
-    return new SharedHttpClient(vertx, name, client);
+    return new SharedHttpClient(vertx, closeFuture, name, client);
   }
 
   @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    Future<Void> future = close();
-    if (handler != null) {
-      future.onComplete(handler);
-    }
+    ContextInternal closingCtx = vertx.getOrCreateContext();
+    closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
   }
 
   @Override
   public Future<Void> close() {
-    Promise<Void> promise = vertx.promise();
+    ContextInternal closingCtx = vertx.getOrCreateContext();
+    PromiseInternal<Void> promise = closingCtx.promise();
+    closeFuture.close(promise);
+    return promise.future();
+  }
+
+  @Override
+  public void close(Promise<Void> completion) {
     LocalMap<String, HttpClientHolder> localMap = vertx.sharedData().getLocalMap(MAP_NAME);
     HttpClientHolder current, candidate;
     for (; ; ) {
@@ -77,20 +89,14 @@ public class SharedHttpClient implements HttpClient, Closeable {
       candidate = current.decrement();
       if (candidate == null) {
         if (localMap.removeIfPresent(name, current)) {
-          current.close().onComplete(promise);
+          current.close().onComplete(completion);
           break;
         }
       } else if (localMap.replace(name, current, candidate)) {
-        promise.complete();
+        completion.complete();
         break;
       }
     }
-    return promise.future();
-  }
-
-  @Override
-  public void close(Promise<Void> completion) {
-    close().onComplete(completion);
   }
 
   @Override

@@ -31,21 +31,20 @@ import static io.vertx.core.http.HttpMethod.GET;
 
 public class SharedHttpClientTest extends VertxTestBase {
 
-  int sharedPoolSize = 7;
-  int clientVerticleInstances = 8;
-
-  int requestsPerVerticle = 50 * sharedPoolSize;
-  int requestsTotal = clientVerticleInstances * requestsPerVerticle;
+  private static final int SHARED_POOL_SIZE = 7;
+  private static final int CLIENT_VERTICLE_INSTANCES = 8;
+  private static final int NUM_REQUESTS_PER_VERTICLE = 50 * SHARED_POOL_SIZE;
+  private static final int TOTAL_REQUESTS = CLIENT_VERTICLE_INSTANCES * NUM_REQUESTS_PER_VERTICLE;
 
   @Test
   public void testVerticlesUseSamePool() throws Exception {
-    CountDownLatch receivedLatch = new CountDownLatch(requestsTotal);
+    CountDownLatch receivedLatch = new CountDownLatch(TOTAL_REQUESTS);
     ServerVerticle serverVerticle = new ServerVerticle();
 
     vertx.deployVerticle(serverVerticle, onSuccess(serverId -> {
 
-      HttpClientOptions clientOptions = httpClientOptions(serverVerticle, sharedPoolSize);
-      DeploymentOptions deploymentOptions = deploymentOptions(clientVerticleInstances, clientOptions);
+      HttpClientOptions clientOptions = httpClientOptions(serverVerticle, SHARED_POOL_SIZE);
+      DeploymentOptions deploymentOptions = deploymentOptions(CLIENT_VERTICLE_INSTANCES, clientOptions);
 
       Supplier<Verticle> verticleSupplier = () -> new ClientVerticle(clientVerticle -> {
         // Verify the reply context is the same as of the deployment
@@ -55,38 +54,38 @@ public class SharedHttpClientTest extends VertxTestBase {
       });
 
       vertx.deployVerticle(verticleSupplier, deploymentOptions, onSuccess(clientId -> {
-        vertx.eventBus().publish(ClientVerticle.TRIGGER_ADDRESS, requestsPerVerticle);
+        vertx.eventBus().publish(ClientVerticle.TRIGGER_ADDRESS, NUM_REQUESTS_PER_VERTICLE);
       }));
     }));
 
-    waitUntil(() -> serverVerticle.connections.size() == sharedPoolSize);
+    waitUntil(() -> serverVerticle.connections.size() == SHARED_POOL_SIZE);
     serverVerticle.replyLatch.complete();
     awaitLatch(receivedLatch);
-    assertEquals(serverVerticle.maxConnections, sharedPoolSize);
+    assertEquals(serverVerticle.maxConnections, SHARED_POOL_SIZE);
   }
 
   @Test
   public void testSharedPoolClosedAutomatically() throws Exception {
-    CountDownLatch receivedLatch = new CountDownLatch(requestsTotal);
+    CountDownLatch receivedLatch = new CountDownLatch(TOTAL_REQUESTS);
     ServerVerticle serverVerticle = new ServerVerticle();
     AtomicReference<String> clientDeploymentId = new AtomicReference<>();
 
     vertx.deployVerticle(serverVerticle, onSuccess(serverId -> {
 
-      HttpClientOptions clientOptions = httpClientOptions(serverVerticle, sharedPoolSize)
+      HttpClientOptions clientOptions = httpClientOptions(serverVerticle, SHARED_POOL_SIZE)
         // Make sure connections stay alive for the duration of the test if the server is not closed
         .setKeepAliveTimeout(3600);
-      DeploymentOptions deploymentOptions = deploymentOptions(clientVerticleInstances, clientOptions);
+      DeploymentOptions deploymentOptions = deploymentOptions(CLIENT_VERTICLE_INSTANCES, clientOptions);
 
       Supplier<Verticle> verticleSupplier = () -> new ClientVerticle(clientVerticle -> receivedLatch.countDown());
 
       vertx.deployVerticle(verticleSupplier, deploymentOptions, onSuccess(clientId -> {
         clientDeploymentId.set(clientId);
-        vertx.eventBus().publish(ClientVerticle.TRIGGER_ADDRESS, requestsPerVerticle);
+        vertx.eventBus().publish(ClientVerticle.TRIGGER_ADDRESS, NUM_REQUESTS_PER_VERTICLE);
       }));
     }));
 
-    waitUntil(() -> serverVerticle.connections.size() == sharedPoolSize);
+    waitUntil(() -> serverVerticle.connections.size() == SHARED_POOL_SIZE);
     serverVerticle.replyLatch.complete();
     awaitLatch(receivedLatch);
 
@@ -103,25 +102,25 @@ public class SharedHttpClientTest extends VertxTestBase {
   public void testSharedPoolRetainedByOtherDeployment() throws Exception {
     int keepAliveTimeoutSeconds = 3;
 
-    CountDownLatch receivedLatch = new CountDownLatch(requestsTotal);
+    CountDownLatch receivedLatch = new CountDownLatch(TOTAL_REQUESTS);
     ServerVerticle serverVerticle = new ServerVerticle();
     AtomicReference<String> clientDeploymentId = new AtomicReference<>();
 
     vertx.deployVerticle(serverVerticle, onSuccess(serverId -> {
 
-      HttpClientOptions clientOptions = httpClientOptions(serverVerticle, sharedPoolSize)
+      HttpClientOptions clientOptions = httpClientOptions(serverVerticle, SHARED_POOL_SIZE)
         .setKeepAliveTimeout(keepAliveTimeoutSeconds);
-      DeploymentOptions deploymentOptions = deploymentOptions(clientVerticleInstances, clientOptions);
+      DeploymentOptions deploymentOptions = deploymentOptions(CLIENT_VERTICLE_INSTANCES, clientOptions);
 
       Supplier<Verticle> verticleSupplier = () -> new ClientVerticle(clientVerticle -> receivedLatch.countDown());
 
       vertx.deployVerticle(verticleSupplier, deploymentOptions, onSuccess(clientId -> {
         clientDeploymentId.set(clientId);
-        vertx.eventBus().publish(ClientVerticle.TRIGGER_ADDRESS, requestsPerVerticle);
+        vertx.eventBus().publish(ClientVerticle.TRIGGER_ADDRESS, NUM_REQUESTS_PER_VERTICLE);
       }));
     }));
 
-    waitUntil(() -> serverVerticle.connections.size() == sharedPoolSize);
+    waitUntil(() -> serverVerticle.connections.size() == SHARED_POOL_SIZE);
 
     CountDownLatch deployLatch = new CountDownLatch(1);
     vertx.deployVerticle(new AbstractVerticle() {
