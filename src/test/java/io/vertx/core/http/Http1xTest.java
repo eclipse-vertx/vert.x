@@ -5185,6 +5185,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testClientEventLoopSize() throws Exception {
+    Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
     server.requestHandler(req -> {
       req.response().end();
     });
