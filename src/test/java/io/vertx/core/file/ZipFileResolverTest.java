@@ -12,6 +12,7 @@
 package io.vertx.core.file;
 
 import io.vertx.test.core.TestUtils;
+import org.junit.Assert;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,9 +37,11 @@ import java.util.zip.ZipOutputStream;
 public class ZipFileResolverTest extends FileResolverTestBase {
 
   static File getFiles(File baseDir) throws Exception {
+    File file = Files.createTempFile(TestUtils.MAVEN_TARGET_DIR.toPath(), "", "files.jar").toFile();
+    Assert.assertTrue(file.delete());
     return ZipFileResolverTest.getFiles(
       baseDir,
-      new File("target", "files.jar"), ZipOutputStream::new, ZipEntry::new);
+      file, ZipOutputStream::new, ZipEntry::new);
   }
 
   static File getFiles(File baseDir, File files, Function<OutputStream, ZipOutputStream> zipFact, Function<String, ZipEntry> entryFact) throws Exception {
