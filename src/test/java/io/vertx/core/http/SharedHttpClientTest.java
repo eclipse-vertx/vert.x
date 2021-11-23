@@ -124,9 +124,13 @@ public class SharedHttpClientTest extends VertxTestBase {
 
     CountDownLatch deployLatch = new CountDownLatch(1);
     vertx.deployVerticle(new AbstractVerticle() {
+
+      // Keep a reference to the client otherwise it will be automatically closed when collected
+      private HttpClient client;
+
       @Override
-      public void start() throws Exception {
-        vertx.createSharedHttpClient(ClientVerticle.SHARED_CLIENT_NAME, new HttpClientOptions());
+      public void start() {
+        client = vertx.createSharedHttpClient(ClientVerticle.SHARED_CLIENT_NAME, new HttpClientOptions());
       }
     }, onSuccess(v -> {
       deployLatch.countDown();
@@ -195,6 +199,11 @@ public class SharedHttpClientTest extends VertxTestBase {
     public void start(Promise<Void> startPromise) throws Exception {
       replyLatch = ((VertxInternal) vertx).promise();
       vertx.createHttpServer()
+        .connectionHandler(conn -> {
+          connections.add(conn);
+          conn.closeHandler(v -> connections.remove(conn));
+          maxConnections = Math.max(maxConnections, connections.size());
+        })
         .requestHandler(this)
         .listen(0)
         .onSuccess(server -> port = server.actualPort())
@@ -204,10 +213,6 @@ public class SharedHttpClientTest extends VertxTestBase {
 
     @Override
     public void handle(HttpServerRequest req) {
-      HttpConnection connection = req.connection();
-      connections.add(connection);
-      connection.closeHandler(v -> connections.remove(connection));
-      maxConnections = Math.max(maxConnections, connections.size());
       replyLatch.future().onComplete(ar -> req.response().end());
     }
   }
