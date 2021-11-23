@@ -23,6 +23,7 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
+import io.vertx.core.http.impl.SharedHttpClient;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
@@ -136,7 +137,9 @@ public interface Vertx extends Measured {
    *
    * @return the server
    */
-  NetServer createNetServer();
+  default NetServer createNetServer() {
+    return createNetServer(new NetServerOptions());
+  }
 
   /**
    * Create a TCP/SSL client using the specified options
@@ -151,7 +154,9 @@ public interface Vertx extends Measured {
    *
    * @return the client
    */
-  NetClient createNetClient();
+  default NetClient createNetClient() {
+    return createNetClient(new NetClientOptions());
+  }
 
   /**
    * Create an HTTP/HTTPS server using the specified options
@@ -166,7 +171,9 @@ public interface Vertx extends Measured {
    *
    * @return the server
    */
-  HttpServer createHttpServer();
+  default HttpServer createHttpServer() {
+    return createHttpServer(new HttpServerOptions());
+  }
 
   /**
    * Create a HTTP/HTTPS client using the specified options
@@ -179,17 +186,23 @@ public interface Vertx extends Measured {
   /**
    * Like {@link #createSharedHttpClient(HttpClientOptions)}, using default options.
    */
-  HttpClient createSharedHttpClient();
+  default HttpClient createSharedHttpClient() {
+    return createSharedHttpClient(SharedHttpClient.DEFAULT_CLIENT_NAME, new HttpClientOptions());
+  }
 
   /**
    * Like {@link #createSharedHttpClient(String, HttpClientOptions)}, using the default shared client name.
    */
-  HttpClient createSharedHttpClient(HttpClientOptions options);
+  default HttpClient createSharedHttpClient(HttpClientOptions options) {
+    return createSharedHttpClient(SharedHttpClient.DEFAULT_CLIENT_NAME, options);
+  }
 
   /**
    * Like {@link #createSharedHttpClient(String, HttpClientOptions)}, using default options.
    */
-  HttpClient createSharedHttpClient(String name);
+  default HttpClient createSharedHttpClient(String name) {
+    return createSharedHttpClient(name, new HttpClientOptions());
+  }
 
   /**
    * Create a HTTP/HTTPS client using the specified name and options.
@@ -198,14 +211,18 @@ public interface Vertx extends Measured {
    * @param options the options to use
    * @return the client
    */
-  HttpClient createSharedHttpClient(String name, HttpClientOptions options);
+  default HttpClient createSharedHttpClient(String name, HttpClientOptions options) {
+    throw new UnsupportedOperationException();
+  }
 
   /**
    * Create a HTTP/HTTPS client using default options
    *
    * @return the client
    */
-  HttpClient createHttpClient();
+  default HttpClient createHttpClient() {
+    return createHttpClient(new HttpClientOptions());
+  }
 
   /**
    * Create a datagram socket using the specified options
@@ -220,7 +237,9 @@ public interface Vertx extends Measured {
    *
    * @return the socket
    */
-  DatagramSocket createDatagramSocket();
+  default DatagramSocket createDatagramSocket() {
+    return createDatagramSocket(new DatagramSocketOptions());
+  }
 
   /**
    * Get the filesystem object. There is a single instance of FileSystem per Vertx instance.
@@ -357,7 +376,9 @@ public interface Vertx extends Measured {
    * @return a future completed with the result
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  Future<String> deployVerticle(Verticle verticle);
+  default Future<String> deployVerticle(Verticle verticle) {
+    return deployVerticle(verticle, new DeploymentOptions());
+  }
 
   /**
    * Like {@link #deployVerticle(Verticle)} but the completionHandler will be notified when the deployment is complete.
@@ -446,7 +467,9 @@ public interface Vertx extends Measured {
    * @param name  the name.
    * @return a future completed with the result
    */
-  Future<String> deployVerticle(String name);
+  default Future<String> deployVerticle(String name) {
+    return deployVerticle(name, new DeploymentOptions());
+  }
 
   /**
    * Like {@link #deployVerticle(String)} but the completionHandler will be notified when the deployment is complete.
@@ -459,7 +482,9 @@ public interface Vertx extends Measured {
    * @param name  The identifier
    * @param completionHandler  a handler which will be notified when the deployment is complete
    */
-  void deployVerticle(String name, Handler<AsyncResult<String>> completionHandler);
+  default void deployVerticle(String name, Handler<AsyncResult<String>> completionHandler) {
+    deployVerticle(name, new DeploymentOptions(), completionHandler);
+  }
 
 
   /**
@@ -569,22 +594,32 @@ public interface Vertx extends Measured {
    *                 guarantees
    * @param <T> the type of the result
    */
-  <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler);
+  default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<@Nullable T>> resultHandler) {
+    Context context = getOrCreateContext();
+    context.executeBlocking(blockingCodeHandler, ordered, resultHandler);
+  }
 
   /**
    * Like {@link #executeBlocking(Handler, boolean, Handler)} called with ordered = true.
    */
-  <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler);
+  default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
+    executeBlocking(blockingCodeHandler, true, resultHandler);
+  }
 
   /**
    * Same as {@link #executeBlocking(Handler, boolean, Handler)} but with an {@code handler} called when the operation completes
    */
-  <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered);
+  default <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
+    Context context = getOrCreateContext();
+    return context.executeBlocking(blockingCodeHandler, ordered);
+  }
 
   /**
    * Same as {@link #executeBlocking(Handler, Handler)} but with an {@code handler} called when the operation completes
    */
-  <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler);
+  default <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
+    return executeBlocking(blockingCodeHandler, true);
+  }
 
   /**
    * Return the Netty EventLoopGroup used by Vert.x
@@ -605,7 +640,7 @@ public interface Vertx extends Measured {
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize);
 
   /**
-   * Like {@link #createSharedWorkerExecutor(String, int, long, TimeUnit)} but with the {@link TimeUnit#NANOSECONDS ns unit}.
+   * Like {@link #createSharedWorkerExecutor(String, int, long, TimeUnit)} but with the {@link VertxOptions#setMaxWorkerExecuteTimeUnit(TimeUnit)} {@code maxExecuteTimeUnit}.
    */
   WorkerExecutor createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime);
 

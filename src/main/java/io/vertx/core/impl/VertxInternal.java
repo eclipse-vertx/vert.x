@@ -153,9 +153,15 @@ public interface VertxInternal extends Vertx {
   /**
    * Like {@link #executeBlocking(Handler, Handler)} but using the internal worker thread pool.
    */
-  <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
+  default <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+    ContextInternal context = getOrCreateContext();
+    context.executeBlockingInternal(blockingCodeHandler, resultHandler);
+  }
 
-  <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler);
+  default <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+    ContextInternal context = getOrCreateContext();
+    context.executeBlockingInternal(blockingCodeHandler, ordered, resultHandler);
+  }
 
   ClusterManager getClusterManager();
 

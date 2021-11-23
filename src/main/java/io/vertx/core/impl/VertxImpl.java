@@ -11,15 +11,11 @@
 
 package io.vertx.core.impl;
 
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
@@ -289,18 +285,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return DatagramSocketImpl.create(this, options);
   }
 
-  @Override
-  public DatagramSocket createDatagramSocket() {
-    return createDatagramSocket(new DatagramSocketOptions());
-  }
-
   public NetServer createNetServer(NetServerOptions options) {
     return new NetServerImpl(this, options);
-  }
-
-  @Override
-  public NetServer createNetServer() {
-    return createNetServer(new NetServerOptions());
   }
 
   @Override
@@ -316,11 +302,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     CloseFuture fut = resolveCloseFuture();
     fut.add(closeFuture);
     return client;
-  }
-
-  @Override
-  public NetClient createNetClient() {
-    return createNetClient(new NetClientOptions());
   }
 
   @Override
@@ -346,11 +327,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public HttpServer createHttpServer() {
-    return createHttpServer(new HttpServerOptions());
-  }
-
-  @Override
   public HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture) {
     HttpClientImpl client = new HttpClientImpl(this, options, closeFuture);
     closeFuture.add(client);
@@ -366,32 +342,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public HttpClient createSharedHttpClient() {
-    return createSharedHttpClient(SharedHttpClient.DEFAULT_CLIENT_NAME, new HttpClientOptions());
-  }
-
-  @Override
-  public HttpClient createSharedHttpClient(HttpClientOptions options) {
-    return createSharedHttpClient(SharedHttpClient.DEFAULT_CLIENT_NAME, options);
-  }
-
-  @Override
-  public HttpClient createSharedHttpClient(String name) {
-    return createSharedHttpClient(name, new HttpClientOptions());
-  }
-
-  @Override
   public HttpClient createSharedHttpClient(String name, HttpClientOptions options) {
     CloseFuture closeFuture = new CloseFuture(log);
     SharedHttpClient client = SharedHttpClient.create(this, closeFuture, name, options);
     CloseFuture fut = resolveCloseFuture();
     fut.add(closeFuture);
     return client;
-  }
-
-  @Override
-  public HttpClient createHttpClient() {
-    return createHttpClient(new HttpClientOptions());
   }
 
   public EventBus eventBus() {
@@ -643,16 +599,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public Future<String> deployVerticle(String name) {
-    return deployVerticle(name, new DeploymentOptions());
-  }
-
-  @Override
-  public void deployVerticle(String name, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticle(name, new DeploymentOptions(), completionHandler);
-  }
-
-  @Override
   public Future<String> deployVerticle(String name, DeploymentOptions options) {
     if (options.isHa() && haManager() != null) {
       Promise<String> promise = getOrCreateContext().promise();
@@ -669,11 +615,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (completionHandler != null) {
       fut.onComplete(completionHandler);
     }
-  }
-
-  @Override
-  public Future<String> deployVerticle(Verticle verticle) {
-    return deployVerticle(verticle, new DeploymentOptions());
   }
 
   @Override
@@ -780,44 +721,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public Set<VerticleFactory> verticleFactories() {
     return verticleManager.verticleFactories();
-  }
-
-  @Override
-  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
-    ContextInternal context = getOrCreateContext();
-
-    context.executeBlockingInternal(blockingCodeHandler, resultHandler);
-  }
-
-  @Override
-  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    ContextInternal context = getOrCreateContext();
-
-    context.executeBlockingInternal(blockingCodeHandler, ordered, resultHandler);
-  }
-
-  @Override
-  public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    ContextInternal context = getOrCreateContext();
-    return context.executeBlocking(blockingCodeHandler, ordered);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
-    return executeBlocking(blockingCodeHandler, true);
-  }
-
-  @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered,
-                                  Handler<AsyncResult<T>> asyncResultHandler) {
-    ContextInternal context = getOrCreateContext();
-    context.executeBlocking(blockingCodeHandler, ordered, asyncResultHandler);
-  }
-
-  @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler,
-                                  Handler<AsyncResult<T>> asyncResultHandler) {
-    executeBlocking(blockingCodeHandler, true, asyncResultHandler);
   }
 
   @Override
