@@ -31,6 +31,9 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -53,42 +56,55 @@ public class Transport {
     return true;
   }
 
+  private static Transport NATIVE_TRANSPORT = null;
+  private static List<Throwable> NATIVE_UNAVAILABILITY_CAUSES = null;
+
+  public static synchronized List<Throwable> unavailabilityCauses() {
+    return NATIVE_UNAVAILABILITY_CAUSES == null ? Collections.emptyList() : NATIVE_UNAVAILABILITY_CAUSES;
+  }
+
   /**
    * The native transport, it may be {@code null} or failed.
    */
-  public static Transport nativeTransport() {
-    Transport transport = null;
-    try {
-      Transport epoll = new EpollTransport();
-      if (epoll.isAvailable()) {
-        return epoll;
-      } else {
-        transport = epoll;
+  public synchronized static Transport nativeTransport() {
+    if (NATIVE_TRANSPORT == null && NATIVE_UNAVAILABILITY_CAUSES == null) {
+      List<Throwable> causes = new ArrayList<>();
+      Transport transport = null;
+      try {
+        Transport epoll = new EpollTransport();
+        if (epoll.isAvailable()) {
+          return epoll;
+        } else {
+          // causes.add(epoll.unavailabilityCause());
+        }
+      } catch (Throwable ignore) {
+        // Jar not here
       }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    try {
-      Transport ioUring = new IOUringTransport();
-      if (ioUring.isAvailable()) {
-        return ioUring;
-      } else {
-        transport = ioUring;
+      try {
+        Transport ioUring = new IOUringTransport();
+        if (ioUring.isAvailable()) {
+          return ioUring;
+        } else {
+          causes.add(ioUring.unavailabilityCause());
+          ioUring.unavailabilityCause().printStackTrace();
+        }
+      } catch (Throwable ignore) {
+        // Jar not here
       }
-    } catch (Throwable ignore) {
-      // Jar not here
-    }
-    try {
-      Transport kqueue = new KQueueTransport();
-      if (kqueue.isAvailable()) {
-        return kqueue;
-      } else if (transport == null) {
-        transport = kqueue;
+      try {
+        Transport kqueue = new KQueueTransport();
+        if (kqueue.isAvailable()) {
+          return kqueue;
+        } else {
+          causes.add(kqueue.unavailabilityCause());
+        }
+      } catch (Throwable ignore) {
+        // Jar not here
       }
-    } catch (Throwable ignore) {
-      // Jar not here
+      NATIVE_TRANSPORT = transport;
+      NATIVE_UNAVAILABILITY_CAUSES = Collections.unmodifiableList(causes);
     }
-    return transport;
+    return NATIVE_TRANSPORT;
   }
 
   public static Transport transport(boolean preferNative) {

@@ -35,6 +35,7 @@ import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.streams.ReadStream;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -610,10 +611,10 @@ public interface Vertx extends Measured {
   boolean isNativeTransportEnabled();
 
   /**
-   * @return the error (if any) that cause the unavailability of native transport when {@link #isNativeTransportEnabled()}  returns {@code false}.
+   * @return the errors (if any) that cause the unavailability of native transport when {@link #isNativeTransportEnabled()} returns {@code false}.
    */
   @CacheReturn
-  Throwable unavailableNativeTransportCause();
+  List<Throwable> unavailableNativeTransportCauses();
 
   /**
    * Set a default exception handler for {@link Context}, set on {@link Context#exceptionHandler(Handler)} at creation.

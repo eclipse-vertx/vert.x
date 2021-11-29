@@ -330,11 +330,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public Throwable unavailableNativeTransportCause() {
+  public List<Throwable> unavailableNativeTransportCauses() {
     if (isNativeTransportEnabled()) {
       return null;
     }
-    return transport.unavailabilityCause();
+    return Transport.unavailabilityCauses();
   }
 
   public FileSystem fileSystem() {
