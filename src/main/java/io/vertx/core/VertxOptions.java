@@ -37,7 +37,7 @@ public class VertxOptions {
   /**
    * The default number of event loop threads to be used  = 2 * number of cores on the machine
    */
-  public static final int DEFAULT_EVENT_LOOP_POOL_SIZE = 1;
+  public static final int DEFAULT_EVENT_LOOP_POOL_SIZE = 2 * CpuCoreSensor.availableProcessors();
 
   /**
    * The default number of threads in the worker pool = 20
