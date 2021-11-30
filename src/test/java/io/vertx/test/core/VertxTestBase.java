@@ -92,9 +92,6 @@ public class VertxTestBase extends AsyncTestBase {
     }
     FakeClusterManager.reset(); // Bit ugly
     super.tearDown();
-    if (getOptions().getPreferNativeTransport()) {
-      VertxTest.RUNNER.runSystemGC();
-    }
   }
 
   protected void closeClustered(List<Vertx> clustered) throws Exception {
