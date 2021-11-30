@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadFactory;
 class KQueueTransport extends Transport {
 
   KQueueTransport() {
+    super(true);
   }
 
   @Override

@@ -62,6 +62,7 @@ class EpollTransport extends Transport {
   }
 
   EpollTransport() {
+    super(true);
   }
 
   @Override
