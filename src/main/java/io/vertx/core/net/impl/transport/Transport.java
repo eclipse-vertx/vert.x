@@ -50,7 +50,7 @@ public class Transport {
   /**
    * The JDK transport, always there.
    */
-  public static Transport JDK = new Transport();
+  public static Transport JDK = new Transport(false);
 
   public boolean supportFileRegion() {
     return true;
@@ -120,7 +120,18 @@ public class Transport {
     }
   }
 
+  private final boolean supportsDomainSockets;
+
   protected Transport() {
+    this(false);
+  }
+
+  protected Transport(boolean supportsDomainSockets) {
+    this.supportsDomainSockets = supportsDomainSockets;
+  }
+
+  public boolean supportsDomainSockets() {
+    return supportsDomainSockets;
   }
 
   /**

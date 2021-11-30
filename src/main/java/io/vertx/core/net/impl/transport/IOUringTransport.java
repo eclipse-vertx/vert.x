@@ -58,6 +58,10 @@ public class IOUringTransport extends Transport {
     pendingFastOpenRequestsThreshold = value;
   }
 
+  IOUringTransport() {
+    super(false);
+  }
+
   @Override
   public boolean supportFileRegion() {
     return false;
