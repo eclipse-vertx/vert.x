@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class VertxTest extends AsyncTestBase {
 
-  private final org.openjdk.jmh.runner.Runner RUNNER = new Runner(new OptionsBuilder().shouldDoGC(true).build());
+  public static final org.openjdk.jmh.runner.Runner RUNNER = new Runner(new OptionsBuilder().shouldDoGC(true).build());
 
   @Rule
   public RepeatRule repeatRule = new RepeatRule();
