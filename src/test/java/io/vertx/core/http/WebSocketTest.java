@@ -40,7 +40,6 @@ import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.CheckingSender;
-import io.vertx.test.core.Repeat;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.HAProxy;
@@ -142,7 +141,6 @@ public class WebSocketTest extends VertxTestBase {
     testReject(WebsocketVersion.V08, 404, 404);
   }
 
-  @Repeat(times = 1000)
   @Test
   public void testWSBinaryHybi00() throws Exception {
     testWSFrames(true, WebsocketVersion.V00);
