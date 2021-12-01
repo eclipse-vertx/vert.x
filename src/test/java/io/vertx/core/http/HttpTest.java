@@ -3623,7 +3623,6 @@ public abstract class HttpTest extends HttpTestBase {
       conn.closeHandler(v -> complete());
     });
     server.requestHandler(req -> {
-      fail();
     });
     startServer(testAddress, serverCtx, server);
     client.connectionHandler(conn -> {
