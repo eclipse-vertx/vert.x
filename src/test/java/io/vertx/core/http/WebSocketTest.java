@@ -45,6 +45,7 @@ import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.proxy.HAProxy;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.security.cert.Certificate;
@@ -589,6 +590,7 @@ public class WebSocketTest extends VertxTestBase {
     testComplete();
   }
 
+  @Ignore("freezing")
   @Test
   public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
     // Have a server running on a different port to make sure it doesn't interact
