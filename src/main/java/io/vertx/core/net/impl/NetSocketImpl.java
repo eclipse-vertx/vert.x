@@ -26,6 +26,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
@@ -317,55 +318,54 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
   }
 
   @Override
-  public Future<Void> upgradeToSsl() {
-    Promise<Void> promise = context.promise();
-    upgradeToSsl(promise);
-    return promise.future();
-  }
-
-  @Override
-  public Future<Void> upgradeToSsl(String serverName) {
-    Promise<Void> promise = context.promise();
-    upgradeToSsl(serverName, promise);
-    return promise.future();
-  }
-
-  @Override
   public NetSocket upgradeToSsl(Handler<AsyncResult<Void>> handler) {
     return upgradeToSsl(null, handler);
   }
 
   @Override
   public NetSocket upgradeToSsl(String serverName, Handler<AsyncResult<Void>> handler) {
-    ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) chctx.pipeline().get("ssl");
-    if (sslHandler == null) {
-      ChannelPromise p = chctx.newPromise();
-      chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(p));
-      p.addListener(future -> {
-        if (handler != null) {
-          AsyncResult<Void> res;
-          if (future.isSuccess()) {
-            res = Future.succeededFuture();
-          } else {
-            res = Future.failedFuture(future.cause());
-          }
-          context.emit(res, handler);
-        }
-      });
-      if (remoteAddress != null) {
-        sslHandler = new SslHandler(helper.createEngine(vertx, remoteAddress, serverName, false));
-        ((SslHandler) sslHandler).setHandshakeTimeout(helper.getSslHandshakeTimeout(), helper.getSslHandshakeTimeoutUnit());
-      } else {
-        if (helper.isSNI()) {
-          sslHandler = new SniHandler(helper.serverNameMapper(vertx));
-        } else {
-          sslHandler = new SslHandler(helper.createEngine(vertx));
-          ((SslHandler) sslHandler).setHandshakeTimeout(helper.getSslHandshakeTimeout(), helper.getSslHandshakeTimeoutUnit());
-        }
-      }
-      chctx.pipeline().addFirst("ssl", sslHandler);
+    Future<Void> fut = upgradeToSsl(serverName);
+    if (handler != null) {
+      fut.onComplete(handler);
     }
     return this;
+  }
+
+  @Override
+  public Future<Void> upgradeToSsl() {
+    return upgradeToSsl((String) null);
+  }
+
+  @Override
+  public Future<Void> upgradeToSsl(String serverName) {
+    PromiseInternal<Void> promise = context.promise();
+    ChannelPromise flushPromise = chctx.newPromise();
+    flushPromise.addListener((ChannelFutureListener) flushFuture -> {
+      if (flushFuture.isSuccess()) {
+        ChannelOutboundHandler sslHandler = (ChannelOutboundHandler) chctx.pipeline().get("ssl");
+        if (sslHandler == null) {
+          ChannelPromise p = chctx.newPromise();
+          chctx.pipeline().addFirst("handshaker", new SslHandshakeCompletionHandler(p));
+          p.addListener(promise);
+          if (remoteAddress != null) {
+            sslHandler = new SslHandler(helper.createEngine(vertx, remoteAddress, serverName, false));
+            ((SslHandler) sslHandler).setHandshakeTimeout(helper.getSslHandshakeTimeout(), helper.getSslHandshakeTimeoutUnit());
+          } else {
+            if (helper.isSNI()) {
+              sslHandler = new SniHandler(helper.serverNameMapper(vertx));
+            } else {
+              sslHandler = new SslHandler(helper.createEngine(vertx));
+              ((SslHandler) sslHandler).setHandshakeTimeout(helper.getSslHandshakeTimeout(), helper.getSslHandshakeTimeoutUnit());
+            }
+          }
+          chctx.pipeline().addFirst("ssl", sslHandler);
+        }
+      } else {
+        promise.fail(flushFuture.cause());
+      }
+    });
+    flush(flushPromise);
+    return promise.future();
   }
 
   @Override
