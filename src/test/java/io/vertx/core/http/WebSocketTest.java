@@ -610,6 +610,7 @@ public class WebSocketTest extends VertxTestBase {
     testSharedServersRoundRobin();
   }
 
+  @Ignore("freezing")
   @Test
   public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
