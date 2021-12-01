@@ -1392,14 +1392,6 @@ public class Http2ClientTest extends Http2TestBase {
   @Test
   public void testNetSocketConnect() throws Exception {
     waitFor(2);
-    final AtomicInteger writeHandlerCounter = new AtomicInteger(0);
-    Handler<AsyncResult<Void>> writeHandler = (result) -> {
-      if(result.succeeded()) {
-        assertTrue(writeHandlerCounter.incrementAndGet() >= 1);
-      } else {
-        fail(result.cause());
-      }
-    };
 
     server.requestHandler(req -> {
       req.toNetSocket(onSuccess(socket -> {
@@ -1408,7 +1400,7 @@ public class Http2ClientTest extends Http2TestBase {
           switch (status.getAndIncrement()) {
             case 0:
               assertEquals(Buffer.buffer("some-data"), buff);
-              socket.write(buff, writeHandler);
+              socket.write(buff, onSuccess(v -> {}));
               break;
             case 1:
               assertEquals(Buffer.buffer("last-data"), buff);
@@ -1418,14 +1410,12 @@ public class Http2ClientTest extends Http2TestBase {
               break;
           }
         });
-        socket.endHandler(v -> {
+        socket.endHandler(v1 -> {
           assertEquals(2, status.getAndIncrement());
-          socket.write(Buffer.buffer("last-data"), writeHandler);
-        });
-        socket.closeHandler(v -> {
+          socket.write(Buffer.buffer("last-data"), onSuccess(v2 -> {}));
+        }).closeHandler(v -> {
           assertEquals(3, status.getAndIncrement());
           complete();
-          assertEquals(2, writeHandlerCounter.get());
         });
       }));
     });
@@ -1439,7 +1429,7 @@ public class Http2ClientTest extends Http2TestBase {
           AtomicInteger count = new AtomicInteger();
           socket.handler(buff -> {
             if (buff.length() > 0) {
-              received.append(buff.toString());
+              received.append(buff);
               if (received.toString().equals("some-data")) {
                 received.setLength(0);
                 socket.end(Buffer.buffer("last-data"));

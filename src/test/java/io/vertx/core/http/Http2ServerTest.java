@@ -2224,7 +2224,6 @@ public class Http2ServerTest extends Http2TestBase {
   @Test
   public void testNetSocketConnect() throws Exception {
     waitFor(2);
-    List<Integer> callbacks = Collections.synchronizedList(new ArrayList<>());
 
     server.requestHandler(req -> {
       req.toNetSocket().onComplete(onSuccess(socket -> {
@@ -2233,7 +2232,7 @@ public class Http2ServerTest extends Http2TestBase {
           switch (status.getAndIncrement()) {
             case 0:
               assertEquals(Buffer.buffer("some-data"), buff);
-              socket.write(buff, onSuccess(v2 -> callbacks.add(0)));
+              socket.write(buff, onSuccess(v2 -> {}));
               break;
             case 1:
               assertEquals(Buffer.buffer("last-data"), buff);
@@ -2245,11 +2244,10 @@ public class Http2ServerTest extends Http2TestBase {
         });
         socket.endHandler(v1 -> {
           assertEquals(2, status.getAndIncrement());
-          socket.write(Buffer.buffer("last-data"), onSuccess(v2 -> callbacks.add(1)));
+          socket.write(Buffer.buffer("last-data"), onSuccess(v2 -> {}));
         });
         socket.closeHandler(v -> {
-          assertEquals(2, callbacks.size());
-          assertEquals(Arrays.asList(0, 1), callbacks);
+          assertEquals(3, status.getAndIncrement());
           complete();
         });
       }));
