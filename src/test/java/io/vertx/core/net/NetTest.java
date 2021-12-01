@@ -1881,8 +1881,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testListenDomainSocketAddress() throws Exception {
-    Vertx vx = Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
-    Assume.assumeTrue("Native transport must be enabled", vx.isNativeTransportEnabled());
+    VertxInternal vx = (VertxInternal) Vertx.vertx(new VertxOptions().setPreferNativeTransport(true));
+    Assume.assumeTrue("Transport must support domain sockets", vx.transport().supportsDomainSockets());
     int len = 3;
     waitFor(len * len);
     List<SocketAddress> addresses = new ArrayList<>();
