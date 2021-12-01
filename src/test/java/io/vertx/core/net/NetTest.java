@@ -1917,6 +1917,7 @@ public class NetTest extends VertxTestBase {
     }
   }
 
+  @Ignore("Freezes on virtualbox")
   @Test
   // Need to:
   // sudo sysctl -w net.core.somaxconn=10000
@@ -1977,6 +1978,7 @@ public class NetTest extends VertxTestBase {
     testComplete();
   }
 
+  @Ignore("Freezes on virtualbox")
   @Test
   public void testSharedServersRoundRobinWithOtherServerRunningOnDifferentPort() throws Exception {
     CountDownLatch latch = new CountDownLatch(1);
@@ -1996,6 +1998,7 @@ public class NetTest extends VertxTestBase {
     testSharedServersRoundRobin();
   }
 
+  @Ignore("Freezes on virtualbox")
   @Test
   public void testSharedServersRoundRobinButFirstStartAndStopServer() throws Exception {
     // Start and stop a server on the same port/host before hand to make sure it doesn't interact
