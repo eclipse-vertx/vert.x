@@ -17,53 +17,23 @@ import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.shareddata.LocalMap;
 
 import java.util.List;
 import java.util.function.Function;
 
-public class SharedHttpClient implements HttpClient, Closeable {
+public class SharedHttpClient implements HttpClient {
 
-  private static final String MAP_NAME = "__vertx.shared.httpClients";
+  public static final String SHARED_MAP_NAME = "__vertx.shared.httpClients";
   public static final String DEFAULT_CLIENT_NAME = "SharedHttpClient.DEFAULT";
 
   private final VertxInternal vertx;
   private final CloseFuture closeFuture;
-  private final String name;
   private final HttpClient delegate;
 
-  private SharedHttpClient(VertxInternal vertx, CloseFuture closeFuture, String name, HttpClient delegate) {
+  public SharedHttpClient(VertxInternal vertx, CloseFuture closeFuture, HttpClient delegate) {
     this.vertx = vertx;
     this.closeFuture = closeFuture;
-    this.name = name;
     this.delegate = delegate;
-
-    closeFuture.add(this);
-  }
-
-  public static SharedHttpClient create(VertxInternal vertx, CloseFuture closeFuture, String name, HttpClientOptions options) {
-    LocalMap<String, HttpClientHolder> localMap = vertx.sharedData().getLocalMap(MAP_NAME);
-    HttpClient client;
-    HttpClientHolder current, candidate;
-    for (; ; ) {
-      current = localMap.get(name);
-      if (current != null) {
-        candidate = current.increment();
-        if (candidate != null && localMap.replaceIfPresent(name, current, candidate)) {
-          client = candidate.get();
-          break;
-        }
-      } else {
-        candidate = new HttpClientHolder();
-        if (localMap.putIfAbsent(name, candidate) == null) {
-          candidate = candidate.init(vertx, options);
-          client = candidate.get();
-          localMap.put(name, candidate);
-          break;
-        }
-      }
-    }
-    return new SharedHttpClient(vertx, closeFuture, name, client);
   }
 
   @Override
@@ -78,25 +48,6 @@ public class SharedHttpClient implements HttpClient, Closeable {
     PromiseInternal<Void> promise = closingCtx.promise();
     closeFuture.close(promise);
     return promise.future();
-  }
-
-  @Override
-  public void close(Promise<Void> completion) {
-    LocalMap<String, HttpClientHolder> localMap = vertx.sharedData().getLocalMap(MAP_NAME);
-    HttpClientHolder current, candidate;
-    for (; ; ) {
-      current = localMap.get(name);
-      candidate = current.decrement();
-      if (candidate == null) {
-        if (localMap.removeIfPresent(name, current)) {
-          current.close().onComplete(completion);
-          break;
-        }
-      } else if (localMap.replace(name, current, candidate)) {
-        completion.complete();
-        break;
-      }
-    }
   }
 
   @Override
