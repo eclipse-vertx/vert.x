@@ -12,9 +12,6 @@
 package io.vertx.core.impl;
 
 
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
@@ -29,6 +26,7 @@ import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
+import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -40,6 +38,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * This interface provides services for vert.x core internal use only
@@ -101,6 +100,39 @@ public interface VertxInternal extends Vertx {
    * @return the client
    */
   HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture);
+
+  default <C> C createSharedClient(String clientKey, String clientName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
+    LocalMap<String, SharedClientHolder<C>> localMap = sharedData().getLocalMap(clientKey);
+    SharedClientHolder<C> v = localMap.compute(clientName, (key, value) -> {
+      if (value == null) {
+        CloseFuture fut = new CloseFuture();
+        C client = supplier.apply(fut);
+        return new SharedClientHolder<>(fut, 1, client);
+      } else {
+        return new SharedClientHolder<>(value.closeFuture, value.count + 1, value.client);
+      }
+    });
+    C client = v.client;
+    CloseFuture close = v.closeFuture;
+    closeFuture.add(completion -> {
+      LocalMap<String, SharedClientHolder<C>> localMap1 = sharedData().getLocalMap(clientKey);
+      SharedClientHolder<C> res = localMap1.compute(clientName, (key, value) -> {
+        if (value == null) {
+          return null; // Should never happen unless bug
+        } else if (value.count == 1) {
+          return null;
+        } else {
+          return new SharedClientHolder<>(value.closeFuture, value.count - 1, value.client);
+        }
+      });
+      if (res == null) {
+        close.close(completion);
+      } else {
+        completion.complete();
+      }
+    });
+    return client;
+  }
 
   /**
    * Get the current context

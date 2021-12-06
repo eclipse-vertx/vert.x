@@ -343,11 +343,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public HttpClient createSharedHttpClient(String name, HttpClientOptions options) {
-    CloseFuture closeFuture = new CloseFuture(log);
-    SharedHttpClient client = SharedHttpClient.create(this, closeFuture, name, options);
     CloseFuture fut = resolveCloseFuture();
-    fut.add(closeFuture);
-    return client;
+    HttpClient httpClient = createSharedClient(SharedHttpClient.SHARED_MAP_NAME, name, fut, closeFuture -> createHttpClient(options, closeFuture));
+    return new SharedHttpClient(this, fut, httpClient);
   }
 
   public EventBus eventBus() {
