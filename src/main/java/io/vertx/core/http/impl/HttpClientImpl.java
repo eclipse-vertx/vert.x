@@ -191,7 +191,6 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     }
 
     closeFuture.add(netClient);
-    closeFuture.add(this);
   }
 
   /**

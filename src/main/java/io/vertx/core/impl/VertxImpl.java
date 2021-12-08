@@ -334,7 +334,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpClient createHttpClient(HttpClientOptions options) {
-    CloseFuture closeFuture = resolveCloseFuture();
+    CloseFuture closeFuture = new CloseFuture();
     HttpClient client;
     if (options.isShared()) {
       client = createSharedClient(SharedHttpClient.SHARED_MAP_NAME, options.getName(), closeFuture, cf -> createHttpClient(options, cf));
@@ -342,6 +342,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       client = createHttpClient(options, closeFuture);
     }
+    resolveCloseFuture().add(closeFuture);
     return client;
   }
 
