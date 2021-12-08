@@ -23,6 +23,7 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.impl.CookieImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
+import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
@@ -6032,6 +6033,24 @@ public abstract class HttpTest extends HttpTestBase {
     }, resp -> {
       List<String> cookies = resp.headers().getAll("set-cookie");
       assertEquals(1, cookies.size());
+    });
+  }
+
+  @Test
+  public void testReplaceCookie() throws Exception {
+    testCookies("XSRF-TOKEN=c359b44aef83415", req -> {
+      assertEquals(1, req.cookieCount());
+      req.response().addCookie(Cookie.cookie("XSRF-TOKEN", "88533580000c314").setPath("/"));
+      Map<String, Cookie> deprecatedMap = req.cookieMap();
+      assertFalse(((ServerCookie) deprecatedMap.get("XSRF-TOKEN")).isFromUserAgent());
+      assertEquals("/", deprecatedMap.get("XSRF-TOKEN").getPath());
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      // the expired cookie must be sent back
+      assertEquals(1, cookies.size());
+      // ensure that the cookie jar was updated correctly
+      assertEquals("XSRF-TOKEN=88533580000c314; Path=/", cookies.get(0));
     });
   }
 

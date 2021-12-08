@@ -147,6 +147,11 @@ public class CookieJar extends AbstractSet<ServerCookie> {
       return v;
     }
 
+    if (cookie.isFromUserAgent()) {
+      // user-agent cookies never include a path or domain, so we must assume equality
+      return 0;
+    }
+
     if (cookie.getPath() == null) {
       if (path != null) {
         return -1;

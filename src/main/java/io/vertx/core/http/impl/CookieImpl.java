@@ -26,17 +26,26 @@ import io.vertx.core.http.CookieSameSite;
 public class CookieImpl implements ServerCookie {
 
   private final io.netty.handler.codec.http.cookie.Cookie nettyCookie;
+  // denotes if a cookie has been created from an HTTP request (true) or during the
+  // application/response life cycle (false)
+  private final boolean fromUserAgent;
+
   private boolean changed;
-  private boolean fromUserAgent;
-  // extension features
+  // extension feature(s)
   private CookieSameSite sameSite;
 
   public CookieImpl(String name, String value) {
     this.nettyCookie = new DefaultCookie(name, value);
+    fromUserAgent = false;
     this.changed = true;
   }
 
-  public CookieImpl(io.netty.handler.codec.http.cookie.Cookie nettyCookie) {
+  /**
+   * Internal constructor, only used by the CookieJar.
+   *
+   * @param nettyCookie the underlying cookie object
+   */
+  CookieImpl(io.netty.handler.codec.http.cookie.Cookie nettyCookie) {
     this.nettyCookie = nettyCookie;
     fromUserAgent = true;
   }
