@@ -143,35 +143,47 @@ public class CookieJar extends AbstractSet<ServerCookie> {
     Objects.requireNonNull(name);
 
     int v = cookie.getName().compareTo(name);
-    if (v != 0) {
-      return v;
-    }
 
-    if (cookie.getPath() == null) {
-      if (path != null) {
-        return -1;
-      }
-    } else if (path == null) {
-      return 1;
+    if (cookie.isFromUserAgent()) {
+      // user-agent cookies never include a path or domain, so we must assume equality
+      // just by comparing the name
+      return v;
     } else {
-      v = cookie.getPath().compareTo(path);
+      // perform the tuple check:
+
+      // 1. name comparison (on equals check the next parameter)
       if (v != 0) {
         return v;
       }
-    }
 
-    if (cookie.getDomain() == null) {
-      if (domain != null) {
-        return -1;
+      // 2. path comparison (on equals check the next parameter)
+      if (cookie.getPath() == null) {
+        if (path != null) {
+          return -1;
+        }
+      } else if (path == null) {
+        return 1;
+      } else {
+        v = cookie.getPath().compareTo(path);
+        if (v != 0) {
+          return v;
+        }
       }
-    } else if (domain == null) {
-      return 1;
-    } else {
-      v = cookie.getDomain().compareToIgnoreCase(domain);
-      return v;
-    }
 
-    return 0;
+      // 3. domain comparison (on equals terminate with 0)
+      if (cookie.getDomain() == null) {
+        if (domain != null) {
+          return -1;
+        }
+      } else if (domain == null) {
+        return 1;
+      } else {
+        v = cookie.getDomain().compareToIgnoreCase(domain);
+        return v;
+      }
+
+      return 0;
+    }
   }
 
 
