@@ -1167,7 +1167,7 @@ public class HTTPExamples {
   }
 
   public static void httpClientSharing1(Vertx vertx) {
-    HttpClient client = vertx.createSharedHttpClient();
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setShared(true));
     vertx.deployVerticle(() -> new AbstractVerticle() {
       @Override
       public void start() throws Exception {
@@ -1184,7 +1184,7 @@ public class HTTPExamples {
         // Get or create a shared client
         // this actually creates a lease to the client
         // when the verticle is undeployed, the lease will be released automaticaly
-        client = vertx.createSharedHttpClient("my-client");
+        client = vertx.createHttpClient(new HttpClientOptions().setShared(true).setName("my-client"));
       }
     }, new DeploymentOptions().setInstances(4));
   }
@@ -1195,7 +1195,7 @@ public class HTTPExamples {
       @Override
       public void start() {
         // The client creates and use two event-loops for 4 instances
-        client = vertx.createSharedHttpClient("my-client", new HttpClientOptions().setPoolEventLoopSize(2));
+        client = vertx.createHttpClient(new HttpClientOptions().setPoolEventLoopSize(2).setShared(true).setName("my-client"));
       }
     }, new DeploymentOptions().setInstances(4));
   }

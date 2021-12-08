@@ -23,7 +23,6 @@ import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
-import io.vertx.core.http.impl.SharedHttpClient;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxBuilder;
 import io.vertx.core.impl.resolver.DnsResolverProvider;
@@ -182,38 +181,6 @@ public interface Vertx extends Measured {
    * @return the client
    */
   HttpClient createHttpClient(HttpClientOptions options);
-
-  /**
-   * Like {@link #createSharedHttpClient(HttpClientOptions)}, using default options.
-   */
-  default HttpClient createSharedHttpClient() {
-    return createSharedHttpClient(SharedHttpClient.DEFAULT_CLIENT_NAME, new HttpClientOptions());
-  }
-
-  /**
-   * Like {@link #createSharedHttpClient(String, HttpClientOptions)}, using the default shared client name.
-   */
-  default HttpClient createSharedHttpClient(HttpClientOptions options) {
-    return createSharedHttpClient(SharedHttpClient.DEFAULT_CLIENT_NAME, options);
-  }
-
-  /**
-   * Like {@link #createSharedHttpClient(String, HttpClientOptions)}, using default options.
-   */
-  default HttpClient createSharedHttpClient(String name) {
-    return createSharedHttpClient(name, new HttpClientOptions());
-  }
-
-  /**
-   * Create a HTTP/HTTPS client using the specified name and options.
-   *
-   * @param name    the shared client name
-   * @param options the options to use
-   * @return the client
-   */
-  default HttpClient createSharedHttpClient(String name, HttpClientOptions options) {
-    throw new UnsupportedOperationException();
-  }
 
   /**
    * Create a HTTP/HTTPS client using default options

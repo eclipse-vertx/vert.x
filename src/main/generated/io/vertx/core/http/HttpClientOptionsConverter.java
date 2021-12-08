@@ -135,6 +135,11 @@ public class HttpClientOptionsConverter {
             obj.setMaxWebSockets(((Number)member.getValue()).intValue());
           }
           break;
+        case "name":
+          if (member.getValue() instanceof String) {
+            obj.setName((String)member.getValue());
+          }
+          break;
         case "pipelining":
           if (member.getValue() instanceof Boolean) {
             obj.setPipelining((Boolean)member.getValue());
@@ -163,6 +168,11 @@ public class HttpClientOptionsConverter {
         case "sendUnmaskedFrames":
           if (member.getValue() instanceof Boolean) {
             obj.setSendUnmaskedFrames((Boolean)member.getValue());
+          }
+          break;
+        case "shared":
+          if (member.getValue() instanceof Boolean) {
+            obj.setShared((Boolean)member.getValue());
           }
           break;
         case "tracingPolicy":
@@ -251,6 +261,9 @@ public class HttpClientOptionsConverter {
     json.put("maxWebSocketFrameSize", obj.getMaxWebSocketFrameSize());
     json.put("maxWebSocketMessageSize", obj.getMaxWebSocketMessageSize());
     json.put("maxWebSockets", obj.getMaxWebSockets());
+    if (obj.getName() != null) {
+      json.put("name", obj.getName());
+    }
     json.put("pipelining", obj.isPipelining());
     json.put("pipeliningLimit", obj.getPipeliningLimit());
     json.put("poolCleanerPeriod", obj.getPoolCleanerPeriod());
@@ -259,6 +272,7 @@ public class HttpClientOptionsConverter {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
+    json.put("shared", obj.isShared());
     if (obj.getTracingPolicy() != null) {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }

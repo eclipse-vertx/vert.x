@@ -130,7 +130,7 @@ public class SharedHttpClientTest extends VertxTestBase {
 
       @Override
       public void start() {
-        client = vertx.createSharedHttpClient(ClientVerticle.SHARED_CLIENT_NAME, new HttpClientOptions());
+        client = vertx.createHttpClient(new HttpClientOptions().setShared(true).setName(ClientVerticle.SHARED_CLIENT_NAME));
       }
     }, onSuccess(v -> {
       deployLatch.countDown();
@@ -176,7 +176,7 @@ public class SharedHttpClientTest extends VertxTestBase {
     @Override
     public void start(Promise<Void> startPromise) throws Exception {
       context = super.context;
-      client = vertx.createSharedHttpClient(SHARED_CLIENT_NAME, new HttpClientOptions(config().getJsonObject("httpClientOptions")));
+      client = vertx.createHttpClient(new HttpClientOptions(config().getJsonObject("httpClientOptions")).setShared(true).setName(SHARED_CLIENT_NAME));
       vertx.eventBus().consumer(TRIGGER_ADDRESS, this).completionHandler(startPromise);
     }
 

@@ -1397,36 +1397,6 @@ or close the client instance.
 Alternatively you can set idle timeout using {@link io.vertx.core.http.HttpClientOptions#setIdleTimeout(int)} - any
 connections not used within this timeout will be closed. Please note the idle timeout value is in seconds not milliseconds.
 
-=== HTTP client sharing
-
-You can share an HTTP client between multiple verticles or instances of the same verticle. Such client should be created outside
-of a verticle otherwise it will be closed when the verticle that created it is undeployed
-
-[source,$lang]
-----
-{@link examples.HTTPExamples#httpClientSharing1}
-----
-
-You can also create a shared HTTP client in each verticle:
-
-[source,$lang]
-----
-{@link examples.HTTPExamples#httpClientSharing2}
-----
-
-The first time {@link io.vertx.core.Vertx#createSharedHttpClient(java.lang.String)} is called it will create the
-client. Subsequent calls will reuse this client and create a lease to this client. The client is closed after all leases have been closed.
-
-By default, a client reuses the current event-loop when it needs to create a TCP connection. The HTTP client will
-therefore randomly use event-loops of verticles using it.
-
-You can assign a number of event loop a client will use independently of the client using it
-
-[source,$lang]
-----
-{@link examples.HTTPExamples#httpClientSharing3}
-----
-
 === HTTP connections
 
 The {@link io.vertx.core.http.HttpConnection} offers the API for dealing with HTTP connection events, lifecycle
@@ -1581,26 +1551,35 @@ Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection
 
 The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
 
-=== HttpClient usage
+=== Client sharing
 
-The HttpClient can be used in a Verticle or embedded.
+You can share an HTTP client between multiple verticles or instances of the same verticle. Such client should be created outside
+of a verticle otherwise it will be closed when the verticle that created it is undeployed
 
-When used in a Verticle, the Verticle *should use its own client instance*.
-
-More generally a client should not be shared between different Vert.x contexts as it can lead to unexpected behavior.
-
-For example a keep-alive connection will call the client handlers on the context of the request that opened the connection, subsequent requests will use
-the same context.
-
-When this happen Vert.x detects it and log a warn:
-
+[source,$lang]
 ----
-Reusing a connection with a different context: an HttpClient is probably shared between different Verticles
+{@link examples.HTTPExamples#httpClientSharing1}
 ----
 
-The HttpClient can be embedded in a non Vert.x thread like a unit test or a plain java `main`: the client handlers
-will be called by different Vert.x threads and contexts, such contexts are created as needed. For production this
-usage is not recommended.
+You can also create a shared HTTP client in each verticle:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSharing2}
+----
+
+The first time a shared client is created it will create and return a client. Subsequent calls will reuse this client and
+create a lease to this client. The client is closed after all leases have been disposed.
+
+By default, a client reuses the current event-loop when it needs to create a TCP connection. The HTTP client will
+therefore randomly use event-loops of verticles using it in a safe fashion.
+
+You can assign a number of event loop a client will use independently of the client using it
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSharing3}
+----
 
 === Server sharing
 

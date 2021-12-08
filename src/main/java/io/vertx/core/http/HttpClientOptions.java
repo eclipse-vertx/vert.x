@@ -21,6 +21,7 @@ import io.vertx.core.tracing.TracingPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -213,6 +214,16 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.PROPAGATE;
 
+  /**
+   * Default shared client = {@code false}
+   */
+  public static final boolean DEFAULT_SHARED = false;
+
+  /**
+   * Actual name of anonymous shared client = {@code __vertx.DEFAULT}
+   */
+  public static final String DEFAULT_NAME = "__vertx.DEFAULT";
+
   private boolean verifyHost = true;
   private int maxPoolSize;
   private boolean keepAlive;
@@ -253,6 +264,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int webSocketClosingTimeout;
 
   private TracingPolicy tracingPolicy;
+
+  private boolean shared;
+  private String name;
 
   /**
    * Default constructor
@@ -306,6 +320,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.webSocketRequestServerNoContext = other.webSocketRequestServerNoContext;
     this.webSocketClosingTimeout = other.webSocketClosingTimeout;
     this.tracingPolicy = other.tracingPolicy;
+    this.shared = other.shared;
+    this.name = other.name;
   }
 
   /**
@@ -368,6 +384,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
     poolEventLoopSize = DEFAULT_POOL_EVENT_LOOP_SIZE;
     tracingPolicy = DEFAULT_TRACING_POLICY;
+    shared = DEFAULT_SHARED;
+    name = DEFAULT_NAME;
   }
 
   @Override
@@ -1375,6 +1393,45 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setTracingPolicy(TracingPolicy tracingPolicy) {
     this.tracingPolicy = tracingPolicy;
+    return this;
+  }
+
+  /**
+   * @return whether the pool is shared
+   */
+  public boolean isShared() {
+    return shared;
+  }
+
+  /**
+   * Set to {@code true} to share the client.
+   *
+   * <p> There can be multiple shared clients distinguished by {@link #getName()}, when no specific
+   * name is set, the {@link #DEFAULT_NAME} is used.
+   *
+   * @param shared {@code true} to use a shared client
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setShared(boolean shared) {
+    this.shared = shared;
+    return this;
+  }
+
+  /**
+   * @return the pool name
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * Set the client name, used when the client is shared, otherwise ignored.
+   * @param name the new name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setName(String name) {
+    Objects.requireNonNull(name, "Client name cannot be null");
+    this.name = name;
     return this;
   }
 }
