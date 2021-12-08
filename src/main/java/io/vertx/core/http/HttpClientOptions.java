@@ -1418,7 +1418,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
-   * @return the pool name
+   * @return the client name used for sharing
    */
   public String getName() {
     return name;

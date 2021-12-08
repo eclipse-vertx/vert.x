@@ -24,7 +24,6 @@ import java.util.function.Function;
 public class SharedHttpClient implements HttpClient {
 
   public static final String SHARED_MAP_NAME = "__vertx.shared.httpClients";
-  public static final String DEFAULT_CLIENT_NAME = "SharedHttpClient.DEFAULT";
 
   private final VertxInternal vertx;
   private final CloseFuture closeFuture;
