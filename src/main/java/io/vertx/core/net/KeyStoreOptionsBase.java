@@ -177,11 +177,12 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     if (helper == null) {
       Supplier<Buffer> value;
       if (this.path != null) {
-        value = () -> vertx.fileSystem().readFileBlocking(((VertxInternal) vertx).resolveFile(path).getAbsolutePath());
+        value = () -> vertx.fileSystem().readFileBlocking(path);
       } else if (this.value != null) {
         value = this::getValue;
       } else {
-        return null;
+        // Keystore input can be "null", for example PKCS#11
+        value = () -> null;
       }
       helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, getAlias()), password, getAliasPassword());
     }
