@@ -21,7 +21,11 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
-
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -312,6 +316,39 @@ public abstract class EventBusTestBase extends VertxTestBase {
     testPublish(obj, (received) -> {
       assertEquals(obj, received);
       assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testSendSerializable() {
+    String str = TestUtils.randomUnicodeString(100);
+    int num = TestUtils.randomInt();
+    MySerializablePOJO pojo = new MySerializablePOJO(str, num);
+    testSend(pojo, (received) -> {
+      assertEquals(pojo, received);
+      assertFalse(pojo == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testReplySerializable() {
+    String str = TestUtils.randomUnicodeString(100);
+    int num = TestUtils.randomInt();
+    MySerializablePOJO pojo = new MySerializablePOJO(str, num);
+    testReply(pojo, (received) -> {
+      assertEquals(pojo, received);
+      assertFalse(pojo == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testPublishSerializable() {
+    String str = TestUtils.randomUnicodeString(100);
+    int num = TestUtils.randomInt();
+    MySerializablePOJO pojo = new MySerializablePOJO(str, num);
+    testPublish(pojo, (received) -> {
+      assertEquals(pojo, received);
+      assertFalse(pojo == received); // Make sure it's copied
     });
   }
 
@@ -625,6 +662,45 @@ public abstract class EventBusTestBase extends VertxTestBase {
     @Override
     public int hashCode() {
       return str != null ? str.hashCode() : 0;
+    }
+  }
+
+  public static class MySerializablePOJO implements Serializable {
+    private String str;
+    private int num;
+
+    public MySerializablePOJO(String str, int num) {
+      this.str = str;
+      this.num = num;
+    }
+
+    public String getStr() {
+      return str;
+    }
+
+    public int getNum() {
+      return num;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      MySerializablePOJO that = (MySerializablePOJO) o;
+      return num == that.num && str.equals(that.str);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(str, num);
+    }
+
+    private void writeObject(ObjectOutputStream oos) throws IOException {
+      oos.defaultWriteObject();
+    }
+
+    private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
+      ois.defaultReadObject();
     }
   }
 

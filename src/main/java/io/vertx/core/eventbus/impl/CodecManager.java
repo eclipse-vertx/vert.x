@@ -18,6 +18,7 @@ import io.vertx.core.eventbus.impl.codecs.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,6 +45,7 @@ public class CodecManager {
   public static final MessageCodec<Character, Character> CHAR_MESSAGE_CODEC = new CharMessageCodec();
   public static final MessageCodec<Byte, Byte> BYTE_MESSAGE_CODEC = new ByteMessageCodec();
   public static final MessageCodec<ReplyException, ReplyException> REPLY_EXCEPTION_MESSAGE_CODEC = new ReplyExceptionMessageCodec();
+  public static final MessageCodec<Serializable, Serializable> SERIALIZABLE_MESSAGE_CODEC = new SerializableMessageCodec(Serializable.class);
 
   private final MessageCodec[] systemCodecs;
   private final ConcurrentMap<String, MessageCodec> userCodecMap = new ConcurrentHashMap<>();
@@ -52,7 +54,7 @@ public class CodecManager {
   public CodecManager() {
     this.systemCodecs = codecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
       BYTE_ARRAY_MESSAGE_CODEC, INT_MESSAGE_CODEC, LONG_MESSAGE_CODEC, FLOAT_MESSAGE_CODEC, DOUBLE_MESSAGE_CODEC,
-      BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC);
+      BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC, SERIALIZABLE_MESSAGE_CODEC);
   }
 
   public MessageCodec lookupCodec(Object body, String codecName) {
@@ -94,6 +96,11 @@ public class CodecManager {
       codec = defaultCodecMap.get(body.getClass());
       if (codec == null) {
         codec = REPLY_EXCEPTION_MESSAGE_CODEC;
+      }
+    } else if (body instanceof Serializable) {
+      codec = defaultCodecMap.get(body.getClass());
+      if (codec == null) {
+        codec = new SerializableMessageCodec(body.getClass());
       }
     } else {
       codec = defaultCodecMap.get(body.getClass());
