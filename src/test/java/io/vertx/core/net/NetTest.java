@@ -465,8 +465,16 @@ public class NetTest extends VertxTestBase {
     long reconnectInterval = TestUtils.randomPositiveInt();
     boolean useAlpn = TestUtils.randomBoolean();
     String hostnameVerificationAlgorithm = TestUtils.randomAlphaString(10);
-    String sslEngine = TestUtils.randomBoolean() ? "jdkSslEngineOptions" : "openSslEngineOptions";
-    boolean openSslSessionCacheEnabled = rand.nextBoolean();
+    String sslEngine;
+    JsonObject sslEngineOptions;
+    if (TestUtils.randomBoolean()) {
+      sslEngine = "jdkSslEngineOptions";
+      sslEngineOptions = new JsonObject();
+    } else {
+      sslEngine = "openSslEngineOptions";
+      boolean sessionCacheEnabled = rand.nextBoolean();
+      sslEngineOptions = new JsonObject().put("sessionCacheEnabled", sessionCacheEnabled);
+    }
     long sslHandshakeTimeout = TestUtils.randomPositiveLong();
 
     JsonObject json = new JsonObject();
@@ -488,10 +496,15 @@ public class NetTest extends VertxTestBase {
         .put("reconnectAttempts", reconnectAttempts)
         .put("reconnectInterval", reconnectInterval)
         .put("useAlpn", useAlpn)
-        .put(sslEngine, new JsonObject())
+        .put(sslEngine, sslEngineOptions)
         .put("hostnameVerificationAlgorithm", hostnameVerificationAlgorithm)
-        .put("openSslSessionCacheEnabled", openSslSessionCacheEnabled)
         .put("sslHandshakeTimeout", sslHandshakeTimeout);
+
+
+    JsonObject converted = new NetClientOptions(json).toJson();
+    for (Map.Entry<String, Object> entry : json) {
+      assertEquals(entry.getValue(), converted.getValue(entry.getKey()));
+    }
 
     NetClientOptions options = new NetClientOptions(json);
     assertEquals(sendBufferSize, options.getSendBufferSize());

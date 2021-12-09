@@ -416,4 +416,11 @@ public class NetClientOptions extends ClientOptionsBase {
   public NetClientOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
     return (NetClientOptions) super.setSslHandshakeTimeoutUnit(sslHandshakeTimeoutUnit);
   }
+
+  @Override
+  public JsonObject toJson() {
+    JsonObject json = super.toJson();
+    NetClientOptionsConverter.toJson(this, json);
+    return json;
+  }
 }
