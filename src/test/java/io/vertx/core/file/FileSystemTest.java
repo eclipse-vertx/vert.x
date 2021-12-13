@@ -2336,4 +2336,14 @@ public class FileSystemTest extends VertxTestBase {
     file.close(onSuccess(v -> testComplete()));
     await();
   }
+  
+  @Test
+  public void testWindowsApplicationDataDirs() {
+    Assume.assumeTrue(Utils.isWindows());
+    String file = System.getProperty("user.home") + "/Application Data";
+    Assume.assumeTrue(new File(file).exists());
+    List<String> dirs = vertx.fileSystem().readDirBlocking(file);
+    assertNotNull(dirs);
+    assertEquals(dirs.size(),0);
+  }
 }
