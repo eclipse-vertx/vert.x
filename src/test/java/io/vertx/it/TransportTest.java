@@ -39,14 +39,14 @@ public class TransportTest extends AsyncTestBase {
   public void testNoNative() {
     ClassLoader classLoader = Vertx.class.getClassLoader();
     try {
-      classLoader.loadClass("io.netty.channel.epoll.Epoll");
-      fail("Was not expected to load Epoll class");
+      Class<?> clazz = classLoader.loadClass("io.netty.channel.epoll.Epoll");
+      fail("Was not expected to load Epoll class from " + clazz.getProtectionDomain().getCodeSource().getLocation());
     } catch (ClassNotFoundException ignore) {
       // Expected
     }
     try {
-      classLoader.loadClass("io.netty.channel.kqueue.KQueue");
-      fail("Was not expected to load KQueue class");
+      Class<?> clazz = classLoader.loadClass("io.netty.channel.kqueue.KQueue");
+      fail("Was not expected to load KQueue class from " + clazz.getProtectionDomain().getCodeSource().getLocation());
     } catch (ClassNotFoundException ignore) {
       // Expected
     }
