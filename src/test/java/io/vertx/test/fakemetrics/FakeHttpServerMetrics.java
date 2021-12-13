@@ -23,20 +23,14 @@ import io.vertx.core.spi.observability.HttpResponse;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServerMetrics<HttpServerMetric, WebSocketMetric, SocketMetric> {
+public class FakeHttpServerMetrics extends FakeTCPMetrics implements HttpServerMetrics<HttpServerMetric, WebSocketMetric, SocketMetric> {
 
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentHashSet<HttpServerMetric> requests = new ConcurrentHashSet<>();
-  private final AtomicInteger connectionCount = new AtomicInteger();
-
-  public int getConnectionCount() {
-    return connectionCount.get();
-  }
 
   public WebSocketMetric getWebSocketMetric(ServerWebSocket ws) {
     return webSockets.get(ws);
@@ -104,32 +98,6 @@ public class FakeHttpServerMetrics extends FakeMetricsBase implements HttpServer
   @Override
   public void disconnected(WebSocketMetric serverWebSocketMetric) {
     webSockets.remove(serverWebSocketMetric.ws);
-  }
-
-  @Override
-  public SocketMetric connected(SocketAddress remoteAddress, String remoteName) {
-    connectionCount.incrementAndGet();
-    return new SocketMetric(remoteAddress, remoteName);
-  }
-
-  @Override
-  public void disconnected(SocketMetric socketMetric, SocketAddress remoteAddress) {
-    connectionCount.decrementAndGet();
-    if (socketMetric != null) {
-      socketMetric.connected.set(false);
-    }
-  }
-
-  @Override
-  public void bytesRead(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    socketMetric.bytesRead.addAndGet(numberOfBytes);
-    socketMetric.bytesReadEvents.add(numberOfBytes);
-  }
-
-  @Override
-  public void bytesWritten(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    socketMetric.bytesWritten.addAndGet(numberOfBytes);
-    socketMetric.bytesWrittenEvents.add(numberOfBytes);
   }
 
   @Override

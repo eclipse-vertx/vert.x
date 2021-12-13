@@ -19,6 +19,7 @@ import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.ProxyFilter;
@@ -160,6 +161,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.netClient = new NetClientImpl(
       vertx,
+      metrics,
       new NetClientOptions(options)
         .setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS": "")
         .setProxyOptions(null)
@@ -191,6 +193,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     }
 
     closeFuture.add(netClient);
+  }
+
+  public NetClient netClient() {
+    return netClient;
   }
 
   /**

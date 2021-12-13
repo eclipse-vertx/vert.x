@@ -73,6 +73,7 @@ public class MetricsTest extends VertxTestBase {
       awaitLatch(latch);
     }
     super.tearDown();
+    FakeMetricsBase.sanityCheck();
   }
 
   @Override
@@ -1205,6 +1206,6 @@ public class MetricsTest extends VertxTestBase {
       so.closeHandler(v -> latch.countDown());
     }));
     awaitLatch(latch);
-    assertEquals(0, metrics.getConnectionCount());
+    assertEquals(0, metrics.connectionCount());
   }
 }
