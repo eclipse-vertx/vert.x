@@ -2344,6 +2344,5 @@ public class FileSystemTest extends VertxTestBase {
     Assume.assumeTrue(new File(file).exists());
     List<String> dirs = vertx.fileSystem().readDirBlocking(file);
     assertNotNull(dirs);
-    assertEquals(dirs.size(),0);
   }
 }
