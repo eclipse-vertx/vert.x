@@ -191,7 +191,6 @@ public class SharedHttpClientTest extends VertxTestBase {
   private static class ServerVerticle extends AbstractVerticle implements Handler<HttpServerRequest> {
 
     volatile Promise<Void> replyLatch;
-    volatile int port;
     Set<HttpConnection> connections = Collections.synchronizedSet(new HashSet<>());
     volatile int maxConnections;
 
@@ -205,8 +204,7 @@ public class SharedHttpClientTest extends VertxTestBase {
           maxConnections = Math.max(maxConnections, connections.size());
         })
         .requestHandler(this)
-        .listen(0)
-        .onSuccess(server -> port = server.actualPort())
+        .listen(HttpTest.DEFAULT_HTTP_PORT)
         .<Void>mapEmpty()
         .onComplete(startPromise);
     }
@@ -219,7 +217,7 @@ public class SharedHttpClientTest extends VertxTestBase {
 
   private static HttpClientOptions httpClientOptions(ServerVerticle serverVerticle, int sharedPoolSize) {
     return new HttpClientOptions()
-      .setDefaultPort(serverVerticle.port)
+      .setDefaultPort(HttpTest.DEFAULT_HTTP_PORT)
       .setMaxPoolSize(sharedPoolSize);
   }
 
