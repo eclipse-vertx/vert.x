@@ -4671,7 +4671,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testHeaderNameValidation() {
-    for (char c : "\0\t\n\u000B\f\r ,:;=\u0080".toCharArray()) {
+    for (char c : "\u001c\u001d\u001e\u001f\0\t\n\u000b\f\r ,:;=\u0080".toCharArray()) {
       try {
         HttpUtils.validateHeaderName(Character.toString(c));
         fail("Char 0x" + Integer.toHexString(c) + " should not be valid");
@@ -4695,6 +4695,37 @@ public class Http1xTest extends HttpTest {
     List<String> valid = Arrays.asList("\r\n\t", "\r\n ", "\n\t", "\n ");
     for (String test : valid) {
       HttpUtils.validateHeaderValue(test);
+    }
+  }
+
+  @Test
+  public void testHeaderNameStartsOrEndsWithControlChars() throws Exception {
+    AtomicInteger invalidRequests = new AtomicInteger();
+    server.exceptionHandler(err -> {
+      invalidRequests.incrementAndGet();
+    });
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer();
+    NetClient client = vertx.createNetClient();
+    try {
+      char[] chars = { 0x1c, 0x1d, 0x1e, 0x1f, 0x0c };
+      boolean[] positions = { true, false };
+      for (boolean position : positions) {
+        for (char invalid : chars) {
+          int current = invalidRequests.get();
+          CountDownLatch latch = new CountDownLatch(1);
+          client.connect(testAddress, onSuccess(so -> {
+            so.write("GET /some/path HTTP/1.1\r\n" + "Host: vertx.io\r\n" + (position ? invalid : "") + "Transfer-encoding" + (position ? "" : invalid) + ": chunked\r\n\r\n");
+            so.closeHandler(v -> latch.countDown());
+          }));
+          awaitLatch(latch);
+          waitUntil(() -> invalidRequests.get() == current + 1);
+        }
+      }
+    } finally {
+      client.close();
     }
   }
 

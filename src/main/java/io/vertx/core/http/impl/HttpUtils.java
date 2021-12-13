@@ -752,6 +752,10 @@ public final class HttpUtils {
     for (int i = 0;i < value.length();i++) {
       char c = value.charAt(i);
       switch (c) {
+        case 0x1c:
+        case 0x1d:
+        case 0x1e:
+        case 0x1f:
         case 0x00:
         case '\t':
         case '\n':
