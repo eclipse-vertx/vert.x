@@ -74,11 +74,15 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final Predicate<SocketAddress> proxyFilter;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {
+    this(vertx, vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null, options, closeFuture);
+  }
+
+  public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).setApplicationProtocols(options.getApplicationLayerProtocols());
-    this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null;
+    this.metrics = metrics;
     this.logEnabled = options.getLogActivity();
     this.idleTimeout = options.getIdleTimeout();
     this.readIdleTimeout = options.getReadIdleTimeout();

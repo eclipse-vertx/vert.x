@@ -56,7 +56,7 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   @Override
   public void requestEnd(HttpClientMetric requestMetric, long bytesWritten) {
     if (requestMetric == null) {
-      FakeHttpClientMetrics.unexpectedError = new RuntimeException("Unexpected null request metric");
+      FakeHttpClientMetrics.registerFailure(new RuntimeException("Unexpected null request metric"));
       return;
     }
     requestMetric.requestEnded.incrementAndGet();
@@ -66,11 +66,11 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   @Override
   public void responseBegin(HttpClientMetric requestMetric, HttpResponse response) {
     if (requestMetric == null) {
-      FakeHttpClientMetrics.unexpectedError = new RuntimeException("Unexpected null request metric");
+      FakeHttpClientMetrics.registerFailure(new RuntimeException("Unexpected null request metric"));;
       return;
     }
     if (response == null) {
-      FakeHttpClientMetrics.unexpectedError = new RuntimeException("Unexpected null response");
+      FakeHttpClientMetrics.registerFailure(new RuntimeException("Unexpected null response"));;
       return;
     }
     requestMetric.responseBegin.incrementAndGet();
@@ -79,7 +79,7 @@ public class EndpointMetric implements ClientMetrics<HttpClientMetric, Void, Htt
   @Override
   public void requestReset(HttpClientMetric requestMetric) {
     if (requestMetric == null) {
-      FakeHttpClientMetrics.unexpectedError = new RuntimeException("Unexpected null request metric");
+      FakeHttpClientMetrics.registerFailure(new RuntimeException("Unexpected null request metric"));
       return;
     }
     requestCount.decrementAndGet();

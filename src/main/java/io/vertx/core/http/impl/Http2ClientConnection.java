@@ -612,6 +612,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     HttpClientImpl client,
     ClientMetrics metrics,
     EventLoopContext context,
+    boolean upgrade,
     Object socketMetric,
     Handler<Http2ClientConnection> c) {
     HttpClientOptions options = client.getOptions();
@@ -625,9 +626,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         Http2ClientConnection conn = new Http2ClientConnection(client, context, connHandler, metrics);
         if (metrics != null) {
           Object m = socketMetric;
-          if (m == null)  {
-            m = met.connected(conn.remoteAddress(), conn.remoteName());
-          }
           conn.metric(m);
         }
         return conn;
@@ -639,8 +637,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
       }
       if (metrics != null) {
-        Object m = socketMetric;
-        if (m == null)  {
+        if (!upgrade)  {
           met.endpointConnected(metrics);
         }
       }
