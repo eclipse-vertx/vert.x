@@ -504,7 +504,9 @@
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-transport-classes-epoll</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-transport-classes-kqueue</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
