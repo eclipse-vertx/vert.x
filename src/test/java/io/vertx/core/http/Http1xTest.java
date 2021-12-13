@@ -4738,7 +4738,7 @@ public class Http1xTest extends HttpTest {
     server.requestHandler(req -> {
       fail();
     });
-    startServer();
+    startServer(testAddress);
     NetClient client = vertx.createNetClient();
     try {
       char[] chars = { 0x1c, 0x1d, 0x1e, 0x1f, 0x0c };
