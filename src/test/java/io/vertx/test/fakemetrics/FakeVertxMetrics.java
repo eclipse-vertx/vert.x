@@ -64,13 +64,11 @@ public class FakeVertxMetrics extends FakeMetricsBase implements VertxMetrics {
   }
 
   public TCPMetrics<?> createNetServerMetrics(NetServerOptions options, SocketAddress localAddress) {
-    return new TCPMetrics<Object>() {
-   };
+    return new FakeTCPMetrics();
   }
 
   public TCPMetrics<?> createNetClientMetrics(NetClientOptions options) {
-    return new TCPMetrics<Object>() {
-    };
+    return new FakeTCPMetrics();
   }
 
   public DatagramSocketMetrics createDatagramSocketMetrics(DatagramSocketOptions options) {

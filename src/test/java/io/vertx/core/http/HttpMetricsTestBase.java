@@ -15,8 +15,10 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
@@ -24,6 +26,7 @@ import io.vertx.test.fakemetrics.FakeHttpClientMetrics;
 import io.vertx.test.fakemetrics.FakeHttpServerMetrics;
 import io.vertx.test.fakemetrics.FakeMetricsBase;
 import io.vertx.test.fakemetrics.FakeMetricsFactory;
+import io.vertx.test.fakemetrics.FakeTCPMetrics;
 import io.vertx.test.fakemetrics.HttpClientMetric;
 import io.vertx.test.fakemetrics.HttpServerMetric;
 import io.vertx.test.fakemetrics.SocketMetric;
@@ -50,7 +53,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    FakeHttpClientMetrics.sanityCheck();
+    FakeMetricsBase.sanityCheck();
     super.tearDown();
   }
 
@@ -107,6 +110,9 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
     AtomicReference<HttpClientMetric> clientMetric = new AtomicReference<>();
     AtomicReference<SocketMetric> clientSocketMetric = new AtomicReference<>();
     FakeHttpClientMetrics metrics = FakeMetricsBase.getMetrics(client);
+    NetClient netClient = ((HttpClientImpl) client).netClient();
+    FakeTCPMetrics tcpMetrics = FakeMetricsBase.getMetrics(netClient);
+    assertSame(metrics, tcpMetrics);
     Context ctx = vertx.getOrCreateContext();
     ctx.runOnContext(v -> {
       assertEquals(Collections.emptySet(), metrics.endpoints());
@@ -117,7 +123,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
         .onComplete(onSuccess(req -> {
           req
             .response(onSuccess(resp -> {
-              clientSocketMetric.set(metrics.getSocket(SocketAddress.inetSocketAddress(8080, "localhost")));
+              clientSocketMetric.set(metrics.firstMetric(SocketAddress.inetSocketAddress(8080, "localhost")));
               assertNotNull(clientSocketMetric.get());
               assertEquals(Collections.singleton("localhost:8080"), metrics.endpoints());
               clientMetric.set(metrics.getMetric(resp.request()));
@@ -126,6 +132,7 @@ public abstract class HttpMetricsTestBase extends HttpTestBase {
               // assertNotNull(clientMetric.get().socket);
               // assertTrue(clientMetric.get().socket.connected.get());
               assertEquals((Integer) 1, metrics.connectionCount("localhost:8080"));
+              assertEquals((Integer) 1, metrics.connectionCount(SocketAddress.inetSocketAddress(8080, "localhost")));
               resp.bodyHandler(buff -> {
                 assertEquals(contentLength, clientMetric.get().bytesRead.get());
                 assertNull(metrics.getMetric(resp.request()));

@@ -42,7 +42,10 @@ public class CloseFuture implements Closeable {
   }
 
   /**
-   * Add a close hook, notified when the {@link #close(Promise)} )} method is called.
+   * Add a close {@code hook}, notified when the {@link #close(Promise)} )} method is called.
+   *
+   * The {@code hook} will be weakly referenced therefore, the caller needs to retain a reference to the hook
+   * otherwise it might be reclaimed and therefore never be called.
    *
    * @param hook the hook to add
    */
@@ -51,7 +54,7 @@ public class CloseFuture implements Closeable {
       throw new IllegalStateException();
     }
     if (hook instanceof CloseFuture) {
-      // Close future might be closed independantly, so we optimize and remove the hooks when
+      // Close future might be closed independently, so we optimize and remove the hooks when
       // the close future completes
       CloseFuture fut = (CloseFuture) hook;
       fut.future().onComplete(ar -> remove(fut));

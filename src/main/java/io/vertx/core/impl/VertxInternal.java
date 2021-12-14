@@ -26,7 +26,6 @@ import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
-import io.vertx.core.shareddata.LocalMap;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
@@ -102,36 +101,7 @@ public interface VertxInternal extends Vertx {
   HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture);
 
   default <C> C createSharedClient(String clientKey, String clientName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
-    LocalMap<String, SharedClientHolder<C>> localMap = sharedData().getLocalMap(clientKey);
-    SharedClientHolder<C> v = localMap.compute(clientName, (key, value) -> {
-      if (value == null) {
-        CloseFuture fut = new CloseFuture();
-        C client = supplier.apply(fut);
-        return new SharedClientHolder<>(fut, 1, client);
-      } else {
-        return new SharedClientHolder<>(value.closeFuture, value.count + 1, value.client);
-      }
-    });
-    C client = v.client;
-    CloseFuture close = v.closeFuture;
-    closeFuture.add(completion -> {
-      LocalMap<String, SharedClientHolder<C>> localMap1 = sharedData().getLocalMap(clientKey);
-      SharedClientHolder<C> res = localMap1.compute(clientName, (key, value) -> {
-        if (value == null) {
-          return null; // Should never happen unless bug
-        } else if (value.count == 1) {
-          return null;
-        } else {
-          return new SharedClientHolder<>(value.closeFuture, value.count - 1, value.client);
-        }
-      });
-      if (res == null) {
-        close.close(completion);
-      } else {
-        completion.complete();
-      }
-    });
-    return client;
+    return SharedClientHolder.createSharedClient(this, clientKey, clientName, closeFuture, supplier);
   }
 
   /**
