@@ -11,10 +11,16 @@
 
 package io.vertx.core.file;
 
+import io.vertx.test.core.TestUtils;
+
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 
 /**
  * @author Clement Escoffier
@@ -23,14 +29,17 @@ public class JarFileResolverWithSpacesTest extends FileResolverTestBase {
 
   @Override
   protected ClassLoader resourcesLoader(File baseDir) throws Exception {
-    File dirWithSpaces = new File("target", "dir with spaces");
-    if (!dirWithSpaces.exists()) {
-      assertTrue(dirWithSpaces.mkdirs());
-    }
-    File files = new File(dirWithSpaces, "files.jar");
-    if (!files.exists()) {
-      files = JarFileResolverTest.getFiles(dirWithSpaces);
-    }
+    File dirWithSpaces = Files.createTempDirectory(TestUtils.MAVEN_TARGET_DIR.toPath(),  "dir with spaces").toFile();
+    File files = ZipFileResolverTest.getFiles(
+      baseDir,
+      new File(dirWithSpaces, "files.jar"),
+      out -> {
+        try {
+          return new JarOutputStream(out);
+        } catch (IOException e) {
+          throw new AssertionError(e);
+        }
+      }, JarEntry::new);
     return new URLClassLoader(new URL[]{files.toURI().toURL()}, Thread.currentThread().getContextClassLoader());
   }
 }

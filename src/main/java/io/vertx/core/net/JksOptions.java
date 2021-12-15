@@ -73,13 +73,13 @@ public class JksOptions extends KeyStoreOptionsBase {
   }
 
   @Override
-  public String getAlias() {
-    return super.getAlias();
+  public JksOptions setAlias(String alias) {
+    return (JksOptions) super.setAlias(alias);
   }
 
   @Override
-  public JksOptions setAlias(String alias) {
-    return (JksOptions) super.setAlias(alias);
+  public JksOptions setAliasPassword(String aliasPassword) {
+    return (JksOptions) super.setAliasPassword(aliasPassword);
   }
 
   @Override

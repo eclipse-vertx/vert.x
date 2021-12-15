@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.net.KeyStoreOptions}.
@@ -13,12 +14,20 @@ import java.time.format.DateTimeFormatter;
 public class KeyStoreOptionsConverter {
 
 
+  private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
+  private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
+
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, KeyStoreOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
         case "alias":
           if (member.getValue() instanceof String) {
             obj.setAlias((String)member.getValue());
+          }
+          break;
+        case "aliasPassword":
+          if (member.getValue() instanceof String) {
+            obj.setAliasPassword((String)member.getValue());
           }
           break;
         case "password":
@@ -43,7 +52,7 @@ public class KeyStoreOptionsConverter {
           break;
         case "value":
           if (member.getValue() instanceof String) {
-            obj.setValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)member.getValue())));
+            obj.setValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)member.getValue())));
           }
           break;
       }
@@ -58,6 +67,9 @@ public class KeyStoreOptionsConverter {
     if (obj.getAlias() != null) {
       json.put("alias", obj.getAlias());
     }
+    if (obj.getAliasPassword() != null) {
+      json.put("aliasPassword", obj.getAliasPassword());
+    }
     if (obj.getPassword() != null) {
       json.put("password", obj.getPassword());
     }
@@ -71,7 +83,7 @@ public class KeyStoreOptionsConverter {
       json.put("type", obj.getType());
     }
     if (obj.getValue() != null) {
-      json.put("value", JsonUtil.BASE64_ENCODER.encodeToString(obj.getValue().getBytes()));
+      json.put("value", BASE64_ENCODER.encodeToString(obj.getValue().getBytes()));
     }
   }
 }

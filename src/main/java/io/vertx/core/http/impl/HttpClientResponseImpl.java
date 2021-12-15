@@ -81,7 +81,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
   @Override
   public NetSocket netSocket() {
     if (netSocket == null) {
-      netSocket = HttpNetSocket.netSocket((ConnectionBase) conn, request.context, this, request);
+      netSocket = HttpNetSocket.netSocket((ConnectionBase) conn, request.context, this, stream);
     }
     return netSocket;
   }
@@ -262,7 +262,7 @@ public class HttpClientResponseImpl implements HttpClientResponse  {
     if (handler != null) {
       handler.handleException(e);
     } else {
-      log.error(e);
+      log.error(e.getMessage(), e);
     }
   }
 

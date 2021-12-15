@@ -13,11 +13,10 @@
 package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.file.impl.FileResolverImpl;
 import io.vertx.core.json.JsonObject;
 
 import java.io.File;
-
-import static io.vertx.core.file.impl.FileResolver.*;
 
 /**
  * Vert.x file system base configuration, this class can be extended by provider implementations to configure
@@ -29,12 +28,12 @@ public class FileSystemOptions {
   /**
    * The default behavior for caching files for class path resolution = {@code false} if and only if the system property {@code "vertx.disableFileCaching"} exists and is set to the string {@code "false"}
    */
-  public static final boolean DEFAULT_FILE_CACHING_ENABLED = !Boolean.getBoolean(DISABLE_FILE_CACHING_PROP_NAME);
+  public static final boolean DEFAULT_FILE_CACHING_ENABLED = !Boolean.getBoolean(FileResolverImpl.DISABLE_FILE_CACHING_PROP_NAME);
 
   /**
    * The default behavior to cache or not class path resolution = {@code false} if and only if the system property {@code "vertx.disableFileCPResolving"} exists and is set to the string {@code "false"}
    */
-  public static final boolean DEFAULT_CLASS_PATH_RESOLVING_ENABLED = !Boolean.getBoolean(DISABLE_CP_RESOLVING_PROP_NAME);
+  public static final boolean DEFAULT_CLASS_PATH_RESOLVING_ENABLED = !Boolean.getBoolean(FileResolverImpl.DISABLE_CP_RESOLVING_PROP_NAME);
 
 
   // get the system default temp dir location (can be overriden by using the standard java system property)
@@ -46,7 +45,7 @@ public class FileSystemOptions {
    * The default file caching dir. If the system property {@code "vertx.cacheDirBase"} is set, then this is the value
    * If not, then the system property {@code java.io.tmpdir} is taken or {code .} if not set. suffixed with {@code vertx-cache}.
    */
-  public static final String DEFAULT_FILE_CACHING_DIR = System.getProperty(CACHE_DIR_BASE_PROP_NAME, TMPDIR + File.separator + DEFAULT_CACHE_DIR_BASE);
+  public static final String DEFAULT_FILE_CACHING_DIR = System.getProperty(FileResolverImpl.CACHE_DIR_BASE_PROP_NAME, TMPDIR + File.separator + DEFAULT_CACHE_DIR_BASE);
 
   private boolean classPathResolvingEnabled = DEFAULT_CLASS_PATH_RESOLVING_ENABLED;
   private boolean fileCachingEnabled = DEFAULT_FILE_CACHING_ENABLED;

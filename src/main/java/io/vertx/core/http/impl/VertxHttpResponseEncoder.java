@@ -18,9 +18,6 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
-import io.vertx.core.net.impl.PartialPooledByteBufAllocator;
-
-import java.util.List;
 
 /**
  * {@link io.netty.handler.codec.http.HttpResponseEncoder} which forces the usage of direct buffers for max performance.
@@ -28,12 +25,6 @@ import java.util.List;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 final class VertxHttpResponseEncoder extends HttpResponseEncoder {
-  private ChannelHandlerContext context;
-
-  @Override
-  protected void encode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
-    super.encode(context, msg, out);
-  }
 
   @Override
   protected void encodeHeaders(HttpHeaders headers, ByteBuf buf) {
@@ -47,7 +38,6 @@ final class VertxHttpResponseEncoder extends HttpResponseEncoder {
 
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-    this.context = PartialPooledByteBufAllocator.forceDirectAllocator(ctx);
     super.handlerAdded(ctx);
   }
 

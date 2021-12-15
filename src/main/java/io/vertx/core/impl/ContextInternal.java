@@ -219,8 +219,8 @@ public interface ContextInternal extends Context {
 
   /**
    * @return the {@link ConcurrentMap} used to store context data
-   * @see Context#get(String)
-   * @see Context#put(String, Object)
+   * @see Context#get(Object)
+   * @see Context#put(Object, Object)
    */
   ConcurrentMap<Object, Object> contextData();
 
@@ -305,4 +305,12 @@ public interface ContextInternal extends Context {
     closeFuture().remove(hook);
   }
 
+  /**
+   * Returns the original context, a duplicate context returns the wrapped context otherwise this instance is returned.
+   *
+   * @return the wrapped context
+   */
+  default ContextInternal unwrap() {
+    return this;
+  }
 }

@@ -11,11 +11,11 @@
 package io.vertx.core.net.impl.pool;
 
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.ConnectionPoolTooBusyException;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 
 import java.util.AbstractList;
@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -62,7 +63,7 @@ import java.util.function.Predicate;
  *
  * <h3>Waiter lifecycle</h3>
  *
- * Connection requests are done with {@link ConnectionPool#acquire(EventLoopContext, int, Handler)}. Such request
+ * Connection requests are done with {@link ConnectionPool#acquire(ContextInternal, int, Handler)}. Such request
  * creates a {@link PoolWaiter}. When such request is made
  *
  * <ul>
@@ -81,13 +82,13 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
   private static final Future POOL_CLOSED = Future.failedFuture("Pool closed");
 
   /**
-   * Select the first available available connection with the same context.
+   * Select the first available available connection with the same event loop.
    */
-  private static final BiFunction<PoolWaiter, List<PoolConnection>, PoolConnection> SAME_CONTEXT_SELECTOR = (waiter, list) -> {
+  private static final BiFunction<PoolWaiter, List<PoolConnection>, PoolConnection> SAME_EVENT_LOOP_SELECTOR = (waiter, list) -> {
     int size = list.size();
     for (int i = 0;i < size;i++) {
       PoolConnection slot = list.get(i);
-      if (slot.context() == waiter.context() && slot.concurrency() > 0) {
+      if (slot.context().nettyEventLoop() == waiter.context().nettyEventLoop() && slot.concurrency() > 0) {
         return slot;
       }
     }
@@ -95,7 +96,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
   };
 
   /**
-   * Select the first available available connection.
+   * Select the first available connection.
    */
   private static final BiFunction<PoolWaiter, List<PoolConnection>, PoolConnection> FIRST_AVAILABLE_SELECTOR = (waiter, list) -> {
     int size = list.size();
@@ -144,7 +145,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     @Override
-    public Context context() {
+    public ContextInternal context() {
       return context;
     }
 
@@ -176,6 +177,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
   // Selectors
   private BiFunction<PoolWaiter<C>, List<PoolConnection<C>>, PoolConnection<C>> selector;
+  private Function<ContextInternal, EventLoopContext> contextProvider;
   private BiFunction<PoolWaiter<C>, List<PoolConnection<C>>, PoolConnection<C>> fallbackSelector;
 
   // Connection state
@@ -216,14 +218,21 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     this.capacity = 0;
     this.maxCapacity = maxCapacity;
     this.sync = new CombinerExecutor<>(this);
-    this.selector = (BiFunction) SAME_CONTEXT_SELECTOR;
+    this.selector = (BiFunction) SAME_EVENT_LOOP_SELECTOR;
     this.fallbackSelector = (BiFunction) FIRST_AVAILABLE_SELECTOR;
+    this.contextProvider = EVENT_LOOP_CONTEXT_PROVIDER;
     this.waiters = new Waiters<>();
   }
 
   @Override
   public ConnectionPool<C> connectionSelector(BiFunction<PoolWaiter<C>, List<PoolConnection<C>>, PoolConnection<C>> selector) {
     this.selector = selector;
+    return this;
+  }
+
+  @Override
+  public ConnectionPool<C> contextProvider(Function<ContextInternal, EventLoopContext> contextProvider) {
+    this.contextProvider = contextProvider;
     return this;
   }
 
@@ -260,7 +269,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     @Override
-    public Runnable execute(SimpleConnectionPool<C> pool) {
+    public Task execute(SimpleConnectionPool<C> pool) {
 
       int capacity = pool.capacityFactors[(int)result.weight()];
 
@@ -277,11 +286,14 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         } else {
           waiter.disposed = true;
         }
-        return () -> {
-          if (waiter != null) {
-            slot.context.emit(POOL_CLOSED, waiter.handler);
+        return new Task() {
+          @Override
+          public void run() {
+            if (waiter != null) {
+              slot.context.emit(POOL_CLOSED, waiter.handler);
+            }
+            slot.result.complete(slot.connection);
           }
-          slot.result.complete(slot.connection);
         };
       } else {
         if (slot.concurrency == 0) {
@@ -311,16 +323,19 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           extra = null;
         }
         slot.concurrency -= c;
-        return () -> {
-          if (waiter != null) {
-            new LeaseImpl<>(slot, waiter.handler).emit();
-          }
-          if (extra != null) {
-            for (LeaseImpl<C> lease : extra) {
-              lease.emit();
+        return new Task() {
+          @Override
+          public void run() {
+            if (waiter != null) {
+              new LeaseImpl<>(slot, waiter.handler).emit();
             }
+            if (extra != null) {
+              for (LeaseImpl<C> lease : extra) {
+                lease.emit();
+              }
+            }
+            slot.result.complete(slot.connection);
           }
-          slot.result.complete(slot.connection);
         };
       }
     }
@@ -338,7 +353,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       this.waiter = waiter;
     }
 
-    public Runnable execute(SimpleConnectionPool<C> pool) {
+    public Task execute(SimpleConnectionPool<C> pool) {
       pool.requests--;
       if (waiter.disposed) {
         waiter = null;
@@ -346,14 +361,22 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         waiter.disposed = true;
       }
       if (pool.closed) {
-        return () -> waiter.handler.handle(POOL_CLOSED);
+        return new Task() {
+          @Override
+          public void run() {
+            waiter.handler.handle(POOL_CLOSED);
+          }
+        };
       }
       pool.remove(removed);
-      return () -> {
-        if (waiter != null) {
-          removed.context.emit(Future.failedFuture(cause), waiter.handler);
+      return new Task() {
+        @Override
+        public void run() {
+          if (waiter != null) {
+            removed.context.emit(Future.failedFuture(cause), waiter.handler);
+          }
+          removed.result.fail(cause);
         }
-        removed.result.fail(cause);
       };
     }
   }
@@ -367,7 +390,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     @Override
-    public Runnable execute(SimpleConnectionPool<C> pool) {
+    public Task execute(SimpleConnectionPool<C> pool) {
       if (pool.closed || pool.slots[removed.index] != removed) {
         return null;
       }
@@ -378,16 +401,20 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       removed.capacity = 0;
       PoolWaiter<C> waiter = pool.waiters.poll();
       if (waiter != null) {
-        Slot<C> slot = new Slot<>(pool, waiter.context, removed.index, waiter.capacity);
+        EventLoopContext connectionContext = pool.contextProvider.apply(waiter.context);
+        Slot<C> slot = new Slot<>(pool, connectionContext, removed.index, waiter.capacity);
         pool.capacity -= w;
         pool.capacity += waiter.capacity;
         pool.slots[removed.index] = slot;
         pool.requests++;
-        return () -> {
-          if (waiter.listener != null) {
-            waiter.listener.onConnect(waiter);
+        return new Task() {
+          @Override
+          public void run() {
+            if (waiter.listener != null) {
+              waiter.listener.onConnect(waiter);
+            }
+            pool.connect(slot, waiter);
           }
-          pool.connect(slot, waiter);
         };
       } else if (pool.size > 1) {
         Slot<C> tmp = pool.slots[pool.size - 1];
@@ -417,7 +444,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     @Override
-    public Runnable execute(SimpleConnectionPool<C> pool) {
+    public Task execute(SimpleConnectionPool<C> pool) {
       if (slot.connection != null) {
         if (slot.maxConcurrency < concurrency) {
           long diff = concurrency - slot.maxConcurrency;
@@ -431,9 +458,12 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
               extra[i] = new LeaseImpl<>(slot, pool.waiters.poll().handler);
             }
             slot.concurrency -= m;
-            return () -> {
-              for (LeaseImpl<C> lease : extra) {
-                lease.emit();
+            return new Task() {
+              @Override
+              public void run() {
+                for (LeaseImpl<C> lease : extra) {
+                  lease.emit();
+                }
               }
             };
           } else {
@@ -467,9 +497,14 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     @Override
-    public Runnable execute(SimpleConnectionPool<C> pool) {
+    public Task execute(SimpleConnectionPool<C> pool) {
       if (pool.closed) {
-        return () -> handler.handle(POOL_CLOSED);
+        return new Task() {
+          @Override
+          public void run() {
+            handler.handle(POOL_CLOSED);
+          }
+        };
       }
       List<C> res = new ArrayList<>();
       List<Slot<C>> removed = new ArrayList<>();
@@ -483,7 +518,12 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       for (Slot<C> slot : removed) {
         pool.remove(slot);
       }
-      return () -> handler.handle(Future.succeededFuture(res));
+      return new Task() {
+        @Override
+        public void run() {
+          handler.handle(Future.succeededFuture(res));
+        }
+      };
     }
   }
 
@@ -494,36 +534,48 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
   private static class Acquire<C> extends PoolWaiter<C> implements Executor.Action<SimpleConnectionPool<C>> {
 
-    public Acquire(EventLoopContext context, PoolWaiter.Listener<C> listener, int capacity, Handler<AsyncResult<Lease<C>>> handler) {
+    public Acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int capacity, Handler<AsyncResult<Lease<C>>> handler) {
       super(listener, context, capacity, handler);
     }
 
     @Override
-    public Runnable execute(SimpleConnectionPool<C> pool) {
+    public Task execute(SimpleConnectionPool<C> pool) {
       if (pool.closed) {
-        return () -> context.emit(POOL_CLOSED, handler);
+        return new Task() {
+          @Override
+          public void run() {
+            context.emit(POOL_CLOSED, handler);
+          }
+        };
       }
 
       // 1. Try reuse a existing connection with the same context
       Slot<C> slot1 = (Slot<C>) pool.selector.apply(this, pool.list);
       if (slot1 != null) {
         slot1.concurrency--;
-        return () -> {
-          new LeaseImpl<>(slot1, handler).emit();
+        return new Task() {
+          @Override
+          public void run() {
+            new LeaseImpl<>(slot1, handler).emit();
+          }
         };
       }
 
       // 2. Try create connection
       if (pool.capacity < pool.maxCapacity) {
         pool.capacity += capacity;
-        Slot<C> slot2 = new Slot<>(pool, context, pool.size, capacity);
+        EventLoopContext connectionContext = pool.contextProvider.apply(context);
+        Slot<C> slot2 = new Slot<>(pool, connectionContext, pool.size, capacity);
         pool.slots[pool.size++] = slot2;
         pool.requests++;
-        return () -> {
-          if (listener != null) {
-            listener.onConnect(this);
+        return new Task() {
+          @Override
+          public void run() {
+            if (listener != null) {
+              listener.onConnect(Acquire.this);
+            }
+            pool.connect(slot2, Acquire.this);
           }
-          pool.connect(slot2, this);
         };
       }
 
@@ -531,31 +583,44 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       Slot<C> slot3 = (Slot<C>) pool.fallbackSelector.apply(this, pool.list);
       if (slot3 != null) {
         slot3.concurrency--;
-        return () -> {
-          new LeaseImpl<>(slot3, handler).emit();
+        return new Task() {
+          @Override
+          public void run() {
+            new LeaseImpl<>(slot3, handler).emit();
+          }
         };
       }
 
       // 4. Fall in waiters list
       if (pool.maxWaiters == -1 || (pool.waiters.size() + pool.requests) < pool.maxWaiters) {
         pool.waiters.addLast(this);
-        return () -> {
-          if (listener != null) {
-            listener.onEnqueue(this);
+        if (listener != null) {
+          return new Task() {
+            @Override
+            public void run() {
+              listener.onEnqueue(Acquire.this);
+            }
+          };
+        } else {
+          return null;
+        }
+      } else {
+        return new Task() {
+          @Override
+          public void run() {
+            context.emit(Future.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + pool.maxWaiters)), handler);
           }
         };
-      } else {
-        return () -> context.emit(Future.failedFuture(new ConnectionPoolTooBusyException("Connection pool reached max wait queue size of " + pool.maxWaiters)), handler);
       }
     }
   }
 
   @Override
-  public void acquire(EventLoopContext context, PoolWaiter.Listener<C> listener, int kind, Handler<AsyncResult<Lease<C>>> handler) {
+  public void acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int kind, Handler<AsyncResult<Lease<C>>> handler) {
     execute(new Acquire<>(context, listener, capacityFactors[kind], handler));
   }
 
-  public void acquire(EventLoopContext context, int kind, Handler<AsyncResult<Lease<C>>> handler) {
+  public void acquire(ContextInternal context, int kind, Handler<AsyncResult<Lease<C>>> handler) {
     acquire(context, PoolWaiter.NULL_LISTENER, kind, handler);
   }
 
@@ -564,7 +629,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     execute(new Cancel<>(waiter, handler));
   }
 
-  private static class Cancel<C> implements Executor.Action<SimpleConnectionPool<C>>, Runnable {
+  private static class Cancel<C> extends Task implements Executor.Action<SimpleConnectionPool<C>> {
 
     private final PoolWaiter<C> waiter;
     private final Handler<AsyncResult<Boolean>> handler;
@@ -576,9 +641,14 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     @Override
-    public Runnable execute(SimpleConnectionPool<C> pool) {
+    public Task execute(SimpleConnectionPool<C> pool) {
       if (pool.closed) {
-        return () -> handler.handle(POOL_CLOSED);
+        return new Task() {
+          @Override
+          public void run() {
+            handler.handle(POOL_CLOSED);
+          }
+        };
       }
       if (pool.waiters.removeFirst(waiter)) {
         cancelled = true;
@@ -634,11 +704,16 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     @Override
-    public Runnable execute(SimpleConnectionPool<C> pool) {
+    public Task execute(SimpleConnectionPool<C> pool) {
       if (!pool.closed && slot.connection != null) {
         if (pool.waiters.size() > 0) {
           PoolWaiter<C> waiter = pool.waiters.poll();
-          return () -> new LeaseImpl<>(slot, waiter.handler).emit();
+          return new Task() {
+            @Override
+            public void run() {
+              new LeaseImpl<>(slot, waiter.handler).emit();
+            }
+          };
         } else {
           slot.concurrency++;
         }
@@ -677,9 +752,14 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     @Override
-    public Runnable execute(SimpleConnectionPool<C> pool) {
+    public Task execute(SimpleConnectionPool<C> pool) {
       if (pool.closed) {
-        return () -> handler.handle(POOL_CLOSED);
+        return new Task() {
+          @Override
+          public void run() {
+            handler.handle(POOL_CLOSED);
+          }
+        };
       }
       pool.closed = true;
       List<PoolWaiter<C>> waiters = pool.waiters.clear();
@@ -695,9 +775,12 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         list.add(slot.result.future());
       }
       pool.size = 0;
-      return () -> {
-        waiters.forEach(w -> w.context.emit(POOL_CLOSED, w.handler));
-        handler.handle(Future.succeededFuture(list));
+      return new Task() {
+        @Override
+        public void run() {
+          waiters.forEach(w -> w.context.emit(POOL_CLOSED, w.handler));
+          handler.handle(Future.succeededFuture(list));
+        }
       };
     }
   }

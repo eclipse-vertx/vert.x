@@ -21,7 +21,9 @@ import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.http.impl.CookieImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
+import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.impl.Utils;
 import io.vertx.core.net.*;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
@@ -851,6 +853,32 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.send(onSuccess(resp -> testComplete()));
       }));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testGetParamDefaultValue() {
+    String paramName1 = "foo";
+    String paramName1Value = "bar";
+    String paramName2 = "notPresentParam";
+    String paramName2DefaultValue = "defaultValue";
+    String reqUri = DEFAULT_TEST_URI + "/?" + paramName1 + "=" + paramName1Value;
+
+    server.requestHandler(req -> {
+      assertTrue(req.params().contains(paramName1));
+      assertEquals(paramName1Value, req.getParam(paramName1, paramName2DefaultValue));
+      assertFalse(req.params().contains(paramName2));
+      assertEquals(paramName2DefaultValue, req.getParam(paramName2, paramName2DefaultValue));
+      req.response().end();
+    });
+
+    server.listen(testAddress, onSuccess(server -> {
+      client.request(new RequestOptions(requestOptions).setURI(reqUri))
+        .onComplete(onSuccess(req -> {
+          req.send(onSuccess(resp -> testComplete()));
+        }));
     }));
 
     await();
@@ -3896,6 +3924,44 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testFollowRedirectHappensAfterResponseIsReceived() throws Exception {
+    AtomicBoolean redirected = new AtomicBoolean();
+    AtomicBoolean sent = new AtomicBoolean();
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      if (redirected.compareAndSet(false, true)) {
+        String scheme = createBaseServerOptions().isSsl() ? "https" : "http";
+        resp
+          .setStatusCode(303)
+          .putHeader(HttpHeaders.CONTENT_LENGTH, "11")
+          .putHeader(HttpHeaders.LOCATION, scheme + "://localhost:8080/whatever")
+          .write("hello ");
+        vertx.setTimer(500, id -> {
+          sent.set(true);
+          resp.end("world");
+        });
+      } else {
+        assertTrue(sent.get());
+        resp.end();
+      }
+    });
+    startServer();
+    client.request(new RequestOptions()
+      .setMethod(HttpMethod.PUT)
+      .setHost(DEFAULT_HTTP_HOST)
+      .setPort(DEFAULT_HTTP_PORT)
+    )
+      .onComplete(onSuccess(req -> {
+        req.setFollowRedirects(true);
+        req.send(onSuccess(resp -> {
+          assertEquals(200, resp.statusCode());
+          testComplete();
+        }));
+      }));
+    await();
+  }
+
+  @Test
   public void testFollowRedirectWithChunkedBody() throws Exception {
     Buffer buff1 = Buffer.buffer(TestUtils.randomAlphaString(2048));
     Buffer buff2 = Buffer.buffer(TestUtils.randomAlphaString(2048));
@@ -4191,7 +4257,6 @@ public abstract class HttpTest extends HttpTestBase {
     await();
   }
 
-  @Ignore
   @Test
   public void testDefaultRedirectHandler() throws Exception {
     testFoo("http://example.com", "http://example.com");
@@ -4209,7 +4274,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   private void testFoo(String location, String expectedAbsoluteURI) throws Exception {
     int status = 301;
-    Map<String, String> headers = Collections.singletonMap(HttpHeaders.LOCATION.toString(), location);
+    MultiMap headers = HttpHeaders.headers().add(HttpHeaders.LOCATION.toString(), location);
     HttpMethod method = HttpMethod.GET;
     String baseURI = "https://localhost:8080";
     class MockReq implements HttpClientRequest {
@@ -4228,7 +4293,7 @@ public abstract class HttpTest extends HttpTestBase {
       public HttpClientRequest setURI(String uri) { throw new UnsupportedOperationException(); }
       public String path() { throw new UnsupportedOperationException(); }
       public String query() { throw new UnsupportedOperationException(); }
-      public MultiMap headers() { throw new UnsupportedOperationException(); }
+      public MultiMap headers() { return headers; }
       public HttpClientRequest putHeader(String name, String value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(CharSequence name, CharSequence value) { throw new UnsupportedOperationException(); }
       public HttpClientRequest putHeader(String name, Iterable<String> values) { throw new UnsupportedOperationException(); }
@@ -5011,6 +5076,10 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testHttpConnect() {
+    testHttpConnect(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT), 200);
+  }
+
+  protected void testHttpConnect(RequestOptions options, int sc) {
     Buffer buffer = TestUtils.randomBuffer(128);
     Buffer received = Buffer.buffer();
     CompletableFuture<Void> closeSocket = new CompletableFuture<>();
@@ -5023,7 +5092,7 @@ public abstract class HttpTest extends HttpTestBase {
       server.requestHandler(req -> {
         vertx.createNetClient(new NetClientOptions()).connect(1235, "localhost", onSuccess(dst -> {
 
-          req.response().setStatusCode(200);
+          req.response().setStatusCode(sc);
           req.response().setStatusMessage("Connection established");
 
           // Now create a NetSocket
@@ -5040,10 +5109,10 @@ public abstract class HttpTest extends HttpTestBase {
         }));
       });
       server.listen(testAddress, onSuccess(s -> {
-        client.request(new RequestOptions(requestOptions).setMethod(HttpMethod.CONNECT)).onComplete(onSuccess(req -> {
+        client.request(options).onComplete(onSuccess(req -> {
           req
             .connect(onSuccess(resp -> {
-              assertEquals(200, resp.statusCode());
+              assertEquals(sc, resp.statusCode());
               NetSocket socket = resp.netSocket();
               socket.handler(buff -> {
                 received.appendBuffer(buff);
@@ -5148,7 +5217,7 @@ public abstract class HttpTest extends HttpTestBase {
     });
   }
 
-  public void testNetSocketConnectSuccess(Handler<NetSocket> clientHandler, Handler<NetSocket> serverHandler) {
+  private void testNetSocketConnectSuccess(Handler<NetSocket> clientHandler, Handler<NetSocket> serverHandler) {
     waitFor(2);
 
     server.requestHandler(req -> {
@@ -5327,6 +5396,34 @@ public abstract class HttpTest extends HttpTestBase {
         }));
     }));
 
+    await();
+  }
+
+  @Test
+  public void testUpgradeTunnelNoSwitch() throws Exception {
+    server.requestHandler(req -> {
+      HttpServerResponse resp = req.response();
+      resp.setChunked(true);
+      resp.write("chunk-1")
+        .compose(v -> resp.write("chunk-2"))
+        .compose(v -> resp.end("chunk-3"));
+    });
+
+    startServer();
+
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/", onSuccess(req -> {
+      req.connect(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        List<String> chunks = new ArrayList<>();
+        resp.handler(chunk -> {
+          chunks.add(chunk.toString());
+        });
+        resp.endHandler(v -> {
+          assertEquals(Arrays.asList("chunk-1", "chunk-2", "chunk-3"), chunks);
+          testComplete();
+        });
+      }));
+    }));
     await();
   }
 
@@ -5704,6 +5801,71 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
+  public void testGetCookiesSameIdentity() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub").setDomain("www.vertx.io")));
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(3, cookies.size());
+      assertTrue(cookies.contains("foo=bar; Path=/"));
+      assertTrue(cookies.contains("foo=bar; Path=/sub"));
+      assertTrue(cookies.contains("foo=bar; Path=/sub; Domain=www.vertx.io"));
+    });
+  }
+
+  @Test
+  public void testGetCookiesSameIdentityRemoveOne() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub").setDomain("www.vertx.io")));
+      // will remove the first one only
+      req.response().removeCookie("foo");
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(2, cookies.size());
+      assertTrue(cookies.contains("foo=bar; Path=/sub"));
+      assertTrue(cookies.contains("foo=bar; Path=/sub; Domain=www.vertx.io"));
+    });
+  }
+
+  @Test
+  public void testGetCookiesSameIdentityRemoveAll() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub").setDomain("www.vertx.io")));
+      req.response().removeCookies("foo");
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(0, cookies.size());
+    });
+  }
+
+  @Test
+  public void testGetCookiesSameIdentityReplace() throws Exception {
+    testCookies(null, req -> {
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub")));
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "bar").setPath("/sub").setDomain("www.vertx.io")));
+      // will replace the last only
+      assertEquals(req.response(), req.response().addCookie(Cookie.cookie("foo", "barista").setPath("/sub").setDomain("www.vertx.io")));
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      assertEquals(3, cookies.size());
+      assertTrue(cookies.contains("foo=bar; Path=/"));
+      assertTrue(cookies.contains("foo=bar; Path=/sub"));
+      assertTrue(cookies.contains("foo=barista; Path=/sub; Domain=www.vertx.io"));
+    });
+  }
+
+  @Test
   public void testCookiesChanged() throws Exception {
     testCookies("foo=bar; wibble=blibble; plop=flop", req -> {
       assertEquals(3, req.cookieCount());
@@ -5871,6 +6033,24 @@ public abstract class HttpTest extends HttpTestBase {
     }, resp -> {
       List<String> cookies = resp.headers().getAll("set-cookie");
       assertEquals(1, cookies.size());
+    });
+  }
+
+  @Test
+  public void testReplaceCookie() throws Exception {
+    testCookies("XSRF-TOKEN=c359b44aef83415", req -> {
+      assertEquals(1, req.cookieCount());
+      req.response().addCookie(Cookie.cookie("XSRF-TOKEN", "88533580000c314").setPath("/"));
+      Map<String, Cookie> deprecatedMap = req.cookieMap();
+      assertFalse(((ServerCookie) deprecatedMap.get("XSRF-TOKEN")).isFromUserAgent());
+      assertEquals("/", deprecatedMap.get("XSRF-TOKEN").getPath());
+      req.response().end();
+    }, resp -> {
+      List<String> cookies = resp.headers().getAll("set-cookie");
+      // the expired cookie must be sent back
+      assertEquals(1, cookies.size());
+      // ensure that the cookie jar was updated correctly
+      assertEquals("XSRF-TOKEN=88533580000c314; Path=/", cookies.get(0));
     });
   }
 
@@ -6444,7 +6624,7 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testConnectTimeout() {
     client.close();
-    client = vertx.createHttpClient(createBaseClientOptions().setConnectTimeout(250));
+    client = vertx.createHttpClient(createBaseClientOptions().setConnectTimeout(1));
     client.request(new RequestOptions().setHost(TestUtils.NON_ROUTABLE_HOST).setPort(8080))
       .onComplete(onFailure(err -> {
         assertTrue(err instanceof ConnectTimeoutException);

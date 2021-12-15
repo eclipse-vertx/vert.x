@@ -11,6 +11,7 @@
 
 package io.vertx.core.http.impl;
 
+import io.netty.handler.codec.DecoderResult;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpRequest;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -51,7 +52,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -538,6 +539,11 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
+  public DecoderResult decoderResult() {
+    return DecoderResult.SUCCESS;
+  }
+
+  @Override
   void handlePriorityChange(StreamPriority streamPriority) {
     Handler<StreamPriority> handler;
     synchronized (conn) {
@@ -549,8 +555,25 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
-  public Map<String, Cookie> cookieMap() {
-    return (Map) response.cookies();
+  public Set<Cookie> cookies() {
+    return (Set) response.cookies();
+  }
+
+  @Override
+  public Set<Cookie> cookies(String name) {
+    return (Set) response.cookies().getAll(name);
+  }
+
+  @Override
+  public Cookie getCookie(String name) {
+    return response.cookies()
+      .get(name);
+  }
+
+  @Override
+  public Cookie getCookie(String name, String domain, String path) {
+    return response.cookies()
+      .get(name, domain, path);
   }
 
   @Override

@@ -146,8 +146,12 @@ This caching behaviour can be set on the {@link io.vertx.core.file.FileSystemOpt
 option. The default value of this option is `true` unless the system property `vertx.disableFileCaching` is
 defined.
 
-The path where the files are cached is `.vertx` by default and can be customized by setting the system
-property `vertx.cacheDirBase`.
+The path where the files are cached is `/tmp/vertx-cache-UUID` by default and can be customized by setting the system
+property `vertx.cacheDirBase`. When using this property, note that it should refer to a directory prefix in a process
+read/writeable location, for example: `-Dvertx.cacheDirBase=/tmp/my-vertx-cache` (Note that there's no UUID).
+
+Each vert.x process will append it's own UUID in order to keep caches independently of different applications running
+on the same machine.
 
 The whole classpath resolving feature can be disabled system-wide by setting the system
 property `vertx.disableFileCPResolving` to `true`.

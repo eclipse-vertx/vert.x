@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.http.RequestOptions}.
@@ -12,6 +13,9 @@ import java.time.format.DateTimeFormatter;
  */
 public class RequestOptionsConverter {
 
+
+  private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
+  private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, RequestOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -51,6 +55,11 @@ public class RequestOptionsConverter {
             obj.setTimeout(((Number)member.getValue()).longValue());
           }
           break;
+        case "traceOperation":
+          if (member.getValue() instanceof String) {
+            obj.setTraceOperation((String)member.getValue());
+          }
+          break;
         case "uri":
           if (member.getValue() instanceof String) {
             obj.setURI((String)member.getValue());
@@ -81,6 +90,9 @@ public class RequestOptionsConverter {
       json.put("ssl", obj.isSsl());
     }
     json.put("timeout", obj.getTimeout());
+    if (obj.getTraceOperation() != null) {
+      json.put("traceOperation", obj.getTraceOperation());
+    }
     if (obj.getURI() != null) {
       json.put("uri", obj.getURI());
     }

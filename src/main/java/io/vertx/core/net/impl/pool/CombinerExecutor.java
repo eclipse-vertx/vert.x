@@ -38,22 +38,35 @@ public class CombinerExecutor<S> implements Executor<S> {
     if (s.get() != 0 || !s.compareAndSet(0, 1)) {
       return;
     }
+    Task head = null;
     do {
       try {
-        pollAndExecute();
+        head = pollAndExecute(head);
       } finally {
         s.set(0);
       }
     } while (!q.isEmpty() && s.compareAndSet(0, 1));
+    while (head != null) {
+      head.run();
+      head = head.next;
+    }
   }
 
-  private void pollAndExecute() {
+  private Task pollAndExecute(Task head) {
     Action<S> a;
     while ((a = q.poll()) != null) {
-      Runnable post = a.execute(state);
-      if (post != null) {
-        post.run();
+      Task action = a.execute(state);
+      if (action != null) {
+        if (head == null) {
+          head = action;
+          head.prev = head;
+        } else {
+          action.prev = head.prev;
+          head.prev.next = action;
+          head.prev = action;
+        }
       }
     }
+    return head;
   }
 }

@@ -67,6 +67,11 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     return this;
   }
 
+  @Override
+  public HttpServerConnection invalidRequestHandler(Handler<HttpServerRequest> handler) {
+    return this;
+  }
+
   public HttpServerMetrics metrics() {
     return metrics;
   }

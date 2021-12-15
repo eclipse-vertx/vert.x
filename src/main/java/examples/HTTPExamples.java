@@ -11,7 +11,9 @@
 
 package examples;
 
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -956,6 +958,34 @@ public class HTTPExamples {
     });
   }
 
+  public void exampleWebSocketDisableOriginHeader(HttpClient client, String host, int port, String requestUri) {
+    WebSocketConnectOptions options = new WebSocketConnectOptions()
+      .setHost(host)
+      .setPort(port)
+      .setURI(requestUri)
+      .setAllowOriginHeader(false);
+    client.webSocket(options, res -> {
+      if (res.succeeded()) {
+        WebSocket ws = res.result();
+        System.out.println("Connected!");
+      }
+    });
+  }
+
+  public void exampleWebSocketSetOriginHeader(HttpClient client, String host, int port, String requestUri, String origin) {
+    WebSocketConnectOptions options = new WebSocketConnectOptions()
+      .setHost(host)
+      .setPort(port)
+      .setURI(requestUri)
+      .addHeader(HttpHeaders.ORIGIN, origin);
+    client.webSocket(options, res -> {
+      if (res.succeeded()) {
+        WebSocket ws = res.result();
+        System.out.println("Connected!");
+      }
+    });
+  }
+
   public void example55(WebSocket webSocket) {
     // Write a simple binary message
     Buffer buffer = Buffer.buffer().appendInt(123).appendFloat(1.23f);
@@ -1105,6 +1135,12 @@ public class HTTPExamples {
     });
   }
 
+  public void randomServersharing(Vertx vertx) {
+    vertx.createHttpServer().requestHandler(request -> {
+      request.response().end("Hello from server " + this);
+    }).listen(-1);
+  }
+
   public void setSSLPerRequest(HttpClient client) {
     client.request(new RequestOptions()
         .setHost("localhost")
@@ -1128,5 +1164,39 @@ public class HTTPExamples {
     request.response()
       .putHeader(HttpHeaders.CONTENT_ENCODING, HttpHeaders.IDENTITY)
       .sendFile("/path/to/image.jpg");
+  }
+
+  public static void httpClientSharing1(Vertx vertx) {
+    HttpClient client = vertx.createHttpClient(new HttpClientOptions().setShared(true));
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        // Use the client
+      }
+    }, new DeploymentOptions().setInstances(4));
+  }
+
+  public static void httpClientSharing2(Vertx vertx) {
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      HttpClient client;
+      @Override
+      public void start() {
+        // Get or create a shared client
+        // this actually creates a lease to the client
+        // when the verticle is undeployed, the lease will be released automaticaly
+        client = vertx.createHttpClient(new HttpClientOptions().setShared(true).setName("my-client"));
+      }
+    }, new DeploymentOptions().setInstances(4));
+  }
+
+  public static void httpClientSharing3(Vertx vertx) {
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      HttpClient client;
+      @Override
+      public void start() {
+        // The client creates and use two event-loops for 4 instances
+        client = vertx.createHttpClient(new HttpClientOptions().setPoolEventLoopSize(2).setShared(true).setName("my-client"));
+      }
+    }, new DeploymentOptions().setInstances(4));
   }
 }

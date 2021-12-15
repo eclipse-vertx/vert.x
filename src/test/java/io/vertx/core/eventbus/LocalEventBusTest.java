@@ -18,7 +18,6 @@ import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.streams.Pump;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.test.core.TestUtils;
 import org.junit.Test;
@@ -1477,6 +1476,74 @@ public class LocalEventBusTest extends EventBusTestBase {
   public void testCloseSender() {
     MessageProducer<String> producer = eb.sender(ADDRESS1);
     producer.close(onSuccess(v -> testComplete()));
+    await();
+  }
+
+  @Test
+  public void testEarlyTimeoutWhenSetMaxBufferedMessages() {
+    testEarlyTimeoutOfBufferedMessages(
+      MessageConsumer::pause,
+      consumer -> consumer.setMaxBufferedMessages(0));
+  }
+
+  @Test
+  public void testEarlyTimeoutOfBufferedMessagesOnHandlerUnregistration() {
+    testEarlyTimeoutOfBufferedMessages(
+      MessageConsumer::pause,
+      MessageConsumer::unregister);
+  }
+
+  private void testEarlyTimeoutOfBufferedMessages(Consumer<MessageConsumer<?>> beforeRequest, Consumer<MessageConsumer<?>> afterRequest) {
+    DeliveryOptions noTimeout = new DeliveryOptions().setSendTimeout(Long.MAX_VALUE);
+    MessageConsumer<?> consumer = vertx.eventBus().consumer(ADDRESS1);
+    consumer.setMaxBufferedMessages(1);
+    consumer.handler(message -> message.reply(null));
+    ((MessageConsumerImpl<?>)consumer).discardHandler(msg -> {
+      if (msg.body().equals(2)) {
+        afterRequest.accept(consumer);
+      }
+    });
+    consumer.completionHandler(__ -> {
+      beforeRequest.accept(consumer);
+      vertx.eventBus().request(ADDRESS1, 1, noTimeout, onFailure(err -> {
+        assertTrue(err instanceof ReplyException);
+        assertEquals(ReplyFailure.TIMEOUT, ((ReplyException) err).failureType());
+        testComplete();
+      }));
+      vertx.eventBus().send(ADDRESS1, 2);
+    });
+    await();
+  }
+
+  @Test
+  public void testEarlyTimeoutWhenMaxBufferedMessagesExceeded() {
+    DeliveryOptions noTimeout = new DeliveryOptions().setSendTimeout(Long.MAX_VALUE);
+    MessageConsumer<?> consumer = vertx.eventBus().consumer(ADDRESS1);
+    consumer.handler(message -> fail());
+    consumer.completionHandler(__ -> {
+      consumer.setMaxBufferedMessages(0).pause();
+      vertx.eventBus().request(ADDRESS1, 1, noTimeout, onFailure(err -> {
+        assertTrue(err instanceof ReplyException);
+        assertEquals(ReplyFailure.TIMEOUT, ((ReplyException) err).failureType());
+        testComplete();
+      }));
+    });
+    await();
+  }
+
+  @Test
+  public void testEarlyTimeoutOnHandlerUnregistration() {
+    DeliveryOptions noTimeout = new DeliveryOptions().setSendTimeout(Long.MAX_VALUE);
+    MessageConsumer<?> consumer = vertx.eventBus().consumer(ADDRESS1);
+    consumer.handler(message -> fail());
+    consumer.completionHandler(__ -> {
+      vertx.eventBus().request(ADDRESS1, 1, noTimeout, onFailure(err -> {
+        assertTrue(err instanceof ReplyException);
+        assertEquals(ReplyFailure.TIMEOUT, ((ReplyException) err).failureType());
+        testComplete();
+      }));
+      consumer.unregister();
+    });
     await();
   }
 }

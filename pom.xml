@@ -20,7 +20,7 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>4.1.1-SNAPSHOT</version>
+  <version>4.2.3-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -45,13 +45,12 @@
 
   <properties>
     <slf4j.version>1.7.21</slf4j.version>
-    <log4j2.version>2.13.3</log4j2.version>
+    <log4j2.version>2.15.0</log4j2.version>
     <junit.version>4.13.1</junit.version>
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>4.1.1-SNAPSHOT</stack.version>
-    <jetty.alpnAgent.argLine/>
+    <stack.version>4.2.3-SNAPSHOT</stack.version>
     <jmh.version>1.19</jmh.version>
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
@@ -224,7 +223,14 @@
               <additionalClasspathElement>${project.basedir}/src/test/classpath/jul</additionalClasspathElement>
             </additionalClasspathElements>
             <systemPropertyVariables>
-              <!--<javax.net.debug>ssl</javax.net.debug>-->
+              <!-- Uncomment to debug SSL -->
+              <!--
+              <javax.net.debug>ssl</javax.net.debug>
+              -->
+              <!-- Uncomment to run with leak detection -->
+              <!--
+              <io.netty.leakDetection.level>PARANOID</io.netty.leakDetection.level>
+              -->
               <buildDirectory>${project.build.directory}</buildDirectory>
               <vertx.version>${project.version}</vertx.version>
               <vertx.handle100Continue>true</vertx.handle100Continue>
@@ -234,7 +240,7 @@
             </systemPropertyVariables>
             <!-- Needs to be small enough to run in a EC2 1.7GB small instance -->
             <!-- IMPORTANT: when modifying this line, don't forge to modify the same line in the`coverage` profile -->
-            <argLine>-Xmx1200M ${jetty.alpnAgent.argLine}</argLine>
+            <argLine>-Xmx1200M</argLine>
             <forkCount>1</forkCount>
             <reuseForks>true</reuseForks>
             <excludes>
@@ -308,7 +314,7 @@
             </goals>
             <configuration>
               <compileSourceRoots>
-                <compileSourceRoot>src/main/java11</compileSourceRoot>
+                <compileSourceRoot>${project.basedir}/src/main/java11</compileSourceRoot>
               </compileSourceRoots>
               <outputDirectory>${project.build.outputDirectory}/META-INF/versions/11/</outputDirectory>
             </configuration>
@@ -321,7 +327,7 @@
             </goals>
             <configuration>
               <compileSourceRoots>
-                <compileSourceRoot>src/test/classpath/servicehelper</compileSourceRoot>
+                <compileSourceRoot>${project.basedir}/src/test/classpath/servicehelper</compileSourceRoot>
               </compileSourceRoots>
               <outputDirectory>${project.build.directory}/classpath/servicehelper</outputDirectory>
             </configuration>
@@ -458,41 +464,6 @@
             </configuration>
           </execution>
           <execution>
-            <id>ssl-engine:agent</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <argLine>${jetty.alpnAgent.argLine}</argLine>
-              <includes>
-                <include>io/vertx/it/SSLEngineTest.java</include>
-              </includes>
-              <systemProperties>
-                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
-              </systemProperties>
-              <classpathDependencyExcludes>
-                <classpathDependencyExclude>io.netty:netty-tcnative-boringssl-static</classpathDependencyExclude>
-              </classpathDependencyExcludes>
-            </configuration>
-          </execution>
-          <execution>
-            <id>ssl-engine:openssl+agent</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-            <configuration>
-              <argLine>${jetty.alpnAgent.argLine}</argLine>
-              <includes>
-                <include>io/vertx/it/SSLEngineTest.java</include>
-              </includes>
-              <systemProperties>
-                <vertx-test-alpn-openssl>true</vertx-test-alpn-openssl>
-              </systemProperties>
-            </configuration>
-          </execution>
-          <execution>
             <id>no-native</id>
             <goals>
               <goal>integration-test</goal>
@@ -504,7 +475,9 @@
               </includes>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>io.netty:netty-transport-native-epoll</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-transport-classes-epoll</classpathDependencyExclude>
                 <classpathDependencyExclude>io.netty:netty-transport-native-kqueue</classpathDependencyExclude>
+                <classpathDependencyExclude>io.netty:netty-transport-classes-kqueue</classpathDependencyExclude>
               </classpathDependencyExcludes>
             </configuration>
           </execution>
@@ -626,7 +599,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>json-codec</id>
+            <id>custom-json-codec</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -640,7 +613,7 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/jsoncodec</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customjsoncodec</additionalClasspathElement>
               </additionalClasspathElements>
               <classpathDependencyExcludes>
                 <classpathDependencyExclude>com.fasterxml.jackson.core:jackson-core</classpathDependencyExclude>
@@ -649,7 +622,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>vertx-thread-factory</id>
+            <id>custom-vertx-thread-factory</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -663,12 +636,12 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/threadfactory</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customthreadfactory</additionalClasspathElement>
               </additionalClasspathElements>
             </configuration>
           </execution>
           <execution>
-            <id>executor-service-factory</id>
+            <id>custom-executor-service-factory</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
@@ -682,7 +655,41 @@
                 <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
               </systemProperties>
               <additionalClasspathElements>
-                <additionalClasspathElement>${project.basedir}/src/test/classpath/executorservicefactory</additionalClasspathElement>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customexecutorservicefactory</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
+          <execution>
+            <id>custom-vertx-tracer-factory</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/VertxTracerFactoryTest.java</include>
+              </includes>
+              <systemProperties>
+                <vertx-test-alpn-jdk>false</vertx-test-alpn-jdk>
+                <vertx-test-alpn-openssl>false</vertx-test-alpn-openssl>
+              </systemProperties>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/tracerfactory</additionalClasspathElement>
+              </additionalClasspathElements>
+            </configuration>
+          </execution>
+          <execution>
+            <id>custom-file-resolver-factory</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>io/vertx/it/FileResolverFactoryTest.java</include>
+              </includes>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.basedir}/src/test/classpath/customfileresolver</additionalClasspathElement>
               </additionalClasspathElements>
             </configuration>
           </execution>
@@ -744,32 +751,12 @@
               <groupId>org.apache.maven.plugins</groupId>
               <artifactId>maven-surefire-plugin</artifactId>
               <configuration>
-                <argLine>-Xmx1200M ${jetty.alpnAgent.argLine}</argLine>
+                <argLine>-Xmx1200M</argLine>
               </configuration>
             </plugin>
           </plugins>
         </pluginManagement>
       </build>
-    </profile>
-
-    <profile>
-      <id>java-8</id>
-      <properties>
-        <jetty.alpnAgent.version>2.0.10</jetty.alpnAgent.version>
-        <jetty.alpnAgent.path>${settings.localRepository}/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
-        <jetty.alpnAgent.argLine>-javaagent:"${jetty.alpnAgent.path}"</jetty.alpnAgent.argLine>
-      </properties>
-      <activation>
-        <jdk>1.8</jdk>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.mortbay.jetty.alpn</groupId>
-          <artifactId>jetty-alpn-agent</artifactId>
-          <version>${jetty.alpnAgent.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
     </profile>
 
     <!-- Run tests with native transport -->
@@ -891,6 +878,24 @@
         </dependency>
       </dependencies>
     </profile>
+
+    <profile>
+      <id>mac</id>
+      <activation>
+        <os>
+          <family>mac</family>
+        </os>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-resolver-dns-native-macos</artifactId>
+          <classifier>osx-x86_64</classifier>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+
   </profiles>
 
 </project>

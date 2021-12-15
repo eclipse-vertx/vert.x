@@ -20,6 +20,7 @@ import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.*;
@@ -31,6 +32,7 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.streams.WriteStream;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -387,13 +389,25 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    public void drainHandler(Handler<Void> handler) {
+    public StreamImpl drainHandler(Handler<Void> handler) {
       drainHandler = handler;
+      return this;
     }
 
     @Override
-    public void exceptionHandler(Handler<Throwable> handler) {
+    public StreamImpl exceptionHandler(Handler<Throwable> handler) {
       exceptionHandler = handler;
+      return this;
+    }
+
+    @Override
+    public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+      return this;
+    }
+
+    @Override
+    public boolean writeQueueFull() {
+      return isNotWritable();
     }
 
     @Override
@@ -553,7 +567,11 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers_ = headers::add;
-        trace = tracer.sendRequest(context, SpanKind.RPC, conn.client.getOptions().getTracingPolicy(), head, headers.method().toString(), headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        String operation = head.traceOperation;
+        if (operation == null) {
+          operation = headers.method().toString();
+        }
+        trace = tracer.sendRequest(context, SpanKind.RPC, conn.client.getOptions().getTracingPolicy(), head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
 
@@ -584,9 +602,9 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  protected void handleIdle() {
+  protected void handleIdle(IdleStateEvent event) {
     if (handler.connection().local().numActiveStreams() > 0) {
-      super.handleIdle();
+      super.handleIdle(event);
     }
   }
 
@@ -594,6 +612,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     HttpClientImpl client,
     ClientMetrics metrics,
     EventLoopContext context,
+    boolean upgrade,
     Object socketMetric,
     Handler<Http2ClientConnection> c) {
     HttpClientOptions options = client.getOptions();
@@ -607,9 +626,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         Http2ClientConnection conn = new Http2ClientConnection(client, context, connHandler, metrics);
         if (metrics != null) {
           Object m = socketMetric;
-          if (m == null)  {
-            m = met.connected(conn.remoteAddress(), conn.remoteName());
-          }
           conn.metric(m);
         }
         return conn;
@@ -621,8 +637,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         conn.setWindowSize(options.getHttp2ConnectionWindowSize());
       }
       if (metrics != null) {
-        Object m = socketMetric;
-        if (m == null)  {
+        if (!upgrade)  {
           met.endpointConnected(metrics);
         }
       }

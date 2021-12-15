@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
+
 /**
  * Options describing how an {@link HttpClient} will connect to make a request.
  *
@@ -88,6 +90,7 @@ public class RequestOptions {
   private MultiMap headers;
   private boolean followRedirects;
   private long timeout;
+  private String traceOperation;
 
   /**
    * Default constructor
@@ -102,6 +105,7 @@ public class RequestOptions {
     uri = DEFAULT_URI;
     followRedirects = DEFAULT_FOLLOW_REDIRECTS;
     timeout = DEFAULT_TIMEOUT;
+    traceOperation = null;
   }
 
   /**
@@ -122,6 +126,7 @@ public class RequestOptions {
     if (other.headers != null) {
       setHeaders(MultiMap.caseInsensitiveMultiMap().setAll(other.headers));
     }
+    setTraceOperation(other.traceOperation);
   }
 
   /**
@@ -363,7 +368,19 @@ public class RequestOptions {
   public RequestOptions setAbsoluteURI(String absoluteURI) {
     Objects.requireNonNull(absoluteURI, "Cannot set a null absolute URI");
     URL url = parseUrl(absoluteURI);
-    Boolean ssl = false;
+    return setAbsoluteURI(url);
+  }
+
+  /**
+   * Like {@link #setAbsoluteURI(String)} but using an {@link URL} parameter.
+   *
+   * @param url the uri to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore(PERMITTED_TYPE)
+  public RequestOptions setAbsoluteURI(URL url) {
+    Objects.requireNonNull(url, "Cannot set a null absolute URI");
+    Boolean ssl = Boolean.FALSE;
     int port = url.getPort();
     String relativeUri = url.getPath().isEmpty() ? "/" + url.getFile() : url.getFile();
     String protocol = url.getProtocol();
@@ -374,7 +391,7 @@ public class RequestOptions {
         }
         break;
       case "https": {
-        ssl = true;
+        ssl = Boolean.TRUE;
         if (port == -1) {
           port = 443;
         }
@@ -511,6 +528,25 @@ public class RequestOptions {
     if (headers == null) {
       headers = MultiMap.caseInsensitiveMultiMap();
     }
+  }
+
+  /**
+   * @return the trace operation override
+   */
+  public String getTraceOperation() {
+    return traceOperation;
+  }
+
+  /**
+   * Override the operation the tracer use for this request. When no operation is set, the HTTP method is used
+   * instead.
+   *
+   * @param op the override
+   * @return  a reference to this, so the API can be used fluently
+   */
+  public RequestOptions setTraceOperation(String op) {
+    this.traceOperation = op;
+    return this;
   }
 
   public JsonObject toJson() {

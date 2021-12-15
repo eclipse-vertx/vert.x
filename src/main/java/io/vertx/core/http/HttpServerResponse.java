@@ -20,6 +20,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
+import java.util.Set;
+
 /**
  * Represents a server-side HTTP response.
  * <p>
@@ -643,6 +645,9 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   /**
    * Expire a cookie, notifying a User Agent to remove it from its cookie jar.
    *
+   * NOTE: This method will only remove the first occurrence of the given name. Users probably may want to use:
+   * {@link #removeCookies(String)}
+   *
    * @param name  the name of the cookie
    * @return the cookie, if it existed, or null
    */
@@ -651,11 +656,63 @@ public interface HttpServerResponse extends WriteStream<Buffer> {
   }
 
   /**
-   * Remove a cookie from the cookie set. If invalidate is true then it will expire a cookie, notifying a User Agent to
-   * remove it from its cookie jar.
+   * Remove a cookie from the cookie set. If invalidate is {@code true} then it will expire a cookie, notifying a User
+   * Agent to remove it from its cookie jar.
+   *
+   * NOTE: This method will only expire the first occurrence of the given name. Users probably may want to use:
+   * {@link #removeCookies(String,boolean)}
    *
    * @param name  the name of the cookie
-   * @return the cookie, if it existed, or null
+   * @return the cookie, if it existed, or {@code null}
    */
   @Nullable Cookie removeCookie(String name, boolean invalidate);
+
+  /**
+   * Expire all cookies, notifying a User Agent to remove it from its cookie jar.
+   *
+   * NOTE: the returned {@link Set} is read-only. This means any attempt to modify (add or remove to the set), will
+   * throw {@link UnsupportedOperationException}.
+   *
+   * @param name  the name of the cookie
+   * @return a read only set of affected cookies, if they existed, or an empty set.
+   */
+  default Set<Cookie> removeCookies(String name) {
+    return removeCookies(name, true);
+  }
+
+  /**
+   * Remove all cookies from the cookie set. If invalidate is {@code true} then it will expire a cookie, notifying a
+   * User Agent to remove it from its cookie jar.
+   *
+   * NOTE: the returned {@link Set} is read-only. This means any attempt to modify (add or remove to the set), will
+   * throw {@link UnsupportedOperationException}.
+   *
+   * @param name  the name of the cookie
+   * @param invalidate invalidate from the user agent
+   * @return a read only set of affected cookies, if they existed, or an empty set.
+   */
+  Set<Cookie> removeCookies(String name, boolean invalidate);
+
+  /**
+   * Expires a cookie from the cookie set. This will notify a User Agent to remove it from its cookie jar.
+   *
+   * @param name  the name of the cookie
+   * @param domain  the domain of the cookie
+   * @param path  the path of the cookie
+   * @return the cookie, if it existed, or {@code null}
+   */
+  default @Nullable Cookie removeCookie(String name, String domain, String path) {
+    return removeCookie(name, domain, path, true);
+  }
+
+  /**
+   * Remove a cookie from the cookie set. If invalidate is {@code true} then it will expire a cookie, notifying a User
+   * Agent to remove it from its cookie jar.
+   *
+   * @param name  the name of the cookie
+   * @param domain  the domain of the cookie
+   * @param path  the path of the cookie
+   * @return the cookie, if it existed, or {@code null}
+   */
+  @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate);
 }

@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.http.HttpClientOptions}.
@@ -12,6 +13,9 @@ import java.time.format.DateTimeFormatter;
  */
 public class HttpClientOptionsConverter {
 
+
+  private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
+  private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, HttpClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -131,6 +135,11 @@ public class HttpClientOptionsConverter {
             obj.setMaxWebSockets(((Number)member.getValue()).intValue());
           }
           break;
+        case "name":
+          if (member.getValue() instanceof String) {
+            obj.setName((String)member.getValue());
+          }
+          break;
         case "pipelining":
           if (member.getValue() instanceof Boolean) {
             obj.setPipelining((Boolean)member.getValue());
@@ -146,6 +155,11 @@ public class HttpClientOptionsConverter {
             obj.setPoolCleanerPeriod(((Number)member.getValue()).intValue());
           }
           break;
+        case "poolEventLoopSize":
+          if (member.getValue() instanceof Number) {
+            obj.setPoolEventLoopSize(((Number)member.getValue()).intValue());
+          }
+          break;
         case "protocolVersion":
           if (member.getValue() instanceof String) {
             obj.setProtocolVersion(io.vertx.core.http.HttpVersion.valueOf((String)member.getValue()));
@@ -154,6 +168,11 @@ public class HttpClientOptionsConverter {
         case "sendUnmaskedFrames":
           if (member.getValue() instanceof Boolean) {
             obj.setSendUnmaskedFrames((Boolean)member.getValue());
+          }
+          break;
+        case "shared":
+          if (member.getValue() instanceof Boolean) {
+            obj.setShared((Boolean)member.getValue());
           }
           break;
         case "tracingPolicy":
@@ -242,13 +261,18 @@ public class HttpClientOptionsConverter {
     json.put("maxWebSocketFrameSize", obj.getMaxWebSocketFrameSize());
     json.put("maxWebSocketMessageSize", obj.getMaxWebSocketMessageSize());
     json.put("maxWebSockets", obj.getMaxWebSockets());
+    if (obj.getName() != null) {
+      json.put("name", obj.getName());
+    }
     json.put("pipelining", obj.isPipelining());
     json.put("pipeliningLimit", obj.getPipeliningLimit());
     json.put("poolCleanerPeriod", obj.getPoolCleanerPeriod());
+    json.put("poolEventLoopSize", obj.getPoolEventLoopSize());
     if (obj.getProtocolVersion() != null) {
       json.put("protocolVersion", obj.getProtocolVersion().name());
     }
     json.put("sendUnmaskedFrames", obj.isSendUnmaskedFrames());
+    json.put("shared", obj.isShared());
     if (obj.getTracingPolicy() != null) {
       json.put("tracingPolicy", obj.getTracingPolicy().name());
     }

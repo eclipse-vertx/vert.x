@@ -42,14 +42,21 @@ public class WebSocketConnectOptions extends RequestOptions {
    */
   public static final List<String> DEFAULT_SUB_PROTOCOLS = null;
 
+  /**
+   * The default WebSocket allow origin header = {@code true}
+   */
+  public static final boolean DEFAULT_ALLOW_ORIGIN_HEADER = true;
+
   private ProxyOptions proxyOptions;
   private WebsocketVersion version;
   private List<String> subProtocols;
+  private boolean allowOriginHeader;
 
   public WebSocketConnectOptions() {
     proxyOptions = DEFAULT_PROXY_OPTIONS;
     version = DEFAULT_VERSION;
     subProtocols = DEFAULT_SUB_PROTOCOLS;
+    allowOriginHeader = DEFAULT_ALLOW_ORIGIN_HEADER;
   }
 
   public WebSocketConnectOptions(WebSocketConnectOptions other) {
@@ -57,6 +64,7 @@ public class WebSocketConnectOptions extends RequestOptions {
     this.proxyOptions = other.proxyOptions != null ? new ProxyOptions(other.proxyOptions) : null;
     this.version = other.version;
     this.subProtocols = other.subProtocols;
+    this.allowOriginHeader = other.allowOriginHeader;
   }
 
   public WebSocketConnectOptions(JsonObject json) {
@@ -132,6 +140,26 @@ public class WebSocketConnectOptions extends RequestOptions {
     return this;
   }
 
+  /**
+   * @return whether to add the {@code origin} header to the WebSocket handshake request
+   */
+  public boolean getAllowOriginHeader() {
+    return allowOriginHeader;
+  }
+
+  /**
+   * Set whether to add the {@code origin} header to the WebSocket handshake request, enabled by default.
+   *
+   * <p> Set to {@code false} when a server does not accept WebSocket with an origin header.
+   *
+   * @param allowOriginHeader whether to add the {@code origin} header to the WebSocket handshake request
+   * @return a reference to this, so the API can be used fluently
+   */
+  public WebSocketConnectOptions setAllowOriginHeader(boolean allowOriginHeader) {
+    this.allowOriginHeader = allowOriginHeader;
+    return this;
+  }
+
   @Override
   public WebSocketConnectOptions setHost(String host) {
     return (WebSocketConnectOptions) super.setHost(host);
@@ -155,6 +183,31 @@ public class WebSocketConnectOptions extends RequestOptions {
   @Override
   public WebSocketConnectOptions addHeader(String key, String value) {
     return (WebSocketConnectOptions) super.addHeader(key, value);
+  }
+
+  @Override
+  public WebSocketConnectOptions addHeader(CharSequence key, CharSequence value) {
+    return (WebSocketConnectOptions) super.addHeader(key, value);
+  }
+
+  @Override
+  public WebSocketConnectOptions addHeader(CharSequence key, Iterable<CharSequence> values) {
+    return (WebSocketConnectOptions) super.addHeader(key, values);
+  }
+
+  @Override
+  public WebSocketConnectOptions putHeader(String key, String value) {
+    return (WebSocketConnectOptions) super.putHeader(key, value);
+  }
+
+  @Override
+  public WebSocketConnectOptions putHeader(CharSequence key, CharSequence value) {
+    return (WebSocketConnectOptions) super.putHeader(key, value);
+  }
+
+  @Override
+  public WebSocketConnectOptions putHeader(CharSequence key, Iterable<CharSequence> values) {
+    return (WebSocketConnectOptions) super.putHeader(key, values);
   }
 
   @GenIgnore

@@ -108,16 +108,6 @@ public class MessageConsumerImpl<T> extends HandlerRegistration<T> implements Me
   }
 
   @Override
-  public void registration(Handler<AsyncResult<MessageConsumer<T>>> handler) {
-
-  }
-
-  @Override
-  public Future<MessageConsumer<T>> registration() {
-    return null;
-  }
-
-  @Override
   public synchronized Future<Void> unregister() {
     handler = null;
     if (endHandler != null) {

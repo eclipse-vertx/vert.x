@@ -30,6 +30,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.streams.WriteStream;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
@@ -171,7 +172,7 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, (EventLoopContext) upgradingConnection.getContext(), upgradedConnection.current.metric(), conn -> {
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, (EventLoopContext) upgradingConnection.getContext(), true, upgradedConnection.current.metric(), conn -> {
             conn.upgradeStream(upgradingStream.metric(), upgradingStream.getContext(), ar -> {
               upgradingConnection.closeHandler(null);
               upgradingConnection.exceptionHandler(null);
@@ -387,23 +388,43 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
     }
 
     @Override
-    public void drainHandler(Handler<Void> handler) {
+    public UpgradingStream drainHandler(Handler<Void> handler) {
       if (upgradedStream != null) {
         upgradedStream.drainHandler(handler);
       } else {
         upgradingStream.drainHandler(handler);
         drainHandler = handler;
       }
+      return this;
     }
 
     @Override
-    public void exceptionHandler(Handler<Throwable> handler) {
+    public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+      if (upgradedStream != null) {
+        upgradedStream.setWriteQueueMaxSize(maxSize);
+      } else {
+
+      }
+      return this;
+    }
+
+    @Override
+    public boolean writeQueueFull() {
+      if (upgradedStream != null) {
+        return upgradedStream.writeQueueFull();
+      }
+      return false;
+    }
+
+    @Override
+    public UpgradingStream exceptionHandler(Handler<Throwable> handler) {
       if (upgradedStream != null) {
         upgradedStream.exceptionHandler(handler);
       } else {
         upgradingStream.exceptionHandler(handler);
         exceptionHandler = handler;
       }
+      return this;
     }
 
     @Override

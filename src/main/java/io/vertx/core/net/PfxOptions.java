@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -70,13 +70,13 @@ public class PfxOptions extends KeyStoreOptionsBase {
   }
 
   @Override
-  public String getAlias() {
-    return super.getAlias();
+  public PfxOptions setAlias(String alias) {
+    return (PfxOptions) super.setAlias(alias);
   }
 
   @Override
-  public KeyStoreOptions setAlias(String alias) {
-    return (KeyStoreOptions) super.setAlias(alias);
+  public PfxOptions setAliasPassword(String aliasPassword) {
+    return (PfxOptions) super.setAliasPassword(aliasPassword);
   }
 
   @Override

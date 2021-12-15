@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.net.TCPSSLOptions}.
@@ -12,6 +13,9 @@ import java.time.format.DateTimeFormatter;
  */
 public class TCPSSLOptionsConverter {
 
+
+  private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
+  private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, TCPSSLOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -28,7 +32,7 @@ public class TCPSSLOptionsConverter {
           if (member.getValue() instanceof JsonArray) {
             ((Iterable<Object>)member.getValue()).forEach( item -> {
               if (item instanceof String)
-                obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)item)));
+                obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)item)));
             });
           }
           break;
@@ -95,6 +99,11 @@ public class TCPSSLOptionsConverter {
             obj.setPfxTrustOptions(new io.vertx.core.net.PfxOptions((io.vertx.core.json.JsonObject)member.getValue()));
           }
           break;
+        case "readIdleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setReadIdleTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
         case "soLinger":
           if (member.getValue() instanceof Number) {
             obj.setSoLinger(((Number)member.getValue()).intValue());
@@ -150,6 +159,11 @@ public class TCPSSLOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
+        case "writeIdleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWriteIdleTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
       }
     }
   }
@@ -166,7 +180,7 @@ public class TCPSSLOptionsConverter {
     }
     if (obj.getCrlValues() != null) {
       JsonArray array = new JsonArray();
-      obj.getCrlValues().forEach(item -> array.add(JsonUtil.BASE64_ENCODER.encodeToString(item.getBytes())));
+      obj.getCrlValues().forEach(item -> array.add(BASE64_ENCODER.encodeToString(item.getBytes())));
       json.put("crlValues", array);
     }
     if (obj.getEnabledCipherSuites() != null) {
@@ -204,6 +218,7 @@ public class TCPSSLOptionsConverter {
     if (obj.getPfxTrustOptions() != null) {
       json.put("pfxTrustOptions", obj.getPfxTrustOptions().toJson());
     }
+    json.put("readIdleTimeout", obj.getReadIdleTimeout());
     json.put("soLinger", obj.getSoLinger());
     json.put("ssl", obj.isSsl());
     json.put("sslHandshakeTimeout", obj.getSslHandshakeTimeout());
@@ -219,5 +234,6 @@ public class TCPSSLOptionsConverter {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
     json.put("useAlpn", obj.isUseAlpn());
+    json.put("writeIdleTimeout", obj.getWriteIdleTimeout());
   }
 }

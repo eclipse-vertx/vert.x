@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.extensions.WebSocketClientExtensio
 import io.netty.handler.codec.http.websocketx.extensions.compression.DeflateFrameClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateClientExtensionHandshaker;
 import io.netty.handler.codec.http.websocketx.extensions.compression.PerMessageDeflateServerExtensionHandshaker;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.*;
@@ -47,12 +48,17 @@ import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
+import io.vertx.core.streams.WriteStream;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import java.net.URI;
 import java.util.*;
 import java.util.function.BiConsumer;
 
+import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V00;
+import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V07;
+import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V08;
+import static io.netty.handler.codec.http.websocketx.WebSocketVersion.V13;
 import static io.vertx.core.http.HttpHeaders.*;
 
 /**
@@ -208,7 +214,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       VertxTracer tracer = context.tracer();
       if (tracer != null) {
         BiConsumer<String, String> headers = (key, val) -> nettyRequest.headers().add(key, val);
-        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, request.method.name(), headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        String operation = request.traceOperation;
+        if (operation == null) {
+          operation = request.method.name();
+        }
+        stream.trace = tracer.sendRequest(stream.context, SpanKind.RPC, options.getTracingPolicy(), request, operation, headers, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
     writeToChannel(nettyRequest, handler == null ? null : context.promise(handler));
@@ -350,6 +360,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     private final InboundBuffer<Object> queue;
     private boolean reset;
     private boolean writable;
+    private boolean closed;
     private HttpRequestHead request;
     private Handler<HttpResponseHead> headHandler;
     private Handler<Buffer> chunkHandler;
@@ -390,13 +401,25 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
 
     @Override
-    public void drainHandler(Handler<Void> handler) {
+    public StreamImpl drainHandler(Handler<Void> handler) {
       drainHandler = handler;
+      return this;
     }
 
     @Override
-    public void exceptionHandler(Handler<Throwable> handler) {
+    public StreamImpl exceptionHandler(Handler<Throwable> handler) {
       exceptionHandler = handler;
+      return this;
+    }
+
+    @Override
+    public WriteStream<Buffer> setWriteQueueMaxSize(int maxSize) {
+      return null;
+    }
+
+    @Override
+    public boolean writeQueueFull() {
+      return false;
     }
 
     @Override
@@ -585,9 +608,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     void handleEnd(LastHttpContent trailer) {
       queue.write(new HeadersAdaptor(trailer.trailingHeaders()));
-      if (closeHandler != null) {
-        closeHandler.handle(null);
-      }
+      tryClose();
     }
 
     void handleException(Throwable cause) {
@@ -599,8 +620,18 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     @Override
     void handleClosed() {
       handleException(CLOSED_EXCEPTION);
-      if (closeHandler != null) {
-        closeHandler.handle(null);
+      tryClose();
+    }
+
+    /**
+     * Attempt to close the stream.
+     */
+    private void tryClose() {
+      if (!closed) {
+        closed = true;
+        if (closeHandler != null) {
+          closeHandler.handle(null);
+        }
       }
     }
   }
@@ -744,9 +775,11 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         if ((request.method == HttpMethod.CONNECT &&
              response.statusCode == 200) || (
              request.method == HttpMethod.GET &&
-             request.headers.contains("connection", "Upgrade", false) &&
+             request.headers != null && request.headers.contains(CONNECTION, UPGRADE, true) &&
              response.statusCode == 101)) {
           removeChannelHandlers();
+        } else {
+          isConnect = false;
         }
       }
     }
@@ -819,6 +852,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     ContextInternal context,
     String requestURI,
     MultiMap headers,
+    boolean allowOriginHeader,
     WebsocketVersion vers,
     List<String> subProtocols,
     int maxWebSocketFrameSize,
@@ -853,11 +887,12 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       if (subProtocols != null) {
         subp = String.join(",", subProtocols);
       }
-      WebSocketClientHandshaker handshaker = WebSocketHandshakeInboundHandler.newHandshaker(
+      WebSocketClientHandshaker handshaker = newHandshaker(
         wsuri,
         version,
         subp,
         !extensionHandshakers.isEmpty(),
+        allowOriginHeader,
         nettyHeaders,
         maxWebSocketFrameSize,
         !options.isSendUnmaskedFrames());
@@ -902,6 +937,91 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
   }
 
+  static WebSocketClientHandshaker newHandshaker(
+    URI webSocketURL, WebSocketVersion version, String subprotocol,
+    boolean allowExtensions, boolean allowOriginHeader, HttpHeaders customHeaders, int maxFramePayloadLength,
+    boolean performMasking) {
+    WebSocketDecoderConfig config = WebSocketDecoderConfig.newBuilder()
+      .expectMaskedFrames(false)
+      .allowExtensions(allowExtensions)
+      .maxFramePayloadLength(maxFramePayloadLength)
+      .allowMaskMismatch(false)
+      .closeOnProtocolViolation(false)
+      .build();
+    if (version == V13) {
+      return new WebSocketClientHandshaker13(
+        webSocketURL, V13, subprotocol, allowExtensions, customHeaders,
+        maxFramePayloadLength, performMasking, false, -1) {
+        @Override
+        protected WebSocketFrameDecoder newWebsocketDecoder() {
+          return new WebSocket13FrameDecoder(config);
+        }
+
+        @Override
+        protected FullHttpRequest newHandshakeRequest() {
+          FullHttpRequest request = super.newHandshakeRequest();
+          if (!allowOriginHeader) {
+            request.headers().remove(ORIGIN);
+          }
+          return request;
+        }
+      };
+    }
+    if (version == V08) {
+      return new WebSocketClientHandshaker08(
+        webSocketURL, V08, subprotocol, allowExtensions, customHeaders,
+        maxFramePayloadLength, performMasking, false, -1) {
+        @Override
+        protected WebSocketFrameDecoder newWebsocketDecoder() {
+          return new WebSocket08FrameDecoder(config);
+        }
+
+        @Override
+        protected FullHttpRequest newHandshakeRequest() {
+          FullHttpRequest request = super.newHandshakeRequest();
+          if (!allowOriginHeader) {
+            request.headers().remove(HttpHeaderNames.SEC_WEBSOCKET_ORIGIN);
+          }
+          return request;
+        }
+      };
+    }
+    if (version == V07) {
+      return new WebSocketClientHandshaker07(
+        webSocketURL, V07, subprotocol, allowExtensions, customHeaders,
+        maxFramePayloadLength, performMasking, false, -1) {
+        @Override
+        protected WebSocketFrameDecoder newWebsocketDecoder() {
+          return new WebSocket07FrameDecoder(config);
+        }
+
+        @Override
+        protected FullHttpRequest newHandshakeRequest() {
+          FullHttpRequest request = super.newHandshakeRequest();
+          if (!allowOriginHeader) {
+            request.headers().remove(HttpHeaderNames.SEC_WEBSOCKET_ORIGIN);
+          }
+          return request;
+        }
+      };
+    }
+    if (version == V00) {
+      return new WebSocketClientHandshaker00(
+        webSocketURL, V00, subprotocol, customHeaders, maxFramePayloadLength, -1) {
+        @Override
+        protected FullHttpRequest newHandshakeRequest() {
+          FullHttpRequest request = super.newHandshakeRequest();
+          if (!allowOriginHeader) {
+            request.headers().remove(ORIGIN);
+          }
+          return request;
+        }
+      };
+    }
+
+    throw new WebSocketHandshakeException("Protocol version " + version + " not supported.");
+  }
+
   ArrayList<WebSocketClientExtensionHandshaker> initializeWebSocketExtensionHandshakers(HttpClientOptions options) {
     ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = new ArrayList<>();
     if (options.getTryWebSocketDeflateFrameCompression()) {
@@ -938,17 +1058,6 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     context.execute(writable, handler);
   }
 
-  /**
-   * @return a list of all pending streams
-   */
-  private Iterable<Stream> pendingStreams() {
-    // There might be duplicate between the requets list and the responses list
-    LinkedHashSet<Stream> list = new LinkedHashSet<>();
-    list.addAll(requests);
-    list.addAll(responses);
-    return list;
-  }
-
   protected void handleClosed() {
     super.handleClosed();
     long timerID = shutdownTimerID;
@@ -969,15 +1078,21 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
     WebSocketImpl ws;
     VertxTracer tracer = context.tracer();
-    Iterable<Stream> streams;
+    List<Stream> allocatedStreams;
+    List<Stream> sentStreams;
     synchronized (this) {
       ws = webSocket;
-      streams = pendingStreams();
+      sentStreams = new ArrayList<>(responses);
+      allocatedStreams = new ArrayList<>(requests);
+      allocatedStreams.removeAll(responses);
     }
     if (ws != null) {
       ws.handleConnectionClosed();
     }
-    for (Stream stream : streams) {
+    for (Stream stream : allocatedStreams) {
+      stream.context.execute(null, v -> stream.handleClosed());
+    }
+    for (Stream stream : sentStreams) {
       if (metrics != null) {
         metrics.requestReset(stream.metric);
       }
@@ -989,28 +1104,29 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
   }
 
-  protected void handleIdle() {
+  protected void handleIdle(IdleStateEvent event) {
     synchronized (this) {
       if (webSocket == null && responses.isEmpty() && requests.isEmpty()) {
         return;
       }
     }
-    super.handleIdle();
+    super.handleIdle(event);
   }
 
   @Override
   protected void handleException(Throwable e) {
     super.handleException(e);
     WebSocketImpl ws;
-    Iterable<Stream> streams;
+    LinkedHashSet<Stream> allStreams = new LinkedHashSet<>();
     synchronized (this) {
       ws = webSocket;
-      streams = pendingStreams();
+      allStreams.addAll(requests);
+      allStreams.addAll(responses);
     }
     if (ws != null) {
       ws.handleException(e);
     }
-    for (Stream stream : streams) {
+    for (Stream stream : allStreams) {
       stream.handleException(e);
     }
   }

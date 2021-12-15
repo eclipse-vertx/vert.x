@@ -39,6 +39,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   private String path;
   private Buffer value;
   private String alias;
+  private String aliasPassword;
 
   /**
    * Default constructor
@@ -59,6 +60,7 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     this.path = other.path;
     this.value = other.value;
     this.alias = other.alias;
+    this.aliasPassword = other.aliasPassword;
   }
 
   protected String getType() {
@@ -154,17 +156,35 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     return this;
   }
 
+  /**
+   * @return the password for the server certificate designated by {@link #getAlias()}, or {@code null}
+   */
+  public String getAliasPassword() {
+    return aliasPassword;
+  }
+
+  /**
+   * Set the password for the server certificate designated by {@link #getAlias()}.
+   *
+   * @return a reference to this, so the API can be used fluently
+   */
+  public KeyStoreOptionsBase setAliasPassword(String aliasPassword) {
+    this.aliasPassword = aliasPassword;
+    return this;
+  }
+
   KeyStoreHelper getHelper(Vertx vertx) throws Exception {
     if (helper == null) {
       Supplier<Buffer> value;
       if (this.path != null) {
-        value = () -> vertx.fileSystem().readFileBlocking(((VertxInternal) vertx).resolveFile(path).getAbsolutePath());
+        value = () -> vertx.fileSystem().readFileBlocking(path);
       } else if (this.value != null) {
         value = this::getValue;
       } else {
-        return null;
+        // Keystore input can be "null", for example PKCS#11
+        value = () -> null;
       }
-      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, getAlias()), password);
+      helper = new KeyStoreHelper(KeyStoreHelper.loadKeyStore(type, provider, password, value, getAlias()), password, getAliasPassword());
     }
     return helper;
   }

@@ -14,8 +14,6 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.eventbus.*;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -24,8 +22,6 @@ import java.util.Map;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class MessageImpl<U, V> implements Message<V> {
-
-  private static final Logger log = LoggerFactory.getLogger(MessageImpl.class);
 
   protected MessageCodec<U, V> messageCodec;
   protected final EventBusImpl bus;

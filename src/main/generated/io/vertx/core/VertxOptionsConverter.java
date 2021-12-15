@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.VertxOptions}.
@@ -12,6 +13,9 @@ import java.time.format.DateTimeFormatter;
  */
 public class VertxOptionsConverter {
 
+
+  private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
+  private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, VertxOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -29,6 +33,11 @@ public class VertxOptionsConverter {
         case "blockedThreadCheckIntervalUnit":
           if (member.getValue() instanceof String) {
             obj.setBlockedThreadCheckIntervalUnit(java.util.concurrent.TimeUnit.valueOf((String)member.getValue()));
+          }
+          break;
+        case "disableTCCL":
+          if (member.getValue() instanceof Boolean) {
+            obj.setDisableTCCL((Boolean)member.getValue());
           }
           break;
         case "eventBusOptions":
@@ -132,6 +141,7 @@ public class VertxOptionsConverter {
     if (obj.getBlockedThreadCheckIntervalUnit() != null) {
       json.put("blockedThreadCheckIntervalUnit", obj.getBlockedThreadCheckIntervalUnit().name());
     }
+    json.put("disableTCCL", obj.getDisableTCCL());
     if (obj.getEventBusOptions() != null) {
       json.put("eventBusOptions", obj.getEventBusOptions().toJson());
     }

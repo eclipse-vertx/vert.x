@@ -55,7 +55,7 @@ public interface NetSocketInternal extends NetSocket {
    * When a read operation is in progress, the flush operation is delayed until the read operation completes.
    *
    * @param message the message to write, it should be handled by one of the channel pipeline handlers
-   * @return a reference to this, so the API can be used fluently
+   * @return a future completed with the result
    */
   Future<Void> writeMessage(Object message);
 
@@ -77,5 +77,15 @@ public interface NetSocketInternal extends NetSocket {
    * @return a reference to this, so the API can be used fluently
    */
   NetSocketInternal messageHandler(Handler<Object> handler);
+
+  /**
+   * Set an handler to process pipeline user events.
+   *
+   * The handler should take care of releasing event, e.g calling {@code ReferenceCountUtil.release(evt)}.
+   *
+   * @param handler the handler to set
+   * @return a reference to this, so the API can be used fluently
+   */
+  NetSocketInternal eventHandler(Handler<Object> handler);
 
 }

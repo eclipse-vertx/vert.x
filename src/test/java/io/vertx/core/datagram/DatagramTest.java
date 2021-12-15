@@ -13,19 +13,21 @@ package io.vertx.core.datagram;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.UnpooledHeapByteBuf;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.datagram.DatagramSocket;
-import io.vertx.core.datagram.DatagramSocketOptions;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
 import io.vertx.core.streams.WriteStream;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.netty.TestLoggerFactory;
+import org.junit.Assume;
 import org.junit.Test;
 
 import java.net.InetAddress;
@@ -35,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
 import static io.vertx.test.core.TestUtils.*;
 
@@ -357,38 +360,68 @@ public class DatagramTest extends VertxTestBase {
 
   @Test
   public void testMulticastJoinLeave() throws Exception {
+    String iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1")).getName();
+    testMulticastJoinLeave("0.0.0.0", new DatagramSocketOptions(), new DatagramSocketOptions().setMulticastNetworkInterface(iface), (groupAddress, handler) -> {
+      peer1.listenMulticastGroup(groupAddress, iface, null, handler);
+    }, (groupAddress, handler) -> {
+      peer1.unlistenMulticastGroup(groupAddress, iface, null, handler);
+    });
+  }
+
+  @Test
+  public void testMulticastJoinLeaveReuseMulticastNetworkInterface() throws Exception {
+    String iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1")).getName();
+    DatagramSocketOptions options = new DatagramSocketOptions().setMulticastNetworkInterface(iface);
+    testMulticastJoinLeave("0.0.0.0", options, options, (groupAddress, handler) -> {
+      peer1.listenMulticastGroup(groupAddress, handler);
+    }, (groupAddress, handler) -> {
+      peer1.unlistenMulticastGroup(groupAddress, handler);
+    });
+  }
+
+  @Test
+  public void testMulticastJoinLeaveBindOnMulticastGroup() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
+    String iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1")).getName();
+    DatagramSocketOptions options = new DatagramSocketOptions().setMulticastNetworkInterface(iface);
+    testMulticastJoinLeave("230.0.0.1", options, options, (groupAddress, handler) -> {
+      peer1.listenMulticastGroup(groupAddress, handler);
+    }, (groupAddress, handler) -> {
+      peer1.unlistenMulticastGroup(groupAddress, handler);
+    });
+  }
+
+  private void testMulticastJoinLeave(String bindAddress,
+                                      DatagramSocketOptions options1,
+                                      DatagramSocketOptions options2,
+                                      BiConsumer<String, Handler<AsyncResult<Void>>> join,
+                                      BiConsumer<String, Handler<AsyncResult<Void>>> leave) {
     if (USE_NATIVE_TRANSPORT) {
       return;
     }
-    Buffer buffer = TestUtils.randomBuffer(128);
+    Buffer buffer = Buffer.buffer("HELLO");
     String groupAddress = "230.0.0.1";
-    String iface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1")).getName();
     AtomicBoolean received = new AtomicBoolean();
-    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions().setMulticastNetworkInterface(iface));
-    peer2 = vertx.createDatagramSocket(new DatagramSocketOptions().setMulticastNetworkInterface(iface));
+    peer1 = vertx.createDatagramSocket(options1);
+    peer2 = vertx.createDatagramSocket(options2);
 
     peer1.handler(packet -> {
       assertEquals(buffer, packet.data());
       received.set(true);
     });
 
-    peer1.listen(1234, "0.0.0.0", ar1 -> {
-      assertTrue(ar1.succeeded());
-      peer1.listenMulticastGroup(groupAddress, iface, null, ar2 -> {
-        assertTrue(ar2.succeeded());
-        peer2.send(buffer, 1234, groupAddress, ar3 -> {
-          assertTrue(ar3.succeeded());
+    peer1.listen(1234, bindAddress, onSuccess(v1 -> {
+      join.accept(groupAddress, onSuccess(v2 -> {
+        peer2.send(buffer, 1234, groupAddress, onSuccess(ar3 -> {
           // leave group in 1 second so give it enough time to really receive the packet first
           vertx.setTimer(1000, id -> {
-            peer1.unlistenMulticastGroup(groupAddress, iface, null, ar4 -> {
-              assertTrue(ar4.succeeded());
+            leave.accept(groupAddress, onSuccess(ar4 -> {
               AtomicBoolean receivedAfter = new AtomicBoolean();
               peer1.handler(packet -> {
                 // Should not receive any more event as it left the group
                 receivedAfter.set(true);
               });
-              peer2.send(buffer, 1234, groupAddress, ar5 -> {
-                assertTrue(ar5.succeeded());
+              peer2.send(buffer, 1234, groupAddress, onSuccess(v5 -> {
                 // schedule a timer which will check in 1 second if we received a message after the group
                 // was left before
                 vertx.setTimer(1000, id2 -> {
@@ -396,12 +429,30 @@ public class DatagramTest extends VertxTestBase {
                   assertTrue(received.get());
                   testComplete();
                 });
-              });
-            });
+              }));
+            }));
           });
-        });
-      });
-    });
+        }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testMulticastJoinWithoutNetworkInterface() {
+    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
+    peer1.listenMulticastGroup("230.0.0.1", onFailure(err -> {
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testMulticastLeaveWithoutNetworkInterface() {
+    peer1 = vertx.createDatagramSocket(new DatagramSocketOptions());
+    peer1.unlistenMulticastGroup("230.0.0.1", onFailure(err -> {
+      testComplete();
+    }));
     await();
   }
 
@@ -601,4 +652,5 @@ public class DatagramTest extends VertxTestBase {
       }));
     }));
     await();
-  }}
+  }
+}

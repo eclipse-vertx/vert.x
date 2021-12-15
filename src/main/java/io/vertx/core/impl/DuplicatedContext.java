@@ -38,6 +38,7 @@ class DuplicatedContext extends AbstractContext {
   private ConcurrentMap<Object, Object> localData;
 
   DuplicatedContext(ContextImpl delegate) {
+    super(delegate.disableTCCL);
     this.delegate = delegate;
   }
 
@@ -182,4 +183,8 @@ class DuplicatedContext extends AbstractContext {
     return new DuplicatedContext(delegate);
   }
 
+  @Override
+  public ContextInternal unwrap() {
+    return delegate;
+  }
 }
