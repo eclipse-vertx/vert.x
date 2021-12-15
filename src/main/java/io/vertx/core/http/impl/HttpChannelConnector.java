@@ -30,6 +30,7 @@ import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetClientImpl;
+import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -87,7 +88,8 @@ public class HttpChannelConnector {
   }
 
   public Future<HttpClientConnection> wrap(EventLoopContext context, NetSocket so_) {
-    NetSocketInternal so = (NetSocketInternal) so_;
+    NetSocketImpl so = (NetSocketImpl) so_;
+    Object metric = so.metric();
     Promise<HttpClientConnection> promise = context.promise();
 
     // Remove all un-necessary handlers
@@ -108,29 +110,29 @@ public class HttpChannelConnector {
       if (useAlpn) {
         if ("h2".equals(protocol)) {
           applyHttp2ConnectionOptions(ch.pipeline());
-          http2Connected(context, ch, promise);
+          http2Connected(context, metric, ch, promise);
         } else {
           applyHttp1xConnectionOptions(ch.pipeline());
           HttpVersion fallbackProtocol = "http/1.0".equals(protocol) ?
             HttpVersion.HTTP_1_0 : HttpVersion.HTTP_1_1;
-          http1xConnected(fallbackProtocol, server, true, context, ch, promise);
+          http1xConnected(fallbackProtocol, server, true, context, metric, ch, promise);
         }
       } else {
         applyHttp1xConnectionOptions(ch.pipeline());
-        http1xConnected(version, server, true, context, ch, promise);
+        http1xConnected(version, server, true, context, metric, ch, promise);
       }
     } else {
       if (version == HttpVersion.HTTP_2) {
         if (this.options.isHttp2ClearTextUpgrade()) {
           applyHttp1xConnectionOptions(pipeline);
-          http1xConnected(version, server, false, context, ch, promise);
+          http1xConnected(version, server, false, context, metric, ch, promise);
         } else {
           applyHttp2ConnectionOptions(pipeline);
-          http2Connected(context, ch, promise);
+          http2Connected(context, metric, ch, promise);
         }
       } else {
         applyHttp1xConnectionOptions(pipeline);
-        http1xConnected(version, server, false, context, ch, promise);
+        http1xConnected(version, server, false, context, metric, ch, promise);
       }
     }
     return promise.future();
@@ -144,14 +146,20 @@ public class HttpChannelConnector {
   }
 
   private void applyHttp2ConnectionOptions(ChannelPipeline pipeline) {
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+    int idleTimeout = options.getIdleTimeout();
+    int readIdleTimeout = options.getReadIdleTimeout();
+    int writeIdleTimeout = options.getWriteIdleTimeout();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
   }
 
   private void applyHttp1xConnectionOptions(ChannelPipeline pipeline) {
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+    int idleTimeout = options.getIdleTimeout();
+    int readIdleTimeout = options.getReadIdleTimeout();
+    int writeIdleTimeout = options.getWriteIdleTimeout();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
     if (options.getLogActivity()) {
       pipeline.addLast("logging", new LoggingHandler());
@@ -172,6 +180,7 @@ public class HttpChannelConnector {
                                SocketAddress server,
                                boolean ssl,
                                ContextInternal context,
+                               Object socketMetric,
                                Channel ch,
                                Promise<HttpClientConnection> future) {
     boolean upgrade = version == HttpVersion.HTTP_2 && options.isHttp2ClearTextUpgrade();
@@ -179,7 +188,6 @@ public class HttpChannelConnector {
       HttpClientMetrics met = client.metrics();
       Http1xClientConnection conn = new Http1xClientConnection(upgrade ? HttpVersion.HTTP_1_1 : version, client, chctx, ssl, server, context, this.metrics);
       if (met != null) {
-        Object socketMetric = met.connected(conn.remoteAddress(), conn.remoteName());
         conn.metric(socketMetric);
         met.endpointConnected(metrics);
       }
@@ -196,10 +204,11 @@ public class HttpChannelConnector {
   }
 
   private void http2Connected(EventLoopContext context,
+                              Object metric,
                               Channel ch,
                               Promise<HttpClientConnection> future) {
     try {
-      VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, null, conn -> {
+      VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, conn -> {
         future.complete(conn);
       });
       ch.pipeline().addLast("handler", clientHandler);

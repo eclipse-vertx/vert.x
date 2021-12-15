@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.impl.JsonUtil;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 /**
  * Converter and mapper for {@link io.vertx.core.eventbus.EventBusOptions}.
@@ -12,6 +13,9 @@ import java.time.format.DateTimeFormatter;
  */
 public class EventBusOptionsConverter {
 
+
+  private static final Base64.Decoder BASE64_DECODER = JsonUtil.BASE64_DECODER;
+  private static final Base64.Encoder BASE64_ENCODER = JsonUtil.BASE64_ENCODER;
 
    static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, EventBusOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
@@ -68,7 +72,7 @@ public class EventBusOptionsConverter {
           if (member.getValue() instanceof JsonArray) {
             ((Iterable<Object>)member.getValue()).forEach( item -> {
               if (item instanceof String)
-                obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(JsonUtil.BASE64_DECODER.decode((String)item)));
+                obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)item)));
             });
           }
           break;
@@ -148,6 +152,11 @@ public class EventBusOptionsConverter {
         case "port":
           if (member.getValue() instanceof Number) {
             obj.setPort(((Number)member.getValue()).intValue());
+          }
+          break;
+        case "readIdleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setReadIdleTimeout(((Number)member.getValue()).intValue());
           }
           break;
         case "receiveBufferSize":
@@ -245,6 +254,11 @@ public class EventBusOptionsConverter {
             obj.setUseAlpn((Boolean)member.getValue());
           }
           break;
+        case "writeIdleTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setWriteIdleTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
       }
     }
   }
@@ -275,7 +289,7 @@ public class EventBusOptionsConverter {
     }
     if (obj.getCrlValues() != null) {
       JsonArray array = new JsonArray();
-      obj.getCrlValues().forEach(item -> array.add(JsonUtil.BASE64_ENCODER.encodeToString(item.getBytes())));
+      obj.getCrlValues().forEach(item -> array.add(BASE64_ENCODER.encodeToString(item.getBytes())));
       json.put("crlValues", array);
     }
     if (obj.getEnabledCipherSuites() != null) {
@@ -318,6 +332,7 @@ public class EventBusOptionsConverter {
       json.put("pfxTrustOptions", obj.getPfxTrustOptions().toJson());
     }
     json.put("port", obj.getPort());
+    json.put("readIdleTimeout", obj.getReadIdleTimeout());
     json.put("receiveBufferSize", obj.getReceiveBufferSize());
     json.put("reconnectAttempts", obj.getReconnectAttempts());
     json.put("reconnectInterval", obj.getReconnectInterval());
@@ -341,5 +356,6 @@ public class EventBusOptionsConverter {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
     json.put("useAlpn", obj.isUseAlpn());
+    json.put("writeIdleTimeout", obj.getWriteIdleTimeout());
   }
 }

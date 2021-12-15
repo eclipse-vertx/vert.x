@@ -150,6 +150,15 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
 
   @Test
   public void testHttpClientRequest() throws Exception {
+    testHttpClientRequest(new RequestOptions().setPort(8080).setHost("localhost").setURI("/"), "GET");
+  }
+
+  @Test
+  public void testHttpClientRequestOverrideOperation() throws Exception {
+    testHttpClientRequest(new RequestOptions().setPort(8080).setHost("localhost").setURI("/").setTraceOperation("operation-override"), "operation-override");
+  }
+
+  private void testHttpClientRequest(RequestOptions request, String expectedOperation) throws Exception {
     String key = TestUtils.randomAlphaString(10);
     Object val = new Object();
     AtomicInteger seq = new AtomicInteger();
@@ -161,6 +170,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
         headers.accept("header-key","header-value");
         assertNotNull(request);
         assertTrue(request instanceof HttpRequest);
+        assertEquals(expectedOperation, operation);
         return request;
       }
       @Override
@@ -185,7 +195,7 @@ public abstract class HttpTracerTestBase extends HttpTestBase {
     ctx.runOnContext(v1 -> {
       ConcurrentMap<Object, Object> tracerMap = ((ContextInternal) ctx).localContextData();
       tracerMap.put(key, val);
-      client.request(HttpMethod.GET, 8080, "localhost", "/", onSuccess(req -> {
+      client.request(request, onSuccess(req -> {
         req.send(onSuccess(resp -> {
           resp.endHandler(v2 -> {
             // Updates are done on the HTTP client context, so we need to run task on this context

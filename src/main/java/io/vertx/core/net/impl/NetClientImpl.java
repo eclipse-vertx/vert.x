@@ -13,7 +13,9 @@ package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoop;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -26,6 +28,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -57,6 +60,8 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
   private static final Logger log = LoggerFactory.getLogger(NetClientImpl.class);
   protected final int idleTimeout;
+  protected final int readIdleTimeout;
+  protected final int writeIdleTimeout;
   private final TimeUnit idleTimeoutUnit;
   protected final boolean logEnabled;
 
@@ -69,13 +74,19 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   private final Predicate<SocketAddress> proxyFilter;
 
   public NetClientImpl(VertxInternal vertx, NetClientOptions options, CloseFuture closeFuture) {
+    this(vertx, vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null, options, closeFuture);
+  }
+
+  public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
     this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).setApplicationProtocols(options.getApplicationLayerProtocols());
-    this.metrics = vertx.metricsSPI() != null ? vertx.metricsSPI().createNetClientMetrics(options) : null;
+    this.metrics = metrics;
     this.logEnabled = options.getLogActivity();
     this.idleTimeout = options.getIdleTimeout();
+    this.readIdleTimeout = options.getReadIdleTimeout();
+    this.writeIdleTimeout = options.getWriteIdleTimeout();
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
     this.closeFuture = closeFuture;
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
@@ -91,8 +102,8 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
-    if (idleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, idleTimeout, idleTimeoutUnit));
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, idleTimeoutUnit));
     }
   }
 
@@ -217,36 +228,44 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
                               ContextInternal context,
                               int remainingAttempts) {
     checkClosed();
-    Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
-    Bootstrap bootstrap = new Bootstrap();
-    bootstrap.group(context.nettyEventLoop());
 
-    vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
+    EventLoop eventLoop = context.nettyEventLoop();
 
-    ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context)
-      .proxyOptions(proxyOptions);
+    if (eventLoop.inEventLoop()) {
+      Objects.requireNonNull(connectHandler, "No null connectHandler accepted");
+      Bootstrap bootstrap = new Bootstrap();
+      bootstrap.group(eventLoop);
+      bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
 
-    channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol(), registerWriteHandlers));
+      vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
 
-    io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, ssl, useAlpn);
-    fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
-      if (!future.isSuccess()) {
-        Throwable cause = future.cause();
-        // FileNotFoundException for domain sockets
-        boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
-        if (connectError && (remainingAttempts > 0 || remainingAttempts == -1)) {
-          context.emit(v -> {
-            log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
-            //Set a timer to retry connection
-            vertx.setTimer(options.getReconnectInterval(), tid ->
-              connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
-            );
-          });
-        } else {
-          failed(context, null, cause, connectHandler);
+      ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context)
+        .proxyOptions(proxyOptions);
+
+      channelProvider.handler(ch -> connected(context, ch, connectHandler, remoteAddress, channelProvider.applicationProtocol(), registerWriteHandlers));
+
+      io.netty.util.concurrent.Future<Channel> fut = channelProvider.connect(remoteAddress, peerAddress, serverName, ssl, useAlpn);
+      fut.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) future -> {
+        if (!future.isSuccess()) {
+          Throwable cause = future.cause();
+          // FileNotFoundException for domain sockets
+          boolean connectError = cause instanceof ConnectException || cause instanceof FileNotFoundException;
+          if (connectError && (remainingAttempts > 0 || remainingAttempts == -1)) {
+            context.emit(v -> {
+              log.debug("Failed to create connection. Will retry in " + options.getReconnectInterval() + " milliseconds");
+              //Set a timer to retry connection
+              vertx.setTimer(options.getReconnectInterval(), tid ->
+                connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts == -1 ? remainingAttempts : remainingAttempts - 1)
+              );
+            });
+          } else {
+            failed(context, null, cause, connectHandler);
+          }
         }
-      }
-    });
+      });
+    } else {
+      eventLoop.execute(() -> connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, registerWriteHandlers, connectHandler, context, remainingAttempts));
+    }
   }
 
   private void connected(ContextInternal context, Channel ch, Promise<NetSocket> connectHandler, SocketAddress remoteAddress, String applicationLayerProtocol, boolean registerWriteHandlers) {

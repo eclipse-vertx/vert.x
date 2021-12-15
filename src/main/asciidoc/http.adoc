@@ -156,25 +156,17 @@ The URI is as defined in http://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html[S
 
 Use {@link io.vertx.core.http.HttpServerRequest#path} to return the path part of the URI
 
-For example, if the request URI was:
+For example, if the request URI was `a/b/c/page.html?param1=abc&param2=xyz
 
- a/b/c/page.html?param1=abc&param2=xyz
-
-Then the path would be
-
- /a/b/c/page.html
+Then the path would be `/a/b/c/page.html`
 
 ==== Request query
 
 Use {@link io.vertx.core.http.HttpServerRequest#query} to return the query part of the URI
 
-For example, if the request URI was:
+For example, if the request URI was `a/b/c/page.html?param1=abc&param2=xyz`
 
- a/b/c/page.html?param1=abc&param2=xyz
-
-Then the query would be
-
- param1=abc&param2=xyz
+Then the query would be  `param1=abc&param2=xyz`
 
 ==== Request headers
 
@@ -203,9 +195,7 @@ Use {@link io.vertx.core.http.HttpServerRequest#params} to return the parameters
 Just like {@link io.vertx.core.http.HttpServerRequest#headers} this returns an instance of {@link io.vertx.core.MultiMap}
 as there can be more than one parameter with the same name.
 
-Request parameters are sent on the request URI, after the path. For example if the URI was:
-
- /page.html?param1=abc&param2=xyz
+Request parameters are sent on the request URI, after the path. For example if the URI was `/page.html?param1=abc&param2=xyz`
 
 Then the parameters would contain the following:
 
@@ -1561,26 +1551,35 @@ Connection {@link io.vertx.core.http.HttpConnection#close} closes the connection
 
 The {@link io.vertx.core.http.HttpConnection#closeHandler} notifies when a connection is closed.
 
-=== HttpClient usage
+=== Client sharing
 
-The HttpClient can be used in a Verticle or embedded.
+You can share an HTTP client between multiple verticles or instances of the same verticle. Such client should be created outside
+of a verticle otherwise it will be closed when the verticle that created it is undeployed
 
-When used in a Verticle, the Verticle *should use its own client instance*.
-
-More generally a client should not be shared between different Vert.x contexts as it can lead to unexpected behavior.
-
-For example a keep-alive connection will call the client handlers on the context of the request that opened the connection, subsequent requests will use
-the same context.
-
-When this happen Vert.x detects it and log a warn:
-
+[source,$lang]
 ----
-Reusing a connection with a different context: an HttpClient is probably shared between different Verticles
+{@link examples.HTTPExamples#httpClientSharing1}
 ----
 
-The HttpClient can be embedded in a non Vert.x thread like a unit test or a plain java `main`: the client handlers
-will be called by different Vert.x threads and contexts, such contexts are created as needed. For production this
-usage is not recommended.
+You can also create a shared HTTP client in each verticle:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSharing2}
+----
+
+The first time a shared client is created it will create and return a client. Subsequent calls will reuse this client and
+create a lease to this client. The client is closed after all leases have been disposed.
+
+By default, a client reuses the current event-loop when it needs to create a TCP connection. The HTTP client will
+therefore randomly use event-loops of verticles using it in a safe fashion.
+
+You can assign a number of event loop a client will use independently of the client using it
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#httpClientSharing3}
+----
 
 === Server sharing
 
@@ -1733,6 +1732,23 @@ The handler will be called with an instance of {@link io.vertx.core.http.WebSock
 ----
 {@link examples.HTTPExamples#example54}
 ----
+
+By default, the client sets the `origin` header to the server host, e.g http://www.example.com. Some servers will refuse
+such request, you can configure the client to not set this header.
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleWebSocketDisableOriginHeader}
+----
+
+You can also set a different header:
+
+[source,$lang]
+----
+{@link examples.HTTPExamples#exampleWebSocketSetOriginHeader}
+----
+
+NOTE: older versions of the WebSocket protocol use `sec-websocket-origin` instead
 
 ==== Writing messages to WebSockets
 

@@ -16,7 +16,6 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -28,8 +27,8 @@ import io.vertx.core.streams.ReadStream;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.security.cert.X509Certificate;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Represents a server-side HTTP request.
@@ -315,11 +314,11 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Establish a TCP <a href="https://tools.ietf.org/html/rfc7231#section-4.3.6">tunnel<a/> with the client.
    *
-   * <p> This must be called only for {@code CONNECT} HTTP method and before any response is sent.
+   * <p> This must be called only for {@code CONNECT} HTTP method or for HTTP connection upgrade, before any response is sent.
    *
-   * <p> Calling this sends a {@code 200} response with no {@code content-length} header set and
-   * then provides the {@code NetSocket} for handling the created tunnel. Any HTTP header set on the
-   * response before calling this method will be sent.
+   * <p> Calling this sends a {@code 200} response for a {@code CONNECT} or a {@code 101} for a connection upgrade wit
+   * no {@code content-length} header set and then provides the {@code NetSocket} for handling the created tunnel.
+   * Any HTTP header set on the response before calling this method will be sent.
    *
    * <pre>
    * server.requestHandler(req -> {
@@ -478,24 +477,73 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   /**
    * Get the cookie with the specified name.
    *
+   * NOTE: this will return just the 1st {@link Cookie} that matches the given name, to get all cookies for this name
+   * see: {@link #cookies(String)}
+   *
    * @param name  the cookie name
-   * @return the cookie
+   * @return the cookie or {@code null} if not found.
    */
-  default @Nullable Cookie getCookie(String name) {
-    return cookieMap().get(name);
-  }
+  @Nullable Cookie getCookie(String name);
 
   /**
-   * @return the number of cookieMap.
+   * Get the cookie with the specified {@code <name, domain, path>}.
+   *
+   * @param name  the cookie name
+   * @param domain the cookie domain
+   * @param path the cookie path
+   * @return the cookie or {@code null} if not found.
+   */
+  @Nullable Cookie getCookie(String name, String domain, String path);
+
+  /**
+   * @return the number of cookies in the cookie jar.
    */
   default int cookieCount() {
-    return cookieMap().size();
+    return cookies().size();
   }
 
   /**
+   * @deprecated the implementation made a wrong assumption that cookies could be identified only by their name. The RFC
+   * states that the tuple of {@code <name, domain, path>} is the unique identifier.
+   *
+   * When more than one cookie has the same name, the map will hold that lost one to be parsed and any previously parsed
+   * value will be silently overwritten.
+   *
    * @return a map of all the cookies.
    */
-  Map<String, Cookie> cookieMap();
+  @Deprecated
+  default Map<String, Cookie> cookieMap() {
+    return cookies()
+      .stream()
+      .collect(Collectors.toMap(Cookie::getName, cookie -> cookie));
+  }
+
+  /**
+   * Returns a read only set of parsed cookies that match the given name, or an empty set. Several cookies may share the
+   * same name but have different keys. A cookie is unique by its {@code <name, domain, path>} tuple.
+   *
+   * The set entries are references to the request original set. This means that performing property changes in the
+   * cookie objects will affect the original object too.
+   *
+   * NOTE: the returned {@link Set} is read-only. This means any attempt to modify (add or remove to the set), will
+   * throw {@link UnsupportedOperationException}.
+   *
+   * @param name the name to be matches
+   * @return the matching cookies or empty set
+   */
+  Set<Cookie> cookies(String name);
+
+  /**
+   * Returns a modifiable set of parsed cookies from the {@code COOKIE} header. Several cookies may share the
+   * same name but have different keys. A cookie is unique by its {@code <name, domain, path>} tuple.
+   *
+   * Request cookies are directly linked to response cookies. Any modification to a cookie object in the returned set
+   * will mark the cookie to be included in the HTTP response. Removing a cookie from the set, will also mean that it
+   * will be removed from the response, regardless if it was modified or not.
+   *
+   * @return a set with all cookies in the cookie jar.
+   */
+  Set<Cookie> cookies();
 
   /**
    * Marks this request as being routed to the given route. This is purely informational and is

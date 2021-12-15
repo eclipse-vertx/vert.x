@@ -14,11 +14,9 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -37,7 +35,6 @@ import io.vertx.core.net.impl.NetSocketImpl;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
-import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
@@ -85,6 +82,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private Http1xServerRequest requestInProgress;
   private Http1xServerRequest responseInProgress;
   private boolean channelPaused;
+  private boolean writable;
   private Handler<HttpServerRequest> requestHandler;
   private Handler<HttpServerRequest> invalidRequestHandler;
 
@@ -107,6 +105,11 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     this.metrics = metrics;
     this.handle100ContinueAutomatically = options.isHandle100ContinueAutomatically();
     this.tracingPolicy = options.getTracingPolicy();
+    this.writable = true;
+  }
+
+  TracingPolicy tracingPolicy() {
+    return tracingPolicy;
   }
 
   @Override
@@ -137,10 +140,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         return;
       }
       responseInProgress = requestInProgress;
-      if (METRICS_ENABLED) {
-        reportRequestBegin(req);
-      }
-      req.handleBegin();
+      req.handleBegin(writable);
       Handler<HttpServerRequest> handler = request.decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
       req.context.emit(req, handler);
     } else if (msg == LastHttpContent.EMPTY_LAST_CONTENT) {
@@ -161,16 +161,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
       onContent(msg);
     } else if (msg instanceof WebSocketFrame) {
       handleWsFrame((WebSocketFrame) msg);
-    }
-  }
-
-  private void reportRequestBegin(Http1xServerRequest request) {
-    if (metrics != null) {
-      request.metric = metrics.requestBegin(metric(), request);
-    }
-    VertxTracer tracer = context.tracer();
-    if (tracer != null) {
-      request.trace = tracer.receiveRequest(request.context, SpanKind.RPC, tracingPolicy, request, request.method().name(), request.headers(), HttpUtils.SERVER_REQUEST_TAG_EXTRACTOR);
     }
   }
 
@@ -197,9 +187,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     synchronized (this) {
       request = requestInProgress;
       requestInProgress = null;
-    }
-    if (METRICS_ENABLED) {
-      reportRequestComplete(request);
     }
     request.context.execute(request, Http1xServerRequest::handleEnd);
   }
@@ -231,7 +218,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   private void handleNext(Http1xServerRequest next) {
     responseInProgress = next;
-    next.handleBegin();
+    next.handleBegin(writable);
     context.emit(next, next_ -> {
       next_.resume();
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
@@ -252,13 +239,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     if (channelPaused) {
       channelPaused = false;
       super.doResume();
-    }
-  }
-
-  private void reportRequestComplete(Http1xServerRequest request) {
-    if (metrics != null) {
-      metrics.requestEnd(request.metric(), request, request.bytesRead());
-      flushBytesRead();
     }
   }
 
@@ -435,6 +415,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
 
   @Override
   public void handleInterestedOpsChanged() {
+    writable = !isNotWritable();
     ContextInternal context;
     Handler<Boolean> handler;
     synchronized (this) {
@@ -448,7 +429,6 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
         return;
       }
     }
-    boolean writable = !isNotWritable();
     context.execute(writable, handler);
   }
 
@@ -516,5 +496,4 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     ReferenceCountUtil.release(obj);
     fail(result.cause());
   }
-
 }

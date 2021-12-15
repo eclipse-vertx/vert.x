@@ -10,6 +10,7 @@
  */
 package io.vertx.core.file.impl;
 
+import io.vertx.core.VertxException;
 import io.vertx.core.impl.Utils;
 
 import java.io.File;
@@ -43,7 +44,7 @@ class FileCache {
 
     // the cacheDir will be suffixed a unique id to avoid eavesdropping from other processes/users
     // also this ensures that if process A deletes cacheDir, it won't affect process B
-    String cacheDirName = fileCacheDir + "-" + UUID.randomUUID().toString();
+    String cacheDirName = fileCacheDir + "-" + UUID.randomUUID();
     File cacheDir = new File(cacheDirName);
     // Create the cache directory
     try {
@@ -56,7 +57,7 @@ class FileCache {
         Files.createDirectories(cacheDir.toPath(), PosixFilePermissions.asFileAttribute(perms));
       }
     } catch (IOException e) {
-      throw new IllegalStateException("Failed to create cache dir: " + cacheDirName, e);
+      throw new IllegalStateException(FileSystemImpl.getFolderAccessErrorMessage("create", fileCacheDir), e);
     }
     return cacheDir;
   }
@@ -65,7 +66,11 @@ class FileCache {
   private File cacheDir;
 
   public FileCache(File cacheDir) {
-    this.cacheDir = cacheDir;
+    try {
+      this.cacheDir = cacheDir.getCanonicalFile();
+    } catch (IOException e) {
+      throw new VertxException("Cannot get canonical name of cacheDir", e);
+    }
   }
 
   synchronized void registerShutdownHook() {
@@ -94,6 +99,10 @@ class FileCache {
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
     }
+  }
+
+  String cacheDir() {
+    return getCacheDir().getPath();
   }
 
   void close() throws IOException {
@@ -132,16 +141,41 @@ class FileCache {
   }
 
   File getFile(String fileName) {
-    // if cacheDir is null, the delete cache dir was already called.
-    // only in this case the resolver is working in an unexpected state
-    if (cacheDir == null) {
-      throw new IllegalStateException("cacheDir is null");
-    }
-    return new File(cacheDir, fileName);
+    return new File(getCacheDir(), fileName);
   }
 
-  File cache(String fileName, File resource, boolean overwrite) throws IOException {
-    File cacheFile = new File(cacheDir, fileName);
+  File getCanonicalFile(File file) {
+    try {
+      if (file.isAbsolute()) {
+        return file.getCanonicalFile();
+      } else {
+        return getFile(file.getPath()).getCanonicalFile();
+      }
+    } catch (IOException e) {
+      // if we can't get the canonical form, return null
+      return null;
+    }
+  }
+
+  String relativize(String fileName) {
+    String cachePath = getCacheDir().getPath();
+
+    if (fileName.startsWith(cachePath)) {
+      int cachePathLen = cachePath.length();
+      if (fileName.length() == cachePathLen) {
+        return "";
+      } else {
+        if (fileName.charAt(cachePathLen) == File.separatorChar) {
+          return fileName.substring(cachePathLen + 1);
+        }
+      }
+    }
+    return null;
+  }
+
+  File cacheFile(String fileName, File resource, boolean overwrite) throws IOException {
+    File cacheFile = new File(getCacheDir(), fileName);
+    fileNameCheck(cacheFile);
     boolean isDirectory = resource.isDirectory();
     if (!isDirectory) {
       cacheFile.getParentFile().mkdirs();
@@ -160,7 +194,8 @@ class FileCache {
   }
 
   void cacheFile(String fileName, InputStream is, boolean overwrite) throws IOException {
-    File cacheFile = new File(cacheDir, fileName);
+    File cacheFile = new File(getCacheDir(), fileName);
+    fileNameCheck(cacheFile);
     cacheFile.getParentFile().mkdirs();
     if (!overwrite) {
       try {
@@ -172,8 +207,33 @@ class FileCache {
     }
   }
 
-  void cacheDir(String fileName) {
-    File file = new File(cacheDir, fileName);
+  void cacheDir(String fileName) throws IOException {
+    File file = new File(getCacheDir(), fileName);
+    fileNameCheck(file);
     file.mkdirs();
+  }
+
+  private void fileNameCheck(File file) throws IOException {
+    String fileName = file.getCanonicalPath();
+    String cachePath = getCacheDir().getPath();
+    if (fileName.startsWith(cachePath)) {
+      int cachePathLen = cachePath.length();
+      if (fileName.length() == cachePathLen) {
+        return;
+      } else {
+        if (fileName.charAt(cachePathLen) == File.separatorChar) {
+          return;
+        }
+      }
+    }
+    throw new VertxException("File is outside of the cacheDir dir: " + file);
+  }
+
+  private File getCacheDir() {
+    File currentCacheDir = cacheDir;
+    if (currentCacheDir == null) {
+      throw new IllegalStateException("cacheDir has been removed. FileResolver is closing?");
+    }
+    return currentCacheDir;
   }
 }

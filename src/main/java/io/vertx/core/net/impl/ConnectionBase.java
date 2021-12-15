@@ -15,6 +15,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -390,6 +391,11 @@ public abstract class ConnectionBase {
     }
   }
 
+  protected void handleEvent(Object evt) {
+    // Will release the event if needed
+    ReferenceCountUtil.release(evt);
+  }
+
   /**
    * Called by the Netty handler when the connection becomes idle. The default implementation closes the
    * connection.
@@ -397,7 +403,7 @@ public abstract class ConnectionBase {
    * Subclasses can override it to prevent the idle event to happen (e.g when the connection is pooled) or
    * perform extra work when the idle event happens.
    */
-  protected void handleIdle() {
+  protected void handleIdle(IdleStateEvent event) {
     chctx.close();
   }
 

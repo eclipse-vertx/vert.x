@@ -16,7 +16,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.resolver.AddressResolverGroup;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.datagram.DatagramSocket;
@@ -31,7 +30,7 @@ import io.vertx.core.eventbus.impl.EventBusImpl;
 import io.vertx.core.eventbus.impl.EventBusInternal;
 import io.vertx.core.eventbus.impl.clustered.ClusteredEventBus;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.impl.FileResolver;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.file.impl.FileSystemImpl;
 import io.vertx.core.file.impl.WindowsFileSystem;
 import io.vertx.core.http.HttpClient;
@@ -40,6 +39,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.impl.HttpClientImpl;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.http.impl.SharedHttpClient;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -71,7 +71,10 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -282,18 +285,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return DatagramSocketImpl.create(this, options);
   }
 
-  @Override
-  public DatagramSocket createDatagramSocket() {
-    return createDatagramSocket(new DatagramSocketOptions());
-  }
-
   public NetServer createNetServer(NetServerOptions options) {
     return new NetServerImpl(this, options);
-  }
-
-  @Override
-  public NetServer createNetServer() {
-    return createNetServer(new NetServerOptions());
   }
 
   @Override
@@ -309,11 +302,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     CloseFuture fut = resolveCloseFuture();
     fut.add(closeFuture);
     return client;
-  }
-
-  @Override
-  public NetClient createNetClient() {
-    return createNetClient(new NetClientOptions());
   }
 
   @Override
@@ -339,11 +327,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public HttpServer createHttpServer() {
-    return createHttpServer(new HttpServerOptions());
-  }
-
-  @Override
   public HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture) {
     HttpClientImpl client = new HttpClientImpl(this, options, closeFuture);
     closeFuture.add(client);
@@ -351,16 +334,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public HttpClient createHttpClient(HttpClientOptions options) {
-    CloseFuture closeFuture = new CloseFuture(log);
-    HttpClient client = createHttpClient(options, closeFuture);
-    CloseFuture fut = resolveCloseFuture();
-    fut.add(closeFuture);
+    CloseFuture closeFuture = new CloseFuture();
+    HttpClient client;
+    if (options.isShared()) {
+      client = createSharedClient(SharedHttpClient.SHARED_MAP_NAME, options.getName(), closeFuture, cf -> createHttpClient(options, cf));
+      client = new SharedHttpClient(this, closeFuture, client);
+    } else {
+      client = createHttpClient(options, closeFuture);
+    }
+    resolveCloseFuture().add(closeFuture);
     return client;
-  }
-
-  @Override
-  public HttpClient createHttpClient() {
-    return createHttpClient(new HttpClientOptions());
   }
 
   public EventBus eventBus() {
@@ -612,16 +595,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public Future<String> deployVerticle(String name) {
-    return deployVerticle(name, new DeploymentOptions());
-  }
-
-  @Override
-  public void deployVerticle(String name, Handler<AsyncResult<String>> completionHandler) {
-    deployVerticle(name, new DeploymentOptions(), completionHandler);
-  }
-
-  @Override
   public Future<String> deployVerticle(String name, DeploymentOptions options) {
     if (options.isHa() && haManager() != null) {
       Promise<String> promise = getOrCreateContext().promise();
@@ -638,11 +611,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     if (completionHandler != null) {
       fut.onComplete(completionHandler);
     }
-  }
-
-  @Override
-  public Future<String> deployVerticle(Verticle verticle) {
-    return deployVerticle(verticle, new DeploymentOptions());
   }
 
   @Override
@@ -752,44 +720,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
-    ContextInternal context = getOrCreateContext();
-
-    context.executeBlockingInternal(blockingCodeHandler, resultHandler);
-  }
-
-  @Override
-  public <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
-    ContextInternal context = getOrCreateContext();
-
-    context.executeBlockingInternal(blockingCodeHandler, ordered, resultHandler);
-  }
-
-  @Override
-  public <T> Future<@Nullable T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered) {
-    ContextInternal context = getOrCreateContext();
-    return context.executeBlocking(blockingCodeHandler, ordered);
-  }
-
-  @Override
-  public <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
-    return executeBlocking(blockingCodeHandler, true);
-  }
-
-  @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, boolean ordered,
-                                  Handler<AsyncResult<T>> asyncResultHandler) {
-    ContextInternal context = getOrCreateContext();
-    context.executeBlocking(blockingCodeHandler, ordered, asyncResultHandler);
-  }
-
-  @Override
-  public <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler,
-                                  Handler<AsyncResult<T>> asyncResultHandler) {
-    executeBlocking(blockingCodeHandler, true, asyncResultHandler);
-  }
-
-  @Override
   public boolean isClustered() {
     return clusterManager != null;
   }
@@ -853,6 +783,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return addressResolver.nettyAddressResolverGroup();
+  }
+
+  @Override
+  public FileResolver fileResolver() {
+    return fileResolver;
   }
 
   @Override

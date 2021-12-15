@@ -332,6 +332,24 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
+  public EventBusOptions setReadIdleTimeout(int idleTimeout) {
+    super.setReadIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public EventBusOptions setWriteIdleTimeout(int idleTimeout) {
+    super.setWriteIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public EventBusOptions setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
+    super.setIdleTimeoutUnit(idleTimeoutUnit);
+    return this;
+  }
+
+  @Override
   @GenIgnore
   public EventBusOptions setKeyCertOptions(KeyCertOptions options) {
     super.setKeyCertOptions(options);

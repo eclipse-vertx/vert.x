@@ -28,6 +28,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.cert.Certificate;
@@ -49,6 +51,30 @@ import static org.junit.Assert.fail;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class TestUtils {
+
+  /**
+   * Locate and return maven target directory
+   */
+  private static File findMavenTargetDir() {
+    String buildDirPath = System.getProperty("buildDirectory");
+    if (buildDirPath != null) {
+      File buildDir = new File(buildDirPath);
+      if (buildDir.exists()) {
+        return buildDir;
+      }
+    }
+    try {
+      URL loc = TestUtils.class.getProtectionDomain().getCodeSource().getLocation();
+      return new File(loc.toURI()).getParentFile();
+    } catch (URISyntaxException e) {
+      return new File("target");
+    }
+  }
+
+  /**
+   * Maven target directory.
+   */
+  public static final File MAVEN_TARGET_DIR = findMavenTargetDir();
 
   /**
    * Non routable host for testing connect timeout.

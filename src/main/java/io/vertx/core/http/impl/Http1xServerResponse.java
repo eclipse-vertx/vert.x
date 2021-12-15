@@ -14,6 +14,9 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
@@ -49,6 +52,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Map;
+import java.util.Set;
 
 import static io.vertx.core.http.HttpHeaders.SET_COOKIE;
 
@@ -91,14 +95,19 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   private boolean writable;
   private boolean closed;
   private final HeadersMultiMap headers;
-  private Map<String, ServerCookie> cookies;
+  private CookieJar cookies;
   private MultiMap trailers;
   private io.netty.handler.codec.http.HttpHeaders trailingHeaders = EmptyHttpHeaders.INSTANCE;
   private String statusMessage;
   private long bytesWritten;
   private Future<NetSocket> netSocket;
 
-  Http1xServerResponse(final VertxInternal vertx, ContextInternal context, Http1xServerConnection conn, HttpRequest request, Object requestMetric) {
+  Http1xServerResponse(VertxInternal vertx,
+                       ContextInternal context,
+                       Http1xServerConnection conn,
+                       HttpRequest request,
+                       Object requestMetric,
+                       boolean writable) {
     this.vertx = vertx;
     this.conn = conn;
     this.context = context;
@@ -107,7 +116,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     this.request = request;
     this.status = HttpResponseStatus.OK;
     this.requestMetric = requestMetric;
-    this.writable = !conn.isNotWritable();
+    this.writable = writable;
     this.keepAlive = (version == HttpVersion.HTTP_1_1 && !request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.CLOSE, true))
       || (version == HttpVersion.HTTP_1_0 && request.headers().contains(io.vertx.core.http.HttpHeaders.CONNECTION, HttpHeaders.KEEP_ALIVE, true));
     this.head = request.method() == io.netty.handler.codec.http.HttpMethod.HEAD;
@@ -689,7 +698,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       headers.remove(HttpHeaders.TRANSFER_ENCODING);
     } else {
       // Set content-length header automatically
-      if (!headers.contains(HttpHeaders.TRANSFER_ENCODING) && !headers.contains(HttpHeaders.CONTENT_LENGTH) && contentLength >= 0) {
+      if (contentLength >= 0 && !headers.contains(HttpHeaders.CONTENT_LENGTH) && !headers.contains(HttpHeaders.TRANSFER_ENCODING)) {
         String value = contentLength == 0 ? "0" : String.valueOf(contentLength);
         headers.set(HttpHeaders.CONTENT_LENGTH, value);
       }
@@ -708,7 +717,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   private void setCookies() {
-    for (ServerCookie cookie: cookies.values()) {
+    for (ServerCookie cookie: cookies) {
       if (cookie.isChanged()) {
         headers.add(SET_COOKIE, cookie.encode());
       }
@@ -744,15 +753,19 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  Future<NetSocket> netSocket() {
+  Future<NetSocket> netSocket(HttpMethod requestMethod, MultiMap requestHeaders) {
     synchronized (conn) {
       if (netSocket == null) {
         if (headWritten) {
-          return context.failedFuture("Response for CONNECT already sent");
+          return context.failedFuture("Response already sent");
         }
-        status = HttpResponseStatus.OK;
+        if (!HttpUtils.isConnectOrUpgrade(requestMethod, requestHeaders)) {
+          return context.failedFuture("HTTP method must be CONNECT or an HTTP upgrade to upgrade the connection to a TCP socket");
+        }
+        status = requestMethod == HttpMethod.CONNECT ? HttpResponseStatus.OK : HttpResponseStatus.SWITCHING_PROTOCOLS;
         prepareHeaders(-1);
-        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers));
+        PromiseInternal<Void> upgradePromise = context.promise();
+        conn.writeToChannel(new AssembledHttpResponse(head, version, status, headers), upgradePromise);
         written = true;
         Promise<NetSocket> promise = context.promise();
         netSocket = promise.future();
@@ -788,9 +801,17 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
     return this;
   }
 
-  Map<String, ServerCookie> cookies() {
-    if (cookies == null) {
-      cookies = CookieImpl.extractCookies(request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE));
+  CookieJar cookies() {
+    synchronized (conn) {
+      // avoid double parsing
+      if (cookies == null) {
+        String cookieHeader = request.headers().get(io.vertx.core.http.HttpHeaders.COOKIE);
+        if (cookieHeader == null) {
+          cookies = new CookieJar();
+        } else {
+          cookies = new CookieJar(cookieHeader);
+        }
+      }
     }
     return cookies;
   }
@@ -799,7 +820,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public HttpServerResponse addCookie(Cookie cookie) {
     synchronized (conn) {
       checkHeadWritten();
-      cookies().put(cookie.getName(), (ServerCookie) cookie);
+      cookies().add((ServerCookie) cookie);
     }
     return this;
   }
@@ -808,7 +829,23 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   public @Nullable Cookie removeCookie(String name, boolean invalidate) {
     synchronized (conn) {
       checkHeadWritten();
-      return CookieImpl.removeCookie(cookies(), name, invalidate);
+      return cookies().removeOrInvalidate(name, invalidate);
+    }
+  }
+
+  @Override
+  public @Nullable Cookie removeCookie(String name, String domain, String path, boolean invalidate) {
+    synchronized (conn) {
+      checkHeadWritten();
+      return cookies().removeOrInvalidate(name, domain, path, invalidate);
+    }
+  }
+
+  @Override
+  public @Nullable Set<Cookie> removeCookies(String name, boolean invalidate) {
+    synchronized (conn) {
+      checkHeadWritten();
+      return (Set) cookies().removeOrInvalidateAll(name, invalidate);
     }
   }
 }

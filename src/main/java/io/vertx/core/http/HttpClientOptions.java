@@ -21,6 +21,7 @@ import io.vertx.core.tracing.TracingPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -199,6 +200,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   public static final int DEFAULT_POOL_CLEANER_PERIOD = 1000;
 
   /**
+   * Default pool event loop size = 0 (reuse current event-loop)
+   */
+  public static final int DEFAULT_POOL_EVENT_LOOP_SIZE = 0;
+
+  /**
    * Default WebSocket closing timeout = 10 second
    */
   public static final int DEFAULT_WEBSOCKET_CLOSING_TIMEOUT = 10;
@@ -207,6 +213,16 @@ public class HttpClientOptions extends ClientOptionsBase {
    * Default tracing control = {@link TracingPolicy#PROPAGATE}
    */
   public static final TracingPolicy DEFAULT_TRACING_POLICY = TracingPolicy.PROPAGATE;
+
+  /**
+   * Default shared client = {@code false}
+   */
+  public static final boolean DEFAULT_SHARED = false;
+
+  /**
+   * Actual name of anonymous shared client = {@code __vertx.DEFAULT}
+   */
+  public static final String DEFAULT_NAME = "__vertx.DEFAULT";
 
   private boolean verifyHost = true;
   private int maxPoolSize;
@@ -219,6 +235,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int http2ConnectionWindowSize;
   private int http2KeepAliveTimeout;
   private int poolCleanerPeriod;
+  private int poolEventLoopSize;
 
   private boolean tryUseCompression;
   private int maxWebSocketFrameSize;
@@ -247,6 +264,9 @@ public class HttpClientOptions extends ClientOptionsBase {
   private int webSocketClosingTimeout;
 
   private TracingPolicy tracingPolicy;
+
+  private boolean shared;
+  private String name;
 
   /**
    * Default constructor
@@ -292,6 +312,7 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.forceSni = other.forceSni;
     this.decoderInitialBufferSize = other.getDecoderInitialBufferSize();
     this.poolCleanerPeriod = other.getPoolCleanerPeriod();
+    this.poolEventLoopSize = other.getPoolEventLoopSize();
     this.tryUsePerFrameWebSocketCompression = other.tryUsePerFrameWebSocketCompression;
     this.tryUsePerMessageWebSocketCompression = other.tryUsePerMessageWebSocketCompression;
     this.webSocketAllowClientNoContext = other.webSocketAllowClientNoContext;
@@ -299,6 +320,8 @@ public class HttpClientOptions extends ClientOptionsBase {
     this.webSocketRequestServerNoContext = other.webSocketRequestServerNoContext;
     this.webSocketClosingTimeout = other.webSocketClosingTimeout;
     this.tracingPolicy = other.tracingPolicy;
+    this.shared = other.shared;
+    this.name = other.name;
   }
 
   /**
@@ -359,7 +382,10 @@ public class HttpClientOptions extends ClientOptionsBase {
     webSocketRequestServerNoContext = DEFAULT_WEBSOCKET_REQUEST_SERVER_NO_CONTEXT;
     webSocketClosingTimeout = DEFAULT_WEBSOCKET_CLOSING_TIMEOUT;
     poolCleanerPeriod = DEFAULT_POOL_CLEANER_PERIOD;
+    poolEventLoopSize = DEFAULT_POOL_EVENT_LOOP_SIZE;
     tracingPolicy = DEFAULT_TRACING_POLICY;
+    shared = DEFAULT_SHARED;
+    name = DEFAULT_NAME;
   }
 
   @Override
@@ -413,6 +439,18 @@ public class HttpClientOptions extends ClientOptionsBase {
   @Override
   public HttpClientOptions setIdleTimeout(int idleTimeout) {
     super.setIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions setReadIdleTimeout(int idleTimeout) {
+    super.setReadIdleTimeout(idleTimeout);
+    return this;
+  }
+
+  @Override
+  public HttpClientOptions setWriteIdleTimeout(int idleTimeout) {
+    super.setWriteIdleTimeout(idleTimeout);
     return this;
   }
 
@@ -1319,6 +1357,33 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   /**
+   * @return the max number of event-loop a pool will use, the default value is {@code 0} which implies
+   * to reuse the current event-loop
+   */
+  public int getPoolEventLoopSize() {
+    return poolEventLoopSize;
+  }
+
+  /**
+   * Set the number of event-loop the pool use.
+   *
+   * <ul>
+   *   <li>when the size is {@code 0}, the client pool will use the current event-loop</li>
+   *   <li>otherwise the client will create and use its own event loop</li>
+   * </ul>
+   *
+   * The default size is {@code 0}.
+   *
+   * @param poolEventLoopSize  the new size
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setPoolEventLoopSize(int poolEventLoopSize) {
+    Arguments.require(poolEventLoopSize >= 0, "poolEventLoopSize must be >= 0");
+    this.poolEventLoopSize = poolEventLoopSize;
+    return this;
+  }
+
+  /**
    * @return the tracing policy
    */
   public TracingPolicy getTracingPolicy() {
@@ -1333,6 +1398,45 @@ public class HttpClientOptions extends ClientOptionsBase {
    */
   public HttpClientOptions setTracingPolicy(TracingPolicy tracingPolicy) {
     this.tracingPolicy = tracingPolicy;
+    return this;
+  }
+
+  /**
+   * @return whether the pool is shared
+   */
+  public boolean isShared() {
+    return shared;
+  }
+
+  /**
+   * Set to {@code true} to share the client.
+   *
+   * <p> There can be multiple shared clients distinguished by {@link #getName()}, when no specific
+   * name is set, the {@link #DEFAULT_NAME} is used.
+   *
+   * @param shared {@code true} to use a shared client
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setShared(boolean shared) {
+    this.shared = shared;
+    return this;
+  }
+
+  /**
+   * @return the client name used for sharing
+   */
+  public String getName() {
+    return name;
+  }
+
+  /**
+   * Set the client name, used when the client is shared, otherwise ignored.
+   * @param name the new name
+   * @return a reference to this, so the API can be used fluently
+   */
+  public HttpClientOptions setName(String name) {
+    Objects.requireNonNull(name, "Client name cannot be null");
+    this.name = name;
     return this;
   }
 }

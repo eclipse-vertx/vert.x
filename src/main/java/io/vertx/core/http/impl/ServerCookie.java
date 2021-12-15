@@ -18,7 +18,7 @@ import io.vertx.core.http.Cookie;
 public interface ServerCookie extends Cookie {
 
   /**
-   * Has the cookie been changed? Changed cookieMap will be saved out in the response and sent to the browser.
+   * Has the cookie been changed? Changed cookie jar will be saved out in the response and sent to the browser.
    *
    * @return true  if changed
    */
@@ -38,5 +38,4 @@ public interface ServerCookie extends Cookie {
    * @return true if the cookie comes from the User Agent.
    */
   boolean isFromUserAgent();
-
 }

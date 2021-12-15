@@ -723,49 +723,15 @@ Application-Layer Protocol Negotiation (ALPN) is a TLS extension for application
 HTTP/2: during the TLS handshake the client gives the list of application protocols it accepts and the server responds
 with a protocol it supports.
 
-If you are using Java 9, you are fine and you can use HTTP/2 out of the box without extra steps.
-
-Java 8 does not supports ALPN out of the box, so ALPN should be enabled by other means:
-
-- _OpenSSL_ support
-- _Jetty-ALPN_ support
-
-The engine options to use is
-
-- the {@link io.vertx.core.net.TCPSSLOptions#getSslEngineOptions()} options when it is set
-- {@link io.vertx.core.net.JdkSSLEngineOptions} when ALPN is available for JDK
-- {@link io.vertx.core.net.OpenSSLEngineOptions} when ALPN is available for OpenSSL
-- otherwise it fails
+Java TLS supports ALPN (Java 8 with the most recent versions).
 
 ===== OpenSSL ALPN support
 
-OpenSSL provides native ALPN support.
+OpenSSL also supports (native) ALPN.
 
 OpenSSL requires to configure {@link io.vertx.core.net.TCPSSLOptions#setOpenSslEngineOptions(OpenSSLEngineOptions)}
 and use http://netty.io/wiki/forked-tomcat-native.html[netty-tcnative] jar on the classpath. Using tcnative may require
 OpenSSL to be installed on your OS depending on the tcnative implementation.
-
-===== Jetty-ALPN support
-
-Jetty-ALPN is a small jar that overrides a few classes of Java 8 distribution to support ALPN.
-
-The JVM must be started with the _alpn-boot-${version}.jar_ in its `bootclasspath`:
-
-----
--Xbootclasspath/p:/path/to/alpn-boot${version}.jar
-----
-
-where ${version} depends on the JVM version, e.g. _8.1.7.v20160121_ for _OpenJDK 1.8.0u74_ . The complete
-list is available on the http://www.eclipse.org/jetty/documentation/current/alpn-chapter.html[Jetty-ALPN page].
-
-The main drawback is that the version depends on the JVM.
-
-To solve this problem the _https://github.com/jetty-project/jetty-alpn-agent[Jetty ALPN agent]_ can be use instead. The agent is a JVM agent that will chose the correct
-ALPN version for the JVM running it:
-
-----
--javaagent:/path/to/alpn/agent
-----
 
 === Using a proxy for client connections
 

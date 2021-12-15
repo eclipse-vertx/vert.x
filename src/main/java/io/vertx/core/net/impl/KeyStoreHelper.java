@@ -208,8 +208,13 @@ public class KeyStoreHelper {
   public static KeyStore loadKeyStore(String type, String provider, String password, Supplier<Buffer> value, String alias) throws Exception {
     Objects.requireNonNull(type);
     KeyStore ks = provider == null ? KeyStore.getInstance(type) : KeyStore.getInstance(type, provider);
-    try (InputStream in = new ByteArrayInputStream(value.get().getBytes())) {
-      ks.load(in, password != null ? password.toCharArray() : null);
+    Buffer keystoreBuffer = value.get();
+    if (keystoreBuffer == null) {
+      ks.load(null, password != null ? password.toCharArray() : null);
+    } else {
+      try (InputStream in = new ByteArrayInputStream(value.get().getBytes())) {
+        ks.load(in, password != null ? password.toCharArray() : null);
+      }
     }
     if (alias != null) {
       if (!ks.containsAlias(alias)) {

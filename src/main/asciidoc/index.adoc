@@ -518,7 +518,9 @@ core library and hacking from there.
 However you can also run Vert.x verticles directly from the command line if you wish.
 
 To do this you need to download and install a Vert.x distribution, and add the `bin` directory of the installation
-to your `PATH` environment variable. Also make sure you have a Java 8 JDK on your `PATH`.
+to your `PATH` environment variable. Also make sure you have a Java JDK on your `PATH`.
+
+Vert.x supports Java from 8 to 17.
 
 NOTE: The JDK is required to support on the fly compilation of Java code.
 
@@ -794,7 +796,9 @@ You can also specify a metrics factory programmatically if embedding Vert.x usin
 
 The `vertx` command is used to interact with Vert.x from the command line. It's main use is to run Vert.x verticles.
 To do this you need to download and install a Vert.x distribution, and add the `bin` directory of the installation
-to your `PATH` environment variable. Also make sure you have a Java 8 JDK on your `PATH`.
+to your `PATH` environment variable. Also make sure you have a Java JDK on your `PATH`.
+
+Vert.x supports Java from 8 to 17.
 
 NOTE: The JDK is required to support on the fly compilation of Java code.
 

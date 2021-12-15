@@ -19,7 +19,6 @@ import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.observability.HttpRequest;
 import io.vertx.core.spi.observability.HttpResponse;
-import junit.framework.AssertionFailedError;
 
 import java.util.Map;
 import java.util.Set;
@@ -30,12 +29,9 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric, Void> {
-
-  static volatile Throwable unexpectedError;
+public class FakeHttpClientMetrics extends FakeTCPMetrics implements HttpClientMetrics<HttpClientMetric, WebSocketMetric, SocketMetric, Void> {
 
   private final String name;
-  private final ConcurrentMap<SocketAddress, SocketMetric> sockets = new ConcurrentHashMap<>();
   private final ConcurrentMap<WebSocketBase, WebSocketMetric> webSockets = new ConcurrentHashMap<>();
   private final ConcurrentMap<SocketAddress, EndpointMetric> endpoints = new ConcurrentHashMap<>();
 
@@ -81,8 +77,8 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
   }
 
   public Integer connectionCount(String name) {
-    EndpointMetric server = endpoint(name);
-    return server != null ? server.connectionCount.get() : null;
+    EndpointMetric endpoint = endpoint(name);
+    return endpoint != null ? endpoint.connectionCount.get() : null;
   }
 
   @Override
@@ -119,43 +115,4 @@ public class FakeHttpClientMetrics extends FakeMetricsBase implements HttpClient
     webSockets.remove(webSocketMetric.ws);
   }
 
-  public SocketMetric connected(SocketAddress remoteAddress, String remoteName) {
-    SocketMetric metric = new SocketMetric(remoteAddress, remoteName);
-    sockets.put(remoteAddress, metric);
-    return metric;
-  }
-
-  public void disconnected(SocketMetric socketMetric, SocketAddress remoteAddress) {
-    sockets.remove(remoteAddress);
-    socketMetric.connected.set(false);
-  }
-
-  public SocketMetric getSocket(SocketAddress address) {
-    return sockets.get(address);
-  }
-
-  @Override
-  public void bytesRead(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    socketMetric.bytesRead.addAndGet(numberOfBytes);
-    socketMetric.bytesReadEvents.add(numberOfBytes);
-  }
-
-  @Override
-  public void bytesWritten(SocketMetric socketMetric, SocketAddress remoteAddress, long numberOfBytes) {
-    socketMetric.bytesWritten.addAndGet(numberOfBytes);
-    socketMetric.bytesWrittenEvents.add(numberOfBytes);
-  }
-
-  @Override
-  public void exceptionOccurred(SocketMetric socketMetric, SocketAddress remoteAddress, Throwable t) {
-  }
-
-  public static void sanityCheck() {
-    Throwable err = unexpectedError;
-    if (err != null) {
-      AssertionFailedError afe = new AssertionFailedError();
-      afe.initCause(err);
-      throw afe;
-    }
-  }
 }

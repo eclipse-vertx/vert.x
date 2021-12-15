@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.EventLoop;
 import io.netty.handler.codec.TooLongFrameException;
 import io.vertx.core.*;
 import io.vertx.core.Future;
@@ -1685,8 +1686,8 @@ public class Http1xTest extends HttpTest {
         .onComplete(res -> latchClient.countDown());
     }
 
-    assertTrue(latchClient.await(10, TimeUnit.SECONDS));
-    assertTrue(latchConns.await(10, TimeUnit.SECONDS));
+    assertTrue(latchClient.await(30, TimeUnit.SECONDS));
+    assertTrue(latchConns.await(30, TimeUnit.SECONDS));
 
     assertEquals(numServers, connectedServers.size());
     for (HttpServer server : servers) {
@@ -1770,8 +1771,13 @@ public class Http1xTest extends HttpTest {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
     server.connectHandler(so -> {
-      so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
-      so.close();
+      Buffer content = Buffer.buffer();
+      so.handler(buff -> {
+        content.appendBuffer(buff);
+        if (content.toString().endsWith("\r\n\r\n")) {
+          so.write(Buffer.buffer("HTTP/1.2 200 OK\r\nContent-Length:5\r\n\r\nHELLO"));
+        }
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     AtomicBoolean a = new AtomicBoolean();
@@ -3733,10 +3739,13 @@ public class Http1xTest extends HttpTest {
   public void testReceiveResponseWithNoRequestInProgress() throws Exception {
     NetServer server = vertx.createNetServer();
     CountDownLatch listenLatch = new CountDownLatch(1);
+    Promise<Void> promise = Promise.promise();
     server.connectHandler(so -> {
-      so.write("HTTP/1.1 200 OK\r\n" +
-        "Transfer-Encoding: chunked\r\n" +
-        "\r\n");
+      promise.future().onSuccess(v -> {
+        so.write("HTTP/1.1 200 OK\r\n" +
+          "Transfer-Encoding: chunked\r\n" +
+          "\r\n");
+      });
     }).listen(testAddress, onSuccess(v -> listenLatch.countDown()));
     awaitLatch(listenLatch);
     client.connectionHandler(conn -> {
@@ -3751,6 +3760,7 @@ public class Http1xTest extends HttpTest {
     });
     client.request(requestOptions)
       .onComplete(onSuccess(req -> {
+        promise.complete();
       }));
     await();
   }
@@ -4691,7 +4701,7 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testHeaderNameValidation() {
-    for (char c : "\0\t\n\u000B\f\r ,:;=\u0080".toCharArray()) {
+    for (char c : "\u001c\u001d\u001e\u001f\0\t\n\u000b\f\r ,:;=\u0080".toCharArray()) {
       try {
         HttpUtils.validateHeaderName(Character.toString(c));
         fail("Char 0x" + Integer.toHexString(c) + " should not be valid");
@@ -4715,6 +4725,38 @@ public class Http1xTest extends HttpTest {
     List<String> valid = Arrays.asList("\r\n\t", "\r\n ", "\n\t", "\n ");
     for (String test : valid) {
       HttpUtils.validateHeaderValue(test);
+    }
+  }
+
+  @Test
+  public void testHeaderNameStartsOrEndsWithControlChars() throws Exception {
+    AtomicInteger invalidRequests = new AtomicInteger();
+    server.invalidRequestHandler(req -> {
+      invalidRequests.incrementAndGet();
+      req.connection().close();
+    });
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(testAddress);
+    NetClient client = vertx.createNetClient();
+    try {
+      char[] chars = { 0x1c, 0x1d, 0x1e, 0x1f, 0x0c };
+      boolean[] positions = { true, false };
+      for (boolean position : positions) {
+        for (char invalid : chars) {
+          int current = invalidRequests.get();
+          CountDownLatch latch = new CountDownLatch(1);
+          client.connect(testAddress, onSuccess(so -> {
+            so.write("GET /some/path HTTP/1.1\r\n" + "Host: vertx.io\r\n" + (position ? invalid : "") + "Transfer-encoding" + (position ? "" : invalid) + ": chunked\r\n\r\n");
+            so.closeHandler(v -> latch.countDown());
+          }));
+          awaitLatch(latch);
+          waitUntil(() -> invalidRequests.get() == current + 1);
+        }
+      }
+    } finally {
+      client.close();
     }
   }
 
@@ -5101,6 +5143,11 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testHttpUpgrade() {
+    testHttpConnect(new RequestOptions(requestOptions).setMethod(HttpMethod.GET).addHeader(HttpHeaders.CONNECTION, "UpGrAdE"), 101);
+  }
+
+  @Test
   public void testServerResponseReset() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
@@ -5111,6 +5158,89 @@ public class Http1xTest extends HttpTest {
     client.request(requestOptions).compose(HttpClientRequest::send)
       .onComplete(onFailure(err -> {
         complete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testNetSocketUpgradeSuccess() {
+    testNetSocketUpgradeSuccess(null);
+  }
+
+  @Test
+  public void testNetSocketUpgradeSuccessWithPayload() {
+    testNetSocketUpgradeSuccess(Buffer.buffer("the-payload"));
+  }
+
+  private void testNetSocketUpgradeSuccess(Buffer payload) {
+    server.requestHandler(req -> {
+      req.body(onSuccess(body -> {
+        if (payload != null) {
+          assertEquals(payload, body);
+        }
+        req.response().headers().set("HTTP/1.1", "101 Upgrade");
+        req.toNetSocket().onComplete(onSuccess(so -> {
+          so.handler(buff -> {
+            assertEquals("ping", buff.toString());
+            so.write("pong");
+            so.close();
+          });
+        }));
+      }));
+    });
+    server.listen(testAddress, onSuccess(s -> {
+      RequestOptions request = new RequestOptions(requestOptions)
+        .setMethod(HttpMethod.GET)
+        .addHeader(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE);
+      if (payload != null) {
+        request.addHeader(HttpHeaders.CONTENT_LENGTH, "" + payload.length());
+      }
+      client.request(request
+      ).onComplete(onSuccess(req -> {
+        req.connect(onSuccess(resp -> {
+          NetSocket so = resp.netSocket();
+          so.write("ping");
+          so.handler(buff -> {
+            assertEquals("pong", buff.toString());
+            so.close(onSuccess(v -> {
+              testComplete();
+            }));
+          });
+        }));
+        if (payload != null) {
+          req.end(payload);
+        }
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testClientEventLoopSize() throws Exception {
+    Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer();
+    int size = 4;
+    int maxPoolSize = size + 2;
+    client.close();
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setMaxPoolSize(maxPoolSize)
+      .setPoolEventLoopSize(size));
+    List<EventLoop> eventLoops = Collections.synchronizedList(new ArrayList<>());
+    client.connectionHandler(conn -> eventLoops.add(((ContextInternal)Vertx.currentContext()).nettyEventLoop()));
+    List<Future> futures = new ArrayList<>();
+    for (int i = 0;i < size * 2;i++) {
+      futures.add(client
+        .request(requestOptions)
+        .compose(HttpClientRequest::send)
+        .compose(HttpClientResponse::body));
+    }
+    CompositeFuture.all(futures).onComplete(onSuccess(v -> {
+      assertEquals(maxPoolSize, eventLoops.size());
+      assertEquals(size, new HashSet<>(eventLoops).size());
+      testComplete();
     }));
     await();
   }

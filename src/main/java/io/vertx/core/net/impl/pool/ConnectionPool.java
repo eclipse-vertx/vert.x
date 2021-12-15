@@ -13,16 +13,33 @@ package io.vertx.core.net.impl.pool;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.impl.VertxInternal;
 
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
  * A connection pool.
  */
 public interface ConnectionPool<C> {
+
+  /**
+   * This provider reuse the context argument when it can be cast or unwrapped to an event-loop context, otherwise
+   * it returns a new event-loop context that reuses the Netty event-loop of the context argument.
+   */
+  Function<ContextInternal, EventLoopContext> EVENT_LOOP_CONTEXT_PROVIDER = ctx -> {
+    ctx = ctx.unwrap();
+    if (ctx instanceof EventLoopContext) {
+      return (EventLoopContext)ctx;
+    } else {
+      VertxInternal vertx = ctx.owner();
+      return vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
+    }
+  };
 
   static <C> ConnectionPool<C> pool(PoolConnector<C> connector, int[] maxSizes) {
     return new SimpleConnectionPool<>(connector, maxSizes);
@@ -47,13 +64,24 @@ public interface ConnectionPool<C> {
   ConnectionPool<C> connectionSelector(BiFunction<PoolWaiter<C>, List<PoolConnection<C>>, PoolConnection<C>> selector);
 
   /**
+   * Set a function that provides an event-loop context out of the specified context. The pool will use the provider
+   * when an event-loop context is required for creating a new connection.
+   *
+   * <p> The default provider is {@link #EVENT_LOOP_CONTEXT_PROVIDER}.
+   *
+   * @param contextProvider the provider to be used by the pool
+   * @return a reference to this, so the API can be used fluently
+   */
+  ConnectionPool<C> contextProvider(Function<ContextInternal, EventLoopContext> contextProvider);
+
+  /**
    * Acquire a connection from the pool.
    *
    * @param context the context
    * @param kind the connection kind wanted which is an index in the max size array provided when constructing the pool
    * @param handler the callback handler with the result
    */
-  void acquire(EventLoopContext context, int kind, Handler<AsyncResult<Lease<C>>> handler);
+  void acquire(ContextInternal context, int kind, Handler<AsyncResult<Lease<C>>> handler);
 
   /**
    * Acquire a connection from the pool.
@@ -63,7 +91,7 @@ public interface ConnectionPool<C> {
    * @param kind the connection kind wanted which is an index in the max size array provided when constructing the pool
    * @param handler the callback handler with the result
    */
-  void acquire(EventLoopContext context, PoolWaiter.Listener<C> listener, int kind, Handler<AsyncResult<Lease<C>>> handler);
+  void acquire(ContextInternal context, PoolWaiter.Listener<C> listener, int kind, Handler<AsyncResult<Lease<C>>> handler);
 
   /**
    * Cancel a waiter.

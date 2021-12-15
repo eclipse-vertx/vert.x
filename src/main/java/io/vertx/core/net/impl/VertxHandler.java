@@ -13,11 +13,11 @@ package io.vertx.core.net.impl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.impl.VertxByteBufAllocator;
@@ -45,8 +45,9 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
   /**
    * Copy and release the {@code buf} when necessary.
    *
-   * <p> This methods assuming the buffer is created by {@link PartialPooledByteBufAllocator} and
-   * caller has full ownership of the buffer.
+   * <p> This methods assuming the has full ownership of the buffer.
+   *
+   * <p> This method assumes that pooled buffers are allocated by {@code PooledByteBufAllocator}
    *
    * <p> The returned buffer will not need to be released and can be wrapped by a {@link io.vertx.core.buffer.Buffer}.
    *
@@ -54,9 +55,7 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
    * @return a safe buffer to use
    */
   public static ByteBuf safeBuffer(ByteBuf buf) {
-    // PartialPooledByteBufAllocator only pool direct buffers
-    // => we only need to copy and release those buffers
-    if (buf != Unpooled.EMPTY_BUFFER && (buf.isDirect() || buf instanceof CompositeByteBuf)) {
+    if (buf != Unpooled.EMPTY_BUFFER && (buf.alloc() instanceof PooledByteBufAllocator || buf instanceof CompositeByteBuf)) {
       try {
         if (buf.isReadable()) {
           ByteBuf buffer = VertxByteBufAllocator.DEFAULT.heapBuffer(buf.readableBytes());
@@ -161,10 +160,9 @@ public final class VertxHandler<C extends ConnectionBase> extends ChannelDuplexH
 
   @Override
   public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-    if (evt instanceof IdleStateEvent && ((IdleStateEvent) evt).state() == IdleState.ALL_IDLE) {
-      conn.handleIdle();
-    } else {
-      ctx.fireUserEventTriggered(evt);
+    if (evt instanceof IdleStateEvent) {
+      conn.handleIdle((IdleStateEvent) evt);
     }
+    conn.handleEvent(evt);
   }
 }

@@ -11,8 +11,11 @@
 package io.vertx.core.net.impl;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.core.AsyncResult;
@@ -22,6 +25,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -60,7 +64,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   private Handler<Channel> worker;
   private volatile boolean listening;
   private ContextInternal listenContext;
-  private ServerID id;
   private TCPServerBase actualServer;
 
   // Main
@@ -99,6 +102,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
       TCPServerBase main;
       boolean shared;
+      ServerID id;
       if (actualPort > 0 || localAddress.isDomainSocket()) {
         id = new ServerID(actualPort, hostOrPath);
         main = sharedNetServers.get(id);
@@ -125,6 +129,11 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
+        if (sslHelper.isSSL()) {
+          bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+        } else {
+          bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        }
 
         bootstrap.childHandler(channelBalancer);
         applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
@@ -136,11 +145,17 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
             if (res.isSuccess()) {
               Channel ch = res.getNow();
               log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
+              if (shared) {
+                ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
+                  synchronized (sharedNetServers) {
+                    sharedNetServers.remove(id);
+                  }
+                });
+              }
               // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
               if (bindAddress.isInetSocket()) {
                 actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
               }
-              id = new ServerID(TCPServerBase.this.actualPort, id.host);
               listenContext.addCloseHook(this);
               metrics = createMetrics(localAddress);
             } else {
@@ -218,10 +233,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         // The actual server still has handlers so we don't actually close it
         completion.complete();
       } else {
-        // No worker left so close the actual server
-        // The done handler needs to be executed on the context that calls close, NOT the context
-        // of the actual server
-        servers.remove(id);
         actualServer.actualClose(completion);
       }
     }

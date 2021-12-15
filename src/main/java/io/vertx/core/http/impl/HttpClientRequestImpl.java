@@ -14,14 +14,7 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.http.HttpClientResponse;
-import io.vertx.core.http.HttpConnection;
-import io.vertx.core.http.HttpHeaders;
-import io.vertx.core.http.HttpMethod;
-import io.vertx.core.http.HttpVersion;
-import io.vertx.core.http.RequestOptions;
-import io.vertx.core.http.StreamPriority;
+import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.HeadersMultiMap;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -31,7 +24,7 @@ import io.vertx.core.net.SocketAddress;
 
 import java.util.Objects;
 
-import static io.vertx.core.http.HttpHeaders.*;
+import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 
 /**
  * This class is optimised for performance when used on the same event loop that is passed to the handler with.
@@ -62,14 +55,16 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   private StreamPriority priority;
   private boolean headWritten;
   private boolean isConnect;
+  private String traceOperation;
 
   HttpClientRequestImpl(HttpClientImpl client, HttpClientStream stream, PromiseInternal<HttpClientResponse> responsePromise, boolean ssl, HttpMethod method,
-                        SocketAddress server, String host, int port, String requestURI) {
+                        SocketAddress server, String host, int port, String requestURI, String traceOperation) {
     super(client, stream, responsePromise, ssl, method, server, host, port, requestURI);
     this.chunked = false;
     this.endPromise = context.promise();
     this.endFuture = endPromise.future();
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
+    this.traceOperation = traceOperation;
 
     //
     stream.continueHandler(this::handleContinue);
@@ -84,7 +79,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
     synchronized (this) {
       handler = exceptionHandler;
       if (handler == null || endFuture.isComplete()) {
-        log.error(t);
+        log.error(t.getMessage(), t);
         return;
       }
     }
@@ -456,6 +451,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   private void doWrite(ByteBuf buff, boolean end, boolean connect, Handler<AsyncResult<Void>> completionHandler) {
     boolean writeHead;
+    boolean writeEnd;
     synchronized (this) {
       if (ended) {
         completionHandler.handle(Future.failedFuture(new IllegalStateException("Request already complete")));
@@ -469,19 +465,20 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       } else {
         writeHead = false;
       }
+      writeEnd = !isConnect && end;
       ended = end;
     }
 
     if (writeHead) {
       HttpMethod method = getMethod();
       String uri = getURI();
-      HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI());
-      stream.writeHead(head, chunked, buff, ended, priority, connect, completionHandler);
+      HttpRequestHead head = new HttpRequestHead(method, uri, headers, authority(), absoluteURI(), traceOperation);
+      stream.writeHead(head, chunked, buff, writeEnd, priority, connect, completionHandler);
     } else {
       if (buff == null && !end) {
         throw new IllegalArgumentException();
       }
-      stream.writeBuffer(buff, end, completionHandler);
+      stream.writeBuffer(buff, writeEnd, completionHandler);
     }
     if (end) {
       tryComplete();

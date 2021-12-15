@@ -12,6 +12,7 @@
 package io.vertx.core.http;
 
 
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
@@ -655,13 +656,13 @@ public class WebSocketTest extends VertxTestBase {
     String secHeader = req.headers().get("Sec-WebSocket-Key");
     String tmp = secHeader + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
     String encoded = sha1(tmp);
-    return ((Http1xServerConnection)req.connection()).netSocket().onSuccess(sock -> {
-      sock.write("HTTP/1.1 101 Web Socket Protocol Handshake\r\n" +
-        "Upgrade: WebSocket\r\n" +
-        "Connection: upgrade\r\n" +
-        "Sec-WebSocket-Accept: " + encoded + "\r\n" +
-        "\r\n");
-    });
+    HttpServerResponse resp = req.response();
+    MultiMap headers = resp.headers();
+    headers.set(HttpHeaders.CONNECTION, HttpHeaders.UPGRADE);
+    headers.set("upgrade", "WebSocket");
+    headers.set("connection", "upgrade");
+    headers.set("sec-websocket-accept", encoded);
+    return req.toNetSocket();
   }
 
   private void testWSWriteStream(WebsocketVersion version) throws Exception {
@@ -2916,13 +2917,16 @@ public class WebSocketTest extends VertxTestBase {
           soi.writeMessage(new CloseWebSocketFrame(status, reason));
           AtomicBoolean closeFrameReceived = new AtomicBoolean();
           soi.messageHandler(msg -> {
-            if (msg instanceof CloseWebSocketFrame) {
-              CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
-              assertEquals(status, frame.statusCode());
-              assertEquals(reason, frame.reasonText());
-              closeFrameReceived.set(true);
+            try {
+              if (msg instanceof CloseWebSocketFrame) {
+                CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
+                assertEquals(status, frame.statusCode());
+                assertEquals(reason, frame.reasonText());
+                closeFrameReceived.set(true);
+              }
+            } finally {
+              ReferenceCountUtil.release(msg);
             }
-            ReferenceCountUtil.release(msg);
           });
           soi.closeHandler(v2 -> {
             assertTrue(closeFrameReceived.get());
@@ -2958,8 +2962,12 @@ public class WebSocketTest extends VertxTestBase {
           Object msg = received.getFirst();
           assertEquals(msg.getClass(), CloseWebSocketFrame.class);
           CloseWebSocketFrame frame = (CloseWebSocketFrame) msg;
-          assertEquals(status, frame.statusCode());
-          assertEquals(reason, frame.reasonText());
+          try {
+            assertEquals(status, frame.statusCode());
+            assertEquals(reason, frame.reasonText());
+          } finally {
+            ReferenceCountUtil.release(msg);
+          }
           complete();
         });
       }));
@@ -3016,7 +3024,12 @@ public class WebSocketTest extends VertxTestBase {
         ws.exceptionHandler(err -> fail());
         ws.closeHandler(v -> {
           assertEquals(1, received.size());
-          assertEquals(received.get(0).getClass(), CloseWebSocketFrame.class);
+          Object msg = received.get(0);
+          try {
+            assertEquals(msg.getClass(), CloseWebSocketFrame.class);
+          } finally {
+            ReferenceCountUtil.release(msg);
+          }
           complete();
         });
         // Client sends a close frame but server will not close the TCP connection as expected
@@ -3574,6 +3587,77 @@ public class WebSocketTest extends VertxTestBase {
               });
             }));
         }));
+      }));
+    }));
+    await();
+  }
+
+  @Test
+  public void testSetOriginHeaderV13() {
+    testOriginHeader(WebsocketVersion.V13, true, "http://www.example.com", HttpHeaders.ORIGIN, "http://www.example.com");
+  }
+
+  @Test
+  public void testEnableOriginHeaderV13() {
+    testOriginHeader(WebsocketVersion.V13, true, null, HttpHeaders.ORIGIN, "http://localhost:8080");
+  }
+
+  @Test
+  public void testDisableOriginHeaderV13() {
+    testOriginHeader(WebsocketVersion.V13, false, null, HttpHeaders.ORIGIN, null);
+  }
+
+  @Test
+  public void testSetOriginHeaderV08() {
+    testOriginHeader(WebsocketVersion.V08, true, "http://www.example.com", HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://www.example.com");
+  }
+
+  @Test
+  public void testEnableOriginHeaderV08() {
+    testOriginHeader(WebsocketVersion.V08, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:8080");
+  }
+
+  @Test
+  public void testDisableOriginHeaderV08() {
+    testOriginHeader(WebsocketVersion.V08, false, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, null);
+  }
+
+  @Test
+  public void testSetOriginHeaderV07() {
+    testOriginHeader(WebsocketVersion.V07, true, "http://www.example.com", HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://www.example.com");
+  }
+
+  @Test
+  public void testEnableOriginHeaderV07() {
+    testOriginHeader(WebsocketVersion.V07, true, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, "http://localhost:8080");
+  }
+
+  @Test
+  public void testDisableOriginHeaderV07() {
+    testOriginHeader(WebsocketVersion.V07, false, null, HttpHeaderNames.SEC_WEBSOCKET_ORIGIN, null);
+  }
+
+  private void testOriginHeader(WebsocketVersion version, boolean allow, String origin, CharSequence header, String expected) {
+    server = vertx.createHttpServer(new HttpServerOptions().setPort(DEFAULT_HTTP_PORT).setHost(HttpTestBase.DEFAULT_HTTP_HOST));
+    server.webSocketHandler(ws -> {
+      if (expected != null) {
+        assertEquals(expected, ws.headers().get(header));
+      } else {
+        assertNull(ws.headers().get(header));
+      }
+    }).listen(onSuccess(v -> {
+      client = vertx.createHttpClient();
+      WebSocketConnectOptions options = new WebSocketConnectOptions()
+        .setVersion(version)
+        .setAllowOriginHeader(allow)
+        .setPort(DEFAULT_HTTP_PORT)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/");
+      if (origin != null) {
+        options.addHeader(header, origin);
+      }
+      client.webSocket(options, onSuccess(ws -> {
+        testComplete();
       }));
     }));
     await();

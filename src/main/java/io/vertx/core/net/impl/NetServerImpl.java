@@ -112,8 +112,11 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
       pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
     }
-    if (options.getIdleTimeout() > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(0, 0, options.getIdleTimeout(), options.getIdleTimeoutUnit()));
+    int idleTimeout = options.getIdleTimeout();
+    int readIdleTimeout = options.getReadIdleTimeout();
+    int writeIdleTimeout = options.getWriteIdleTimeout();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
   }
 

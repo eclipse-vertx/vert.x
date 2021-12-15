@@ -68,10 +68,13 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
                                         HttpChannelConnector connector,
                                         Runnable dispose) {
     super(metrics, dispose);
+
+    ConnectionPool<HttpClientConnection> pool = ConnectionPool.pool(this, new int[]{http1MaxSize, http2MaxSize}, queueMaxSize)
+      .connectionSelector(LIFO_SELECTOR).contextProvider(client.contextProvider());
+
     this.client = client;
     this.connector = connector;
-    this.pool = ConnectionPool.pool(this, new int[] { http1MaxSize, http2MaxSize }, queueMaxSize)
-      .connectionSelector(LIFO_SELECTOR);
+    this.pool = pool;
   }
 
   @Override
@@ -119,13 +122,13 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
 
   private class Request implements PoolWaiter.Listener<HttpClientConnection>, Handler<AsyncResult<Lease<HttpClientConnection>>> {
 
-    private final EventLoopContext context;
+    private final ContextInternal context;
     private final HttpVersion protocol;
     private final long timeout;
     private final Handler<AsyncResult<Lease<HttpClientConnection>>> handler;
     private long timerID;
 
-    Request(EventLoopContext context, HttpVersion protocol, long timeout, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
+    Request(ContextInternal context, HttpVersion protocol, long timeout, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
       this.context = context;
       this.protocol = protocol;
       this.timeout = timeout;
@@ -166,7 +169,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
 
   @Override
   public void requestConnection2(ContextInternal ctx, long timeout, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
-    Request request = new Request((EventLoopContext) ctx, client.getOptions().getProtocolVersion(), timeout, handler);
+    Request request = new Request(ctx, client.getOptions().getProtocolVersion(), timeout, handler);
     request.acquire();
   }
 }

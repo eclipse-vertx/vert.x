@@ -19,6 +19,7 @@ import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.EventLoopContext;
+import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.ProxyFilter;
@@ -29,6 +30,7 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.pool.ConnectionPool;
 import io.vertx.core.net.impl.pool.Endpoint;
 import io.vertx.core.net.impl.pool.Lease;
 import io.vertx.core.spi.metrics.ClientMetrics;
@@ -44,6 +46,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -132,6 +135,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
   private Predicate<SocketAddress> proxyFilter;
   private volatile Handler<HttpConnection> connectionHandler;
   private volatile Function<HttpClientResponse, Future<RequestOptions>> redirectHandler = DEFAULT_HANDLER;
+  private final Function<ContextInternal, EventLoopContext> contextProvider;
 
   public HttpClientImpl(VertxInternal vertx, HttpClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
@@ -157,6 +161,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
     this.netClient = new NetClientImpl(
       vertx,
+      metrics,
       new NetClientOptions(options)
         .setHostnameVerificationAlgorithm(options.isVerifyHost() ? "HTTPS": "")
         .setProxyOptions(null)
@@ -169,11 +174,29 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     httpCM = httpConnectionManager();
     if (options.getPoolCleanerPeriod() > 0 && (options.getKeepAliveTimeout() > 0L || options.getHttp2KeepAliveTimeout() > 0L)) {
       PoolChecker checker = new PoolChecker(this);
-      timerID = vertx.setTimer(options.getPoolCleanerPeriod(), checker);
+      ContextInternal timerContext = vertx.createEventLoopContext();
+      timerID = timerContext.setTimer(options.getPoolCleanerPeriod(), checker);
+    }
+    int eventLoopSize = options.getPoolEventLoopSize();
+    if (eventLoopSize > 0) {
+      EventLoopContext[] eventLoops = new EventLoopContext[eventLoopSize];
+      for (int i = 0;i < eventLoopSize;i++) {
+        eventLoops[i] = vertx.createEventLoopContext();
+      }
+      AtomicInteger idx = new AtomicInteger();
+      contextProvider = ctx -> {
+        int i = idx.getAndIncrement();
+        return eventLoops[i % eventLoopSize];
+      };
+    } else {
+      contextProvider = ConnectionPool.EVENT_LOOP_CONTEXT_PROVIDER;
     }
 
     closeFuture.add(netClient);
-    closeFuture.add(this);
+  }
+
+  public NetClient netClient() {
+    return netClient;
   }
 
   /**
@@ -228,6 +251,10 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
       HttpChannelConnector connector = new HttpChannelConnector(this, netClient, key.proxyOptions, metrics, HttpVersion.HTTP_1_1, key.ssl, false, key.peerAddr, key.serverAddr);
       return new WebSocketEndpoint(null, maxPoolSize, connector, dispose);
     });
+  }
+
+  Function<ContextInternal, EventLoopContext> contextProvider() {
+    return contextProvider;
   }
 
   private int getPort(RequestOptions request) {
@@ -312,7 +339,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
       ar -> {
         if (ar.succeeded()) {
           Http1xClientConnection conn = (Http1xClientConnection) ar.result();
-          conn.toWebSocket(ctx, connectOptions.getURI(), connectOptions.getHeaders(), connectOptions.getVersion(), connectOptions.getSubProtocols(), HttpClientImpl.this.options.getMaxWebSocketFrameSize(), promise);
+          conn.toWebSocket(ctx, connectOptions.getURI(), connectOptions.getHeaders(), connectOptions.getAllowOriginHeader(), connectOptions.getVersion(), connectOptions.getSubProtocols(), HttpClientImpl.this.options.getMaxWebSocketFrameSize(), promise);
         } else {
           promise.fail(ar.cause());
         }
@@ -578,7 +605,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
       peerHost = peerHost.substring(0, peerHost.length() -  1);
     }
     SocketAddress peerAddress = SocketAddress.inetSocketAddress(port, peerHost);
-    doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, timeout, followRedirects, proxyOptions, promise);
+    doRequest(method, peerAddress, server, host, port, useSSL, requestURI, headers, request.getTraceOperation(), timeout, followRedirects, proxyOptions, promise);
   }
 
   private void doRequest(
@@ -590,19 +617,14 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     Boolean useSSL,
     String requestURI,
     MultiMap headers,
+    String traceOperation,
     long timeout,
     Boolean followRedirects,
     ProxyOptions proxyOptions,
     PromiseInternal<HttpClientRequest> requestPromise) {
     ContextInternal ctx = requestPromise.context();
     EndpointKey key = new EndpointKey(useSSL, proxyOptions, server, peerAddress);
-    EventLoopContext eventLoopContext;
-    if (ctx instanceof EventLoopContext) {
-      eventLoopContext = (EventLoopContext) ctx;
-    } else {
-      eventLoopContext = vertx.createEventLoopContext(ctx.nettyEventLoop(), ctx.workerPool(), ctx.classLoader());
-    }
-    httpCM.getConnection(eventLoopContext, key, timeout, ar1 -> {
+    httpCM.getConnection(ctx, key, timeout, ar1 -> {
       if (ar1.succeeded()) {
         Lease<HttpClientConnection> lease = ar1.result();
         HttpClientConnection conn = lease.get();
@@ -612,7 +634,7 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
             stream.closeHandler(v -> {
               lease.recycle();
             });
-            HttpClientRequestImpl req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, server, host, port, requestURI);
+            HttpClientRequestImpl req = new HttpClientRequestImpl(this, stream, ctx.promise(), useSSL, method, server, host, port, requestURI, traceOperation);
             if (headers != null) {
               req.headers().setAll(headers);
             }

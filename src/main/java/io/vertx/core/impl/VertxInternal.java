@@ -27,6 +27,7 @@ import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.net.impl.TCPServerBase;
 import io.vertx.core.net.impl.transport.Transport;
 import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.core.spi.file.FileResolver;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.spi.tracing.VertxTracer;
 
@@ -36,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 /**
  * This interface provides services for vert.x core internal use only
@@ -98,6 +100,10 @@ public interface VertxInternal extends Vertx {
    */
   HttpClient createHttpClient(HttpClientOptions options, CloseFuture closeFuture);
 
+  default <C> C createSharedClient(String clientKey, String clientName, CloseFuture closeFuture, Function<CloseFuture, C> supplier) {
+    return SharedClientHolder.createSharedClient(this, clientKey, clientName, closeFuture, supplier);
+  }
+
   /**
    * Get the current context
    * @return the context
@@ -149,9 +155,15 @@ public interface VertxInternal extends Vertx {
   /**
    * Like {@link #executeBlocking(Handler, Handler)} but using the internal worker thread pool.
    */
-  <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler);
+  default <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<T>> resultHandler) {
+    ContextInternal context = getOrCreateContext();
+    context.executeBlockingInternal(blockingCodeHandler, resultHandler);
+  }
 
-  <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler);
+  default <T> void executeBlockingInternal(Handler<Promise<T>> blockingCodeHandler, boolean ordered, Handler<AsyncResult<T>> resultHandler) {
+    ContextInternal context = getOrCreateContext();
+    context.executeBlockingInternal(blockingCodeHandler, ordered, resultHandler);
+  }
 
   ClusterManager getClusterManager();
 
@@ -169,6 +181,11 @@ public interface VertxInternal extends Vertx {
    * @return the address resolver
    */
   AddressResolver addressResolver();
+
+  /**
+   * @return the file resolver
+   */
+  FileResolver fileResolver();
 
   /**
    * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
