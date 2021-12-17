@@ -112,7 +112,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
 	  }
 	  else {
 	    pipeline.addLast("logging", new LoggingHandler(ByteBufFormat.SIMPLE));
-	  }
+      }
     }
     if (sslHelper.isSSL()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
