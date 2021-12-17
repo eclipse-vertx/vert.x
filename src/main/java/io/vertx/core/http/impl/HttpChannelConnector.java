@@ -165,7 +165,7 @@ public class HttpChannelConnector {
     if (options.getLogActivity()) {
       if(options.isHexDumpEnabled()) {
         pipeline.addLast("logging", new LoggingHandler(ByteBufFormat.HEX_DUMP));
-	  }
+      }
       else {
         pipeline.addLast("logging", new LoggingHandler(ByteBufFormat.SIMPLE));
       }
