@@ -430,6 +430,21 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
+  public void testMaxHaderListSize() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxHeaderListSize(Integer.MAX_VALUE)));
+    server.requestHandler(req -> {
+      req.response().end();
+    });
+    startServer(testAddress);
+    client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, resp -> {
+      assertEquals(Integer.MAX_VALUE, resp.request().connection().remoteSettings().getMaxHeaderListSize());
+      testComplete();
+    }).setTimeout(10000).exceptionHandler(this::fail).end();
+    await();
+  }
+
+  @Test
   public void testFoo() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {

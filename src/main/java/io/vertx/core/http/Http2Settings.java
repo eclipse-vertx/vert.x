@@ -57,9 +57,9 @@ public class Http2Settings {
   public static final int DEFAULT_MAX_FRAME_SIZE = 16384;
 
   /**
-   * Default HTTP/2 spec value for {@link #getMaxHeaderListSize} : {@code Integer.MAX_VALUE}
+   * Default HTTP/2 spec value for {@link #getMaxHeaderListSize} : {@code 8192}
    */
-  public static final int DEFAULT_MAX_HEADER_LIST_SIZE = Integer.MAX_VALUE;
+  public static final int DEFAULT_MAX_HEADER_LIST_SIZE = 8192;
 
   /**
    * Default HTTP/2 spec value for {@link #getExtraSettings} : {@code null}
