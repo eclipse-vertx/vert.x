@@ -404,6 +404,7 @@ public abstract class ConnectionBase {
    * perform extra work when the idle event happens.
    */
   protected void handleIdle(IdleStateEvent event) {
+    log.debug("The connection will be closed due to timeout");
     chctx.close();
   }
 
