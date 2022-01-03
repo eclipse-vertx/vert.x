@@ -574,6 +574,49 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
+  public void testAcquireClosedConnection() throws Exception {
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 });
+    EventLoopContext context = vertx.createEventLoopContext();
+    pool.acquire(context, 0, onSuccess(lease -> {
+      lease.recycle();
+    }));
+    Connection expected = new Connection();
+    ConnectionRequest request = mgr.assertRequest();
+    request.connect(expected, 0);
+    CountDownLatch latch1 = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    context.runOnContext(v -> {
+      pool.evict(conn -> {
+        // Make sure that the event-loop thread is busy and pool lock are borrowed
+        latch1.countDown();
+        try {
+          // Wait until the acquisition and removal tasks are enqueued
+          latch2.await();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+        // When we return, the tasks will be executed by this thread
+        // but the acquisition callback is a pool post action executed after the removal task is executed
+        return false;
+      }, ar -> {
+      });
+    });
+    awaitLatch(latch1);
+    AtomicBoolean closed = new AtomicBoolean();
+    pool.acquire(context, 0, onSuccess(lease -> {
+      // Get not null closed connection
+      assertNotNull(lease.get());
+      assertTrue(closed.get());
+      testComplete();
+    }));
+    request.listener.onRemove();
+    closed.set(true);
+    latch2.countDown();
+    await();
+  }
+
+  @Test
   public void testCancelQueuedWaiters() throws Exception {
     waitFor(1);
     EventLoopContext context = vertx.createEventLoopContext();
