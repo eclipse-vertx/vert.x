@@ -632,10 +632,15 @@ public class ConnectionPoolTest extends VertxTestBase {
         w.complete(waiter);
       }
     }, 0, ar -> fail());
-    w.get(10, TimeUnit.SECONDS);
-    pool.cancel(w.get(10, TimeUnit.SECONDS), onSuccess(removed -> {
-      assertTrue(removed);
-      testComplete();
+    PoolWaiter<Connection> waiter = w.get(10, TimeUnit.SECONDS);
+    pool.cancel(waiter, onSuccess(removed1 -> {
+      assertTrue(removed1);
+      assertEquals(0, pool.waiters());
+      pool.cancel(waiter, onSuccess(removed2 -> {
+        assertFalse(removed2);
+        assertEquals(0, pool.waiters());
+        testComplete();
+      }));
     }));
     await();
   }

@@ -654,8 +654,9 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           }
         };
       }
-      if (pool.waiters.removeFirst(waiter)) {
+      if (pool.waiters.remove(waiter)) {
         cancelled = true;
+        waiter.disposed = true;
       } else if (!waiter.disposed) {
         waiter.disposed = true;
         cancelled = true;
@@ -710,8 +711,8 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public Task execute(SimpleConnectionPool<C> pool) {
       if (!pool.closed && slot.connection != null) {
-        if (pool.waiters.size() > 0) {
-          PoolWaiter<C> waiter = pool.waiters.poll();
+        PoolWaiter<C> waiter = pool.waiters.poll();
+        if (waiter != null) {
           LeaseImpl<C> lease = new LeaseImpl<>(slot, waiter.handler);
           return new Task() {
             @Override
@@ -810,11 +811,15 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         return null;
       }
       PoolWaiter<C> node = head.next;
-      removeFirst(node);
+      remove(node);
       return node;
     }
 
     void addLast(PoolWaiter<C> node) {
+      if (node.queued) {
+        throw new IllegalStateException();
+      }
+      node.queued = true;
       node.prev = head.prev;
       node.next = head;
       head.prev.next = node;
@@ -823,6 +828,10 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     void addFirst(PoolWaiter<C> node) {
+      if (node.queued) {
+        throw new IllegalStateException();
+      }
+      node.queued = true;
       node.prev = head;
       node.next = head.prev;
       head.next.prev = node;
@@ -830,12 +839,14 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       size++;
     }
 
-    boolean removeFirst(PoolWaiter<C> node) {
-      if (node.next == null) {
+    boolean remove(PoolWaiter<C> node) {
+      if (!node.queued) {
         return false;
       }
       node.next.prev = node.prev;
       node.prev.next = node.next;
+      node.next = node.prev = null;
+      node.queued = false;
       size--;
       return true;
     }
