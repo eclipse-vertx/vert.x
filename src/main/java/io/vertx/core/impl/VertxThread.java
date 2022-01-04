@@ -25,8 +25,8 @@ public class VertxThread extends FastThreadLocalThread implements BlockedThreadC
   private final long maxExecTime;
   private final TimeUnit maxExecTimeUnit;
   private long execStart;
-  private ContextInternal context;
-  private ClassLoader topLevelTCCL;
+  ContextInternal context;
+  ClassLoader topLevelTCCL;
 
   public VertxThread(Runnable target, String name, boolean worker, long maxExecTime, TimeUnit maxExecTimeUnit) {
     super(target, name);
@@ -42,13 +42,13 @@ public class VertxThread extends FastThreadLocalThread implements BlockedThreadC
     return context;
   }
 
-  private void executeStart() {
+  void executeStart() {
     if (context == null) {
       execStart = System.nanoTime();
     }
   }
 
-  private void executeEnd() {
+  void executeEnd() {
     if (context == null) {
       execStart = 0;
     }
@@ -72,43 +72,4 @@ public class VertxThread extends FastThreadLocalThread implements BlockedThreadC
     return maxExecTimeUnit;
   }
 
-  /**
-   * Begin the emission of a context event.
-   * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
-   * shall be used.
-   *
-   * @param context the context on which the event is emitted on
-   * @return the current context that shall be restored
-   */
-  ContextInternal beginEmission(ContextInternal context) {
-    if (!ContextImpl.DISABLE_TIMINGS) {
-      executeStart();
-    }
-    ContextInternal prev = this.context;
-    if (prev == null) {
-      topLevelTCCL = Thread.currentThread().getContextClassLoader();
-    }
-    this.context = context;
-    return prev;
-  }
-
-  /**
-   * End the emission of a context task.
-   * <p>
-   * This is a low level interface that should not be used, instead {@link ContextInternal#dispatch(Object, io.vertx.core.Handler)}
-   * shall be used.
-   *
-   * @param prev the previous context thread to restore, might be {@code null}
-   */
-  void endEmission(ContextInternal prev) {
-    context = prev;
-    if (prev == null) {
-      Thread.currentThread().setContextClassLoader(topLevelTCCL);
-      topLevelTCCL = null;
-    }
-    if (!ContextImpl.DISABLE_TIMINGS) {
-      executeEnd();
-    }
-  }
 }

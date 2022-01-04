@@ -19,7 +19,7 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class BenchmarkContext extends ContextImpl {
+public class BenchmarkContext extends ContextBase {
 
   public static BenchmarkContext create(Vertx vertx) {
     VertxImpl impl = (VertxImpl) vertx;
@@ -32,7 +32,7 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, ClassLoader tccl) {
-    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, null, null, tccl, false);
+    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, null, null, tccl);
   }
 
   @Override
@@ -41,27 +41,27 @@ public class BenchmarkContext extends ContextImpl {
   }
 
   @Override
-  boolean inThread() {
+  public boolean inThread() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  <T> void emit(AbstractContext ctx, T argument, Handler<T> task) {
+  protected <T> void emit(ContextInternal ctx, T argument, Handler<T> task) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  void runOnContext(AbstractContext ctx, Handler<Void> action) {
+  protected void runOnContext(ContextInternal ctx, Handler<Void> action) {
     ctx.dispatch(null, action);
   }
 
   @Override
-  <T> void execute(AbstractContext ctx, T argument, Handler<T> task) {
+  protected <T> void execute(ContextInternal ctx, T argument, Handler<T> task) {
     task.handle(argument);
   }
 
   @Override
-  <T> void execute(AbstractContext ctx, Runnable task) {
+  protected void execute(ContextInternal ctx, Runnable task) {
     task.run();
   }
 
@@ -75,4 +75,8 @@ public class BenchmarkContext extends ContextImpl {
     return false;
   }
 
+  @Override
+  public boolean isWorkerContext() {
+    return false;
+  }
 }

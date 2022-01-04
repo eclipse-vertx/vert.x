@@ -99,8 +99,7 @@ public class InboundBuffer<E> {
   }
 
   private void checkThread() {
-    Thread thread = Thread.currentThread();
-    if (!(thread instanceof FastThreadLocalThread)) {
+    if (!context.inThread()) {
       throw new IllegalStateException("This operation must be called from a Vert.x thread");
     }
   }

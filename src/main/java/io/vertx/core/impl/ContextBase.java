@@ -25,32 +25,22 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
+ * A base class for {@link Context} implementations.
+ *
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-abstract class ContextImpl extends AbstractContext {
+public abstract class ContextBase implements ContextInternal {
 
-  /**
-   * Execute the {@code task} disabling the thread-local association for the duration
-   * of the execution. {@link Vertx#currentContext()} will return {@code null},
-   * @param task the task to execute
-   * @throws IllegalStateException if the current thread is not a Vertx thread
-   */
-  static void executeIsolated(Handler<Void> task) {
-    Thread currentThread = Thread.currentThread();
-    if (currentThread instanceof VertxThread) {
-      VertxThread vertxThread = (VertxThread) currentThread;
-      ContextInternal prev = vertxThread.beginEmission(null);
-      try {
-        task.handle(null);
-      } finally {
-        vertxThread.endEmission(prev);
-      }
+  static <T> void setResultHandler(ContextInternal ctx, Future<T> fut, Handler<AsyncResult<T>> resultHandler) {
+    if (resultHandler != null) {
+      fut.onComplete(resultHandler);
     } else {
-      task.handle(null);
+      fut.onFailure(ctx::reportException);
     }
   }
 
-  private static final Logger log = LoggerFactory.getLogger(ContextImpl.class);
+  private static final Logger log = LoggerFactory.getLogger(ContextBase.class);
 
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
   static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
@@ -65,19 +55,17 @@ abstract class ContextImpl extends AbstractContext {
   private ConcurrentMap<Object, Object> localData;
   private volatile Handler<Throwable> exceptionHandler;
   final TaskQueue internalOrderedTasks;
-  final WorkerPool internalBlockingPool;
+  final WorkerPool internalWorkerPool;
   final WorkerPool workerPool;
   final TaskQueue orderedTasks;
 
-  ContextImpl(VertxInternal vertx,
-              EventLoop eventLoop,
-              WorkerPool internalBlockingPool,
-              WorkerPool workerPool,
-              Deployment deployment,
-              CloseFuture closeFuture,
-              ClassLoader tccl,
-              boolean disableTCCL) {
-    super(disableTCCL);
+  protected ContextBase(VertxInternal vertx,
+                        EventLoop eventLoop,
+                        WorkerPool internalWorkerPool,
+                        WorkerPool workerPool,
+                        Deployment deployment,
+                        CloseFuture closeFuture,
+                        ClassLoader tccl) {
     this.deployment = deployment;
     this.config = deployment != null ? deployment.config() : new JsonObject();
     this.eventLoop = eventLoop;
@@ -85,7 +73,7 @@ abstract class ContextImpl extends AbstractContext {
     this.owner = vertx;
     this.workerPool = workerPool;
     this.closeFuture = closeFuture;
-    this.internalBlockingPool = internalBlockingPool;
+    this.internalWorkerPool = internalWorkerPool;
     this.orderedTasks = new TaskQueue();
     this.internalOrderedTasks = new TaskQueue();
   }
@@ -97,16 +85,6 @@ abstract class ContextImpl extends AbstractContext {
   @Override
   public CloseFuture closeFuture() {
     return closeFuture;
-  }
-
-  @Override
-  public boolean isDeployment() {
-    return deployment != null;
-  }
-
-  @Override
-  public String deploymentID() {
-    return deployment != null ? deployment.deploymentID() : null;
   }
 
   @Override
@@ -124,12 +102,12 @@ abstract class ContextImpl extends AbstractContext {
 
   @Override
   public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
-    return executeBlocking(this, action, internalBlockingPool, internalOrderedTasks);
+    return executeBlocking(this, action, internalWorkerPool, internalOrderedTasks);
   }
 
   @Override
   public <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
-    return executeBlocking(this, action, internalBlockingPool, ordered ? internalOrderedTasks : null);
+    return executeBlocking(this, action, internalWorkerPool, ordered ? internalOrderedTasks : null);
   }
 
   @Override
@@ -235,49 +213,36 @@ abstract class ContextImpl extends AbstractContext {
     return exceptionHandler;
   }
 
-  public int getInstanceCount() {
-    // the no verticle case
-    if (deployment == null) {
-      return 0;
-    }
-
-    // the single verticle without an instance flag explicitly defined
-    if (deployment.deploymentOptions() == null) {
-      return 1;
-    }
-    return deployment.deploymentOptions().getInstances();
-  }
-
   @Override
   public final void runOnContext(Handler<Void> action) {
     runOnContext(this, action);
   }
 
-  abstract void runOnContext(AbstractContext ctx, Handler<Void> action);
+  protected abstract void runOnContext(ContextInternal ctx, Handler<Void> action);
 
   @Override
   public void execute(Runnable task) {
     execute(this, task);
   }
 
-  abstract <T> void execute(AbstractContext ctx, Runnable task);
+  protected abstract <T> void execute(ContextInternal ctx, Runnable task);
 
   @Override
   public final <T> void execute(T argument, Handler<T> task) {
     execute(this, argument, task);
   }
 
-  abstract <T> void execute(AbstractContext ctx, T argument, Handler<T> task);
+  protected abstract <T> void execute(ContextInternal ctx, T argument, Handler<T> task);
 
   @Override
   public <T> void emit(T argument, Handler<T> task) {
     emit(this, argument, task);
   }
 
-  abstract <T> void emit(AbstractContext ctx, T argument, Handler<T> task);
+  protected abstract <T> void emit(ContextInternal ctx, T argument, Handler<T> task);
 
   @Override
-  public final ContextInternal duplicate() {
+  public ContextInternal duplicate() {
     return new DuplicatedContext(this);
   }
 }

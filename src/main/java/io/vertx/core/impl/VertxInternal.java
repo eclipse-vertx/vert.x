@@ -71,7 +71,9 @@ public interface VertxInternal extends Vertx {
 
   EventLoopGroup getAcceptorEventLoopGroup();
 
-  ExecutorService getWorkerPool();
+  WorkerPool getWorkerPool();
+
+  WorkerPool getInternalWorkerPool();
 
   Map<ServerID, HttpServerImpl> sharedHttpServers();
 

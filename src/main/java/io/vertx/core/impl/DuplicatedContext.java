@@ -33,18 +33,17 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-class DuplicatedContext extends AbstractContext {
+class DuplicatedContext implements ContextInternal {
 
-  protected final ContextImpl delegate;
+  protected final ContextBase delegate;
   private ConcurrentMap<Object, Object> localData;
 
-  DuplicatedContext(ContextImpl delegate) {
-    super(delegate.disableTCCL);
+  DuplicatedContext(ContextBase delegate) {
     this.delegate = delegate;
   }
 
   @Override
-  boolean inThread() {
+  public boolean inThread() {
     return delegate.inThread();
   }
 
@@ -54,28 +53,13 @@ class DuplicatedContext extends AbstractContext {
   }
 
   @Override
-  public final boolean isDeployment() {
-    return delegate.isDeployment();
-  }
-
-  @Override
   public final VertxTracer tracer() {
     return delegate.tracer();
   }
 
   @Override
-  public final String deploymentID() {
-    return delegate.deploymentID();
-  }
-
-  @Override
   public final JsonObject config() {
     return delegate.config();
-  }
-
-  @Override
-  public final int getInstanceCount() {
-    return delegate.getInstanceCount();
   }
 
   @Override
@@ -141,22 +125,22 @@ class DuplicatedContext extends AbstractContext {
 
   @Override
   public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action) {
-    return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, delegate.internalOrderedTasks);
+    return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, delegate.internalOrderedTasks);
   }
 
   @Override
   public final <T> Future<T> executeBlockingInternal(Handler<Promise<T>> action, boolean ordered) {
-    return ContextImpl.executeBlocking(this, action, delegate.internalBlockingPool, ordered ? delegate.internalOrderedTasks : null);
+    return ContextBase.executeBlocking(this, action, delegate.internalWorkerPool, ordered ? delegate.internalOrderedTasks : null);
   }
 
   @Override
   public final <T> Future<T> executeBlocking(Handler<Promise<T>> action, boolean ordered) {
-    return ContextImpl.executeBlocking(this, action, delegate.workerPool, ordered ? delegate.orderedTasks : null);
+    return ContextBase.executeBlocking(this, action, delegate.workerPool, ordered ? delegate.orderedTasks : null);
   }
 
   @Override
   public final <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler, TaskQueue queue) {
-    return ContextImpl.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
+    return ContextBase.executeBlocking(this, blockingCodeHandler, delegate.workerPool, queue);
   }
 
   @Override
@@ -182,6 +166,11 @@ class DuplicatedContext extends AbstractContext {
   @Override
   public boolean isEventLoopContext() {
     return delegate.isEventLoopContext();
+  }
+
+  @Override
+  public boolean isWorkerContext() {
+    return delegate.isWorkerContext();
   }
 
   @Override

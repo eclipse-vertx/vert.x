@@ -20,7 +20,7 @@ import java.util.concurrent.RejectedExecutionException;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class EventLoopContext extends ContextImpl {
+public class EventLoopContext extends ContextBase {
 
   EventLoopContext(VertxInternal vertx,
                    EventLoop eventLoop,
@@ -28,9 +28,8 @@ public class EventLoopContext extends ContextImpl {
                    WorkerPool workerPool,
                    Deployment deployment,
                    CloseFuture closeFuture,
-                   ClassLoader tccl,
-                   boolean disableTCCL) {
-    super(vertx, eventLoop, internalBlockingPool, workerPool, deployment, closeFuture, tccl, disableTCCL);
+                   ClassLoader tccl) {
+    super(vertx, eventLoop, internalBlockingPool, workerPool, deployment, closeFuture, tccl);
   }
 
   @Override
@@ -39,7 +38,7 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  void runOnContext(AbstractContext ctx, Handler<Void> action) {
+  protected void runOnContext(ContextInternal ctx, Handler<Void> action) {
     try {
       nettyEventLoop().execute(() -> ctx.dispatch(action));
     } catch (RejectedExecutionException ignore) {
@@ -48,7 +47,7 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  <T> void emit(AbstractContext ctx, T argument, Handler<T> task) {
+  protected <T> void emit(ContextInternal ctx, T argument, Handler<T> task) {
     EventLoop eventLoop = nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       ContextInternal prev = ctx.beginDispatch();
@@ -71,7 +70,7 @@ public class EventLoopContext extends ContextImpl {
    * </ul>
    */
   @Override
-  <T> void execute(AbstractContext ctx, T argument, Handler<T> task) {
+  protected <T> void execute(ContextInternal ctx, T argument, Handler<T> task) {
     EventLoop eventLoop = nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       task.handle(argument);
@@ -81,7 +80,7 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  <T> void execute(AbstractContext ctx, Runnable task) {
+  protected <T> void execute(ContextInternal ctx, Runnable task) {
     EventLoop eventLoop = nettyEventLoop();
     if (eventLoop.inEventLoop()) {
       task.run();
@@ -96,7 +95,12 @@ public class EventLoopContext extends ContextImpl {
   }
 
   @Override
-  boolean inThread() {
+  public boolean isWorkerContext() {
+    return false;
+  }
+
+  @Override
+  public boolean inThread() {
     return nettyEventLoop().inEventLoop();
   }
 
