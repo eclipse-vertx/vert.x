@@ -983,4 +983,34 @@ public class ContextTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testDispatchContextOnAnyThread() {
+    ClassLoader tccl1 = new URLClassLoader(new URL[0]);
+    ClassLoader tccl2 = new URLClassLoader(new URL[0]);
+    VertxImpl impl = (VertxImpl) vertx;
+    ContextInternal ctx1 = new FakeContext(impl, tccl1);
+    ContextInternal ctx2 = new FakeContext(impl, tccl2);
+    AtomicInteger exec = new AtomicInteger();
+    Thread thread = Thread.currentThread();
+    ClassLoader current = thread.getContextClassLoader();
+    ctx1.dispatch(() -> {
+      assertSame(thread, Thread.currentThread());
+      assertSame(ctx1, Vertx.currentContext());
+      assertSame(tccl1, thread.getContextClassLoader());
+      assertEquals(1, exec.incrementAndGet());
+      ctx2.dispatch(() -> {
+        assertSame(thread, Thread.currentThread());
+        assertSame(ctx2, Vertx.currentContext());
+        assertSame(tccl2, thread.getContextClassLoader());
+        assertEquals(2, exec.incrementAndGet());
+      });
+      assertSame(ctx1, Vertx.currentContext());
+      assertSame(tccl1, thread.getContextClassLoader());
+      assertEquals(2, exec.get());
+    });
+    assertNull(Vertx.currentContext());
+    assertSame(current, thread.getContextClassLoader());
+    assertEquals(2, exec.get());
+  }
 }

@@ -22,20 +22,19 @@ import java.util.concurrent.RejectedExecutionException;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class WorkerContext extends ContextImpl {
+public class WorkerContext extends ContextBase {
 
   WorkerContext(VertxInternal vertx,
                 WorkerPool internalBlockingPool,
                 WorkerPool workerPool,
                 Deployment deployment,
                 CloseFuture closeFuture,
-                ClassLoader tccl,
-                boolean disableTCCL) {
-    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeFuture, tccl, disableTCCL);
+                ClassLoader tccl) {
+    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, deployment, closeFuture, tccl);
   }
 
   @Override
-  void runOnContext(AbstractContext ctx, Handler<Void> action) {
+  protected void runOnContext(ContextInternal ctx, Handler<Void> action) {
     try {
       run(ctx, null, action);
     } catch (RejectedExecutionException ignore) {
@@ -50,25 +49,30 @@ public class WorkerContext extends ContextImpl {
    * </ul>
    */
   @Override
-  <T> void execute(AbstractContext ctx, T argument, Handler<T> task) {
+  protected <T> void execute(ContextInternal ctx, T argument, Handler<T> task) {
     execute(orderedTasks, argument, task);
   }
 
   @Override
-  <T> void emit(AbstractContext ctx, T argument, Handler<T> task) {
+  protected <T> void emit(ContextInternal ctx, T argument, Handler<T> task) {
     execute(orderedTasks, argument, arg -> {
       ctx.dispatch(arg, task);
     });
   }
 
   @Override
-  <T> void execute(AbstractContext ctx, Runnable task) {
+  protected <T> void execute(ContextInternal ctx, Runnable task) {
     execute(this, task, Runnable::run);
   }
 
   @Override
   public boolean isEventLoopContext() {
     return false;
+  }
+
+  @Override
+  public boolean isWorkerContext() {
+    return true;
   }
 
   private Executor executor;
@@ -125,7 +129,7 @@ public class WorkerContext extends ContextImpl {
   }
 
   @Override
-  boolean inThread() {
+  public boolean inThread() {
     return Context.isOnWorkerThread();
   }
 }

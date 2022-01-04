@@ -184,7 +184,7 @@ public class DeploymentManager {
     for (Verticle verticle: verticles) {
       CloseFuture closeFuture = new CloseFuture(log);
       WorkerPool workerPool = poolName != null ? vertx.createSharedWorkerPool(poolName, options.getWorkerPoolSize(), options.getMaxWorkerExecuteTime(), options.getMaxWorkerExecuteTimeUnit()) : null;
-      ContextImpl context = (options.isWorker() ? vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl) :
+      ContextBase context = (options.isWorker() ? vertx.createWorkerContext(deployment, closeFuture, workerPool, tccl) :
         vertx.createEventLoopContext(deployment, closeFuture, workerPool, tccl));
       VerticleHolder holder = new VerticleHolder(verticle, context, workerPool, closeFuture);
       deployment.addVerticle(holder);
@@ -226,11 +226,11 @@ public class DeploymentManager {
   static class VerticleHolder {
 
     final Verticle verticle;
-    final ContextImpl context;
+    final ContextBase context;
     final WorkerPool workerPool;
     final CloseFuture closeFuture;
 
-    VerticleHolder(Verticle verticle, ContextImpl context, WorkerPool workerPool, CloseFuture closeFuture) {
+    VerticleHolder(Verticle verticle, ContextBase context, WorkerPool workerPool, CloseFuture closeFuture) {
       this.verticle = verticle;
       this.context = context;
       this.workerPool = workerPool;
@@ -274,7 +274,7 @@ public class DeploymentManager {
       verticles.add(holder);
     }
 
-    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextImpl context, VerticleHolder closeFuture, Throwable cause) {
+    private synchronized void rollback(ContextInternal callingContext, Handler<AsyncResult<Deployment>> completionHandler, ContextBase context, VerticleHolder closeFuture, Throwable cause) {
       if (status == ST_DEPLOYED) {
         status = ST_UNDEPLOYING;
         doUndeployChildren(callingContext).onComplete(childrenResult -> {
@@ -331,7 +331,7 @@ public class DeploymentManager {
           parent.removeChild(this);
         }
         for (VerticleHolder verticleHolder: verticles) {
-          ContextImpl context = verticleHolder.context;
+          ContextBase context = verticleHolder.context;
           Promise p = Promise.promise();
           undeployFutures.add(p.future());
           context.runOnContext(v -> {

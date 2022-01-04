@@ -344,7 +344,7 @@ public class HAManager {
                 log.warn("Timed out waiting for group information to appear");
               } else {
                 // Remove any context we have here (from the timer) otherwise will screw things up when verticles are deployed
-                ContextImpl.executeIsolated(v -> {
+                ((VertxImpl)vertx).executeIsolated(v -> {
                   checkQuorumWhenAdded(nodeID, start);
                 });
               }
@@ -404,7 +404,7 @@ public class HAManager {
   private void addToHADeployList(final String verticleName, final DeploymentOptions deploymentOptions,
                                  final Handler<AsyncResult<String>> doneHandler) {
     toDeployOnQuorum.add(() -> {
-      ContextImpl.executeIsolated(v -> {
+      ((VertxImpl)vertx).executeIsolated(v -> {
         deployVerticle(verticleName, deploymentOptions, doneHandler);
       });
     });
@@ -428,7 +428,7 @@ public class HAManager {
       Deployment dep = deploymentManager.getDeployment(deploymentID);
       if (dep != null) {
         if (dep.deploymentOptions().isHa()) {
-          ContextImpl.executeIsolated(v -> {
+          ((VertxImpl)vertx).executeIsolated(v -> {
             deploymentManager.undeployVerticle(deploymentID).onComplete(result -> {
               if (result.succeeded()) {
                 log.info("Successfully undeployed HA deployment " + deploymentID + "-" + dep.verticleIdentifier() + " as there is no quorum");
@@ -523,7 +523,7 @@ public class HAManager {
     final CountDownLatch latch = new CountDownLatch(1);
     final AtomicReference<Throwable> err = new AtomicReference<>();
     // Now deploy this verticle on this node
-    ContextImpl.executeIsolated(v -> {
+    ((VertxImpl)vertx).executeIsolated(v -> {
       JsonObject options = failedVerticle.getJsonObject("options");
       doDeployVerticle(verticleName, new DeploymentOptions(options), result -> {
         if (result.succeeded()) {

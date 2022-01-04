@@ -16,6 +16,7 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.impl.VertxThread;
+import io.vertx.core.impl.launcher.VertxCommandLauncher;
 import io.vertx.core.json.JsonObject;
 
 import java.util.List;
@@ -135,7 +136,9 @@ public interface Context {
    * @param resultHandler  handler that will be called when the blocking code is complete
    * @param <T> the type of the result
    */
-  <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler);
+  default <T> void executeBlocking(Handler<Promise<T>> blockingCodeHandler, Handler<AsyncResult<@Nullable T>> resultHandler) {
+    executeBlocking(blockingCodeHandler, true, resultHandler);
+  }
 
   /**
    * Same as {@link #executeBlocking(Handler, boolean, Handler)} but with an {@code handler} called when the operation completes
@@ -145,7 +148,9 @@ public interface Context {
   /**
    * Same as {@link #executeBlocking(Handler, Handler)} but with an {@code handler} called when the operation completes
    */
-  <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler);
+  default <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
+    return executeBlocking(blockingCodeHandler, true);
+  }
 
   /**
    * If the context is associated with a Verticle deployment, this returns the deployment ID of that deployment.
@@ -165,7 +170,9 @@ public interface Context {
   /**
    * The process args
    */
-  List<String> processArgs();
+  default List<String> processArgs() {
+    return VertxCommandLauncher.getProcessArguments();
+  }
 
   /**
    * Is the current context an event loop context?

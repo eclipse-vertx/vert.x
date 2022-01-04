@@ -123,7 +123,7 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
 
   private InboundBuffer<Object> pendingQueue() {
     if (pending == null) {
-      pending = new InboundBuffer<>(conn.getContext(), 8);
+      pending = new InboundBuffer<>(context, 8);
       pending.drainHandler(v -> conn.doResume());
       pending.handler(buffer -> {
         if (buffer == InboundBuffer.END_SENTINEL) {
