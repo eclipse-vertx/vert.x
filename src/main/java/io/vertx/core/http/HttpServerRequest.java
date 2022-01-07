@@ -55,8 +55,7 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
    *   starts with <i>An HTTP line is larger than</i> the {@code REQUEST_URI_TOO_LONG} status is sent </li>
    *   <li>Otherwise when the cause is an instance of {@code io.netty.handler.codec.TooLongFrameException} and the error message
    *   starts with <i>HTTP header is larger than</i> the {@code REQUEST_HEADER_FIELDS_TOO_LARGE} status is sent</li>
-   *   <li>Otherwise when the request is a {@link HttpVersion#HTTP_1_0} {@code GET} {@code /bad-request} then {@code BAD_REQUEST} status is sent</li>
-   *   <li>Otherwise the connection is closed</li>
+   *   <li>Otherwise then {@code BAD_REQUEST} status is sent</li>
    * </ul>
    */
   @GenIgnore
@@ -72,16 +71,12 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
         status = HttpResponseStatus.REQUEST_HEADER_FIELDS_TOO_LARGE;
       }
     }
-    if (status == null && HttpMethod.GET == request.method() &&
-      HttpVersion.HTTP_1_0 == request.version() && "/bad-request".equals(request.uri())) {
-      // Matches Netty's specific HttpRequest for invalid messages
+    if (status == null) {
       status = HttpResponseStatus.BAD_REQUEST;
     }
-    if (status != null) {
-      request.response().setStatusCode(status.code()).end();
-    } else {
-      request.connection().close();
-    }
+    HttpServerResponse response = request.response();
+    response.setStatusCode(status.code()).end();
+    response.close();
   };
 
   @Override
