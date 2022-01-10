@@ -20,8 +20,6 @@ import io.vertx.core.Future;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.file.AsyncFile;
-import io.vertx.core.http.impl.CookieImpl;
 import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.ServerCookie;
 import io.vertx.core.impl.Utils;
@@ -36,14 +34,12 @@ import io.vertx.test.fakestream.FakeStream;
 import io.vertx.test.netty.TestLoggerFactory;
 import io.vertx.test.proxy.HAProxy;
 import org.junit.Assume;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.*;
 import java.net.ServerSocket;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -6630,6 +6626,43 @@ public abstract class HttpTest extends HttpTestBase {
         assertTrue(err instanceof ConnectTimeoutException);
         testComplete();
       }));
+    await();
+  }
+
+  @Test
+  public void testResponseEndFutureCompletes_WithoutBody() throws Exception {
+      testResponseEndFutureCompletes(HttpServerResponse::end);
+  }
+
+  @Test
+  public void testResponseEndFutureCompletes_WithBody() throws Exception {
+    testResponseEndFutureCompletes(httpServerResponse -> httpServerResponse.end("hello"));
+  }
+
+  @Test
+  public void testResponseEndFutureCompletes_ChunkedWithoutBody() throws Exception {
+    testResponseEndFutureCompletes(httpServerResponse -> httpServerResponse.setChunked(true).write("hello")
+      .compose(nothing -> httpServerResponse.end())
+    );
+  }
+
+  @Test
+  public void testResponseEndFutureCompletes_ChunkedWithBody() throws Exception {
+    testResponseEndFutureCompletes(httpServerResponse -> httpServerResponse.setChunked(true).write("hello")
+      .compose(nothing -> httpServerResponse.end("world"))
+    );
+  }
+
+  private void testResponseEndFutureCompletes(final Function<HttpServerResponse, Future<Void>> function) throws Exception {
+    waitFor(2);
+    server.requestHandler(
+      httpServerRequest -> function.apply(httpServerRequest.response()).onComplete(onSuccess(nothing -> complete()))
+    );
+    startServer(testAddress);
+    client.request(requestOptions)
+      .compose(HttpClientRequest::send)
+      .compose(HttpClientResponse::end)
+      .onComplete(onSuccess(nothing -> complete()));
     await();
   }
 }
