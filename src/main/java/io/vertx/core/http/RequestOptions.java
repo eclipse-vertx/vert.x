@@ -526,7 +526,7 @@ public class RequestOptions {
 
   private void checkHeaders() {
     if (headers == null) {
-      headers = MultiMap.caseInsensitiveMultiMap();
+      headers = HttpHeaders.headers();
     }
   }
 
