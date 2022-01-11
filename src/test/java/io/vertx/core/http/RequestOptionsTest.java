@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class RequestOptionsTest {
@@ -94,5 +95,15 @@ public class RequestOptionsTest {
     assertEquals(headers.toString(), 2, headers.size());
     assertEquals(Collections.singletonList("value"), headers.getAll("key"));
     assertEquals(Arrays.asList("bar", "baz"), headers.getAll("foo"));
+  }
+
+  @Test
+  public void testHeaderNameValidation() {
+    assertThrows(IllegalArgumentException.class, () -> new RequestOptions().addHeader("=", "invalid header name"));
+  }
+
+  @Test
+  public void testHeaderValueValidation() {
+    assertThrows(IllegalArgumentException.class, () -> new RequestOptions().addHeader("invalid-header-value", "\r"));
   }
 }
