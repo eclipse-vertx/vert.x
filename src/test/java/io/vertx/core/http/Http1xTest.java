@@ -4730,6 +4730,46 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testInvalidHttpResponseHeader() throws Exception {
+    waitFor(2);
+    NetServer server = vertx.createNetServer();
+    try {
+      server.connectHandler(so -> {
+        AtomicBoolean sent = new AtomicBoolean();
+        so.handler(buff -> {
+          if (sent.compareAndSet(false, true)) {
+            so.write("" +
+              "HTTP/1.1 200 OK\r\n" +
+              "Content-Length: 0\r\n" +
+              "\uD83D\uDE31: val\r\n" +
+              "\r\n");
+          }
+        });
+      });
+      CountDownLatch latch = new CountDownLatch(1);
+      server.listen(testAddress, onSuccess(s -> latch.countDown()));
+      awaitLatch(latch);
+      client.connectionHandler(conn -> {
+        conn.exceptionHandler(err -> {
+          if (err.getClass() == IllegalArgumentException.class) {
+            complete();
+          }
+        });
+      });
+      client.request(HttpMethod.GET, testAddress, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, DEFAULT_TEST_URI, response -> {
+        fail();
+      }).exceptionHandler(err -> {
+        if (err.getClass() == IllegalArgumentException.class) {
+          complete();
+        }
+      }).end();
+      await();
+    } finally {
+      server.close();
+    }
+  }
+
+  @Test
   public void testChunkedServerResponse() {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();

@@ -22,6 +22,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.impl.pool.ConnectResult;
 import io.vertx.core.http.impl.pool.ConnectionListener;
@@ -191,7 +192,7 @@ class HttpChannelConnector implements ConnectionProvider<HttpClientConnection> {
       options.getMaxHeaderSize(),
       options.getMaxChunkSize(),
       false,
-      false,
+      !HttpHeaders.DISABLE_HTTP_HEADERS_VALIDATION,
       options.getDecoderInitialBufferSize()));
     if (options.isTryUseCompression()) {
       pipeline.addLast("inflater", new HttpContentDecompressor(false));
