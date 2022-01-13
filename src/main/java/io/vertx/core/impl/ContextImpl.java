@@ -176,7 +176,7 @@ abstract class ContextImpl extends AbstractContext {
       if (metrics != null) {
         metrics.rejected(queueMetric);
       }
-      throw e;
+      promise.fail(e);
     }
     return fut;
   }
