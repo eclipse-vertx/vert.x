@@ -45,11 +45,17 @@ public class NetClientOptions extends ClientOptionsBase {
    */
   public static final String DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM = "";
 
+  /**
+   * Default pcap file name where capturing of HTTP traffic is recorded. When no file is set, capturing is disabled.
+   */
+  public static final String DEFAULT_PCAP_CAPTURE_FILE = "";
+
 
   private int reconnectAttempts;
   private long reconnectInterval;
   private String hostnameVerificationAlgorithm;
   private List<String> applicationLayerProtocols;
+  private String pcapCaptureFile;
 
     /**
    * The default constructor
@@ -70,6 +76,7 @@ public class NetClientOptions extends ClientOptionsBase {
     this.reconnectInterval = other.getReconnectInterval();
     this.hostnameVerificationAlgorithm = other.getHostnameVerificationAlgorithm();
     this.applicationLayerProtocols = other.applicationLayerProtocols != null ? new ArrayList<>(other.applicationLayerProtocols) : null;
+    this.pcapCaptureFile = other.pcapCaptureFile;
   }
 
   /**
@@ -96,6 +103,7 @@ public class NetClientOptions extends ClientOptionsBase {
     this.reconnectAttempts = DEFAULT_RECONNECT_ATTEMPTS;
     this.reconnectInterval = DEFAULT_RECONNECT_INTERVAL;
     this.hostnameVerificationAlgorithm = DEFAULT_HOSTNAME_VERIFICATION_ALGORITHM;
+    this.pcapCaptureFile = DEFAULT_PCAP_CAPTURE_FILE;
   }
 
   @Override
@@ -119,6 +127,12 @@ public class NetClientOptions extends ClientOptionsBase {
   @Override
   public NetClientOptions setReusePort(boolean reusePort) {
     super.setReusePort(reusePort);
+    return this;
+  }
+
+  @Override
+  public NetClientOptions setPcapCaptureFile(String pcapCaptureFile) {
+    super.setPcapCaptureFile(pcapCaptureFile);
     return this;
   }
 

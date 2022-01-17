@@ -57,6 +57,7 @@ public class HttpChannelConnector {
   private final HttpVersion version;
   private final SocketAddress peerAddress;
   private final SocketAddress server;
+  private final boolean enablePcapCapture;
 
   public HttpChannelConnector(HttpClientImpl client,
                               NetClientImpl netClient,
@@ -77,6 +78,7 @@ public class HttpChannelConnector {
     this.version = version;
     this.peerAddress = peerAddress;
     this.server = server;
+    this.enablePcapCapture = (options.getPcapCaptureFile() != null) && !options.getPcapCaptureFile().isEmpty();
   }
 
   public SocketAddress server() {
@@ -163,6 +165,9 @@ public class HttpChannelConnector {
     }
     if (options.getLogActivity()) {
       pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
+    }
+    if (enablePcapCapture) {
+      pipeline.addLast("pcapCapturing", new VertxPcapWriteHandler(options.getPcapCaptureFile()));
     }
     pipeline.addLast("codec", new HttpClientCodec(
       options.getMaxInitialLineLength(),

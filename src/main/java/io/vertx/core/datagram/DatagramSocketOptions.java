@@ -137,6 +137,11 @@ public class DatagramSocketOptions extends NetworkOptions {
   }
 
   @Override
+  public DatagramSocketOptions setPcapCaptureFile(String pcapCaptureFile) {
+    return (DatagramSocketOptions) super.setPcapCaptureFile(pcapCaptureFile);
+  }
+
+  @Override
   public int getTrafficClass() {
     return super.getTrafficClass();
   }

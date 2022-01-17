@@ -29,6 +29,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
+import io.vertx.core.http.impl.VertxPcapWriteHandler;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
@@ -64,6 +65,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   protected final int writeIdleTimeout;
   private final TimeUnit idleTimeoutUnit;
   protected final boolean logEnabled;
+  private final boolean enablePcapCapture;
 
   private final VertxInternal vertx;
   private final NetClientOptions options;
@@ -90,6 +92,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
     this.closeFuture = closeFuture;
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
+    this.enablePcapCapture = (options.getPcapCaptureFile() != null) && !options.getPcapCaptureFile().isEmpty();
 
     sslHelper.validate(vertx);
   }
@@ -97,6 +100,9 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   protected void initChannel(ChannelPipeline pipeline) {
     if (logEnabled) {
       pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
+    }
+    if (enablePcapCapture) {
+      pipeline.addLast("pcapCapturing", new VertxPcapWriteHandler(options.getPcapCaptureFile()));
     }
     if (options.isSsl()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.

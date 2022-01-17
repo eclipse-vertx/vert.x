@@ -285,6 +285,12 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
+  public HttpServerOptions setPcapCaptureFile(String pcapCaptureFile) {
+    super.setPcapCaptureFile(pcapCaptureFile);
+    return this;
+  }
+
+  @Override
   public HttpServerOptions setTrafficClass(int trafficClass) {
     super.setTrafficClass(trafficClass);
     return this;

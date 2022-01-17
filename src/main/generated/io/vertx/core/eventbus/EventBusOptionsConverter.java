@@ -25,6 +25,11 @@ public class EventBusOptionsConverter {
             obj.setAcceptBacklog(((Number)member.getValue()).intValue());
           }
           break;
+        case "activityLogDataFormat":
+          if (member.getValue() instanceof String) {
+            obj.setActivityLogDataFormat(io.netty.handler.logging.ByteBufFormat.valueOf((String)member.getValue()));
+          }
+          break;
         case "clientAuth":
           if (member.getValue() instanceof String) {
             obj.setClientAuth(io.vertx.core.http.ClientAuth.valueOf((String)member.getValue()));
@@ -127,6 +132,11 @@ public class EventBusOptionsConverter {
         case "openSslEngineOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setOpenSslEngineOptions(new io.vertx.core.net.OpenSSLEngineOptions((io.vertx.core.json.JsonObject)member.getValue()));
+          }
+          break;
+        case "pcapCaptureFile":
+          if (member.getValue() instanceof String) {
+            obj.setPcapCaptureFile((String)member.getValue());
           }
           break;
         case "pemKeyCertOptions":
@@ -269,6 +279,9 @@ public class EventBusOptionsConverter {
 
    static void toJson(EventBusOptions obj, java.util.Map<String, Object> json) {
     json.put("acceptBacklog", obj.getAcceptBacklog());
+    if (obj.getActivityLogDataFormat() != null) {
+      json.put("activityLogDataFormat", obj.getActivityLogDataFormat().name());
+    }
     if (obj.getClientAuth() != null) {
       json.put("clientAuth", obj.getClientAuth().name());
     }
@@ -318,6 +331,9 @@ public class EventBusOptionsConverter {
     json.put("logActivity", obj.getLogActivity());
     if (obj.getOpenSslEngineOptions() != null) {
       json.put("openSslEngineOptions", obj.getOpenSslEngineOptions().toJson());
+    }
+    if (obj.getPcapCaptureFile() != null) {
+      json.put("pcapCaptureFile", obj.getPcapCaptureFile());
     }
     if (obj.getPemKeyCertOptions() != null) {
       json.put("pemKeyCertOptions", obj.getPemKeyCertOptions().toJson());
