@@ -75,17 +75,18 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   @Override
   void handleException(Throwable t) {
     super.handleException(t);
-    Handler<Throwable> handler;
-    synchronized (this) {
-      handler = exceptionHandler;
-      if (handler == null || endFuture.isComplete()) {
-        log.error(t.getMessage(), t);
-        return;
+    if (endPromise.tryFail(t)) {
+      Handler<Throwable> handler = exceptionHandler();
+      if (handler != null) {
+        context.emit(t, handler);
+      } else {
+        if (log.isDebugEnabled()) {
+          log.error(t.getMessage(), t);
+        } else {
+          log.error(t.getMessage());
+        }
       }
     }
-    // Might be called from non vertx thread
-    context.emit(t, handler);
-    endPromise.tryFail(t);
   }
 
   @Override
