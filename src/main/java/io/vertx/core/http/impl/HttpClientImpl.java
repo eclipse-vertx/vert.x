@@ -459,6 +459,9 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     }
     webSocketCM.close();
     httpCM.close();
+    if (metrics != null) {
+      metrics.close();
+    }
     completion.complete();
   }
 
