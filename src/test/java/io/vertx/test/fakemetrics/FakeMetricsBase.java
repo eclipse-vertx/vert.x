@@ -23,6 +23,8 @@ public class FakeMetricsBase implements Metrics {
 
   private static volatile Throwable unexpectedError;
 
+  private boolean closed;
+
   public static <M extends FakeMetricsBase> M getMetrics(Measured measured) {
     return (M) ((MetricsProvider) measured).getMetrics();
   }
@@ -42,5 +44,13 @@ public class FakeMetricsBase implements Metrics {
       unexpectedError = null;
       throw afe;
     }
+  }
+
+  @Override
+  public synchronized void close() {
+    if (closed) {
+      registerFailure(new IllegalStateException(getClass().getSimpleName() + " already closed"));
+    }
+    closed = true;
   }
 }
