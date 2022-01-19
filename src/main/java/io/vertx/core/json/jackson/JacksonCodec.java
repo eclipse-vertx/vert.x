@@ -105,16 +105,25 @@ public class JacksonCodec implements JsonCodec {
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
     ByteBuf buf = Unpooled.buffer();
-    ByteBufOutputStream out = new ByteBufOutputStream(buf);
-    JsonGenerator generator = createGenerator(out, pretty);
+    ByteBufOutputStream out = null;
     try {
-      encodeJson(object, generator);
-      generator.flush();
-      return Buffer.buffer(buf);
-    } catch (IOException e) {
-      throw new EncodeException(e.getMessage(), e);
+      out = new ByteBufOutputStream(buf);
+      JsonGenerator generator = createGenerator(out, pretty);
+      try {
+        encodeJson(object, generator);
+        generator.flush();
+        return Buffer.buffer(buf);
+      } catch (IOException e) {
+        throw new EncodeException(e.getMessage(), e);
+      } finally {
+        close(generator);
+      }
     } finally {
-      close(generator);
+      if (out != null) {
+        // in case ByteBufOutputStream used a writeUTF call,
+        // some internal state is created that should be clear
+        close(out);
+      }
     }
   }
 
