@@ -19,8 +19,10 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.VertxBindException;
 import io.vertx.core.net.SocketAddress;
 
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
@@ -46,7 +48,11 @@ public class AsyncResolveConnectHelper {
         if (f.isSuccess()) {
           promise.setSuccess(future.channel());
         } else {
-          promise.setFailure(f.cause());
+          Throwable cause = f.cause();
+          if (cause instanceof BindException) {
+            cause = new VertxBindException((BindException) cause, converted);
+          }
+          promise.setFailure(cause);
         }
       });
     } else {
@@ -60,7 +66,11 @@ public class AsyncResolveConnectHelper {
             if (f.isSuccess()) {
               promise.setSuccess(future.channel());
             } else {
-              promise.setFailure(f.cause());
+              Throwable cause = f.cause();
+              if (cause instanceof BindException) {
+                cause = new VertxBindException((BindException) cause, t);
+              }
+              promise.setFailure(cause);
             }
           });
         } else {
