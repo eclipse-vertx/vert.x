@@ -109,7 +109,7 @@ public class Transport {
 
   public SocketAddress convert(io.vertx.core.net.SocketAddress address) {
     if (address.isDomainSocket()) {
-      throw new IllegalArgumentException("Domain socket not supported by JDK transport");
+      throw new IllegalArgumentException("Domain socket are not supported by JDK transport, you need to use native transport to use them");
     } else {
       InetAddress ip = ((SocketAddressImpl) address).ipAddress();
       if (ip != null) {
