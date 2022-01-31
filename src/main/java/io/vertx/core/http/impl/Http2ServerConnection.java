@@ -12,6 +12,9 @@
 package io.vertx.core.http.impl;
 
 import io.netty.channel.EventLoop;
+import io.netty.handler.codec.compression.CompressionOptions;
+import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2Error;
@@ -30,6 +33,7 @@ import io.vertx.core.spi.metrics.HttpServerMetrics;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -40,6 +44,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
   final HttpServerOptions options;
   private final String serverOrigin;
   private final HttpServerMetrics metrics;
+  private final Function<String, String> encodingDetector;
   private final Supplier<ContextInternal> streamContextSupplier;
 
   Handler<HttpServerRequest> requestHandler;
@@ -51,12 +56,14 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     Supplier<ContextInternal> streamContextSupplier,
     String serverOrigin,
     VertxHttp2ConnectionHandler connHandler,
+    Function<String, String> encodingDetector,
     HttpServerOptions options,
     HttpServerMetrics metrics) {
     super(context, connHandler);
 
     this.options = options;
     this.serverOrigin = serverOrigin;
+    this.encodingDetector = encodingDetector;
     this.streamContextSupplier = streamContextSupplier;
     this.metrics = metrics;
   }
@@ -104,9 +111,30 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     return false;
   }
 
+
+  private static class EncodingDetector extends HttpContentCompressor {
+
+    private EncodingDetector(CompressionOptions[] compressionOptions) {
+      super(compressionOptions);
+    }
+
+    @Override
+    protected String determineEncoding(String acceptEncoding) {
+      return super.determineEncoding(acceptEncoding);
+    }
+  }
+
+  String determineContentEncoding(Http2Headers headers) {
+    String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
+    if (acceptEncoding != null && encodingDetector != null) {
+      return encodingDetector.apply(acceptEncoding);
+    }
+    return null;
+  }
+
   private Http2ServerRequest createRequest(int streamId, Http2Headers headers, boolean streamEnded) {
     Http2Stream stream = handler.connection().stream(streamId);
-    String contentEncoding = options.isCompressionSupported() ? HttpUtils.determineContentEncoding(headers) : null;
+    String contentEncoding = options.isCompressionSupported() ? determineContentEncoding(headers) : null;
     Http2ServerRequest request = new Http2ServerRequest(this, options.getTracingPolicy(), streamContextSupplier.get(), serverOrigin, headers, contentEncoding, streamEnded);
     request.isConnect = request.method() == HttpMethod.CONNECT;
     request.init(stream);
@@ -157,7 +185,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
         if (ar.succeeded()) {
           synchronized (Http2ServerConnection.this) {
             int promisedStreamId = ar.result();
-            String contentEncoding = HttpUtils.determineContentEncoding(headers_);
+            String contentEncoding = determineContentEncoding(headers_);
             Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
             Push push = new Push(context, contentEncoding, method, path, promise);
             push.priority(streamPriority);

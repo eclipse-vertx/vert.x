@@ -680,30 +680,6 @@ public final class HttpUtils {
     }
   }
 
-  private static class CustomCompressor extends HttpContentCompressor {
-    @Override
-    public ZlibWrapper determineWrapper(String acceptEncoding) {
-      return super.determineWrapper(acceptEncoding);
-    }
-  }
-  private static final CustomCompressor compressor = new CustomCompressor();
-
-  static String determineContentEncoding(Http2Headers headers) {
-    String acceptEncoding = headers.get(HttpHeaderNames.ACCEPT_ENCODING) != null ? headers.get(HttpHeaderNames.ACCEPT_ENCODING).toString() : null;
-    if (acceptEncoding != null) {
-      ZlibWrapper wrapper = compressor.determineWrapper(acceptEncoding);
-      if (wrapper != null) {
-        switch (wrapper) {
-          case GZIP:
-            return "gzip";
-          case ZLIB:
-            return "deflate";
-        }
-      }
-    }
-    return null;
-  }
-
   static HttpVersion toNettyHttpVersion(io.vertx.core.http.HttpVersion version) {
     switch (version) {
       case HTTP_1_0: {

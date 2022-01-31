@@ -15,7 +15,7 @@ package io.vertx.core.http;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  * @author <a href="mailto:nscavell@redhat.com">Nick Scavelli</a>
  */
-public class Http2CompressionTest extends HttpCompressionTest {
+public class Http2CompressionTest extends GzipHttpCompressionTestBase {
 
   public Http2CompressionTest(int compressionLevel) {
     super(compressionLevel);

@@ -10,7 +10,7 @@
  */
 package io.vertx.core.http;
 
-public class Http1xCompressionTest extends HttpCompressionTest {
+public class Http1xCompressionTest extends GzipHttpCompressionTestBase {
 
   public Http1xCompressionTest(int compressionLevel) {
     super(compressionLevel);

@@ -14,6 +14,8 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.compression.CompressionOptions;
+import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -23,6 +25,10 @@ import io.netty.handler.codec.http.HttpResponse;
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
 final class HttpChunkContentCompressor extends HttpContentCompressor {
+
+  public HttpChunkContentCompressor(CompressionOptions... compressionOptions) {
+    super(0, compressionOptions);
+  }
 
   @Override
   public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
@@ -48,9 +54,4 @@ final class HttpChunkContentCompressor extends HttpContentCompressor {
     }
     return result;
   }
-
-  HttpChunkContentCompressor(int compressionLevel) {
-    super(compressionLevel);
-  }
-
 }

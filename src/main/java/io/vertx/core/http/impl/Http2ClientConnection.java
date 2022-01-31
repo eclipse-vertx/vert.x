@@ -530,7 +530,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         }
       }
       if (conn.client.getOptions().isTryUseCompression() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
-        headers.set(HttpHeaderNames.ACCEPT_ENCODING, DEFLATE_GZIP);
+        headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
       try {
         createStream(request, headers, handler);
@@ -618,7 +618,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
       .server(false)
-      .useCompression(client.getOptions().isTryUseCompression())
+      .useDecompression(client.getOptions().isTryUseCompression())
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
       .initialSettings(client.getOptions().getInitialSettings())
       .connectionFactory(connHandler -> {

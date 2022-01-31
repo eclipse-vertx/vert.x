@@ -12,7 +12,10 @@ package io.vertx.core.http.impl;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
+import io.netty.handler.codec.compression.CompressionOptions;
+import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
+import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SniHandler;
@@ -36,6 +39,9 @@ import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
 import io.vertx.core.spi.metrics.HttpServerMetrics;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -57,6 +63,8 @@ public class HttpServerWorker implements Handler<Channel> {
   private final boolean disableH2C;
   final Handler<HttpServerConnection> connectionHandler;
   private final Handler<Throwable> exceptionHandler;
+  private final CompressionOptions[] compressionOptions;
+  private final Function<String, String> encodingDetector;
 
   public HttpServerWorker(EventLoopContext context,
                           Supplier<ContextInternal> streamContextSupplier,
@@ -68,6 +76,18 @@ public class HttpServerWorker implements Handler<Channel> {
                           boolean disableH2C,
                           Handler<HttpServerConnection> connectionHandler,
                           Handler<Throwable> exceptionHandler) {
+
+    CompressionOptions[] compressionOptions = null;
+    if (options.isCompressionSupported()) {
+      List<CompressionOptions> compressors = options.getCompressors();
+      if (compressors == null) {
+        int compressionLevel = options.getCompressionLevel();
+        compressionOptions = new CompressionOptions[] { StandardCompressionOptions.gzip(compressionLevel, 15, 8), StandardCompressionOptions.deflate(compressionLevel, 15, 8) };
+      } else {
+        compressionOptions = compressors.toArray(new CompressionOptions[0]);
+      }
+    }
+
     this.context = context;
     this.streamContextSupplier = streamContextSupplier;
     this.server = server;
@@ -79,6 +99,8 @@ public class HttpServerWorker implements Handler<Channel> {
     this.disableH2C = disableH2C;
     this.connectionHandler = connectionHandler;
     this.exceptionHandler = exceptionHandler;
+    this.compressionOptions = compressionOptions;
+    this.encodingDetector = compressionOptions != null ? new EncodingDetector(compressionOptions)::determineEncoding : null;
   }
 
   @Override
@@ -226,12 +248,11 @@ public class HttpServerWorker implements Handler<Channel> {
     HttpServerMetrics metrics = (HttpServerMetrics) server.getMetrics();
     VertxHttp2ConnectionHandler<Http2ServerConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ServerConnection>()
       .server(true)
-      .useCompression(options.isCompressionSupported())
+      .useCompression(compressionOptions)
       .useDecompression(options.isDecompressionSupported())
-      .compressionLevel(options.getCompressionLevel())
       .initialSettings(options.getInitialSettings())
       .connectionFactory(connHandler -> {
-        Http2ServerConnection conn = new Http2ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler, options, metrics);
+        Http2ServerConnection conn = new Http2ServerConnection(ctx, streamContextSupplier, serverOrigin, connHandler, encodingDetector, options, metrics);
         if (metrics != null) {
           conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
         }
@@ -261,7 +282,7 @@ public class HttpServerWorker implements Handler<Channel> {
       pipeline.addLast("inflater", new HttpContentDecompressor(false));
     }
     if (options.isCompressionSupported()) {
-      pipeline.addLast("deflater", new HttpChunkContentCompressor(options.getCompressionLevel()));
+      pipeline.addLast("deflater", new HttpChunkContentCompressor(compressionOptions));
     }
     if (sslHelper.isSSL() || options.isCompressionSupported()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
@@ -303,5 +324,17 @@ public class HttpServerWorker implements Handler<Channel> {
       conn.metric(metrics.connected(conn.remoteAddress(), conn.remoteName()));
     }
     connectionHandler.handle(conn);
+  }
+
+  private static class EncodingDetector extends HttpContentCompressor {
+
+    private EncodingDetector(CompressionOptions[] compressionOptions) {
+      super(compressionOptions);
+    }
+
+    @Override
+    protected String determineEncoding(String acceptEncoding) {
+      return super.determineEncoding(acceptEncoding);
+    }
   }
 }

@@ -11,7 +11,9 @@
 
 package io.vertx.core.http;
 
+import io.netty.handler.codec.compression.CompressionOptions;
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
@@ -149,6 +151,7 @@ public class HttpServerOptions extends NetServerOptions {
 
   private boolean compressionSupported;
   private int compressionLevel;
+  private List<CompressionOptions> compressors;
   private int maxWebSocketFrameSize;
   private int maxWebSocketMessageSize;
   private List<String> webSocketSubProtocols;
@@ -189,6 +192,7 @@ public class HttpServerOptions extends NetServerOptions {
     super(other);
     this.compressionSupported = other.isCompressionSupported();
     this.compressionLevel = other.getCompressionLevel();
+    this.compressors = other.compressors != null ? new ArrayList<>(other.compressors) : null;
     this.maxWebSocketFrameSize = other.maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = other.maxWebSocketMessageSize;
     this.webSocketSubProtocols = other.webSocketSubProtocols != null ? new ArrayList<>(other.webSocketSubProtocols) : null;
@@ -540,6 +544,43 @@ public class HttpServerOptions extends NetServerOptions {
    */
   public HttpServerOptions setCompressionLevel(int compressionLevel) {
     this.compressionLevel = compressionLevel;
+    return this;
+  }
+
+  /**
+   * @return the list of compressor to use
+   */
+  @Unstable
+  public List<CompressionOptions> getCompressors() {
+    return compressors;
+  }
+
+  /**
+   * Add a compressor.
+   *
+   * @see #setCompressors(List)
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Unstable
+  public HttpServerOptions addCompressor(CompressionOptions compressor) {
+    if (compressors == null) {
+      compressors = new ArrayList<>();
+    }
+    compressors.add(compressor);
+    return this;
+  }
+
+  /**
+   * Set the list of compressor to use instead of using the default gzip/deflate {@link #setCompressionLevel(int)} configuration.
+   *
+   * <p> This is only active when {@link #setCompressionSupported(boolean)} is {@code true}.
+   *
+   * @param compressors the list of compressors
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Unstable
+  public HttpServerOptions setCompressors(List<CompressionOptions> compressors) {
+    this.compressors = compressors;
     return this;
   }
 
