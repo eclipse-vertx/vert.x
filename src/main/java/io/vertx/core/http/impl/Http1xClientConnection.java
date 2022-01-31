@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.DecoderResult;
+import io.netty.handler.codec.compression.Brotli;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -41,7 +42,6 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -181,7 +181,8 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     }
     if (options.isTryUseCompression() && request.headers().get(ACCEPT_ENCODING) == null) {
       // if compression should be used but nothing is specified by the user support deflate and gzip.
-      request.headers().set(ACCEPT_ENCODING, DEFLATE_GZIP);
+      CharSequence acceptEncoding = determineCompressionAcceptEncoding();
+      request.headers().set(ACCEPT_ENCODING, acceptEncoding);
     }
     if (!options.isKeepAlive() && options.getProtocolVersion() == io.vertx.core.http.HttpVersion.HTTP_1_1) {
       request.headers().set(CONNECTION, CLOSE);
@@ -198,6 +199,19 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       request = new AssembledHttpRequest(request, buf);
     }
     return request;
+  }
+
+  static CharSequence determineCompressionAcceptEncoding() {
+    if (isBrotliAvailable()) {
+      return DEFLATE_GZIP_BR;
+    } else {
+      return DEFLATE_GZIP;
+    }
+  }
+
+  // Encapsulated in a method, so GraalVM can substitute it
+  private static boolean isBrotliAvailable() {
+    return Brotli.isAvailable();
   }
 
   private void beginRequest(Stream stream, HttpRequestHead request, boolean chunked, ByteBuf buf, boolean end, boolean connect, Handler<AsyncResult<Void>> handler) {

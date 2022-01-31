@@ -11,6 +11,8 @@
 
 package examples;
 
+import io.netty.handler.codec.compression.GzipOptions;
+import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.DeploymentOptions;
@@ -1164,6 +1166,18 @@ public class HTTPExamples {
     request.response()
       .putHeader(HttpHeaders.CONTENT_ENCODING, HttpHeaders.IDENTITY)
       .sendFile("/path/to/image.jpg");
+  }
+
+  public static void setCompressors() {
+    new HttpServerOptions()
+      .addCompressor(io.netty.handler.codec.compression.StandardCompressionOptions.gzip())
+      .addCompressor(io.netty.handler.codec.compression.StandardCompressionOptions.deflate())
+      .addCompressor(io.netty.handler.codec.compression.StandardCompressionOptions.brotli())
+      .addCompressor(io.netty.handler.codec.compression.StandardCompressionOptions.zstd());
+  }
+
+  public static void compressorConfig() {
+    GzipOptions gzip = StandardCompressionOptions.gzip(6, 15, 8);
   }
 
   public static void httpClientSharing1(Vertx vertx) {

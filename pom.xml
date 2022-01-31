@@ -197,6 +197,12 @@
       <artifactId>netty-tcnative-boringssl-static</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.aayushatharva.brotli4j</groupId>
+      <artifactId>brotli4j</artifactId>
+      <version>1.6.0</version>
+      <scope>test</scope>
+    </dependency>
 
     <!-- JMH -->
     <dependency>
