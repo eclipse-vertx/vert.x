@@ -100,6 +100,12 @@ public interface HttpHeaders {
   CharSequence ACCESS_CONTROL_ALLOW_ORIGIN = HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
 
   /**
+   * Access-Control-Allow-Private-Network header name
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence ACCESS_CONTROL_ALLOW_PRIVATE_NETWORK = HttpHeaderNames.ACCESS_CONTROL_ALLOW_PRIVATE_NETWORK;
+
+  /**
    * Access-Control-Expose-Headers header name
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
@@ -122,6 +128,12 @@ public interface HttpHeaders {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   CharSequence ACCESS_CONTROL_REQUEST_METHOD = HttpHeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
+
+  /**
+   * Access-Control-Request-Private-Network header name
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  CharSequence ACCESS_CONTROL_REQUEST_PRIVATE_NETWORK = HttpHeaderNames.ACCESS_CONTROL_REQUEST_PRIVATE_NETWORK;
 
   /**
    *  Age header name
