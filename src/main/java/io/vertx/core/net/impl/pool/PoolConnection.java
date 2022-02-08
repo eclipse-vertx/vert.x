@@ -30,13 +30,18 @@ public interface PoolConnection<C> {
   C get();
 
   /**
-   * @return the connection concurrency
+   * @return the number of times this connection has been acquired
    */
-  int concurrency();
+  int usage();
 
   /**
-   * @return the maximum connection concurrency
+   * @return the number of times this connection can be acquired from the pool, the returned value can be negative
    */
-  int maxConcurrency();
+  long available();
+
+  /**
+   * @return the total number of times this connection can be acquired
+   */
+  long concurrency();
 
 }

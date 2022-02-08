@@ -183,6 +183,47 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testReduceMaxConcurrentStreams() throws Exception {
+    server.close();
+    server = vertx.createHttpServer(createBaseServerOptions().setInitialSettings(new Http2Settings().setMaxConcurrentStreams(10)));
+    List<HttpServerRequest> requests = new ArrayList<>();
+    AtomicBoolean flipped = new AtomicBoolean();
+    server.requestHandler(req -> {
+      int max = flipped.get() ? 5 : 10;
+      requests.add(req);
+      assertTrue("Was expecting at most " + max + " concurrent requests instead of " + requests.size(), requests.size() <= max);
+      if (requests.size() == max) {
+        vertx.setTimer(30, id -> {
+          HttpConnection conn = req.connection();
+          if (max == 10) {
+            conn.updateSettings(new Http2Settings(conn.settings()).setMaxConcurrentStreams(max / 2));
+            flipped.set(true);
+          }
+          requests.forEach(request -> request.response().end());
+          requests.clear();
+        });
+      }
+    });
+    startServer();
+    client.connectionHandler(conn -> {
+      conn.remoteSettingsHandler(settings -> {
+        conn.ping(Buffer.buffer("settings"));
+      });
+    });
+    waitFor(10 * 5);
+    for (int i = 0;i < 10 * 5;i++) {
+      client.request(requestOptions).onComplete(onSuccess(req -> {
+        req.send(onSuccess(resp -> {
+          resp.body(onSuccess(body -> {
+            complete();
+          }));
+        }));
+      }));
+    }
+    await();
+  }
+
+  @Test
   public void testGet() throws Exception {
     ServerBootstrap bootstrap = createH2Server((decoder, encoder) -> new Http2EventAdapter() {
       @Override
