@@ -53,7 +53,7 @@ public interface ConnectionPool<C> {
    * Set a {@code selector} function that decides the best connection to use.
    *
    * <p> The selector is called with the waiter and a list of candidate connections,
-   * the selector must return a connection with a positive {@link PoolConnection#concurrency()}.
+   * the selector must return a connection with a positive {@link PoolConnection#available()}.
    *
    * <p>The selector can return {@code null} if no suitable connection is found. Then the pool will
    * attempt to create a new connection or chose another available connection.

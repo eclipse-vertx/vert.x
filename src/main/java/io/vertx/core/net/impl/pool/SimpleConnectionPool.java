@@ -88,7 +88,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     int size = list.size();
     for (int i = 0;i < size;i++) {
       PoolConnection slot = list.get(i);
-      if (slot.context().nettyEventLoop() == waiter.context().nettyEventLoop() && slot.concurrency() > 0) {
+      if (slot.context().nettyEventLoop() == waiter.context().nettyEventLoop() && slot.available() > 0) {
         return slot;
       }
     }
@@ -102,7 +102,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     int size = list.size();
     for (int i = 0;i < size;i++) {
       PoolConnection slot = list.get(i);
-      if (slot.concurrency() > 0) {
+      if (slot.available() > 0) {
         return slot;
       }
     }
@@ -120,15 +120,15 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     private PoolWaiter<C> initiator;
     private C connection;    // The actual connection, might be null
     private int index;       // The index in the pool slots array
-    private int concurrency;    // The current concurrency, i.e the number of acquisitions this connection supports
-    private int maxConcurrency; // The connection maximum concurrency
+    private int usage;    // The number of times this connection is acquired
+    private long concurrency; // The total number of times the connection can be acquired
     private int capacity;      // The connection capacity
 
     public Slot(SimpleConnectionPool<C> pool, EventLoopContext context, int index, int capacity) {
       this.pool = pool;
       this.context = context;
       this.connection = null;
-      this.concurrency = 0;
+      this.usage = 0;
       this.index = index;
       this.capacity = capacity;
       this.result = context.promise();
@@ -155,13 +155,18 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     }
 
     @Override
-    public int concurrency() {
-      return concurrency;
+    public int usage() {
+      return usage;
     }
 
     @Override
-    public int maxConcurrency() {
-      return maxConcurrency;
+    public long available() {
+      return concurrency - usage;
+    }
+
+    @Override
+    public long concurrency() {
+      return concurrency;
     }
   }
 
@@ -275,9 +280,9 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
 
       int initialCapacity = slot.capacity;
       slot.connection = result.connection();
-      slot.maxConcurrency = (int)result.concurrency();
+      slot.concurrency = result.concurrency();
       slot.capacity = capacity;
-      slot.concurrency = slot.maxConcurrency;
+      slot.usage = 0;
       pool.requests--;
       pool.capacity += (capacity - initialCapacity);
       if (pool.closed) {
@@ -296,25 +301,24 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           }
         };
       } else {
-        if (slot.concurrency == 0) {
+        long acquisitions = slot.concurrency;
+        if (acquisitions == 0) {
           if (!waiter.disposed) {
             pool.waiters.addFirst(waiter);
           }
           return null;
         }
-        int c = 1;
-        int concurrency;
         LeaseImpl<C> lease;
         if (waiter.disposed) {
           lease = null;
-          concurrency = slot.concurrency;
         } else {
           lease = new LeaseImpl<>(slot, waiter.handler);
           waiter.disposed = true;
-          concurrency = slot.concurrency - 1;
+          acquisitions--;
         }
         LeaseImpl<C>[] leases;
-        int m = Math.min(concurrency, pool.waiters.size());
+        int m = (int)Math.min(acquisitions, pool.waiters.size());
+        int c = 1;
         if (m > 0) {
           c += m;
           leases = new LeaseImpl[m];
@@ -324,7 +328,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         } else {
           leases = null;
         }
-        slot.concurrency -= c;
+        slot.usage = c;
         return new Task() {
           @Override
           public void run() {
@@ -397,8 +401,8 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
         return null;
       }
       int w = removed.capacity;
+      removed.usage = 0;
       removed.concurrency = 0;
-      removed.maxConcurrency = 0;
       removed.connection = null;
       removed.capacity = 0;
       PoolWaiter<C> waiter = pool.waiters.poll();
@@ -448,18 +452,17 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public Task execute(SimpleConnectionPool<C> pool) {
       if (slot.connection != null) {
-        if (slot.maxConcurrency < concurrency) {
-          long diff = concurrency - slot.maxConcurrency;
-          slot.concurrency += diff;
-          slot.maxConcurrency += diff;
+        long diff = concurrency - slot.concurrency;
+        slot.concurrency += diff;
+        if (diff > 0) {
           LeaseImpl<C>[] extra;
-          int m = Math.min(slot.concurrency, pool.waiters.size());
+          int m = (int)Math.min(slot.concurrency - slot.usage, pool.waiters.size());
           if (m > 0) {
             extra = new LeaseImpl[m];
             for (int i = 0;i < m;i++) {
               extra[i] = new LeaseImpl<>(slot, pool.waiters.poll().handler);
             }
-            slot.concurrency -= m;
+            slot.usage += m;
             return new Task() {
               @Override
               public void run() {
@@ -472,7 +475,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
             return null;
           }
         } else {
-          throw new UnsupportedOperationException("Not yet implemented");
+          return null;
         }
       } else {
         return null;
@@ -512,7 +515,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       List<Slot<C>> removed = new ArrayList<>();
       for (int i = pool.size - 1;i >= 0;i--) {
         Slot<C> slot = pool.slots[i];
-        if (slot.connection != null && slot.concurrency == slot.maxConcurrency && predicate.test(slot.connection)) {
+        if (slot.connection != null && slot.usage == 0 && predicate.test(slot.connection)) {
           removed.add(slot);
           res.add(slot.connection);
         }
@@ -554,7 +557,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       // 1. Try reuse a existing connection with the same context
       Slot<C> slot1 = (Slot<C>) pool.selector.apply(this, pool.list);
       if (slot1 != null) {
-        slot1.concurrency--;
+        slot1.usage++;
         LeaseImpl<C> lease = new LeaseImpl<>(slot1, handler);
         return new Task() {
           @Override
@@ -585,7 +588,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       // 3. Try use another context
       Slot<C> slot3 = (Slot<C>) pool.fallbackSelector.apply(this, pool.list);
       if (slot3 != null) {
-        slot3.concurrency--;
+        slot3.usage++;
         LeaseImpl<C> lease = new LeaseImpl<>(slot3, handler);
         return new Task() {
           @Override
@@ -711,8 +714,8 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
     @Override
     public Task execute(SimpleConnectionPool<C> pool) {
       if (!pool.closed && slot.connection != null) {
-        PoolWaiter<C> waiter = pool.waiters.poll();
-        if (waiter != null) {
+        PoolWaiter<C> waiter;
+        if (slot.usage <= slot.concurrency && (waiter = pool.waiters.poll()) != null) {
           LeaseImpl<C> lease = new LeaseImpl<>(slot, waiter.handler);
           return new Task() {
             @Override
@@ -721,7 +724,7 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
             }
           };
         } else {
-          slot.concurrency++;
+          slot.usage--;
         }
       }
       return null;

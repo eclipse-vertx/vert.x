@@ -38,6 +38,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
   private final boolean useDecompressor;
+  private final Http2Settings initialSettings;
 
   public VertxHttp2ConnectionHandler(
       Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory,
@@ -48,6 +49,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     super(decoder, encoder, initialSettings);
     this.connectionFactory = connectionFactory;
     this.useDecompressor = useDecompressor;
+    this.initialSettings = initialSettings;
     encoder().flowController().listener(s -> {
       if (connection != null) {
         connection.onStreamWritabilityChanged(s);
@@ -58,6 +60,10 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   public ChannelHandlerContext context() {
     return chctx;
+  }
+
+  public Http2Settings initialSettings() {
+    return initialSettings;
   }
 
   /**

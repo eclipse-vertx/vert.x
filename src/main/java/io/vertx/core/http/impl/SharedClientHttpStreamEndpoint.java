@@ -42,7 +42,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     long last = 0L;
     for (int i = 0; i < size; i++) {
       PoolConnection<HttpClientConnection> pooled = connections.get(i);
-      if (pooled.concurrency() > 0) {
+      if (pooled.available() > 0) {
         HttpClientConnection conn = pooled.get();
         if (selected == null) {
           selected = pooled;
