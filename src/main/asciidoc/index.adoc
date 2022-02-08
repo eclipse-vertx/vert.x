@@ -1321,9 +1321,9 @@ terminal 3 as that has a different group.
 If we kill the instance in terminal 3, it won't get failed over as there is no other vert.x instance in that
 group.
 
-=== Dealing with network partitions - Quora
+=== Dealing with network partitions - Quorum
 
-The HA implementation also supports quora. A quorum is the minimum number of votes that a distributed
+The HA implementation also supports quorum. A quorum is the minimum number of votes that a distributed
 transaction has to obtain in order to be allowed to perform an operation in a distributed system.
 
 When starting a Vert.x instance you can instruct it that it requires a `quorum` before any HA deployments will
@@ -1332,7 +1332,7 @@ Typically you chose your quorum size to `Q = 1 + N/2` where `N` is the number of
 are less than `Q` nodes in the cluster the HA deployments will undeploy. They will redeploy again if/when a
 quorum is re-attained. By doing this you can prevent against network partitions, a.k.a. _split brain_.
 
-There is more information on quora http://en.wikipedia.org/wiki/Quorum_(distributed_computing)[here].
+There is more information on quorum http://en.wikipedia.org/wiki/Quorum_(distributed_computing)[here].
 
 To run vert.x instances with a quorum you specify `-quorum` on the command line, e.g.
 
@@ -1367,7 +1367,7 @@ instances.
 If we now close or kill one of the nodes the modules will automatically undeploy on the other nodes, as there
 is no longer a quorum.
 
-Quora can also be used in conjunction with ha groups. In that case, quora are resolved for each particular
+Quorum can also be used in conjunction with ha groups. In that case, quorum are resolved for each particular
 group.
 
 == Native transports
