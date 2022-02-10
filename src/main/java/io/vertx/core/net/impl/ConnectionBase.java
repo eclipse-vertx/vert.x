@@ -323,13 +323,20 @@ public abstract class ConnectionBase {
 
   public abstract NetworkMetrics metrics();
 
-  protected synchronized void handleException(Throwable t) {
-    NetworkMetrics metrics = metrics();
+  protected void handleException(Throwable t) {
+    NetworkMetrics metrics;
+    Object metric;
+    Handler<Throwable> handler;
+    synchronized (this) {
+      metrics = metrics();
+      metric = this.metric;
+      handler = exceptionHandler;
+    }
     if (metrics != null) {
       metrics.exceptionOccurred(metric, remoteAddress(), t);
     }
-    if (exceptionHandler != null) {
-      exceptionHandler.handle(t);
+    if (handler != null) {
+      handler.handle(t);
     } else {
       if (log.isDebugEnabled()) {
         log.error(t.getMessage(), t);
