@@ -332,7 +332,16 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
   public void forEach(Consumer<? super Map.Entry<String, String>> action) {
     HeadersMultiMap.MapEntry e = head.after;
     while (e != head) {
-      action.accept(new AbstractMap.SimpleEntry<>(e.key.toString(), e.value.toString()));
+      action.accept(e.stringEntry());
+      e = e.after;
+    }
+  }
+
+  @Override
+  public void forEach(BiConsumer<String, String> action) {
+    HeadersMultiMap.MapEntry e = head.after;
+    while (e != head) {
+      action.accept(e.getKey().toString(), e.getValue().toString());
       e = e.after;
     }
   }
@@ -570,6 +579,15 @@ public final class HeadersMultiMap extends HttpHeaders implements MultiMap {
     @Override
     public String toString() {
       return getKey() + "=" + getValue();
+    }
+
+    @SuppressWarnings({"rawtypes","unchecked"})
+    private Map.Entry<String, String> stringEntry() {
+      if (key instanceof String && value instanceof String) {
+        return (Map.Entry) this;
+      } else {
+        return new AbstractMap.SimpleEntry<>(key.toString(), value.toString());
+      }
     }
   }
 
