@@ -944,4 +944,42 @@ public class ContextTest extends VertxTestBase {
     });
     await();
   }
+
+  @Test
+  public void testIsDuplicatedContext() {
+    Context context = vertx.getOrCreateContext();
+    assertFalse(((ContextInternal) context).isDuplicate());
+    context.runOnContext(x -> {
+      assertFalse(((ContextInternal) Vertx.currentContext()).isDuplicate());
+
+      ContextInternal duplicate = ((ContextInternal) Vertx.currentContext()).duplicate();
+      assertTrue(duplicate.isDuplicate());
+      assertSame(duplicate.unwrap(), context);
+      duplicate.runOnContext(z -> {
+        assertTrue(((ContextInternal) Vertx.currentContext()).isDuplicate());
+        assertSame(Vertx.currentContext(), duplicate);
+        testComplete();
+      });
+    });
+    await();
+  }
+
+  @Test
+  public void testIsDuplicatedContextFromWorkerContext() {
+    ContextInternal context = createWorkerContext();
+    assertFalse(context.isDuplicate());
+    context.runOnContext(x -> {
+      assertFalse(((ContextInternal) Vertx.currentContext()).isDuplicate());
+
+      ContextInternal duplicate = ((ContextInternal) Vertx.currentContext()).duplicate();
+      assertSame(duplicate.unwrap(), context);
+      assertTrue(duplicate.isDuplicate());
+      duplicate.runOnContext(z -> {
+        assertTrue(((ContextInternal) Vertx.currentContext()).isDuplicate());
+        assertSame(Vertx.currentContext(), duplicate);
+        testComplete();
+      });
+    });
+    await();
+  }
 }

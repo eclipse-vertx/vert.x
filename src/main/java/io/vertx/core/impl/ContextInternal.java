@@ -313,4 +313,13 @@ public interface ContextInternal extends Context {
   default ContextInternal unwrap() {
     return this;
   }
+
+  /**
+   * Returns {@code true} if this context is a duplicated context.
+   *
+   * @return {@code true} if this context is a duplicated context, {@code false} otherwise.
+   */
+  default boolean isDuplicate() {
+    return false;
+  }
 }
