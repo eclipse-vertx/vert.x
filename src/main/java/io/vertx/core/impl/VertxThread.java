@@ -12,6 +12,7 @@
 package io.vertx.core.impl;
 
 import io.netty.util.concurrent.FastThreadLocalThread;
+import io.vertx.core.impl.btc.BlockedThreadChecker;
 
 import java.util.concurrent.TimeUnit;
 
