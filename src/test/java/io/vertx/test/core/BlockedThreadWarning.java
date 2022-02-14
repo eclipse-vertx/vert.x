@@ -11,7 +11,7 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.impl.BlockedThreadChecker;
+import io.vertx.core.impl.btc.BlockedThreadChecker;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;

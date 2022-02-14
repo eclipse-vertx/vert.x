@@ -19,6 +19,7 @@ import io.vertx.core.*;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.impl.btc.BlockedThreadChecker;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;

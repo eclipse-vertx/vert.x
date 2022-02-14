@@ -12,6 +12,7 @@
 package io.vertx.core;
 
 import io.vertx.core.*;
+import io.vertx.core.impl.VertxInternal;
 import io.vertx.test.core.BlockedThreadWarning;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Rule;
@@ -19,7 +20,7 @@ import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.*;
 
 /**
  * @author <a href="http://oss.lehmann.cx/">Alexander Lehmann</a>
@@ -118,5 +119,37 @@ public class BlockedThreadCheckerTest extends VertxTestBase {
     newVertx.deployVerticle(verticle);
     await();
     blockedThreadWarning.expectMessage("vert.x-worker-thread", maxWorkerExecuteTime, maxWorkerExecuteTimeUnit);
+  }
+
+  @Test
+  public void testCustomThreadBlockedHandler() throws Exception {
+    disableThreadChecks();
+    waitFor(2);
+    Verticle verticle = new AbstractVerticle() {
+      @Override
+      public void start() throws InterruptedException {
+        Thread.sleep(3000);
+        complete();
+      }
+    };
+    long maxWorkerExecuteTime = 1000;
+    long warningExceptionTime = 2;
+    TimeUnit maxWorkerExecuteTimeUnit = MILLISECONDS;
+    TimeUnit warningExceptionTimeUnit = SECONDS;
+    VertxOptions vertxOptions = new VertxOptions();
+    vertxOptions.setMaxWorkerExecuteTime(maxWorkerExecuteTime);
+    vertxOptions.setMaxWorkerExecuteTimeUnit(maxWorkerExecuteTimeUnit);
+    vertxOptions.setWarningExceptionTime(warningExceptionTime);
+    vertxOptions.setWarningExceptionTimeUnit(warningExceptionTimeUnit);
+    Vertx newVertx = vertx(vertxOptions);
+    ((VertxInternal) newVertx).blockedThreadChecker().setThreadBlockedHandler(bte -> {
+      assertEquals(NANOSECONDS.convert(maxWorkerExecuteTime, maxWorkerExecuteTimeUnit), bte.maxExecTime());
+      assertEquals(NANOSECONDS.convert(warningExceptionTime, warningExceptionTimeUnit), bte.warningExceptionTime());
+      complete();
+    });
+    DeploymentOptions deploymentOptions = new DeploymentOptions();
+    deploymentOptions.setWorker(true);
+    newVertx.deployVerticle(verticle, deploymentOptions);
+    await();
   }
 }
