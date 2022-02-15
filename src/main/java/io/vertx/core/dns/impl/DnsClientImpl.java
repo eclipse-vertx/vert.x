@@ -77,12 +77,7 @@ public final class DnsClientImpl implements DnsClient {
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     actualCtx.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
-      if(options.isHexDumpEnabled()) {
-        channel.pipeline().addLast("logging", new LoggingHandler(ByteBufFormat.HEX_DUMP));
-      }
-      else {
-        channel.pipeline().addLast("logging", new LoggingHandler(ByteBufFormat.SIMPLE));
-      }
+      channel.pipeline().addLast("logging", new LoggingHandler(activityLogFormat));
     }    
     channel.pipeline().addLast(new DatagramDnsQueryEncoder());
     channel.pipeline().addLast(new DatagramDnsResponseDecoder());

@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -789,8 +790,8 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   @Override
-  public TCPSSLOptions setHexDumpEnabled(boolean hexDumpEnabled) {
-    return (TCPSSLOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  public TCPSSLOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    return (TCPSSLOptions) super.setActivityLogFormat(activityLogFormat);
   }
   @Override
   public TCPSSLOptions setSendBufferSize(int sendBufferSize) {

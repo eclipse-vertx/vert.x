@@ -242,8 +242,8 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
-  public ClientOptionsBase setHexDumpEnabled(boolean hexDumpEnabled) {
-    return (ClientOptionsBase) super.setHexDumpEnabled(hexDumpEnabled);
+  public ClientOptionsBase setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    return (ClientOptionsBase) super.setActivityLogFormat(activityLogFormat);
   }
 
   @Override

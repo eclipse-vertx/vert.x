@@ -1197,8 +1197,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setHexDumpEnabled(boolean hexDumpEnabled) {
-    return (HttpClientOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  public HttpClientOptions setActivityLogFormat(ByteBufFormat activityLogFormat ) {
+    return (HttpClientOptions) super.setActivityLogFormat(activityLogFormat);
   }
 
   /**

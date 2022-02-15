@@ -14,6 +14,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
+import io.netty.handler.logging.ByteBufFormat;
 
 
 /**
@@ -53,16 +54,16 @@ public abstract class NetworkOptions {
   public static final boolean DEFAULT_LOG_ENABLED = false;
   
   /**
-   * The default hexdump enabled = true
+   * The default logActivity is ByteBufFormat.SIMPLE
    */
-  public static final boolean DEFAULT_HEXDUMP_ENABLED = true;
+  public static final boolean DEFAULT_LOG_ACTIVITY_FORMAT = ByteBufFormat.SIMPLE;
 
   private int sendBufferSize;
   private int receiveBufferSize;
   private int trafficClass;
   private boolean reuseAddress;
   private boolean logActivity;
-  private boolean hexDumpEnabled;
+  private ByteBufFormat activityLogFormat;
   private boolean reusePort;
 
   /**
@@ -74,7 +75,7 @@ public abstract class NetworkOptions {
     reuseAddress = DEFAULT_REUSE_ADDRESS;
     trafficClass = DEFAULT_TRAFFIC_CLASS;
     logActivity = DEFAULT_LOG_ENABLED;
-    hexDumpEnabled = DEFAULT_HEXDUMP_ENABLED;
+    activityLogFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
     reusePort = DEFAULT_REUSE_PORT;
   }
 
@@ -90,7 +91,7 @@ public abstract class NetworkOptions {
     this.reusePort = other.isReusePort();
     this.trafficClass = other.getTrafficClass();
     this.logActivity = other.logActivity;
-    this.hexDumpEnabled = other.hexDumpEnabled;
+    this.activityLogFormat = other.activityLogFormat;
   }
 
   /**
@@ -200,10 +201,10 @@ public abstract class NetworkOptions {
   }
  
   /**
-   * @return true when network activity hexdump is enabled
+   * @return Netty's logging handler's data format.
    */
-  public boolean isHexDumpEnabled() {
-    return hexDumpEnabled;
+  public boolean getActivityLogFormat() {
+    return activityLogFormat;
   }
 
   /**
@@ -218,13 +219,13 @@ public abstract class NetworkOptions {
   }
 
   /**
-   * Set to true to enblae hexdump of netty's ByteBufs: Netty's pipeline is configured for logging on Netty's logger.
+   * Set the value of Netty's logging handler's data format: Netty's pipeline is configured for logging on Netty's logger.
    *
-   * @param logActivity true for logging the network activity
+   * @param activityLogFormat the value of activityLogFormat
    * @return a reference to this, so the API can be used fluently
    */
-  public NetworkOptions setHexDumpEnabled(boolean hexDumpEnabled) {
-    this.hexDumpEnabled = hexDumpEnabled;
+  public NetworkOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    this.activityLogFormat = activityLogFormat;
     return this;
   }
 

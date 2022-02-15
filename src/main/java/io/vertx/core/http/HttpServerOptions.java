@@ -781,8 +781,8 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setHexDumpEnabled(boolean hexDumpEnabled) {
-    return (HttpServerOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  public HttpServerOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    return (HttpServerOptions) super.setActivityLogFormat(activityLogFormat);
   }
 
   @Override

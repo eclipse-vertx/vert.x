@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
+import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -409,8 +410,8 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetServerOptions setHexDumpEnabled(boolean hexDumpEnabled) {
-    return (NetServerOptions) super.setHexDumpEnabled(hexDumpEnabled);
+  public NetServerOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    return (NetServerOptions) super.setActivityLogFormat(activityLogFormat);
   }
 
   /**

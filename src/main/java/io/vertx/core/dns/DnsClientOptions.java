@@ -14,6 +14,7 @@ package io.vertx.core.dns;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
+import io.netty.handler.logging.ByteBufFormat;
 
 /**
  * Configuration options for Vert.x DNS client.
@@ -44,9 +45,9 @@ public class DnsClientOptions {
   public static final boolean DEFAULT_LOG_ENABLED = false;
   
   /**
-   * The default hexdump enabled = true
+   * The default ByteBufFormat is SIMPLE
    */
-  public static final boolean DEFAULT_HEXDUMP_ENABLED = true;
+  public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT= ByteBufFormat.SIMPLE:
 
   /**
   * The default value for the recursion desired flag (RD) = {@code true}
@@ -57,7 +58,7 @@ public class DnsClientOptions {
   private String host = DEFAULT_HOST;
   private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
   private boolean logActivity = DEFAULT_LOG_ENABLED;
-  private boolean hexDumpEnabled = DEFAULT_HEXDUMP_ENABLED;
+  private ByteBufFormat activityLogFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
   private boolean recursionDesired = DEFAULT_RECURSION_DESIRED;
 
   public DnsClientOptions() {
@@ -72,7 +73,7 @@ public class DnsClientOptions {
     host = other.host;
     queryTimeout = other.queryTimeout;
     logActivity = other.logActivity;
-    hexDumpEnabled = other.hexDumpEnabled;
+    activityLogFormat = other.activityLogFormat;
     recursionDesired = other.recursionDesired;
   }
 
@@ -146,10 +147,10 @@ public class DnsClientOptions {
   }
 
   /**
-   * @return {@code true} when hex dumping of netty ByteBuff is enabled
+   * @return {@code ByteBufFormat} get Netty's log format
    */
-  public boolean isHexDumpEnabled() {
-    return hexDumpEnabled;
+  public boolean getActivityLogFormat() {
+    return activityLogFormat;
   }
 
   /**
@@ -164,13 +165,13 @@ public class DnsClientOptions {
   }
 
   /**
-   * Set to true to enable hex dumping of netty's ByteBufs: Netty's pipeline is configured for logging on Netty's logger.
+   * Set to get the date in desired format of Netty's ByteBuf while logging,  Netty's pipeline is configured for logging on Netty's logger.
    *
-   * @param hexDumpEnabled true for logging the network activity
+   * @param activityLogFormat format of Netty's logging data
    * @return a reference to this, so the API can be used fluently
    */
-  public DnsClientOptions setHexDumpEnabled(boolean hexDumpEnabled) {
-    this.hexDumpEnabled = hexDumpEnabled;
+  public DnsClientOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    this.activityLogFormat = activityLogFormat;
     return this;
   }  
 

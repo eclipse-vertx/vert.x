@@ -164,12 +164,7 @@ public class HttpChannelConnector {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
     if (options.getLogActivity()) {
-      if(options.isHexDumpEnabled()) {
-        pipeline.addLast("logging", new LoggingHandler(ByteBufFormat.HEX_DUMP));
-      }
-      else {
-        pipeline.addLast("logging", new LoggingHandler(ByteBufFormat.SIMPLE));
-      }
+      pipeline.addLast("logging", new LoggingHandler(activityLogFormat));
     }
     pipeline.addLast("codec", new HttpClientCodec(
       options.getMaxInitialLineLength(),
