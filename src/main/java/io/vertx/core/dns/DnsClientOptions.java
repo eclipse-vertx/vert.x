@@ -165,7 +165,7 @@ public class DnsClientOptions {
   }
 
   /**
-   * Set to get the date in desired format of Netty's ByteBuf while logging,  Netty's pipeline is configured for logging on Netty's logger.
+   * Set the value of Netty's logging handler's data format:  Netty's pipeline is configured for logging on Netty's logger.
    *
    * @param activityLogFormat format of Netty's logging data
    * @return a reference to this, so the API can be used fluently
