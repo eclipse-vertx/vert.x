@@ -19,6 +19,7 @@ import io.netty.channel.MaxMessagesRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
+import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
@@ -78,7 +79,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     bufAllocator.maxMessagesPerRead(1);
     context.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
-      channel.pipeline().addLast("logging", new LoggingHandler());
+      channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogFormat()));
     }
     VertxMetrics metrics = vertx.metricsSPI();
     this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;

@@ -14,6 +14,7 @@ package io.vertx.core.dns;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.json.JsonObject;
+import io.netty.handler.logging.ByteBufFormat;
 
 /**
  * Configuration options for Vert.x DNS client.
@@ -42,6 +43,11 @@ public class DnsClientOptions {
    * The default log enabled = false
    */
   public static final boolean DEFAULT_LOG_ENABLED = false;
+  
+  /**
+   * The default ByteBufFormat is SIMPLE
+   */
+  public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT= ByteBufFormat.SIMPLE;
 
   /**
   * The default value for the recursion desired flag (RD) = {@code true}
@@ -52,6 +58,7 @@ public class DnsClientOptions {
   private String host = DEFAULT_HOST;
   private long queryTimeout = DEFAULT_QUERY_TIMEOUT;
   private boolean logActivity = DEFAULT_LOG_ENABLED;
+  private ByteBufFormat activityLogFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
   private boolean recursionDesired = DEFAULT_RECURSION_DESIRED;
 
   public DnsClientOptions() {
@@ -66,6 +73,7 @@ public class DnsClientOptions {
     host = other.host;
     queryTimeout = other.queryTimeout;
     logActivity = other.logActivity;
+    activityLogFormat = other.activityLogFormat;
     recursionDesired = other.recursionDesired;
   }
 
@@ -139,7 +147,14 @@ public class DnsClientOptions {
   }
 
   /**
-   * Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
+   * @return {@code ByteBufFormat} get Netty's log format
+   */
+  public ByteBufFormat getActivityLogFormat() {
+    return activityLogFormat;
+  }
+
+  /**
+   * Set to true to enable network activity logging: Netty's pipeline is configured for logging on Netty's logger.
    *
    * @param logActivity true for logging the network activity
    * @return a reference to this, so the API can be used fluently
@@ -148,6 +163,17 @@ public class DnsClientOptions {
     this.logActivity = logActivity;
     return this;
   }
+
+  /**
+   * Set the value of Netty's logging handler's data format:  Netty's pipeline is configured for logging on Netty's logger.
+   *
+   * @param activityLogFormat format of Netty's logging data
+   * @return a reference to this, so the API can be used fluently
+   */
+  public DnsClientOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    this.activityLogFormat = activityLogFormat;
+    return this;
+  }  
 
   /**
    * Return whether or not recursion is desired

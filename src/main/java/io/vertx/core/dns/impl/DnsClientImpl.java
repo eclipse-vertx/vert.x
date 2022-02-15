@@ -15,6 +15,7 @@ import io.netty.channel.*;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.handler.codec.dns.*;
+import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.collection.LongObjectHashMap;
 import io.netty.util.collection.LongObjectMap;
@@ -76,7 +77,7 @@ public final class DnsClientImpl implements DnsClient {
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     actualCtx.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
-      channel.pipeline().addLast("logging", new LoggingHandler());
+      channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogFormat()));
     }
     channel.pipeline().addLast(new DatagramDnsQueryEncoder());
     channel.pipeline().addLast(new DatagramDnsResponseDecoder());

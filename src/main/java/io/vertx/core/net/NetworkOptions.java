@@ -14,6 +14,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
+import io.netty.handler.logging.ByteBufFormat;
 
 
 /**
@@ -51,12 +52,18 @@ public abstract class NetworkOptions {
    * The default log enabled = false
    */
   public static final boolean DEFAULT_LOG_ENABLED = false;
+  
+  /**
+   * The default logActivity is ByteBufFormat.SIMPLE
+   */
+  public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT = ByteBufFormat.SIMPLE;
 
   private int sendBufferSize;
   private int receiveBufferSize;
   private int trafficClass;
   private boolean reuseAddress;
   private boolean logActivity;
+  private ByteBufFormat activityLogFormat;
   private boolean reusePort;
 
   /**
@@ -68,6 +75,7 @@ public abstract class NetworkOptions {
     reuseAddress = DEFAULT_REUSE_ADDRESS;
     trafficClass = DEFAULT_TRAFFIC_CLASS;
     logActivity = DEFAULT_LOG_ENABLED;
+    activityLogFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
     reusePort = DEFAULT_REUSE_PORT;
   }
 
@@ -83,6 +91,7 @@ public abstract class NetworkOptions {
     this.reusePort = other.isReusePort();
     this.trafficClass = other.getTrafficClass();
     this.logActivity = other.logActivity;
+    this.activityLogFormat = other.activityLogFormat;
   }
 
   /**
@@ -190,6 +199,13 @@ public abstract class NetworkOptions {
   public boolean getLogActivity() {
     return logActivity;
   }
+ 
+  /**
+   * @return Netty's logging handler's data format.
+   */
+  public ByteBufFormat getActivityLogFormat() {
+    return activityLogFormat;
+  }
 
   /**
    * Set to true to enabled network activity logging: Netty's pipeline is configured for logging on Netty's logger.
@@ -199,6 +215,17 @@ public abstract class NetworkOptions {
    */
   public NetworkOptions setLogActivity(boolean logActivity) {
     this.logActivity = logActivity;
+    return this;
+  }
+
+  /**
+   * Set the value of Netty's logging handler's data format: Netty's pipeline is configured for logging on Netty's logger.
+   *
+   * @param activityLogFormat the value of activityLogFormat
+   * @return a reference to this, so the API can be used fluently
+   */
+  public NetworkOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    this.activityLogFormat = activityLogFormat;
     return this;
   }
 

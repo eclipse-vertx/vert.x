@@ -18,6 +18,7 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
+import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -778,6 +779,11 @@ public class HttpServerOptions extends NetServerOptions {
   @Override
   public HttpServerOptions setLogActivity(boolean logEnabled) {
     return (HttpServerOptions) super.setLogActivity(logEnabled);
+  }
+
+  @Override
+  public HttpServerOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    return (HttpServerOptions) super.setActivityLogFormat(activityLogFormat);
   }
 
   @Override

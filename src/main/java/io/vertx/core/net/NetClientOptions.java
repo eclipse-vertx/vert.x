@@ -14,6 +14,7 @@ package io.vertx.core.net;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
+import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -383,6 +384,11 @@ public class NetClientOptions extends ClientOptionsBase {
   @Override
   public NetClientOptions setLogActivity(boolean logEnabled) {
     return (NetClientOptions) super.setLogActivity(logEnabled);
+  }
+
+  @Override
+  public NetClientOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
+    return (NetClientOptions) super.setActivityLogFormat(activityLogFormat);
   }
 
   public NetClientOptions setProxyOptions(ProxyOptions proxyOptions) {
