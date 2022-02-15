@@ -47,7 +47,7 @@ public class DnsClientOptions {
   /**
    * The default ByteBufFormat is SIMPLE
    */
-  public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT= ByteBufFormat.SIMPLE:
+  public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT= ByteBufFormat.SIMPLE;
 
   /**
   * The default value for the recursion desired flag (RD) = {@code true}

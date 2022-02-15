@@ -78,7 +78,7 @@ public final class DnsClientImpl implements DnsClient {
     actualCtx.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
       channel.pipeline().addLast("logging", new LoggingHandler(activityLogFormat));
-    }    
+    }   
     channel.pipeline().addLast(new DatagramDnsQueryEncoder());
     channel.pipeline().addLast(new DatagramDnsResponseDecoder());
     channel.pipeline().addLast(new SimpleChannelInboundHandler<DnsResponse>() {
