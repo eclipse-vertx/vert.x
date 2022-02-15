@@ -56,7 +56,7 @@ public abstract class NetworkOptions {
   /**
    * The default logActivity is ByteBufFormat.SIMPLE
    */
-  public static final boolean DEFAULT_LOG_ACTIVITY_FORMAT = ByteBufFormat.SIMPLE;
+  public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT = ByteBufFormat.SIMPLE;
 
   private int sendBufferSize;
   private int receiveBufferSize;
