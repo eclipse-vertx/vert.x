@@ -15,6 +15,7 @@ import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetworkOptions;
+import io.netty.handler.logging.ByteBufFormat;
 
 /**
  * Options used to configure a datagram socket.

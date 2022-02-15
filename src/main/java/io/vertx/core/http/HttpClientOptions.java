@@ -17,6 +17,7 @@ import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.*;
 import io.vertx.core.tracing.TracingPolicy;
+import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.ArrayList;
 import java.util.Collections;
