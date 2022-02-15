@@ -20,6 +20,7 @@ import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.WorkerContext;
 import io.vertx.test.core.VertxTestBase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -115,7 +116,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
-  public void testCapacity() throws Exception {
+  public void testConcurrency() throws Exception {
     EventLoopContext context = vertx.createEventLoopContext();
     ConnectionManager mgr = new ConnectionManager();
     ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 10 }, 10);
@@ -135,7 +136,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
-  public void testIncreaseCapacity() throws Exception {
+  public void testIncreaseConcurrency() throws Exception {
     ConnectionManager mgr = new ConnectionManager();
     ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 });
     EventLoopContext ctx = vertx.createEventLoopContext();
@@ -163,7 +164,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
-  public void testSatisfyPendingWaitersWithExtraCapacity() throws Exception {
+  public void testSatisfyPendingWaitersWithExtraConcurrency() throws Exception {
     EventLoopContext context = vertx.createEventLoopContext();
     ConnectionManager mgr = new ConnectionManager();
     ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 }, 2);
@@ -184,7 +185,7 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
-  public void testEmptyCapacity() {
+  public void testEmptyConcurrency() {
     EventLoopContext context = vertx.createEventLoopContext();
     ConnectionManager mgr = new ConnectionManager();
     ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 }, 2);
@@ -203,6 +204,42 @@ public class ConnectionPoolTest extends VertxTestBase {
     request.concurrency(0).connect(expected, 0);
     assertEquals(0, seq.getAndIncrement());
     request.concurrency(2);
+    await();
+  }
+
+  @Test
+  public void testDecreaseConcurrency() throws Exception {
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 });
+    EventLoopContext ctx = vertx.createEventLoopContext();
+    Connection conn1 = new Connection();
+    CountDownLatch l1 = new CountDownLatch(2);
+    CountDownLatch l2 = new CountDownLatch(1);
+    Lease<Connection>[] leases = new Lease[3];
+    pool.acquire(ctx, 0, onSuccess(lease -> {
+      leases[0] = lease;
+      l1.countDown();
+    }));
+    pool.acquire(ctx, 0, onSuccess(lease -> {
+      leases[1] = lease;
+      l1.countDown();
+    }));
+    pool.acquire(ctx, 0, onSuccess(lease -> {
+      leases[2] = lease;
+      l2.countDown();
+    }));
+    ConnectionRequest request = mgr.assertRequest();
+    request.concurrency(2).connect(conn1, 0);
+    awaitLatch(l1);
+    assertEquals(1, l2.getCount());
+    request.listener.onConcurrencyChange(1);
+    ctx.runOnContext(v -> {
+      leases[0].recycle();
+      assertEquals(1, l2.getCount());
+      leases[1].recycle();
+      assertEquals(0, l2.getCount());
+      testComplete();
+    });
     await();
   }
 
@@ -574,6 +611,49 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
+  public void testAcquireClosedConnection() throws Exception {
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 });
+    EventLoopContext context = vertx.createEventLoopContext();
+    pool.acquire(context, 0, onSuccess(lease -> {
+      lease.recycle();
+    }));
+    Connection expected = new Connection();
+    ConnectionRequest request = mgr.assertRequest();
+    request.connect(expected, 0);
+    CountDownLatch latch1 = new CountDownLatch(1);
+    CountDownLatch latch2 = new CountDownLatch(1);
+    context.runOnContext(v -> {
+      pool.evict(conn -> {
+        // Make sure that the event-loop thread is busy and pool lock are borrowed
+        latch1.countDown();
+        try {
+          // Wait until the acquisition and removal tasks are enqueued
+          latch2.await();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+        // When we return, the tasks will be executed by this thread
+        // but the acquisition callback is a pool post action executed after the removal task is executed
+        return false;
+      }, ar -> {
+      });
+    });
+    awaitLatch(latch1);
+    AtomicBoolean closed = new AtomicBoolean();
+    pool.acquire(context, 0, onSuccess(lease -> {
+      // Get not null closed connection
+      assertNotNull(lease.get());
+      assertTrue(closed.get());
+      testComplete();
+    }));
+    request.listener.onRemove();
+    closed.set(true);
+    latch2.countDown();
+    await();
+  }
+
+  @Test
   public void testCancelQueuedWaiters() throws Exception {
     waitFor(1);
     EventLoopContext context = vertx.createEventLoopContext();
@@ -589,10 +669,15 @@ public class ConnectionPoolTest extends VertxTestBase {
         w.complete(waiter);
       }
     }, 0, ar -> fail());
-    w.get(10, TimeUnit.SECONDS);
-    pool.cancel(w.get(10, TimeUnit.SECONDS), onSuccess(removed -> {
-      assertTrue(removed);
-      testComplete();
+    PoolWaiter<Connection> waiter = w.get(10, TimeUnit.SECONDS);
+    pool.cancel(waiter, onSuccess(removed1 -> {
+      assertTrue(removed1);
+      assertEquals(0, pool.waiters());
+      pool.cancel(waiter, onSuccess(removed2 -> {
+        assertFalse(removed2);
+        assertEquals(0, pool.waiters());
+        testComplete();
+      }));
     }));
     await();
   }
@@ -691,8 +776,8 @@ public class ConnectionPoolTest extends VertxTestBase {
     pool.connectionSelector((waiter, list) -> {
       assertEquals(1, list.size());
       PoolConnection<Connection> pooled = list.get(0);
+      assertEquals(1, pooled.available());
       assertEquals(1, pooled.concurrency());
-      assertEquals(1, pooled.maxConcurrency());
       assertSame(conn1, pooled.get());
       assertSame(context, pooled.context());
       assertSame(context, waiter.context());

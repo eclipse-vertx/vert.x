@@ -105,6 +105,9 @@ public class JacksonCodec implements JsonCodec {
   @Override
   public Buffer toBuffer(Object object, boolean pretty) throws EncodeException {
     ByteBuf buf = Unpooled.buffer();
+    // There is no need to use a try with resources here as jackson
+    // is a well-behaved and always calls the closes all streams in the
+    // "finally" block bellow.
     ByteBufOutputStream out = new ByteBufOutputStream(buf);
     JsonGenerator generator = createGenerator(out, pretty);
     try {

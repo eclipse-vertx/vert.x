@@ -11,9 +11,13 @@
 
 package io.vertx.core.json;
 
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -57,4 +61,12 @@ public class JacksonTest extends VertxTestBase {
       assertTrue(e.getMessage().contains(MyPojo.class.getName()));
     }
   }
+
+  @Test(expected = EncodeException.class)
+  public void encodeToBuffer() {
+    // if other than EncodeException happens here, then
+    // there is probably a leak closing the netty buffer output stream
+    codec.toBuffer(new RuntimeException("Unsupported"));
+  }
+
 }

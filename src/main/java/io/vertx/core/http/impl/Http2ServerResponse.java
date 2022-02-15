@@ -436,6 +436,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
   void write(ByteBuf chunk, boolean end, Handler<AsyncResult<Void>> handler) {
     Handler<Void> bodyEndHandler;
     Handler<Void> endHandler;
+    boolean invokeHandler = false;
     synchronized (conn) {
       if (ended) {
         throw new IllegalStateException("Response has already been written");
@@ -453,6 +454,8 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       boolean sent = checkSendHeaders(end && !hasBody && trailers == null);
       if (hasBody || (!sent && end)) {
         stream.writeData(chunk, end && trailers == null, handler);
+      } else {
+        invokeHandler = true;
       }
       if (end && trailers != null) {
         stream.writeHeaders(trailers, true, null);
@@ -466,6 +469,9 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       }
       if (endHandler != null) {
         endHandler.handle(null);
+      }
+      if (invokeHandler) {
+        handler.handle(Future.succeededFuture());
       }
     }
   }

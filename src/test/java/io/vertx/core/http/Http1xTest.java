@@ -4761,6 +4761,64 @@ public class Http1xTest extends HttpTest {
   }
 
   @Test
+  public void testInvalidHttpRequestHeaderResponse() throws Exception {
+    server.requestHandler(req -> {
+      fail();
+    });
+    startServer(testAddress);
+    NetClient client = vertx.createNetClient();
+    try {
+      CountDownLatch latch = new CountDownLatch(1);
+      Buffer response = Buffer.buffer();
+      client.connect(testAddress, onSuccess(so -> {
+        so.write("GET /some/path HTTP/1.1\r\n" +
+          "Host: vertx.io\r\n" +
+          "\uD83D\uDE31: val\r\n" +
+          "\r\n");
+        so.handler(response::appendBuffer);
+        so.closeHandler(v -> {
+          latch.countDown();
+        });
+      }));
+      awaitLatch(latch);
+      assertTrue(response.toString().startsWith("HTTP/1.1 400 Bad Request\r\n"));
+    } finally {
+      client.close();
+    }
+  }
+
+  @Test
+  public void testInvalidHttpResponseHeader() throws Exception {
+    waitFor(2);
+    NetServer server = vertx.createNetServer().connectHandler(so -> {
+      AtomicBoolean sent = new AtomicBoolean();
+      so.handler(buff -> {
+        if (sent.compareAndSet(false, true)) {
+          so.write("" +
+            "HTTP/1.1 200 OK\r\n" +
+            "Content-Length: 0\r\n" +
+            "\uD83D\uDE31: val\r\n" +
+            "\r\n");
+        }
+      });
+    });
+    CountDownLatch latch = new CountDownLatch(1);
+    server.listen(testAddress, onSuccess(s -> latch.countDown()));
+    awaitLatch(latch);
+    client.request(requestOptions).onComplete(onSuccess(req -> {
+      req.connection().exceptionHandler(err -> {
+        assertEquals(IllegalArgumentException.class, err.getClass());
+        complete();
+      });
+      req.send(onFailure(err -> {
+        assertEquals(IllegalArgumentException.class, err.getClass());
+        complete();
+      }));
+    }));
+    await();
+  }
+
+  @Test
   public void testChunkedServerResponse() {
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();

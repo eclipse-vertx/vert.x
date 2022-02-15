@@ -53,6 +53,7 @@ public class PoolWaiter<C> {
   PoolWaiter<C> prev;
   PoolWaiter<C> next;
   boolean disposed;
+  boolean queued;
 
   PoolWaiter(PoolWaiter.Listener<C> listener, ContextInternal context, final int capacity, Handler<AsyncResult<Lease<C>>> handler) {
     this.listener = listener;

@@ -34,7 +34,7 @@ public class HttpClientPush implements HttpRequest {
     String rawMethod = headers.method().toString();
     String authority = headers.authority() != null ? headers.authority().toString() : null;
     MultiMap headersMap = new Http2HeadersAdaptor(headers);
-    int pos = authority.indexOf(':');
+    int pos = authority == null ? -1 : authority.indexOf(':');
     if (pos == -1) {
       this.host = authority;
       this.port = 80;

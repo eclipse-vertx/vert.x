@@ -237,6 +237,7 @@ public class FileResolverImpl implements FileResolver {
       case "bundleresource": // Equinox
       case "jrt": // java run-time (JEP 220)
       case "resource":  // substratevm (graal native image)
+      case "vfs":  // jboss-vfs
         return unpackFromBundleURL(url, isDir);
       default:
         throw new IllegalStateException("Invalid url protocol: " + prot);

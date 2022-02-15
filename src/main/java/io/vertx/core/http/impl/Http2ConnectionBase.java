@@ -67,7 +67,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private Handler<io.vertx.core.http.Http2Settings> remoteSettingsHandler;
   private final ArrayDeque<Handler<Void>> updateSettingsHandlers = new ArrayDeque<>();
   private final ArrayDeque<Promise<Buffer>> pongHandlers = new ArrayDeque<>();
-  private Http2Settings localSettings = new Http2Settings();
+  private Http2Settings localSettings;
   private Http2Settings remoteSettings;
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
@@ -83,6 +83,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
     this.windowSize = handler.connection().local().flowController().windowSize(handler.connection().connectionStream());
     this.maxConcurrentStreams = io.vertx.core.http.Http2Settings.DEFAULT_MAX_CONCURRENT_STREAMS;
     this.streamKey = handler.connection().newKey();
+    this.localSettings = handler.initialSettings();
   }
 
   VertxInternal vertx() {

@@ -109,7 +109,7 @@ public class Transport {
 
   public SocketAddress convert(io.vertx.core.net.SocketAddress address) {
     if (address.isDomainSocket()) {
-      throw new IllegalArgumentException("Domain socket not supported by JDK transport");
+      throw new IllegalArgumentException("Domain socket are not supported by JDK transport, you need to use native transport to use them");
     } else {
       InetAddress ip = ((SocketAddressImpl) address).ipAddress();
       if (ip != null) {
@@ -180,7 +180,7 @@ public class Transport {
    */
   public ChannelFactory<? extends Channel> channelFactory(boolean domainSocket) {
     if (domainSocket) {
-      throw new IllegalArgumentException();
+      throw new IllegalArgumentException("The Vertx instance must be created with the preferNativeTransport option set to true to create domain sockets");
     }
     return NioSocketChannel::new;
   }

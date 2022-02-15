@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -72,6 +74,19 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   List<String> getAll(CharSequence name);
 
   /**
+   * Allows iterating over the entries in the map
+   */
+  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  default void forEach(BiConsumer<String, String> action) {
+    forEach(new Consumer<Map.Entry<String, String>>() {
+      @Override
+      public void accept(Map.Entry<String, String> entry) {
+        action.accept(entry.getKey(), entry.getValue());
+      }
+    });
+  }
+
+  /**
    * Returns all entries in the multi-map.
    *
    * @return A immutable {@link java.util.List} of the name-value entries, which will be
@@ -80,7 +95,7 @@ public interface MultiMap extends Iterable<Map.Entry<String, String>> {
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   default List<Map.Entry<String, String>> entries() {
     List<Map.Entry<String, String>> entries = new ArrayList<>();
-    forEach(entries::add);
+    forEach((Consumer<Map.Entry<String, String>>)entries::add);
     return entries;
   }
 

@@ -187,4 +187,9 @@ class DuplicatedContext extends AbstractContext {
   public ContextInternal unwrap() {
     return delegate;
   }
+
+  @Override
+  public boolean isDuplicate() {
+    return true;
+  }
 }

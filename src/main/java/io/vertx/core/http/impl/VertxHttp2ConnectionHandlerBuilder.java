@@ -38,7 +38,6 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   private boolean useCompression;
   private boolean useDecompression;
   private int compressionLevel = HttpServerOptions.DEFAULT_COMPRESSION_LEVEL;
-  private io.vertx.core.http.Http2Settings initialSettings;
   private Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private boolean logEnabled;
 
@@ -47,7 +46,7 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
   }
 
   VertxHttp2ConnectionHandlerBuilder<C> initialSettings(io.vertx.core.http.Http2Settings settings) {
-    this.initialSettings = settings;
+    HttpUtils.fromVertxInitialSettings(isServer(), settings, initialSettings());
     return this;
   }
 
@@ -102,9 +101,6 @@ class VertxHttp2ConnectionHandlerBuilder<C extends Http2ConnectionBase> extends 
 
   @Override
   protected VertxHttp2ConnectionHandler<C> build() {
-    if (initialSettings != null) {
-      HttpUtils.fromVertxInitialSettings(isServer(), initialSettings, initialSettings());
-    }
     if (logEnabled) {
       frameLogger(new Http2FrameLogger(LogLevel.DEBUG));
     }
