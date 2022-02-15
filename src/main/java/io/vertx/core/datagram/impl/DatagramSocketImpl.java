@@ -19,14 +19,12 @@ import io.netty.channel.MaxMessagesRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.InternetProtocolFamily;
-import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -45,7 +43,6 @@ import io.vertx.core.streams.WriteStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Objects;
 
@@ -79,7 +76,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     bufAllocator.maxMessagesPerRead(1);
     context.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
-      channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogFormat()));
+      channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
     VertxMetrics metrics = vertx.metricsSPI();
     this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;

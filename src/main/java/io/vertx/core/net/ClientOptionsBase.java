@@ -18,7 +18,6 @@ import io.netty.handler.logging.ByteBufFormat;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -243,8 +242,8 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
-  public ClientOptionsBase setActivityLogFormat(ByteBufFormat activityLogFormat) {
-    return (ClientOptionsBase) super.setActivityLogFormat(activityLogFormat);
+  public ClientOptionsBase setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+    return (ClientOptionsBase) super.setActivityLogDataFormat(activityLogDataFormat);
   }
 
   @Override

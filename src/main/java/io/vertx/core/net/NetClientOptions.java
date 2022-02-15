@@ -387,8 +387,8 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public NetClientOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
-    return (NetClientOptions) super.setActivityLogFormat(activityLogFormat);
+  public NetClientOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+    return (NetClientOptions) super.setActivityLogDataFormat(activityLogDataFormat);
   }
 
   public NetClientOptions setProxyOptions(ProxyOptions proxyOptions) {

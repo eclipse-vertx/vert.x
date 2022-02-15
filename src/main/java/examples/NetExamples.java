@@ -11,12 +11,11 @@
 
 package examples;
 
+import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.net.*;
 
@@ -191,6 +190,15 @@ public class NetExamples {
   public void exampleNetworkActivityLoggingOnServer(Vertx vertx) {
 
     NetServerOptions options = new NetServerOptions().setLogActivity(true);
+
+    NetServer server = vertx.createNetServer(options);
+  }
+
+  public void exampleNetworkActivityLoggingFormat(Vertx vertx) {
+
+    NetServerOptions options = new NetServerOptions()
+      .setLogActivity(true)
+      .setActivityLogDataFormat(ByteBufFormat.SIMPLE);
 
     NetServer server = vertx.createNetServer(options);
   }

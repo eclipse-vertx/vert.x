@@ -410,8 +410,8 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
-  public NetServerOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
-    return (NetServerOptions) super.setActivityLogFormat(activityLogFormat);
+  public NetServerOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+    return (NetServerOptions) super.setActivityLogDataFormat(activityLogDataFormat);
   }
 
   /**

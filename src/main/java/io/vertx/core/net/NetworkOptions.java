@@ -52,18 +52,18 @@ public abstract class NetworkOptions {
    * The default log enabled = false
    */
   public static final boolean DEFAULT_LOG_ENABLED = false;
-  
+
   /**
    * The default logActivity is ByteBufFormat.SIMPLE
    */
-  public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT = ByteBufFormat.SIMPLE;
+  public static final ByteBufFormat DEFAULT_LOG_ACTIVITY_FORMAT = ByteBufFormat.HEX_DUMP;
 
   private int sendBufferSize;
   private int receiveBufferSize;
   private int trafficClass;
   private boolean reuseAddress;
   private boolean logActivity;
-  private ByteBufFormat activityLogFormat;
+  private ByteBufFormat activityLogDataFormat;
   private boolean reusePort;
 
   /**
@@ -75,7 +75,7 @@ public abstract class NetworkOptions {
     reuseAddress = DEFAULT_REUSE_ADDRESS;
     trafficClass = DEFAULT_TRAFFIC_CLASS;
     logActivity = DEFAULT_LOG_ENABLED;
-    activityLogFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
+    activityLogDataFormat = DEFAULT_LOG_ACTIVITY_FORMAT;
     reusePort = DEFAULT_REUSE_PORT;
   }
 
@@ -91,7 +91,7 @@ public abstract class NetworkOptions {
     this.reusePort = other.isReusePort();
     this.trafficClass = other.getTrafficClass();
     this.logActivity = other.logActivity;
-    this.activityLogFormat = other.activityLogFormat;
+    this.activityLogDataFormat = other.activityLogDataFormat;
   }
 
   /**
@@ -199,12 +199,12 @@ public abstract class NetworkOptions {
   public boolean getLogActivity() {
     return logActivity;
   }
- 
+
   /**
    * @return Netty's logging handler's data format.
    */
-  public ByteBufFormat getActivityLogFormat() {
-    return activityLogFormat;
+  public ByteBufFormat getActivityLogDataFormat() {
+    return activityLogDataFormat;
   }
 
   /**
@@ -221,11 +221,11 @@ public abstract class NetworkOptions {
   /**
    * Set the value of Netty's logging handler's data format: Netty's pipeline is configured for logging on Netty's logger.
    *
-   * @param activityLogFormat the value of activityLogFormat
+   * @param activityLogDataFormat the format to use
    * @return a reference to this, so the API can be used fluently
    */
-  public NetworkOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
-    this.activityLogFormat = activityLogFormat;
+  public NetworkOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+    this.activityLogDataFormat = activityLogDataFormat;
     return this;
   }
 

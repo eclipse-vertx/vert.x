@@ -1198,8 +1198,8 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setActivityLogFormat(ByteBufFormat activityLogFormat ) {
-    return (HttpClientOptions) super.setActivityLogFormat(activityLogFormat);
+  public HttpClientOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+    return (HttpClientOptions) super.setActivityLogDataFormat(activityLogDataFormat);
   }
 
   /**

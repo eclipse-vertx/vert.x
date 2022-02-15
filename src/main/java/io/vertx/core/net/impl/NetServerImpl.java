@@ -15,7 +15,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
-import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SniHandler;
 import io.netty.handler.ssl.SslHandler;
@@ -107,7 +106,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
 
   protected void initChannel(ChannelPipeline pipeline) {
 	  if (options.getLogActivity()) {
-      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogFormat()));  
+      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
     if (sslHelper.isSSL()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.

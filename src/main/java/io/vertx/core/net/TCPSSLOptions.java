@@ -790,9 +790,10 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   @Override
-  public TCPSSLOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
-    return (TCPSSLOptions) super.setActivityLogFormat(activityLogFormat);
+  public TCPSSLOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+    return (TCPSSLOptions) super.setActivityLogDataFormat(activityLogDataFormat);
   }
+
   @Override
   public TCPSSLOptions setSendBufferSize(int sendBufferSize) {
     return (TCPSSLOptions) super.setSendBufferSize(sendBufferSize);

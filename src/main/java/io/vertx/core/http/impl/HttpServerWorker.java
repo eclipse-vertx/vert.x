@@ -250,7 +250,7 @@ public class HttpServerWorker implements Handler<Channel> {
 
   private void configureHttp1OrH2C(ChannelPipeline pipeline) {
     if (logEnabled) {
-      pipeline.addLast("logging", new LoggingHandler());
+      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
     if (HttpServerImpl.USE_FLASH_POLICY_HANDLER) {
       pipeline.addLast("flashpolicy", new FlashPolicyHandler());

@@ -782,8 +782,8 @@ public class HttpServerOptions extends NetServerOptions {
   }
 
   @Override
-  public HttpServerOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
-    return (HttpServerOptions) super.setActivityLogFormat(activityLogFormat);
+  public HttpServerOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+    return (HttpServerOptions) super.setActivityLogDataFormat(activityLogDataFormat);
   }
 
   @Override

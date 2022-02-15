@@ -15,7 +15,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.logging.ByteBufFormat;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -33,7 +32,6 @@ import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetSocketImpl;
-import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
@@ -164,7 +162,7 @@ public class HttpChannelConnector {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
     if (options.getLogActivity()) {
-      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogFormat()));
+      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
     pipeline.addLast("codec", new HttpClientCodec(
       options.getMaxInitialLineLength(),

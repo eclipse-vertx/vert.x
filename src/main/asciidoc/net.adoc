@@ -286,7 +286,56 @@ For debugging purposes, network activity can be logged:
 {@link examples.NetExamples#exampleNetworkActivityLoggingOnServer}
 ----
 
-for the client
+Here is the output of a simple HTTP server
+
+[literal]
+----
+id: 0x359e3df6, L:/127.0.0.1:8080 - R:/127.0.0.1:65351] READ: 78B
+         +-------------------------------------------------+
+         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |
++--------+-------------------------------------------------+----------------+
+|00000000| 47 45 54 20 2f 20 48 54 54 50 2f 31 2e 31 0d 0a |GET / HTTP/1.1..|
+|00000010| 48 6f 73 74 3a 20 6c 6f 63 61 6c 68 6f 73 74 3a |Host: localhost:|
+|00000020| 38 30 38 30 0d 0a 55 73 65 72 2d 41 67 65 6e 74 |8080..User-Agent|
+|00000030| 3a 20 63 75 72 6c 2f 37 2e 36 34 2e 31 0d 0a 41 |: curl/7.64.1..A|
+|00000040| 63 63 65 70 74 3a 20 2a 2f 2a 0d 0a 0d 0a       |ccept: */*....  |
++--------+-------------------------------------------------+----------------+
+[id: 0x359e3df6, L:/127.0.0.1:8080 - R:/127.0.0.1:65351] WRITE: 50B
+         +-------------------------------------------------+
+         |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |
++--------+-------------------------------------------------+----------------+
+|00000000| 48 54 54 50 2f 31 2e 31 20 32 30 30 20 4f 4b 0d |HTTP/1.1 200 OK.|
+|00000010| 0a 63 6f 6e 74 65 6e 74 2d 6c 65 6e 67 74 68 3a |.content-length:|
+|00000020| 20 31 31 0d 0a 0d 0a 48 65 6c 6c 6f 20 57 6f 72 | 11....Hello Wor|
+|00000030| 6c 64                                           |ld              |
++--------+-------------------------------------------------+----------------+
+[id: 0x359e3df6, L:/127.0.0.1:8080 - R:/127.0.0.1:65351] READ COMPLETE
+[id: 0x359e3df6, L:/127.0.0.1:8080 - R:/127.0.0.1:65351] FLUSH
+----
+
+By default, binary data is logged in hex format.
+
+You can reduce the data format verbosity to only print the buffer length instead of the entire data
+
+[source,$lang]
+----
+{@link examples.NetExamples#exampleNetworkActivityLoggingOnServer}
+----
+
+Here is the same output with simple buffer format
+
+[literal]
+----
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] READ: 78B
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] WRITE: 50B
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] READ COMPLETE
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] FLUSH
+[id: 0xda8d41dc, L:/127.0.0.1:8080 - R:/127.0.0.1:65399] READ COMPLETE
+[id: 0xda8d41dc, L:/127.0.0.1:8080 ! R:/127.0.0.1:65399] INACTIVE
+[id: 0xda8d41dc, L:/127.0.0.1:8080 ! R:/127.0.0.1:65399] UNREGISTERED
+----
+
+Clients can also log network activity
 
 [source,$lang]
 ----

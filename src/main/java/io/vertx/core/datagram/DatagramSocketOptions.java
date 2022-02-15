@@ -247,8 +247,7 @@ public class DatagramSocketOptions extends NetworkOptions {
   }
 
   @Override
-  public DatagramSocketOptions setActivityLogFormat(ByteBufFormat activityLogFormat) {
-    return (DatagramSocketOptions) super.setActivityLogFormat(activityLogFormat);
+  public DatagramSocketOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
+    return (DatagramSocketOptions) super.setActivityLogDataFormat(activityLogDataFormat);
   }
-  
 }
