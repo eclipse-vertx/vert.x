@@ -203,7 +203,7 @@ public abstract class NetworkOptions {
   /**
    * @return Netty's logging handler's data format.
    */
-  public boolean getActivityLogFormat() {
+  public ByteBufFormat getActivityLogFormat() {
     return activityLogFormat;
   }
 

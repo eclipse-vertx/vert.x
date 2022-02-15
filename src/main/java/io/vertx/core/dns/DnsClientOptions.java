@@ -149,7 +149,7 @@ public class DnsClientOptions {
   /**
    * @return {@code ByteBufFormat} get Netty's log format
    */
-  public boolean getActivityLogFormat() {
+  public ByteBufFormat getActivityLogFormat() {
     return activityLogFormat;
   }
 
