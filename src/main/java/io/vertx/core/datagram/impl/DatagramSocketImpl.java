@@ -79,7 +79,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     bufAllocator.maxMessagesPerRead(1);
     context.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
-      channel.pipeline().addLast("logging", new LoggingHandler(activityLogFormat));
+      channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogFormat));
     }
     VertxMetrics metrics = vertx.metricsSPI();
     this.metrics = metrics != null ? metrics.createDatagramSocketMetrics(options) : null;

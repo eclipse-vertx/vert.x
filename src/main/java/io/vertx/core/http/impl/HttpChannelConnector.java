@@ -164,7 +164,7 @@ public class HttpChannelConnector {
       pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
     if (options.getLogActivity()) {
-      pipeline.addLast("logging", new LoggingHandler(activityLogFormat));
+      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogFormat));
     }
     pipeline.addLast("codec", new HttpClientCodec(
       options.getMaxInitialLineLength(),

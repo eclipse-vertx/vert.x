@@ -77,7 +77,7 @@ public final class DnsClientImpl implements DnsClient {
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
     actualCtx.nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
-      channel.pipeline().addLast("logging", new LoggingHandler(activityLogFormat));
+      channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogFormat));
     }   
     channel.pipeline().addLast(new DatagramDnsQueryEncoder());
     channel.pipeline().addLast(new DatagramDnsResponseDecoder());

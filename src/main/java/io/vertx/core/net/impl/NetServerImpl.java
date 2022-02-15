@@ -107,7 +107,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
 
   protected void initChannel(ChannelPipeline pipeline) {
 	  if (options.getLogActivity()) {
-      pipeline.addLast("logging", new LoggingHandler(activityLogFormat));  
+      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogFormat));  
     }
     if (sslHelper.isSSL()) {
       // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
