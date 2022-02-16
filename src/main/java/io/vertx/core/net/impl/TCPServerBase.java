@@ -57,7 +57,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   protected final Context creatingContext;
   protected final VertxInternal vertx;
   protected final NetServerOptions options;
-  protected final SSLHelper sslHelper;
 
   // Per server
   private EventLoop eventLoop;
@@ -67,6 +66,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   private TCPServerBase actualServer;
 
   // Main
+  private SSLHelper sslHelper;
   private ServerChannelLoadBalancer channelBalancer;
   private io.netty.util.concurrent.Future<Channel> bindFuture;
   private Set<TCPServerBase> servers;
@@ -76,7 +76,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   public TCPServerBase(VertxInternal vertx, NetServerOptions options) {
     this.vertx = vertx;
     this.options = new NetServerOptions(options);
-    this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
     this.creatingContext = vertx.getContext();
   }
 
@@ -85,7 +84,33 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     return server != null ? server.actualPort : actualPort;
   }
 
-  public synchronized io.netty.util.concurrent.Future<Channel> listen(SocketAddress localAddress, ContextInternal context, Handler<Channel> worker) {
+  protected abstract Handler<Channel> childHandler(ContextInternal context, SocketAddress socketAddress, SSLHelper sslHelper);
+
+  protected SSLHelper createSSLHelper() {
+    return new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions());
+  }
+
+  public synchronized SSLHelper sslHelper() {
+    return sslHelper;
+  }
+
+  public Future<TCPServerBase> bind(SocketAddress address) {
+    ContextInternal listenContext = vertx.getOrCreateContext();
+
+    io.netty.util.concurrent.Future<Channel> bindFuture = listen(address, listenContext);
+
+    Promise<TCPServerBase> promise = listenContext.promise();
+    bindFuture.addListener(res -> {
+      if (res.isSuccess()) {
+        promise.complete(this);
+      } else {
+        promise.fail(res.cause());
+      }
+    });
+    return promise.future();
+  }
+
+  private synchronized io.netty.util.concurrent.Future<Channel> listen(SocketAddress localAddress, ContextInternal context) {
     if (listening) {
       throw new IllegalStateException("Listen already called");
     }
@@ -93,7 +118,6 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     this.listenContext = context;
     this.listening = true;
     this.eventLoop = context.nettyEventLoop();
-    this.worker = worker;
 
     SocketAddress bindAddress;
     Map<ServerID, TCPServerBase> sharedNetServers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
@@ -122,24 +146,26 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
         }
       }
       if (main == null) {
-        servers = new HashSet<>();
-        servers.add(this);
-        channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
-        channelBalancer.addWorker(eventLoop, worker);
-
-        ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-        if (sslHelper.isSSL()) {
-          bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-        } else {
-          bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-        }
-
-        bootstrap.childHandler(channelBalancer);
-        applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
-
         try {
+          sslHelper = createSSLHelper();
           sslHelper.validate(vertx);
+          worker =  childHandler(listenContext, localAddress, sslHelper);
+          servers = new HashSet<>();
+          servers.add(this);
+          channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
+          channelBalancer.addWorker(eventLoop, worker);
+
+          ServerBootstrap bootstrap = new ServerBootstrap();
+          bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
+          if (sslHelper.isSSL()) {
+            bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+          } else {
+            bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+          }
+
+          bootstrap.childHandler(channelBalancer);
+          applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+
           bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
           bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
             if (res.isSuccess()) {
@@ -178,9 +204,11 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
       } else {
         // Server already exists with that host/port - we will use that
         actualServer = main;
+        metrics = main.metrics;
+        sslHelper = main.sslHelper;
+        worker =  childHandler(listenContext, localAddress, sslHelper);
         actualServer.servers.add(this);
         actualServer.channelBalancer.addWorker(eventLoop, worker);
-        metrics = main.metrics;
         listenContext.addCloseHook(this);
       }
     }

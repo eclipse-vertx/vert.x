@@ -83,12 +83,18 @@ public class SSLEngineTest extends HttpTestBase {
         .setKeyCertOptions(Cert.SERVER_PEM.get())
         .setSsl(true)
         .setUseAlpn(useAlpn);
+    server = vertx.createHttpServer(options);
+    server.requestHandler(req -> {
+      assertEquals(req.version(), version);
+      assertTrue(req.isSSL());
+      req.response().end();
+    });
     try {
-      server = vertx.createHttpServer(options);
+      startServer();
       if (error != null) {
         fail("Was expecting failure: " + error);
       }
-    } catch (VertxException e) {
+    } catch (Exception e) {
       if (error == null) {
         fail(e);
       } else {
@@ -96,37 +102,29 @@ public class SSLEngineTest extends HttpTestBase {
         if (expectCause) {
           assertNotSame(e, e.getCause());
         }
+        return;
       }
-      return;
     }
-    server.requestHandler(req -> {
-      assertEquals(req.version(), version);
-      assertTrue(req.isSSL());
-      req.response().end();
-    });
-    server.listen(onSuccess(s -> {
-      HttpServerImpl impl = (HttpServerImpl) s;
-      SSLHelper sslHelper = impl.getSslHelper();
-      SslContext ctx = sslHelper.getContext((VertxInternal) vertx);
-      switch (expectedSslContext != null ? expectedSslContext : "jdk") {
-        case "jdk":
-          assertTrue(ctx instanceof JdkSslContext);
-          break;
-        case "openssl":
-          assertTrue(ctx instanceof OpenSslContext);
-          break;
-      }
-      client = vertx.createHttpClient(new HttpClientOptions()
-          .setSslEngineOptions(engine)
-          .setSsl(true)
-          .setUseAlpn(useAlpn)
-          .setTrustAll(true)
-          .setProtocolVersion(version));
-      client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(req -> {
-        req.send(onSuccess(resp -> {
-          assertEquals(200, resp.statusCode());
-          testComplete();
-        }));
+    SSLHelper sslHelper = ((HttpServerImpl)server).sslHelper();
+    SslContext ctx = sslHelper.getContext((VertxInternal) vertx);
+    switch (expectedSslContext != null ? expectedSslContext : "jdk") {
+      case "jdk":
+        assertTrue(ctx instanceof JdkSslContext);
+        break;
+      case "openssl":
+        assertTrue(ctx instanceof OpenSslContext);
+        break;
+    }
+    client = vertx.createHttpClient(new HttpClientOptions()
+      .setSslEngineOptions(engine)
+      .setSsl(true)
+      .setUseAlpn(useAlpn)
+      .setTrustAll(true)
+      .setProtocolVersion(version));
+    client.request(HttpMethod.GET, DEFAULT_HTTP_PORT, DEFAULT_HTTP_HOST, "/somepath", onSuccess(req -> {
+      req.send(onSuccess(resp -> {
+        assertEquals(200, resp.statusCode());
+        testComplete();
       }));
     }));
     await();

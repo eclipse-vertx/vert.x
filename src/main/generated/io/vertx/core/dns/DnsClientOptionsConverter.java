@@ -20,6 +20,11 @@ public class DnsClientOptionsConverter {
   public static void fromJson(Iterable<java.util.Map.Entry<String, Object>> json, DnsClientOptions obj) {
     for (java.util.Map.Entry<String, Object> member : json) {
       switch (member.getKey()) {
+        case "activityLogFormat":
+          if (member.getValue() instanceof String) {
+            obj.setActivityLogFormat(io.netty.handler.logging.ByteBufFormat.valueOf((String)member.getValue()));
+          }
+          break;
         case "host":
           if (member.getValue() instanceof String) {
             obj.setHost((String)member.getValue());
@@ -54,6 +59,9 @@ public class DnsClientOptionsConverter {
   }
 
   public static void toJson(DnsClientOptions obj, java.util.Map<String, Object> json) {
+    if (obj.getActivityLogFormat() != null) {
+      json.put("activityLogFormat", obj.getActivityLogFormat().name());
+    }
     if (obj.getHost() != null) {
       json.put("host", obj.getHost());
     }

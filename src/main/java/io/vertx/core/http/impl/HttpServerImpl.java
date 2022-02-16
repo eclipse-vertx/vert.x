@@ -28,7 +28,6 @@ import io.vertx.core.spi.metrics.TCPMetrics;
 import io.vertx.core.spi.metrics.VertxMetrics;
 import io.vertx.core.streams.ReadStream;
 
-import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -173,14 +172,21 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     return this;
   }
 
-  private Handler<Channel> childHandler(EventLoopContext context,
-                                        Supplier<ContextInternal> streamContextSupplier,
-                                        HttpServerConnectionHandler handlers,
-                                        Handler<Throwable> exceptionHandler,
-                                        SocketAddress address,
-                                        String serverOrigin) {
+  @Override
+  protected Handler<Channel> childHandler(ContextInternal context, SocketAddress address, SSLHelper sslHelper) {
+    EventLoopContext connContext;
+    if (context instanceof EventLoopContext) {
+      connContext = (EventLoopContext) context;
+    } else {
+      connContext = vertx.createEventLoopContext(context.nettyEventLoop(), context.workerPool(), context.classLoader());
+    }
+    String host = address.isInetSocket() ? address.host() : "localhost";
+    int port = address.port();
+    String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
+    HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestStream.handler, invalidRequestHandler, wsStream.handler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
+    Supplier<ContextInternal> streamContextSupplier = context::duplicate;
     return new HttpServerWorker(
-      context,
+      connContext,
       streamContextSupplier,
       this,
       vertx,
@@ -188,8 +194,19 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
       options,
       serverOrigin,
       disableH2c,
-      handlers,
-      handlers.exceptionHandler);
+      hello,
+      hello.exceptionHandler);
+  }
+
+  @Override
+  protected SSLHelper createSSLHelper() {
+    return super.createSSLHelper()
+      .setApplicationProtocols(options
+        .getAlpnVersions()
+        .stream()
+        .map(HttpVersion::alpnName)
+        .collect(Collectors.toList())
+      );
   }
 
   @Override
@@ -197,37 +214,7 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
     if (requestStream.handler() == null && wsStream.handler() == null) {
       throw new IllegalStateException("Set request or WebSocket handler first");
     }
-    ContextInternal listenContext = vertx.getOrCreateContext();
-    EventLoopContext connContext;
-    if (listenContext instanceof EventLoopContext) {
-      connContext = (EventLoopContext) listenContext;
-    } else {
-      connContext = vertx.createEventLoopContext(listenContext.nettyEventLoop(), listenContext.workerPool(), listenContext.classLoader());
-    }
-    String host = address.isInetSocket() ? address.host() : "localhost";
-    int port = address.port();
-    List<HttpVersion> applicationProtocols = options.getAlpnVersions();
-    sslHelper.setApplicationProtocols(applicationProtocols
-      .stream()
-      .map(HttpVersion::alpnName)
-      .collect(Collectors.toList()));
-
-    String serverOrigin = (options.isSsl() ? "https" : "http") + "://" + host + ":" + port;
-
-    HttpServerConnectionHandler hello = new HttpServerConnectionHandler(this, requestStream.handler, invalidRequestHandler, wsStream.handler, connectionHandler, exceptionHandler == null ? DEFAULT_EXCEPTION_HANDLER : exceptionHandler);
-    Supplier<ContextInternal> streamContextSupplier = listenContext::duplicate;
-    Handler<Channel> channelHandler = childHandler(connContext, streamContextSupplier, hello, exceptionHandler, address, serverOrigin);
-    io.netty.util.concurrent.Future<Channel> bindFuture = listen(address, listenContext, channelHandler);
-
-    Promise<HttpServer> promise = listenContext.promise();
-    bindFuture.addListener(res -> {
-      if (res.isSuccess()) {
-        promise.complete(this);
-      } else {
-        promise.fail(res.cause());
-      }
-    });
-    return promise.future();
+    return bind(address).map(this);
   }
 
   @Override
@@ -282,10 +269,6 @@ public class HttpServerImpl extends TCPServerBase implements HttpServer, Closeab
 
   public boolean isClosed() {
     return !isListening();
-  }
-
-  public SSLHelper getSslHelper() {
-    return sslHelper;
   }
 
   boolean requestAccept() {
