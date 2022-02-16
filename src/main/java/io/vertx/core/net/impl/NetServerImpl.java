@@ -47,7 +47,6 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
 
   private final NetSocketStream connectStream = new NetSocketStream();
   private long demand = Long.MAX_VALUE;
-  private Handler<NetSocket> registeredHandler;
   private Handler<NetSocket> handler;
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
@@ -104,22 +103,6 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     return this;
   }
 
-  protected void initChannel(ChannelPipeline pipeline) {
-	  if (options.getLogActivity()) {
-      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
-    }
-    if (sslHelper.isSSL()) {
-      // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
-      pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
-    }
-    int idleTimeout = options.getIdleTimeout();
-    int readIdleTimeout = options.getReadIdleTimeout();
-    int writeIdleTimeout = options.getWriteIdleTimeout();
-    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
-      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
-    }
-  }
-
   @Override
   protected TCPMetrics<?> createMetrics(SocketAddress localAddress) {
     VertxMetrics vertxMetrics = vertx.metricsSPI();
@@ -158,26 +141,16 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   }
 
   @Override
+  protected Handler<Channel> childHandler(ContextInternal context, SocketAddress socketAddress, SSLHelper sslHelper) {
+    return new NetServerWorker(context, sslHelper, handler, exceptionHandler);
+  }
+
+  @Override
   public synchronized Future<NetServer> listen(SocketAddress localAddress) {
     if (handler == null) {
       throw new IllegalStateException("Set connect handler first");
     }
-
-    ContextInternal listenContext = vertx.getOrCreateContext();
-    registeredHandler = handler;
-
-    io.netty.util.concurrent.Future<Channel> bindFuture = listen(localAddress, listenContext, new NetServerWorker(listenContext, handler, exceptionHandler));
-
-    // just add it to the future so it gets notified once the bind is complete
-    Promise<NetServer> promise = listenContext.promise();
-    bindFuture.addListener(res -> {
-      if (res.isSuccess()) {
-        promise.complete(this);
-      } else {
-        promise.fail(res.cause());
-      }
-    });
-    return promise.future();
+    return bind(localAddress).map(this);
   }
 
   @Override
@@ -234,11 +207,13 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
   private class NetServerWorker implements Handler<Channel> {
 
     private final ContextInternal context;
+    private SSLHelper sslHelper;
     private final Handler<NetSocket> connectionHandler;
     private final Handler<Throwable> exceptionHandler;
 
-    NetServerWorker(ContextInternal context, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler) {
+    NetServerWorker(ContextInternal context, SSLHelper sslHelper, Handler<NetSocket> connectionHandler, Handler<Throwable> exceptionHandler) {
       this.context = context;
+      this.sslHelper = sslHelper;
       this.connectionHandler = connectionHandler;
       this.exceptionHandler = exceptionHandler;
     }
@@ -306,7 +281,7 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
     }
 
     private void connected(Channel ch) {
-      NetServerImpl.this.initChannel(ch.pipeline());
+      NetServerImpl.this.initChannel(ch.pipeline(), sslHelper.isSSL());
       TCPMetrics<?> metrics = getMetrics();
       VertxHandler<NetSocketImpl> handler = VertxHandler.create(ctx -> new NetSocketImpl(context, ctx, sslHelper, metrics));
       handler.removeHandler(NetSocketImpl::unregisterEventBusHandler);
@@ -318,6 +293,22 @@ public class NetServerImpl extends TCPServerBase implements Closeable, MetricsPr
         context.emit(conn, connectionHandler::handle);
       });
       ch.pipeline().addLast("handler", handler);
+    }
+  }
+
+  protected void initChannel(ChannelPipeline pipeline, boolean ssl) {
+    if (options.getLogActivity()) {
+      pipeline.addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
+    }
+    if (ssl) {
+      // only add ChunkedWriteHandler when SSL is enabled otherwise it is not needed as FileRegion is used.
+      pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());       // For large file / sendfile support
+    }
+    int idleTimeout = options.getIdleTimeout();
+    int readIdleTimeout = options.getReadIdleTimeout();
+    int writeIdleTimeout = options.getWriteIdleTimeout();
+    if (idleTimeout > 0 || readIdleTimeout > 0 || writeIdleTimeout > 0) {
+      pipeline.addLast("idle", new IdleStateHandler(readIdleTimeout, writeIdleTimeout, idleTimeout, options.getIdleTimeoutUnit()));
     }
   }
 

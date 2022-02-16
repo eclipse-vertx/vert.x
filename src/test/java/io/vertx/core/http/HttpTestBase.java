@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.net.ProxyType;
 import io.vertx.core.net.SocketAddress;
@@ -21,7 +22,11 @@ import io.vertx.test.proxy.SocksProxy;
 import io.vertx.test.proxy.TestProxyBase;
 import io.vertx.test.core.VertxTestBase;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -106,16 +111,32 @@ public class HttpTestBase extends VertxTestBase {
   }
 
   protected void startServer(SocketAddress bindAddress, Context context, HttpServer server) throws Exception {
-    CountDownLatch latch = new CountDownLatch(1);
+    CompletableFuture<Void> latch = new CompletableFuture<>();
     context.runOnContext(v -> {
-      Handler<AsyncResult<HttpServer>> onListen = onSuccess(s -> latch.countDown());
+      Future<HttpServer> fut;
       if (bindAddress != null) {
-        server.listen(bindAddress, onListen);
+        fut = server.listen(bindAddress);
       } else {
-        server.listen(onListen);
+        fut = server.listen();
       }
+      fut.onComplete(ar -> {
+        if (ar.succeeded()) {
+          latch.complete(null);
+        } else {
+          latch.completeExceptionally(ar.cause());
+        }
+      });
     });
-    awaitLatch(latch);
+    try {
+      latch.get(20, TimeUnit.SECONDS);
+    } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof Exception) {
+        throw (Exception) cause;
+      } else {
+        throw e;
+      }
+    }
   }
 
   protected void startProxy(String username, ProxyType proxyType) throws Exception {

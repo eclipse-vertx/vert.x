@@ -11,16 +11,27 @@
 
 package io.vertx.core.http;
 
+import io.netty.buffer.ByteBufUtil;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.Promise;
+import io.vertx.core.VertxOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.tls.Cert;
 import io.vertx.test.tls.Trust;
+import org.junit.Assume;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -185,5 +196,55 @@ public class Http1xTLSTest extends HttpTLSTest {
       }));
     }));
     await();
+  }
+
+  @Test
+  public void testSharedServer() throws Exception {
+    int num = VertxOptions.DEFAULT_EVENT_LOOP_POOL_SIZE;
+    Assume.assumeTrue(num > 1);
+    List<String> expected = Arrays.asList("chunk-1", "chunk-2", "chunk-3");
+    client = vertx.createHttpClient(new HttpClientOptions().setMaxPoolSize(num).setSsl(true).setTrustAll(true));
+    AtomicInteger connCount = new AtomicInteger();
+    List<String> sessionIds = Collections.synchronizedList(new ArrayList<>());
+    client.connectionHandler(conn -> {
+      sessionIds.add(ByteBufUtil.hexDump(conn.sslSession().getId()));
+      connCount.incrementAndGet();
+    });
+    CountDownLatch listenLatch = new CountDownLatch(1);
+    vertx.deployVerticle(() -> new AbstractVerticle() {
+      HttpServer server;
+      @Override
+      public void start(Promise<Void> startPromise) {
+        server = vertx.createHttpServer(new HttpServerOptions()
+          .setSsl(true)
+          .setKeyStoreOptions(Cert.SERVER_JKS.get())
+          .setHost(DEFAULT_HTTPS_HOST)
+          .setPort(DEFAULT_HTTPS_PORT)
+        ).requestHandler(req -> {
+          HttpServerResponse resp = req.response().setChunked(true);
+          expected.forEach(resp::write);
+          resp.end();
+        });
+        server
+          .listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST)
+          .<Void>mapEmpty()
+          .onComplete(startPromise);
+      }
+    }, new DeploymentOptions().setInstances(num), onSuccess(v -> listenLatch.countDown()));
+    awaitLatch(listenLatch);
+    CountDownLatch connectionLatch = new CountDownLatch(num);
+    for (int i = 0;i < num;i++) {
+      client.request(HttpMethod.GET, DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, DEFAULT_TEST_URI)
+        .onComplete(onSuccess(request -> {
+          connectionLatch.countDown();
+        }));
+      if (i == 0) {
+        // Wait until the first connection is established to ensure other connections can reuse the session id
+        waitUntil(() -> connectionLatch.getCount() == num - 1);
+      }
+    }
+    awaitLatch(connectionLatch);
+    assertEquals(num, sessionIds.size());
+    assertEquals(1, new HashSet<>(sessionIds).size());
   }
 }
