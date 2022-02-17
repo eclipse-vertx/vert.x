@@ -315,11 +315,12 @@ id: 0x359e3df6, L:/127.0.0.1:8080 - R:/127.0.0.1:65351] READ: 78B
 
 By default, binary data is logged in hex format.
 
-You can reduce the data format verbosity to only print the buffer length instead of the entire data
+You can reduce the data format verbosity to only print the buffer length instead of the entire data by setting the log data fomat.
+
 
 [source,$lang]
 ----
-{@link examples.NetExamples#exampleNetworkActivityLoggingOnServer}
+{@link examples.NetExamples#exampleNetworkActivityLoggingFormat}
 ----
 
 Here is the same output with simple buffer format
