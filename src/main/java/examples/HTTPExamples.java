@@ -919,7 +919,7 @@ public class HTTPExamples {
         if (ar.succeeded()) {
           // Terminate the handshake with the status code 101 (Switching Protocol)
           // Reject the handshake with 401 (Unauthorized)
-          promise.complete(ar.succeeded() ? 101 : 401);
+          promise.complete(ar.result() ? 101 : 401);
         } else {
           // Will send a 500 error
           promise.fail(ar.cause());
