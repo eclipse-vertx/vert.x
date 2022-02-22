@@ -654,6 +654,48 @@ public class ConnectionPoolTest extends VertxTestBase {
   }
 
   @Test
+  public void testConnectSuccessAfterClose() {
+    testConnectResultAfterClose(true);
+  }
+
+  @Test
+  public void testConnectFailureAfterClose() {
+    testConnectResultAfterClose(false);
+  }
+
+  private void testConnectResultAfterClose(boolean success) {
+    ConnectionManager mgr = new ConnectionManager();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 });
+    EventLoopContext ctx = vertx.createEventLoopContext();
+    AtomicInteger acquired = new AtomicInteger();
+    pool.acquire(ctx,0, ar -> {
+      assertEquals(0, acquired.getAndIncrement());
+    });
+    assertEquals(1, pool.size());
+    ConnectionRequest request = mgr.assertRequest();
+    Promise<List<Future<Connection>>> closeResult = Promise.promise();
+    pool.close(closeResult);
+    Throwable cause = new Throwable();
+    Connection expected = new Connection();
+    if (success) {
+      request.connect(expected, 0);
+    } else {
+      request.fail(cause);
+    }
+    assertTrue(closeResult.future().isComplete());
+    List<Future<Connection>> connections = closeResult.future().result();
+    assertEquals(1, connections.size());
+    assertEquals(success, connections.get(0).succeeded());
+    assertEquals(0, pool.size());
+    if (success) {
+      assertEquals(expected, connections.get(0).result());
+    } else {
+      assertEquals(cause, connections.get(0).cause());
+    }
+    waitUntil(() -> acquired.get() == 1);
+  }
+
+  @Test
   public void testCancelQueuedWaiters() throws Exception {
     waitFor(1);
     EventLoopContext context = vertx.createEventLoopContext();

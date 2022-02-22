@@ -366,20 +366,20 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       } else {
         waiter.disposed = true;
       }
-      if (pool.closed) {
-        return new Task() {
-          @Override
-          public void run() {
-            waiter.handler.handle(POOL_CLOSED);
-          }
-        };
+      if (!pool.closed) {
+        pool.remove(removed);
       }
-      pool.remove(removed);
       return new Task() {
         @Override
         public void run() {
           if (waiter != null) {
-            removed.context.emit(Future.failedFuture(cause), waiter.handler);
+            Future<Lease<C>> waiterFailure;
+            if (pool.closed) {
+              waiterFailure = POOL_CLOSED;
+            } else {
+              waiterFailure = Future.failedFuture(cause);
+            }
+            removed.context.emit(waiterFailure, waiter.handler);
           }
           removed.result.fail(cause);
         }
@@ -776,8 +776,10 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
       for (int i = 0;i < pool.size;i++) {
         Slot<C> slot = pool.slots[i];
         pool.slots[i] = null;
-        if (slot.initiator != null) {
+        PoolWaiter<C> waiter = slot.initiator;
+        if (waiter != null) {
           waiters.add(slot.initiator);
+          slot.initiator.disposed = true;
           slot.initiator = null;
         }
         pool.capacity -= slot.capacity;
