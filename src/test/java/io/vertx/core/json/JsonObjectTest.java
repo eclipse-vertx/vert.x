@@ -14,6 +14,7 @@ package io.vertx.core.json;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.test.core.TestUtils;
+import java.time.LocalTime;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 import static org.junit.Assert.*;
 
 /**
@@ -792,6 +794,8 @@ public class JsonObjectTest {
     jsonObject = new JsonObject(map);
     arr = (JsonArray)jsonObject.getValue("foo");
     assertEquals("blah", arr.getString(0));
+    jsonObject.put("foo", LocalTime.NOON);
+    assertEquals("12:00:00", jsonObject.getValue("foo"));
   }
 
   @Test
@@ -834,6 +838,9 @@ public class JsonObjectTest {
     assertNull(jsonObject.getValue("foo", null));
     assertEquals("blah", jsonObject.getValue("absent", "blah"));
     assertNull(jsonObject.getValue("absent", null));
+    jsonObject.put("foo", LocalTime.NOON);
+    assertEquals("12:00:00", jsonObject.getValue("foo", "blah"));
+    assertEquals("12:00:00", jsonObject.getValue("foo", null));
   }
 
   @Test
@@ -1930,6 +1937,138 @@ public class JsonObjectTest {
     for (Map.Entry<String, ?> o : rawData) {
       assertTrue(o.getValue() instanceof TimeUnit);
     }
+  }
+
+  @Test
+  public void testGetLocalTime() {
+    LocalTime now = LocalTime.now();
+    jsonObject.put("foo", now);
+    assertEquals(now, jsonObject.getLocalTime("foo"));
+    assertEquals(now.toString(), jsonObject.getValue("foo"));
+
+    // Can also get as string:
+    String val = jsonObject.getString("foo");
+    assertNotNull(val);
+    LocalTime retrieved = LocalTime.from(ISO_LOCAL_TIME.parse(val));
+    assertEquals(now, retrieved);
+
+    jsonObject.put("foo", 123);
+    try {
+      jsonObject.getLocalTime("foo");
+      fail();
+    } catch (ClassCastException e) {
+      // Ok
+    }
+
+    jsonObject.putNull("foo");
+    assertNull(jsonObject.getLocalTime("foo"));
+    assertNull(jsonObject.getValue("foo"));
+    assertNull(jsonObject.getLocalTime("absent"));
+    assertNull(jsonObject.getValue("absent"));
+    try {
+      jsonObject.getLocalTime(null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getLocalTime(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testGetLocalTimeDefault() {
+    LocalTime now = LocalTime.now();
+    LocalTime later = now.plus(1, ChronoUnit.HOURS);
+    jsonObject.put("foo", now);
+    assertEquals(now, jsonObject.getLocalTime("foo", later));
+    assertEquals(now.toString(), jsonObject.getValue("foo", later));
+    assertEquals(now, jsonObject.getLocalTime("foo", null));
+    assertEquals(now.toString(), jsonObject.getValue("foo", null));
+
+    jsonObject.put("foo", 123);
+    try {
+      jsonObject.getLocalTime("foo", later);
+      fail();
+    } catch (ClassCastException e) {
+      // Ok
+    }
+
+    jsonObject.putNull("foo");
+    assertNull(jsonObject.getLocalTime("foo", later));
+    assertEquals(later, jsonObject.getLocalTime("absent", later));
+    assertEquals(later, jsonObject.getValue("absent", later));
+    assertNull(jsonObject.getLocalTime("foo", null));
+    assertNull(jsonObject.getValue("foo", null));
+    assertNull(jsonObject.getLocalTime("absent", null));
+    assertNull(jsonObject.getValue("absent", null));
+    try {
+      jsonObject.getLocalTime(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testPutLocalTime() {
+    LocalTime time1 = LocalTime.now();
+    LocalTime time2 = time1.plus(1, ChronoUnit.MINUTES);
+    LocalTime time3 = time2.plus(1, ChronoUnit.MINUTES);
+
+    assertSame(jsonObject, jsonObject.put("foo", time1));
+    assertEquals(time1, jsonObject.getLocalTime("foo"));
+    assertEquals(time1.toString(), jsonObject.getValue("foo"));
+
+    jsonObject.put("fum", time2);
+    assertEquals(time2, jsonObject.getLocalTime("fum"));
+    assertEquals(time2.toString(), jsonObject.getValue("fum"));
+    assertEquals(time1, jsonObject.getLocalTime("foo"));
+    assertEquals(time1.toString(), jsonObject.getValue("foo"));
+
+    jsonObject.put("foo", time3);
+    assertEquals(time3, jsonObject.getLocalTime("foo"));
+    assertEquals(time3.toString(), jsonObject.getValue("foo"));
+
+    jsonObject.put("foo", null);
+    assertTrue(jsonObject.containsKey("foo"));
+
+    try {
+      jsonObject.put(null, time1);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testPutLocalTimeAsObject() {
+    Object localTime = LocalTime.now();
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.put("localTime", localTime);
+    // assert data is stored as String
+    assertTrue(jsonObject.getValue("localTime") instanceof String);
   }
 
 }

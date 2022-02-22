@@ -19,6 +19,7 @@ import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import java.time.LocalTime;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -26,6 +27,7 @@ import java.util.*;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -83,6 +85,21 @@ public class JacksonDatabindTest extends VertxTestBase {
   }
 
   @Test
+  public void testLocalTimeDecoding() {
+    Pojo original = new Pojo();
+    original.localTime = LocalTime.from(ISO_LOCAL_TIME.parse("07:25:38.397"));
+    Pojo decoded = Json.decodeValue("{\"localTime\":\"07:25:38.397\"}", Pojo.class);
+    assertEquals(original.localTime, decoded.localTime);
+  }
+
+  @Test
+  public void testNullLocalTimeDecoding() {
+    Pojo original = new Pojo();
+    Pojo decoded = Json.decodeValue("{\"localTime\":null}", Pojo.class);
+    assertEquals(original.localTime, decoded.localTime);
+  }
+
+  @Test
   public void testBytesDecoding() {
     Pojo original = new Pojo();
     original.bytes = TestUtils.randomByteArray(12);
@@ -104,5 +121,7 @@ public class JacksonDatabindTest extends VertxTestBase {
     Instant instant;
     @JsonProperty
     byte[] bytes;
+    @JsonProperty
+    LocalTime localTime;
   }
 }

@@ -13,6 +13,8 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import io.vertx.core.buffer.Buffer;
+import java.time.LocalTime;
+import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -87,6 +89,7 @@ public class JsonPOJOMapperTest {
 
   public static class MyType2 {
     public Instant isodate = Instant.now();
+    public LocalTime localTime = LocalTime.NOON;
     public byte[] base64 = "Hello World!".getBytes();
   }
 
@@ -145,7 +148,7 @@ public class JsonPOJOMapperTest {
       new JsonObject().put(key, "1").mapTo(MyType2.class);
       fail();
     } catch (IllegalArgumentException e) {
-      assertThat(e.getCause(), is(instanceOf(InvalidFormatException.class)));
+      MatcherAssert.assertThat(e.getCause(), instanceOf(InvalidFormatException.class));
       InvalidFormatException ife = (InvalidFormatException) e.getCause();
       assertEquals("1", ife.getValue());
     }
@@ -156,4 +159,24 @@ public class JsonPOJOMapperTest {
     assertNull(JsonObject.mapFrom(null));
   }
 
+  @Test
+  public void testJavaTimesToObjectMapping() {
+    JavaTimeTypes j = new JsonObject().put("localTime", LocalTime.NOON).mapTo(JavaTimeTypes.class);
+    assertEquals(LocalTime.NOON, j.localTime);
+  }
+
+  @Test
+  public void testJavaTimesFromObjectMapping() {
+    JsonObject json = JsonObject.mapFrom(new JavaTimeTypes());
+    assertEquals(LocalTime.NOON, json.getLocalTime("localTime"));
+  }
+
+  @Test
+  public void testInvalidLocalTime() {
+    testInvalidValueToPOJO("localTime");
+  }
+
+  public static class JavaTimeTypes {
+    public LocalTime localTime = LocalTime.NOON;
+  }
 }

@@ -14,6 +14,7 @@ package io.vertx.core.json;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.test.core.TestUtils;
+import java.time.LocalTime;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 import static org.junit.Assert.*;
 
 /**
@@ -573,6 +575,17 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testAddLocalTime() {
+    LocalTime now = LocalTime.now();
+    assertSame(jsonArray, jsonArray.add(now));
+    assertEquals(now, jsonArray.getLocalTime(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    jsonArray.add(null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
+  }
+
+  @Test
   public void testAddObject() {
     jsonArray.add((Object)"bar");
     jsonArray.add((Object)(Integer.valueOf(123)));
@@ -588,6 +601,8 @@ public class JsonArrayTest {
     JsonArray arr = new JsonArray().add("quux");
     jsonArray.add((Object)obj);
     jsonArray.add((Object)arr);
+    LocalTime localTime = LocalTime.now();
+    jsonArray.add(localTime);
     assertEquals("bar", jsonArray.getString(0));
     assertEquals(Integer.valueOf(123), jsonArray.getInteger(1));
     assertEquals(Long.valueOf(123l), jsonArray.getLong(2));
@@ -600,6 +615,8 @@ public class JsonArrayTest {
     assertEquals(now.toString(), jsonArray.getValue(7));
     assertEquals(obj, jsonArray.getJsonObject(8));
     assertEquals(arr, jsonArray.getJsonArray(9));
+    assertEquals(localTime, jsonArray.getLocalTime(10));
+    assertEquals(localTime.toString(), jsonArray.getValue(10));
     try {
       jsonArray.add(new SomeClass());
       // OK (we can put anything, yet it should fail to encode if a codec is missing)
@@ -1216,6 +1233,21 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testSetLocalTime() {
+    LocalTime now = LocalTime.now();
+    try {
+      jsonArray.set(0, now);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, now));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
   public void testSetObject() {
     jsonArray.add("bar");
     try {
@@ -1407,4 +1439,49 @@ public class JsonArrayTest {
       assertTrue(o instanceof TimeUnit);
     }
   }
+
+  @Test
+  public void testGetLocalTime() {
+    LocalTime now = LocalTime.now();
+    jsonArray.add(now);
+    assertEquals(now, jsonArray.getLocalTime(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    assertEquals(now, LocalTime.from(ISO_LOCAL_TIME.parse(jsonArray.getString(0))));
+    try {
+      jsonArray.getLocalTime(-1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getValue(-1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getLocalTime(1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getValue(1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add(123);
+    try {
+      jsonArray.getLocalTime(1);
+      fail();
+    } catch (ClassCastException e) {
+      // OK
+    }
+    jsonArray.addNull();
+    assertNull(jsonArray.getLocalTime(2));
+    assertNull(jsonArray.getValue(2));
+  }
+
+
 }
