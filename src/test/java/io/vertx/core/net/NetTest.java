@@ -27,6 +27,7 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.ConcurrentHashSet;
+import io.vertx.core.impl.Utils;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -1170,6 +1171,8 @@ public class NetTest extends VertxTestBase {
 
   @Test
   public void testReconnectAttemptsNotEnough() {
+    // This test does not pass reliably in CI for Windows
+    Assume.assumeFalse(Utils.isWindows());
     client.close();
     client = vertx.createNetClient(new NetClientOptions().setReconnectAttempts(100).setReconnectInterval(10));
 
