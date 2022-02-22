@@ -19,6 +19,7 @@ import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import org.junit.Test;
 
@@ -27,6 +28,7 @@ import java.util.*;
 
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 
 /**
@@ -100,6 +102,21 @@ public class JacksonDatabindTest extends VertxTestBase {
   }
 
   @Test
+  public void testLocalDateDecoding() {
+    Pojo original = new Pojo();
+    original.localDate = LocalDate.from(ISO_LOCAL_DATE.parse("2022-02-22"));
+    Pojo decoded = Json.decodeValue("{\"localDate\":\"2022-02-22\"}", Pojo.class);
+    assertEquals(original.localDate, decoded.localDate);
+  }
+
+  @Test
+  public void testNullLocalDateDecoding() {
+    Pojo original = new Pojo();
+    Pojo decoded = Json.decodeValue("{\"localDate\":null}", Pojo.class);
+    assertEquals(original.localDate, decoded.localDate);
+  }
+
+  @Test
   public void testBytesDecoding() {
     Pojo original = new Pojo();
     original.bytes = TestUtils.randomByteArray(12);
@@ -123,5 +140,7 @@ public class JacksonDatabindTest extends VertxTestBase {
     byte[] bytes;
     @JsonProperty
     LocalTime localTime;
+    @JsonProperty
+    LocalDate localDate;
   }
 }

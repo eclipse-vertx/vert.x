@@ -13,6 +13,7 @@ package io.vertx.core.json;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import io.vertx.core.buffer.Buffer;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import org.hamcrest.MatcherAssert;
 import org.junit.Test;
@@ -24,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 /**
@@ -143,17 +143,6 @@ public class JsonPOJOMapperTest {
     testInvalidValueToPOJO("base64");
   }
 
-  private void testInvalidValueToPOJO(String key) {
-    try {
-      new JsonObject().put(key, "1").mapTo(MyType2.class);
-      fail();
-    } catch (IllegalArgumentException e) {
-      MatcherAssert.assertThat(e.getCause(), instanceOf(InvalidFormatException.class));
-      InvalidFormatException ife = (InvalidFormatException) e.getCause();
-      assertEquals("1", ife.getValue());
-    }
-  }
-
   @Test
   public void testNullPOJO() {
     assertNull(JsonObject.mapFrom(null));
@@ -161,8 +150,12 @@ public class JsonPOJOMapperTest {
 
   @Test
   public void testJavaTimesToObjectMapping() {
-    JavaTimeTypes j = new JsonObject().put("localTime", LocalTime.NOON).mapTo(JavaTimeTypes.class);
+    JavaTimeTypes j = new JsonObject()
+      .put("localTime", LocalTime.NOON)
+      .put("localDate", LocalDate.parse("2022-02-22"))
+      .mapTo(JavaTimeTypes.class);
     assertEquals(LocalTime.NOON, j.localTime);
+    assertEquals(LocalDate.parse("2022-02-22"), j.localDate);
   }
 
   @Test
@@ -172,11 +165,28 @@ public class JsonPOJOMapperTest {
   }
 
   @Test
-  public void testInvalidLocalTime() {
-    testInvalidValueToPOJO("localTime");
+  public void testInvalidJavaTimeTypes() {
+    testInvalidValueToPOJO("localTime", JavaTimeTypes.class);
+    testInvalidValueToPOJO("localDate", JavaTimeTypes.class);
   }
 
   public static class JavaTimeTypes {
     public LocalTime localTime = LocalTime.NOON;
+    public LocalDate localDate = LocalDate.parse("2022-02-22");
+  }
+
+  private void testInvalidValueToPOJO(String key) {
+    testInvalidValueToPOJO(key, MyType2.class);
+  }
+
+  private void testInvalidValueToPOJO(String key, Class<?> clazz) {
+    try {
+      new JsonObject().put(key, "1").mapTo(clazz);
+      fail();
+    } catch (IllegalArgumentException e) {
+      MatcherAssert.assertThat(e.getCause(), instanceOf(InvalidFormatException.class));
+      InvalidFormatException ife = (InvalidFormatException) e.getCause();
+      assertEquals("1", ife.getValue());
+    }
   }
 }
