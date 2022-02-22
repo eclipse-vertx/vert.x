@@ -149,14 +149,10 @@ public abstract class ConnectionBase {
    */
   final void read(Object msg) {
     read = true;
-    if (!closed) {
-      if (METRICS_ENABLED) {
-        reportBytesRead(msg);
-      }
-      handleMessage(msg);
-    } else {
-      ReferenceCountUtil.release(msg);
+    if (METRICS_ENABLED) {
+      reportBytesRead(msg);
     }
+    handleMessage(msg);
   }
 
   /**

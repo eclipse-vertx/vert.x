@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.http.HttpMethod;
@@ -1069,6 +1070,29 @@ public class NetTest extends VertxTestBase {
     } finally {
       servers.forEach(NetServer::close);
     }
+  }
+
+  @Test
+  public void testReceiveMessageAfterExplicitClose() throws Exception {
+    server.connectHandler(so -> {
+      so.write("Hello World");
+    });
+    startServer();
+    client.connect(testAddress, onSuccess(so -> {
+      NetSocketInternal soi = (NetSocketInternal) so;
+      soi.channelHandlerContext().pipeline().addFirst(new ChannelInboundHandlerAdapter() {
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+          so.close();
+          super.channelRead(ctx, msg);
+        }
+      });
+      so.handler(buff -> {
+        assertEquals("Hello World", buff.toString());
+        testComplete();
+      });
+    }));
+    await();
   }
 
   @Test
