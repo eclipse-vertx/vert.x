@@ -16,6 +16,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 
 /**
  * Implementation utilities (details) affecting the way JSON objects are wrapped.
@@ -74,6 +76,8 @@ public final class JsonUtil {
       val = new JsonArray((List) val);
     } else if (val instanceof Instant) {
       val = ISO_INSTANT.format((Instant) val);
+    } else if (val instanceof LocalTime) {
+      val = ISO_LOCAL_TIME.format((LocalTime) val);
     } else if (val instanceof byte[]) {
       val = BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Buffer) {
@@ -115,6 +119,8 @@ public final class JsonUtil {
     } else if (val instanceof byte[]) {
       // OK
     } else if (val instanceof Instant) {
+      // OK
+    } else if (val instanceof LocalTime) {
       // OK
     } else if (val instanceof Enum) {
       // OK

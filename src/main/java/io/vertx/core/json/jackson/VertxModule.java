@@ -15,16 +15,18 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
+import java.time.LocalTime;
 
 /**
- * A Jackson {@code Module} to provide following VertX Serializers and Deserializers
- * that can be reused for building custom mappers :
+ * A Jackson {@code Module} to provide following Vert.x Serializers and Deserializers
+ * that can be reused for building custom mappers:
  * <ul>
  *   <li>{@code JsonObjectSerializer} of {@code JsonObject} </li>
  *   <li>{@code JsonArraySerializer} of {@code JsonArray}</li>
  *   <li>{@code InstantSerializer} and {@code InstantDeserializer} of {@code Instant}</li>
- *   <li>{@code ByteArraySerializer} and {@code ByteArraySerializer} of {@code byte[]}</li>
- *   <li>{@code BufferSerializer} and {@code BufferSerializer} of {@code Buffer}</li>
+ *   <li>{@code LocalTimeSerializer} and {@code LocalTimeDeserializer} of {@code LocalTime}</li>
+ *   <li>{@code ByteArraySerializer} and {@code ByteArrayDeserializer} of {@code byte[]}</li>
+ *   <li>{@code BufferSerializer} and {@code BufferDeserializer} of {@code Buffer}</li>
  * </ul>
  */
 public class VertxModule extends SimpleModule {
@@ -33,9 +35,11 @@ public class VertxModule extends SimpleModule {
     // custom types
     addSerializer(JsonObject.class, new JsonObjectSerializer());
     addSerializer(JsonArray.class, new JsonArraySerializer());
-    // he have 2 extensions: RFC-7493
+    // Extensions to RFC-7493
     addSerializer(Instant.class, new InstantSerializer());
     addDeserializer(Instant.class, new InstantDeserializer());
+    addSerializer(LocalTime.class, new LocalTimeSerializer());
+    addDeserializer(LocalTime.class, new LocalTimeDeserializer());
     addSerializer(byte[].class, new ByteArraySerializer());
     addDeserializer(byte[].class, new ByteArrayDeserializer());
     addSerializer(Buffer.class, new BufferSerializer());

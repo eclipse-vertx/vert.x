@@ -16,7 +16,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.buffer.ByteBufInputStream;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.DecodeException;
@@ -26,7 +25,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -77,6 +75,7 @@ public class DatabindCodec extends JacksonCodec {
     return value;
   }
 
+  @Override
   public <T> T fromValue(Object json, TypeReference<T> type) {
     T value = DatabindCodec.mapper.convertValue(json, type);
     if (type.getType() == Object.class) {
@@ -90,6 +89,7 @@ public class DatabindCodec extends JacksonCodec {
     return fromParser(createParser(str), clazz);
   }
 
+  @Override
   public <T> T fromString(String str, TypeReference<T> typeRef) throws DecodeException {
     return fromParser(createParser(str), typeRef);
   }
@@ -99,6 +99,7 @@ public class DatabindCodec extends JacksonCodec {
     return fromParser(createParser(buf), clazz);
   }
 
+  @Override
   public <T> T fromBuffer(Buffer buf, TypeReference<T> typeRef) throws DecodeException {
     return fromParser(createParser(buf), typeRef);
   }
