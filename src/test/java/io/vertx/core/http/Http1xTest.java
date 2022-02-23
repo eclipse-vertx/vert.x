@@ -5292,8 +5292,9 @@ public class Http1xTest extends HttpTest {
     for (int i = 0;i < size * 2;i++) {
       futures.add(client
         .request(requestOptions)
-        .compose(HttpClientRequest::send)
-        .compose(HttpClientResponse::body));
+        .compose(request -> request
+          .send()
+          .compose(HttpClientResponse::body)));
     }
     CompositeFuture.all(futures).onComplete(onSuccess(v -> {
       assertEquals(maxPoolSize, eventLoops.size());
