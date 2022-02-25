@@ -11,10 +11,7 @@
 
 package io.vertx.core.impl.launcher.commands;
 
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
+import io.vertx.core.*;
 import io.vertx.core.cli.CLIException;
 import io.vertx.core.cli.CommandLine;
 import io.vertx.core.cli.annotations.*;
@@ -36,7 +33,7 @@ import java.util.stream.Collectors;
  */
 @Name("run")
 @Summary("Runs a verticle called <main-verticle> in its own instance of vert.x.")
-public class RunCommand extends BareCommand {
+public class RunCommand extends BareCommand implements Closeable {
 
   protected DeploymentOptions deploymentOptions;
 
@@ -253,14 +250,7 @@ public class RunCommand extends BareCommand {
       }
 
       if (vertx instanceof VertxInternal) {
-        ((VertxInternal) vertx).addCloseHook(completionHandler -> {
-          try {
-            beforeStoppingVertx(vertx);
-            completionHandler.handle(Future.succeededFuture());
-          } catch (Exception e) {
-            completionHandler.handle(Future.failedFuture(e));
-          }
-        });
+        ((VertxInternal) vertx).addCloseHook(this);
       }
 
       deploymentOptions = new DeploymentOptions();
@@ -449,6 +439,16 @@ public class RunCommand extends BareCommand {
     final Object main = executionContext.main();
     if (main instanceof VertxLifecycleHooks) {
       ((VertxLifecycleHooks) main).afterStoppingVertx();
+    }
+  }
+
+  @Override
+  public void close(Promise<Void> completion) {
+    try {
+      beforeStoppingVertx(vertx);
+      completion.complete();
+    } catch (Exception e) {
+      completion.fail(e);
     }
   }
 }
