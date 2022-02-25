@@ -11,14 +11,7 @@
 
 package io.vertx.core.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Context;
-import io.vertx.core.DeploymentOptions;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Promise;
-import io.vertx.core.ServiceHelper;
-import io.vertx.core.Verticle;
+import io.vertx.core.*;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
@@ -30,26 +23,16 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  *
@@ -62,7 +45,7 @@ public class DeploymentManager {
   private final VertxInternal vertx;
   private final Map<String, Deployment> deployments = new ConcurrentHashMap<>();
   private final Map<String, IsolatingClassLoader> classloaders = new HashMap<>();
-  private final Map<String, List<VerticleFactory>> verticleFactories = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, List<VerticleFactory>> verticleFactories = new ConcurrentHashMap<>();
   private final List<VerticleFactory> defaultFactories = new ArrayList<>();
 
   public DeploymentManager(VertxInternal vertx) {
@@ -307,17 +290,17 @@ public class DeploymentManager {
     if (prefix == null) {
       throw new IllegalArgumentException("factory.prefix() cannot be null");
     }
-    List<VerticleFactory> facts = verticleFactories.get(prefix);
-    if (facts == null) {
-      facts = new ArrayList<>();
-      verticleFactories.put(prefix, facts);
-    }
-    if (facts.contains(factory)) {
-      throw new IllegalArgumentException("Factory already registered");
-    }
-    facts.add(factory);
-    // Sort list in ascending order
-    facts.sort((fact1, fact2) -> fact1.order() - fact2.order());
+    verticleFactories.compute(prefix, (p, facts) -> {
+      if (facts == null) {
+        return Collections.singletonList(factory);
+      }
+      if (facts.contains(factory)) {
+        throw new IllegalArgumentException("Factory already registered");
+      }
+      return Stream.concat(facts.stream(), Stream.of(factory))
+        .sorted(Comparator.comparingInt(VerticleFactory::order))
+        .collect(toList());
+    });
     factory.init(vertx);
   }
 
@@ -326,19 +309,19 @@ public class DeploymentManager {
     if (prefix == null) {
       throw new IllegalArgumentException("factory.prefix() cannot be null");
     }
-    List<VerticleFactory> facts = verticleFactories.get(prefix);
-    boolean removed = false;
-    if (facts != null) {
-      if (facts.remove(factory)) {
-        removed = true;
+    verticleFactories.compute(prefix, (p, facts) -> {
+      if (facts != null) {
+        ArrayList<VerticleFactory> candidate = new ArrayList<>(facts);
+        if (candidate.remove(factory)) {
+          if (candidate.isEmpty()) {
+            return null;
+          }
+          candidate.trimToSize();
+          return candidate;
+        }
       }
-      if (facts.isEmpty()) {
-        verticleFactories.remove(prefix);
-      }
-    }
-    if (!removed) {
       throw new IllegalArgumentException("factory isn't registered");
-    }
+    });
   }
 
   public Set<VerticleFactory> verticleFactories() {
