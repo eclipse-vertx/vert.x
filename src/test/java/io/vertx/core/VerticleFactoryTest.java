@@ -11,16 +11,19 @@
 
 package io.vertx.core;
 
-import io.vertx.core.*;
 import io.vertx.core.impl.Deployment;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.VerticleFactory;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -510,6 +513,56 @@ public class VerticleFactoryTest extends VertxTestBase {
     await();
   }
 
+  @Test
+  @Repeat(times = 10)
+  public void testConcurrentRegistrations() throws Exception {
+    int count = 100;
+    List<CompletableFuture<Void>> registrations = new ArrayList<>(count);
+    CyclicBarrier barrier = new CyclicBarrier(count);
+    ExecutorService executor = Executors.newCachedThreadPool();
+    for (int i = 0; i < count; i++) {
+      TestVerticleFactory factory = new TestVerticleFactory("foo");
+      registrations.add(CompletableFuture.runAsync(() -> {
+        try {
+          barrier.await();
+          vertx.registerVerticleFactory(factory);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException(e);
+        } catch (BrokenBarrierException e) {
+          throw new RuntimeException(e);
+        }
+      }, executor));
+    }
+    CompletableFuture.allOf(registrations.toArray(new CompletableFuture<?>[0])).get();
+    assertEquals(count, vertx.verticleFactories().size());
+  }
+
+  @Test
+  @Repeat(times = 10)
+  public void testConcurrentUnregistrations() throws Exception {
+    int count = 100;
+    List<CompletableFuture<Void>> unregistrations = new ArrayList<>(count);
+    CyclicBarrier barrier = new CyclicBarrier(count);
+    ExecutorService executor = Executors.newCachedThreadPool();
+    for (int i = 0; i < count; i++) {
+      TestVerticleFactory factory = new TestVerticleFactory("foo");
+      vertx.registerVerticleFactory(factory);
+      unregistrations.add(CompletableFuture.runAsync(() -> {
+        try {
+          barrier.await();
+          vertx.unregisterVerticleFactory(factory);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException(e);
+        } catch (BrokenBarrierException e) {
+          throw new RuntimeException(e);
+        }
+      }, executor));
+    }
+    CompletableFuture.allOf(unregistrations.toArray(new CompletableFuture<?>[0])).get();
+    assertTrue(vertx.verticleFactories().isEmpty());
+  }
 
   class TestVerticleFactory implements VerticleFactory {
 
