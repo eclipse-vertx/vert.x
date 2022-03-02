@@ -1045,11 +1045,15 @@ public class FileSystemImpl implements FileSystem {
             } else {
               files = file.listFiles(fnFilter);
             }
-            List<String> ret = new ArrayList<>(files.length);
-            for (File f : files) {
-              ret.add(f.getCanonicalPath());
+            if (null == files || files.length == 0) {
+              return new ArrayList<>(0);
+            } else {
+              List<String> ret = new ArrayList<>(files.length);
+              for (File f : files) {
+                ret.add(f.getCanonicalPath());
+              }
+              return ret;
             }
-            return ret;
           }
         } catch (IOException e) {
           throw new FileSystemException(getFolderAccessErrorMessage("read", p), e);
