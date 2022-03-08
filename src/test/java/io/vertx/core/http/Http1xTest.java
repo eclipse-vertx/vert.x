@@ -4713,9 +4713,21 @@ public class Http1xTest extends HttpTest {
     }
   }
 
+  private static List<String> invalidCharsForHeaders() {
+    return Arrays.asList(
+      "\u0000", "\u0001", "\u0002", "\u0003", "\u0004", "\u0005", "\u0006", "\u0007", "\u0008", /* HTAB */ /* LF */
+      "\u000b", "\u000c", /* CR  */ "\u000e", "\u000f", "\u0010", "\u0011", "\u0012", "\u0013", "\u0014", "\u0015",
+      "\u0016", "\u0017", "\u0018", "\u0019", "\u001a", "\u001b", "\u001c", "\u001d", "\u001e", "\u001f", /* SP */
+      /* u0021-u007e */
+      "\u007f"
+      /* u0080-u00FF obsolete but still accepted for header value */
+    );
+  }
+
   @Test
   public void testHeaderValueValidation() {
-    List<String> invalid = Arrays.asList("\f", "\0", "\u000b", "\r\n3", "\r3", "\n3", "\n\r");
+    List<String> invalid = new ArrayList<>(invalidCharsForHeaders());
+    invalid.addAll(Arrays.asList("\r\n3", "\r3", "\n3", "\n\r"));
     for (String test : invalid) {
       try {
         HttpUtils.validateHeaderValue(test);
@@ -4743,10 +4755,18 @@ public class Http1xTest extends HttpTest {
     startServer(testAddress);
     NetClient client = vertx.createNetClient();
     try {
-      char[] chars = { 0x1c, 0x1d, 0x1e, 0x1f, 0x0c };
+      List<String> chars = new ArrayList<>(invalidCharsForHeaders());
+      chars.addAll(Arrays.asList(
+        // Forbidden chars in a header name part
+        // Note : '\t' and ' ' are forbidden too, but still used in the obsolete line folding syntax
+        // Note : '\n', '\r' and ':' are forbidden too, but they are used as header boundaries, so it will never fail.
+        "\"", "(", ")", ",", "/", ";", "<", ">", "=", "?", "@", "[", "]", "\\", "{", "}",
+        // Outside the ASCII range
+        "\u0080", "\u0090", "\u00a0", "\u00b0", "\u00c0", "\u00d0", "\u00e0", "\u00f0", "\u00ff"));
       boolean[] positions = { true, false };
       for (boolean position : positions) {
-        for (char invalid : chars) {
+        for (String invalid : chars) {
+          System.out.println("char : " + invalid.codePointAt(0) + " - position : " + position);
           int current = invalidRequests.get();
           CountDownLatch latch = new CountDownLatch(1);
           client.connect(testAddress, onSuccess(so -> {
@@ -5238,7 +5258,7 @@ public class Http1xTest extends HttpTest {
         if (payload != null) {
           assertEquals(payload, body);
         }
-        req.response().headers().set("HTTP/1.1", "101 Upgrade");
+        req.response().setStatusCode(101);
         req.toNetSocket().onComplete(onSuccess(so -> {
           so.handler(buff -> {
             assertEquals("ping", buff.toString());
