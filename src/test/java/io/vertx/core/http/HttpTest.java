@@ -13,6 +13,7 @@ package io.vertx.core.http;
 
 import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.compression.DecompressionException;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.vertx.codegen.annotations.Nullable;
@@ -939,9 +940,9 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testRequestHeadersWithCharSequence() {
     HashMap<CharSequence, String> expectedHeaders = new HashMap<>();
-    expectedHeaders.put(HttpHeaders.TEXT_HTML, "text/html");
-    expectedHeaders.put(HttpHeaders.USER_AGENT, "User-Agent");
-    expectedHeaders.put(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED, "application/x-www-form-urlencoded");
+    expectedHeaders.put(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=utf-8");
+    expectedHeaders.put(HttpHeaderNames.CONTENT_ENCODING, "gzip");
+    expectedHeaders.put(HttpHeaderNames.USER_AGENT, "Mozilla/5.0");
 
     server.requestHandler(req -> {
 
@@ -1052,9 +1053,9 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testResponseHeadersWithCharSequence() {
     HashMap<CharSequence, String> headers = new HashMap<>();
-    headers.put(HttpHeaders.TEXT_HTML, "text/html");
-    headers.put(HttpHeaders.USER_AGENT, "User-Agent");
-    headers.put(HttpHeaders.APPLICATION_X_WWW_FORM_URLENCODED, "application/x-www-form-urlencoded");
+    headers.put(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=utf-8");
+    headers.put(HttpHeaderNames.CONTENT_ENCODING, "gzip");
+    headers.put(HttpHeaderNames.USER_AGENT, "Mozilla/5.0");
 
     server.requestHandler(req -> {
       headers.forEach((k, v) -> req.response().headers().add(k, v));
@@ -5216,7 +5217,7 @@ public abstract class HttpTest extends HttpTestBase {
     waitFor(2);
 
     server.requestHandler(req -> {
-      req.response().headers().set("HTTP/1.1", "101 Upgrade");
+      req.response().setStatusCode(101);
       req.toNetSocket().onComplete(onSuccess(serverHandler::handle));
     });
 

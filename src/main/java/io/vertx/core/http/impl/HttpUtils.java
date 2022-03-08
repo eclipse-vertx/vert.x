@@ -795,7 +795,7 @@ public final class HttpUtils {
     }
   }
 
-  private static final int HIGHEST_INVALID_VALUE_CHAR_MASK = ~15;
+  private static final int HIGHEST_INVALID_VALUE_CHAR_MASK = ~0x1F;
 
   private static int validateValueChar(CharSequence seq, int state, char character) {
     /*
@@ -804,15 +804,15 @@ public final class HttpUtils {
      * 1: The previous character was CR
      * 2: The previous character was LF
      */
-    if ((character & HIGHEST_INVALID_VALUE_CHAR_MASK) == 0) {
-      // Check the absolutely prohibited characters.
+    if ((character & HIGHEST_INVALID_VALUE_CHAR_MASK) == 0 || character == 0x7F) { // 0x7F is "DEL".
+      // The only characters allowed in the range 0x00-0x1F are : HTAB, LF and CR
       switch (character) {
-        case 0x0: // NULL
-          throw new IllegalArgumentException("a header value contains a prohibited character '\0': " + seq);
-        case 0x0b: // Vertical tab
-          throw new IllegalArgumentException("a header value contains a prohibited character '\\v': " + seq);
-        case '\f':
-          throw new IllegalArgumentException("a header value contains a prohibited character '\\f': " + seq);
+        case 0x09: // Horizontal tab - HTAB
+        case 0x0a: // Line feed - LF
+        case 0x0d: // Carriage return - CR
+          break;
+        default:
+          throw new IllegalArgumentException("a header value contains a prohibited character '" + (int) character + "': " + seq);
       }
     }
 
@@ -849,29 +849,38 @@ public final class HttpUtils {
     for (int i = 0;i < value.length();i++) {
       char c = value.charAt(i);
       switch (c) {
-        case 0x1c:
-        case 0x1d:
-        case 0x1e:
-        case 0x1f:
-        case 0x00:
-        case '\t':
-        case '\n':
-        case 0x0b:
-        case '\f':
-        case '\r':
+        // The RFC allows only : "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
+        //                       "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
+        // Where DIGIT is 0x30-0x39, and ALPHA : 0x41-0x5A and 0x61-0x7A
         case ' ':
+        case '"':
+        case '(':
+        case ')':
         case ',':
+        case '/':
         case ':':
         case ';':
+        case '<':
+        case '>':
         case '=':
+        case '?':
+        case '@':
+        case '[':
+        case ']':
+        case '\\':
+        case '{':
+        case '}':
+        case 0x7f: // DEL
           throw new IllegalArgumentException(
-            "a header name cannot contain the following prohibited characters: =,;: \\t\\r\\n\\v\\f: " +
-              value);
+            "a header name cannot contain some prohibited characters, such as : " + value);
         default:
+          // Check to see if the character is a control character
+          if (c < 0x20) {
+            throw new IllegalArgumentException("a header name cannot contain control characters: " + value);
+          }
           // Check to see if the character is not an ASCII character, or invalid
-          if (c > 127) {
-            throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " +
-              value);
+          if (c > 0x7f) {
+            throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " + value);
           }
       }
     }
