@@ -849,29 +849,38 @@ public final class HttpUtils {
     for (int i = 0;i < value.length();i++) {
       char c = value.charAt(i);
       switch (c) {
-        case 0x1c:
-        case 0x1d:
-        case 0x1e:
-        case 0x1f:
-        case 0x00:
-        case '\t':
-        case '\n':
-        case 0x0b:
-        case '\f':
-        case '\r':
+        // The RFC allows only : "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
+        //                       "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
+        // Where DIGIT is 0x30-0x39, and ALPHA : 0x41-0x5A and 0x61-0x7A
         case ' ':
+        case '"':
+        case '(':
+        case ')':
         case ',':
+        case '/':
         case ':':
         case ';':
+        case '<':
+        case '>':
         case '=':
+        case '?':
+        case '@':
+        case '[':
+        case ']':
+        case '\\':
+        case '{':
+        case '}':
+        case 0x7f: // DEL
           throw new IllegalArgumentException(
-            "a header name cannot contain the following prohibited characters: =,;: \\t\\r\\n\\v\\f: " +
-              value);
+            "a header name cannot contain some prohibited characters, such as : " + value);
         default:
+          // Check to see if the character is a control character
+          if (c < 0x20) {
+            throw new IllegalArgumentException("a header name cannot contain control characters: " + value);
+          }
           // Check to see if the character is not an ASCII character, or invalid
-          if (c > 127) {
-            throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " +
-              value);
+          if (c > 0x7f) {
+            throw new IllegalArgumentException("a header name cannot contain non-ASCII character: " + value);
           }
       }
     }
