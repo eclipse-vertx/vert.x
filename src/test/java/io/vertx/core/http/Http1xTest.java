@@ -4713,7 +4713,14 @@ public class Http1xTest extends HttpTest {
 
   @Test
   public void testHeaderValueValidation() {
-    List<String> invalid = Arrays.asList("\f", "\0", "\u000b", "\r\n3", "\r3", "\n3", "\n\r");
+    List<String> invalid = Arrays.asList(
+      "\u0000", "\u0001", "\u0002", "\u0003", "\u0004", "\u0005", "\u0006", "\u0007", "\u0008", /* HTAB */ /* LF */
+      "\u000b", "\u000c", /* CR  */ "\u000e", "\u000f", "\u0010", "\u0011", "\u0012", "\u0013", "\u0014", "\u0015",
+      "\u0016", "\u0017", "\u0018", "\u0019", "\u001a", "\u001b", "\u001c", "\u001d", "\u001e", "\u001f", /* SP */
+      /* u0021-u007e */
+      "\u007F",
+      /* u0080-u00FF obsolete but still accepted */
+      "\r\n3", "\r3", "\n3", "\n\r");
     for (String test : invalid) {
       try {
         HttpUtils.validateHeaderValue(test);
