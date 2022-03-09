@@ -17,6 +17,7 @@ package io.vertx.core.impl.btc;
  * and durations are in nanoseconds.
  */
 public class BlockedThreadEvent {
+
   private final Thread thread;
   private final long maxExecTime;
   private final long duration;
