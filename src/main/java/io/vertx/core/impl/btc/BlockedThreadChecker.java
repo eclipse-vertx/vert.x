@@ -16,6 +16,8 @@ import io.vertx.core.VertxException;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -36,7 +38,8 @@ public class BlockedThreadChecker {
     TimeUnit maxExecTimeUnit();
   }
 
-  private static final Logger log = LoggerFactory.getLogger(BlockedThreadChecker.class);
+  public static final String LOGGER_NAME = "io.vertx.core.impl.BlockedThreadChecker";
+  private static final Logger log = LoggerFactory.getLogger(LOGGER_NAME);
 
   private final Map<Thread, Task> threads = new WeakHashMap<>();
   private final Timer timer; // Need to use our own timer - can't use event loop for this
@@ -49,7 +52,10 @@ public class BlockedThreadChecker {
     timer.schedule(new TimerTask() {
       @Override
       public void run() {
+        List<BlockedThreadEvent> events = new ArrayList<>();
+        Handler<BlockedThreadEvent> handler;
         synchronized (BlockedThreadChecker.this) {
+          handler = blockedThreadHandler;
           long now = System.nanoTime();
           for (Map.Entry<Thread, Task> entry : threads.entrySet()) {
             long execStart = entry.getValue().startTime();
@@ -58,12 +64,12 @@ public class BlockedThreadChecker {
             TimeUnit maxExecTimeUnit = entry.getValue().maxExecTimeUnit();
             long maxExecTimeInNanos = TimeUnit.NANOSECONDS.convert(timeLimit, maxExecTimeUnit);
             long warningExceptionTimeInNanos = TimeUnit.NANOSECONDS.convert(warningExceptionTime, warningExceptionTimeUnit);
-            BlockedThreadEvent bts = new BlockedThreadEvent(entry.getKey(), dur, maxExecTimeInNanos, warningExceptionTimeInNanos);
             if (execStart != 0 && dur >= maxExecTimeInNanos) {
-              blockedThreadHandler.handle(bts);
+              events.add(new BlockedThreadEvent(entry.getKey(), dur, maxExecTimeInNanos, warningExceptionTimeInNanos));
             }
           }
         }
+        events.forEach(handler::handle);
       }
     }, intervalUnit.toMillis(interval), intervalUnit.toMillis(interval));
   }
@@ -75,7 +81,7 @@ public class BlockedThreadChecker {
    * @param handler The handler to run
    */
   public synchronized void setThreadBlockedHandler(Handler<BlockedThreadEvent> handler) {
-    this.blockedThreadHandler = handler;
+    this.blockedThreadHandler = handler == null ? BlockedThreadChecker::defaultBlockedThreadHandler : handler;
   }
 
   public synchronized void registerThread(Thread thread, BlockedThreadChecker.Task checked) {
@@ -101,5 +107,4 @@ public class BlockedThreadChecker {
       log.warn(message, stackTrace);
     }
   }
-
 }

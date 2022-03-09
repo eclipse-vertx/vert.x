@@ -11,7 +11,6 @@
 
 package io.vertx.test.core;
 
-import io.vertx.core.impl.btc.BlockedThreadChecker;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -23,6 +22,7 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import static io.vertx.core.impl.btc.BlockedThreadChecker.LOGGER_NAME;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.assertThat;
 
@@ -52,7 +52,7 @@ public class BlockedThreadWarning implements TestRule {
         synchronized (BlockedThreadWarning.this) {
           logs.clear();
         }
-        Logger logger = Logger.getLogger(BlockedThreadChecker.class.getName());
+        Logger logger = Logger.getLogger(LOGGER_NAME);
         Handler handler = new Handler() {
           public void publish(LogRecord record) {
             synchronized (BlockedThreadWarning.this) {
