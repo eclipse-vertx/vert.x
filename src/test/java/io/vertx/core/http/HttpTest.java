@@ -658,7 +658,7 @@ public abstract class HttpTest extends HttpTestBase {
 
   @Test
   public void testResponseEndHandlersSendFile() throws Exception {
-    waitFor(2);
+    waitFor(4);
     AtomicInteger cnt = new AtomicInteger();
     String content = "iqdioqwdqwiojqwijdwqd";
     File toSend = setupFile("somefile.txt", content);
@@ -667,12 +667,14 @@ public abstract class HttpTest extends HttpTestBase {
         // Insert another header
         req.response().putHeader("extraheader", "wibble");
         assertEquals(0, cnt.getAndIncrement());
+        complete();
       });
       req.response().bodyEndHandler(v -> {
         assertEquals(content.length(), req.response().bytesWritten());
         assertEquals(1, cnt.getAndIncrement());
         complete();
       });
+      req.response().endHandler(v -> complete());
       req.response().sendFile(toSend.getAbsolutePath());
     }).listen(testAddress, onSuccess(server -> {
       client.request(requestOptions).onComplete(onSuccess(req -> {

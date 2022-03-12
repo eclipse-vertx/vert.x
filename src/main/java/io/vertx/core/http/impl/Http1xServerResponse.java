@@ -604,13 +604,20 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
           handler = bodyEndHandler;
         }
         if (handler != null) {
-          context.emit(v -> {
-            handler.handle(null);
-          });
+          context.emit(handler);
         }
 
         // allow to write next response
         conn.responseComplete();
+
+        // signal end handler
+        Handler<Void> end;
+        synchronized (conn) {
+          end = !closed ? endHandler : null;
+        }
+        if (null != end) {
+          context.emit(end);
+        }
       });
     }
   }
