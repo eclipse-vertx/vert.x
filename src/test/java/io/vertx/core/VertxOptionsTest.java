@@ -315,6 +315,14 @@ public class VertxOptionsTest extends VertxTestBase {
   }
 
   @Test
+  public void testDefaultJsonVertxOptions() {
+    VertxOptions vertxOptions1 = new VertxOptions();
+    JsonObject json = vertxOptions1.toJson();
+    VertxOptions vertxOptions2 = new VertxOptions(json);
+    assertEquals(json, vertxOptions2.toJson());
+  }
+
+  @Test
   public void testJsonOptions() {
     VertxOptions options = new VertxOptions(new JsonObject());
 
