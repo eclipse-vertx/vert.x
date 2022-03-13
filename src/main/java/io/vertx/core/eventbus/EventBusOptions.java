@@ -173,6 +173,10 @@ public class EventBusOptions extends TCPSSLOptions {
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     EventBusOptionsConverter.toJson(this, json);
+    final String clusterPublicPortName = "clusterPublicPort";
+    if (json.containsKey(clusterPublicPortName) && json.getInteger(clusterPublicPortName) == DEFAULT_CLUSTER_PUBLIC_PORT) {
+      json.remove(clusterPublicPortName);
+    }
     return json;
   }
 
