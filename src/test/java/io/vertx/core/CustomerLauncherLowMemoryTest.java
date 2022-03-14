@@ -20,13 +20,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.vertx.test.core.AsyncTestBase.assertWaitUntil;
-import static org.junit.Assert.assertTrue;
 
 public class CustomerLauncherLowMemoryTest {
 
-  private static final String MSG_READY = CustomerLauncherLowMemoryTest.class.getSimpleName() + "-ready";
   private static final String MSG_HOOK = CustomerLauncherLowMemoryTest.class.getSimpleName() + "-hook";
 
   private Process process;
@@ -48,9 +47,8 @@ public class CustomerLauncherLowMemoryTest {
   @Test
   public void testCloseHookInvoked() throws Exception {
     startExternalProcess();
-    assertWaitUntil(() -> outputContains(MSG_READY), 10000, "Verticle failed to deploy");
-    stopExternalProcess();
     assertWaitUntil(() -> outputContains(MSG_HOOK), 10000, "Hook not invoked");
+    stopExternalProcess();
   }
 
   private void startExternalProcess() throws IOException {
@@ -74,8 +72,19 @@ public class CustomerLauncherLowMemoryTest {
   }
 
   private void stopExternalProcess() throws InterruptedException {
-    process.destroy();
+    AtomicBoolean stopped = new AtomicBoolean();
+    new Thread(() -> {
+      try {
+        Thread.sleep(10_000);
+      } catch (InterruptedException ignore) {
+        return;
+      }
+      if (!stopped.get()) {
+        process.destroy();
+      }
+    });
     process.waitFor();
+    stopped.set(true);
   }
 
   private boolean outputContains(String line) {
@@ -125,12 +134,12 @@ public class CustomerLauncherLowMemoryTest {
           Thread.currentThread().interrupt();
           prom.fail(e);
         }
-      }, ar -> {
-        if (ar.succeeded()) {
-          arrays = ar.result();
-          System.out.println(MSG_READY);
+      }, ar1 -> {
+        if (ar1.succeeded()) {
+          arrays = ar1.result();
+          context.owner().close();
         } else {
-          ar.cause().printStackTrace();
+          ar1.cause().printStackTrace();
         }
       });
     }
