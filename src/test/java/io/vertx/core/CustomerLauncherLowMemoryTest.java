@@ -50,7 +50,7 @@ public class CustomerLauncherLowMemoryTest {
     startExternalProcess();
     assertWaitUntil(() -> outputContains(MSG_READY), 10000, "Verticle failed to deploy");
     stopExternalProcess();
-    assertTrue("Hook not invoked", outputContains(MSG_HOOK));
+    assertWaitUntil(() -> outputContains(MSG_HOOK), 10000, "Hook not invoked");
   }
 
   private void startExternalProcess() throws IOException {
