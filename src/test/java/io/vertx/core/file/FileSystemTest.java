@@ -31,6 +31,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.util.EnumSet;
@@ -2335,5 +2336,35 @@ public class FileSystemTest extends VertxTestBase {
     assertEquals(expected, file.sizeBlocking());
     file.close(onSuccess(v -> testComplete()));
     await();
+  }
+
+  @Test
+  public void testFileLocking() throws Exception {
+    Assume.assumeFalse(Utils.isWindows());
+    String path = tmpFile(".lock").getAbsolutePath();
+    FileSystem fs = vertx.fileSystem();
+    fs.writeFileBlocking(path, Buffer.buffer("HelloLocks"));
+
+    AsyncFile file1 = fs.openBlocking(path, new OpenOptions());
+    AsyncFile file2 = fs.openBlocking(path, new OpenOptions());
+
+    file1.lock(0, "Hello".length(), false, onSuccess(lock1 -> {
+      file2.lock(onFailure(t -> {
+        assertTrue(t instanceof FileSystemException);
+        assertTrue(t.getCause() instanceof OverlappingFileLockException);
+        file2.lock("Hello".length(), "Locks".length(), false, onSuccess(lock2 -> {
+          lock1.release(onSuccess(r1 -> {
+            lock2.release(onSuccess(r2 -> {
+              testComplete();
+            }));
+          }));
+        }));
+      }));
+    }));
+
+    await();
+
+    file1.close();
+    file2.close();
   }
 }

@@ -18,11 +18,13 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
+import io.vertx.core.file.AsyncFileLock;
 import io.vertx.core.file.FileSystemException;
 import io.vertx.core.file.OpenOptions;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.streams.impl.InboundBuffer;
@@ -30,6 +32,8 @@ import io.vertx.core.streams.impl.InboundBuffer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
+import java.nio.channels.FileLock;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -589,5 +593,70 @@ public class AsyncFileImpl implements AsyncFile {
     return vertx.getOrCreateContext().executeBlockingInternal(prom -> {
       prom.complete(sizeBlocking());
     });
+  }
+
+  @Override
+  public AsyncFileLock tryLock() {
+    try {
+      return new AsyncFileLockImpl(vertx, ch.tryLock());
+    } catch (IOException e) {
+      throw new FileSystemException(e);
+    }
+  }
+
+  @Override
+  public AsyncFileLock tryLock(long position, long size, boolean shared) {
+    try {
+      return new AsyncFileLockImpl(vertx, ch.tryLock(position, size, shared));
+    } catch (IOException e) {
+      throw new FileSystemException(e);
+    }
+  }
+
+  @Override
+  public Future<AsyncFileLock> lock() {
+    return lock(0, Long.MAX_VALUE, false);
+  }
+
+  @Override
+  public void lock(Handler<AsyncResult<AsyncFileLock>> handler) {
+    Future<AsyncFileLock> future = lock();
+    if (handler != null) {
+      future.onComplete(handler);
+    }
+  }
+
+  private static CompletionHandler<FileLock, PromiseInternal<AsyncFileLock>> LOCK_COMPLETION = new CompletionHandler<FileLock, PromiseInternal<AsyncFileLock>>() {
+    @Override
+    public void completed(FileLock result, PromiseInternal<AsyncFileLock> p) {
+      p.complete(new AsyncFileLockImpl(p.context().owner(), result));
+    }
+
+    @Override
+    public void failed(Throwable t, PromiseInternal<AsyncFileLock> p) {
+      p.fail(new FileSystemException(t));
+    }
+  };
+
+  @Override
+  public Future<AsyncFileLock> lock(long position, long size, boolean shared) {
+    PromiseInternal<AsyncFileLock> promise = vertx.promise();
+    vertx.executeBlockingInternal(prom -> {
+      ch.lock(position, size, shared, promise, LOCK_COMPLETION);
+    }, ar -> {
+      if (ar.failed()) {
+        // Happens only if ch.lock throws a RuntimeException
+        promise.fail(new FileSystemException(ar.cause()));
+      }
+    });
+    return promise.future();
+  }
+
+  @Override
+  public void lock(long position, long size, boolean shared, Handler<AsyncResult<AsyncFileLock>> handler) {
+    Future<AsyncFileLock> future = lock(position, size, shared);
+    if (handler != null) {
+      future.onComplete(handler);
+    }
   }
 }
