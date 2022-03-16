@@ -1614,6 +1614,8 @@ public class Http2ServerTest extends Http2TestBase {
           closed.incrementAndGet();
         });
         req.response().exceptionHandler(err -> {
+          assertEquals(HttpClosedException.class, err.getClass());
+          assertEquals(0, ((HttpClosedException)err).goAway().getErrorCode());
           closed.incrementAndGet();
         });
         HttpConnection conn = req.connection();

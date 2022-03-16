@@ -619,7 +619,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
     @Override
     void handleClosed() {
-      handleException(CLOSED_EXCEPTION);
+      handleException(HttpUtils.CLOSED_EXCEPTION);
       tryClose();
     }
 
@@ -1098,7 +1098,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
       Object trace = stream.trace;
       if (tracer != null && trace != null) {
-        tracer.receiveResponse(stream.context, null, trace, ConnectionBase.CLOSED_EXCEPTION, TagExtractor.empty());
+        tracer.receiveResponse(stream.context, null, trace, HttpUtils.CLOSED_EXCEPTION, TagExtractor.empty());
       }
       stream.context.execute(null, v -> stream.handleClosed());
     }
@@ -1150,7 +1150,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       if (stream != null) {
         stream.promise.future().onComplete(handler);
       } else {
-        handler.handle(Future.failedFuture(CLOSED_EXCEPTION));
+        handler.handle(Future.failedFuture(HttpUtils.CLOSED_EXCEPTION));
       }
     } else {
       eventLoop.execute(() -> {

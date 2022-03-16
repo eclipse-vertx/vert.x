@@ -28,6 +28,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Cookie;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerFileUpload;
@@ -43,7 +44,6 @@ import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
@@ -153,26 +153,26 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
-  void onClose() {
+  void onClose(HttpClosedException ex) {
     VertxTracer tracer = context.tracer();
     Object trace = this.trace;
     if (tracer != null && trace != null) {
       Throwable failure;
       synchronized (conn) {
         if (!streamEnded && (!ended || !response.ended())) {
-          failure = ConnectionBase.CLOSED_EXCEPTION;
+          failure = ex;
         } else {
           failure = null;
         }
       }
       tracer.sendResponse(context, failure == null ? response : null, trace, failure, HttpUtils.SERVER_RESPONSE_TAG_EXTRACTOR);
     }
-    super.onClose();
+    super.onClose(ex);
   }
 
   @Override
-  void handleClose() {
-    super.handleClose();
+  void handleClose(HttpClosedException ex) {
+    super.handleClose(ex);
     boolean notify;
     synchronized (conn) {
       notify = !streamEnded;
@@ -180,7 +180,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
     if (notify) {
       notifyException(new ClosedChannelException());
     }
-    response.handleClose();
+    response.handleClose(ex);
   }
 
   @Override

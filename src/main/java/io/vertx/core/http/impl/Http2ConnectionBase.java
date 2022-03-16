@@ -33,6 +33,7 @@ import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.buffer.impl.VertxByteBufAllocator;
 import io.vertx.core.http.GoAway;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.impl.EventLoopContext;
@@ -72,7 +73,7 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   private Handler<GoAway> goAwayHandler;
   private Handler<Void> shutdownHandler;
   private Handler<Buffer> pingHandler;
-  private boolean goneAway;
+  private GoAway goAwayStatus;
   private int windowSize;
   private long maxConcurrentStreams;
 
@@ -146,34 +147,33 @@ abstract class Http2ConnectionBase extends ConnectionBase implements Http2FrameL
   void onStreamClosed(Http2Stream s) {
     VertxHttp2Stream stream = s.getProperty(streamKey);
     if (stream != null) {
-      stream.onClose();
+      stream.onClose(new HttpClosedException(goAwayStatus));
     }
     checkShutdown();
   }
 
-  boolean onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
+  boolean onGoAwaySent(GoAway goAway) {
     synchronized (this) {
-      if (goneAway) {
+      if (this.goAwayStatus != null) {
         return false;
       }
-      goneAway = true;
+      this.goAwayStatus = goAway;
     }
     checkShutdown();
     return true;
   }
 
-  boolean onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
+  boolean onGoAwayReceived(GoAway goAway) {
     Handler<GoAway> handler;
     synchronized (this) {
-      if (goneAway) {
+      if (this.goAwayStatus != null) {
         return false;
       }
-      goneAway = true;
+      this.goAwayStatus = goAway;
       handler = goAwayHandler;
     }
     if (handler != null) {
-      Buffer buffer = Buffer.buffer(debugData);
-      context.dispatch(v -> handler.handle(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(buffer)));
+      context.dispatch(new GoAway(goAway), handler);
     }
     checkShutdown();
     return true;

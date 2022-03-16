@@ -1037,7 +1037,11 @@ public class Http2ClientTest extends Http2TestBase {
       });
     });
     client.request(requestOptions).onComplete(onSuccess(req -> {
-      req.send(onFailure(err -> complete()));
+      req.send(onFailure(err -> {
+        assertEquals(HttpClosedException.class, err.getClass());
+        assertEquals(0, ((HttpClosedException)err).goAway().getErrorCode());
+        complete();
+      }));
     }));
     await();
   }

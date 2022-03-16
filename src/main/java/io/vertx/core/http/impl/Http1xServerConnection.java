@@ -447,12 +447,12 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
     }
     if (requestInProgress != null) {
       requestInProgress.context.execute(v -> {
-        requestInProgress.handleException(CLOSED_EXCEPTION);
+        requestInProgress.handleException(HttpUtils.CLOSED_EXCEPTION);
       });
     }
     if (responseInProgress != null && responseInProgress != requestInProgress) {
       responseInProgress.context.execute(v -> {
-        responseInProgress.handleException(CLOSED_EXCEPTION);
+        responseInProgress.handleException(HttpUtils.CLOSED_EXCEPTION);
       });
     }
     if (ws != null) {
