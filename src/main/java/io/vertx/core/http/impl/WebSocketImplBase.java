@@ -39,7 +39,6 @@ import io.vertx.core.http.impl.ws.WebSocketFrameInternal;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.streams.impl.InboundBuffer;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -512,7 +511,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
       textConsumer.unregister();
     }
     if (exceptionHandler != null && !graceful) {
-      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+      context.dispatch(HttpUtils.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (closeHandler != null) {
       context.dispatch(null, closeHandler);

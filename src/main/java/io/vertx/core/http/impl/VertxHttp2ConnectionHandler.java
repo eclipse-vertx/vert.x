@@ -24,6 +24,8 @@ import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.GoAway;
 
 import java.util.function.Function;
 
@@ -187,12 +189,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
 
   @Override
   public void onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-    connection.onGoAwaySent(lastStreamId, errorCode, debugData);
+    connection.onGoAwaySent(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(Buffer.buffer(debugData)));
   }
 
   @Override
   public void onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-    connection.onGoAwayReceived(lastStreamId, errorCode, debugData);
+    connection.onGoAwayReceived(new GoAway().setErrorCode(errorCode).setLastStreamId(lastStreamId).setDebugData(Buffer.buffer(debugData)));
   }
 
   //

@@ -220,8 +220,8 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     }
 
     @Override
-    void handleClose() {
-      super.handleClose();
+    void handleClose(HttpClosedException ex) {
+      super.handleClose(ex);
       if (pendingPushes.remove(this)) {
         promise.fail("Push reset by client");
       } else {
@@ -232,7 +232,7 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
           concurrentStreams++;
           push.complete();
         }
-        response.handleClose();
+        response.handleClose(ex);
       }
     }
 
