@@ -13,6 +13,7 @@ package io.vertx.core.file;
 
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.Nullable;
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -210,6 +211,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    *
    * @return the lock if it can be acquired immediately, otherwise {@code null}
    */
+  @Unstable
   @Nullable AsyncFileLock tryLock();
 
   /**
@@ -220,6 +222,7 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param shared whether the lock should be shared
    * @return the lock if it can be acquired immediately, otherwise {@code null}
    */
+  @Unstable
   @Nullable AsyncFileLock tryLock(long position, long size, boolean shared);
 
   /**
@@ -227,11 +230,13 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    *
    * @return a future indicating the completion of this operation
    */
+  @Unstable
   Future<AsyncFileLock> lock();
 
   /**
    * Like {@link #lock()} but the {@code handler} will be called when the operation is complete or if an error occurs.
    */
+  @Unstable
   void lock(Handler<AsyncResult<AsyncFileLock>> handler);
 
   /**
@@ -242,10 +247,13 @@ public interface AsyncFile extends ReadStream<Buffer>, WriteStream<Buffer> {
    * @param shared whether the lock should be shared
    * @return a future indicating the completion of this operation
    */
+  @Unstable
   Future<AsyncFileLock> lock(long position, long size, boolean shared);
 
   /**
    * Like {@link #lock(long, long, boolean)} but the {@code handler} will be called when the operation is complete or if an error occurs.
    */
+  @Unstable
   void lock(long position, long size, boolean shared, Handler<AsyncResult<AsyncFileLock>> handler);
+
 }
