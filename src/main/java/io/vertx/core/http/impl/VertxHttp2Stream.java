@@ -22,6 +22,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpFrame;
 import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
@@ -80,9 +81,9 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     stream.setProperty(conn.streamKey, this);
   }
 
-  void onClose() {
+  void onClose(HttpClosedException ex) {
     conn.flushBytesWritten();
-    context.execute(v -> this.handleClose());
+    context.execute(ex, this::handleClose);
   }
 
   void onError(Throwable cause) {
@@ -256,7 +257,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
   void handleException(Throwable cause) {
   }
 
-  void handleClose() {
+  void handleClose(HttpClosedException ex) {
   }
 
   synchronized void priority(StreamPriority streamPriority) {

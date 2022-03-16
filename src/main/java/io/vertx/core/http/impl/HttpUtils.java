@@ -29,6 +29,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.file.OpenOptions;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.StreamPriority;
@@ -60,6 +61,7 @@ import static io.vertx.core.http.Http2Settings.*;
  */
 public final class HttpUtils {
 
+  static final HttpClosedException CLOSED_EXCEPTION = new HttpClosedException();
   static final int SC_SWITCHING_PROTOCOLS = 101;
   static final int SC_BAD_GATEWAY = 502;
 

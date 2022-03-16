@@ -17,16 +17,14 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
-import io.vertx.core.http.StreamResetException;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.ConnectionBase;
-import io.vertx.core.streams.Pipe;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.WriteStream;
 
@@ -86,7 +84,7 @@ class HttpNetSocket implements NetSocket {
   }
 
   private void handleException(Throwable cause) {
-    if (cause == ConnectionBase.CLOSED_EXCEPTION || cause.getClass() == ClosedChannelException.class) {
+    if (cause instanceof HttpClosedException || cause.getClass() == ClosedChannelException.class) {
       Handler<Void> endHandler = endHandler();
       if (endHandler != null) {
         endHandler.handle(null);

@@ -27,7 +27,6 @@ import io.vertx.core.http.*;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.ClientMetrics;
 import io.vertx.core.spi.metrics.HttpClientMetrics;
 import io.vertx.core.spi.tracing.SpanKind;
@@ -82,8 +81,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  synchronized boolean onGoAwaySent(int lastStreamId, long errorCode, ByteBuf debugData) {
-    boolean goneAway = super.onGoAwaySent(lastStreamId, errorCode, debugData);
+  boolean onGoAwaySent(GoAway goAway) {
+    boolean goneAway = super.onGoAwaySent(goAway);
     if (goneAway) {
       // Eagerly evict from the pool
       tryEvict();
@@ -92,8 +91,8 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   @Override
-  synchronized boolean onGoAwayReceived(int lastStreamId, long errorCode, ByteBuf debugData) {
-    boolean goneAway = super.onGoAwayReceived(lastStreamId, errorCode, debugData);
+  boolean onGoAwayReceived(GoAway goAway) {
+    boolean goneAway = super.onGoAwayReceived(goAway);
     if (goneAway) {
       // Eagerly evict from the pool
       tryEvict();
@@ -329,7 +328,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     }
 
     @Override
-    void onClose() {
+    void onClose(HttpClosedException ex) {
       if (conn.metrics != null) {
         if (!requestEnded || !responseEnded) {
           conn.metrics.requestReset(metric);
@@ -341,14 +340,14 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (responseEnded && requestEnded) {
           err = null;
         } else {
-          err = ConnectionBase.CLOSED_EXCEPTION;
+          err = ex;
         }
         tracer.receiveResponse(context, response, trace, err, HttpUtils.CLIENT_RESPONSE_TAG_EXTRACTOR);
       }
       if (!responseEnded) {
-        onError(CLOSED_EXCEPTION);
+        onError(ex);
       }
-      super.onClose();
+      super.onClose(ex);
       // commented to be used later when we properly define the HTTP/2 connection expiration from the pool
       // boolean disposable = conn.streams.isEmpty();
       if (!push) {

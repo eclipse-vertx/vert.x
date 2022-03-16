@@ -29,6 +29,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.http.Cookie;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
@@ -36,7 +37,6 @@ import io.vertx.core.http.StreamPriority;
 import io.vertx.core.http.StreamResetException;
 import io.vertx.core.http.impl.headers.Http2HeadersAdaptor;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.observability.HttpResponse;
 import io.vertx.core.streams.ReadStream;
 
@@ -105,7 +105,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
     }
   }
 
-  void handleClose() {
+  void handleClose(HttpClosedException ex) {
     Handler<Throwable> exceptionHandler;
     Handler<Void> endHandler;
     Handler<Void> closeHandler;
@@ -117,7 +117,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       closeHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      stream.context.emit(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+      stream.context.emit(ex, exceptionHandler);
     }
     if (endHandler != null) {
       stream.context.emit(null, endHandler);

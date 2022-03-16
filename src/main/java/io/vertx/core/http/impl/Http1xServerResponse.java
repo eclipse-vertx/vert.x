@@ -14,9 +14,6 @@ package io.vertx.core.http.impl;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.EmptyHttpHeaders;
@@ -33,6 +30,7 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Cookie;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerResponse;
@@ -43,7 +41,6 @@ import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetSocket;
-import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.observability.HttpResponse;
 
@@ -635,7 +632,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
   }
 
   void handleException(Throwable t) {
-    if (t == Http1xServerConnection.CLOSED_EXCEPTION) {
+    if (t instanceof HttpClosedException) {
       handleClosed();
     } else {
       Handler<Throwable> handler;
@@ -663,7 +660,7 @@ public class Http1xServerResponse implements HttpServerResponse, HttpResponse {
       closedHandler = this.closeHandler;
     }
     if (exceptionHandler != null) {
-      context.dispatch(ConnectionBase.CLOSED_EXCEPTION, exceptionHandler);
+      context.dispatch(HttpUtils.CLOSED_EXCEPTION, exceptionHandler);
     }
     if (endHandler != null) {
       context.dispatch(null, endHandler);

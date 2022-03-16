@@ -16,6 +16,7 @@ import io.netty.handler.codec.http2.Http2Headers;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.http.HttpClosedException;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.StreamPriority;
@@ -129,8 +130,8 @@ abstract class Http2ServerStream extends VertxHttp2Stream<Http2ServerConnection>
   }
 
   @Override
-  void handleClose() {
-    super.handleClose();
+  void handleClose(HttpClosedException ex) {
+    super.handleClose(ex);
     if (METRICS_ENABLED) {
       HttpServerMetrics metrics = conn.metrics();
       if (metrics != null) {
