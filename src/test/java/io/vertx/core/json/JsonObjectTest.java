@@ -18,6 +18,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -2487,9 +2489,9 @@ public class JsonObjectTest {
 
   @Test
   public void testPutOffsetDateTimeAsObject() {
-    Object localDateTime = OffsetDateTime.now();
+    Object offsetDateTime = OffsetDateTime.now();
     JsonObject jsonObject = new JsonObject();
-    jsonObject.put("foo", localDateTime);
+    jsonObject.put("foo", offsetDateTime);
     // assert data is stored as String
     assertTrue(jsonObject.getValue("foo") instanceof String);
   }
