@@ -17,6 +17,7 @@ import io.vertx.test.core.TestUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,6 +35,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 import static org.junit.Assert.*;
 
 /**
@@ -457,6 +459,11 @@ public class JsonArrayTest {
     assertEquals(localDateTime, jsonArray.getLocalDateTime(14));
     assertEquals(localDateTime.toString(), jsonArray.getValue(14));
 
+    OffsetDateTime offsetDateTime = OffsetDateTime.now();
+    jsonArray.add(offsetDateTime);
+    assertEquals(offsetDateTime, jsonArray.getOffsetDateTime(15));
+    assertEquals(offsetDateTime.toString(), jsonArray.getValue(15));
+
     // JsonObject with inner Map
     List<Object> list = new ArrayList<>();
     Map<String, Object> innerMap = new HashMap<>();
@@ -627,6 +634,17 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testAddOffsetDateTime() {
+    OffsetDateTime now = OffsetDateTime.now();
+    assertSame(jsonArray, jsonArray.add(now));
+    assertEquals(now, jsonArray.getOffsetDateTime(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    jsonArray.add(null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
+  }
+
+  @Test
   public void testAddObject() {
     jsonArray.add((Object)"bar");
     jsonArray.add((Object)(Integer.valueOf(123)));
@@ -648,6 +666,8 @@ public class JsonArrayTest {
     jsonArray.add(localDate);
     LocalDateTime localDateTime = LocalDateTime.now();
     jsonArray.add(localDateTime);
+    OffsetDateTime offsetDateTime = OffsetDateTime.now();
+    jsonArray.add(offsetDateTime);
 
     assertEquals("bar", jsonArray.getString(0));
     assertEquals(Integer.valueOf(123), jsonArray.getInteger(1));
@@ -667,6 +687,8 @@ public class JsonArrayTest {
     assertEquals(localDate.toString(), jsonArray.getValue(11));
     assertEquals(localDateTime, jsonArray.getLocalDateTime(12));
     assertEquals(localDateTime.toString(), jsonArray.getValue(12));
+    assertEquals(offsetDateTime, jsonArray.getOffsetDateTime(13));
+    assertEquals(offsetDateTime.toString(), jsonArray.getValue(13));
 
     try {
       jsonArray.add(new SomeClass());
@@ -1329,6 +1351,21 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testSetOffsetDateTime() {
+    OffsetDateTime now = OffsetDateTime.now();
+    try {
+      jsonArray.set(0, now);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, now));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
   public void testSetObject() {
     jsonArray.add("bar");
     try {
@@ -1647,6 +1684,49 @@ public class JsonArrayTest {
     }
     jsonArray.addNull();
     assertNull(jsonArray.getLocalDateTime(2));
+    assertNull(jsonArray.getValue(2));
+  }
+
+  @Test
+  public void testGetOffsetDateTime() {
+    OffsetDateTime now = OffsetDateTime.now();
+    jsonArray.add(now);
+    assertEquals(now, jsonArray.getOffsetDateTime(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    assertEquals(now, OffsetDateTime.from(ISO_OFFSET_DATE_TIME.parse(jsonArray.getString(0))));
+    try {
+      jsonArray.getOffsetDateTime(-1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getValue(-1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getOffsetDateTime(1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getValue(1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add(123);
+    try {
+      jsonArray.getOffsetDateTime(1);
+      fail();
+    } catch (ClassCastException e) {
+      // OK
+    }
+    jsonArray.addNull();
+    assertNull(jsonArray.getOffsetDateTime(2));
     assertNull(jsonArray.getValue(2));
   }
 }

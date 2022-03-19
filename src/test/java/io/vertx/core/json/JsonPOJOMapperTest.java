@@ -16,6 +16,7 @@ import io.vertx.core.buffer.Buffer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 
@@ -155,10 +156,12 @@ public class JsonPOJOMapperTest {
       .put("localTime", LocalTime.NOON)
       .put("localDate", LocalDate.parse("2022-02-22"))
       .put("localDateTime", LocalDateTime.parse("2022-02-22T01:02:03.123456000"))
+      .put("offsetDateTime", OffsetDateTime.parse("2022-02-22T01:02:03.123456000+02:00"))
       .mapTo(JavaTimeTypes.class);
     assertEquals(LocalTime.NOON, j.localTime);
     assertEquals(LocalDate.parse("2022-02-22"), j.localDate);
     assertEquals(LocalDateTime.parse("2022-02-22T01:02:03.123456000"), j.localDateTime);
+    assertEquals(OffsetDateTime.parse("2022-02-22T01:02:03.123456000+02:00"), j.offsetDateTime);
   }
 
   @Test
@@ -167,6 +170,7 @@ public class JsonPOJOMapperTest {
     assertEquals(LocalTime.NOON, json.getLocalTime("localTime"));
     assertEquals(LocalDate.parse("2022-02-22"), json.getLocalDate("localDate"));
     assertEquals(LocalDateTime.parse("2022-02-22T01:02:03.123456000"), json.getLocalDateTime("localDateTime"));
+    assertEquals(OffsetDateTime.parse("2022-02-22T01:02:03.123456000+02:00"), json.getOffsetDateTime("offsetDateTime"));
   }
 
   @Test
@@ -174,12 +178,14 @@ public class JsonPOJOMapperTest {
     testInvalidValueToPOJO("localTime", JavaTimeTypes.class);
     testInvalidValueToPOJO("localDate", JavaTimeTypes.class);
     testInvalidValueToPOJO("localDateTime", JavaTimeTypes.class);
+    testInvalidValueToPOJO("offsetDateTime", JavaTimeTypes.class);
   }
 
   public static class JavaTimeTypes {
     public LocalTime localTime = LocalTime.NOON;
     public LocalDate localDate = LocalDate.parse("2022-02-22");
     public LocalDateTime localDateTime = LocalDateTime.parse("2022-02-22T01:02:03.123456000");
+    public OffsetDateTime offsetDateTime = OffsetDateTime.parse("2022-02-22T01:02:03.123456000+02:00");
   }
 
   private void testInvalidValueToPOJO(String key) {

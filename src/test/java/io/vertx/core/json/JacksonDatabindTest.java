@@ -22,6 +22,7 @@ import io.vertx.test.core.VertxTestBase;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -32,6 +33,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -134,6 +136,21 @@ public class JacksonDatabindTest extends VertxTestBase {
   }
 
   @Test
+  public void testOffsetDateTimeDecoding() {
+    Pojo original = new Pojo();
+    original.offsetDateTime = OffsetDateTime.from(ISO_OFFSET_DATE_TIME.parse("2022-02-22T01:02:03.123456789+02:00"));
+    Pojo decoded = Json.decodeValue("{\"offsetDateTime\":\"2022-02-22T01:02:03.123456789+02:00\"}", Pojo.class);
+    assertEquals(original.offsetDateTime, decoded.offsetDateTime);
+  }
+
+  @Test
+  public void testNullOffsetDateTimeDecoding() {
+    Pojo original = new Pojo();
+    Pojo decoded = Json.decodeValue("{\"offsetDateTime\":null}", Pojo.class);
+    assertEquals(original.offsetDateTime, decoded.offsetDateTime);
+  }
+
+  @Test
   public void testBytesDecoding() {
     Pojo original = new Pojo();
     original.bytes = TestUtils.randomByteArray(12);
@@ -161,5 +178,7 @@ public class JacksonDatabindTest extends VertxTestBase {
     LocalDate localDate;
     @JsonProperty
     LocalDateTime localDateTime;
+    @JsonProperty
+    OffsetDateTime offsetDateTime;
   }
 }
