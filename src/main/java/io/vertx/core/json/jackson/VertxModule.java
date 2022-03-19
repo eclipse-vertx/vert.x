@@ -15,6 +15,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
@@ -40,6 +41,8 @@ public class VertxModule extends SimpleModule {
     addDeserializer(Instant.class, new InstantDeserializer());
     addSerializer(LocalTime.class, new LocalTimeSerializer());
     addDeserializer(LocalTime.class, new LocalTimeDeserializer());
+    addSerializer(LocalDate.class, new LocalDateSerializer());
+    addDeserializer(LocalDate.class, new LocalDateDeserializer());
     addSerializer(byte[].class, new ByteArraySerializer());
     addDeserializer(byte[].class, new ByteArrayDeserializer());
     addSerializer(Buffer.class, new BufferSerializer());

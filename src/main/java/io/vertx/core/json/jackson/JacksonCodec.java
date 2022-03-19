@@ -26,6 +26,7 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.spi.json.JsonCodec;
 
 import java.io.Closeable;
@@ -327,6 +328,9 @@ public class JacksonCodec implements JsonCodec {
       } else if (json instanceof LocalTime) {
         // RFC-7493
         generator.writeString((ISO_LOCAL_TIME.format((LocalTime)json)));
+      } else if (json instanceof LocalDate) {
+        // RFC-7493
+        generator.writeString(ISO_LOCAL_DATE.format((LocalDate)json));
       } else if (json instanceof byte[]) {
         // RFC-7493
         generator.writeString(BASE64_ENCODER.encodeToString((byte[]) json));
@@ -386,6 +390,8 @@ public class JacksonCodec implements JsonCodec {
         o = Instant.from(ISO_INSTANT.parse(str));
       } else if (clazz == LocalTime.class) {
         o = LocalTime.from(ISO_LOCAL_TIME.parse(str));
+      } else if (clazz == LocalDate.class) {
+        o = LocalDate.from(ISO_LOCAL_DATE.parse(str));
       } else if (!clazz.isAssignableFrom(String.class)) {
         throw new DecodeException("Failed to decode");
       }

@@ -16,6 +16,7 @@ import io.vertx.core.shareddata.Shareable;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.function.Function;
@@ -23,6 +24,7 @@ import java.util.stream.Stream;
 
 import static io.vertx.core.json.impl.JsonUtil.*;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 
 /**
@@ -111,6 +113,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       return ISO_INSTANT.format((Instant) val);
     } else if (val instanceof LocalTime) {
       return ISO_LOCAL_TIME.format((LocalTime) val);
+    } else if (val instanceof LocalDate) {
+      return ISO_LOCAL_DATE.format((LocalDate) val);
     } else if (val instanceof byte[]) {
       return BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Buffer) {
@@ -342,7 +346,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    *
    * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted local time
    * without offset or timezone information. This extension complies to the RFC-7493 with all the restrictions
-   * mentioned before. The method will then decode and return an instant value.
+   * mentioned before. The method will then decode and return a local time value.
    *
    * @param pos the position in the array
    * @return the LocalTime, or null if a null value present
@@ -363,6 +367,35 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     String encoded = (String) val;
     // parse to proper type
     return LocalTime.from(ISO_LOCAL_TIME.parse(encoded));
+  }
+
+
+  /**
+   * Get the LocalDate at position {@code pos} in the array.
+   *
+   * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted local date
+   * without offset or timezone information. This extension complies to the RFC-7493 with all the restrictions
+   * mentioned before. The method will then decode and return a local date value.
+   *
+   * @param pos the position in the array
+   * @return the LocalTime, or null if a null value present
+   * @throws java.lang.ClassCastException            if the value cannot be converted to String
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
+   */
+  public LocalDate getLocalDate(int pos) {
+    Object val = list.get(pos);
+    // no-op
+    if (val == null) {
+      return null;
+    }
+    // no-op if value is already correct type
+    if (val instanceof LocalDate) {
+      return (LocalDate) val;
+    }
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return LocalDate.from(ISO_LOCAL_DATE.parse(encoded));
   }
 
   /**
