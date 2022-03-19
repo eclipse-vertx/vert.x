@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 /**
  * A Jackson {@code Module} to provide following Vert.x Serializers and Deserializers
@@ -29,6 +30,7 @@ import java.time.LocalTime;
  *   <li>{@code LocalTimeSerializer} and {@code LocalTimeDeserializer} of {@code LocalTime}</li>
  *   <li>{@code LocalDateSerializer} and {@code LocalDateDeserializer} of {@code LocalDate}</li>
  *   <li>{@code LocalDateTimeSerializer} and {@code LocalDateTimeDeserializer} of {@code LocalDateTime}</li>
+ *   <li>{@code OffsetDateTimeSerializer} and {@code OffsetDateTimeDeserializer} of {@code OffsetDateTime}</li>
  *   <li>{@code ByteArraySerializer} and {@code ByteArrayDeserializer} of {@code byte[]}</li>
  *   <li>{@code BufferSerializer} and {@code BufferDeserializer} of {@code Buffer}</li>
  * </ul>
@@ -48,6 +50,8 @@ public class VertxModule extends SimpleModule {
     addDeserializer(LocalDate.class, new LocalDateDeserializer());
     addSerializer(LocalDateTime.class, new LocalDateTimeSerializer());
     addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer());
+    addSerializer(OffsetDateTime.class, new OffsetDateTimeSerializer());
+    addDeserializer(OffsetDateTime.class, new OffsetDateTimeDeserializer());
     addSerializer(byte[].class, new ByteArraySerializer());
     addDeserializer(byte[].class, new ByteArrayDeserializer());
     addSerializer(Buffer.class, new BufferSerializer());

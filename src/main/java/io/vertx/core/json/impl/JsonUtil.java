@@ -13,6 +13,7 @@ package io.vertx.core.json.impl;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -22,6 +23,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Iterator;
@@ -43,6 +45,8 @@ public final class JsonUtil {
       DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSSSS");
   private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER =
     DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSS");
+  private static final DateTimeFormatter OFFSET_DATE_TIME_FORMATTER =
+    DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSSXXX");
 
   static {
     /*
@@ -67,6 +71,8 @@ public final class JsonUtil {
    *   <li>{@code Instant} will be converted to iso date {@code String}</li>
    *   <li>{@code LocalTime} will be converted to iso time {@code String}</li>
    *   <li>{@code LocalDate} will be converted to iso date {@code String}</li>
+   *   <li>{@code LocalDateTime} will be converted to iso date time {@code String}</li>
+   *   <li>{@code OffsetDateTime} will be converted to iso date time {@code String}</li>
    *   <li>{@code byte[]} will be converted to base64 {@code String}</li>
    *   <li>{@code Enum} will be converted to enum name {@code String}</li>
    * </ul>
@@ -92,6 +98,8 @@ public final class JsonUtil {
       val = ISO_LOCAL_DATE.format(((LocalDate) val));
     } else if (val instanceof LocalDateTime) {
       val = LOCAL_DATE_TIME_FORMATTER.format(((LocalDateTime) val));
+    } else if (val instanceof OffsetDateTime) {
+      val = OFFSET_DATE_TIME_FORMATTER.format(((OffsetDateTime) val));
     } else if (val instanceof byte[]) {
       val = BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Buffer) {
@@ -139,6 +147,8 @@ public final class JsonUtil {
     } else if (val instanceof LocalDate) {
       // OK
     } else if (val instanceof LocalDateTime) {
+      // OK
+    } else if (val instanceof OffsetDateTime) {
       // OK
     } else if (val instanceof Enum) {
       // OK

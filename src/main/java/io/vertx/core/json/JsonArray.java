@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -28,6 +29,7 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
+import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 /**
  * A representation of a <a href="http://json.org/">JSON</a> array in Java.
@@ -119,6 +121,8 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
       return ISO_LOCAL_DATE.format((LocalDate) val);
     } else if (val instanceof LocalDateTime) {
       return ISO_LOCAL_DATE_TIME.format((LocalDateTime) val);
+    } else if (val instanceof OffsetDateTime) {
+      return ISO_OFFSET_DATE_TIME.format((OffsetDateTime) val);
     } else if (val instanceof byte[]) {
       return BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Buffer) {
@@ -427,6 +431,34 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     String encoded = (String) val;
     // parse to proper type
     return LocalDateTime.from(ISO_LOCAL_DATE_TIME.parse(encoded));
+  }
+
+  /**
+   * Get the OffsetDateTime at position {@code pos} in the array.
+   *
+   * JSON itself has no notion of a temporal types, this extension allows ISO 8601 string formatted offset date
+   * time without timezone information. This extension complies to the RFC-7493 with all the restrictions
+   * mentioned before. The method will then decode and return a date time value with offset.
+   *
+   * @param pos the position in the array
+   * @return the OffsetDateTime, or null if a null value present
+   * @throws java.lang.ClassCastException            if the value cannot be converted to String
+   * @throws java.time.format.DateTimeParseException if the String value is not a legal ISO 8601 encoded value
+   */
+  public OffsetDateTime getOffsetDateTime(int pos) {
+    Object val = list.get(pos);
+    // no-op
+    if (val == null) {
+      return null;
+    }
+    // no-op if value is already correct type
+    if (val instanceof OffsetDateTime) {
+      return (OffsetDateTime) val;
+    }
+    // assume that the value is in String format as per RFC
+    String encoded = (String) val;
+    // parse to proper type
+    return OffsetDateTime.from(ISO_OFFSET_DATE_TIME.parse(encoded));
   }
 
   /**
