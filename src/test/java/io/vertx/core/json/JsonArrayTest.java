@@ -15,6 +15,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.test.core.TestUtils;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +32,7 @@ import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 import static org.junit.Assert.*;
 
@@ -444,10 +446,17 @@ public class JsonArrayTest {
     jsonArray.add(localTime);
     assertEquals(localTime, jsonArray.getLocalTime(12));
     assertEquals(localTime.toString(), jsonArray.getValue(12));
+
     LocalDate localDate = LocalDate.now();
     jsonArray.add(localDate);
     assertEquals(localDate, jsonArray.getLocalDate(13));
     assertEquals(localDate.toString(), jsonArray.getValue(13));
+
+    LocalDateTime localDateTime = LocalDateTime.now();
+    jsonArray.add(localDateTime);
+    assertEquals(localDateTime, jsonArray.getLocalDateTime(14));
+    assertEquals(localDateTime.toString(), jsonArray.getValue(14));
+
     // JsonObject with inner Map
     List<Object> list = new ArrayList<>();
     Map<String, Object> innerMap = new HashMap<>();
@@ -607,6 +616,17 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testAddLocalDateTime() {
+    LocalDateTime now = LocalDateTime.now();
+    assertSame(jsonArray, jsonArray.add(now));
+    assertEquals(now, jsonArray.getLocalDateTime(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    jsonArray.add(null);
+    assertNull(jsonArray.getValue(1));
+    assertEquals(2, jsonArray.size());
+  }
+
+  @Test
   public void testAddObject() {
     jsonArray.add((Object)"bar");
     jsonArray.add((Object)(Integer.valueOf(123)));
@@ -626,6 +646,9 @@ public class JsonArrayTest {
     jsonArray.add(localTime);
     LocalDate localDate = LocalDate.now();
     jsonArray.add(localDate);
+    LocalDateTime localDateTime = LocalDateTime.now();
+    jsonArray.add(localDateTime);
+
     assertEquals("bar", jsonArray.getString(0));
     assertEquals(Integer.valueOf(123), jsonArray.getInteger(1));
     assertEquals(Long.valueOf(123l), jsonArray.getLong(2));
@@ -642,6 +665,9 @@ public class JsonArrayTest {
     assertEquals(localTime.toString(), jsonArray.getValue(10));
     assertEquals(localDate, jsonArray.getLocalDate(11));
     assertEquals(localDate.toString(), jsonArray.getValue(11));
+    assertEquals(localDateTime, jsonArray.getLocalDateTime(12));
+    assertEquals(localDateTime.toString(), jsonArray.getValue(12));
+
     try {
       jsonArray.add(new SomeClass());
       // OK (we can put anything, yet it should fail to encode if a codec is missing)
@@ -1288,6 +1314,21 @@ public class JsonArrayTest {
   }
 
   @Test
+  public void testSetLocalDateTime() {
+    LocalDateTime now = LocalDateTime.now();
+    try {
+      jsonArray.set(0, now);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add("bar");
+    assertSame(jsonArray, jsonArray.set(0, now));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    assertEquals(1, jsonArray.size());
+  }
+
+  @Test
   public void testSetObject() {
     jsonArray.add("bar");
     try {
@@ -1563,6 +1604,49 @@ public class JsonArrayTest {
     }
     jsonArray.addNull();
     assertNull(jsonArray.getLocalDate(2));
+    assertNull(jsonArray.getValue(2));
+  }
+
+  @Test
+  public void testGetLocalDateTime() {
+    LocalDateTime now = LocalDateTime.now();
+    jsonArray.add(now);
+    assertEquals(now, jsonArray.getLocalDateTime(0));
+    assertEquals(now.toString(), jsonArray.getValue(0));
+    assertEquals(now, LocalDateTime.from(ISO_LOCAL_DATE_TIME.parse(jsonArray.getString(0))));
+    try {
+      jsonArray.getLocalDateTime(-1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getValue(-1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getLocalDateTime(1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    try {
+      jsonArray.getValue(1);
+      fail();
+    } catch (IndexOutOfBoundsException e) {
+      // OK
+    }
+    jsonArray.add(123);
+    try {
+      jsonArray.getLocalDateTime(1);
+      fail();
+    } catch (ClassCastException e) {
+      // OK
+    }
+    jsonArray.addNull();
+    assertNull(jsonArray.getLocalDateTime(2));
     assertNull(jsonArray.getValue(2));
   }
 }

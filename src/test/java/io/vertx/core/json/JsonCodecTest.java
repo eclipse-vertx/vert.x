@@ -19,6 +19,7 @@ import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.core.json.jackson.JacksonCodec;
 import io.vertx.test.core.TestUtils;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -95,6 +97,8 @@ public class JsonCodecTest {
     jsonObject.put("mylocaltime", localTime);
     LocalDate localDate = LocalDate.now();
     jsonObject.put("mylocaldate", localDate);
+    LocalDateTime localDateTime = LocalDateTime.now();
+    jsonObject.put("mylocaldatetime", localDateTime);
     jsonObject.putNull("mynull");
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
@@ -112,6 +116,7 @@ public class JsonCodecTest {
       + "\"myinstant\":\"" + ISO_INSTANT.format(now) + "\","
       + "\"mylocaltime\":\"" + ISO_LOCAL_TIME.format(localTime) + "\","
       + "\"mylocaldate\":\"" + ISO_LOCAL_DATE.format(localDate) + "\","
+      + "\"mylocaldatetime\":\"" + ISO_LOCAL_DATE_TIME.format(localDateTime) + "\","
       + "\"mynull\":null,"
       + "\"myobj\":{\"foo\":\"bar\"},"
       + "\"myarr\":[\"foo\",123]"
@@ -138,6 +143,7 @@ public class JsonCodecTest {
     jsonArray.add(new JsonArray().add("foo").add(123));
     jsonArray.add(LocalTime.NOON);
     jsonArray.add(LocalDate.parse("2022-02-22"));
+    jsonArray.add(LocalDateTime.parse("2022-02-22T01:02:03.123456"));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
 
     String expected = "["
@@ -153,7 +159,8 @@ public class JsonCodecTest {
       + "{\"foo\":\"bar\"},"
       + "[\"foo\",123],"
       + "\"12:00:00\","
-      + "\"2022-02-22\""
+      + "\"2022-02-22\","
+      + "\"2022-02-22T01:02:03.123456\""
       + "]";
     String json = mapper.toString(jsonArray);
     assertEquals(expected, json);
@@ -177,6 +184,8 @@ public class JsonCodecTest {
     jsonObject.put("mylocaltime", localTime);
     LocalDate localDate = LocalDate.now();
     jsonObject.put("mylocaldate", localDate);
+    LocalDateTime localDateTime = LocalDateTime.now();
+    jsonObject.put("mylocaldatetime", localDateTime);
     jsonObject.putNull("mynull");
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
@@ -194,6 +203,7 @@ public class JsonCodecTest {
       + "\"myinstant\":\"" + ISO_INSTANT.format(now) + "\","
       + "\"mylocaltime\":\"" + ISO_LOCAL_TIME.format(localTime) + "\","
       + "\"mylocaldate\":\"" + ISO_LOCAL_DATE.format(localDate) + "\","
+      + "\"mylocaldatetime\":\"" + ISO_LOCAL_DATE_TIME.format(localDateTime) + "\","
       + "\"mynull\":null,"
       + "\"myobj\":{\"foo\":\"bar\"},"
       + "\"myarr\":[\"foo\",123]"
@@ -220,12 +230,12 @@ public class JsonCodecTest {
     jsonArray.add(new JsonArray().add("foo").add(123));
     jsonArray.add(LocalTime.parse("12:34:56.123"));
     jsonArray.add(LocalDate.parse("2022-02-22"));
+    jsonArray.add(LocalDateTime.parse("2022-02-22T01:02:03.1234567"));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
-    Buffer expected = Buffer.buffer("[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123],\"12:34:56.123\",\"2022-02-22\"]", "UTF-8");
+    Buffer expected = Buffer.buffer("[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123],\"12:34:56.123\",\"2022-02-22\",\"2022-02-22T01:02:03.1234567\"]", "UTF-8");
     Buffer json = mapper.toBuffer(jsonArray);
     assertArrayEquals(expected.getBytes(), json.getBytes());
   }
-
 
   @Test
   public void testEncodeJsonObjectPrettily() {
@@ -243,6 +253,7 @@ public class JsonCodecTest {
     jsonObject.put("myinstant", now);
     jsonObject.put("mylocaltime", LocalTime.parse("12:34:56.123"));
     jsonObject.put("mylocaldate", LocalDate.parse("2022-02-22"));
+    jsonObject.put("mylocaldatetime", LocalDateTime.parse("2022-02-22T01:02:03.123456123"));
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
@@ -259,6 +270,7 @@ public class JsonCodecTest {
       "  \"myinstant\" : \"" + strInstant + "\"," + Utils.LINE_SEPARATOR +
       "  \"mylocaltime\" : \"12:34:56.123\"," + Utils.LINE_SEPARATOR +
       "  \"mylocaldate\" : \"2022-02-22\"," + Utils.LINE_SEPARATOR +
+      "  \"mylocaldatetime\" : \"2022-02-22T01:02:03.123456123\"," + Utils.LINE_SEPARATOR +
       "  \"myobj\" : {" + Utils.LINE_SEPARATOR +
       "    \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
       "  }," + Utils.LINE_SEPARATOR +
@@ -285,10 +297,11 @@ public class JsonCodecTest {
     jsonArray.add(new JsonArray().add("foo").add(123));
     jsonArray.add(LocalTime.parse("12:34:56.123"));
     jsonArray.add(LocalDate.parse("2022-02-22"));
+    jsonArray.add(LocalDateTime.parse("2022-02-22T01:02:03.123456001"));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);
     String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", \"" + strBytes + "\", null, {" + Utils.LINE_SEPARATOR +
       "  \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
-      "}, [ \"foo\", 123 ], \"12:34:56.123\", \"2022-02-22\" ]";
+      "}, [ \"foo\", 123 ], \"12:34:56.123\", \"2022-02-22\", \"2022-02-22T01:02:03.123456001\" ]";
     String json = mapper.toString(jsonArray, true);
     assertEquals(expected, json);
   }
@@ -311,6 +324,7 @@ public class JsonCodecTest {
       + "\"myinstant\":\"" + strInstant + "\","
       + "\"mylocaltime\":\"12:34:56.123\","
       + "\"mylocaldate\":\"2022-02-22\","
+      + "\"mylocaldatetime\":\"2022-02-22T01:02:03.123456780\","
       + "\"mynull\":null,"
       + "\"myobj\":{\"foo\":\"bar\"},"
       + "\"myarr\":[\"foo\",123]}";
@@ -335,6 +349,9 @@ public class JsonCodecTest {
     LocalDate localDate = LocalDate.parse("2022-02-22");
     assertEquals(localDate, obj.getLocalDate("mylocaldate"));
     assertEquals(localDate.toString(), obj.getValue("mylocaldate"));
+    LocalDateTime localDateTime = LocalDateTime.parse("2022-02-22T01:02:03.12345678");
+    assertEquals(localDateTime, obj.getLocalDateTime("mylocaldatetime"));
+    assertEquals(localDateTime.toString(), obj.getValue("mylocaldatetime"));
     assertTrue(obj.containsKey("mynull"));
     JsonObject nestedObj = obj.getJsonObject("myobj");
     assertEquals("bar", nestedObj.getString("foo"));
@@ -363,7 +380,8 @@ public class JsonCodecTest {
       + "{\"foo\":\"bar\"},"
       + "[\"foo\",123],"
       + "\"12:34:56.123\","
-      + "\"2022-02-22\"]";
+      + "\"2022-02-22\","
+      + "\"2022-02-22T01:02:03.123456789\"]";
     JsonArray arr = new JsonArray(mapper.fromString(json, List.class));
     assertEquals("foo", arr.getString(0));
     assertEquals(Integer.valueOf(123), arr.getInteger(1));
@@ -390,6 +408,9 @@ public class JsonCodecTest {
     LocalDate localDate = LocalDate.parse("2022-02-22");
     assertEquals(localDate, arr.getLocalDate(14));
     assertEquals(localDate.toString(), arr.getValue(14));
+    LocalDateTime localDateTime = LocalDateTime.parse("2022-02-22T01:02:03.123456789");
+    assertEquals(localDateTime, arr.getLocalDateTime(15));
+    assertEquals(localDateTime.toString(), arr.getValue(15));
   }
 
   // Strict JSON doesn't allow comments but we do so users can add comments to config files etc
@@ -517,6 +538,24 @@ public class JsonCodecTest {
     LocalDate now = LocalDate.now();
     String json = '"' + ISO_LOCAL_DATE.format(now) + '"';
     LocalDate decoded = mapper.fromString(json, LocalDate.class);
+    assertEquals(now, decoded);
+  }
+
+  @Test
+  public void encodeCustomTypeLocalDateTime() {
+    LocalDateTime now = LocalDateTime.now();
+    String json = mapper.toString(now);
+    assertNotNull(json);
+    // the RFC is one way only
+    LocalDateTime decoded = LocalDateTime.from(ISO_LOCAL_DATE_TIME.parse(json.substring(1, json.length() - 1)));
+    assertEquals(now, decoded);
+  }
+
+  @Test
+  public void decodeCustomTypeLocalDateTime() {
+    LocalDateTime now = LocalDateTime.now();
+    String json = '"' + ISO_LOCAL_DATE_TIME.format(now) + '"';
+    LocalDateTime decoded = mapper.fromString(json, LocalDateTime.class);
     assertEquals(now, decoded);
   }
 
@@ -664,6 +703,9 @@ public class JsonCodecTest {
     LocalDate localDate = LocalDate.parse("2022-02-22");
     assertEquals("{\"key\":\"2022-02-22\"}", checkMap(localDate));
     assertEquals("[\"2022-02-22\"]", checkList(localDate));
+    LocalDateTime localDateTime = LocalDateTime.parse("2022-02-22T01:02:03.123456");
+    assertEquals("{\"key\":\"2022-02-22T01:02:03.123456\"}", checkMap(localDateTime));
+    assertEquals("[\"2022-02-22T01:02:03.123456\"]", checkList(localDateTime));
     assertEquals("{\"key\":\"MICROSECONDS\"}", checkMap(TimeUnit.MICROSECONDS));
     assertEquals("[\"MICROSECONDS\"]", checkList(TimeUnit.MICROSECONDS));
     BigInteger bigInt = new BigInteger("123456789");

@@ -14,6 +14,7 @@ package io.vertx.core.json;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import io.vertx.core.buffer.Buffer;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import org.hamcrest.MatcherAssert;
 import org.junit.Test;
@@ -153,26 +154,32 @@ public class JsonPOJOMapperTest {
     JavaTimeTypes j = new JsonObject()
       .put("localTime", LocalTime.NOON)
       .put("localDate", LocalDate.parse("2022-02-22"))
+      .put("localDateTime", LocalDateTime.parse("2022-02-22T01:02:03.123456000"))
       .mapTo(JavaTimeTypes.class);
     assertEquals(LocalTime.NOON, j.localTime);
     assertEquals(LocalDate.parse("2022-02-22"), j.localDate);
+    assertEquals(LocalDateTime.parse("2022-02-22T01:02:03.123456000"), j.localDateTime);
   }
 
   @Test
   public void testJavaTimesFromObjectMapping() {
     JsonObject json = JsonObject.mapFrom(new JavaTimeTypes());
     assertEquals(LocalTime.NOON, json.getLocalTime("localTime"));
+    assertEquals(LocalDate.parse("2022-02-22"), json.getLocalDate("localDate"));
+    assertEquals(LocalDateTime.parse("2022-02-22T01:02:03.123456000"), json.getLocalDateTime("localDateTime"));
   }
 
   @Test
   public void testInvalidJavaTimeTypes() {
     testInvalidValueToPOJO("localTime", JavaTimeTypes.class);
     testInvalidValueToPOJO("localDate", JavaTimeTypes.class);
+    testInvalidValueToPOJO("localDateTime", JavaTimeTypes.class);
   }
 
   public static class JavaTimeTypes {
     public LocalTime localTime = LocalTime.NOON;
     public LocalDate localDate = LocalDate.parse("2022-02-22");
+    public LocalDateTime localDateTime = LocalDateTime.parse("2022-02-22T01:02:03.123456000");
   }
 
   private void testInvalidValueToPOJO(String key) {

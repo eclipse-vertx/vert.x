@@ -15,6 +15,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.shareddata.Shareable;
 import io.vertx.test.core.TestUtils;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +34,7 @@ import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
 import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_TIME;
 import static org.junit.Assert.*;
 
@@ -1741,6 +1743,7 @@ public class JsonObjectTest {
     obj.put("myinstant", Instant.now());
     obj.put("mylocaltime", LocalTime.now());
     obj.put("mylocaldate", LocalDate.now());
+    obj.put("mylocaldatetime", LocalDateTime.now());
     return obj;
   }
 
@@ -1782,23 +1785,24 @@ public class JsonObjectTest {
     json.getMap().put("now", now);
     assertEquals(now, json.getInstant("now"));
     assertSame(now, json.getInstant("now"));
-
     // same for byte[]
     byte[] bytes = "bytes".getBytes();
     // bypass any custom validation
     json.getMap().put("bytes", bytes);
     assertEquals(bytes, json.getBinary("bytes"));
     assertSame(bytes, json.getBinary("bytes"));
-
     LocalTime localTime = LocalTime.now();
     json.getMap().put("localTime", localTime);
     assertEquals(localTime, json.getLocalTime("localTime"));
     assertSame(localTime, json.getLocalTime("localTime"));
-
     LocalDate localDate = LocalDate.now();
     json.getMap().put("localDate", localDate);
     assertEquals(localDate, json.getLocalDate("localDate"));
     assertSame(localDate, json.getLocalDate("localDate"));
+    LocalDateTime localDateTime = LocalDateTime.now();
+    json.getMap().put("localDateTime", localDateTime);
+    assertEquals(localDateTime, json.getLocalDateTime("localDateTime"));
+    assertSame(localDateTime, json.getLocalDateTime("localDateTime"));
   }
 
   @Test
@@ -2217,5 +2221,137 @@ public class JsonObjectTest {
     jsonObject.put("localDate", localDate);
     // assert data is stored as String
     assertTrue(jsonObject.getValue("localDate") instanceof String);
+  }
+
+  @Test
+  public void testGetLocalDateTime() {
+    LocalDateTime now = LocalDateTime.now();
+    jsonObject.put("foo", now);
+    assertEquals(now, jsonObject.getLocalDateTime("foo"));
+    assertEquals(now.toString(), jsonObject.getValue("foo"));
+
+    // Can also get as string:
+    String val = jsonObject.getString("foo");
+    assertNotNull(val);
+    LocalDateTime retrieved = LocalDateTime.from(ISO_LOCAL_DATE_TIME.parse(val));
+    assertEquals(now, retrieved);
+
+    jsonObject.put("foo", 123);
+    try {
+      jsonObject.getLocalDateTime("foo");
+      fail();
+    } catch (ClassCastException e) {
+      // Ok
+    }
+
+    jsonObject.putNull("foo");
+    assertNull(jsonObject.getLocalDateTime("foo"));
+    assertNull(jsonObject.getValue("foo"));
+    assertNull(jsonObject.getLocalDateTime("absent"));
+    assertNull(jsonObject.getValue("absent"));
+    try {
+      jsonObject.getLocalDateTime(null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getLocalDateTime(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testGetLocalDateTimeDefault() {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime later = now.plus(1, ChronoUnit.DAYS);
+    jsonObject.put("foo", now);
+    assertEquals(now, jsonObject.getLocalDateTime("foo", later));
+    assertEquals(now.toString(), jsonObject.getValue("foo", later));
+    assertEquals(now, jsonObject.getLocalDateTime("foo", null));
+    assertEquals(now.toString(), jsonObject.getValue("foo", null));
+
+    jsonObject.put("foo", 123);
+    try {
+      jsonObject.getLocalDateTime("foo", later);
+      fail();
+    } catch (ClassCastException e) {
+      // Ok
+    }
+
+    jsonObject.putNull("foo");
+    assertNull(jsonObject.getLocalDateTime("foo", later));
+    assertEquals(later, jsonObject.getLocalDateTime("absent", later));
+    assertEquals(later, jsonObject.getValue("absent", later));
+    assertNull(jsonObject.getLocalDateTime("foo", null));
+    assertNull(jsonObject.getValue("foo", null));
+    assertNull(jsonObject.getLocalDateTime("absent", null));
+    assertNull(jsonObject.getValue("absent", null));
+    try {
+      jsonObject.getLocalDateTime(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+    try {
+      jsonObject.getValue(null, null);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testPutLocalDateTime() {
+    LocalDateTime day1 = LocalDateTime.now();
+    LocalDateTime day2 = day1.plus(1, ChronoUnit.DAYS);
+    LocalDateTime day3 = day2.plus(1, ChronoUnit.DAYS);
+
+    assertSame(jsonObject, jsonObject.put("foo", day1));
+    assertEquals(day1, jsonObject.getLocalDateTime("foo"));
+    assertEquals(day1.toString(), jsonObject.getValue("foo"));
+
+    jsonObject.put("fum", day2);
+    assertEquals(day2, jsonObject.getLocalDateTime("fum"));
+    assertEquals(day2.toString(), jsonObject.getValue("fum"));
+    assertEquals(day1, jsonObject.getLocalDateTime("foo"));
+    assertEquals(day1.toString(), jsonObject.getValue("foo"));
+
+    jsonObject.put("foo", day3);
+    assertEquals(day3, jsonObject.getLocalDateTime("foo"));
+    assertEquals(day3.toString(), jsonObject.getValue("foo"));
+
+    jsonObject.put("foo", null);
+    assertTrue(jsonObject.containsKey("foo"));
+
+    try {
+      jsonObject.put(null, day1);
+      fail();
+    } catch (NullPointerException e) {
+      // OK
+    }
+  }
+
+  @Test
+  public void testPutLocalDateTimeAsObject() {
+    Object localDateTime = LocalDateTime.now();
+    JsonObject jsonObject = new JsonObject();
+    jsonObject.put("foo", localDateTime);
+    // assert data is stored as String
+    assertTrue(jsonObject.getValue("foo") instanceof String);
   }
 }
