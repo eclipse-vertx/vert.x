@@ -242,7 +242,7 @@ public class JsonCodecTest {
     Instant now = Instant.now();
     jsonObject.put("myinstant", now);
     jsonObject.put("mylocaltime", LocalTime.parse("12:34:56.123"));
-    jsonObject.put("mylocaldate", LocalDate.parse("2022-0-22"));
+    jsonObject.put("mylocaldate", LocalDate.parse("2022-02-22"));
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
     String strBytes = BASE64_ENCODER.encodeToString(bytes);

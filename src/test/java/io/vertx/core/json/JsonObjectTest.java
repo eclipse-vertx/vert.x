@@ -796,8 +796,9 @@ public class JsonObjectTest {
     jsonObject = new JsonObject(map);
     arr = (JsonArray)jsonObject.getValue("foo");
     assertEquals("blah", arr.getString(0));
-    jsonObject.put("foo", LocalTime.NOON);
-    assertEquals("12:00:00", jsonObject.getValue("foo"));
+    LocalTime now = LocalTime.now();
+    jsonObject.put("foo", now);
+    assertEquals(now.toString(), jsonObject.getValue("foo"));
   }
 
   @Test
@@ -840,9 +841,10 @@ public class JsonObjectTest {
     assertNull(jsonObject.getValue("foo", null));
     assertEquals("blah", jsonObject.getValue("absent", "blah"));
     assertNull(jsonObject.getValue("absent", null));
-    jsonObject.put("foo", LocalTime.NOON);
-    assertEquals("12:00:00", jsonObject.getValue("foo", "blah"));
-    assertEquals("12:00:00", jsonObject.getValue("foo", null));
+    LocalTime now = LocalTime.now();
+    jsonObject.put("foo", now);
+    assertEquals(now.toString(), jsonObject.getValue("foo", "blah"));
+    assertEquals(now.toString(), jsonObject.getValue("foo", null));
   }
 
   @Test

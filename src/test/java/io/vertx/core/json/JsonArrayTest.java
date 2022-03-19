@@ -442,12 +442,12 @@ public class JsonArrayTest {
     }
     LocalTime localTime = LocalTime.now();
     jsonArray.add(localTime);
-    assertEquals(localTime, jsonArray.getLocalTime(13));
-    assertEquals(localTime.toString(), jsonArray.getValue(13));
+    assertEquals(localTime, jsonArray.getLocalTime(12));
+    assertEquals(localTime.toString(), jsonArray.getValue(12));
     LocalDate localDate = LocalDate.now();
     jsonArray.add(localDate);
-    assertEquals(localDate, jsonArray.getLocalDate(14));
-    assertEquals(localDate.toString(), jsonArray.getValue(14));
+    assertEquals(localDate, jsonArray.getLocalDate(13));
+    assertEquals(localDate.toString(), jsonArray.getValue(13));
     // JsonObject with inner Map
     List<Object> list = new ArrayList<>();
     Map<String, Object> innerMap = new HashMap<>();
