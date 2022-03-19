@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,6 +16,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
@@ -26,6 +27,8 @@ import java.time.LocalTime;
  *   <li>{@code JsonArraySerializer} of {@code JsonArray}</li>
  *   <li>{@code InstantSerializer} and {@code InstantDeserializer} of {@code Instant}</li>
  *   <li>{@code LocalTimeSerializer} and {@code LocalTimeDeserializer} of {@code LocalTime}</li>
+ *   <li>{@code LocalDateSerializer} and {@code LocalDateDeserializer} of {@code LocalDate}</li>
+ *   <li>{@code LocalDateTimeSerializer} and {@code LocalDateTimeDeserializer} of {@code LocalDateTime}</li>
  *   <li>{@code ByteArraySerializer} and {@code ByteArrayDeserializer} of {@code byte[]}</li>
  *   <li>{@code BufferSerializer} and {@code BufferDeserializer} of {@code Buffer}</li>
  * </ul>
@@ -43,6 +46,8 @@ public class VertxModule extends SimpleModule {
     addDeserializer(LocalTime.class, new LocalTimeDeserializer());
     addSerializer(LocalDate.class, new LocalDateSerializer());
     addDeserializer(LocalDate.class, new LocalDateDeserializer());
+    addSerializer(LocalDateTime.class, new LocalDateTimeSerializer());
+    addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer());
     addSerializer(byte[].class, new ByteArraySerializer());
     addDeserializer(byte[].class, new ByteArrayDeserializer());
     addSerializer(Buffer.class, new BufferSerializer());

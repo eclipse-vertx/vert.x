@@ -12,6 +12,7 @@ package io.vertx.core.json.impl;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -19,6 +20,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.Shareable;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -39,6 +41,8 @@ public final class JsonUtil {
 
   private static final DateTimeFormatter LOCAL_TIME_FORMATTER =
       DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSSSS");
+  private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER =
+    DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSS");
 
   static {
     /*
@@ -86,6 +90,8 @@ public final class JsonUtil {
       val = LOCAL_TIME_FORMATTER.format((LocalTime) val);
     } else if (val instanceof LocalDate) {
       val = ISO_LOCAL_DATE.format(((LocalDate) val));
+    } else if (val instanceof LocalDateTime) {
+      val = LOCAL_DATE_TIME_FORMATTER.format(((LocalDateTime) val));
     } else if (val instanceof byte[]) {
       val = BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Buffer) {
@@ -131,6 +137,8 @@ public final class JsonUtil {
     } else if (val instanceof LocalTime) {
       // OK
     } else if (val instanceof LocalDate) {
+      // OK
+    } else if (val instanceof LocalDateTime) {
       // OK
     } else if (val instanceof Enum) {
       // OK

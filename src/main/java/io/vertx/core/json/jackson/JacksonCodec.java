@@ -331,6 +331,9 @@ public class JacksonCodec implements JsonCodec {
       } else if (json instanceof LocalDate) {
         // RFC-7493
         generator.writeString(ISO_LOCAL_DATE.format((LocalDate)json));
+      } else if (json instanceof LocalDateTime) {
+        // RFC-7493
+        generator.writeString(ISO_LOCAL_DATE_TIME.format((LocalDateTime)json));
       } else if (json instanceof byte[]) {
         // RFC-7493
         generator.writeString(BASE64_ENCODER.encodeToString((byte[]) json));
@@ -392,6 +395,8 @@ public class JacksonCodec implements JsonCodec {
         o = LocalTime.from(ISO_LOCAL_TIME.parse(str));
       } else if (clazz == LocalDate.class) {
         o = LocalDate.from(ISO_LOCAL_DATE.parse(str));
+      } else if (clazz == LocalDateTime.class) {
+        o = LocalDateTime.from(ISO_LOCAL_DATE_TIME.parse(str));
       } else if (!clazz.isAssignableFrom(String.class)) {
         throw new DecodeException("Failed to decode");
       }
