@@ -31,10 +31,13 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.FakeDNSServer;
+import org.apache.directory.server.dns.DnsException;
+import org.apache.directory.server.dns.messages.QuestionRecord;
 import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.messages.ResourceRecord;
 import org.apache.directory.server.dns.store.DnsAttribute;
+import org.apache.directory.server.dns.store.RecordStore;
 import org.junit.Test;
 
 import java.io.File;
@@ -84,6 +87,25 @@ public class HostnameResolutionTest extends VertxTestBase {
   public void testAsyncResolve() throws Exception {
     ((VertxImpl) vertx).resolveAddress("vertx.io", onSuccess(resolved -> {
       assertEquals("127.0.0.1", resolved.getHostAddress());
+      testComplete();
+    }));
+    await();
+  }
+
+  @Test
+  public void testAsyncResolveTruncated() throws Exception {
+
+    dnsServer.store(new RecordStore() {
+      @Override
+      public Set<ResourceRecord> getRecords(QuestionRecord question) throws DnsException {
+        return Collections.singleton(new FakeDNSServer.VertxResourceRecord("vertx.io", "127.0.0.1").setTruncated(true));
+      }
+    });
+
+
+    ((VertxImpl) vertx).resolveAddress("vertx.io", onSuccess(resolved -> {
+      assertEquals("127.0.0.1", resolved.getHostAddress());
+      assertEquals(1, dnsServer.getTcpQueries());
       testComplete();
     }));
     await();
@@ -864,32 +886,7 @@ public class HostnameResolutionTest extends VertxTestBase {
   }
 
   private void testAddressSelection(AddressResolverOptions options, int expected) throws Exception {
-    Function<String, ResourceRecord> createRecord = ipAddress -> new ResourceRecord() {
-      @Override
-      public String getDomainName() {
-        return "vertx.io";
-      }
-
-      @Override
-      public RecordType getRecordType() {
-        return RecordType.A;
-      }
-
-      @Override
-      public RecordClass getRecordClass() {
-        return RecordClass.IN;
-      }
-
-      @Override
-      public int getTimeToLive() {
-        return 100;
-      }
-
-      @Override
-      public String get(String s) {
-        return DnsAttribute.IP_ADDRESS.equals(s) ? ipAddress : null;
-      }
-    };
+    Function<String, ResourceRecord> createRecord = ipAddress -> new FakeDNSServer.VertxResourceRecord("vertx.io", ipAddress);
 
     Set<ResourceRecord> records = new LinkedHashSet<>();
     records.add(createRecord.apply("127.0.0.1"));
