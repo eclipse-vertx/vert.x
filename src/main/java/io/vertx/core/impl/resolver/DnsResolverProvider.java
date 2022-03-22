@@ -14,6 +14,7 @@ package io.vertx.core.impl.resolver;
 import io.netty.channel.ChannelFactory;
 import io.netty.channel.EventLoop;
 import io.netty.channel.socket.DatagramChannel;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.resolver.*;
 import io.netty.resolver.dns.*;
 import io.netty.util.NetUtil;
@@ -86,7 +87,9 @@ public class DnsResolverProvider implements ResolverProvider {
       }
     }
     DnsServerAddresses nameServerAddresses = options.isRotateServers() ? DnsServerAddresses.rotational(serverList) : DnsServerAddresses.sequential(serverList);
-    DnsServerAddressStreamProvider nameServerAddressProvider = hostname -> nameServerAddresses.stream();
+    DnsServerAddressStreamProvider nameServerAddressProvider = hostname -> {
+      return nameServerAddresses.stream();
+    };
 
     HostsFileEntries entries;
     if (options.getHostsPath() != null) {
@@ -116,76 +119,67 @@ public class DnsResolverProvider implements ResolverProvider {
     DnsCache authoritativeDnsServerCache = new DefaultDnsCache(minTtl, maxTtl, negativeTtl);
 
     this.vertx = vertx;
-    this.resolverGroup = new AddressResolverGroup<InetSocketAddress>() {
+
+
+    DnsNameResolverBuilder builder = new DnsNameResolverBuilder();
+    builder.hostsFileEntriesResolver(new HostsFileEntriesResolver() {
       @Override
-      protected io.netty.resolver.AddressResolver<InetSocketAddress> newResolver(EventExecutor executor) throws Exception {
-        ChannelFactory<DatagramChannel> channelFactory = () -> vertx.transport().datagramChannel();
-        DnsAddressResolverGroup group = new DnsAddressResolverGroup(channelFactory, nameServerAddressProvider) {
-          @Override
-          protected final io.netty.resolver.AddressResolver<InetSocketAddress> newAddressResolver(EventLoop eventLoop, NameResolver<InetAddress> resolver) throws Exception {
-            if (options.isRoundRobinInetAddress()) {
-              return new RoundRobinInetAddressResolver(eventLoop, resolver).asAddressResolver();
-            } else {
-              return super.newAddressResolver(eventLoop, resolver);
-            }
-          }
+      public InetAddress address(String inetHost, ResolvedAddressTypes resolvedAddressTypes) {
+        if (inetHost.endsWith(".")) {
+          inetHost = inetHost.substring(0, inetHost.length() - 1);
+        }
+        InetAddress address = lookup(inetHost, resolvedAddressTypes);
+        if (address == null) {
+          address = lookup(inetHost.toLowerCase(Locale.ENGLISH), resolvedAddressTypes);
+        }
+        return address;
+      }
+      InetAddress lookup(String inetHost, ResolvedAddressTypes resolvedAddressTypes) {
+        switch (resolvedAddressTypes) {
+          case IPV4_ONLY:
+            return entries.inet4Entries().get(inetHost);
+          case IPV6_ONLY:
+            return entries.inet6Entries().get(inetHost);
+          case IPV4_PREFERRED:
+            Inet4Address inet4Address = entries.inet4Entries().get(inetHost);
+            return inet4Address != null? inet4Address : entries.inet6Entries().get(inetHost);
+          case IPV6_PREFERRED:
+            Inet6Address inet6Address = entries.inet6Entries().get(inetHost);
+            return inet6Address != null? inet6Address : entries.inet4Entries().get(inetHost);
+          default:
+            throw new IllegalArgumentException("Unknown ResolvedAddressTypes " + resolvedAddressTypes);
+        }
+      }
+    });
+    builder.channelFactory(() -> vertx.transport().datagramChannel());
+    builder.socketChannelFactory(() -> (SocketChannel) vertx.transport().channelFactory(false).newChannel());
+    builder.nameServerProvider(nameServerAddressProvider);
+    builder.optResourceEnabled(options.isOptResourceEnabled());
+    builder.resolveCache(resolveCache);
+    builder.authoritativeDnsServerCache(authoritativeDnsServerCache);
+    builder.queryTimeoutMillis(options.getQueryTimeout());
+    builder.maxQueriesPerResolve(options.getMaxQueries());
+    builder.recursionDesired(options.getRdFlag());
+    if (options.getSearchDomains() != null) {
+      builder.searchDomains(options.getSearchDomains());
+      int ndots = options.getNdots();
+      if (ndots == -1) {
+        ndots = AddressResolver.DEFAULT_NDOTS_RESOLV_OPTION;
+      }
+      builder.ndots(ndots);
+    }
 
-          @Override
-          protected NameResolver<InetAddress> newNameResolver(EventLoop eventLoop, ChannelFactory<? extends DatagramChannel> channelFactory, DnsServerAddressStreamProvider nameServerProvider) throws Exception {
-            DnsNameResolverBuilder builder = new DnsNameResolverBuilder((EventLoop) executor);
-            builder.hostsFileEntriesResolver(new HostsFileEntriesResolver() {
-              @Override
-              public InetAddress address(String inetHost, ResolvedAddressTypes resolvedAddressTypes) {
-                if (inetHost.endsWith(".")) {
-                  inetHost = inetHost.substring(0, inetHost.length() - 1);
-                }
-                InetAddress address = lookup(inetHost, resolvedAddressTypes);
-                if (address == null) {
-                  address = lookup(inetHost.toLowerCase(Locale.ENGLISH), resolvedAddressTypes);
-                }
-                return address;
-              }
-              InetAddress lookup(String inetHost, ResolvedAddressTypes resolvedAddressTypes) {
-                switch (resolvedAddressTypes) {
-                  case IPV4_ONLY:
-                    return entries.inet4Entries().get(inetHost);
-                  case IPV6_ONLY:
-                    return entries.inet6Entries().get(inetHost);
-                  case IPV4_PREFERRED:
-                    Inet4Address inet4Address = entries.inet4Entries().get(inetHost);
-                    return inet4Address != null? inet4Address : entries.inet6Entries().get(inetHost);
-                  case IPV6_PREFERRED:
-                    Inet6Address inet6Address = entries.inet6Entries().get(inetHost);
-                    return inet6Address != null? inet6Address : entries.inet4Entries().get(inetHost);
-                  default:
-                    throw new IllegalArgumentException("Unknown ResolvedAddressTypes " + resolvedAddressTypes);
-                }
-              }
-            });
-            builder.channelFactory(channelFactory);
-            builder.nameServerProvider(nameServerAddressProvider);
-            builder.optResourceEnabled(options.isOptResourceEnabled());
-            builder.resolveCache(resolveCache);
-            builder.authoritativeDnsServerCache(authoritativeDnsServerCache);
-            builder.queryTimeoutMillis(options.getQueryTimeout());
-            builder.maxQueriesPerResolve(options.getMaxQueries());
-            builder.recursionDesired(options.getRdFlag());
-            if (options.getSearchDomains() != null) {
-              builder.searchDomains(options.getSearchDomains());
-              int ndots = options.getNdots();
-              if (ndots == -1) {
-                ndots = AddressResolver.DEFAULT_NDOTS_RESOLV_OPTION;
-              }
-              builder.ndots(ndots);
-            }
-            return builder.build();
-          }
-        };
-
-        io.netty.resolver.AddressResolver<InetSocketAddress> resolver = group.getResolver(executor);
-        resolvers.add(new ResolverRegistration(resolver, (EventLoop) executor));
-
-        return resolver;
+    this.resolverGroup = new DnsAddressResolverGroup(builder) {
+      @Override
+      protected io.netty.resolver.AddressResolver<InetSocketAddress> newAddressResolver(EventLoop eventLoop, NameResolver<InetAddress> resolver) throws Exception {
+        io.netty.resolver.AddressResolver<InetSocketAddress> addressResolver;
+        if (options.isRoundRobinInetAddress()) {
+          addressResolver = new RoundRobinInetAddressResolver(eventLoop, resolver).asAddressResolver();
+        } else {
+          addressResolver = super.newAddressResolver(eventLoop, resolver);
+        }
+        resolvers.add(new ResolverRegistration(addressResolver, eventLoop));
+        return addressResolver;
       }
     };
   }

@@ -51,9 +51,7 @@ public class ProxyErrorTest extends VertxTestBase {
 
   @Override
   protected void tearDown() throws Exception {
-    if (dnsServer.isStarted()) {
-      dnsServer.stop();
-    }
+    dnsServer.stop();
     if (proxy!=null) {
       proxy.stop();
     }
