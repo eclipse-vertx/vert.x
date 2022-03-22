@@ -16,25 +16,29 @@ import org.apache.directory.server.dns.DnsServer;
 import org.apache.directory.server.dns.io.encoder.DnsMessageEncoder;
 import org.apache.directory.server.dns.io.encoder.ResourceRecordEncoder;
 import org.apache.directory.server.dns.messages.DnsMessage;
+import org.apache.directory.server.dns.messages.DnsMessageModifier;
 import org.apache.directory.server.dns.messages.QuestionRecord;
 import org.apache.directory.server.dns.messages.RecordClass;
 import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.messages.ResourceRecord;
 import org.apache.directory.server.dns.messages.ResourceRecordModifier;
 import org.apache.directory.server.dns.protocol.DnsProtocolHandler;
+import org.apache.directory.server.dns.protocol.DnsTcpDecoder;
 import org.apache.directory.server.dns.protocol.DnsUdpDecoder;
 import org.apache.directory.server.dns.protocol.DnsUdpEncoder;
 import org.apache.directory.server.dns.store.DnsAttribute;
 import org.apache.directory.server.dns.store.RecordStore;
+import org.apache.directory.server.protocol.shared.transport.TcpTransport;
+import org.apache.directory.server.protocol.shared.transport.Transport;
 import org.apache.directory.server.protocol.shared.transport.UdpTransport;
 import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFactory;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.codec.ProtocolDecoder;
 import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
-import org.apache.mina.transport.socket.DatagramAcceptor;
 import org.apache.mina.transport.socket.DatagramSessionConfig;
 
 import java.io.IOException;
@@ -83,7 +87,7 @@ public final class FakeDNSServer extends DnsServer {
   private String ipAddress = IP_ADDRESS;
   private int port = PORT;
   private volatile RecordStore store;
-  private DatagramAcceptor acceptor;
+  private List<IoAcceptor> acceptors;
   private final Deque<DnsMessage> currentMessage = new ArrayDeque<>();
 
   public FakeDNSServer() {
@@ -127,7 +131,7 @@ public final class FakeDNSServer extends DnsServer {
   public FakeDNSServer testResolveAAAA(final String ipAddress) {
     return store(new RecordStore() {
       @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) {
         Set<ResourceRecord> set = new HashSet<>();
 
         ResourceRecordModifier rm = new ResourceRecordModifier();
@@ -146,7 +150,7 @@ public final class FakeDNSServer extends DnsServer {
   public FakeDNSServer testResolveMX(final int prio, final String mxRecord) {
     return store(new RecordStore() {
       @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) {
         Set<ResourceRecord> set = new HashSet<>();
 
         ResourceRecordModifier rm = new ResourceRecordModifier();
@@ -165,7 +169,7 @@ public final class FakeDNSServer extends DnsServer {
   public FakeDNSServer testResolveTXT(final String txt) {
     return store(new RecordStore() {
       @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) throws org.apache.directory.server.dns.DnsException {
+      public Set<ResourceRecord> getRecords(QuestionRecord questionRecord) {
         Set<ResourceRecord> set = new HashSet<>();
 
         ResourceRecordModifier rm = new ResourceRecordModifier();
@@ -359,12 +363,8 @@ public final class FakeDNSServer extends DnsServer {
 
   @Override
   public void start() throws IOException {
-    UdpTransport transport = new UdpTransport(ipAddress, port);
-    setTransports( transport );
 
-    acceptor = transport.getAcceptor();
-
-    acceptor.setHandler(new DnsProtocolHandler(this, new RecordStore() {
+    DnsProtocolHandler handler = new DnsProtocolHandler(this, new RecordStore() {
       @Override
       public Set<ResourceRecord> getRecords(QuestionRecord question) throws DnsException {
         RecordStore actual = store;
@@ -378,41 +378,156 @@ public final class FakeDNSServer extends DnsServer {
       @Override
       public void sessionCreated(IoSession session) throws Exception {
         // Use our own codec to support AAAA testing
-        session.getFilterChain().addFirst("codec",
-          new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
+        if (session.getTransportMetadata().isConnectionless()) {
+          session.getFilterChain().addFirst( "codec", new ProtocolCodecFilter(new TestDnsProtocolUdpCodecFactory()));
+        } else {
+          session.getFilterChain().addFirst( "codec", new ProtocolCodecFilter(new TestDnsProtocolTcpCodecFactory()));
+        }
       }
+
       @Override
       public void messageReceived(IoSession session, Object message) {
         if (message instanceof DnsMessage) {
           synchronized (FakeDNSServer.this) {
-           currentMessage.add((DnsMessage) message);
+            currentMessage.add((DnsMessage) message);
           }
         }
         super.messageReceived(session, message);
       }
-    });
+    };
 
-    // Allow the port to be reused even if the socket is in TIME_WAIT state
-    ((DatagramSessionConfig) acceptor.getSessionConfig()).setReuseAddress(true);
+    UdpTransport udpTransport = new UdpTransport(ipAddress, port);
+    ((DatagramSessionConfig)udpTransport.getAcceptor().getSessionConfig()).setReuseAddress(true);
+    TcpTransport tcpTransport = new TcpTransport(ipAddress, port);
+    tcpTransport.getAcceptor().getSessionConfig().setReuseAddress(true);
 
-    // Start the listener
-    acceptor.bind();
+    setTransports(udpTransport, tcpTransport);
+
+    for  (Transport transport : getTransports()) {
+      IoAcceptor acceptor = transport.getAcceptor();
+
+      acceptor.setHandler(handler);
+
+      // Start the listener
+      acceptor.bind();
+    }
   }
-
 
   @Override
   public void stop() {
-    acceptor.dispose();
+    for (Transport transport : getTransports()) {
+      System.out.println("closing " +transport);
+      transport.getAcceptor().dispose();
+    }
   }
 
+  public static class VertxResourceRecord implements ResourceRecord {
+
+    private final String ipAddress;
+    private final String domainName;
+    private boolean isTruncated;
+
+    public VertxResourceRecord(String domainName, String ipAddress) {
+      this.domainName = domainName;
+      this.ipAddress = ipAddress;
+    }
+
+    public boolean isTruncated() {
+      return isTruncated;
+    }
+
+    public VertxResourceRecord setTruncated(boolean truncated) {
+      isTruncated = truncated;
+      return this;
+    }
+
+    @Override
+    public String getDomainName() {
+      return domainName;
+    }
+
+    @Override
+    public RecordType getRecordType() {
+      return RecordType.A;
+    }
+
+    @Override
+    public RecordClass getRecordClass() {
+      return RecordClass.IN;
+    }
+
+    @Override
+    public int getTimeToLive() {
+      return 100;
+    }
+
+    @Override
+    public String get(String id) {
+      return DnsAttribute.IP_ADDRESS.equals(id) ? ipAddress : null;
+    }
+  }
+
+  private static final ResourceRecordEncoder TestAAAARecordEncoder = new ResourceRecordEncoder() {
+    @Override
+    protected void putResourceRecordData(IoBuffer ioBuffer, ResourceRecord resourceRecord) {
+      if (!resourceRecord.get(DnsAttribute.IP_ADDRESS).equals("::1")) {
+        throw new IllegalStateException("Only supposed to be used with IPV6 address of ::1");
+      }
+      // encode the ::1
+      ioBuffer.put(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1});
+    }
+  };
+
+  private final DnsMessageEncoder encoder = new DnsMessageEncoder();
+
+  private void encode(DnsMessage dnsMessage, IoBuffer buf) {
+
+    // Hack
+    if (dnsMessage.getAnswerRecords().size() == 1 && dnsMessage.getAnswerRecords().get(0) instanceof VertxResourceRecord) {
+      VertxResourceRecord vrr = (VertxResourceRecord) dnsMessage.getAnswerRecords().get(0);
+
+      DnsMessageModifier modifier = new DnsMessageModifier();
+      modifier.setTransactionId(dnsMessage.getTransactionId());
+      modifier.setMessageType(dnsMessage.getMessageType());
+      modifier.setOpCode(dnsMessage.getOpCode());
+      modifier.setAuthoritativeAnswer(dnsMessage.isAuthoritativeAnswer());
+      modifier.setTruncated(dnsMessage.isTruncated());
+      modifier.setRecursionDesired(dnsMessage.isRecursionDesired());
+      modifier.setRecursionAvailable(dnsMessage.isRecursionAvailable());
+      modifier.setReserved(dnsMessage.isReserved());
+      modifier.setAcceptNonAuthenticatedData(dnsMessage.isAcceptNonAuthenticatedData());
+      modifier.setResponseCode(dnsMessage.getResponseCode());
+      modifier.setQuestionRecords(dnsMessage.getQuestionRecords());
+      modifier.setAnswerRecords(dnsMessage.getAnswerRecords());
+      modifier.setAuthorityRecords(dnsMessage.getAuthorityRecords());
+      modifier.setAdditionalRecords(dnsMessage.getAdditionalRecords());
+
+      modifier.setTruncated(vrr.isTruncated);
+
+      dnsMessage = modifier.getDnsMessage();
+    }
+
+    encoder.encode(buf, dnsMessage);
+
+    for (ResourceRecord record: dnsMessage.getAnswerRecords()) {
+      // This is a hack to allow to also test for AAAA resolution as DnsMessageEncoder does not support it and it
+      // is hard to extend, because the interesting methods are private...
+      // In case of RecordType.AAAA we need to encode the RecordType by ourself
+      if (record.getRecordType() == RecordType.AAAA) {
+        try {
+          TestAAAARecordEncoder.put(buf, record);
+        } catch (IOException e) {
+          // Should never happen
+          throw new IllegalStateException(e);
+        }
+      }
+    }
+  }
 
   /**
    * ProtocolCodecFactory which allows to test AAAA resolution
    */
   private final class TestDnsProtocolUdpCodecFactory implements ProtocolCodecFactory {
-    private DnsMessageEncoder encoder = new DnsMessageEncoder();
-    private TestAAAARecordEncoder recordEncoder = new TestAAAARecordEncoder();
-
     @Override
     public ProtocolEncoder getEncoder(IoSession session) throws Exception {
       return new DnsUdpEncoder() {
@@ -420,23 +535,8 @@ public final class FakeDNSServer extends DnsServer {
         @Override
         public void encode(IoSession session, Object message, ProtocolEncoderOutput out) {
           IoBuffer buf = IoBuffer.allocate( 1024 );
-          DnsMessage dnsMessage = (DnsMessage) message;
-          encoder.encode(buf, dnsMessage);
-          for (ResourceRecord record: dnsMessage.getAnswerRecords()) {
-            // This is a hack to allow to also test for AAAA resolution as DnsMessageEncoder does not support it and it
-            // is hard to extend, because the interesting methods are private...
-            // In case of RecordType.AAAA we need to encode the RecordType by ourself
-            if (record.getRecordType() == RecordType.AAAA) {
-              try {
-                recordEncoder.put(buf, record);
-              } catch (IOException e) {
-                // Should never happen
-                throw new IllegalStateException(e);
-              }
-            }
-          }
+          FakeDNSServer.this.encode((DnsMessage)message, buf);
           buf.flip();
-
           out.write( buf );
         }
       };
@@ -446,16 +546,36 @@ public final class FakeDNSServer extends DnsServer {
     public ProtocolDecoder getDecoder(IoSession session) throws Exception {
       return new DnsUdpDecoder();
     }
+  }
 
-    private final class TestAAAARecordEncoder extends ResourceRecordEncoder {
-      @Override
-      protected void putResourceRecordData(IoBuffer ioBuffer, ResourceRecord resourceRecord) {
-        if (!resourceRecord.get(DnsAttribute.IP_ADDRESS).equals("::1")) {
-          throw new IllegalStateException("Only supposed to be used with IPV6 address of ::1");
+  /**
+   * ProtocolCodecFactory which allows to test AAAA resolution
+   */
+  private final class TestDnsProtocolTcpCodecFactory implements ProtocolCodecFactory {
+    @Override
+    public ProtocolEncoder getEncoder(IoSession session) throws Exception {
+      return new DnsUdpEncoder() {
+
+        @Override
+        public void encode(IoSession session, Object message, ProtocolEncoderOutput out) {
+          IoBuffer buf = IoBuffer.allocate( 1024 );
+          buf.putShort( ( short ) 0 );
+          FakeDNSServer.this.encode((DnsMessage) message, buf);
+          encoder.encode( buf, ( DnsMessage ) message );
+          int end = buf.position();
+          short recordLength = ( short ) ( end - 2 );
+          buf.rewind();
+          buf.putShort( recordLength );
+          buf.position( end );
+          buf.flip();
+          out.write( buf );
         }
-        // encode the ::1
-        ioBuffer.put(new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1});
-      }
+      };
+    }
+
+    @Override
+    public ProtocolDecoder getDecoder(IoSession session) throws Exception {
+      return new DnsTcpDecoder();
     }
   }
 }
