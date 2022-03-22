@@ -301,7 +301,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
 
   @Override
   public boolean isPaused() {
-    synchronized(conn) {
+    synchronized (conn) {
       return super.isPaused();
     }
   }
