@@ -150,6 +150,10 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     return bytesRead;
   }
 
+  public boolean isPaused() {
+    return pending.isPaused();
+  }
+
   public void doPause() {
     pending.pause();
   }

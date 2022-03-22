@@ -493,6 +493,13 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   }
 
   @Override
+  public boolean isPaused() {
+    synchronized(conn) {
+      return pendingQueue().isPaused();
+    }
+  }
+
+  @Override
   public HttpServerRequest customFrameHandler(Handler<HttpFrame> handler) {
     return this;
   }

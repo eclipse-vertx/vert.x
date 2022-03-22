@@ -300,6 +300,13 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
+  public boolean isPaused() {
+    synchronized(conn) {
+      return super.isPaused();
+    }
+  }
+
+  @Override
   public HttpServerRequest resume() {
     return fetch(Long.MAX_VALUE);
   }

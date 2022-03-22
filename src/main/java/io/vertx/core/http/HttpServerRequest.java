@@ -432,6 +432,13 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   boolean isEnded();
 
   /**
+   * Is the request paused?
+   *
+   * @return true if paused
+   */
+  boolean isPaused();
+
+  /**
    * Set a custom frame handler. The handler will get notified when the http stream receives an custom HTTP/2
    * frame. HTTP/2 permits extension of the protocol.
    *
