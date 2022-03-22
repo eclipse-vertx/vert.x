@@ -21,6 +21,7 @@ import io.netty.channel.ConnectTimeoutException;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
@@ -1279,19 +1280,33 @@ public class NetTest extends VertxTestBase {
     client.close();
     client = vertx.createNetClient(clientOptions);
     Buffer received = Buffer.buffer();
-    Handler<NetSocket> receiver = s -> s.handler(received::appendBuffer);
-    Handler<NetSocket> sender = socket -> {
+    AtomicInteger idleEvents = new AtomicInteger();
+    Handler<NetSocket> receiver = so -> {
+      ((NetSocketInternal)so).eventHandler(evt -> {
+        if (evt instanceof IdleStateEvent) {
+          idleEvents.incrementAndGet();
+        }
+      });
+      so.handler(received::appendBuffer);
+    };
+    Handler<NetSocket> sender = so -> {
       AtomicInteger times = new AtomicInteger();
       vertx.setPeriodic(100, id -> {
         int val = times.getAndIncrement();
         if (val < 10) {
-          socket.write("" + val);
+          so.write("" + val);
         } else {
           vertx.cancelTimer(id);
         }
       });
-      socket.closeHandler(v -> {
+      ((NetSocketInternal)so).eventHandler(evt -> {
+        if (evt instanceof IdleStateEvent) {
+          idleEvents.incrementAndGet();
+        }
+      });
+      so.closeHandler(v -> {
         check.accept(received);
+        assertEquals(1, idleEvents.get());
         testComplete();
       });
     };
