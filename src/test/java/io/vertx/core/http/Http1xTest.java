@@ -5276,12 +5276,18 @@ public class Http1xTest extends HttpTest {
   @Test
   public void testClientEventLoopSize() throws Exception {
     Assume.assumeTrue("Domain socket don't pass this test", testAddress.isInetSocket());
-    server.requestHandler(req -> {
-      req.response().end();
-    });
-    startServer();
     int size = 4;
     int maxPoolSize = size + 2;
+    List<HttpServerRequest> requests = new ArrayList<>();
+    server.requestHandler(req -> {
+      requests.add(req);
+      if (requests.size() == maxPoolSize) {
+        requests.forEach(_req -> _req.response().end());
+      } else if (requests.size() > maxPoolSize) {
+        req.response().end();
+      }
+    });
+    startServer();
     client.close();
     client = vertx.createHttpClient(new HttpClientOptions()
       .setMaxPoolSize(maxPoolSize)
