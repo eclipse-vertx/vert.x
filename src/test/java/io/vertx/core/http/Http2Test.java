@@ -521,7 +521,7 @@ public class Http2Test extends HttpTest {
   }
 
   @Test
-  public void testFoo() throws Exception {
+  public void testContentLengthNotRequired() throws Exception {
     waitFor(2);
     server.requestHandler(req -> {
       HttpServerResponse resp = req.response();
@@ -532,13 +532,13 @@ public class Http2Test extends HttpTest {
     });
     startServer(testAddress);
     client.request(requestOptions)
-      .compose(HttpClientRequest::send)
-      .onComplete(onSuccess(resp -> {
+      .compose(req -> req.send().compose(resp -> {
         assertNull(resp.getHeader("content-length"));
-        resp.bodyHandler(body -> {
-          assertEquals("HelloWorld", body.toString());
-          complete();
-        });
+        return resp.body();
+      }))
+      .onComplete(onSuccess(body -> {
+        assertEquals("HelloWorld", body.toString());
+        complete();
       }));
     await();
   }
