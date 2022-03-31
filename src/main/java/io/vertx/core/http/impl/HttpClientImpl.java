@@ -339,7 +339,15 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
       ar -> {
         if (ar.succeeded()) {
           Http1xClientConnection conn = (Http1xClientConnection) ar.result();
-          conn.toWebSocket(ctx, connectOptions.getURI(), connectOptions.getHeaders(), connectOptions.getAllowOriginHeader(), connectOptions.getVersion(), connectOptions.getSubProtocols(), HttpClientImpl.this.options.getMaxWebSocketFrameSize(), promise);
+          conn.toWebSocket(ctx,
+            connectOptions.getURI(),
+            connectOptions.getHeaders(),
+            connectOptions.getAllowOriginHeader(),
+            connectOptions.getVersion(),
+            connectOptions.getSubProtocols(),
+            connectOptions.getTimeout(),
+            HttpClientImpl.this.options.getMaxWebSocketFrameSize(),
+            promise);
         } else {
           promise.fail(ar.cause());
         }

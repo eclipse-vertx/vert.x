@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.websocketx.CloseWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameDecoder;
 import io.netty.handler.codec.http.websocketx.WebSocket13FrameEncoder;
+import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.PlatformDependent;
 import io.vertx.core.AbstractVerticle;
@@ -1741,6 +1742,33 @@ public class WebSocketTest extends VertxTestBase {
 
     public List<Throwable> getReceivedExceptions() {
       return receivedExceptions;
+    }
+  }
+
+  @Test
+  public void testHandshakeTimeout() throws Exception {
+    NetServer server = vertx.createNetServer()
+      .connectHandler(so -> {
+
+      })
+      .listen(1234, DEFAULT_HTTP_HOST)
+      .toCompletionStage()
+      .toCompletableFuture()
+      .get(20, TimeUnit.SECONDS);
+    try {
+      client = vertx.createHttpClient(new HttpClientOptions().setConnectTimeout(1000));
+      WebSocketConnectOptions options = new WebSocketConnectOptions()
+        .setPort(1234)
+        .setHost(DEFAULT_HTTP_HOST)
+        .setURI("/")
+        .setTimeout(1000);
+      client.webSocket(options).onComplete(onFailure(err -> {
+        assertEquals(WebSocketHandshakeException.class, err.getClass());
+        testComplete();
+      }));
+      await();
+    } finally {
+      server.close();
     }
   }
 
