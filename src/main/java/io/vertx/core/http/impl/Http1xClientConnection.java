@@ -855,6 +855,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
     boolean allowOriginHeader,
     WebsocketVersion vers,
     List<String> subProtocols,
+    long handshakeTimeout,
     int maxWebSocketFrameSize,
     Promise<WebSocket> promise) {
     try {
@@ -874,6 +875,15 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         }
       } else {
         nettyHeaders = null;
+      }
+
+      long timer;
+      if (handshakeTimeout > 0L) {
+        timer = vertx.setTimer(handshakeTimeout, id -> {
+          close();
+        });
+      } else {
+        timer = -1;
       }
 
       ChannelPipeline p = chctx.channel().pipeline();
@@ -898,6 +908,9 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
         !options.isSendUnmaskedFrames());
 
       WebSocketHandshakeInboundHandler handshakeInboundHandler = new WebSocketHandshakeInboundHandler(handshaker, ar -> {
+        if (timer > 0L) {
+          vertx.cancelTimer(timer);
+        }
         AsyncResult<WebSocket> wsRes = ar.map(v -> {
           WebSocketImpl w = new WebSocketImpl(
             context,
