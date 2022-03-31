@@ -10,6 +10,7 @@
  */
 package io.vertx.core.http;
 
+import io.netty.handler.codec.http.websocketx.WebSocketHandshakeException;
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.core.MultiMap;
@@ -178,6 +179,18 @@ public class WebSocketConnectOptions extends RequestOptions {
   @Override
   public WebSocketConnectOptions setURI(String uri) {
     return (WebSocketConnectOptions) super.setURI(uri);
+  }
+
+  /**
+   * Sets the amount of time after which if the WebSocket handshake does not happen within the timeout period an
+   * {@link WebSocketHandshakeException} will be passed to the exception handler and the connection will be closed.
+   *
+   * @param timeout the amount of time in milliseconds.
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Override
+  public WebSocketConnectOptions setTimeout(long timeout) {
+    return (WebSocketConnectOptions) super.setTimeout(timeout);
   }
 
   @Override
