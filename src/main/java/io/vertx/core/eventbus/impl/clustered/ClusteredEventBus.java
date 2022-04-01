@@ -11,6 +11,7 @@
 
 package io.vertx.core.eventbus.impl.clustered;
 
+import io.vertx.core.Closeable;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
@@ -96,6 +97,7 @@ public class ClusteredEventBus extends EventBusImpl {
       clusterManager.setNodeInfo(nodeInfo, setPromise);
       return setPromise.future();
     }).onSuccess(v -> {
+      vertx.removeCloseHook((Closeable) server);
       started = true;
       nodeSelector.eventBusStarted();
     }).onComplete(promise);

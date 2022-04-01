@@ -516,4 +516,24 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     assertNotNull(nodeSelectorRef.get());
     assertFalse(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
   }
+
+  @Test
+  public void testClusterEventBusClosesItsInternalNetServer() throws Exception {
+    startNodes(2);
+
+    final MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1, new DeliveryOptions().setLocalOnly(false));
+
+    ((VertxInternal) vertices[1]).addCloseHook(
+      closeable -> vertx.setTimer(250, // delay to fail consistently - NetServer shutdown takes a bit
+        id -> producer.write("foo")
+          .onComplete(onSuccess(nothing -> testComplete()))
+          .onComplete(closeable) // completing closeable later is important
+      )
+    );
+    vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> vertices[1].close());
+
+    producer.write("foo");
+
+    await();
+  }
 }
