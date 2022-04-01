@@ -581,14 +581,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         }
         haPromise.future().onComplete(ar2 -> {
           addressResolver.close(ar3 -> {
-            Promise<Void> ebClose = getOrCreateContext().promise();
-            eventBus.close(ebClose);
-            ebClose.future().onComplete(ar4 -> {
-              closeClusterManager(ar5 -> {
-                // Copy set to prevent ConcurrentModificationException
-                deleteCacheDirAndShutdown(completionHandler);
+              closeClusterManager(ar4 -> {
+                Promise<Void> ebClose = getOrCreateContext().promise();
+                eventBus.close(ebClose);
+                ebClose.future().onComplete(ar5 -> {
+                  // Copy set to prevent ConcurrentModificationException
+                  deleteCacheDirAndShutdown(completionHandler);
+                });
               });
-            });
           });
         });
       });
