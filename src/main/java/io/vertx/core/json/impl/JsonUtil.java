@@ -11,9 +11,6 @@
 package io.vertx.core.json.impl;
 
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
-import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
-import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-import static java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
@@ -24,7 +21,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
@@ -40,13 +36,6 @@ public final class JsonUtil {
 
   public static final Base64.Encoder BASE64_ENCODER;
   public static final Base64.Decoder BASE64_DECODER;
-
-  private static final DateTimeFormatter LOCAL_TIME_FORMATTER =
-      DateTimeFormatter.ofPattern("HH:mm:ss.SSSSSSSSS");
-  private static final DateTimeFormatter LOCAL_DATE_TIME_FORMATTER =
-    DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSS");
-  private static final DateTimeFormatter OFFSET_DATE_TIME_FORMATTER =
-    DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSSSSSSSXXX");
 
   static {
     /*
@@ -93,13 +82,13 @@ public final class JsonUtil {
     } else if (val instanceof Instant) {
       val = ISO_INSTANT.format((Instant) val);
     } else if (val instanceof LocalTime) {
-      val = LOCAL_TIME_FORMATTER.format((LocalTime) val);
+      val = ((LocalTime) val).toString();
     } else if (val instanceof LocalDate) {
-      val = ISO_LOCAL_DATE.format(((LocalDate) val));
+      val = ((LocalDate) val).toString();
     } else if (val instanceof LocalDateTime) {
-      val = LOCAL_DATE_TIME_FORMATTER.format(((LocalDateTime) val));
+      val = ((LocalDateTime) val).toString();
     } else if (val instanceof OffsetDateTime) {
-      val = OFFSET_DATE_TIME_FORMATTER.format(((OffsetDateTime) val));
+      val = ((OffsetDateTime) val).toString();
     } else if (val instanceof byte[]) {
       val = BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Buffer) {
