@@ -26,7 +26,6 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.impl.JsonUtil;
 import io.vertx.core.spi.json.JsonCodec;
 
 import java.io.Closeable;
