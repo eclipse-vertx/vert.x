@@ -12,6 +12,7 @@
 package examples;
 
 import io.netty.handler.logging.ByteBufFormat;
+import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -133,24 +134,25 @@ public class NetExamples {
 
   public void example11(Vertx vertx) {
 
-    // Create a few instances so we can utilise cores
+    class MyVerticle extends AbstractVerticle {
 
-    for (int i = 0; i < 10; i++) {
-      NetServer server = vertx.createNetServer();
-      server.connectHandler(socket -> {
-        socket.handler(buffer -> {
-          // Just echo back the data
-          socket.write(buffer);
+      NetServer server;
+
+      @Override
+      public void start() throws Exception {
+        server = vertx.createNetServer();
+        server.connectHandler(socket -> {
+          socket.handler(buffer -> {
+            // Just echo back the data
+            socket.write(buffer);
+          });
         });
-      });
-      server.listen(1234, "localhost");
+        server.listen(1234, "localhost");
+      }
     }
-  }
 
-  public void example12(Vertx vertx) {
-
-    DeploymentOptions options = new DeploymentOptions().setInstances(10);
-    vertx.deployVerticle("com.mycompany.MyVerticle", options);
+    // Create a few instances so we can utilise cores
+    vertx.deployVerticle(MyVerticle.class, new DeploymentOptions().setInstances(10));
   }
 
   public void example13(Vertx vertx) {
