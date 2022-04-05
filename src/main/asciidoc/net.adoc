@@ -202,16 +202,12 @@ You can instantiate more instances programmatically in your code:
 {@link examples.NetExamples#example11}
 ----
 
-or, if you are using verticles you can simply deploy more instances of your server verticle by using the `-instances` option
+or, you can simply deploy more instances of your server verticle by using the `-instances` option
 on the command line:
 
- vertx run com.mycompany.MyVerticle -instances 10
-
-or when programmatically deploying your verticle
-
-[source,$lang]
+[source]
 ----
-{@link examples.NetExamples#example12}
+>  vertx run com.mycompany.MyVerticle -instances 10
 ----
 
 Once you do this you will find the echo server works functionally identically to before, but all your cores on your
