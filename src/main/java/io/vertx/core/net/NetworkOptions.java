@@ -12,6 +12,7 @@
 package io.vertx.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.Unstable;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.json.JsonObject;
 import io.netty.handler.logging.ByteBufFormat;
@@ -203,6 +204,7 @@ public abstract class NetworkOptions {
   /**
    * @return Netty's logging handler's data format.
    */
+  @Unstable
   public ByteBufFormat getActivityLogDataFormat() {
     return activityLogDataFormat;
   }
@@ -224,6 +226,7 @@ public abstract class NetworkOptions {
    * @param activityLogDataFormat the format to use
    * @return a reference to this, so the API can be used fluently
    */
+  @Unstable
   public NetworkOptions setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
     this.activityLogDataFormat = activityLogDataFormat;
     return this;
