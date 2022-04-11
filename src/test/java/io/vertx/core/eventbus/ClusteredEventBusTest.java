@@ -11,9 +11,7 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
@@ -520,20 +518,15 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
   @Test
   public void testClusterEventBusClosesItsInternalNetServer() throws Exception {
     startNodes(2);
-
     final MessageProducer<String> producer = vertices[0].eventBus().sender(ADDRESS1, new DeliveryOptions().setLocalOnly(false));
-
-    ((VertxInternal) vertices[1]).addCloseHook(
-      closeable -> vertx.setTimer(250, // delay to fail consistently - NetServer shutdown takes a bit
-        id -> producer.write("foo")
-          .onComplete(onSuccess(nothing -> testComplete()))
-          .onComplete(closeable) // completing closeable later is important
-      )
+    final Closeable onClosing = closeable -> vertx.setTimer(250, // delay to fail consistently - NetServer shutdown takes a bit
+      id -> producer.write("foo")
+        .onComplete(onSuccess(nothing -> testComplete()))
+        .onComplete(closeable) // completing closeable later is important
     );
+    ((VertxInternal) vertices[1]).addCloseHook(onClosing);
     vertices[1].eventBus().consumer(ADDRESS1).handler(msg -> vertices[1].close());
-
     producer.write("foo");
-
     await();
   }
 }
