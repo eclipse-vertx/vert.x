@@ -219,7 +219,7 @@ public class Http1xServerConnection extends Http1xConnectionBase<ServerWebSocket
   private void handleNext(Http1xServerRequest next) {
     responseInProgress = next;
     next.handleBegin(writable);
-    context.emit(next, next_ -> {
+    next.context.emit(next, next_ -> {
       next_.resume();
       Handler<HttpServerRequest> handler = next_.nettyRequest().decoderResult().isSuccess() ? requestHandler : invalidRequestHandler;
       handler.handle(next_);
