@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,18 +14,20 @@ package io.vertx.core.shareddata;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.shareddata.LocalMap;
-import io.vertx.core.shareddata.Shareable;
-import io.vertx.core.shareddata.SharedData;
+import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
+import io.vertx.core.shareddata.AsyncMapTest.SomeSerializableObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
-import static io.vertx.test.core.TestUtils.*;
+import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
+import static io.vertx.test.core.TestUtils.assertNullPointerException;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -171,9 +173,11 @@ public class LocalSharedDataTest extends VertxTestBase {
   @Test
   public void testMapTypes() throws Exception {
 
-    LocalMap map = sharedData.getLocalMap("foo");
+    LocalMap<Object, Object> map = sharedData.getLocalMap("foo");
 
     String key = "key";
+
+    assertNullPointerException(() -> map.put(key, null));
 
     double d = new Random().nextDouble();
     map.put(key, d);
@@ -183,7 +187,7 @@ public class LocalSharedDataTest extends VertxTestBase {
     map.put(key, f);
     assertEquals(f, map.get(key));
 
-    byte b = (byte)new Random().nextInt();
+    byte b = (byte) new Random().nextInt();
     map.put(key, b);
     assertEquals(b, map.get(key));
 
@@ -234,15 +238,37 @@ public class LocalSharedDataTest extends VertxTestBase {
 
     JsonObject obj = new JsonObject().put("foo", "bar");
     map.put("obj", obj);
-    JsonObject other = (JsonObject)map.get("obj");
+    JsonObject other = (JsonObject) map.get("obj");
     assertEquals(obj, other);
     assertNotSame(obj, other); // Should be copied
 
     JsonArray arr = new JsonArray().add("foo");
     map.put("arr", arr);
-    JsonArray otherArr = (JsonArray)map.get("arr");
+    JsonArray otherArr = (JsonArray) map.get("arr");
     assertEquals(arr, otherArr);
     assertNotSame(arr, otherArr); // Should be copied
+
+    BigInteger bi = BigInteger.valueOf(new Random().nextLong());
+    map.put(key, bi);
+    BigInteger otherBi = (BigInteger) map.get(key);
+    assertSame(bi, otherBi);
+
+    BigDecimal bd = BigDecimal.valueOf(new Random().nextDouble());
+    map.put(key, bd);
+    BigDecimal otherBd = (BigDecimal) map.get(key);
+    assertSame(bd, otherBd);
+
+    SomeSerializableObject so = new SomeSerializableObject(TestUtils.randomAlphaString(15));
+    map.put(key, so);
+    SomeSerializableObject otherSo = (SomeSerializableObject) map.get(key);
+    assertEquals(so, otherSo);
+    assertNotSame(so, otherSo);
+
+    SomeClusterSerializableObject cso = new SomeClusterSerializableObject(TestUtils.randomAlphaString(15));
+    map.put(key, cso);
+    SomeClusterSerializableObject otherCso = (SomeClusterSerializableObject) map.get(key);
+    assertEquals(cso, otherCso);
+    assertNotSame(cso, otherCso);
   }
 
   @Test
