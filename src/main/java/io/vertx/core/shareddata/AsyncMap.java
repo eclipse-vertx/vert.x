@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
+
 
 /**
  * An asynchronous map.
@@ -263,7 +265,7 @@ public interface AsyncMap<K, V> {
    *
    * @param resultHandler invoked when the operation completes
    */
-  @GenIgnore
+  @GenIgnore(PERMITTED_TYPE)
   default void keys(Handler<AsyncResult<Set<K>>> resultHandler) {
     keys().onComplete(resultHandler);
   }
@@ -271,7 +273,7 @@ public interface AsyncMap<K, V> {
   /**
    * Same as {@link #keys(Handler)} but returns a {@code Future} of the asynchronous result
    */
-  @GenIgnore
+  @GenIgnore(PERMITTED_TYPE)
   Future<Set<K>> keys();
 
   /**
@@ -283,7 +285,7 @@ public interface AsyncMap<K, V> {
    *
    * @param resultHandler invoked when the operation completes
    */
-  @GenIgnore
+  @GenIgnore(PERMITTED_TYPE)
   default void values(Handler<AsyncResult<List<V>>> resultHandler) {
     values().onComplete(resultHandler);
   }
@@ -291,7 +293,7 @@ public interface AsyncMap<K, V> {
   /**
    * Same as {@link #values(Handler)} but returns a {@code Future} of the asynchronous result
    */
-  @GenIgnore
+  @GenIgnore(PERMITTED_TYPE)
   Future<List<V>> values();
 
   /**
