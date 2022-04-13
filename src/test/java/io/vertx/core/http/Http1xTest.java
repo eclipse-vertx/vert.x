@@ -22,6 +22,7 @@ import io.vertx.core.http.impl.Http1xOrH2CHandler;
 import io.vertx.core.http.impl.Http1xServerConnection;
 import io.vertx.core.http.impl.Http1xUpgradeToH2CHandler;
 import io.vertx.core.http.impl.HttpServerImpl;
+import io.vertx.core.http.impl.HttpServerRequestInternal;
 import io.vertx.core.http.impl.HttpUtils;
 import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.impl.ContextInternal;
@@ -1105,6 +1106,7 @@ public class Http1xTest extends HttpTest {
 
     AtomicInteger reqCount = new AtomicInteger(0);
     server.requestHandler(req -> {
+      assertSame(Vertx.currentContext(), ((HttpServerRequestInternal)req).context());
       int theCount = reqCount.get();
       assertEquals(theCount, Integer.parseInt(req.headers().get("count")));
       reqCount.incrementAndGet();
