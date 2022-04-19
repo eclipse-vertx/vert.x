@@ -189,7 +189,7 @@ public interface SharedData {
    * Return a {@code LocalMap} with the specific {@code name}.
    *
    * @param name  the name of the map
-   * @return the msp
+   * @return the map
    */
   <K, V> LocalMap<K, V> getLocalMap(String name);
 
