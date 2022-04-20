@@ -36,6 +36,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+
 /**
  * Command to create a <em>bare</em> instance of vert.x.
  *
@@ -51,6 +56,7 @@ public class BareCommand extends ClasspathHandler {
   public static final String VERTX_EVENTBUS_PROP_PREFIX = "vertx.eventBus.options.";
   public static final String DEPLOYMENT_OPTIONS_PROP_PREFIX = "vertx.deployment.options.";
   public static final String METRICS_OPTIONS_PROP_PREFIX = "vertx.metrics.options.";
+  private static final ObjectMapper YAML_MAPPER = new YAMLMapper();
 
   protected Vertx vertx;
 
@@ -291,13 +297,27 @@ public class BareCommand extends ClasspathHandler {
   protected JsonObject getJsonFromFileOrString(String jsonFileOrString, String argName) {
     JsonObject conf;
     if (jsonFileOrString != null) {
-      try (Scanner scanner = new Scanner(new File(jsonFileOrString), "UTF-8").useDelimiter("\\A")) {
+      File source = new File(jsonFileOrString);
+      try (Scanner scanner = new Scanner(source, "UTF-8").useDelimiter("\\A")) {
+
         String sconf = scanner.next();
-        try {
-          conf = new JsonObject(sconf);
-        } catch (DecodeException e) {
-          log.error("Configuration file " + sconf + " does not contain a valid JSON object");
-          return null;
+        String extension = getExtension(source);
+
+        if ("yaml".equals(extension)) {
+          try {
+            JsonNode jsonNode = YAML_MAPPER.readTree(sconf);
+            conf = new JsonObject(jsonNode.toString());
+          } catch (JsonProcessingException e) {
+            log.error("Configuration file " + sconf + " does not contain a valid YAML object");
+            return null;
+          }
+        } else {
+          try {
+            conf = new JsonObject(sconf);
+          } catch (DecodeException e) {
+            log.error("Configuration file " + sconf + " does not contain a valid JSON object");
+            return null;
+          }
         }
       } catch (FileNotFoundException e) {
         try {
@@ -312,6 +332,18 @@ public class BareCommand extends ClasspathHandler {
       conf = null;
     }
     return conf;
+  }
+
+  private static String getExtension(File source) {
+    String sourceName = source.getName();
+    int index = sourceName.lastIndexOf(".");
+    String substring = sourceName.substring(index + 1);
+
+    if ("yml".equals(substring) || "yaml".equals(substring)) {
+      return "yaml";
+    } else {
+      return substring.toLowerCase();
+    }
   }
 
   /**

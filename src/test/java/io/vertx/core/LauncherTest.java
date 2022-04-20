@@ -392,7 +392,7 @@ public class LauncherTest extends VertxTestBase {
   @Test
   public void testRunVerticleWithConfFile() throws Exception {
     Path tempDir = testFolder.newFolder().toPath();
-    Path tempFile = Files.createTempFile(tempDir, "conf", "json");
+    Path tempFile = Files.createTempFile(tempDir, "conf", ".json");
     MyLauncher launcher = new MyLauncher();
     JsonObject conf = new JsonObject().put("foo", "bar").put("wibble", 123);
     Files.write(tempFile, conf.encode().getBytes());
@@ -400,6 +400,40 @@ public class LauncherTest extends VertxTestBase {
     launcher.dispatch(args);
     assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
     assertEquals(conf, TestVerticle.conf);
+  }
+
+  @Test
+  public void testRunVerticleWithYAMLConfFile() throws Exception {
+    testYamlConfigFile(".yaml");
+  }
+
+  @Test
+  public void testRunVerticleWithYMLConfFile() throws Exception {
+    testYamlConfigFile(".yml");
+  }
+
+  private void testYamlConfigFile(String extension) throws Exception {
+    Path tempDir = testFolder.newFolder().toPath();
+    Path tempFile = Files.createTempFile(tempDir, "conf", extension);
+    MyLauncher launcher = new MyLauncher();
+    String yamlContent = "foo: \"bar\"\n"
+      + "foo1: \n"
+      + "  bar1: \"A\"\n"
+      + "  bar2: 1\n"
+      + "  bar3: \n"
+      + "    - \"A\"\n"
+      + "    - \"B\"";
+    Files.write(tempFile,yamlContent.getBytes());
+    String[] args = {"run", "java:" + TestVerticle.class.getCanonicalName(), "-conf", tempFile.toString()};
+    launcher.dispatch(args);
+    assertWaitUntil(() -> TestVerticle.instanceCount.get() == 1);
+    JsonObject confExpected = new JsonObject().put("foo", "bar")
+                                              .put("foo1", new JsonObject()
+                                                .put("bar1", "A")
+                                                .put("bar2", 1)
+                                                .put("bar3", Arrays.asList("A", "B"))
+                                              );
+    assertEquals(confExpected, TestVerticle.conf);
   }
 
   @Test
