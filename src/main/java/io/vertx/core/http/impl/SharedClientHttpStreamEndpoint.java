@@ -169,7 +169,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
 
   @Override
   public void requestConnection2(ContextInternal ctx, long timeout, Handler<AsyncResult<Lease<HttpClientConnection>>> handler) {
-    Request request = new Request(ctx, client.getOptions().getProtocolVersion(), timeout, handler);
+    Request request = new Request(ctx, client.options().getProtocolVersion(), timeout, handler);
     request.acquire();
   }
 }

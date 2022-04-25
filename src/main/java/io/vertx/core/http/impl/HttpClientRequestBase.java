@@ -187,7 +187,7 @@ public abstract class HttpClientRequestBase implements HttpClientRequest {
   private synchronized long cancelTimeout() {
     long ret;
     if ((ret = currentTimeoutTimerId) != -1) {
-      client.getVertx().cancelTimer(currentTimeoutTimerId);
+      client.vertx().cancelTimer(currentTimeoutTimerId);
       currentTimeoutTimerId = -1;
       ret = currentTimeoutMs;
       currentTimeoutMs = 0;

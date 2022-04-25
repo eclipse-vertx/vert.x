@@ -70,7 +70,7 @@ public class HttpChannelConnector {
     this.client = client;
     this.netClient = netClient;
     this.metrics = metrics;
-    this.options = client.getOptions();
+    this.options = client.options();
     this.proxyOptions = proxyOptions;
     this.ssl = ssl;
     this.useAlpn = useAlpn;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,25 +11,17 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.Closeable;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.*;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.EventLoopContext;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
+import io.vertx.core.net.*;
 import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.ProxyFilter;
 import io.vertx.core.net.impl.pool.ConnectionManager;
-import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.ProxyOptions;
-import io.vertx.core.net.ProxyType;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.pool.ConnectionPool;
 import io.vertx.core.net.impl.pool.Endpoint;
 import io.vertx.core.net.impl.pool.Lease;
@@ -41,11 +33,7 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -56,12 +44,11 @@ import java.util.stream.Collectors;
 import static io.vertx.core.http.HttpHeaders.CONTENT_LENGTH;
 
 /**
- *
  * This class is thread-safe.
  *
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
+public class HttpClientImpl implements HttpClientInternal, MetricsProvider, Closeable {
 
   // Pattern to check we are not dealing with an absoluate URI
   private static final Pattern ABS_URI_START_PATTERN = Pattern.compile("^\\p{Alpha}[\\p{Alpha}\\p{Digit}+.\\-]*:");
@@ -546,14 +533,13 @@ public class HttpClientImpl implements HttpClient, MetricsProvider, Closeable {
     return this;
   }
 
-  public HttpClientOptions getOptions() {
+  @Override
+  public HttpClientOptions options() {
     return options;
   }
 
-  /**
-   * @return the vertx, for use in package related classes only.
-   */
-  public VertxInternal getVertx() {
+  @Override
+  public VertxInternal vertx() {
     return vertx;
   }
 

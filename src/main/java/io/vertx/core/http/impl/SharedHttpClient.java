@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,7 +11,10 @@
 
 package io.vertx.core.http.impl;
 
-import io.vertx.core.*;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.MultiMap;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
@@ -21,18 +24,18 @@ import io.vertx.core.impl.future.PromiseInternal;
 import java.util.List;
 import java.util.function.Function;
 
-public class SharedHttpClient implements HttpClient {
+public class SharedHttpClient implements HttpClientInternal {
 
   public static final String SHARED_MAP_NAME = "__vertx.shared.httpClients";
 
   private final VertxInternal vertx;
   private final CloseFuture closeFuture;
-  private final HttpClient delegate;
+  private final HttpClientInternal delegate;
 
   public SharedHttpClient(VertxInternal vertx, CloseFuture closeFuture, HttpClient delegate) {
     this.vertx = vertx;
     this.closeFuture = closeFuture;
-    this.delegate = delegate;
+    this.delegate = (HttpClientInternal) delegate;
   }
 
   @Override
@@ -159,5 +162,15 @@ public class SharedHttpClient implements HttpClient {
   @Override
   public Function<HttpClientResponse, Future<RequestOptions>> redirectHandler() {
     return delegate.redirectHandler();
+  }
+
+  @Override
+  public VertxInternal vertx() {
+    return delegate.vertx();
+  }
+
+  @Override
+  public HttpClientOptions options() {
+    return delegate.options();
   }
 }

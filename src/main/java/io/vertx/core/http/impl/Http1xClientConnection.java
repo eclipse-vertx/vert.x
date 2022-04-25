@@ -115,7 +115,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
                          ClientMetrics metrics) {
     super(context, channel);
     this.client = client;
-    this.options = client.getOptions();
+    this.options = client.options();
     this.ssl = ssl;
     this.server = server;
     this.metrics = metrics;
@@ -901,7 +901,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
       }
 
       ChannelPipeline p = chctx.channel().pipeline();
-      ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebSocketExtensionHandshakers(client.getOptions());
+      ArrayList<WebSocketClientExtensionHandshaker> extensionHandshakers = initializeWebSocketExtensionHandshakers(client.options());
       if (!extensionHandshakers.isEmpty()) {
         p.addBefore("handler", "webSocketsExtensionsHandler", new WebSocketClientExtensionHandler(
           extensionHandshakers.toArray(new WebSocketClientExtensionHandshaker[0])));
