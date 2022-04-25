@@ -93,7 +93,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
   public synchronized HttpClientRequest setFollowRedirects(boolean followRedirects) {
     checkEnded();
     if (followRedirects) {
-      this.followRedirects = client.getOptions().getMaxRedirects() - 1;
+      this.followRedirects = client.options().getMaxRedirects() - 1;
     } else {
       this.followRedirects = 0;
     }
@@ -115,7 +115,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
       throw new IllegalStateException("Cannot set chunked after data has been written on request");
     }
     // HTTP 1.0 does not support chunking so we ignore this if HTTP 1.0
-    if (client.getOptions().getProtocolVersion() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
+    if (client.options().getProtocolVersion() != io.vertx.core.http.HttpVersion.HTTP_1_0) {
       this.chunked = chunked;
     }
     return this;
@@ -217,7 +217,7 @@ public class HttpClientRequestImpl extends HttpClientRequestBase implements Http
 
   @Override
   public Future<HttpClientResponse> connect() {
-    if (client.getOptions().isPipelining()) {
+    if (client.options().isPipelining()) {
       return context.failedFuture("Cannot upgrade a pipe-lined request");
     }
     doWrite(null, false, true, ar -> {});

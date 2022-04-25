@@ -36,8 +36,6 @@ import io.vertx.core.streams.WriteStream;
 import java.util.*;
 import java.util.function.BiConsumer;
 
-import static io.vertx.core.http.HttpHeaders.DEFLATE_GZIP;
-
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -73,7 +71,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   public long concurrency() {
     long concurrency = remoteSettings().getMaxConcurrentStreams();
-    long http2MaxConcurrency = client.getOptions().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.getOptions().getHttp2MultiplexingLimit();
+    long http2MaxConcurrency = client.options().getHttp2MultiplexingLimit() <= 0 ? Long.MAX_VALUE : client.options().getHttp2MultiplexingLimit();
     if (http2MaxConcurrency > 0) {
       concurrency = Math.min(concurrency, http2MaxConcurrency);
     }
@@ -114,7 +112,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
 
   @Override
   protected void concurrencyChanged(long concurrency) {
-    int limit = client.getOptions().getHttp2MultiplexingLimit();
+    int limit = client.options().getHttp2MultiplexingLimit();
     if (limit > 0) {
       concurrency = Math.min(concurrency, limit);
     }
@@ -160,7 +158,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
   }
 
   private void recycle() {
-    int timeout = client.getOptions().getHttp2KeepAliveTimeout();
+    int timeout = client.options().getHttp2KeepAliveTimeout();
     expirationTimestamp = timeout > 0 ? System.currentTimeMillis() + timeout * 1000L : 0L;
   }
 
@@ -529,7 +527,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           headers.add(HttpUtils.toLowerCase(header.getKey()), header.getValue());
         }
       }
-      if (conn.client.getOptions().isTryUseCompression() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
+      if (conn.client.options().isTryUseCompression() && headers.get(HttpHeaderNames.ACCEPT_ENCODING) == null) {
         headers.set(HttpHeaderNames.ACCEPT_ENCODING, Http1xClientConnection.determineCompressionAcceptEncoding());
       }
       try {
@@ -570,7 +568,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
         if (operation == null) {
           operation = headers.method().toString();
         }
-        trace = tracer.sendRequest(context, SpanKind.RPC, conn.client.getOptions().getTracingPolicy(), head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
+        trace = tracer.sendRequest(context, SpanKind.RPC, conn.client.options().getTracingPolicy(), head, operation, headers_, HttpUtils.CLIENT_HTTP_REQUEST_TAG_EXTRACTOR);
       }
     }
 
@@ -614,13 +612,13 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     boolean upgrade,
     Object socketMetric,
     Handler<Http2ClientConnection> c) {
-    HttpClientOptions options = client.getOptions();
+    HttpClientOptions options = client.options();
     HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
       .server(false)
-      .useDecompression(client.getOptions().isTryUseCompression())
+      .useDecompression(client.options().isTryUseCompression())
       .gracefulShutdownTimeoutMillis(0) // So client close tests don't hang 30 seconds - make this configurable later but requires HTTP/1 impl
-      .initialSettings(client.getOptions().getInitialSettings())
+      .initialSettings(client.options().getInitialSettings())
       .connectionFactory(connHandler -> {
         Http2ClientConnection conn = new Http2ClientConnection(client, context, connHandler, metrics);
         if (metrics != null) {
