@@ -23,6 +23,8 @@ import io.vertx.core.impl.launcher.VertxLifecycleHooks;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.spi.cli.CliJsonProcessor;
+import io.vertx.core.spi.cli.CliJsonProcessors;
 import io.vertx.core.spi.launcher.ExecutionContext;
 
 import java.io.File;
@@ -291,11 +293,15 @@ public class BareCommand extends ClasspathHandler {
   protected JsonObject getJsonFromFileOrString(String jsonFileOrString, String argName) {
     JsonObject conf;
     if (jsonFileOrString != null) {
-      try (Scanner scanner = new Scanner(new File(jsonFileOrString), "UTF-8").useDelimiter("\\A")) {
+      File source = new File(jsonFileOrString);
+      try (Scanner scanner = new Scanner(source, "UTF-8").useDelimiter("\\A")) {
         String sconf = scanner.next();
+        String extension = getExtension(source);
+
         try {
-          conf = new JsonObject(sconf);
-        } catch (DecodeException e) {
+          CliJsonProcessor cliJsonProcessor = CliJsonProcessors.get(extension);
+          conf = cliJsonProcessor.process(sconf);
+        } catch (Exception e) {
           log.error("Configuration file " + sconf + " does not contain a valid JSON object");
           return null;
         }
@@ -312,6 +318,22 @@ public class BareCommand extends ClasspathHandler {
       conf = null;
     }
     return conf;
+  }
+
+  private static String getExtension(File source) {
+    String sourceName = source.getName();
+    int index = sourceName.lastIndexOf(".");
+    if (index == -1) {
+      return "json";
+    }
+
+    String substring = sourceName.substring(index + 1);
+
+    if ("yml".equals(substring) || "yaml".equals(substring)) {
+      return "yaml";
+    } else {
+      return substring.toLowerCase();
+    }
   }
 
   /**
