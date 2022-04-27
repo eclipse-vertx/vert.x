@@ -38,7 +38,7 @@ public interface WriteStream<T> extends StreamBase {
    * @return a reference to this, so the API can be used fluently
    */
   @Override
-  WriteStream<T> exceptionHandler(Handler<Throwable> handler);
+  WriteStream<T> exceptionHandler(@Nullable Handler<Throwable> handler);
 
   /**
    * Write some data to the stream.
