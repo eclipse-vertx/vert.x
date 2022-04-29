@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -12,44 +12,113 @@
 package io.vertx.core.shareddata.impl;
 
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.shareddata.Shareable;
+
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toSet;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
-public class Checker {
+class Checker {
+
+  private static final Logger log = LoggerFactory.getLogger(Checker.class);
+
+  private static final Set<Class<?>> IMMUTABLE_TYPES = Stream.<Class<?>>builder()
+    .add(String.class)
+    .add(Integer.class)
+    .add(Long.class)
+    .add(Boolean.class)
+    .add(Double.class)
+    .add(Float.class)
+    .add(Short.class)
+    .add(Byte.class)
+    .add(Character.class)
+    .add(BigInteger.class)
+    .add(BigDecimal.class)
+    .build()
+    .collect(toSet());
 
   static void checkType(Object obj) {
-    if (obj instanceof String ||
-        obj instanceof Integer ||
-        obj instanceof Long ||
-        obj instanceof Boolean ||
-        obj instanceof Double ||
-        obj instanceof Float ||
-        obj instanceof Short ||
-        obj instanceof Byte ||
-        obj instanceof Character ||
-        obj instanceof byte[] ||
-        obj instanceof Shareable) {
-    } else {
+    Objects.requireNonNull(obj, "null not allowed for shareddata data structure");
+    // All immutables and byte arrays are Serializable by the platform
+    if (!(obj instanceof Serializable || obj instanceof Shareable || obj instanceof ClusterSerializable)) {
       throw new IllegalArgumentException("Invalid type for shareddata data structure: " + obj.getClass().getName());
     }
   }
 
+  @SuppressWarnings("unchecked")
   static <T> T copyIfRequired(T obj) {
-    if (obj instanceof byte[]) {
-      //Copy it
-      byte[] bytes = (byte[]) obj;
-      byte[] copy = new byte[bytes.length];
-      System.arraycopy(bytes, 0, copy, 0, bytes.length);
-      return (T) copy;
+    Object result;
+    if (obj == null) {
+      // Happens with putIfAbsent
+      result = null;
+    } else if (IMMUTABLE_TYPES.contains(obj.getClass())) {
+      result = obj;
+    } else if (obj instanceof byte[]) {
+      result = copyByteArray((byte[]) obj);
     } else if (obj instanceof Shareable) {
-      return (T) ((Shareable) obj).copy();
+      result = ((Shareable) obj).copy();
+    } else if (obj instanceof ClusterSerializable) {
+      result = copyClusterSerializable((ClusterSerializable) obj);
+    } else if (obj instanceof Serializable) {
+      result = copySerializable(obj);
     } else {
-      return obj;
+      throw new IllegalStateException();
+    }
+    return (T) result;
+  }
+
+  private static byte[] copyByteArray(byte[] bytes) {
+    byte[] copy = new byte[bytes.length];
+    System.arraycopy(bytes, 0, copy, 0, bytes.length);
+    return copy;
+  }
+
+  private static ClusterSerializable copyClusterSerializable(ClusterSerializable obj) {
+    logDeveloperInfo(obj);
+    Buffer buffer = Buffer.buffer();
+    obj.writeToBuffer(buffer);
+    try {
+      ClusterSerializable copy = obj.getClass().getConstructor().newInstance();
+      copy.readFromBuffer(0, buffer);
+      return copy;
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new RuntimeException(e);
     }
   }
 
+  private static void logDeveloperInfo(Object obj) {
+    if (log.isDebugEnabled()) {
+      log.debug("Copying " + obj.getClass() + " for shared data. Consider implementing " + Shareable.class + " for better performance.");
+    }
+  }
+
+  private static Object copySerializable(Object obj) {
+    logDeveloperInfo(obj);
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    byte[] bytes;
+    try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+      oos.writeObject(obj);
+      oos.flush();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    bytes = baos.toByteArray();
+    ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+    try (ObjectInputStream ois = new ObjectInputStream(bais)) {
+      return ois.readObject();
+    } catch (IOException | ClassNotFoundException e) {
+      throw new RuntimeException(e);
+    }
+  }
 }
