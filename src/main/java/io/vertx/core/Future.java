@@ -20,6 +20,7 @@ import io.vertx.core.impl.future.SucceededFuture;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Represents the result of an action that may, or may not, have occurred yet.
@@ -181,6 +182,13 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   * Alias for {@link #compose(Supplier)}.
+   */
+  default <U> Future<U> flatMap(Supplier<Future<U>> supplier) {
+    return compose(supplier);
+  }
+
+  /**
    * Compose this future with a {@code mapper} function.<p>
    *
    * When this future (the one on which {@code compose} is called) succeeds, the {@code mapper} will be called with
@@ -200,6 +208,25 @@ public interface Future<T> extends AsyncResult<T> {
   }
 
   /**
+   * Compose this future with a {@code supplier} function.<p>
+   *
+   * When this future (the one on which {@code compose} is called) succeeds, the {@code supplier} will be called and
+   * this supplier returns another future object. This returned future completion will complete
+   * the future returned by this method call.<p>
+   *
+   * If the {@code supplier} throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * When this future fails, the failure will be propagated to the returned future and the {@code supplier}
+   * will not be called.
+   *
+   * @param supplier the supplier function
+   * @return the composed future
+   */
+  default <U> Future<U> compose(Supplier<Future<U>> supplier) {
+    return compose(supplier, Future::failedFuture);
+  }
+
+  /**
    * Handles a failure of this Future by returning the result of another Future.
    * If the mapper fails, then the returned future will be failed with this failure.
    *
@@ -207,7 +234,7 @@ public interface Future<T> extends AsyncResult<T> {
    * @return A recovered future
    */
   default Future<T> recover(Function<Throwable, Future<T>> mapper) {
-    return compose(Future::succeededFuture, mapper);
+    return compose((Function) Future::succeededFuture, mapper);
   }
 
   /**
@@ -228,6 +255,25 @@ public interface Future<T> extends AsyncResult<T> {
    * @return the composed future
    */
   <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper);
+
+  /**
+   * Compose this future with a {@code successSupplier} and {@code failureMapper} functions.<p>
+   *
+   * When this future (the one on which {@code compose} is called) succeeds, the {@code successSupplier} will be called and
+   * this supplier returns another future object. This returned future completion will complete
+   * the future returned by this method call.<p>
+   *
+   * When this future (the one on which {@code compose} is called) fails, the {@code failureMapper} will be called with
+   * the failure and this mapper returns another future object. This returned future completion will complete
+   * the future returned by this method call.<p>
+   *
+   * If either function throws an exception, the returned future will be failed with this exception.<p>
+   *
+   * @param successSupplier the supplier called on success
+   * @param failureMapper the function mapping the failure
+   * @return the composed future
+   */
+  <U> Future<U> compose(Supplier<Future<U>> successSupplier, Function<Throwable, Future<U>> failureMapper);
 
   /**
    * Transform this future with a {@code mapper} functions.<p>

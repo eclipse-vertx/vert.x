@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -229,7 +230,7 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testComposeSuccessToSuccess() {
+  public void testComposeFunctionSuccessToSuccess() {
     AtomicReference<String> ref = new AtomicReference<>();
     Promise<Integer> p = Promise.promise();
     Future<Integer> c = p.future();
@@ -248,7 +249,26 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testComposeSuccessToFailure() {
+  public void testComposeSupplierSuccessToSuccess() {
+    AtomicReference<String> ref = new AtomicReference<>();
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> c = p.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<Integer> f4 = f3.compose(() -> {
+      ref.set("unrelated");
+      return c;
+    });
+    Checker<Integer>  checker = new Checker<>(f4);
+    p3.complete("abcdef");
+    checker.assertNotCompleted();
+    assertEquals("unrelated", ref.get());
+    p.complete(6);
+    checker.assertSucceeded(6);
+  }
+
+  @Test
+  public void testComposeFunctionSuccessToFailure() {
     Throwable cause = new Throwable();
     AtomicReference<String> ref = new AtomicReference<>();
     Promise<Integer> p = Promise.promise();
@@ -266,7 +286,25 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testComposeFailure() {
+  public void testComposeSupplierSuccessToFailure() {
+    Throwable cause = new Throwable();
+    AtomicReference<String> ref = new AtomicReference<>();
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> c = p.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<Integer> f4 = f3.compose(() -> {
+      ref.set("unrelated");
+      return c;
+    });
+    Checker<Integer> checker = new Checker<>(f4);
+    p3.complete("abcdef");
+    p.fail(cause);
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testComposeFunctionFailure() {
     Exception cause = new Exception();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
@@ -277,7 +315,18 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testComposeFails() {
+  public void testComposeSupplierFailure() {
+    Exception cause = new Exception();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<Integer> f4 = f3.compose(() -> Future.succeededFuture(42));
+    Checker<Integer> checker = new Checker<>(f4);
+    p3.fail(cause);
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testComposeFunctionFails() {
     RuntimeException cause = new RuntimeException();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
@@ -288,11 +337,33 @@ public class FutureTest extends FutureTestBase {
   }
 
   @Test
-  public void testComposeWithNullFunction() {
+  public void testComposeSupplierFails() {
+    RuntimeException cause = new RuntimeException();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<Integer> f4 = f3.compose(() -> { throw cause; });
+    Checker<Integer> checker = new Checker<>(f4);
+    p3.complete("foo");
+    checker.assertFailed(cause);
+  }
+
+  @Test
+  public void testComposeFunctionWithNull() {
     Promise<Integer> p = Promise.promise();
     Future<Integer> f = p.future();
     try {
       f.compose((Function<Integer, Future<Integer>>) null);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+  }
+
+  @Test
+  public void testComposeSupplierWithNull() {
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> f = p.future();
+    try {
+      f.compose((Supplier<Future<Integer>>) null);
       fail();
     } catch (NullPointerException ignore) {
     }
@@ -821,6 +892,7 @@ public class FutureTest extends FutureTestBase {
       public boolean succeeded() { throw new UnsupportedOperationException(); }
       public boolean failed() { throw new UnsupportedOperationException(); }
       public <U> Future<U> compose(Function<T, Future<U>> successMapper, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<U> compose(Supplier<Future<U>> successSupplier, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
       public <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper) { throw new UnsupportedOperationException(); }
       public <U> Future<T> eventually(Function<Void, Future<U>> mapper) { throw new UnsupportedOperationException(); }
       public <U> Future<U> map(Function<T, U> mapper) { throw new UnsupportedOperationException(); }

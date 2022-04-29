@@ -18,6 +18,7 @@ import io.vertx.core.impl.ContextInternal;
 
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Future base implementation.
@@ -81,6 +82,15 @@ abstract class FutureBase<T> implements FutureInternal<T> {
     Objects.requireNonNull(successMapper, "No null success mapper accepted");
     Objects.requireNonNull(failureMapper, "No null failure mapper accepted");
     Composition<T, U> operation = new Composition<>(context, successMapper, failureMapper);
+    addListener(operation);
+    return operation;
+  }
+
+  @Override
+  public <U> Future<U> compose(Supplier<Future<U>> successSupplier, Function<Throwable, Future<U>> failureMapper) {
+    Objects.requireNonNull(successSupplier, "No null success supplier accepted");
+    Objects.requireNonNull(failureMapper, "No null failure mapper accepted");
+    Composition<T, U> operation = new Composition<>(context, unused -> successSupplier.get(), failureMapper);
     addListener(operation);
     return operation;
   }
