@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -330,12 +330,13 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   protected ReplyException deliverMessageLocally(MessageImpl msg) {
     ConcurrentCyclicSequence<HandlerHolder> handlers = handlerMap.get(msg.address());
+    boolean messageLocal = isMessageLocal(msg);
     if (handlers != null) {
       if (msg.isSend()) {
         //Choose one
-        HandlerHolder holder = handlers.next();
+        HandlerHolder holder = nextHandler(handlers, messageLocal);
         if (metrics != null) {
-          metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), holder != null ? 1 : 0);
+          metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, holder != null ? 1 : 0);
         }
         if (holder != null) {
           holder.handler.receive(msg.copyBeforeReceive());
@@ -345,19 +346,25 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       } else {
         // Publish
         if (metrics != null) {
-          metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), handlers.size());
+          metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, handlers.size());
         }
         for (HandlerHolder holder: handlers) {
-          holder.handler.receive(msg.copyBeforeReceive());
+          if (messageLocal || !holder.isLocalOnly()) {
+            holder.handler.receive(msg.copyBeforeReceive());
+          }
         }
       }
       return null;
     } else {
       if (metrics != null) {
-        metrics.messageReceived(msg.address(), !msg.isSend(), isMessageLocal(msg), 0);
+        metrics.messageReceived(msg.address(), !msg.isSend(), messageLocal, 0);
       }
       return new ReplyException(ReplyFailure.NO_HANDLERS, "No handlers for address " + msg.address);
     }
+  }
+
+  protected HandlerHolder nextHandler(ConcurrentCyclicSequence<HandlerHolder> handlers, boolean messageLocal) {
+    return handlers.next();
   }
 
   protected void checkStarted() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,6 +11,7 @@
 
 package io.vertx.core.eventbus;
 
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -515,5 +516,71 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
     startNodes(options);
     assertNotNull(nodeSelectorRef.get());
     assertFalse(nodeSelectorRef.get().wantsUpdatesFor(ADDRESS1));
+  }
+
+  @Test
+  public void testLocalConsumerNeverGetsMessagePublishedFromRemote() throws Exception {
+    startNodes(2);
+    waitFor(3);
+
+    CountDownLatch completionLatch = new CountDownLatch(4);
+    EventBus eb0 = vertices[0].eventBus();
+    String firstAddress = "foo";
+    eb0.localConsumer(firstAddress, message -> fail()).completionHandler(onSuccess(v -> completionLatch.countDown()));
+    eb0.consumer(firstAddress, message -> complete()).completionHandler(onSuccess(v -> completionLatch.countDown()));
+    String secondAddress = "bar";
+    eb0.consumer(secondAddress, message -> complete()).completionHandler(onSuccess(v -> completionLatch.countDown()));
+    eb0.localConsumer(secondAddress, message -> fail()).completionHandler(onSuccess(v -> completionLatch.countDown()));
+    awaitLatch(completionLatch);
+
+    EventBus eb1 = vertices[1].eventBus();
+    eb1.publish(firstAddress, "content");
+    eb1.publish(secondAddress, "content");
+
+    vertx.setTimer(500, l -> complete()); // some delay to make sure no msg has been received by local consumers
+
+    await();
+  }
+
+  @Test
+  public void testLocalConsumerNeverGetsMessageSentFromRemote() throws Exception {
+    startNodes(2);
+    int maxMessages = 50;
+    waitFor(4 * maxMessages);
+
+
+    class CountingHandler implements Handler<Message<Object>> {
+      AtomicInteger counter = new AtomicInteger();
+
+      @Override
+      public void handle(Message<Object> msg) {
+        assertTrue(counter.incrementAndGet() <= maxMessages);
+        complete();
+      }
+    }
+
+    CountDownLatch completionLatch = new CountDownLatch(8);
+    EventBus eb0 = vertices[0].eventBus();
+    String firstAddress = "foo";
+    for (int i = 0; i < 2; i++) {
+      eb0.localConsumer(firstAddress, message -> fail()).completionHandler(onSuccess(v -> completionLatch.countDown()));
+      eb0.consumer(firstAddress, new CountingHandler()).completionHandler(onSuccess(v -> completionLatch.countDown()));
+    }
+    String secondAddress = "bar";
+    for (int i = 0; i < 2; i++) {
+      eb0.consumer(secondAddress, new CountingHandler()).completionHandler(onSuccess(v -> completionLatch.countDown()));
+      eb0.localConsumer(secondAddress, message -> fail()).completionHandler(onSuccess(v -> completionLatch.countDown()));
+    }
+    awaitLatch(completionLatch);
+
+    EventBus eb1 = vertices[1].eventBus();
+    String[] addresses = {firstAddress, secondAddress};
+    for (int i = 0; i < 2 * maxMessages; i++) {
+      for (String address : addresses) {
+        eb1.send(address, "content");
+      }
+    }
+
+    await();
   }
 }
