@@ -112,6 +112,14 @@ abstract class FutureBase<T> implements FutureInternal<T> {
   }
 
   @Override
+  public <U> Future<T> eventually(Supplier<Future<U>> supplier) {
+    Objects.requireNonNull(supplier, "No null supplier accepted");
+    Eventually<T, U> operation = new Eventually<>(context, unused -> supplier.get());
+    addListener(operation);
+    return operation;
+  }
+
+  @Override
   public <U> Future<U> map(Function<T, U> mapper) {
     Objects.requireNonNull(mapper, "No null mapper accepted");
     Mapping<T, U> operation = new Mapping<>(context, mapper);

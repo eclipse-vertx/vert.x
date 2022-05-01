@@ -300,9 +300,24 @@ public interface Future<T> extends AsyncResult<T> {
    * of the returned future.
    *
    * @param mapper the function returning the future.
-   * @return the composed future
+   * @return this future
    */
   <U> Future<T> eventually(Function<Void, Future<U>> mapper);
+
+  /**
+   * Compose this future with a {@code supplier} that will be always be called.
+   *
+   * <p>When this future (the one on which {@code eventually} is called) completes, the {@code supplier} will be called
+   * and this supplier returns another future object. This returned future completion will complete the future returned
+   * by this method call with the original result of the future.
+   *
+   * <p>The outcome of the future returned by the {@code supplier} will not influence the nature
+   * of the returned future.
+   *
+   * @param supplier the function returning the future.
+   * @return this future
+   */
+  <U> Future<T> eventually(Supplier<Future<U>> supplier);
 
   /**
    * Apply a {@code mapper} function on this future.<p>

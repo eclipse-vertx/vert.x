@@ -452,15 +452,19 @@ public class FutureTest extends FutureTestBase {
 
   @Test
   public void testEventuallySuccessToSuccess() {
-    testEventuallySuccessTo(p -> p.complete(6));
+    Consumer<Promise<Integer>> op = p -> p.complete(6);
+    testEventuallyFunctionSuccessTo(op);
+    testEventuallySupplierSuccessTo(op);
   }
 
   @Test
   public void testEventuallySuccessToFailure() {
-    testEventuallySuccessTo(p -> p.fail("it-failed"));
+    Consumer<Promise<Integer>> op = p -> p.fail("it-failed");
+    testEventuallyFunctionSuccessTo(op);
+    testEventuallySupplierSuccessTo(op);
   }
 
-  private void testEventuallySuccessTo(Consumer<Promise<Integer>> op) {
+  private void testEventuallyFunctionSuccessTo(Consumer<Promise<Integer>> op) {
     AtomicInteger cnt = new AtomicInteger();
     Promise<Integer> p = Promise.promise();
     Future<Integer> c = p.future();
@@ -479,23 +483,66 @@ public class FutureTest extends FutureTestBase {
     checker.assertSucceeded("abcdef");
   }
 
+  private void testEventuallySupplierSuccessTo(Consumer<Promise<Integer>> op) {
+    AtomicInteger cnt = new AtomicInteger();
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> c = p.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<String> f4 = f3.eventually(() -> {
+      cnt.incrementAndGet();
+      return c;
+    });
+    Checker<String>  checker = new Checker<>(f4);
+    checker.assertNotCompleted();
+    p3.complete("abcdef");
+    assertEquals(1, cnt.get());
+    checker.assertNotCompleted();
+    op.accept(p);
+    checker.assertSucceeded("abcdef");
+  }
+
   @Test
   public void testEventuallyFailureToSuccess() {
-    testEventuallyFailureTo(p -> p.complete(6));
+    Consumer<Promise<Integer>> op = p -> p.complete(6);
+    testEventuallyFunctionFailureTo(op);
+    testEventuallySupplierFailureTo(op);
   }
 
   @Test
   public void testEventuallyFailureToFailure() {
-    testEventuallyFailureTo(p -> p.fail("it-failed"));
+    Consumer<Promise<Integer>> op = p -> p.fail("it-failed");
+    testEventuallyFunctionFailureTo(op);
+    testEventuallySupplierFailureTo(op);
   }
 
-  private void testEventuallyFailureTo(Consumer<Promise<Integer>> op) {
+  private void testEventuallyFunctionFailureTo(Consumer<Promise<Integer>> op) {
     AtomicInteger cnt = new AtomicInteger();
     Promise<Integer> p = Promise.promise();
     Future<Integer> c = p.future();
     Promise<String> p3 = Promise.promise();
     Future<String> f3 = p3.future();
     Future<String> f4 = f3.eventually(v -> {
+      cnt.incrementAndGet();
+      return c;
+    });
+    Checker<String>  checker = new Checker<>(f4);
+    checker.assertNotCompleted();
+    RuntimeException expected = new RuntimeException();
+    p3.fail(expected);
+    assertEquals(1, cnt.get());
+    checker.assertNotCompleted();
+    op.accept(p);
+    checker.assertFailed(expected);
+  }
+
+  private void testEventuallySupplierFailureTo(Consumer<Promise<Integer>> op) {
+    AtomicInteger cnt = new AtomicInteger();
+    Promise<Integer> p = Promise.promise();
+    Future<Integer> c = p.future();
+    Promise<String> p3 = Promise.promise();
+    Future<String> f3 = p3.future();
+    Future<String> f4 = f3.eventually(() -> {
       cnt.incrementAndGet();
       return c;
     });
@@ -895,6 +942,7 @@ public class FutureTest extends FutureTestBase {
       public <U> Future<U> compose(Supplier<Future<U>> successSupplier, Function<Throwable, Future<U>> failureMapper) { throw new UnsupportedOperationException(); }
       public <U> Future<U> transform(Function<AsyncResult<T>, Future<U>> mapper) { throw new UnsupportedOperationException(); }
       public <U> Future<T> eventually(Function<Void, Future<U>> mapper) { throw new UnsupportedOperationException(); }
+      public <U> Future<T> eventually(Supplier<Future<U>> supplier) { throw new UnsupportedOperationException(); }
       public <U> Future<U> map(Function<T, U> mapper) { throw new UnsupportedOperationException(); }
       public <V> Future<V> map(V value) { throw new UnsupportedOperationException(); }
       public Future<T> otherwise(Function<Throwable, T> mapper) { throw new UnsupportedOperationException(); }
