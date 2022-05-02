@@ -50,13 +50,6 @@ public class SharedHttpClient implements HttpClient {
   }
 
   @Override
-  protected void finalize() throws Throwable {
-    // Make sure the shared client count gets decreased if there are no more references to this instance
-    close();
-    super.finalize();
-  }
-
-  @Override
   public void request(RequestOptions options, Handler<AsyncResult<HttpClientRequest>> handler) {
     delegate.request(options, handler);
   }
