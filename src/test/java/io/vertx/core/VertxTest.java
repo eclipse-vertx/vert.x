@@ -229,6 +229,28 @@ public class VertxTest extends AsyncTestBase {
     await();
   }
 
+  @Test
+  public void testFinalizeSharedWorkerExecutor() throws Exception {
+    VertxInternal vertx = (VertxInternal) Vertx.vertx();
+    try {
+      Thread[] threads = new Thread[2];
+      vertx.createSharedWorkerExecutor("LeakTest").executeBlocking(promise -> {
+        threads[0] = Thread.currentThread();
+        promise.complete();
+      }).toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
+      vertx.createSharedWorkerExecutor("LeakTest").executeBlocking(promise -> {
+        threads[1] = Thread.currentThread();
+        promise.complete();
+      }).toCompletionStage().toCompletableFuture().get(20, TimeUnit.SECONDS);
+      runGC();
+      assertFalse(threads[0].isAlive());
+      assertFalse(threads[1].isAlive());
+    } finally {
+      vertx.close(ar -> {
+        testComplete();
+      });
+    }
+  }
 
   @Test
   public void testStickContextFinalization() throws Exception {

@@ -76,28 +76,24 @@ class WorkerExecutorImpl implements MetricsProvider, WorkerExecutorInternal {
 
   @Override
   public Future<Void> close() {
-    PromiseInternal<Void> promise = vertx.promise();
-    close(promise);
+    ContextInternal closingCtx = vertx.getOrCreateContext();
+    PromiseInternal<Void> promise = closingCtx.promise();
+    closeFuture.close(promise);
     return promise.future();
   }
 
   @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    close().onComplete(handler);
+    ContextInternal closingCtx = vertx.getOrCreateContext();
+    closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
   }
 
   @Override
   public void close(Promise<Void> completion) {
-    System.out.println("closing worker exec");
-    boolean close;
     synchronized (this) {
-      close = !closed;
       closed = true;
     }
-    if (close) {
-      closeFuture.remove(this);
-      pool.close();
-    }
+    pool.close();
     completion.complete();
   }
 }
