@@ -17,6 +17,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.impl.logging.Logger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -30,6 +31,7 @@ public class CloseFuture implements Closeable {
   private final Logger log;
   private final Promise<Void> promise;
   private boolean closed;
+  private Map<Closeable, CloseFuture> weakHooks;
   private Map<Closeable, CloseFuture> hooks;
 
   public CloseFuture() {
@@ -57,12 +59,19 @@ public class CloseFuture implements Closeable {
       // Close future might be closed independently, so we optimize and remove the hooks when
       // the close future completes
       CloseFuture fut = (CloseFuture) hook;
-      fut.future().onComplete(ar -> remove(fut));
+      fut.future().onComplete(ar -> {
+        remove(fut);
+      });
+      if (weakHooks == null) {
+        weakHooks = new WeakHashMap<>();
+      }
+      weakHooks.put(hook, this);
+    } else {
+      if (hooks == null) {
+        hooks = new HashMap<>();
+      }
+      hooks.put(hook, this);
     }
-    if (hooks == null) {
-      hooks = new WeakHashMap<>();
-    }
-    hooks.put(hook, this);
   }
 
   /**
@@ -70,10 +79,17 @@ public class CloseFuture implements Closeable {
    *
    * @param hook the hook to remove
    */
-  public synchronized void remove(Closeable hook) {
-    if (hooks != null) {
-      hooks.remove(hook);
+  public synchronized boolean remove(Closeable hook) {
+    if (hook instanceof CloseFuture) {
+      if (weakHooks != null) {
+        return weakHooks.remove(hook) != null;
+      }
+    } else {
+      if (hooks != null) {
+        return hooks.remove(hook) != null;
+      }
     }
+    return false;
   }
 
   /**
@@ -97,32 +113,40 @@ public class CloseFuture implements Closeable {
    */
   public Future<Void> close() {
     boolean close;
-    List<Closeable> toClose;
+    List<List<Closeable>> toClose = new ArrayList<>();
     synchronized (this) {
       close = !closed;
-      toClose = hooks != null ? new ArrayList<>(hooks.keySet()) : null;
+      if (weakHooks != null) {
+        toClose.add(new ArrayList<>(weakHooks.keySet()));
+      }
+      if (hooks != null) {
+        toClose.add(new ArrayList<>(hooks.keySet()));
+      }
       closed = true;
+      weakHooks = null;
       hooks = null;
     }
     if (close) {
       // We want an immutable version of the list holding strong references to avoid racing against finalization
-      if (toClose != null && !toClose.isEmpty()) {
-        int num = toClose.size();
+      int num = toClose.stream().mapToInt(List::size).sum();
+      if (num > 0) {
         AtomicInteger count = new AtomicInteger();
-        for (Closeable hook : toClose) {
-          Promise<Void> closePromise = Promise.promise();
-          closePromise.future().onComplete(ar -> {
-            if (count.incrementAndGet() == num) {
-              promise.complete();
+        for (List<Closeable> l : toClose) {
+          for (Closeable hook : l) {
+            Promise<Void> closePromise = Promise.promise();
+            closePromise.future().onComplete(ar -> {
+              if (count.incrementAndGet() == num) {
+                promise.complete();
+              }
+            });
+            try {
+              hook.close(closePromise);
+            } catch (Throwable t) {
+              if (log != null) {
+                log.warn("Failed to run close hook", t);
+              }
+              closePromise.tryFail(t);
             }
-          });
-          try {
-            hook.close(closePromise);
-          } catch (Throwable t) {
-            if (log != null) {
-              log.warn("Failed to run close hook", t);
-            }
-            closePromise.tryFail(t);
           }
         }
       } else {
@@ -139,5 +163,10 @@ public class CloseFuture implements Closeable {
    */
   public void close(Promise<Void> completionHandler) {
     close().onComplete(completionHandler);
+  }
+
+  @Override
+  protected void finalize() {
+    close();
   }
 }

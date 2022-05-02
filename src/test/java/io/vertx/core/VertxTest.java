@@ -42,7 +42,11 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class VertxTest extends AsyncTestBase {
 
-  private final org.openjdk.jmh.runner.Runner RUNNER = new Runner(new OptionsBuilder().shouldDoGC(true).build());
+  private static final org.openjdk.jmh.runner.Runner RUNNER = new Runner(new OptionsBuilder().shouldDoGC(true).build());
+
+  public static void runGC() {
+    RUNNER.runSystemGC();
+  }
 
   @Rule
   public RepeatRule repeatRule = new RepeatRule();
@@ -158,7 +162,7 @@ public class VertxTest extends AsyncTestBase {
       assertWaitUntil(() -> socketRef.get() != null);
       for (int i = 0;i < 10;i++) {
         Thread.sleep(10);
-        RUNNER.runSystemGC();
+        runGC();
         assertFalse(closed.get());
         assertNotNull(ref.get());
       }
@@ -166,7 +170,7 @@ public class VertxTest extends AsyncTestBase {
       long now = System.currentTimeMillis();
       while (true) {
         assertTrue(System.currentTimeMillis() - now < 20_000);
-        RUNNER.runSystemGC();
+        runGC();
         if (ref.get() == null) {
           assertTrue(closed.get());
           break;
@@ -203,7 +207,7 @@ public class VertxTest extends AsyncTestBase {
       assertWaitUntil(() -> socketRef.get() != null);
       for (int i = 0;i < 10;i++) {
         Thread.sleep(10);
-        RUNNER.runSystemGC();
+        runGC();
         assertFalse(closed.get());
         assertNotNull(ref.get());
       }
@@ -211,7 +215,7 @@ public class VertxTest extends AsyncTestBase {
       long now = System.currentTimeMillis();
       while (true) {
         assertTrue(System.currentTimeMillis() - now < 20_000);
-        RUNNER.runSystemGC();
+        runGC();
         if (ref.get() == null) {
           assertTrue(closed.get());
           break;
@@ -250,7 +254,7 @@ public class VertxTest extends AsyncTestBase {
       long now = System.currentTimeMillis();
       while (true) {
         assertTrue(System.currentTimeMillis() - now < 20_000);
-        RUNNER.runSystemGC();
+        runGC();
         if (ref.get().get() == null) {
           break;
         }
@@ -261,23 +265,6 @@ public class VertxTest extends AsyncTestBase {
       });
     }
     await();
-  }
-
-  @Test
-  public void testCloseFutureDuplicateClose() {
-    AtomicReference<Promise<Void>> ref = new AtomicReference<>();
-    CloseFuture fut = new CloseFuture();
-    fut.add(ref::set);
-    Promise<Void> p1 = Promise.promise();
-    fut.close(p1);
-    assertNotNull(ref.get());
-    Promise<Void> p2 = Promise.promise();
-    fut.close(p2);
-    assertFalse(p1.future().isComplete());
-    assertFalse(p2.future().isComplete());
-    ref.get().complete();
-    assertTrue(p1.future().isComplete());
-    assertTrue(p2.future().isComplete());
   }
 
   @Test
