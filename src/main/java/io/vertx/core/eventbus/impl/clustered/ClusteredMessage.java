@@ -275,7 +275,7 @@ public class ClusteredMessage<U, V> extends MessageImpl<U, V> {
     if (replyAddress != null) {
       reply(new ReplyException(ReplyFailure.ERROR, failure));
     } else {
-      log.trace(failure);
+      log.error(failure);
     }
   }
 }
