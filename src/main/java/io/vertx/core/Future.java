@@ -301,7 +301,9 @@ public interface Future<T> extends AsyncResult<T> {
    *
    * @param mapper the function returning the future.
    * @return this future
+   * @deprecated Use {@link #eventually(Supplier)}
    */
+  @Deprecated
   <U> Future<T> eventually(Function<Void, Future<U>> mapper);
 
   /**
