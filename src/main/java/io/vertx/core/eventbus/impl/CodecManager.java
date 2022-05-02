@@ -21,6 +21,8 @@ import io.vertx.core.json.JsonObject;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -53,6 +55,7 @@ public class CodecManager {
     this.systemCodecs = codecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
       BYTE_ARRAY_MESSAGE_CODEC, INT_MESSAGE_CODEC, LONG_MESSAGE_CODEC, FLOAT_MESSAGE_CODEC, DOUBLE_MESSAGE_CODEC,
       BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC);
+    this.registerDefaultCodec(Object[].class, new InnerObjectArrayMessageCodec());
   }
 
   public MessageCodec lookupCodec(Object body, String codecName) {
@@ -60,7 +63,11 @@ public class CodecManager {
     if (codecName != null) {
       codec = userCodecMap.get(codecName);
       if (codec == null) {
-        throw new IllegalArgumentException("No message codec for name: " + codecName);
+        codec = Stream.of(systemCodecs())
+          .filter(c -> c.name().equals(codecName))
+          .findAny()
+          .orElseThrow(() -> new IllegalArgumentException("No message codec for name: " + codecName));
+
       }
     } else if (body == null) {
       codec = NULL_MESSAGE_CODEC;
@@ -158,10 +165,17 @@ public class CodecManager {
 
   private MessageCodec[] codecs(MessageCodec... codecs) {
     MessageCodec[] arr = new MessageCodec[codecs.length];
-    for (MessageCodec codec: codecs) {
+    for (MessageCodec codec : codecs) {
       arr[codec.systemCodecID()] = codec;
     }
     return arr;
+  }
+
+  private class InnerObjectArrayMessageCodec extends ObjectArrayMessageCodec {
+
+    private InnerObjectArrayMessageCodec() {
+      super(CodecManager.this::lookupCodec, CodecManager.this.systemCodecs());
+    }
   }
 
 
