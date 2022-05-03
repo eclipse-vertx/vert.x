@@ -23,13 +23,16 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
 import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.Arguments;
+import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
@@ -49,10 +52,10 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:nmaurer@redhat.com">Norman Maurer</a>
  */
-public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
+public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Closeable {
 
-  public static DatagramSocketImpl create(VertxInternal vertx, DatagramSocketOptions options) {
-    DatagramSocketImpl socket = new DatagramSocketImpl(vertx, options);
+  public static DatagramSocketImpl create(VertxInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
+    DatagramSocketImpl socket = new DatagramSocketImpl(vertx, closeFuture, options);
     // Make sure object is fully initiliased to avoid race with async registration
     socket.init();
     return socket;
@@ -65,8 +68,9 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
   private Handler<Void> endHandler;
   private Handler<Throwable> exceptionHandler;
   private long demand;
+  private final CloseFuture closeFuture;
 
-  private DatagramSocketImpl(VertxInternal vertx, DatagramSocketOptions options) {
+  private DatagramSocketImpl(VertxInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
     Transport transport = vertx.transport();
     DatagramChannel channel = transport.datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
     transport.configure(channel, new DatagramSocketOptions(options));
@@ -83,6 +87,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
     this.channel = channel;
     this.context = context;
     this.demand = Long.MAX_VALUE;
+    this.closeFuture = closeFuture;
   }
 
   private void init() {
@@ -425,23 +430,28 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider {
 
   @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    Future<Void> future = close();
-    if (handler != null) {
-      future.onComplete(handler);
-    }
+    ContextInternal closingCtx = context.owner().getOrCreateContext();
+    closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
   }
 
   @Override
   public synchronized Future<Void> close() {
-    // make sure everything is flushed out on close
-    if (!channel.isOpen()) {
-      return context.succeededFuture();
-    }
-    channel.flush();
-    ChannelFuture future = channel.close();
-    PromiseInternal<Void> promise = context.promise();
-    future.addListener(promise);
+    ContextInternal closingCtx = context.owner().getOrCreateContext();
+    PromiseInternal<Void> promise = closingCtx.promise();
+    closeFuture.close(promise);
     return promise.future();
+  }
+
+  @Override
+  public void close(Promise<Void> completion) {
+    if (!channel.isOpen()) {
+      completion.complete();
+    } else {
+      // make sure everything is flushed out on close
+      channel.flush();
+      ChannelFuture future = channel.close();
+      future.addListener((PromiseInternal<Void>)completion);
+    }
   }
 
   @Override

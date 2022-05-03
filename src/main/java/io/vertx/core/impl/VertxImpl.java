@@ -283,7 +283,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
   @Override
   public DatagramSocket createDatagramSocket(DatagramSocketOptions options) {
-    return DatagramSocketImpl.create(this, options);
+    CloseFuture closeFuture = new CloseFuture(log);
+    DatagramSocketImpl so = DatagramSocketImpl.create(this, closeFuture, options);
+    closeFuture.add(so);
+    CloseFuture fut = resolveCloseFuture();
+    fut.add(closeFuture);
+    return so;
   }
 
   public NetServer createNetServer(NetServerOptions options) {
@@ -1048,9 +1053,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   @Override
   public synchronized WorkerExecutorImpl createSharedWorkerExecutor(String name, int poolSize, long maxExecuteTime, TimeUnit maxExecuteTimeUnit) {
     SharedWorkerPool sharedWorkerPool = createSharedWorkerPool(name, poolSize, maxExecuteTime, maxExecuteTimeUnit);
-    CloseFuture fut = resolveCloseFuture();
-    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, closeFuture, sharedWorkerPool);
-    fut.add(namedExec);
+    CloseFuture parentCf = resolveCloseFuture();
+    CloseFuture execCf = new CloseFuture();
+    parentCf.add(execCf);
+    WorkerExecutorImpl namedExec = new WorkerExecutorImpl(this, execCf, sharedWorkerPool);
+    execCf.add(namedExec);
     return namedExec;
   }
 
