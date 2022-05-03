@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -10,19 +10,14 @@
  */
 package io.vertx.core.impl.utils;
 
-import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.*;
 
 public class ConcurrentCyclicSequenceTest {
 
@@ -111,6 +106,55 @@ public class ConcurrentCyclicSequenceTest {
     for (T elt : seq) {
       ret.add(elt);
     }
+    return ret;
+  }
+
+  @Test
+  public void testIteratorOfEmpty() {
+    ConcurrentCyclicSequence<String> empty = new ConcurrentCyclicSequence<>();
+    advance(empty, 3);
+    Iterator<String> it1 = empty.iterator(false);
+    assertThat(toList(it1)).isEmpty();
+    assertThrows(NoSuchElementException.class, () -> it1.next());
+    Iterator<String> it2 = empty.iterator(true);
+    assertThat(toList(it2)).isEmpty();
+    assertThrows(NoSuchElementException.class, () -> it2.next());
+  }
+
+  @Test
+  public void testIteratorOfSingleton() {
+    ConcurrentCyclicSequence<String> singleton = new ConcurrentCyclicSequence<>("precious");
+    advance(singleton, 4);
+    Iterator<String> it1 = singleton.iterator(false);
+    assertThat(toList(it1)).containsExactly("precious");
+    assertThrows(NoSuchElementException.class, () -> it1.next());
+    Iterator<String> it2 = singleton.iterator(true);
+    assertThat(toList(it2)).containsExactly("precious");
+    assertThrows(NoSuchElementException.class, () -> it2.next());
+  }
+
+  @Test
+  public void testIterator() {
+    ConcurrentCyclicSequence<String> seq = new ConcurrentCyclicSequence<>("foo", "bar", "baz", "qux");
+    advance(seq, 2 * seq.size() + 3);
+    Iterator<String> it1 = seq.iterator(false);
+    assertThat(toList(it1)).containsExactly("qux", "foo", "bar", "baz");
+    assertThrows(NoSuchElementException.class, () -> it1.next());
+    Iterator<String> it2 = seq.iterator(true);
+    assertThat(toList(it2)).containsExactly("foo", "bar", "baz", "qux");
+    assertThrows(NoSuchElementException.class, () -> it2.next());
+  }
+
+  private void advance(ConcurrentCyclicSequence<String> seq, int n) {
+    for (int i = 0; i < n; i++) {
+      seq.next();
+    }
+  }
+
+
+  private static <T> List<T> toList(Iterator<T> it) {
+    List<T> ret = new ArrayList<>();
+    it.forEachRemaining(ret::add);
     return ret;
   }
 }

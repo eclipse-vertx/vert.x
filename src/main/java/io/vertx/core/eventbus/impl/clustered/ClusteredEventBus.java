@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -24,17 +24,15 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.net.NetClient;
-import io.vertx.core.net.NetClientOptions;
-import io.vertx.core.net.NetServer;
-import io.vertx.core.net.NetServerOptions;
-import io.vertx.core.net.NetSocket;
+import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
+import io.vertx.core.net.*;
 import io.vertx.core.parsetools.RecordParser;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeInfo;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationInfo;
 
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -216,6 +214,24 @@ public class ClusteredEventBus extends EventBusImpl {
   protected boolean isMessageLocal(MessageImpl msg) {
     ClusteredMessage clusteredMessage = (ClusteredMessage) msg;
     return !clusteredMessage.isFromWire();
+  }
+
+  @Override
+  protected HandlerHolder nextHandler(ConcurrentCyclicSequence<HandlerHolder> handlers, boolean messageLocal) {
+    HandlerHolder handlerHolder = null;
+    if (messageLocal) {
+      handlerHolder = handlers.next();
+    } else {
+      Iterator<HandlerHolder> iterator = handlers.iterator(false);
+      while (iterator.hasNext()) {
+        HandlerHolder next = iterator.next();
+        if (next.isReplyHandler() || !next.isLocalOnly()) {
+          handlerHolder = next;
+          break;
+        }
+      }
+    }
+    return handlerHolder;
   }
 
   private int getClusterPort() {

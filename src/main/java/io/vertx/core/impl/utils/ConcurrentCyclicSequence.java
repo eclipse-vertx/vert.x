@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -57,7 +57,11 @@ public class ConcurrentCyclicSequence<T> implements Iterable<T>, Iterator<T> {
    * @return the current index
    */
   public int index() {
-    return elements.length > 0 ? pos.get() % elements.length : 0;
+    return elements.length > 1 ? computeIndex(pos.get()) : 0;
+  }
+
+  private int computeIndex(int p) {
+    return Math.abs(p % elements.length);
   }
 
   /**
@@ -119,17 +123,15 @@ public class ConcurrentCyclicSequence<T> implements Iterable<T>, Iterator<T> {
   @SuppressWarnings("unchecked")
   @Override
   public T next() {
-    int len = elements.length;
-    switch (len) {
-      case 0:
-        return null;
-      case 1:
-        return (T) elements[0];
-      default:
-        int p;
-        p = pos.getAndIncrement();
-        return (T) elements[Math.abs(p % len)];
+    T result;
+    if (elements.length == 0) {
+      result = null;
+    } else if (elements.length == 1) {
+      result = (T) elements[0];
+    } else {
+      result = (T) elements[computeIndex(pos.getAndIncrement())];
     }
+    return result;
   }
 
   /**
@@ -143,9 +145,67 @@ public class ConcurrentCyclicSequence<T> implements Iterable<T>, Iterator<T> {
    * @return an iterator starting at the first element of the sequence, the iterator will not throw {@link ConcurrentModificationException}
    */
   @Override
-  @SuppressWarnings("unchecked")
   public Iterator<T> iterator() {
-    return Arrays.asList((T[]) elements).iterator();
+    return iterator(true);
+  }
+
+  /**
+   * @return an iterator starting at the next element of the sequence, the iterator will not throw {@link ConcurrentModificationException}
+   */
+  public Iterator<T> iterator(boolean startAtBeginning) {
+    Iterator<T> iterator;
+    int len = elements.length;
+    if (len == 0) {
+      iterator = Collections.emptyIterator();
+    } else if (len == 1) {
+      iterator = new SingletonIter();
+    } else {
+      iterator = new Iter(startAtBeginning ? 0 : pos.getAndIncrement());
+    }
+    return iterator;
+  }
+
+  @SuppressWarnings("unchecked")
+  private class SingletonIter implements Iterator<T> {
+    boolean next = true;
+
+    @Override
+    public boolean hasNext() {
+      return next;
+    }
+
+    @Override
+    public T next() {
+      if (next) {
+        next = false;
+        return (T) elements[0];
+      }
+      throw new NoSuchElementException();
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private class Iter implements Iterator<T> {
+    final int start;
+    int cursor;
+
+    public Iter(int start) {
+      this.start = start;
+      cursor = 0;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return cursor != elements.length;
+    }
+
+    @Override
+    public T next() {
+      if (cursor >= elements.length) {
+        throw new NoSuchElementException();
+      }
+      return (T) elements[computeIndex(start + cursor++)];
+    }
   }
 }
 
