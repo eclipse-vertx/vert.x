@@ -14,8 +14,11 @@ package io.vertx.core.shareddata;
 import io.vertx.core.buffer.Buffer;
 
 /**
- * Objects implementing this interface will be written to and read from a {@link Buffer} when respectively
- * stored and read from an {@link AsyncMap}.
+ * Objects implementing this interface will be written to and read from a {@link Buffer} when:
+ * <ul>
+ *   <li>stored in and read from an {@link AsyncMap}, or</li>
+ *   <li>encodec to and decoded from an {@link io.vertx.core.eventbus.EventBus} message body</li>
+ * </ul>
  *
  * @implSpec Implementations must have a public no-argument constructor.
  */

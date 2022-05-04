@@ -18,6 +18,9 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableImplObject;
+import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
+import io.vertx.core.shareddata.AsyncMapTest.SomeSerializableObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -341,6 +344,87 @@ public abstract class EventBusTestBase extends VertxTestBase {
   public void testPublishJsonObject() {
     JsonObject obj = new JsonObject();
     obj.put(TestUtils.randomUnicodeString(100), TestUtils.randomUnicodeString(100)).put(TestUtils.randomUnicodeString(100), TestUtils.randomInt());
+    testPublish(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testSendClusterSerializable() {
+    SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
+    testSend(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testReplyClusterSerializable() {
+    SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
+    testReply(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testPublishClusterSerializable() {
+    SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
+    testPublish(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testSendClusterSerializableImpl() {
+    SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
+    testSend(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testReplyClusterSerializableImpl() {
+    SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
+    testReply(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testPublishClusterSerializableImpl() {
+    SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
+    testPublish(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testSendSerializable() {
+    SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
+    testSend(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testReplySerializable() {
+    SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
+    testReply(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testPublishSerializable() {
+    SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
     testPublish(obj, (received) -> {
       assertEquals(obj, received);
       assertFalse(obj == received); // Make sure it's copied

@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.Function;
 
 /**
  * A local event bus implementation
@@ -84,6 +85,18 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   Handler<DeliveryContext>[] outboundInterceptors() {
     return outboundInterceptors;
+  }
+
+  @Override
+  public EventBus clusterSerializableChecker(Function<String, Boolean> classNamePredicate) {
+    codecManager.clusterSerializableCheck(classNamePredicate);
+    return this;
+  }
+
+  @Override
+  public EventBus serializableChecker(Function<String, Boolean> classNamePredicate) {
+    codecManager.serializableCheck(classNamePredicate);
+    return this;
   }
 
   @Override
@@ -232,7 +245,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   public MessageImpl createMessage(boolean send, String address, MultiMap headers, Object body, String codecName) {
     Objects.requireNonNull(address, "no null address accepted");
-    MessageCodec codec = codecManager.lookupCodec(body, codecName);
+    MessageCodec codec = codecManager.lookupCodec(body, codecName, true);
     @SuppressWarnings("unchecked")
     MessageImpl msg = new MessageImpl(address, headers, body, codec, send, this);
     return msg;
