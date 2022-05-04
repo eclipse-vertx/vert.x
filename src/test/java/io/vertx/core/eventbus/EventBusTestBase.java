@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -22,6 +22,8 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -253,6 +255,36 @@ public abstract class EventBusTestBase extends VertxTestBase {
   @Test
   public void testPublishShort() {
     testPublish(TestUtils.randomShort());
+  }
+
+  @Test
+  public void testSendBigInteger() {
+    testSend(BigInteger.valueOf(TestUtils.randomLong()));
+  }
+
+  @Test
+  public void testReplyBigInteger() {
+    testReply(BigInteger.valueOf(TestUtils.randomLong()));
+  }
+
+  @Test
+  public void testPublishBigInteger() {
+    testPublish(BigInteger.valueOf(TestUtils.randomLong()));
+  }
+
+  @Test
+  public void testSendBigDecimal() {
+    testSend(BigDecimal.valueOf(TestUtils.randomDouble()));
+  }
+
+  @Test
+  public void testReplyBigDecimal() {
+    testReply(BigDecimal.valueOf(TestUtils.randomDouble()));
+  }
+
+  @Test
+  public void testPublishBigDecimal() {
+    testPublish(BigDecimal.valueOf(TestUtils.randomDouble()));
   }
 
   @Test

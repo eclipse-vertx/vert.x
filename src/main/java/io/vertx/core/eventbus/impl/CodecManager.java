@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -18,6 +18,8 @@ import io.vertx.core.eventbus.impl.codecs.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,6 +46,8 @@ public class CodecManager {
   public static final MessageCodec<Character, Character> CHAR_MESSAGE_CODEC = new CharMessageCodec();
   public static final MessageCodec<Byte, Byte> BYTE_MESSAGE_CODEC = new ByteMessageCodec();
   public static final MessageCodec<ReplyException, ReplyException> REPLY_EXCEPTION_MESSAGE_CODEC = new ReplyExceptionMessageCodec();
+  public static final MessageCodec<BigInteger, BigInteger> BIG_INTEGER_MESSAGE_CODEC = new BigIntegerMessageCodec();
+  public static final MessageCodec<BigDecimal, BigDecimal> BIG_DECIMAL_MESSAGE_CODEC = new BigDecimalMessageCodec();
 
   private final MessageCodec[] systemCodecs;
   private final ConcurrentMap<String, MessageCodec> userCodecMap = new ConcurrentHashMap<>();
@@ -52,7 +56,8 @@ public class CodecManager {
   public CodecManager() {
     this.systemCodecs = codecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
       BYTE_ARRAY_MESSAGE_CODEC, INT_MESSAGE_CODEC, LONG_MESSAGE_CODEC, FLOAT_MESSAGE_CODEC, DOUBLE_MESSAGE_CODEC,
-      BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC);
+      BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC,
+      BIG_INTEGER_MESSAGE_CODEC, BIG_DECIMAL_MESSAGE_CODEC);
   }
 
   public MessageCodec lookupCodec(Object body, String codecName) {
@@ -90,6 +95,10 @@ public class CodecManager {
       codec = CHAR_MESSAGE_CODEC;
     } else if (body instanceof Byte) {
       codec = BYTE_MESSAGE_CODEC;
+    } else if (body instanceof BigInteger) {
+      codec = BIG_INTEGER_MESSAGE_CODEC;
+    } else if (body instanceof BigDecimal) {
+      codec = BIG_DECIMAL_MESSAGE_CODEC;
     } else if (body instanceof ReplyException) {
       codec = defaultCodecMap.get(body.getClass());
       if (codec == null) {
