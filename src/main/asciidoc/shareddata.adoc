@@ -31,6 +31,13 @@ In the latter case the key/value will be copied before putting it into the map.
 This way we can ensure there is no _shared access to mutable state_ between different threads in your Vert.x application.
 And you won't have to worry about protecting that state by synchronising access to it.
 
+[NOTE]
+====
+As a convenience, objects implementing {@link io.vertx.core.shareddata.ClusterSerializable} or `java.io.Serializable` can be used as keys and values too.
+In this case, the key/value will be copied before putting it into the map by serializing/deserializing.
+Therefore, it is recommended to consider implementing {@link io.vertx.core.shareddata.Shareable} instead for better performance.
+====
+
 Here's an example of using a shared local map:
 
 [source,$lang]
@@ -43,6 +50,13 @@ Here's an example of using a shared local map:
 {@link io.vertx.core.shareddata.AsyncMap Asynchronous shared maps} allow data to be put in the map and retrieved locally or from any other node.
 
 This makes them really useful for things like storing session state in a farm of servers hosting a Vert.x Web application.
+
+They only allow certain data types to be used as keys and values:
+
+- immutable types (e.g. strings, booleans, ... etc), or
+- types implementing the {@link io.vertx.core.shareddata.ClusterSerializable} interface (buffers, JSON arrays, JSON objects, or your own cluster serializable objects), or
+- types implementing the `java.io.Serializable` interface.
+
 
 Getting the map is asynchronous and the result is returned to you in the handler that you specify. Here's an example:
 
