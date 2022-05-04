@@ -9,17 +9,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
  */
 
-package io.vertx.core.shareddata.impl;
+package io.vertx.core.shareddata;
 
 import io.vertx.core.buffer.Buffer;
 
 /**
- * @deprecated as of 4.3, use {@link io.vertx.core.shareddata.ClusterSerializable} instead
+ * Objects implementing this interface will be written to and read from a {@link Buffer} when respectively
+ * stored and read from an {@link AsyncMap}.
+ *
+ * @implSpec Implementations must have a public no-argument constructor.
  */
-@Deprecated
-public interface ClusterSerializable {
+public interface ClusterSerializable extends io.vertx.core.shareddata.impl.ClusterSerializable {
 
+  @Override
   void writeToBuffer(Buffer buffer);
 
+  @Override
   int readFromBuffer(int pos, Buffer buffer);
 }
