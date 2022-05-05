@@ -11,23 +11,16 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.*;
-import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.ReplyFailure;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.spi.tracing.SpanKind;
 import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
-import java.util.Iterator;
-
 public abstract class HandlerRegistration<T> implements Closeable {
-
-  private static final Logger log = LoggerFactory.getLogger(HandlerRegistration.class);
 
   public final ContextInternal context;
   public final EventBusImpl bus;
@@ -50,7 +43,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
     if (bus.metrics != null) {
       bus.metrics.scheduleMessage(metric, msg.isLocal());
     }
-    context.nettyEventLoop().execute(() -> {
+    context.executor().execute(() -> {
       // Need to check handler is still there - the handler might have been removed after the message were sent but
       // before it was received
       if (!doReceive(msg)) {
@@ -102,7 +95,7 @@ public abstract class HandlerRegistration<T> implements Closeable {
 
   void dispatch(Handler<Message<T>> theHandler, Message<T> message, ContextInternal context) {
     InboundDeliveryContext deliveryCtx = new InboundDeliveryContext((MessageImpl<?, T>) message, theHandler, context);
-    context.dispatch(deliveryCtx::dispatch);
+    deliveryCtx.dispatch();
   }
 
   void discard(Message<T> msg) {
@@ -116,58 +109,32 @@ public abstract class HandlerRegistration<T> implements Closeable {
     }
   }
 
-  private class InboundDeliveryContext implements DeliveryContext<T> {
+  private class InboundDeliveryContext extends DeliveryContextBase<T> {
 
-    private final MessageImpl<?, T> message;
-    private final Iterator<Handler<DeliveryContext>> iter;
     private final Handler<Message<T>> handler;
-    private final ContextInternal context;
 
     private InboundDeliveryContext(MessageImpl<?, T> message, Handler<Message<T>> handler, ContextInternal context) {
-      this.message = message;
+      super(message, message.bus.inboundInterceptors(), context);
+
       this.handler = handler;
-      this.iter = message.bus.receiveInterceptors();
-      this.context = context;
     }
 
-    void dispatch() {
-      next();
-    }
-
-    @Override
-    public Message<T> message() {
-      return message;
-    }
-
-    @Override
-    public void next() {
-      if (iter.hasNext()) {
-        try {
-          Handler<DeliveryContext> handler = iter.next();
-          if (handler != null) {
-            handler.handle(this);
-          } else {
-            next();
-          }
-        } catch (Throwable t) {
-          log.error("Failure in interceptor", t);
+    protected void execute() {
+      ContextInternal ctx = InboundDeliveryContext.super.context;
+      Object m = metric;
+      VertxTracer tracer = ctx.tracer();
+      if (bus.metrics != null) {
+        bus.metrics.messageDelivered(m, message.isLocal());
+      }
+      if (tracer != null && !src) {
+        message.trace = tracer.receiveRequest(ctx, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
+        HandlerRegistration.this.dispatch(message, ctx, handler);
+        Object trace = message.trace;
+        if (message.replyAddress == null && trace != null) {
+          tracer.sendResponse(this.context, null, trace, null, TagExtractor.empty());
         }
       } else {
-        Object m = metric;
-        VertxTracer tracer = context.tracer();
-        if (bus.metrics != null) {
-          bus.metrics.messageDelivered(m, message.isLocal());
-        }
-        if (tracer != null && !src) {
-          message.trace = tracer.receiveRequest(context, SpanKind.RPC, TracingPolicy.PROPAGATE, message, message.isSend() ? "send" : "publish", message.headers(), MessageTagExtractor.INSTANCE);
-          HandlerRegistration.this.dispatch(message, context, handler);
-          Object trace = message.trace;
-          if (message.replyAddress == null && trace != null) {
-            tracer.sendResponse(context, null, trace, null, TagExtractor.empty());
-          }
-        } else {
-          HandlerRegistration.this.dispatch(message, context, handler);
-        }
+        HandlerRegistration.this.dispatch(message, ctx, handler);
       }
     }
 

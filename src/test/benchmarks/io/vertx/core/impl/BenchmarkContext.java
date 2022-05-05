@@ -14,6 +14,8 @@ package io.vertx.core.impl;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
+import java.util.concurrent.Executor;
+
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
@@ -31,6 +33,11 @@ public class BenchmarkContext extends ContextImpl {
 
   public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, ClassLoader tccl) {
     super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, null, null, tccl, false);
+  }
+
+  @Override
+  public Executor executor() {
+    return Runnable::run;
   }
 
   @Override

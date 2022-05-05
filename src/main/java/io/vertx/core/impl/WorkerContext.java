@@ -16,6 +16,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.spi.metrics.PoolMetrics;
 
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
@@ -36,7 +37,7 @@ public class WorkerContext extends ContextImpl {
   @Override
   void runOnContext(AbstractContext ctx, Handler<Void> action) {
     try {
-      run(ctx, orderedTasks, null, action);
+      run(ctx, null, action);
     } catch (RejectedExecutionException ignore) {
       // Pool is already shut down
     }
@@ -70,23 +71,35 @@ public class WorkerContext extends ContextImpl {
     return false;
   }
 
-  private <T> void run(ContextInternal ctx, TaskQueue queue, T value, Handler<T> task) {
+  private Executor executor;
+
+  @Override
+  public Executor executor() {
+    if (executor == null) {
+      executor = command -> {
+        PoolMetrics metrics = workerPool.metrics();
+        Object queueMetric = metrics != null ? metrics.submitted() : null;
+        orderedTasks.execute(() -> {
+          Object execMetric = null;
+          if (metrics != null) {
+            execMetric = metrics.begin(queueMetric);
+          }
+          try {
+            command.run();
+          } finally {
+            if (metrics != null) {
+              metrics.end(execMetric, true);
+            }
+          }
+        }, workerPool.executor());
+      };
+    }
+    return executor;
+  }
+
+  private <T> void run(ContextInternal ctx, T value, Handler<T> task) {
     Objects.requireNonNull(task, "Task handler must not be null");
-    PoolMetrics metrics = workerPool.metrics();
-    Object queueMetric = metrics != null ? metrics.submitted() : null;
-    queue.execute(() -> {
-      Object execMetric = null;
-      if (metrics != null) {
-        execMetric = metrics.begin(queueMetric);
-      }
-      try {
-        ctx.dispatch(value, task);
-      } finally {
-        if (metrics != null) {
-          metrics.end(execMetric, true);
-        }
-      }
-    }, workerPool.executor());
+    executor().execute(() -> ctx.dispatch(value, task));
   }
 
   private <T> void execute(TaskQueue queue, T argument, Handler<T> task) {
