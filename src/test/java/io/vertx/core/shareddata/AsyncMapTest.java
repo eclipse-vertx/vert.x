@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -18,7 +18,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.shareddata.impl.ClusterSerializable;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
@@ -104,6 +103,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testMapPutGetClusterSerializableObject() {
     testMapPutGet(new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("bar"));
+  }
+
+  @Test
+  public void testMapPutGetClusterSerializableImplObject() {
+    testMapPutGet(new SomeClusterSerializableImplObject("bar"), new SomeClusterSerializableImplObject("bar"));
   }
 
   @Test
@@ -229,6 +233,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapPutIfAbsentGetClusterSerializableImplObject() {
+    testMapPutIfAbsentGet(new SomeClusterSerializableImplObject("bar"), new SomeClusterSerializableImplObject("bar"));
+  }
+
+  @Test
   public void testMapPutIfAbsentTtl() {
     getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
       map.putIfAbsent("pipo", "molo", 10, onSuccess(vd -> {
@@ -327,6 +336,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapRemoveClusterSerializableImplObject() {
+    testMapRemove(new SomeClusterSerializableImplObject("bar"), new SomeClusterSerializableImplObject("bar"));
+  }
+
+  @Test
   public void testMapRemoveIfPresentByte() {
     testMapRemoveIfPresent((byte) 1, (byte) 2, (byte) 3, (byte) 4);
   }
@@ -401,13 +415,18 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapRemoveIfPresentClusterSerializableImplObject() {
+    testMapRemoveIfPresent(new SomeClusterSerializableImplObject("foo"), new SomeClusterSerializableImplObject("bar"), new SomeClusterSerializableImplObject("baz"), new SomeClusterSerializableImplObject("quux"));
+  }
+
+  @Test
   public void testMapReplaceByte() {
-    testMapReplace((byte)1, (byte)2, (byte)3);
+    testMapReplace((byte) 1, (byte) 2, (byte) 3);
   }
 
   @Test
   public void testMapReplaceShort() {
-    testMapReplace((short)1, (short)2, (short)3);
+    testMapReplace((short) 1, (short) 2, (short) 3);
   }
 
   @Test
@@ -470,6 +489,11 @@ public abstract class AsyncMapTest extends VertxTestBase {
   @Test
   public void testMapReplaceClusterSerializableObject() {
     testMapReplace(new SomeClusterSerializableObject("foo"), new SomeClusterSerializableObject("bar"), new SomeClusterSerializableObject("quux"));
+  }
+
+  @Test
+  public void testMapReplaceClusterSerializableImplObject() {
+    testMapReplace(new SomeClusterSerializableImplObject("foo"), new SomeClusterSerializableImplObject("bar"), new SomeClusterSerializableImplObject("quux"));
   }
 
   @Test
@@ -574,11 +598,16 @@ public abstract class AsyncMapTest extends VertxTestBase {
   }
 
   @Test
+  public void testMapReplaceIfPresentClusterSerializableImplObject() {
+    testMapReplaceIfPresent(new SomeClusterSerializableImplObject("foo"), new SomeClusterSerializableImplObject("bar"), new SomeClusterSerializableImplObject("quux"));
+  }
+
+  @Test
   public void testMapReplaceIfPresentTtl() {
     getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map -> {
-      map.put("pipo", "molo",  onSuccess(vd -> {
+      map.put("pipo", "molo", onSuccess(vd -> {
         assertNull(vd);
-        map.replaceIfPresent("pipo", "molo", "mili",10, onSuccess(vd2 -> {
+        map.replaceIfPresent("pipo", "molo", "mili", 10, onSuccess(vd2 -> {
           assertTrue(vd2);
           getVertx().sharedData().<String, String>getAsyncMap("foo", onSuccess(map2 -> {
             assertWaitUntil(map2, "pipo", 15, Objects::isNull);
@@ -938,6 +967,45 @@ public abstract class AsyncMapTest extends VertxTestBase {
       if (this == o) return true;
       if (!(o instanceof SomeClusterSerializableObject)) return false;
       SomeClusterSerializableObject that = (SomeClusterSerializableObject) o;
+      if (str != null ? !str.equals(that.str) : that.str != null) return false;
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return str != null ? str.hashCode() : 0;
+    }
+
+    @Override
+    public void writeToBuffer(Buffer buffer) {
+      buffer.appendInt(str.length());
+      buffer.appendString(str);
+    }
+
+    @Override
+    public int readFromBuffer(int pos, Buffer buffer) {
+      int length = buffer.getInt(pos);
+      str = buffer.getString(pos + 4, pos + 4 + length);
+      return pos + 4 + length;
+    }
+  }
+
+  @Deprecated
+  public static final class SomeClusterSerializableImplObject implements io.vertx.core.shareddata.impl.ClusterSerializable {
+    private String str;
+
+    public SomeClusterSerializableImplObject() {
+    }
+
+    public SomeClusterSerializableImplObject(String str) {
+      this.str = str;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (!(o instanceof SomeClusterSerializableImplObject)) return false;
+      SomeClusterSerializableImplObject that = (SomeClusterSerializableImplObject) o;
       if (str != null ? !str.equals(that.str) : that.str != null) return false;
       return true;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -30,9 +30,8 @@ import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
  * <p>
  * {@link AsyncMap} does <em>not</em> allow {@code null} to be used as a key or value.
  *
- * @implSpec Implementations of the interface must handle {@link io.vertx.core.shareddata.impl.ClusterSerializable}
- * implementing objects.
  * @author <a href="http://tfox.org">Tim Fox</a>
+ * @implSpec Implementations of the interface must handle {@link io.vertx.core.shareddata.ClusterSerializable} implementing objects.
  */
 @VertxGen
 public interface AsyncMap<K, V> {

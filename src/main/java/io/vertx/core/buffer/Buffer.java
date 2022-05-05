@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -20,8 +20,8 @@ import io.vertx.core.buffer.impl.BufferImpl;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
-import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -14,16 +14,14 @@ package io.vertx.core.shareddata.impl;
 import io.vertx.core.buffer.Buffer;
 
 /**
- * Objects implementing this interface will be write to and read from a {@link Buffer} when respectively
- * stored and read from an {@link io.vertx.core.shareddata.AsyncMap}.
- * <p>
- * Implementations must have a public no-argument constructor.
- *
- * @author <a href="http://tfox.org">Tim Fox</a>
+ * @deprecated as of 4.3, use {@link io.vertx.core.shareddata.ClusterSerializable} instead
  */
-public interface ClusterSerializable {
+@Deprecated
+public interface ClusterSerializable extends io.vertx.core.shareddata.ClusterSerializable {
 
+  @Override
   void writeToBuffer(Buffer buffer);
 
+  @Override
   int readFromBuffer(int pos, Buffer buffer);
 }
