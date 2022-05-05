@@ -19,11 +19,21 @@ import io.vertx.core.buffer.Buffer;
  *
  * @implSpec Implementations must have a public no-argument constructor.
  */
-public interface ClusterSerializable extends io.vertx.core.shareddata.impl.ClusterSerializable {
+public interface ClusterSerializable {
 
-  @Override
+  /**
+   * Method invoked when serializing this instance.
+   *
+   * @param buffer the {@link Buffer} where the serialized bytes must be written to
+   */
   void writeToBuffer(Buffer buffer);
 
-  @Override
+  /**
+   * Method invoked when deserializing bytes to this instance.
+   *
+   * @param pos the position where to start reading the {@code buffer}
+   * @param buffer the {@link Buffer} where the serialized bytes must be read from
+   * @return the position after the last serialized byte
+   */
   int readFromBuffer(int pos, Buffer buffer);
 }

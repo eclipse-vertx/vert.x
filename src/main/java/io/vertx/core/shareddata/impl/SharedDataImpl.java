@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -18,6 +18,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 
@@ -195,25 +196,9 @@ public class SharedDataImpl implements SharedData {
     if (obj == null) {
       throw new IllegalArgumentException("Cannot put null in key or value of async map");
     }
-    Class<?> clazz = obj.getClass();
-    if (clazz == Integer.class || clazz == int.class ||
-      clazz == Long.class || clazz == long.class ||
-      clazz == Short.class || clazz == short.class ||
-      clazz == Float.class || clazz == float.class ||
-      clazz == Double.class || clazz == double.class ||
-      clazz == Boolean.class || clazz == boolean.class ||
-      clazz == Byte.class || clazz == byte.class ||
-      clazz == String.class || clazz == byte[].class) {
-      // Basic types - can go in as is
-      return;
-    } else if (obj instanceof ClusterSerializable) {
-      // OK
-      return;
-    } else if (obj instanceof Serializable) {
-      // OK
-      return;
-    } else {
-      throw new IllegalArgumentException("Invalid type: " + clazz + " to put in async map");
+    // All immutables and byte arrays are Serializable by the platform
+    if (!(obj instanceof Serializable || obj instanceof ClusterSerializable)) {
+      throw new IllegalArgumentException("Invalid type: " + obj.getClass().getName() + " to put in async map");
     }
   }
 

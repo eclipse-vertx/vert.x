@@ -17,9 +17,11 @@ import io.vertx.core.buffer.Buffer;
  * @deprecated as of 4.3, use {@link io.vertx.core.shareddata.ClusterSerializable} instead
  */
 @Deprecated
-public interface ClusterSerializable {
+public interface ClusterSerializable extends io.vertx.core.shareddata.ClusterSerializable {
 
+  @Override
   void writeToBuffer(Buffer buffer);
 
+  @Override
   int readFromBuffer(int pos, Buffer buffer);
 }
