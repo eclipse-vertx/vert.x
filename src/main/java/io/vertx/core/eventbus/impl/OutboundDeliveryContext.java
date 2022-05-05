@@ -13,9 +13,7 @@ package io.vertx.core.eventbus.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-import io.vertx.core.eventbus.DeliveryContext;
 import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.impl.clustered.ClusteredMessage;
 import io.vertx.core.impl.ContextInternal;
@@ -25,25 +23,22 @@ import io.vertx.core.spi.tracing.TagExtractor;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx.core.tracing.TracingPolicy;
 
-import java.util.Iterator;
 import java.util.function.BiConsumer;
 
-public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<AsyncResult<Void>> {
+public class OutboundDeliveryContext<T> extends DeliveryContextBase<T> implements Handler<AsyncResult<Void>> {
 
   public final ContextInternal ctx;
-  public final MessageImpl message;
   public final DeliveryOptions options;
   public final ReplyHandler<T> replyHandler;
   private final Promise<Void> writePromise;
   private boolean src;
 
-  Iterator<Handler<DeliveryContext>> iter;
   EventBusImpl bus;
   EventBusMetrics metrics;
 
   OutboundDeliveryContext(ContextInternal ctx, MessageImpl message, DeliveryOptions options, ReplyHandler<T> replyHandler, Promise<Void> writePromise) {
+    super(message, message.bus.outboundInterceptors(), ctx);
     this.ctx = ctx;
-    this.message = message;
     this.options = options;
     this.replyHandler = replyHandler;
     this.writePromise = writePromise;
@@ -95,41 +90,23 @@ public class OutboundDeliveryContext<T> implements DeliveryContext<T>, Handler<A
   }
 
   @Override
-  public Message<T> message() {
-    return message;
-  }
-
-  @Override
-  public void next() {
-    if (iter.hasNext()) {
-      Handler<DeliveryContext> handler = iter.next();
-      try {
-        if (handler != null) {
-          handler.handle(this);
-        } else {
-          next();
+  protected void execute() {
+    VertxTracer tracer = ctx.tracer();
+    if (tracer != null) {
+      if (message.trace == null) {
+        src = true;
+        BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
+        TracingPolicy tracingPolicy = options.getTracingPolicy();
+        if (tracingPolicy == null) {
+          tracingPolicy = TracingPolicy.PROPAGATE;
         }
-      } catch (Throwable t) {
-        EventBusImpl.log.error("Failure in interceptor", t);
+        message.trace = tracer.sendRequest(ctx, SpanKind.RPC, tracingPolicy, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
+      } else {
+        // Handle failure here
+        tracer.sendResponse(ctx, null, message.trace, null, TagExtractor.empty());
       }
-    } else {
-      VertxTracer tracer = ctx.tracer();
-      if (tracer != null) {
-        if (message.trace == null) {
-          src = true;
-          BiConsumer<String, String> biConsumer = (String key, String val) -> message.headers().set(key, val);
-          TracingPolicy tracingPolicy = options.getTracingPolicy();
-          if (tracingPolicy == null) {
-            tracingPolicy = TracingPolicy.PROPAGATE;
-          }
-          message.trace = tracer.sendRequest(ctx, SpanKind.RPC, tracingPolicy, message, message.send ? "send" : "publish", biConsumer, MessageTagExtractor.INSTANCE);
-        } else {
-          // Handle failure here
-          tracer.sendResponse(ctx, null, message.trace, null, TagExtractor.empty());
-        }
-      }
-      bus.sendOrPub(this);
     }
+    bus.sendOrPub(this);
   }
 
   @Override

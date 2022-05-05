@@ -15,21 +15,19 @@ import io.vertx.core.*;
 import io.vertx.core.eventbus.*;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.impl.utils.ConcurrentCyclicSequence;
 import io.vertx.core.spi.metrics.EventBusMetrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.VertxMetrics;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A local event bus implementation
@@ -38,10 +36,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
-  static final Logger log = LoggerFactory.getLogger(EventBusImpl.class);
+  private static final AtomicReferenceFieldUpdater<EventBusImpl, Handler[]> OUTBOUND_INTERCEPTORS_UPDATER = AtomicReferenceFieldUpdater.newUpdater(EventBusImpl.class, Handler[].class, "outboundInterceptors");
+  private static final AtomicReferenceFieldUpdater<EventBusImpl, Handler[]> INBOUND_INTERCEPTORS_UPDATER = AtomicReferenceFieldUpdater.newUpdater(EventBusImpl.class, Handler[].class, "inboundInterceptors");
 
-  private final List<Handler<DeliveryContext>> sendInterceptors = new CopyOnWriteArrayList<>();
-  private final List<Handler<DeliveryContext>> receiveInterceptors = new CopyOnWriteArrayList<>();
+  private volatile Handler<DeliveryContext>[] outboundInterceptors = new Handler[0];
+  private volatile Handler<DeliveryContext>[] inboundInterceptors = new Handler[0];
   private final AtomicLong replySequence = new AtomicLong(0);
   protected final VertxInternal vertx;
   protected final EventBusMetrics metrics;
@@ -57,30 +56,34 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public <T> EventBus addOutboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
-    sendInterceptors.add((Handler) interceptor);
+    addInterceptor(OUTBOUND_INTERCEPTORS_UPDATER, interceptor);
     return this;
   }
 
   @Override
   public <T> EventBus addInboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
-    receiveInterceptors.add((Handler)interceptor);
+    addInterceptor(INBOUND_INTERCEPTORS_UPDATER, interceptor);
     return this;
   }
 
   @Override
   public <T> EventBus removeOutboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
-    sendInterceptors.remove(interceptor);
+    removeInterceptor(OUTBOUND_INTERCEPTORS_UPDATER, interceptor);
     return this;
-  }
-
-  Iterator<Handler<DeliveryContext>> receiveInterceptors() {
-    return receiveInterceptors.iterator();
   }
 
   @Override
   public <T> EventBus removeInboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
-    receiveInterceptors.remove(interceptor);
+    removeInterceptor(OUTBOUND_INTERCEPTORS_UPDATER, interceptor);
     return this;
+  }
+
+  Handler<DeliveryContext>[] inboundInterceptors() {
+    return inboundInterceptors;
+  }
+
+  Handler<DeliveryContext>[] outboundInterceptors() {
+    return outboundInterceptors;
   }
 
   @Override
@@ -388,7 +391,6 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   public <T> void sendOrPubInternal(OutboundDeliveryContext<T> senderCtx) {
     checkStarted();
-    senderCtx.iter = sendInterceptors.iterator();
     senderCtx.bus = this;
     senderCtx.metrics = metrics;
     senderCtx.next();
@@ -409,6 +411,39 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       }
     }
     return CompositeFuture.join(futures).mapEmpty();
+  }
+
+  private void addInterceptor(AtomicReferenceFieldUpdater<EventBusImpl, Handler[]> updater, Handler interceptor) {
+    while (true) {
+      Handler[] interceptors = updater.get(this);
+      Handler[] copy = Arrays.copyOf(interceptors, interceptors.length + 1);
+      copy[interceptors.length] = interceptor;
+      if (updater.compareAndSet(this, interceptors, copy)) {
+        break;
+      }
+    }
+  }
+
+  private void removeInterceptor(AtomicReferenceFieldUpdater<EventBusImpl, Handler[]> updater, Handler interceptor) {
+    while (true) {
+      Handler[] interceptors = updater.get(this);
+      int idx = -1;
+      for (int i = 0;i < interceptors.length;i++) {
+        if (interceptors[i] == interceptor) {
+          idx = i;
+          break;
+        }
+      }
+      if (idx == -1) {
+        return;
+      }
+      Handler<DeliveryContext>[] copy = new Handler[interceptors.length - 1];
+      System.arraycopy(interceptors, 0, copy, 0, idx);
+      System.arraycopy(interceptors, idx + 1, copy, idx, copy.length - idx);
+      if (updater.compareAndSet(this, interceptors, copy)) {
+        break;
+      }
+    }
   }
 }
 

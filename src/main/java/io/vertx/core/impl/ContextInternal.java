@@ -18,6 +18,7 @@ import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 
 /**
  * This interface provides an api for vert.x core internal use only
@@ -38,6 +39,16 @@ public interface ContextInternal extends Context {
     }
     return null;
   }
+
+  @Override
+  default void runOnContext(Handler<Void> action) {
+    executor().execute(() -> dispatch(action));
+  }
+
+  /**
+   * @return an executor that schedule a task on this context, the thread executing the task will not be associated with this context
+   */
+  Executor executor();
 
   /**
    * Return the Netty EventLoop used by this Context. This can be used to integrate

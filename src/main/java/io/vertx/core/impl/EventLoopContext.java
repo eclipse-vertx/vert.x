@@ -14,6 +14,7 @@ package io.vertx.core.impl;
 import io.netty.channel.EventLoop;
 import io.vertx.core.Handler;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
@@ -30,6 +31,11 @@ public class EventLoopContext extends ContextImpl {
                    ClassLoader tccl,
                    boolean disableTCCL) {
     super(vertx, eventLoop, internalBlockingPool, workerPool, deployment, closeFuture, tccl, disableTCCL);
+  }
+
+  @Override
+  public Executor executor() {
+    return nettyEventLoop();
   }
 
   @Override

@@ -20,6 +20,7 @@ import io.vertx.core.spi.tracing.VertxTracer;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 
 /**
  * A context that forwards most operations to a delegate. This context
@@ -81,6 +82,11 @@ class DuplicatedContext extends AbstractContext {
   public final Context exceptionHandler(Handler<Throwable> handler) {
     delegate.exceptionHandler(handler);
     return this;
+  }
+
+  @Override
+  public Executor executor() {
+    return delegate.executor();
   }
 
   @Override
