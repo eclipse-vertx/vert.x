@@ -18,7 +18,6 @@ import io.vertx.core.Promise;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.*;
 import io.vertx.core.spi.cluster.ClusterManager;
 

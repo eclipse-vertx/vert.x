@@ -14,7 +14,6 @@ package io.vertx.core.shareddata.impl;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
-import io.vertx.core.shareddata.ClusterSerializable;
 import io.vertx.core.shareddata.Shareable;
 
 import java.io.*;
