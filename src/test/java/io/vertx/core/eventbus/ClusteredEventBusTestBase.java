@@ -44,9 +44,17 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
     Promise<Vertx> promise = Promise.promise();
     super.clusteredVertx(options, promise);
     promise.future().onSuccess(vertx -> {
+      ImmutableObjectCodec immutableObjectCodec = new ImmutableObjectCodec();
+      vertx.eventBus().registerCodec(immutableObjectCodec);
+      vertx.eventBus().codecSelector(obj -> obj instanceof ImmutableObject ? immutableObjectCodec.name() : null);
       vertx.eventBus().clusterSerializableChecker(className -> className.startsWith(AsyncMapTest.class.getName()));
       vertx.eventBus().serializableChecker(className -> className.startsWith(AsyncMapTest.class.getName()));
     }).onComplete(ar);
+  }
+
+  @Override
+  protected boolean shouldImmutableObjectBeCopied() {
+    return true;
   }
 
   @Override

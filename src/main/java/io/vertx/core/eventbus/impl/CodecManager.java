@@ -62,6 +62,7 @@ public class CodecManager {
 
   private volatile Function<String, Boolean> clusterSerializableCheck = DENY_ALL;
   private volatile Function<String, Boolean> serializableCheck = DENY_ALL;
+  private volatile Function<Object, String> codecSelector = o -> null;
 
   public CodecManager() {
     this.systemCodecs = codecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
@@ -73,10 +74,7 @@ public class CodecManager {
   public MessageCodec lookupCodec(Object body, String codecName, boolean local) {
     MessageCodec codec;
     if (codecName != null) {
-      codec = userCodecMap.get(codecName);
-      if (codec == null) {
-        throw new IllegalArgumentException("No message codec for name: " + codecName);
-      }
+      codec = getCodec(codecName);
     } else if (body == null) {
       codec = NULL_MESSAGE_CODEC;
     } else if (body instanceof String) {
@@ -117,14 +115,17 @@ public class CodecManager {
     } else {
       codec = defaultCodecMap.get(body.getClass());
       if (codec == null) {
-        if (body instanceof ClusterSerializable && (local || acceptClusterSerializable(body.getClass().getName()))) {
+        if ((codecName = codecSelector.apply(body)) != null) {
+          codec = getCodec(codecName);
+        } else if (body instanceof ClusterSerializable && (local || acceptClusterSerializable(body.getClass().getName()))) {
           codec = clusterSerializableCodec;
         } else if (body instanceof Serializable && (local || acceptSerializable(body.getClass().getName()))) {
           codec = serializableCodec;
-        } else {
-          throw new IllegalArgumentException("No message codec for type: " + body.getClass());
         }
       }
+    }
+    if (codec == null) {
+      throw new IllegalArgumentException("No message codec for type: " + body.getClass());
     }
     return codec;
   }
@@ -203,5 +204,9 @@ public class CodecManager {
 
   public boolean acceptSerializable(String className) {
     return serializableCheck.apply(className);
+  }
+
+  public void codecSelector(Function<Object, String> selector) {
+    this.codecSelector = Objects.requireNonNull(selector);
   }
 }

@@ -27,8 +27,11 @@ import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
+
+import static io.vertx.core.eventbus.impl.CodecManager.STRING_MESSAGE_CODEC;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -432,6 +435,35 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
+  public void testSendWithCodecFromSelector() {
+    ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
+    testSend(obj, (received) -> {
+      assertEquals(obj, received);
+      assertEquals(shouldImmutableObjectBeCopied(), obj != received);
+    });
+  }
+
+  @Test
+  public void testReplyWithCodecFromSelector() {
+    ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
+    testReply(obj, (received) -> {
+      assertEquals(obj, received);
+      assertEquals(shouldImmutableObjectBeCopied(), obj != received);
+    });
+  }
+
+  @Test
+  public void testPublishWithCodecFromSelector() {
+    ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
+    testPublish(obj, (received) -> {
+      assertEquals(obj, received);
+      assertEquals(shouldImmutableObjectBeCopied(), obj != received);
+    });
+  }
+
+  protected abstract boolean shouldImmutableObjectBeCopied();
+
+  @Test
   public void testSendWithHeaders() {
     testSend("foo", "foo", null, new DeliveryOptions().addHeader("uhqwduh", "qijwdqiuwd").addHeader("iojdijef", "iqjwddh"));
   }
@@ -821,6 +853,55 @@ public abstract class EventBusTestBase extends VertxTestBase {
     @Override
     public String name() {
       return getClass().getName();
+    }
+
+    @Override
+    public byte systemCodecID() {
+      return -1;
+    }
+  }
+
+  public static class ImmutableObject {
+    public final String str;
+
+    public ImmutableObject(String str) {
+      this.str = Objects.requireNonNull(str);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ImmutableObject that = (ImmutableObject) o;
+      return str.equals(that.str);
+    }
+
+    @Override
+    public int hashCode() {
+      return str.hashCode();
+    }
+  }
+
+  public static class ImmutableObjectCodec implements MessageCodec<ImmutableObject, ImmutableObject> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, ImmutableObject immutableObject) {
+      STRING_MESSAGE_CODEC.encodeToWire(buffer, immutableObject.str);
+    }
+
+    @Override
+    public ImmutableObject decodeFromWire(int pos, Buffer buffer) {
+      return new ImmutableObject(STRING_MESSAGE_CODEC.decodeFromWire(pos, buffer));
+    }
+
+    @Override
+    public ImmutableObject transform(ImmutableObject immutableObject) {
+      return immutableObject;
+    }
+
+    @Override
+    public String name() {
+      return "ImmutableObjectCodec";
     }
 
     @Override

@@ -220,6 +220,12 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
   }
 
   @Override
+  public EventBus codecSelector(Function<Object, String> selector) {
+    codecManager.codecSelector(selector);
+    return this;
+  }
+
+  @Override
   public void close(Promise<Void> promise) {
     if (!started) {
       promise.complete();

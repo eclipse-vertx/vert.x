@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -46,6 +46,9 @@ public class LocalEventBusTest extends EventBusTestBase {
     vertx.close();
     vertx = Vertx.vertx();
     eb = (EventBusInternal) vertx.eventBus();
+    ImmutableObjectCodec immutableObjectCodec = new ImmutableObjectCodec();
+    eb.registerCodec(immutableObjectCodec);
+    eb.codecSelector(obj -> obj instanceof ImmutableObject ? immutableObjectCodec.name() : null);
     running = true;
   }
 
@@ -930,6 +933,11 @@ public class LocalEventBusTest extends EventBusTestBase {
 
 
   @Override
+  protected boolean shouldImmutableObjectBeCopied() {
+    return false;
+  }
+
+  @Override
   protected <T, R> void testSend(T val, R received, Consumer<T> consumer, DeliveryOptions options) {
     eb.<T>consumer(ADDRESS1).handler((Message<T> msg) -> {
       if (consumer == null) {
@@ -938,7 +946,7 @@ public class LocalEventBusTest extends EventBusTestBase {
         if (options != null && options.getHeaders() != null) {
           assertNotNull(msg.headers());
           assertEquals(options.getHeaders().size(), msg.headers().size());
-          for (Map.Entry<String, String> entry: options.getHeaders().entries()) {
+          for (Map.Entry<String, String> entry : options.getHeaders().entries()) {
             assertEquals(msg.headers().get(entry.getKey()), entry.getValue());
           }
         }
