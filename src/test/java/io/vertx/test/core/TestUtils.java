@@ -36,6 +36,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -326,6 +327,17 @@ public class TestUtils {
       if (b1[i] != b2[i]) return false;
     }
     return true;
+  }
+
+  public static boolean iterablesEqual(Iterable<?> a, Iterable<?> b) {
+    Iterator ia = a.iterator();
+    Iterator ib = b.iterator();
+    while (ia.hasNext() && ib.hasNext()) {
+      if (!ia.next().equals(ib.next())) {
+        return false;
+      }
+    }
+    return !ia.hasNext() && !ib.hasNext();
   }
 
   /**

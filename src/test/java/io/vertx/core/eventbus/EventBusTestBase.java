@@ -22,6 +22,10 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
@@ -313,6 +317,75 @@ public abstract class EventBusTestBase extends VertxTestBase {
       assertEquals(obj, received);
       assertFalse(obj == received); // Make sure it's copied
     });
+  }
+
+  @Test
+  public void testSendEmptyList() {
+    testSend(new ArrayList<>(), (Iterable r) -> assertFalse(r.iterator().hasNext()));
+  }
+
+  @Test
+  public void testReplyEmptyList() {
+    testReply(new ArrayList<>(), (Iterable r) -> assertFalse(r.iterator().hasNext()));
+  }
+
+  @Test
+  public void testPublishEmptyList() {
+    testReply(new ArrayList<>(), (Iterable r) -> assertFalse(r.iterator().hasNext()));
+  }
+
+  @Test
+  public void testSendList() {
+    List<String> l = new ArrayList<>();
+    l.add("foo");
+    l.add("bar");
+    l.add("eek");
+    testSend(l, (Iterable<String> r) -> assertTrue(TestUtils.iterablesEqual(l, r)));
+  }
+
+  @Test
+  public void testReplyList() {
+    List<String> l = new ArrayList<>();
+    l.add("foo");
+    l.add("bar");
+    l.add("eek");
+    testReply(l, (Iterable<String> r) -> assertTrue(TestUtils.iterablesEqual(l, r)));
+  }
+
+  @Test
+  public void testPublishList() {
+    List<String> l = new ArrayList<>();
+    l.add("foo");
+    l.add("bar");
+    l.add("eek");
+    testReply(l, (Iterable<String> r) -> assertTrue(TestUtils.iterablesEqual(l, r)));
+  }
+
+  @Test
+  public void testSendIntegerSet() {
+    Set<Integer> s = new HashSet<>();
+    s.add(31);
+    s.add(239);
+    s.add(12924);
+    testSend(s, (Iterable<Integer> r) -> assertTrue(TestUtils.iterablesEqual(s, r)));
+  }
+
+  @Test
+  public void testReplyIntegerSet() {
+    Set<Integer> s = new HashSet<>();
+    s.add(31);
+    s.add(239);
+    s.add(12924);
+    testReply(s, (Iterable<Integer> r) -> assertTrue(TestUtils.iterablesEqual(s, r)));
+  }
+
+  @Test
+  public void testPublishIntegerSet() {
+    Set<Integer> s = new HashSet<>();
+    s.add(31);
+    s.add(239);
+    s.add(12924);
+    testReply(s, (Iterable<Integer> r) -> assertTrue(TestUtils.iterablesEqual(s, r)));
   }
 
   @Test
