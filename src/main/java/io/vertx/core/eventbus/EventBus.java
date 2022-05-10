@@ -18,6 +18,7 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.eventbus.impl.DefaultSerializableChecker;
 import io.vertx.core.metrics.Measured;
 
 import java.util.function.Function;
@@ -38,6 +39,12 @@ import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
  */
 @VertxGen
 public interface EventBus extends Measured {
+
+  /**
+   * Default {@link java.io.Serializable} class checker used by Vert.x when {@link #serializableChecker(Function)} has not been set.
+   */
+  @GenIgnore
+  Function<String, Boolean> DEFAULT_SERIALIZABLE_CHECKER = DefaultSerializableChecker.INSTANCE::check;
 
   /**
    * Sends a message.

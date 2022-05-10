@@ -48,7 +48,9 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
       vertx.eventBus().registerCodec(immutableObjectCodec);
       vertx.eventBus().codecSelector(obj -> obj instanceof ImmutableObject ? immutableObjectCodec.name() : null);
       vertx.eventBus().clusterSerializableChecker(className -> className.startsWith(AsyncMapTest.class.getName()));
-      vertx.eventBus().serializableChecker(className -> className.startsWith(AsyncMapTest.class.getName()));
+      vertx.eventBus().serializableChecker(className -> {
+        return EventBus.DEFAULT_SERIALIZABLE_CHECKER.apply(className) || className.startsWith(AsyncMapTest.class.getName());
+      });
     }).onComplete(ar);
   }
 

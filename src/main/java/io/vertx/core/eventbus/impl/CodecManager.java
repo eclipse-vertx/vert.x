@@ -12,6 +12,7 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.impl.codecs.*;
@@ -20,8 +21,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.shareddata.impl.ClusterSerializable;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,8 +30,6 @@ import java.util.function.Function;
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class CodecManager {
-
-  private static final Function<String, Boolean> DENY_ALL = className -> Boolean.FALSE;
 
   // The standard message codecs
   public static final MessageCodec<String, String> PING_MESSAGE_CODEC = new PingMessageCodec();
@@ -51,8 +48,6 @@ public class CodecManager {
   public static final MessageCodec<Character, Character> CHAR_MESSAGE_CODEC = new CharMessageCodec();
   public static final MessageCodec<Byte, Byte> BYTE_MESSAGE_CODEC = new ByteMessageCodec();
   public static final MessageCodec<ReplyException, ReplyException> REPLY_EXCEPTION_MESSAGE_CODEC = new ReplyExceptionMessageCodec();
-  public static final MessageCodec<BigInteger, BigInteger> BIG_INTEGER_MESSAGE_CODEC = new BigIntegerMessageCodec();
-  public static final MessageCodec<BigDecimal, BigDecimal> BIG_DECIMAL_MESSAGE_CODEC = new BigDecimalMessageCodec();
 
   private final MessageCodec[] systemCodecs;
   private final ConcurrentMap<String, MessageCodec> userCodecMap = new ConcurrentHashMap<>();
@@ -60,15 +55,15 @@ public class CodecManager {
   private final ClusterSerializableCodec clusterSerializableCodec = new ClusterSerializableCodec(this);
   private final SerializableCodec serializableCodec = new SerializableCodec(this);
 
-  private volatile Function<String, Boolean> clusterSerializableCheck = DENY_ALL;
-  private volatile Function<String, Boolean> serializableCheck = DENY_ALL;
+  private volatile Function<String, Boolean> clusterSerializableCheck = s -> Boolean.FALSE;
+  private volatile Function<String, Boolean> serializableCheck = EventBus.DEFAULT_SERIALIZABLE_CHECKER;
   private volatile Function<Object, String> codecSelector = o -> null;
 
   public CodecManager() {
     this.systemCodecs = codecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
       BYTE_ARRAY_MESSAGE_CODEC, INT_MESSAGE_CODEC, LONG_MESSAGE_CODEC, FLOAT_MESSAGE_CODEC, DOUBLE_MESSAGE_CODEC,
       BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC,
-      BIG_INTEGER_MESSAGE_CODEC, BIG_DECIMAL_MESSAGE_CODEC, clusterSerializableCodec, serializableCodec);
+      clusterSerializableCodec, serializableCodec);
   }
 
   public MessageCodec lookupCodec(Object body, String codecName, boolean local) {
@@ -103,10 +98,6 @@ public class CodecManager {
       codec = CHAR_MESSAGE_CODEC;
     } else if (body instanceof Byte) {
       codec = BYTE_MESSAGE_CODEC;
-    } else if (body instanceof BigInteger) {
-      codec = BIG_INTEGER_MESSAGE_CODEC;
-    } else if (body instanceof BigDecimal) {
-      codec = BIG_DECIMAL_MESSAGE_CODEC;
     } else if (body instanceof ReplyException) {
       codec = defaultCodecMap.get(body.getClass());
       if (codec == null) {

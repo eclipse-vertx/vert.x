@@ -55,7 +55,7 @@ public class SerializableCodec implements MessageCodec<Object, Object> {
 
   @Override
   public byte systemCodecID() {
-    return 19;
+    return 17;
   }
 
   private class CheckedClassNameObjectInputStream extends ObjectInputStream {

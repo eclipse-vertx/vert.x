@@ -72,6 +72,6 @@ public class ClusterSerializableCodec implements MessageCodec<ClusterSerializabl
 
   @Override
   public byte systemCodecID() {
-    return 18;
+    return 16;
   }
 }
