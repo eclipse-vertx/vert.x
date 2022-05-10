@@ -25,7 +25,7 @@ allows a MyPOJO class to be sent, but when that message is sent to a handler it 
 
 Vert.x has built-in codecs for certain data types:
 
-- basic types (e.g. strings, booleans, ... etc), or
+- basic types (string, byte array, byte, int, long, double, boolean, short, char), or
 - some Vert.x data types (buffers, JSON array, JSON objects), or
 - types implementing the {@link io.vertx.core.shareddata.ClusterSerializable} interface, or
 - types implementing the `java.io.Serializable` interface.
