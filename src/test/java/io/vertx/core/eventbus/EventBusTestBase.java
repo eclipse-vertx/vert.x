@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -18,12 +18,20 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableImplObject;
+import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
+import io.vertx.core.shareddata.AsyncMapTest.SomeSerializableObject;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
+
+import static io.vertx.core.eventbus.impl.CodecManager.STRING_MESSAGE_CODEC;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -256,6 +264,36 @@ public abstract class EventBusTestBase extends VertxTestBase {
   }
 
   @Test
+  public void testSendBigInteger() {
+    testSend(BigInteger.valueOf(TestUtils.randomLong()));
+  }
+
+  @Test
+  public void testReplyBigInteger() {
+    testReply(BigInteger.valueOf(TestUtils.randomLong()));
+  }
+
+  @Test
+  public void testPublishBigInteger() {
+    testPublish(BigInteger.valueOf(TestUtils.randomLong()));
+  }
+
+  @Test
+  public void testSendBigDecimal() {
+    testSend(BigDecimal.valueOf(TestUtils.randomDouble()));
+  }
+
+  @Test
+  public void testReplyBigDecimal() {
+    testReply(BigDecimal.valueOf(TestUtils.randomDouble()));
+  }
+
+  @Test
+  public void testPublishBigDecimal() {
+    testPublish(BigDecimal.valueOf(TestUtils.randomDouble()));
+  }
+
+  @Test
   public void testSendJsonArray() {
     JsonArray arr = new JsonArray();
     arr.add(TestUtils.randomUnicodeString(100)).add(TestUtils.randomInt()).add(TestUtils.randomBoolean());
@@ -314,6 +352,116 @@ public abstract class EventBusTestBase extends VertxTestBase {
       assertFalse(obj == received); // Make sure it's copied
     });
   }
+
+  @Test
+  public void testSendClusterSerializable() {
+    SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
+    testSend(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testReplyClusterSerializable() {
+    SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
+    testReply(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testPublishClusterSerializable() {
+    SomeClusterSerializableObject obj = new SomeClusterSerializableObject(TestUtils.randomAlphaString(50));
+    testPublish(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testSendClusterSerializableImpl() {
+    SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
+    testSend(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testReplyClusterSerializableImpl() {
+    SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
+    testReply(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testPublishClusterSerializableImpl() {
+    SomeClusterSerializableImplObject obj = new SomeClusterSerializableImplObject(TestUtils.randomAlphaString(50));
+    testPublish(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testSendSerializable() {
+    SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
+    testSend(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testReplySerializable() {
+    SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
+    testReply(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testPublishSerializable() {
+    SomeSerializableObject obj = new SomeSerializableObject(TestUtils.randomAlphaString(50));
+    testPublish(obj, (received) -> {
+      assertEquals(obj, received);
+      assertFalse(obj == received); // Make sure it's copied
+    });
+  }
+
+  @Test
+  public void testSendWithCodecFromSelector() {
+    ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
+    testSend(obj, (received) -> {
+      assertEquals(obj, received);
+      assertEquals(shouldImmutableObjectBeCopied(), obj != received);
+    });
+  }
+
+  @Test
+  public void testReplyWithCodecFromSelector() {
+    ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
+    testReply(obj, (received) -> {
+      assertEquals(obj, received);
+      assertEquals(shouldImmutableObjectBeCopied(), obj != received);
+    });
+  }
+
+  @Test
+  public void testPublishWithCodecFromSelector() {
+    ImmutableObject obj = new ImmutableObject(TestUtils.randomAlphaString(15));
+    testPublish(obj, (received) -> {
+      assertEquals(obj, received);
+      assertEquals(shouldImmutableObjectBeCopied(), obj != received);
+    });
+  }
+
+  protected abstract boolean shouldImmutableObjectBeCopied();
 
   @Test
   public void testSendWithHeaders() {
@@ -705,6 +853,55 @@ public abstract class EventBusTestBase extends VertxTestBase {
     @Override
     public String name() {
       return getClass().getName();
+    }
+
+    @Override
+    public byte systemCodecID() {
+      return -1;
+    }
+  }
+
+  public static class ImmutableObject {
+    public final String str;
+
+    public ImmutableObject(String str) {
+      this.str = Objects.requireNonNull(str);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      ImmutableObject that = (ImmutableObject) o;
+      return str.equals(that.str);
+    }
+
+    @Override
+    public int hashCode() {
+      return str.hashCode();
+    }
+  }
+
+  public static class ImmutableObjectCodec implements MessageCodec<ImmutableObject, ImmutableObject> {
+
+    @Override
+    public void encodeToWire(Buffer buffer, ImmutableObject immutableObject) {
+      STRING_MESSAGE_CODEC.encodeToWire(buffer, immutableObject.str);
+    }
+
+    @Override
+    public ImmutableObject decodeFromWire(int pos, Buffer buffer) {
+      return new ImmutableObject(STRING_MESSAGE_CODEC.decodeFromWire(pos, buffer));
+    }
+
+    @Override
+    public ImmutableObject transform(ImmutableObject immutableObject) {
+      return immutableObject;
+    }
+
+    @Override
+    public String name() {
+      return "ImmutableObjectCodec";
     }
 
     @Override

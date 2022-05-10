@@ -22,3 +22,20 @@ You unregister a message codec with {@link io.vertx.core.eventbus.EventBus#unreg
 
 Message codecs don't always have to encode and decode as the same type. For example you can write a codec that
 allows a MyPOJO class to be sent, but when that message is sent to a handler it arrives as a MyOtherPOJO class.
+
+Vert.x has built-in codecs for certain data types:
+
+- basic types (string, byte array, byte, int, long, double, boolean, short, char), or
+- some Vert.x data types (buffers, JSON array, JSON objects), or
+- types implementing the {@link io.vertx.core.shareddata.ClusterSerializable} interface, or
+- types implementing the `java.io.Serializable` interface.
+
+[IMPORTANT]
+====
+In clustered mode, {@link io.vertx.core.shareddata.ClusterSerializable} and `java.io.Serializable` objects are rejected by default, for security reasons.
+
+You can define which classes are allowed for encoding and decoding by providing functions which inspect the name of the class:
+
+- {@link io.vertx.core.eventbus.EventBus#clusterSerializableChecker EventBus.clusterSerializableChecker()}, and
+- {@link io.vertx.core.eventbus.EventBus#serializableChecker EventBus.serializableChecker()}.
+====

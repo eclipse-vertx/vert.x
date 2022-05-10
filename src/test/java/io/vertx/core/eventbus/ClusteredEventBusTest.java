@@ -16,6 +16,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableImplObject;
+import io.vertx.core.shareddata.AsyncMapTest.SomeClusterSerializableObject;
+import io.vertx.core.shareddata.AsyncMapTest.SomeSerializableObject;
 import io.vertx.core.spi.cluster.NodeSelector;
 import io.vertx.core.spi.cluster.RegistrationUpdateEvent;
 import io.vertx.core.spi.cluster.WrappedClusterManager;
@@ -24,6 +27,7 @@ import io.vertx.test.core.TestUtils;
 import io.vertx.test.tls.Cert;
 import org.junit.Test;
 
+import java.io.InvalidClassException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -581,6 +585,74 @@ public class ClusteredEventBusTest extends ClusteredEventBusTestBase {
       }
     }
 
+    await();
+  }
+
+  @Test
+  public void testRejectedClusterSerializableNotSent() {
+    testRejectedNotSent(SomeClusterSerializableObject.class, new SomeClusterSerializableObject("bar"));
+  }
+
+  @Test
+  public void testRejectedClusterSerializableImplNotSent() {
+    testRejectedNotSent(SomeClusterSerializableImplObject.class, new SomeClusterSerializableImplObject("bar"));
+  }
+
+  @Test
+  public void testRejectedSerializableNotSent() {
+    testRejectedNotSent(SomeSerializableObject.class, new SomeSerializableObject("bar"));
+  }
+
+  private <T> void testRejectedNotSent(Class<T> clazz, T message) {
+    startNodes(2);
+    vertices[0].eventBus()
+      .clusterSerializableChecker(s -> Boolean.FALSE)
+      .serializableChecker(s -> Boolean.FALSE);
+    vertices[1].eventBus().consumer("foo", msg -> fail()).completionHandler(onSuccess(reg -> {
+      try {
+        vertices[0].eventBus().send("foo", message);
+        fail();
+      } catch (IllegalArgumentException e) {
+        assertEquals("No message codec for type: class " + clazz.getName(), e.getMessage());
+        testComplete();
+      }
+    }));
+    await();
+  }
+
+  @Test
+  public void testRejectedClusterSerializableNotReceived() {
+    testRejectedNotReceived(SomeClusterSerializableObject.class, new SomeClusterSerializableObject("bar"));
+  }
+
+  @Test
+  public void testRejectedClusterSerializableImplNotReceived() {
+    testRejectedNotReceived(SomeClusterSerializableImplObject.class, new SomeClusterSerializableImplObject("bar"));
+  }
+
+  @Test
+  public void testRejectedSerializableNotReceived() {
+    testRejectedNotReceived(SomeSerializableObject.class, new SomeSerializableObject("bar"));
+  }
+
+  private <T> void testRejectedNotReceived(Class<T> clazz, T message) {
+    startNodes(2);
+    vertices[1].eventBus()
+      .clusterSerializableChecker(s -> Boolean.FALSE)
+      .serializableChecker(s -> Boolean.FALSE);
+    vertices[1].eventBus().consumer("foo", msg -> {
+      try {
+        Object body = msg.body();
+        fail(String.valueOf(body));
+      } catch (RuntimeException e) {
+        Throwable cause = e.getCause();
+        String exceptionMsg = cause instanceof InvalidClassException ? cause.getMessage() : e.getMessage();
+        assertEquals("Class not allowed: " + clazz.getName(), exceptionMsg);
+        testComplete();
+      }
+    }).completionHandler(onSuccess(reg -> {
+      vertices[0].eventBus().send("foo", message);
+    }));
     await();
   }
 }

@@ -11,13 +11,14 @@
 
 package io.vertx.core.shareddata.impl;
 
-import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.ClusterSerializableUtils;
+import io.vertx.core.impl.SerializableUtils;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.shareddata.Shareable;
 
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Objects;
@@ -86,15 +87,7 @@ class Checker {
 
   private static ClusterSerializable copyClusterSerializable(ClusterSerializable obj) {
     logDeveloperInfo(obj);
-    Buffer buffer = Buffer.buffer();
-    obj.writeToBuffer(buffer);
-    try {
-      ClusterSerializable copy = obj.getClass().getConstructor().newInstance();
-      copy.readFromBuffer(0, buffer);
-      return copy;
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
+    return ClusterSerializableUtils.copy(obj);
   }
 
   private static void logDeveloperInfo(Object obj) {
@@ -105,20 +98,6 @@ class Checker {
 
   private static Object copySerializable(Object obj) {
     logDeveloperInfo(obj);
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    byte[] bytes;
-    try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-      oos.writeObject(obj);
-      oos.flush();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-    bytes = baos.toByteArray();
-    ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-    try (ObjectInputStream ois = new ObjectInputStream(bais)) {
-      return ois.readObject();
-    } catch (IOException | ClassNotFoundException e) {
-      throw new RuntimeException(e);
-    }
+    return SerializableUtils.fromBytes(SerializableUtils.toBytes(obj), ObjectInputStream::new);
   }
 }

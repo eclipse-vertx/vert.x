@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -12,15 +12,19 @@
 package io.vertx.core.eventbus.impl;
 
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.eventbus.impl.codecs.*;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.shareddata.impl.ClusterSerializable;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -48,20 +52,24 @@ public class CodecManager {
   private final MessageCodec[] systemCodecs;
   private final ConcurrentMap<String, MessageCodec> userCodecMap = new ConcurrentHashMap<>();
   private final ConcurrentMap<Class, MessageCodec> defaultCodecMap = new ConcurrentHashMap<>();
+  private final ClusterSerializableCodec clusterSerializableCodec = new ClusterSerializableCodec(this);
+  private final SerializableCodec serializableCodec = new SerializableCodec(this);
+
+  private volatile Function<String, Boolean> clusterSerializableCheck = s -> Boolean.FALSE;
+  private volatile Function<String, Boolean> serializableCheck = EventBus.DEFAULT_SERIALIZABLE_CHECKER;
+  private volatile Function<Object, String> codecSelector = o -> null;
 
   public CodecManager() {
     this.systemCodecs = codecs(NULL_MESSAGE_CODEC, PING_MESSAGE_CODEC, STRING_MESSAGE_CODEC, BUFFER_MESSAGE_CODEC, JSON_OBJECT_MESSAGE_CODEC, JSON_ARRAY_MESSAGE_CODEC,
       BYTE_ARRAY_MESSAGE_CODEC, INT_MESSAGE_CODEC, LONG_MESSAGE_CODEC, FLOAT_MESSAGE_CODEC, DOUBLE_MESSAGE_CODEC,
-      BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC);
+      BOOLEAN_MESSAGE_CODEC, SHORT_MESSAGE_CODEC, CHAR_MESSAGE_CODEC, BYTE_MESSAGE_CODEC, REPLY_EXCEPTION_MESSAGE_CODEC,
+      clusterSerializableCodec, serializableCodec);
   }
 
-  public MessageCodec lookupCodec(Object body, String codecName) {
+  public MessageCodec lookupCodec(Object body, String codecName, boolean local) {
     MessageCodec codec;
     if (codecName != null) {
-      codec = userCodecMap.get(codecName);
-      if (codec == null) {
-        throw new IllegalArgumentException("No message codec for name: " + codecName);
-      }
+      codec = getCodec(codecName);
     } else if (body == null) {
       codec = NULL_MESSAGE_CODEC;
     } else if (body instanceof String) {
@@ -98,8 +106,17 @@ public class CodecManager {
     } else {
       codec = defaultCodecMap.get(body.getClass());
       if (codec == null) {
-        throw new IllegalArgumentException("No message codec for type: " + body.getClass());
+        if ((codecName = codecSelector.apply(body)) != null) {
+          codec = getCodec(codecName);
+        } else if (body instanceof ClusterSerializable && (local || acceptClusterSerializable(body.getClass().getName()))) {
+          codec = clusterSerializableCodec;
+        } else if (body instanceof Serializable && (local || acceptSerializable(body.getClass().getName()))) {
+          codec = serializableCodec;
+        }
       }
+    }
+    if (codec == null) {
+      throw new IllegalArgumentException("No message codec for type: " + body.getClass());
     }
     return codec;
   }
@@ -158,11 +175,29 @@ public class CodecManager {
 
   private MessageCodec[] codecs(MessageCodec... codecs) {
     MessageCodec[] arr = new MessageCodec[codecs.length];
-    for (MessageCodec codec: codecs) {
+    for (MessageCodec codec : codecs) {
       arr[codec.systemCodecID()] = codec;
     }
     return arr;
   }
 
+  public void clusterSerializableCheck(Function<String, Boolean> classNamePredicate) {
+    this.clusterSerializableCheck = Objects.requireNonNull(classNamePredicate);
+  }
 
+  public boolean acceptClusterSerializable(String className) {
+    return clusterSerializableCheck.apply(className);
+  }
+
+  public void serializableCheck(Function<String, Boolean> classNamePredicate) {
+    this.serializableCheck = Objects.requireNonNull(classNamePredicate);
+  }
+
+  public boolean acceptSerializable(String className) {
+    return serializableCheck.apply(className);
+  }
+
+  public void codecSelector(Function<Object, String> selector) {
+    this.codecSelector = Objects.requireNonNull(selector);
+  }
 }

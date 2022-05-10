@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,10 +11,8 @@
 
 package io.vertx.core.eventbus;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxOptions;
+import io.vertx.core.*;
+import io.vertx.core.shareddata.AsyncMapTest;
 import io.vertx.core.spi.cluster.*;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.fakecluster.FakeClusterManager;
@@ -39,6 +37,26 @@ public class ClusteredEventBusTestBase extends EventBusTestBase {
 
   protected ClusterManager getClusterManager() {
     return new FakeClusterManager();
+  }
+
+  @Override
+  protected void clusteredVertx(VertxOptions options, Handler<AsyncResult<Vertx>> ar) {
+    Promise<Vertx> promise = Promise.promise();
+    super.clusteredVertx(options, promise);
+    promise.future().onSuccess(vertx -> {
+      ImmutableObjectCodec immutableObjectCodec = new ImmutableObjectCodec();
+      vertx.eventBus().registerCodec(immutableObjectCodec);
+      vertx.eventBus().codecSelector(obj -> obj instanceof ImmutableObject ? immutableObjectCodec.name() : null);
+      vertx.eventBus().clusterSerializableChecker(className -> className.startsWith(AsyncMapTest.class.getName()));
+      vertx.eventBus().serializableChecker(className -> {
+        return EventBus.DEFAULT_SERIALIZABLE_CHECKER.apply(className) || className.startsWith(AsyncMapTest.class.getName());
+      });
+    }).onComplete(ar);
+  }
+
+  @Override
+  protected boolean shouldImmutableObjectBeCopied() {
+    return true;
   }
 
   @Override

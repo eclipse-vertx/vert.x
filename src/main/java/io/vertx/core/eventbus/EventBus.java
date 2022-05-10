@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -18,7 +18,12 @@ import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.eventbus.impl.DefaultSerializableChecker;
 import io.vertx.core.metrics.Measured;
+
+import java.util.function.Function;
+
+import static io.vertx.codegen.annotations.GenIgnore.PERMITTED_TYPE;
 
 /**
  * A Vert.x event-bus is a light-weight distributed messaging system which allows different parts of your application,
@@ -34,6 +39,12 @@ import io.vertx.core.metrics.Measured;
  */
 @VertxGen
 public interface EventBus extends Measured {
+
+  /**
+   * Default {@link java.io.Serializable} class checker used by Vert.x when {@link #serializableChecker(Function)} has not been set.
+   */
+  @GenIgnore
+  Function<String, Boolean> DEFAULT_SERIALIZABLE_CHECKER = DefaultSerializableChecker.INSTANCE::check;
 
   /**
    * Sends a message.
@@ -219,16 +230,18 @@ public interface EventBus extends Measured {
    * @param codec  the message codec to register
    * @return a reference to this, so the API can be used fluently
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Fluent
+  @GenIgnore(PERMITTED_TYPE)
   EventBus registerCodec(MessageCodec codec);
 
   /**
    * Unregister a message codec.
-   * <p>
-   * @param name  the name of the codec
+   *
+   * @param name the name of the codec
    * @return a reference to this, so the API can be used fluently
    */
-  @GenIgnore(GenIgnore.PERMITTED_TYPE)
+  @Fluent
+  @GenIgnore(PERMITTED_TYPE)
   EventBus unregisterCodec(String name);
 
   /**
@@ -244,22 +257,35 @@ public interface EventBus extends Measured {
    * @param codec  the message codec to register
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   @GenIgnore
   <T> EventBus registerDefaultCodec(Class<T> clazz, MessageCodec<T, ?> codec);
 
   /**
    * Unregister a default message codec.
-   * <p>
-   * @param clazz  the class for which the codec was registered
+   *
+   * @param clazz the class for which the codec was registered
    * @return a reference to this, so the API can be used fluently
    */
+  @Fluent
   @GenIgnore
   EventBus unregisterDefaultCodec(Class clazz);
 
   /**
+   * Set selector to be invoked when the bus has not found any codec for a {@link Message} body.
+   * <p>
+   * The selector must return the name of a codec which has been registered with either {@link #registerCodec(MessageCodec)} or {@link #registerDefaultCodec(Class, MessageCodec)}.
+   *
+   * @param selector the codec selector
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  EventBus codecSelector(Function<Object, String> selector);
+
+  /**
    * Add an interceptor that will be called whenever a message is sent from Vert.x
    *
-   * @param interceptor  the interceptor
+   * @param interceptor the interceptor
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
@@ -286,10 +312,32 @@ public interface EventBus extends Measured {
   /**
    * Remove an interceptor that was added by {@link #addInboundInterceptor(Handler)}
    *
-   * @param interceptor  the interceptor
+   * @param interceptor the interceptor
    * @return a reference to this, so the API can be used fluently
    */
   @Fluent
   <T> EventBus removeInboundInterceptor(Handler<DeliveryContext<T>> interceptor);
+
+  /**
+   * Register a predicate to invoke when verifying if an object is forbidden to be encoded/decoded as {@link io.vertx.core.shareddata.ClusterSerializable}.
+   * <p>
+   * This is only used when Vert.x is clustered.
+   *
+   * @param classNamePredicate the predicate
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  EventBus clusterSerializableChecker(Function<String, Boolean> classNamePredicate);
+
+  /**
+   * Register a predicate to invoke when verifying if an object is allowed to be encoded/decoded as {@link java.io.Serializable}.
+   * <p>
+   * This is only used when Vert.x is clustered.
+   *
+   * @param classNamePredicate the predicate
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  EventBus serializableChecker(Function<String, Boolean> classNamePredicate);
 }
 
