@@ -172,7 +172,15 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
         public void upgradeTo(ChannelHandlerContext ctx, FullHttpResponse upgradeResponse) throws Exception {
 
           // Now we need to upgrade this to an HTTP2
-          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, (EventLoopContext) upgradingConnection.getContext(), true, upgradedConnection.current.metric(), conn -> {
+          VertxHttp2ConnectionHandler<Http2ClientConnection> handler = Http2ClientConnection.createHttp2ConnectionHandler(upgradedConnection.client, upgradingConnection.metrics, (EventLoopContext) upgradingConnection.getContext(), true, upgradedConnection.current.metric());
+          upgradingConnection.channel().pipeline().addLast(handler);
+          handler.connectFuture().addListener(future -> {
+            if (!future.isSuccess()) {
+              // Handle me
+              log.error(future.cause().getMessage(), future.cause());
+              return;
+            }
+            Http2ClientConnection conn = (Http2ClientConnection) future.getNow();
             conn.upgradeStream(upgradingStream.metric(), upgradingStream.getContext(), ar -> {
               upgradingConnection.closeHandler(null);
               upgradingConnection.exceptionHandler(null);
@@ -234,7 +242,6 @@ public class Http2UpgradedClientConnection implements HttpClientConnection {
               }
             });
           });
-          upgradingConnection.channel().pipeline().addLast(handler);
           handler.clientUpgrade(ctx);
         }
       };

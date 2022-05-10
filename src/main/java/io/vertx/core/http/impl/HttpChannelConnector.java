@@ -27,6 +27,7 @@ import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.EventLoopContext;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SocketAddress;
@@ -90,7 +91,7 @@ public class HttpChannelConnector {
   public Future<HttpClientConnection> wrap(EventLoopContext context, NetSocket so_) {
     NetSocketImpl so = (NetSocketImpl) so_;
     Object metric = so.metric();
-    Promise<HttpClientConnection> promise = context.promise();
+    PromiseInternal<HttpClientConnection> promise = context.promise();
 
     // Remove all un-necessary handlers
     ChannelPipeline pipeline = so.channelHandlerContext().pipeline();
@@ -206,16 +207,17 @@ public class HttpChannelConnector {
   private void http2Connected(EventLoopContext context,
                               Object metric,
                               Channel ch,
-                              Promise<HttpClientConnection> future) {
+                              PromiseInternal<HttpClientConnection> promise) {
+    VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler;
     try {
-      VertxHttp2ConnectionHandler<Http2ClientConnection> clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric, conn -> {
-        future.complete(conn);
-      });
+      clientHandler = Http2ClientConnection.createHttp2ConnectionHandler(client, metrics, context, false, metric);
       ch.pipeline().addLast("handler", clientHandler);
       ch.flush();
     } catch (Exception e) {
-      connectFailed(ch, e, future);
+      connectFailed(ch, e, promise);
+      return;
     }
+    clientHandler.connectFuture().addListener(promise);
   }
 
   private void connectFailed(Channel ch, Throwable t, Promise<HttpClientConnection> future) {
