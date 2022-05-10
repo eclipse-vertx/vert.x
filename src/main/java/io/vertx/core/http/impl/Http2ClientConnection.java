@@ -612,8 +612,7 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
     ClientMetrics metrics,
     EventLoopContext context,
     boolean upgrade,
-    Object socketMetric,
-    Handler<Http2ClientConnection> c) {
+    Object socketMetric) {
     HttpClientOptions options = client.getOptions();
     HttpClientMetrics met = client.metrics();
     VertxHttp2ConnectionHandler<Http2ClientConnection> handler = new VertxHttp2ConnectionHandlerBuilder<Http2ClientConnection>()
@@ -640,7 +639,6 @@ class Http2ClientConnection extends Http2ConnectionBase implements HttpClientCon
           met.endpointConnected(metrics);
         }
       }
-      c.handle(conn);
     });
     handler.removeHandler(conn -> {
       if (metrics != null) {
