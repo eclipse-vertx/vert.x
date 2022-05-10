@@ -17,12 +17,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http2.*;
-import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
+import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
@@ -37,6 +37,8 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   private final Function<VertxHttp2ConnectionHandler<C>, C> connectionFactory;
   private C connection;
   private ChannelHandlerContext chctx;
+  private Promise<C> connectFuture;
+  private boolean settingsRead;
   private Handler<C> addHandler;
   private Handler<C> removeHandler;
   private final boolean useDecompressor;
@@ -58,6 +60,13 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       }
     });
     connection().addListener(this);
+  }
+
+  public Future<C> connectFuture() {
+    if (connectFuture == null) {
+      throw new IllegalStateException();
+    }
+    return connectFuture;
   }
 
   public ChannelHandlerContext context() {
@@ -95,6 +104,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
     super.handlerAdded(ctx);
     chctx = ctx;
+    connectFuture = new DefaultPromise<>(ctx.executor());
     connection = connectionFactory.apply(this);
   }
 
@@ -142,6 +152,9 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   protected void onConnectionError(ChannelHandlerContext ctx, boolean outbound, Throwable cause, Http2Exception http2Ex) {
     connection.onConnectionError(cause);
+    if (!settingsRead) {
+      connectFuture.setFailure(http2Ex);
+    }
     // Default behavior send go away
     super.onConnectionError(ctx, outbound, cause, http2Ex);
   }
@@ -295,14 +308,15 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
     chctx.flush();
   }
 
-  void writePushPromise(int streamId, Http2Headers headers, Handler<AsyncResult<Integer>> completionHandler) {
+  io.netty.util.concurrent.Future<Integer> writePushPromise(int streamId, Http2Headers headers) {
     int promisedStreamId = connection().local().incrementAndGetNextStreamId();
+    DefaultPromise<Integer> future = new DefaultPromise<>(chctx.executor());
     ChannelPromise promise = chctx.newPromise();
     promise.addListener(fut -> {
       if (fut.isSuccess()) {
-        completionHandler.handle(Future.succeededFuture(promisedStreamId));
+        future.setSuccess(promisedStreamId);
       } else {
-        completionHandler.handle(Future.failedFuture(fut.cause()));
+        future.setFailure(fut.cause());
       }
     });
     EventExecutor executor = chctx.executor();
@@ -313,6 +327,7 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
         _writePushPromise(streamId, promisedStreamId, headers, promise);
       });
     }
+    return future;
   }
 
   int maxConcurrentStreams() {
@@ -363,9 +378,11 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
       decoder().frameListener(connection);
     }
     connection.onSettingsRead(ctx, settings);
+    settingsRead = true;
     if (addHandler != null) {
       addHandler.handle(connection);
     }
+    connectFuture.setSuccess(connection);
   }
 
   @Override

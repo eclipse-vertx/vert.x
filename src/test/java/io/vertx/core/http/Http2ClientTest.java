@@ -1708,6 +1708,27 @@ public class Http2ClientTest extends Http2TestBase {
   }
 
   @Test
+  public void testRejectClearTextDirect() throws Exception {
+    System.setProperty("vertx.disableH2c", "true");
+    try {
+      server.close();
+      server = vertx.createHttpServer(serverOptions.setUseAlpn(false).setSsl(false));
+      server.requestHandler(req -> {
+        fail();
+      });
+      startServer(testAddress);
+      client.close();
+      client = vertx.createHttpClient(clientOptions.setUseAlpn(false).setSsl(false).setHttp2ClearTextUpgrade(false));
+      client.request(requestOptions).onComplete(onFailure(err -> {
+        testComplete();
+      }));
+      await();
+    } finally {
+      System.clearProperty("vertx.disableH2c");
+    }
+  }
+
+  @Test
   public void testIdleTimeout() throws Exception {
     testIdleTimeout(serverOptions, clientOptions.setDefaultPort(DEFAULT_HTTPS_PORT));
   }

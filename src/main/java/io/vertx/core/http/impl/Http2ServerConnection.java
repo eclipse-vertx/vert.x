@@ -18,6 +18,8 @@ import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Headers;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.Http2Stream;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.FutureListener;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -151,28 +153,26 @@ public class Http2ServerConnection extends Http2ConnectionBase implements HttpSe
     if (headers != null) {
       headers.forEach(header -> headers_.add(header.getKey(), header.getValue()));
     }
-    handler.writePushPromise(streamId, headers_, new Handler<AsyncResult<Integer>>() {
-      @Override
-      public void handle(AsyncResult<Integer> ar) {
-        if (ar.succeeded()) {
-          synchronized (Http2ServerConnection.this) {
-            int promisedStreamId = ar.result();
-            String contentEncoding = HttpUtils.determineContentEncoding(headers_);
-            Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
-            Push push = new Push(context, contentEncoding, method, path, promise);
-            push.priority(streamPriority);
-            push.init(promisedStream);
-            int maxConcurrentStreams = handler.maxConcurrentStreams();
-            if (concurrentStreams < maxConcurrentStreams) {
-              concurrentStreams++;
-              push.complete();
-            } else {
-              pendingPushes.add(push);
-            }
+    Future<Integer> fut = handler.writePushPromise(streamId, headers_);
+    fut.addListener((FutureListener<Integer>) future -> {
+      if (future.isSuccess()) {
+        synchronized (Http2ServerConnection.this) {
+          int promisedStreamId = future.getNow();
+          String contentEncoding = HttpUtils.determineContentEncoding(headers_);
+          Http2Stream promisedStream = handler.connection().stream(promisedStreamId);
+          Push push = new Push(context, contentEncoding, method, path, promise);
+          push.priority(streamPriority);
+          push.init(promisedStream);
+          int maxConcurrentStreams = handler.maxConcurrentStreams();
+          if (concurrentStreams < maxConcurrentStreams) {
+            concurrentStreams++;
+            push.complete();
+          } else {
+            pendingPushes.add(push);
           }
-        } else {
-          promise.fail(ar.cause());
         }
+      } else {
+        promise.fail(future.cause());
       }
     });
   }
