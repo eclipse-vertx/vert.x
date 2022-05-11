@@ -515,8 +515,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
     long timerId = timeoutCounter.getAndIncrement();
-    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, delay, context);
-    timeouts.put(timerId, task);
+    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, delay, context, timeouts);
     if (context.isDeployment()) {
       context.addCloseHook(task);
     }
@@ -871,11 +870,17 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private final ContextInternal context;
     private final java.util.concurrent.Future<?> future;
 
-    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, long delay, ContextInternal context) {
+    InternalTimerHandler(long timerID,
+      Handler<Long> runnable,
+      boolean periodic,
+      long delay,
+      ContextInternal context,
+      ConcurrentMap<Long, InternalTimerHandler> timeouts) {
       this.context = context;
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
+      timeouts.put(timerID, this);
       EventLoop el = context.nettyEventLoop();
       if (periodic) {
         future = el.scheduleAtFixedRate(this, delay, delay, TimeUnit.MILLISECONDS);
