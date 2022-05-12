@@ -762,7 +762,7 @@ Brotli and zstandard can also be used.
 {@link examples.HTTPExamples#setCompressors}
 ----
 
-NOTE: use {@code io.netty.handler.codec.compression.StandardCompressionOptions} static methods to create {@code io.netty.handler.codec.compression.CompressionOptions}
+NOTE: use {@link io.netty.handler.codec.compression.StandardCompressionOptions} static methods to create {@link io.netty.handler.codec.compression.CompressionOptions}
 
 Brotli and zstandard libraries need to be added to the classpath.
 
