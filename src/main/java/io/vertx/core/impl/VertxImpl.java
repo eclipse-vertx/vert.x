@@ -76,6 +76,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -356,7 +357,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public long setPeriodic(long delay, Handler<Long> handler) {
-    return scheduleTimeout(getOrCreateContext(), handler, delay, true);
+    return scheduleTimeout(getOrCreateContext(), true, delay, TimeUnit.MILLISECONDS, handler);
   }
 
   @Override
@@ -365,7 +366,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public long setTimer(long delay, Handler<Long> handler) {
-    return scheduleTimeout(getOrCreateContext(), handler, delay, false);
+    return scheduleTimeout(getOrCreateContext(), false, delay, TimeUnit.MILLISECONDS, handler);
   }
 
   @Override
@@ -450,10 +451,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public boolean cancelTimer(long id) {
-    InternalTimerHandler handler = timeouts.remove(id);
+    InternalTimerHandler handler = timeouts.get(id);
     if (handler != null) {
-      handler.cancel();
-      return true;
+      return handler.cancel();
     } else {
       return false;
     }
@@ -509,15 +509,21 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new DnsClientImpl(this, options);
   }
 
-  public long scheduleTimeout(ContextInternal context, Handler<Long> handler, long delay, boolean periodic) {
+  public long scheduleTimeout(ContextInternal context, boolean periodic, long delay, TimeUnit timeUnit, Handler<Long> handler) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
     long timerId = timeoutCounter.getAndIncrement();
-    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, delay, context);
+    InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
     timeouts.put(timerId, task);
     if (context.isDeployment()) {
       context.addCloseHook(task);
+    }
+    EventLoop el = context.nettyEventLoop();
+    if (periodic) {
+      task.future = el.scheduleAtFixedRate(task, delay, delay, timeUnit);
+    } else {
+      task.future = el.schedule(task, delay, timeUnit);
     }
     return timerId;
   }
@@ -868,19 +874,14 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     private final boolean periodic;
     private final long timerID;
     private final ContextInternal context;
-    private final java.util.concurrent.Future<?> future;
+    private final AtomicBoolean disposed = new AtomicBoolean();
+    private volatile java.util.concurrent.Future<?> future;
 
-    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, long delay, ContextInternal context) {
+    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, ContextInternal context) {
       this.context = context;
       this.timerID = timerID;
       this.handler = runnable;
       this.periodic = periodic;
-      EventLoop el = context.nettyEventLoop();
-      if (periodic) {
-        future = el.scheduleAtFixedRate(this, delay, delay, TimeUnit.MILLISECONDS);
-      } else {
-        future = el.schedule(this, delay, TimeUnit.MILLISECONDS);
-      }
     }
 
     @Override
@@ -890,10 +891,11 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     public void handle(Void v) {
       if (periodic) {
-        if (timeouts.containsKey(timerID)) {
+        if (!disposed.get()) {
           handler.handle(timerID);
         }
-      } else if (timeouts.remove(timerID) != null) {
+      } else if (disposed.compareAndSet(false, true)) {
+        timeouts.remove(timerID);
         try {
           handler.handle(timerID);
         } finally {
@@ -903,18 +905,29 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       }
     }
 
-    private void cancel() {
-      future.cancel(false);
-      if (context.isDeployment()) {
-        context.removeCloseHook(this);
+    private boolean cancel() {
+      boolean cancelled = tryCancel();
+      if (cancelled) {
+        if (context.isDeployment()) {
+          context.removeCloseHook(this);
+        }
+      }
+      return cancelled;
+    }
+
+    private boolean tryCancel() {
+      if  (disposed.compareAndSet(false, true)) {
+        timeouts.remove(timerID);
+        future.cancel(false);
+        return true;
+      } else {
+        return false;
       }
     }
 
     // Called via Context close hook when Verticle is undeployed
     public void close(Promise<Void> completion) {
-      if (timeouts.remove(timerID) != null) {
-        future.cancel(false);
-      }
+      tryCancel();
       completion.complete();
     }
   }
@@ -986,7 +999,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
           throw new IllegalStateException();
         }
         this.handler = handler;
-        id = scheduleTimeout(getOrCreateContext(), this, delay, periodic);
+        id = scheduleTimeout(getOrCreateContext(), periodic, delay, TimeUnit.MILLISECONDS, this);
       } else {
         cancel();
       }
