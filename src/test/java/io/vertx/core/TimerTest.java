@@ -12,11 +12,14 @@
 package io.vertx.core;
 
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.streams.ReadStream;
+import io.vertx.test.core.Repeat;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -445,5 +448,25 @@ public class TimerTest extends VertxTestBase {
       });
     });
     await();
+  }
+
+  @Repeat(times = 100)
+  @Test
+  public void testRaceWhenTimerCreatedOutsideEventLoop() {
+    int numThreads = 1000;
+    int numIter = 1;
+    Thread[] threads = new Thread[numThreads];
+    AtomicInteger count = new AtomicInteger(numIter * numThreads);
+    for (int i = 0;i < numThreads;i++) {
+      Thread th = new Thread(() -> {
+        // We need something more aggressive than a millisecond for this test
+        ((VertxImpl)vertx).scheduleTimeout(((VertxImpl) vertx).getOrCreateContext(), false, 1, TimeUnit.NANOSECONDS, ignore -> {
+          count.decrementAndGet();
+        });
+      });
+      th.start();
+      threads[i] = th;
+    }
+    waitUntil(() -> count.get() == 0);
   }
 }
