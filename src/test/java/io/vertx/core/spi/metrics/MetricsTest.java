@@ -507,7 +507,7 @@ public class MetricsTest extends VertxTestBase {
       latch.countDown();
     });
     awaitLatch(latch);
-    waitUntil(() -> metrics.getReplyFailureAddresses().size() == 1);
+    waitUntil(() -> metrics.getReplyFailureAddresses().size() == 1, 11_000);
     assertEquals(Collections.singletonList(ReplyFailure.TIMEOUT), metrics.getReplyFailures());
   }
 
