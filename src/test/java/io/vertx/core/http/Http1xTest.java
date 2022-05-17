@@ -15,6 +15,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoop;
 import io.netty.handler.codec.TooLongFrameException;
+import io.netty.handler.codec.http.TooLongHttpHeaderException;
 import io.vertx.core.*;
 import io.vertx.core.Future;
 import io.vertx.core.buffer.Buffer;
@@ -3589,7 +3590,7 @@ public class Http1xTest extends HttpTest {
       }
     }, errors -> {
       assertEquals(2, errors.size());
-      assertEquals(TooLongFrameException.class, errors.get(0).getClass());
+      assertEquals(TooLongHttpHeaderException.class, errors.get(0).getClass());
     });
   }
 

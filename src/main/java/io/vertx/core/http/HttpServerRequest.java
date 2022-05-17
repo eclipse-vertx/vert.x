@@ -12,8 +12,9 @@
 package io.vertx.core.http;
 
 import io.netty.handler.codec.DecoderResult;
-import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.TooLongHttpHeaderException;
+import io.netty.handler.codec.http.TooLongHttpLineException;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -63,13 +64,10 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
     DecoderResult result = request.decoderResult();
     Throwable cause = result.cause();
     HttpResponseStatus status = null;
-    if (cause instanceof TooLongFrameException) {
-      String causeMsg = cause.getMessage();
-      if (causeMsg.startsWith("An HTTP line is larger than")) {
-        status = HttpResponseStatus.REQUEST_URI_TOO_LONG;
-      } else if (causeMsg.startsWith("HTTP header is larger than")) {
-        status = HttpResponseStatus.REQUEST_HEADER_FIELDS_TOO_LARGE;
-      }
+    if (cause instanceof TooLongHttpLineException) {
+      status = HttpResponseStatus.REQUEST_URI_TOO_LONG;
+    } else if (cause instanceof TooLongHttpHeaderException) {
+      status = HttpResponseStatus.REQUEST_HEADER_FIELDS_TOO_LARGE;
     }
     if (status == null) {
       status = HttpResponseStatus.BAD_REQUEST;
