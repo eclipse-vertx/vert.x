@@ -18,6 +18,7 @@ import io.vertx.core.impl.future.SucceededFuture;
 import io.vertx.core.impl.launcher.VertxCommandLauncher;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A context implementation that does not hold any specific state.
@@ -84,13 +85,13 @@ abstract class AbstractContext implements ContextInternal {
   @Override
   public long setPeriodic(long delay, Handler<Long> handler) {
     VertxImpl owner = (VertxImpl) owner();
-    return owner.scheduleTimeout(this, handler, delay, true);
+    return owner.scheduleTimeout(this, true, delay, TimeUnit.MILLISECONDS, handler);
   }
 
   @Override
   public long setTimer(long delay, Handler<Long> handler) {
     VertxImpl owner = (VertxImpl) owner();
-    return owner.scheduleTimeout(this, handler, delay, false);
+    return owner.scheduleTimeout(this, false, delay, TimeUnit.MILLISECONDS,handler);
   }
 
   @Override
