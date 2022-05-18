@@ -123,6 +123,16 @@
       <artifactId>netty-transport-native-kqueue</artifactId>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-unix-common</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-resolver-dns-native-macos</artifactId>
+      <optional>true</optional>
+    </dependency>
 
     <!-- Jackson -->
     <dependency>
