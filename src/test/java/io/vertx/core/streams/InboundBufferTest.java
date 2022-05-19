@@ -11,6 +11,7 @@
 package io.vertx.core.streams;
 
 import io.vertx.core.Context;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.streams.impl.InboundBuffer;
 import io.vertx.test.core.VertxTestBase;
 import org.junit.Test;
@@ -26,7 +27,7 @@ import java.util.function.Consumer;
 public class InboundBufferTest extends VertxTestBase {
 
   private volatile Runnable contextChecker;
-  private Context context;
+  private ContextInternal context;
   private InboundBuffer<Integer> buffer;
   private AtomicInteger sequence;
 
@@ -50,7 +51,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Override
   public void setUp() throws Exception {
     super.setUp();
-    context = vertx.getOrCreateContext();
+    context = (ContextInternal) vertx.getOrCreateContext();
     sequence = new AtomicInteger();
     context.runOnContext(v -> {
       Thread contextThread = Thread.currentThread();
@@ -72,7 +73,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testFlowing() {
     context.runOnContext(v -> {
-      buffer = new InboundBuffer<>(context);
+      buffer = new InboundBuffer<>(context.executor());
       AtomicInteger events = new AtomicInteger();
       buffer.handler(elt -> {
         checkContext();
@@ -88,7 +89,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testTake() {
     context.runOnContext(v -> {
-      buffer = new InboundBuffer<>(context);
+      buffer = new InboundBuffer<>(context.executor());
       AtomicInteger events = new AtomicInteger();
       buffer.handler(elt -> {
         checkContext();
@@ -106,7 +107,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testFlowingAdd() {
     context.runOnContext(v -> {
-      buffer = new InboundBuffer<>(context);
+      buffer = new InboundBuffer<>(context.executor());
       AtomicInteger events = new AtomicInteger();
       buffer.handler(elt -> {
         checkContext();
@@ -124,7 +125,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testFlowingRefill() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       AtomicInteger events = new AtomicInteger();
       buffer.handler(s -> {
         checkContext();
@@ -147,7 +148,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPauseWhenFull() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicInteger reads = new AtomicInteger();
       buffer.drainHandler(v2 -> {
@@ -172,7 +173,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPausedResume() {
     context.runOnContext(v -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       AtomicInteger events = new AtomicInteger();
       buffer.handler(s -> {
         checkContext();
@@ -196,7 +197,7 @@ public class InboundBufferTest extends VertxTestBase {
   public void testPausedDrain() {
     waitFor(2);
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       AtomicInteger drained = new AtomicInteger();
       AtomicInteger emitted = new AtomicInteger();
       buffer.drainHandler(v2 -> {
@@ -223,7 +224,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPausedRequestLimited() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 3L);
+      buffer = new InboundBuffer<>(context.executor(), 3L);
       AtomicInteger events = new AtomicInteger();
       buffer.handler(s -> {
         checkContext();
@@ -258,7 +259,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPushReturnsTrueUntilHighWatermark() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 2L);
+      buffer = new InboundBuffer<>(context.executor(), 2L);
       buffer.pause();
       buffer.fetch(1);
       assertTrue(emit());
@@ -272,7 +273,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testHighWaterMark() {
     context.runOnContext(v -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       buffer.pause();
       fill();
       assertEquals(5, sequence.get());
@@ -284,7 +285,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testEmptyHandler() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context.executor(), 4L);
       AtomicInteger emptyCount = new AtomicInteger();
       AtomicInteger itemCount = new AtomicInteger();
       buffer.handler(item -> itemCount.incrementAndGet());
@@ -311,7 +312,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testEmitWhenHandlingLastItem() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context.executor(), 4L);
       buffer.pause();
       fill();
       int next = sequence.get();
@@ -335,7 +336,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testEmitInElementHandler() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicBoolean receiving = new AtomicBoolean();
       buffer.handler(s -> {
@@ -376,7 +377,7 @@ public class InboundBufferTest extends VertxTestBase {
 
   private void testEmitInElementHandler(Consumer<Integer> emit) {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicInteger drained = new AtomicInteger();
       AtomicBoolean draining = new AtomicBoolean();
@@ -416,7 +417,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testEmitInDrainHandler1() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context.executor(), 4L);
       AtomicInteger drained = new AtomicInteger();
       AtomicInteger expectedDrained = new AtomicInteger();
       buffer.drainHandler(v2 -> {
@@ -452,7 +453,7 @@ public class InboundBufferTest extends VertxTestBase {
   public void testEmitInDrainHandler2() {
     waitFor(2);
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       AtomicInteger drained = new AtomicInteger();
       AtomicBoolean draining = new AtomicBoolean();
       AtomicInteger emitted = new AtomicInteger();
@@ -491,7 +492,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testDrainAfter() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       AtomicInteger events = new AtomicInteger();
       AtomicBoolean receiving = new AtomicBoolean();
       buffer.handler(s -> {
@@ -514,7 +515,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPauseInElementHandler() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 5L);
+      buffer = new InboundBuffer<>(context.executor(), 5L);
       AtomicInteger events = new AtomicInteger();
       buffer.handler(s -> {
         events.incrementAndGet();
@@ -534,7 +535,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testAddAllEmitInHandler() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context.executor(), 4L);
       List<Integer> emitted = new ArrayList<>();
       buffer.handler(elt -> {
         switch (elt) {
@@ -554,7 +555,7 @@ public class InboundBufferTest extends VertxTestBase {
   public void testAddAllWhenPaused() {
     waitFor(3);
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context.executor(), 4L);
       AtomicInteger emitted = new AtomicInteger();
       AtomicInteger emptied = new AtomicInteger();
       AtomicInteger drained = new AtomicInteger();
@@ -586,7 +587,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testAddAllWhenFlowing() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context.executor(), 4L);
       AtomicInteger emitted = new AtomicInteger();
       AtomicInteger emptied = new AtomicInteger();
       AtomicInteger drained = new AtomicInteger();
@@ -607,7 +608,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testAddAllWhenDelivering() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context.executor(), 4L);
       List<Integer> emitted = new ArrayList<>();
       buffer.handler(elt -> {
         emitted.add(elt);
@@ -628,7 +629,7 @@ public class InboundBufferTest extends VertxTestBase {
   public void testPollDuringEmission() {
     waitFor(2);
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context.executor(), 4L);
       List<Integer> polled = new ArrayList<>();
       List<Integer> emitted = new ArrayList<>();
       AtomicInteger drained = new AtomicInteger();
@@ -661,7 +662,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testCheckThatPauseAfterResumeWontDoAnyEmission() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 4L);
+      buffer = new InboundBuffer<>(context.executor(), 4L);
       AtomicInteger emitted = new AtomicInteger();
       buffer.handler(elt -> emitted.incrementAndGet());
       buffer.pause();
@@ -683,7 +684,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testBufferSignalingFullImmediately() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 0L);
+      buffer = new InboundBuffer<>(context.executor(), 0L);
       List<Integer> emitted = new ArrayList<>();
       buffer.drainHandler(v -> {
         assertEquals(Arrays.asList(0, 1), emitted);
@@ -702,7 +703,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testPauseInHandlerSignalsFullImmediately() {
     context.runOnContext(v -> {
-      buffer = new InboundBuffer<>(context, 0);
+      buffer = new InboundBuffer<>(context.executor(), 0);
       buffer.handler(elt -> {
         checkContext();
         buffer.pause();
@@ -716,7 +717,7 @@ public class InboundBufferTest extends VertxTestBase {
   @Test
   public void testFetchWhenNotEmittingWithNoPendingElements() {
     context.runOnContext(v1 -> {
-      buffer = new InboundBuffer<>(context, 0);
+      buffer = new InboundBuffer<>(context.executor(), 0);
       AtomicInteger drained = new AtomicInteger();
       buffer.drainHandler(v2 -> {
         context.runOnContext(v -> {
@@ -743,7 +744,7 @@ public class InboundBufferTest extends VertxTestBase {
 
   @Test
   public void testRejectWrongThread() {
-    buffer = new InboundBuffer<>(context);
+    buffer = new InboundBuffer<>(context.executor());
     try {
       buffer.write(0);
       fail();

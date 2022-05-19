@@ -97,7 +97,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
     this.context = context;
     this.maxWebSocketFrameSize = maxWebSocketFrameSize;
     this.maxWebSocketMessageSize = maxWebSocketMessageSize;
-    this.pending = new InboundBuffer<>(context);
+    this.pending = new InboundBuffer<>(context.executor());
     this.writable = !conn.isNotWritable();
     this.chctx = conn.channelHandlerContext();
 

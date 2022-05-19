@@ -389,7 +389,7 @@ public class Http1xClientConnection extends Http1xConnectionBase<WebSocketImpl> 
 
       this.writable = !conn.isNotWritable();
       this.conn = conn;
-      this.queue = new InboundBuffer<>(context, 5)
+      this.queue = new InboundBuffer<>(context.executor(), 5)
         .handler(item -> {
           if (item instanceof MultiMap) {
             Handler<MultiMap> handler = endHandler;

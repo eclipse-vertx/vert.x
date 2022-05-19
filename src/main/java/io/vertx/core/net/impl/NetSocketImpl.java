@@ -83,7 +83,7 @@ public class NetSocketImpl extends ConnectionBase implements NetSocketInternal {
     this.metrics = metrics;
     this.messageHandler = new DataMessageHandler();
     this.negotiatedApplicationLayerProtocol = negotiatedApplicationLayerProtocol;
-    pending = new InboundBuffer<>(context);
+    pending = new InboundBuffer<>(context.executor());
     pending.drainHandler(v -> doResume());
     pending.exceptionHandler(context::reportException);
     pending.handler(msg -> {

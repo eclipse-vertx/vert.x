@@ -54,7 +54,7 @@ abstract class VertxHttp2Stream<C extends Http2ConnectionBase> {
     this.conn = conn;
     this.vertx = conn.vertx();
     this.context = context;
-    this.pending = new InboundBuffer<>(context, 5);
+    this.pending = new InboundBuffer<>(context.executor(), 5);
     this.priority = HttpUtils.DEFAULT_STREAM_PRIORITY;
     this.writable = true;
     this.isConnect = false;
