@@ -470,7 +470,7 @@ public class Http2ServerResponse implements HttpServerResponse, HttpResponse {
       if (endHandler != null) {
         endHandler.handle(null);
       }
-      if (invokeHandler) {
+      if (invokeHandler && handler != null) {
         handler.handle(Future.succeededFuture());
       }
     }
