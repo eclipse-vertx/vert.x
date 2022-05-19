@@ -416,7 +416,6 @@ public final class FakeDNSServer extends DnsServer {
   @Override
   public void stop() {
     for (Transport transport : getTransports()) {
-      System.out.println("closing " +transport);
       transport.getAcceptor().dispose();
     }
   }
