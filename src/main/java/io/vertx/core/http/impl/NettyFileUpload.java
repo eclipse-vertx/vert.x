@@ -18,7 +18,6 @@ import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.streams.ReadStream;
 import io.vertx.core.streams.impl.InboundBuffer;
 
@@ -46,7 +45,7 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
   private Handler<Buffer> dataHandler;
   private final long size;
 
-  NettyFileUpload(ContextInternal context, HttpServerRequest request, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
+  NettyFileUpload(Context context, HttpServerRequest request, String name, String filename, String contentType, String contentTransferEncoding, Charset charset, long size) {
     this.name = name;
     this.filename = filename;
     this.contentType = contentType;
@@ -54,7 +53,7 @@ final class NettyFileUpload implements FileUpload, ReadStream<Buffer> {
     this.charset = charset;
     this.request = request;
     this.size = size;
-    this.pending = new InboundBuffer<>(context.executor())
+    this.pending = new InboundBuffer<>(context)
       .drainHandler(v -> request.resume())
       .handler(buff -> {
         if (buff == InboundBuffer.END_SENTINEL) {

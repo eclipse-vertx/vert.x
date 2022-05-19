@@ -11,10 +11,12 @@
 package io.vertx.core.streams.impl;
 
 import io.netty.util.concurrent.FastThreadLocalThread;
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.impl.ContextInternal;
 
 import java.util.ArrayDeque;
-import java.util.concurrent.Executor;
 
 /**
  * A buffer that transfers elements to an handler with back-pressure.
@@ -61,14 +63,14 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
  */
-public class InboundBuffer<E> implements Runnable {
+public class InboundBuffer<E> {
 
   /**
    * A reusable sentinel for signaling the end of a stream.
    */
   public static final Object END_SENTINEL = new Object();
 
-  private final Executor executor;
+  private final ContextInternal context;
   private final ArrayDeque<E> pending;
   private final long highWaterMark;
   private long demand;
@@ -79,18 +81,18 @@ public class InboundBuffer<E> implements Runnable {
   private Handler<Throwable> exceptionHandler;
   private boolean emitting;
 
-  public InboundBuffer(Executor executor) {
-    this(executor, 16L);
+  public InboundBuffer(Context context) {
+    this(context, 16L);
   }
 
-  public InboundBuffer(Executor executor, long highWaterMark) {
-    if (executor == null) {
-      throw new NullPointerException("Executor must not be null");
+  public InboundBuffer(Context context, long highWaterMark) {
+    if (context == null) {
+      throw new NullPointerException("context must not be null");
     }
     if (highWaterMark < 0) {
       throw new IllegalArgumentException("highWaterMark " + highWaterMark + " >= 0");
     }
-    this.executor = executor;
+    this.context = (ContextInternal) context;
     this.highWaterMark = highWaterMark;
     this.demand = Long.MAX_VALUE;
     this.pending = new ArrayDeque<>();
@@ -192,8 +194,7 @@ public class InboundBuffer<E> implements Runnable {
    * <p/>
    * Calling this assumes {@code (demand > 0L && !pending.isEmpty()) == true}
    */
-  @Override
-  public void run() {
+  private void drain() {
     int emitted = 0;
     Handler<Void> drainHandler;
     Handler<Void> emptyHandler;
@@ -276,7 +277,7 @@ public class InboundBuffer<E> implements Runnable {
       }
       emitting = true;
     }
-    executor.execute(this);
+    context.runOnContext(v -> drain());
     return true;
   }
 

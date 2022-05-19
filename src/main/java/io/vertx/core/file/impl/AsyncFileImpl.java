@@ -108,7 +108,7 @@ public class AsyncFileImpl implements AsyncFile {
       throw new FileSystemException(FileSystemImpl.getFileAccessErrorMessage("open", path), e);
     }
     this.context = context;
-    this.queue = new InboundBuffer<>(context.executor(), 0);
+    this.queue = new InboundBuffer<>(context, 0);
     queue.handler(buff -> {
       if (buff.length() > 0) {
         handleBuffer(buff);
