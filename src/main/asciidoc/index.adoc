@@ -214,10 +214,29 @@ completes and the result is available, like any other kind of event.
 {@link examples.CoreExamples#exampleFuture1}
 ----
 
-NOTE: Vert.x 3 provides a callback-only model. To allow an easy migration to Vert.x 4 we decided that each asynchronous method
-has also a callback version. The `props` method above has also a version {@link io.vertx.core.file.FileSystem#props(java.lang.String, io.vertx.core.Handler)}
-with a callback as method argument.
+NOTE: Vert.x 3 provides a callback-only model.
+To allow an easy migration to Vert.x 4 we decided that each asynchronous method has also a callback version.
+The `props` method above has also a version {@link io.vertx.core.file.FileSystem#props(java.lang.String, io.vertx.core.Handler)} with a callback as method argument.
 
+[CAUTION]
+====
+Do not confuse _futures_ with _promises_.
+
+If futures represent the "read-side" of an asynchronous result, promises are the "write-side".
+They allow you to defer the action of providing a result.
+
+In most cases, you don't need to create promises yourself in a Vert.x application.
+<<_future_composition>> and <<_future_coordination>> provide you with the tools to transform and merge asynchronous results.
+
+However, if, in your codebase, you have legacy methods which use callbacks, you can leverage the fact that a promise extends {@link io.vertx.core.Handler io.vertx.core.Handler<io.vertx.core.AsyncResult>}:
+
+[source,$lang]
+----
+{@link examples.CoreExamples#promiseAsHandler}
+----
+====
+
+[#_future_composition]
 == Future composition
 
 {@link io.vertx.core.Future#compose(java.util.function.Function)} can be used for chaining futures:
@@ -241,6 +260,7 @@ of the steps fails, the final future will fail.
 
 Beyond this, {@link io.vertx.core.Future} offers more: `map`, `recover`, `otherwise` and even a `flatMap` which is an alias of `compose`
 
+[#_future_coordination]
 == Future coordination
 
 Coordination of multiple futures can be achieved with Vert.x {@link io.vertx.core.Future futures}. It
