@@ -14,10 +14,8 @@ package examples;
 import io.vertx.core.*;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.dns.AddressResolverOptions;
-import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileProps;
 import io.vertx.core.file.FileSystem;
-import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.*;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -126,6 +124,15 @@ public class CoreExamples {
         System.out.println("Failure: " + ar.cause().getMessage());
       }
     });
+  }
+
+  public void promiseAsHandler() {
+    Promise<String> promise = Promise.promise();
+    legacyGreetAsync(promise);
+    Future<String> greeting = promise.future();
+  }
+
+  private void legacyGreetAsync(Handler<AsyncResult<String>> promise) {
   }
 
   public void exampleFutureComposition1(Vertx vertx) {
