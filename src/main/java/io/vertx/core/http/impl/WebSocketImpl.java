@@ -60,4 +60,14 @@ public class WebSocketImpl extends WebSocketImplBase<WebSocketImpl> implements W
     }
     super.handleClose(graceful);
   }
+
+  @Override
+  public int getWriteQueueMaxSize() {
+    return this.getWriteQueueSize();
+  }
+
+  @Override
+  public int getWriteQueueSize() {
+    return this.getWriteQueueSize();
+  }
 }
