@@ -69,6 +69,9 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   NetSocket setWriteQueueMaxSize(int maxSize);
 
   @Override
+  int getWriteQueueMaxSize();
+
+  @Override
   NetSocket drainHandler(Handler<Void> handler);
 
   /**
@@ -316,4 +319,3 @@ public interface NetSocket extends ReadStream<Buffer>, WriteStream<Buffer> {
   String applicationLayerProtocol();
 
 }
-
