@@ -17,6 +17,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextInternal;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 
 /**
  * A buffer that transfers elements to an handler with back-pressure.
@@ -71,7 +72,7 @@ public class InboundBuffer<E> {
   public static final Object END_SENTINEL = new Object();
 
   private final ContextInternal context;
-  private final ArrayDeque<E> pending;
+  private ArrayDeque<E> pending;
   private final long highWaterMark;
   private long demand;
   private Handler<E> handler;
@@ -95,7 +96,8 @@ public class InboundBuffer<E> {
     this.context = (ContextInternal) context;
     this.highWaterMark = highWaterMark;
     this.demand = Long.MAX_VALUE;
-    this.pending = new ArrayDeque<>();
+    // empty ArrayDeque's constructor ArrayDeque allocates 16 elements; let's delay the allocation to be of the proper size
+    this.pending = null;
   }
 
   private void checkThread() {
@@ -116,6 +118,9 @@ public class InboundBuffer<E> {
     Handler<E> handler;
     synchronized (this) {
       if (demand == 0L || emitting) {
+        if (pending == null) {
+          pending = new ArrayDeque<>(1);
+        }
         pending.add(element);
         return checkWritable();
       } else {
@@ -134,7 +139,7 @@ public class InboundBuffer<E> {
     if (demand == Long.MAX_VALUE) {
       return true;
     } else {
-      long actual = pending.size() - demand;
+      long actual = size() - demand;
       boolean writable = actual < highWaterMark;
       overflow |= !writable;
       return writable;
@@ -151,6 +156,15 @@ public class InboundBuffer<E> {
   public boolean write(Iterable<E> elements) {
     checkThread();
     synchronized (this) {
+      final int requiredCapacity;
+      if (pending == null) {
+        if (elements instanceof Collection) {
+          requiredCapacity = ((Collection<E>) elements).size();
+        } else {
+          requiredCapacity = 1;
+        }
+        pending = new ArrayDeque<>(requiredCapacity);
+      }
       for (E element : elements) {
         pending.add(element);
       }
@@ -168,7 +182,7 @@ public class InboundBuffer<E> {
     Handler<E> h;
     while (true) {
       synchronized (this) {
-        int size = pending.size();
+        int size = size();
         if (demand == 0L) {
           emitting = false;
           boolean writable = size < highWaterMark;
@@ -181,6 +195,7 @@ public class InboundBuffer<E> {
         if (demand != Long.MAX_VALUE) {
           demand--;
         }
+        assert pending != null;
         element = pending.poll();
         h = this.handler;
       }
@@ -201,7 +216,7 @@ public class InboundBuffer<E> {
       E element;
       Handler<E> handler;
       synchronized (this) {
-        int size = pending.size();
+        int size = size();
         if (size == 0) {
           emitting = false;
           if (overflow) {
@@ -220,6 +235,7 @@ public class InboundBuffer<E> {
         if (demand != Long.MAX_VALUE) {
           demand--;
         }
+        assert pending != null;
         element = pending.poll();
         handler = this.handler;
       }
@@ -271,7 +287,7 @@ public class InboundBuffer<E> {
       if (demand < 0L) {
         demand = Long.MAX_VALUE;
       }
-      if (emitting || (pending.isEmpty() && !overflow)) {
+      if (emitting || (isEmpty() && !overflow)) {
         return false;
       }
       emitting = true;
@@ -289,6 +305,9 @@ public class InboundBuffer<E> {
    */
   public E read() {
     synchronized (this) {
+      if (isEmpty()) {
+        return null;
+      }
       return pending.poll();
     }
   }
@@ -301,6 +320,9 @@ public class InboundBuffer<E> {
    * @return a reference to this, so the API can be used fluently
    */
   public synchronized InboundBuffer<E> clear() {
+    if (isEmpty()) {
+      return this;
+    }
     pending.clear();
     return this;
   }
@@ -376,6 +398,9 @@ public class InboundBuffer<E> {
    * @return whether the buffer is empty
    */
   public synchronized boolean isEmpty() {
+    if (pending == null) {
+      return true;
+    }
     return pending.isEmpty();
   }
 
@@ -383,7 +408,7 @@ public class InboundBuffer<E> {
    * @return whether the buffer is writable
    */
   public synchronized boolean isWritable() {
-    return pending.size() < highWaterMark;
+    return size() < highWaterMark;
   }
 
   /**
@@ -397,6 +422,6 @@ public class InboundBuffer<E> {
    * @return the actual number of elements in the buffer
    */
   public synchronized int size() {
-    return pending.size();
+    return pending == null ? 0 : pending.size();
   }
 }
