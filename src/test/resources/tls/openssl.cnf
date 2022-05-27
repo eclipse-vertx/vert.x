@@ -7,9 +7,9 @@ database         = root-ca/index.txt
 default_md       = sha256
 policy           = policy_match
 serial           = root-ca/serial
-default_days     = 3650
+default_days     = 10950
 crlnumber        = root-ca/crlnumber
-default_crl_days = 3650
+default_crl_days = 10950
 
 [ CA_other ]
 new_certs_dir    = other-ca
@@ -17,9 +17,9 @@ database         = other-ca/index.txt
 default_md       = sha256
 policy           = policy_match
 serial           = other-ca/serial
-default_days     = 3650
+default_days     = 10950
 crlnumber        = other-ca/crlnumber
-default_crl_days = 3650
+default_crl_days = 10950
 
 [ CA_int ]
 new_certs_dir    = int-ca
@@ -27,9 +27,9 @@ database         = int-ca/index.txt
 default_md       = sha256
 policy           = policy_match
 serial           = int-ca/serial
-default_days     = 3650
+default_days     = 10950
 crlnumber        = int-ca/crlnumber
-default_crl_days = 3650
+default_crl_days = 10950
 
 [ policy_match ]
 countryName             = optional
