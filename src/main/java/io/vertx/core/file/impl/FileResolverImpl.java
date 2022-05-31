@@ -83,6 +83,10 @@ public class FileResolverImpl implements FileResolver {
     return null;
   }
 
+  FileCache getFileCache() {
+    return this.cache;
+  }
+
   /**
    * Close this file resolver, this is a blocking operation.
    */
@@ -238,7 +242,7 @@ public class FileResolverImpl implements FileResolver {
       case "jrt": // java run-time (JEP 220)
       case "resource":  // substratevm (graal native image)
       case "vfs":  // jboss-vfs
-        return unpackFromBundleURL(url, isDir);
+        return unpackFromBundleURL(url, fileName, isDir);
       default:
         throw new IllegalStateException("Invalid url protocol: " + prot);
     }
@@ -344,23 +348,23 @@ public class FileResolverImpl implements FileResolver {
    * reading it from the url.
    *
    * @param url the url
+   * @param  fileName the file name used to cache the content
    * @return the extracted file
    */
-  private File unpackFromBundleURL(URL url, boolean isDir) {
-    String file = url.getHost() + File.separator + url.getFile();
+  private File unpackFromBundleURL(URL url, String fileName, boolean isDir) {
     try {
       if ((getClassLoader() != null && isBundleUrlDirectory(url)) || isDir) {
         // Directory
-        cache.cacheDir(file);
+        cache.cacheDir(fileName);
       } else {
         try (InputStream is = url.openStream()) {
-          cache.cacheFile(file, is, !enableCaching);
+          cache.cacheFile(fileName, is, !enableCaching);
         }
       }
     } catch (IOException e) {
       throw new VertxException(FileSystemImpl.getFileAccessErrorMessage("unpack", url.toString()), e);
     }
-    return cache.getFile(file);
+    return cache.getFile(fileName);
   }
 
 
