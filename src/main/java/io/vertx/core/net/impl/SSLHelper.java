@@ -471,34 +471,16 @@ public class SSLHelper {
 
   public SslContext getContext(VertxInternal vertx, String serverName, boolean useAlpn) {
     int idx = useAlpn ? 0 : 1;
-    if (serverName == null) {
-      if (sslContexts[idx] == null) {
-        TrustManagerFactory trustMgrFactory;
-        try {
-          trustMgrFactory = getTrustMgrFactory(vertx, null);
-        } catch (Exception e) {
-          throw new VertxException(e);
-        }
-        sslContexts[idx] = createContext(vertx, useAlpn, null, trustMgrFactory);
-      }
-      return sslContexts[idx];
-    } else {
-      X509KeyManager mgr;
+    if (sslContexts[idx] == null) {
+      TrustManagerFactory trustMgrFactory;
       try {
-        mgr = keyCertOptions.keyManagerMapper(vertx).apply(serverName);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-      if (mgr == null) {
-        return sslContexts[idx];
-      }
-      try {
-        TrustManagerFactory trustMgrFactory = getTrustMgrFactory(vertx, serverName);
-        return sslContextMaps[idx].computeIfAbsent(mgr.getCertificateChain(null)[0], s -> createContext(vertx, useAlpn, mgr, trustMgrFactory));
+        trustMgrFactory = getTrustMgrFactory(vertx, serverName);
       } catch (Exception e) {
         throw new VertxException(e);
       }
+      sslContexts[idx] = createContext(vertx, useAlpn, null, trustMgrFactory);
     }
+    return sslContexts[idx];
   }
 
   // This is called to validate some of the SSL params as that only happens when the context is created

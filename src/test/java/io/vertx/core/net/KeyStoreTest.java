@@ -23,7 +23,10 @@ import io.vertx.test.tls.Trust;
 import org.junit.Test;
 
 import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509KeyManager;
+
 import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.Collections;
@@ -350,7 +353,7 @@ public class KeyStoreTest extends VertxTestBase {
 
   @Test
   public void testJKSPath() throws Exception {
-    testKeyStore(Cert.SERVER_JKS.get().getHelper(vertx));
+    testKeyStoreOptions(Cert.SERVER_JKS.get());
   }
 
   @Test
@@ -358,7 +361,7 @@ public class KeyStoreTest extends VertxTestBase {
     JksOptions options = Cert.SERVER_JKS.get();
     Buffer store = vertx.fileSystem().readFileBlocking(options.getPath());
     options.setPath(null).setValue(store);
-    testKeyStore(options.getHelper(vertx));
+    testKeyStoreOptions(options);
   }
 
   @Test
@@ -373,12 +376,12 @@ public class KeyStoreTest extends VertxTestBase {
       .setPath(null)
       .setValue(store)
       .setPassword(jks.getPassword());
-    testKeyStore(options.getHelper(vertx));
+      testKeyStoreOptions(options);
   }
 
   @Test
   public void testPKCS12Path() throws Exception {
-    testKeyStore(Cert.SERVER_PKCS12.get().getHelper(vertx));
+    testKeyStoreOptions(Cert.SERVER_PKCS12.get());
   }
 
   @Test
@@ -386,12 +389,12 @@ public class KeyStoreTest extends VertxTestBase {
     PfxOptions options = Cert.SERVER_PKCS12.get();
     Buffer store = vertx.fileSystem().readFileBlocking(options.getPath());
     options.setPath(null).setValue(store);
-    testKeyStore(options.getHelper(vertx));
+    testKeyStoreOptions(options);
   }
 
   @Test
   public void testKeyCertPath() throws Exception {
-    testKeyStore(Cert.SERVER_PEM.get().getHelper(vertx));
+    testPemKeyCertOptions(Cert.SERVER_PEM.get());
   }
 
   /**
@@ -400,7 +403,7 @@ public class KeyStoreTest extends VertxTestBase {
    */
   @Test
   public void testRsaKeyCertPath() throws Exception {
-    testKeyStore(Cert.SERVER_PEM_RSA.get().getHelper(vertx));
+    testPemKeyCertOptions(Cert.SERVER_PEM_RSA.get());
   }
 
   @Test
@@ -410,7 +413,7 @@ public class KeyStoreTest extends VertxTestBase {
     options.setKeyValue(null).setKeyValue(key);
     Buffer cert = vertx.fileSystem().readFileBlocking(options.getCertPath());
     options.setCertValue(null).setCertValue(cert);
-    testKeyStore(options.getHelper(vertx));
+    testPemKeyCertOptions(options);
   }
 
   @Test
@@ -452,6 +455,20 @@ public class KeyStoreTest extends VertxTestBase {
     Enumeration<String> aliases = keyStore.aliases();
     assertTrue(aliases.hasMoreElements());
     KeyManager[] keyManagers = helper.getKeyMgr();
+    assertTrue(keyManagers.length > 0);
+  }
+
+  private void testPemKeyCertOptions(PemKeyCertOptions options) throws Exception {
+    Enumeration<String> aliases = options.loadKeyStore(vertx).aliases();
+    assertTrue(aliases.hasMoreElements());
+    KeyManager[] keyManagers = options.getKeyManagerFactory(vertx).getKeyManagers();
+    assertTrue(keyManagers.length > 0);
+  }
+
+  private void testKeyStoreOptions(KeyStoreOptionsBase options) throws Exception {
+    Enumeration<String> aliases = options.loadKeyStore(vertx).aliases();
+    assertTrue(aliases.hasMoreElements());
+    KeyManager[] keyManagers = options.getKeyManagerFactory(vertx).getKeyManagers();
     assertTrue(keyManagers.length > 0);
   }
 

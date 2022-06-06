@@ -1569,6 +1569,8 @@ public class NetTest extends VertxTestBase {
   }
 
   @Test
+  // Server requires client certificate which is issued by either Root CA or Other CA.
+  // Client provides certificate issued by Root CA.
   public void testSniWithServerNameTrustFail(){
     TLSTest test = new TLSTest().clientTrust(Trust.SNI_JKS_HOST2)
         .clientCert(Cert.CLIENT_PEM_ROOT_CA)
@@ -1577,7 +1579,7 @@ public class NetTest extends VertxTestBase {
         .sni(true)
         .serverName("host2.com")
         .serverTrust(Trust.SNI_SERVER_ROOT_CA_AND_OTHER_CA_2);
-    test.run(false);
+    test.run(true);
     await();
   }
 

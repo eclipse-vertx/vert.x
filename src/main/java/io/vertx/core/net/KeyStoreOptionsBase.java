@@ -15,8 +15,10 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.core.net.impl.ReloadingKeyStore;
 
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.KeyStoreBuilderParameters;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
@@ -40,6 +42,8 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
   private Buffer value;
   private String alias;
   private String aliasPassword;
+  private X509KeyManager km;
+  private KeyStore.Builder builder;
 
   /**
    * Default constructor
@@ -189,6 +193,29 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
     return helper;
   }
 
+  X509KeyManager getKeyManager(Vertx vertx) throws Exception {
+    if (km == null) {
+      VertxInternal v = (VertxInternal) vertx;
+
+      if (this.path != null) {
+        builder = ReloadingKeyStore.Builder.fromKeyStoreFile(v, type, provider,
+            v.resolveFile(path).getAbsolutePath(), password, alias, aliasPassword);
+      } else if (this.value != null) {
+
+        KeyStore.ProtectionParameter protection = new KeyStore.PasswordProtection(
+            password != null ? password.toCharArray() : null);
+
+        builder = KeyStore.Builder
+            .newInstance(KeyStoreHelper.loadKeyStore(type, provider, password, this::getValue, alias), protection);
+      }
+
+      KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
+      kmf.init(new KeyStoreBuilderParameters(builder));
+      km = (X509KeyManager) kmf.getKeyManagers()[0];
+    }
+    return km;
+  }
+
   /**
    * Load and return a Java keystore.
    *
@@ -196,20 +223,21 @@ public abstract class KeyStoreOptionsBase implements KeyCertOptions, TrustOption
    * @return the {@code KeyStore}
    */
   public KeyStore loadKeyStore(Vertx vertx) throws Exception {
-    KeyStoreHelper helper = getHelper(vertx);
-    return helper != null ? helper.store() : null;
+    // Ensure that KeyStore is constructed.
+    getKeyManager(vertx);
+    return builder.getKeyStore();
   }
 
   @Override
   public KeyManagerFactory getKeyManagerFactory(Vertx vertx) throws Exception {
-    KeyStoreHelper helper = getHelper(vertx);
-    return helper != null ? helper.getKeyMgrFactory() : null;
+    return new KeyManagerFactoryWrapper(getKeyManager(vertx));
   }
 
   @Override
   public Function<String, X509KeyManager> keyManagerMapper(Vertx vertx) throws Exception {
-    KeyStoreHelper helper = getHelper(vertx);
-    return helper != null ? helper::getKeyMgr : null;
+    X509KeyManager km = getKeyManager(vertx);
+    // Key manager will do SNI lookup and mapping from SNI server name to certificate and key alias.
+    return serverName -> km;
   }
 
   @Override

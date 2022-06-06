@@ -18,10 +18,13 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Enumeration;
+
+import javax.net.ssl.X509KeyManager;
 
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.test.core.VertxTestBase;
@@ -49,8 +52,7 @@ public class KeyStoreHelperTest extends VertxTestBase {
     PemKeyCertOptions options = new PemKeyCertOptions()
             .addKeyPath("target/test-classes/tls/server-key.pem")
             .addCertPath("target/test-classes/tls/server-cert.pem");
-    KeyStoreHelper helper = options.getHelper(vertx);
-    assertKeyType(helper.store(), RSAPrivateKey.class);
+    assertKeyType(options.loadKeyStore(vertx), RSAPrivateKey.class);
   }
 
   /**
@@ -66,8 +68,7 @@ public class KeyStoreHelperTest extends VertxTestBase {
     PemKeyCertOptions options = new PemKeyCertOptions()
             .addKeyPath("target/test-classes/tls/server-key-ec.pem")
             .addCertPath("target/test-classes/tls/server-cert-ec.pem");
-    KeyStoreHelper helper = options.getHelper(vertx);
-    assertKeyType(helper.store(), ECPrivateKey.class);
+    assertKeyType(options.loadKeyStore(vertx), ECPrivateKey.class);
   }
 
   private void assertKeyType(KeyStore store, Class<?> expectedKeyType) throws KeyStoreException, GeneralSecurityException {

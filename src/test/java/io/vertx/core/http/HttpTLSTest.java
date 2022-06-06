@@ -466,22 +466,30 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
-  // Client provides SNI but server ignores it and provides a different cerficate
+  // Client provides SNI when server option setSni(false).
+  // Server still processes SNI and returns correct certificate.
+  // NOTE: It is not possible to disable SNI support in NewSunX509 KeyManager. The impact is following:
+  //  - CORRECT server certificate is returned according to requested SNI, even if server option setSni(false).
+  //  - Previously, before switching to SNI handling in NewSunX509 KeyManager, INCORRECT certificate was returned.
   public void testSNIServerIgnoresExtension1() throws Exception {
     testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host2.com"))
-        .fail();
+        .pass();
   }
 
   @Test
-  // Client provides SNI but server ignores it and provides a different cerficate - check we get a certificate
+  // Client provides SNI when server option setSni(false).
+  // Server still processes SNI and returns correct certificate.
+  // NOTE: It is not possible to disable SNI support in NewSunX509 KeyManager. The impact is following:
+  //  - CORRECT server certificate is returned according to requested SNI, even if server option setSni(false).
+  //  - Previously, before switching to SNI handling in NewSunX509 KeyManager, INCORRECT certificate was returned.
   public void testSNIServerIgnoresExtension2() throws Exception {
-    Certificate cert = testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SNI_JKS, Trust.NONE)
+    Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.NONE)
         .clientVerifyHost(false)
         .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host2.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("localhost", TestUtils.cnOf(cert));
+    assertEquals("host2.com", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -655,25 +663,31 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  // Client sets SNI servername to host5.com.
+  // Server certificate has Subject CN=host5.com but SAN DNS *.host5.com.
+  // Default server certificate CN=localhost is returned because host5.com did not *.host5.com.
   public void testSNISubjectAltenativeNameCNMatch2() throws Exception {
-    Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST5, Cert.SNI_JKS, Trust.NONE)
+    Certificate cert = testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SNI_JKS, Trust.NONE)
         .serverSni()
         .clientVerifyHost(false)
         .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host5.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host5.com", TestUtils.cnOf(cert));
+    assertEquals("localhost", TestUtils.cnOf(cert));
   }
 
   @Test
+  // Client sets SNI servername to host5.com.
+  // Server certificate has Subject CN=host5.com but SAN DNS *.host5.com.
+  // Default server certificate CN=localhost is returned because host5.com did not *.host5.com.
   public void testSNISubjectAltenativeNameCNMatch2PKCS12() throws Exception {
-    Certificate cert = testTLS(Cert.NONE, Trust.SNI_JKS_HOST5, Cert.SNI_PKCS12, Trust.NONE)
+    Certificate cert = testTLS(Cert.NONE, Trust.SERVER_JKS, Cert.SNI_PKCS12, Trust.NONE)
         .serverSni()
         .clientVerifyHost(false)
         .requestOptions(new RequestOptions().setSsl(true).setPort(4043).setHost("host5.com"))
         .pass()
         .clientPeerCert();
-    assertEquals("host5.com", TestUtils.cnOf(cert));
+    assertEquals("localhost", TestUtils.cnOf(cert));
   }
 
   @Test
@@ -790,13 +804,15 @@ public abstract class HttpTLSTest extends HttpTestBase {
   }
 
   @Test
+  // Server requires client certificate which is issued by either Root CA or Other CA.
+  // Client provides certificate issued by Root CA.
   public void testSNIWithServerNameTrustFail() throws Exception {
     testTLS(Cert.CLIENT_PEM_ROOT_CA, Trust.SNI_JKS_HOST2, Cert.SNI_JKS, Trust.SNI_SERVER_ROOT_CA_AND_OTHER_CA_2).serverSni()
         .requestOptions(new RequestOptions().setSsl(true)
             .setPort(4043)
             .setHost("host2.com"))
         .requiresClientAuth()
-        .fail();
+        .pass();
   }
 
   @Test
@@ -1321,13 +1337,7 @@ public abstract class HttpTLSTest extends HttpTestBase {
 
   @Test
   public void testPKCS12MissingPassword() {
-    String msg;
-    if (PlatformDependent.javaVersion() < 15) {
-      msg = "Get Key failed: null";
-    } else {
-      msg = "Get Key failed: Cannot read the array length because \"password\" is null";
-    }
-    testInvalidKeyStore(Cert.SERVER_PKCS12.get().setPassword(null), msg, null);
+    testInvalidKeyStore(Cert.SERVER_PKCS12.get().setPassword(null), "Password must not be null", null);
   }
 
   @Test
