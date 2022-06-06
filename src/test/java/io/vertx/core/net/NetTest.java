@@ -36,6 +36,7 @@ import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.impl.HAProxyMessageCompletionHandler;
+import io.vertx.core.net.impl.NetClientImpl;
 import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.NetSocketInternal;
 import io.vertx.core.net.impl.VertxHandler;
@@ -52,16 +53,25 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.*;
@@ -3485,6 +3495,38 @@ public class NetTest extends VertxTestBase {
   public void testNetClientInternalTLS() throws Exception {
     client.close();
     client = vertx.createNetClient(new NetClientOptions().setSsl(true).setTrustStoreOptions(Trust.SERVER_JKS.get()));
+    testNetClientInternal_(new HttpServerOptions()
+      .setHost("localhost")
+      .setPort(1234)
+      .setSsl(true)
+      .setKeyStoreOptions(Cert.SERVER_JKS.get()), true);
+  }
+
+  // This test is here to cover a WildFly use case for passing in an SSLContext for which there are no
+  // configuration options.
+  // This is currently done by casing to NetClientImpl and calling setSuppliedSSLContext().
+  @Test
+  public void testNetClientInternalTLSWithSuppliedSSLContext() throws Exception {
+    client.close();
+    client = vertx.createNetClient(new NetClientOptions().setSsl(true));
+    Path tsPath = Paths.get(this.getClass().getClassLoader().getResource(Trust.SERVER_JKS.get().getPath()).toURI());
+
+    TrustManagerFactory tmFactory;
+    try (InputStream trustStoreStream = Files.newInputStream(tsPath, StandardOpenOption.READ)){
+      KeyStore trustStore = KeyStore.getInstance("jks");
+      trustStore.load(trustStoreStream, Trust.SERVER_JKS.get().getPassword().toCharArray());
+      tmFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      tmFactory.init(trustStore);
+    }
+
+    SSLContext sslContext = SSLContext.getInstance("TLS");
+    sslContext.init(
+      null,
+      tmFactory.getTrustManagers(),
+      null
+    );
+    ((NetClientImpl)client).setSuppliedSSLContext(sslContext);
+
     testNetClientInternal_(new HttpServerOptions()
       .setHost("localhost")
       .setPort(1234)

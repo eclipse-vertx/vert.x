@@ -44,6 +44,7 @@ import io.vertx.core.spi.metrics.Metrics;
 import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
+import javax.net.ssl.SSLContext;
 import java.io.FileNotFoundException;
 import java.net.ConnectException;
 import java.util.Objects;
@@ -174,6 +175,13 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
   @Override
   public boolean isMetricsEnabled() {
     return metrics != null;
+  }
+
+  /**
+   * Must be called before calling connect().
+   */
+  public void setSuppliedSSLContext(SSLContext suppliedSSLContext) {
+    sslHelper.setSuppliedSslContext(suppliedSSLContext);
   }
 
   @Override
