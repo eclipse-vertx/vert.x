@@ -726,30 +726,52 @@ public class ConnectionPoolTest extends VertxTestBase {
 
   @Test
   public void testCancelWaiterBeforeConnectionSuccess() throws Exception {
-    testCancelWaiterBeforeConnection(true);
+    testCancelWaiterBeforeConnection(true, 0);
+  }
+
+  @Test
+  public void testCancelWaiterBeforeConnectionSuccessWithExtraWaiters() throws Exception {
+    testCancelWaiterBeforeConnection(true, 2);
   }
 
   @Test
   public void testCancelWaiterBeforeConnectionFailure() throws Exception {
-    testCancelWaiterBeforeConnection(false);
+    testCancelWaiterBeforeConnection(false, 0);
   }
 
-  public void testCancelWaiterBeforeConnection(boolean success) throws Exception {
+  public void testCancelWaiterBeforeConnection(boolean success, int extra) throws Exception {
+    if (!success && extra > 0) {
+      throw new IllegalArgumentException();
+    }
     waitFor(1);
     EventLoopContext context = vertx.createEventLoopContext();
     ConnectionManager mgr = new ConnectionManager();
-    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 }, 1);
-    CompletableFuture<PoolWaiter<Connection>> w = new CompletableFuture<>();
+    ConnectionPool<Connection> pool = ConnectionPool.pool(mgr, new int[] { 1 }, 1 + extra);
+    CompletableFuture<PoolWaiter<Connection>> waiterLatch = new CompletableFuture<>();
     pool.acquire(context, new PoolWaiter.Listener<Connection>() {
       @Override
       public void onConnect(PoolWaiter<Connection> waiter) {
-        w.complete(waiter);
+        waiterLatch.complete(waiter);
       }
     }, 0, ar -> fail());
-    w.get(10, TimeUnit.SECONDS);
+    waiterLatch.get(10, TimeUnit.SECONDS);
+    CountDownLatch enqueuedLatch = new CountDownLatch(extra);
+    CountDownLatch recycledLatch = new CountDownLatch(extra);
+    for (int i = 0;i < extra;i++) {
+      pool.acquire(context, new PoolWaiter.Listener<Connection>() {
+        @Override
+        public void onEnqueue(PoolWaiter<Connection> waiter) {
+          enqueuedLatch.countDown();
+        }
+      }, 0, onSuccess(conn -> {
+        conn.recycle();
+        recycledLatch.countDown();
+      }));
+    }
+    awaitLatch(enqueuedLatch);
     ConnectionRequest request = mgr.assertRequest();
     CountDownLatch latch = new CountDownLatch(1);
-    pool.cancel(w.get(10, TimeUnit.SECONDS), onSuccess(removed -> {
+    pool.cancel(waiterLatch.get(10, TimeUnit.SECONDS), onSuccess(removed -> {
       assertTrue(removed);
       latch.countDown();
     }));
@@ -759,6 +781,16 @@ public class ConnectionPoolTest extends VertxTestBase {
     } else {
       request.fail(new Throwable());
     }
+    awaitLatch(recycledLatch);
+    // Check we can acquire the same connection again
+    CountDownLatch doneLatch = new CountDownLatch(extra);
+    for (int i = 0;i < extra;i++) {
+      pool.acquire(context, 0, onSuccess(conn -> {
+        doneLatch.countDown();
+        conn.recycle();
+      }));
+    }
+    awaitLatch(doneLatch);
   }
 
   @Test
