@@ -309,16 +309,18 @@ public class SimpleConnectionPool<C> implements ConnectionPool<C> {
           return null;
         }
         LeaseImpl<C> lease;
+        int c;
         if (waiter.disposed) {
           lease = null;
+          c = 0;
         } else {
           lease = new LeaseImpl<>(slot, waiter.handler);
+          c = 1;
           waiter.disposed = true;
           acquisitions--;
         }
         LeaseImpl<C>[] leases;
         int m = (int)Math.min(acquisitions, pool.waiters.size());
-        int c = 1;
         if (m > 0) {
           c += m;
           leases = new LeaseImpl[m];
