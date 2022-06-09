@@ -42,6 +42,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -852,6 +853,27 @@ public abstract class HttpTest extends HttpTestBase {
       client.request(requestOptions).onComplete(onSuccess(req -> {
         req.send(onSuccess(resp -> testComplete()));
       }));
+    }));
+
+    await();
+  }
+
+  @Test
+  public void testOverrideParamsCharset() {
+    server.requestHandler(req -> {
+      String val = req.getParam("param");
+      assertEquals("\u20AC", val); // Euro sign
+      req.setParamsCharset(StandardCharsets.ISO_8859_1.name());
+      val = req.getParam("param");
+      assertEquals("\u00E2\u0082\u00AC", val);
+      req.response().end();
+    });
+
+    server.listen(testAddress, onSuccess(server -> {
+      client.request(new RequestOptions(requestOptions).setURI("/?param=%E2%82%AC"))
+        .onComplete(onSuccess(req -> {
+          req.send(onSuccess(resp -> testComplete()));
+        }));
     }));
 
     await();

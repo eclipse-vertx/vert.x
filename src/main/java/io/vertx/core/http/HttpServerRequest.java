@@ -182,6 +182,20 @@ public interface HttpServerRequest extends ReadStream<Buffer> {
   }
 
   /**
+   * Override the charset to use for decoding the query parameter map, when none is set, {@code UTF8} is used.
+   *
+   * @param charset the charset to use for decoding query params
+   * @return a reference to this, so the API can be used fluently
+   */
+  @Fluent
+  HttpServerRequest setParamsCharset(String charset);
+
+  /**
+   * @return the charset used for decoding query parameters
+   */
+  String getParamsCharset();
+
+  /**
    * @return the query parameters in the request
    */
   @CacheReturn
