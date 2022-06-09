@@ -43,6 +43,9 @@ import io.vertx.core.streams.impl.InboundBuffer;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Set;
 
 import static io.vertx.core.spi.metrics.Metrics.METRICS_ENABLED;
@@ -80,6 +83,7 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   private Http1xServerResponse response;
 
   // Cache this for performance
+  private Charset paramsCharset = StandardCharsets.UTF_8;
   private MultiMap params;
   private MultiMap headers;
   private String absoluteURI;
@@ -278,9 +282,25 @@ public class Http1xServerRequest implements HttpServerRequestInternal, io.vertx.
   }
 
   @Override
+  public HttpServerRequest setParamsCharset(String charset) {
+    Objects.requireNonNull(charset, "Charset must not be null");
+    Charset current = paramsCharset;
+    paramsCharset = Charset.forName(charset);
+    if (!paramsCharset.equals(current)) {
+      params = null;
+    }
+    return this;
+  }
+
+  @Override
+  public String getParamsCharset() {
+    return paramsCharset.name();
+  }
+
+  @Override
   public MultiMap params() {
     if (params == null) {
-      params = HttpUtils.params(uri());
+      params = HttpUtils.params(uri(), paramsCharset);
     }
     return params;
   }

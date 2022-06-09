@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
@@ -493,8 +494,8 @@ public final class HttpUtils {
     return absoluteURI;
   }
 
-  static MultiMap params(String uri) {
-    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri);
+  static MultiMap params(String uri, Charset charset) {
+    QueryStringDecoder queryStringDecoder = new QueryStringDecoder(uri, charset);
     Map<String, List<String>> prms = queryStringDecoder.parameters();
     MultiMap params = MultiMap.caseInsensitiveMultiMap();
     if (!prms.isEmpty()) {

@@ -52,6 +52,9 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.cert.X509Certificate;
 import java.net.URISyntaxException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -70,6 +73,7 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   private Object trace;
 
   // Accessed on context thread
+  private Charset paramsCharset = StandardCharsets.UTF_8;
   private MultiMap params;
   private String absoluteURI;
   private MultiMap attributes;
@@ -377,10 +381,25 @@ public class Http2ServerRequest extends Http2ServerStream implements HttpServerR
   }
 
   @Override
+  public HttpServerRequest setParamsCharset(String charset) {
+    Objects.requireNonNull(charset, "Charset must not be null");
+    Charset current = paramsCharset;
+    paramsCharset = Charset.forName(charset);
+    if (!paramsCharset.equals(current)) {
+      params = null;
+    }
+    return this;
+  }
+
+  @Override
+  public String getParamsCharset() {
+    return paramsCharset.name();
+  }
+  @Override
   public MultiMap params() {
     synchronized (conn) {
       if (params == null) {
-        params = HttpUtils.params(uri());
+        params = HttpUtils.params(uri(), paramsCharset);
       }
       return params;
     }
