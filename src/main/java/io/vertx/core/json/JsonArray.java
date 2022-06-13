@@ -93,6 +93,21 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
   }
 
   /**
+   * Create a JsonArray from a array of objects.
+   *
+   * @param args The objects into JsonArray.
+   */
+  public static JsonArray of(Object... args) {
+    JsonArray arr = new JsonArray();
+
+    for (Object o : args) {
+      arr.add(o);
+    }
+
+    return arr;
+  }
+
+  /**
    * Get the String at position {@code pos} in the array,
    *
    * @param pos the position in the array

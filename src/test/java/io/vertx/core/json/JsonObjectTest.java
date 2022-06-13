@@ -1932,4 +1932,41 @@ public class JsonObjectTest {
     }
   }
 
+  @Test
+  void testJsonObjectOf() {
+    // test int
+    int i = 1;
+
+    // test string
+    String s = "a string";
+
+    // test boolean
+    boolean b = true;
+
+    // test JsonObject
+    String jk = "json key";
+    String jv = "json value";
+    JsonObject j = new JsonObject().put(jk, jv);
+    JsonObject j2 = JsonObject.of(jk, jv);
+
+    // test JsonArray
+    String v1 = "json array value 1";
+    String v2 = "json array value 2";
+    JsonArray a = new JsonArray().add(v1).add(v2);
+
+    // test null
+    JsonObject n = null;
+
+    JsonObject jobj = JsonObject.of("i", i, "s", s, "b", b, "j", j, "j2", j2, "a", a, "n", n);
+
+    assertEquals(i, jobj.getInteger("i"));
+    assertEquals(s, jobj.getString("s"));
+    assertEquals(b, jobj.getBoolean("b"));
+    assertEquals(j, jobj.getJsonObject("j"));
+    // j2 is also equals to j, different object with same value
+    assertEquals(j, jobj.getJsonObject("j2"));
+    assertEquals(a, jobj.getJsonArray("a"));
+    assertEquals(n, jobj.getJsonObject("n"));
+  }
+
 }
