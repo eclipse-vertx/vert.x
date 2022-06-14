@@ -98,13 +98,10 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @param args The objects into JsonArray.
    */
   public static JsonArray of(Object... args) {
-    JsonArray arr = new JsonArray();
-
-    for (Object o : args) {
-      arr.add(o);
+    if (args == null) {
+      throw new NullPointerException();
     }
-
-    return arr;
+    return new JsonArray(new ArrayList(Arrays.asList(args)));
   }
 
   /**
