@@ -96,12 +96,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * Create a JsonArray from a array of objects.
    *
    * @param args The objects into JsonArray.
+   * @throws NullPointerException if the args is null.
    */
   public static JsonArray of(Object... args) {
     if (args == null) {
       throw new NullPointerException();
     }
-    return new JsonArray(new ArrayList(Arrays.asList(args)));
+    return new JsonArray(new ArrayList<>(Arrays.asList(args)));
   }
 
   /**
