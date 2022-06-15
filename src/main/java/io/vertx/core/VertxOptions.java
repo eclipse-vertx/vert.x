@@ -52,7 +52,7 @@ public class VertxOptions {
   /**
    * The default value of blocked thread check interval = 1000 ms.
    */
-  public static final long DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(1);;
+  public static final long DEFAULT_BLOCKED_THREAD_CHECK_INTERVAL = TimeUnit.SECONDS.toMillis(1);
 
   /**
    * The default value of blocked thread check interval unit = {@link TimeUnit#MILLISECONDS}
