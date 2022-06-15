@@ -1934,8 +1934,8 @@ public class JsonObjectTest {
 
   @Test
   void testJsonObjectOf() {
-    // test int
-    int i = 1;
+    // test Ingeger
+    Integer i = 1;
 
     // test string
     String s = "a string";

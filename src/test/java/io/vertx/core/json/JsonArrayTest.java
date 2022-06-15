@@ -1410,8 +1410,8 @@ public class JsonArrayTest {
 
   @Test
   void testJsonArrayOf() {
-    // test int
-    int i = 1;
+    // test Integer
+    Integer i = 1;
 
     // test string
     String s = "a string";
