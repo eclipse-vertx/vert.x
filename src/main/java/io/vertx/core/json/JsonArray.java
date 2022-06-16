@@ -99,9 +99,11 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @throws NullPointerException if the args is null.
    */
   public static JsonArray of(Object... args) {
-    if (args == null) {
-      throw new NullPointerException();
+    // implicit nullcheck of args
+    if (args.length == 0) {
+      return new JsonArray();
     }
+
     return new JsonArray(new ArrayList<>(Arrays.asList(args)));
   }
 

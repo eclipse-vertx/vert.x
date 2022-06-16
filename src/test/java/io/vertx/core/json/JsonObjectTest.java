@@ -1933,7 +1933,7 @@ public class JsonObjectTest {
   }
 
   @Test
-  void testJsonObjectOf() {
+  public void testJsonObjectOfArgs() {
     // test Ingeger
     Integer i = 1;
 
@@ -1967,6 +1967,20 @@ public class JsonObjectTest {
     assertEquals(j, jobj.getJsonObject("j2"));
     assertEquals(a, jobj.getJsonArray("a"));
     assertEquals(n, jobj.getJsonObject("n"));
+  }
+
+  @Test
+  public void testJsonObjectOfEmpty() {
+    assertEquals(new JsonObject(), JsonObject.of());
+  }
+
+  @Test
+  public void testJsonObjectOfNull() {
+    assertThrows(
+      NullPointerException.class,
+      () -> {
+        JsonObject.of((Object[]) null);
+      });
   }
 
 }

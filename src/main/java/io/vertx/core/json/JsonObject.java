@@ -93,22 +93,21 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    *
    * @param args The key/value pairs.
    * @throws NullPointerException     if the args is null.
-   * @throws IllegalArgumentException if the number of elements is not even.
+   * @throws IllegalArgumentException if the args length is odd.
    */
   public static JsonObject of(Object... args) {
-    if (args == null) {
-      throw new NullPointerException();
+    // implicit nullcheck of args
+    if (args.length == 0) {
+      return new JsonObject();
     }
 
-    int length = args.length;
-
-    if (length % 2 != 0) {
-      throw new IllegalArgumentException("The number of elements is not even");
+    if ((args.length & 1) != 0) {
+      throw new IllegalArgumentException("The args length is odd");
     }
 
-    Map<String, Object> map = new LinkedHashMap<>(length / 2);
+    Map<String, Object> map = new LinkedHashMap<>(args.length / 2);
 
-    for (int i = 0; i + 1 < length; i += 2) {
+    for (int i = 0; i + 1 < args.length; i += 2) {
       String k = args[i].toString();
       Object v = args[i + 1];
       map.put(k, v);

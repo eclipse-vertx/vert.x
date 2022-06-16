@@ -1409,7 +1409,7 @@ public class JsonArrayTest {
   }
 
   @Test
-  void testJsonArrayOf() {
+  public void testJsonArrayOfArgs() {
     // test Integer
     Integer i = 1;
 
@@ -1443,6 +1443,20 @@ public class JsonArrayTest {
     // a2 is also equals to a, different object with same value
     assertEquals(a, jarr.getJsonArray(5));
     assertEquals(n, jarr.getJsonObject(6));
+  }
+
+  @Test
+  public void testJsonArrayOfEmpty() {
+    assertEquals(new JsonArray(), JsonArray.of());
+  }
+
+  @Test
+  public void testJsonArrayOfNull() {
+    assertThrows(
+      NullPointerException.class,
+      () -> {
+        JsonArray.of((Object[]) null);
+      });
   }
 
 }
