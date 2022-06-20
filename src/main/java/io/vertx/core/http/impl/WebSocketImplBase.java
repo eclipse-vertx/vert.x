@@ -563,7 +563,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
    */
   void initiateConnectionCloseTimeout(long timeoutMillis) {
     synchronized (conn) {
-      closeTimeoutID = context.owner().setTimer(timeoutMillis, id -> {
+      closeTimeoutID = context.setTimer(timeoutMillis, id -> {
         synchronized (conn) {
           closeTimeoutID = -1L;
         }

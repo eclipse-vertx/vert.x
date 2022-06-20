@@ -277,12 +277,14 @@ public interface ContextInternal extends Context {
   ContextInternal duplicate();
 
   /**
-   * Like {@link Vertx#setPeriodic(long, Handler)} except the periodic timer will fire on this context.
+   * Like {@link Vertx#setPeriodic(long, Handler)} except the periodic timer will fire on this context and the
+   * timer will not be associated with the context close hook.
    */
   long setPeriodic(long delay, Handler<Long> handler);
 
   /**
-   * Like {@link Vertx#setTimer(long, Handler)} except the timer will fire on this context.
+   * Like {@link Vertx#setTimer(long, Handler)} except the timer will fire on this context and the timer
+   * will not be associated with the context close hook.
    */
   long setTimer(long delay, Handler<Long> handler);
 

@@ -358,7 +358,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public long setPeriodic(long delay, Handler<Long> handler) {
-    return scheduleTimeout(getOrCreateContext(), true, delay, TimeUnit.MILLISECONDS, handler);
+    ContextInternal ctx = getOrCreateContext();
+    return scheduleTimeout(ctx, true, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
   @Override
@@ -367,7 +368,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   public long setTimer(long delay, Handler<Long> handler) {
-    return scheduleTimeout(getOrCreateContext(), false, delay, TimeUnit.MILLISECONDS, handler);
+    ContextInternal ctx = getOrCreateContext();
+    return scheduleTimeout(ctx, false, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), handler);
   }
 
   @Override
@@ -510,14 +512,19 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return new DnsClientImpl(this, options);
   }
 
-  public long scheduleTimeout(ContextInternal context, boolean periodic, long delay, TimeUnit timeUnit, Handler<Long> handler) {
+  public long scheduleTimeout(ContextInternal context,
+                                              boolean periodic,
+                                              long delay,
+                                              TimeUnit timeUnit,
+                                              boolean addCloseHook,
+                                              Handler<Long> handler) {
     if (delay < 1) {
       throw new IllegalArgumentException("Cannot schedule a timer with delay < 1 ms");
     }
     long timerId = timeoutCounter.getAndIncrement();
     InternalTimerHandler task = new InternalTimerHandler(timerId, handler, periodic, context);
     timeouts.put(timerId, task);
-    if (context.isDeployment()) {
+    if (addCloseHook) {
       context.addCloseHook(task);
     }
     EventLoop el = context.nettyEventLoop();
@@ -526,7 +533,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     } else {
       task.future = el.schedule(task, delay, timeUnit);
     }
-    return timerId;
+    return task.id;
   }
 
   public AbstractContext getContext() {
@@ -869,18 +876,18 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
    * This class does not rely on the internal {@link #future} for the termination to handle the worker case
    * since the actual timer {@link #handler} execution is scheduled when the {@link #future} executes.
    */
-  private class InternalTimerHandler implements Handler<Void>, Closeable, Runnable {
+  class InternalTimerHandler implements Handler<Void>, Closeable, Runnable {
 
     private final Handler<Long> handler;
     private final boolean periodic;
-    private final long timerID;
+    private final long id;
     private final ContextInternal context;
     private final AtomicBoolean disposed = new AtomicBoolean();
     private volatile java.util.concurrent.Future<?> future;
 
-    InternalTimerHandler(long timerID, Handler<Long> runnable, boolean periodic, ContextInternal context) {
+    InternalTimerHandler(long id, Handler<Long> runnable, boolean periodic, ContextInternal context) {
       this.context = context;
-      this.timerID = timerID;
+      this.id = id;
       this.handler = runnable;
       this.periodic = periodic;
     }
@@ -893,12 +900,12 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     public void handle(Void v) {
       if (periodic) {
         if (!disposed.get()) {
-          handler.handle(timerID);
+          handler.handle(id);
         }
       } else if (disposed.compareAndSet(false, true)) {
-        timeouts.remove(timerID);
+        timeouts.remove(id);
         try {
-          handler.handle(timerID);
+          handler.handle(id);
         } finally {
           // Clean up after it's fired
           context.removeCloseHook(this);
@@ -918,7 +925,7 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
 
     private boolean tryCancel() {
       if  (disposed.compareAndSet(false, true)) {
-        timeouts.remove(timerID);
+        timeouts.remove(id);
         future.cancel(false);
         return true;
       } else {
@@ -999,8 +1006,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
         if (id != null) {
           throw new IllegalStateException();
         }
+        ContextInternal ctx = getOrCreateContext();
         this.handler = handler;
-        id = scheduleTimeout(getOrCreateContext(), periodic, delay, TimeUnit.MILLISECONDS, this);
+        this.id = scheduleTimeout(ctx, periodic, delay, TimeUnit.MILLISECONDS, ctx.isDeployment(), this);
       } else {
         cancel();
       }
