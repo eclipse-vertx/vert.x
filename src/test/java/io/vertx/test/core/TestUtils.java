@@ -11,6 +11,30 @@
 
 package io.vertx.test.core;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.cert.Certificate;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+import java.util.zip.GZIPOutputStream;
+
+import javax.security.cert.X509Certificate;
+
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.util.NetUtil;
@@ -19,33 +43,14 @@ import io.vertx.core.Future;
 import io.vertx.core.MultiMap;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.Http2Settings;
-import io.vertx.core.net.*;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.TrustOptions;
 import io.vertx.core.net.impl.KeyStoreHelper;
 import io.vertx.test.netty.TestLoggerFactory;
-
-import javax.security.cert.X509Certificate;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.RandomAccessFile;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.function.Supplier;
-import java.util.jar.JarEntry;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-import java.util.zip.GZIPOutputStream;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -511,5 +516,19 @@ public class TestUtils {
       InternalLoggerFactory.setDefaultFactory(prev);
     }
     return factory;
+  }
+
+  /**
+   * Checks if the JVM supports ECC algorithms.
+   *
+   * @return {@code true} if the JVM supports ECC.
+   */
+  public static boolean isECCSupportedByVM() {
+    try {
+      KeyFactory.getInstance("EC");
+      return true;
+    } catch (GeneralSecurityException e) {
+      return false;
+    }
   }
 }
