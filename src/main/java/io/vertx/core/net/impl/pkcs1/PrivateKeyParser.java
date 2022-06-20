@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,14 +11,19 @@
 
 package io.vertx.core.net.impl.pkcs1;
 
-import io.vertx.core.VertxException;
-import io.vertx.core.buffer.Buffer;
-
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.GeneralSecurityException;
+import java.security.KeyPairGenerator;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.util.Arrays;
+
+import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
 
 /**
  * This code is copies and modifies over from net.oauth.java.jmeter:ApacheJMeter_oauth
@@ -39,6 +44,39 @@ public class PrivateKeyParser {
    * ASN.1 OID for EC public key.
    */
   private static final byte[] OID_EC_PUBLIC_KEY = { 0x2A, (byte) 0x86, 0x48, (byte) 0xCE, 0x3D, 0x02, 0x01 };
+
+  private static String oidToString(byte[] oid) {
+    StringBuilder result = new StringBuilder();
+    int value = oid[0] & 0xff;
+    result.append(value / 40).append(".").append(value % 40);
+    for (int index = 1; index < oid.length; ++index) {
+      byte bValue = oid[index];
+      if (bValue < 0) {
+        value = (bValue & 0b01111111);
+        ++index;
+        if (index == oid.length) {
+          throw new IllegalArgumentException("Invalid OID");
+        }
+        value <<= 7;
+        value |= (oid[index] & 0b01111111);
+        result.append(".").append(value);
+      } else {
+        result.append(".").append(bValue);
+      }
+    }
+    return result.toString();
+  }
+
+  private static ECParameterSpec getECParameterSpec(String curveName) throws VertxException {
+    try {
+      KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+      keyPairGenerator.initialize(new ECGenParameterSpec(curveName));
+      ECPublicKey publicKey = (ECPublicKey) keyPairGenerator.generateKeyPair().getPublic();
+      return publicKey.getParams();
+    } catch (GeneralSecurityException e) {
+      throw new VertxException("Cannot determine EC parameter spec for curve name/OID", e);
+    }
+  }
 
   /**
    * Gets the algorithm used by a PKCS#8 encoded private key.
@@ -77,6 +115,70 @@ public class PrivateKeyParser {
     } else {
         throw new VertxException("Unsupported algorithm identifier");
     }
+  }
+
+  /**
+   * Converts a DER encoded ECPrivateKey into a Java ECPrivateKeySpec.
+   * <p>
+   * <a href="https://datatracker.ietf.org/doc/html/rfc5915#section-3">
+   * RFC 5915</a> defines the following ASN.1 syntax for an EC private key:
+   * </p>
+   * <pre>
+   * ECPrivateKey ::= SEQUENCE {
+   *   version        INTEGER { ecPrivkeyVer1(1) } (ecPrivkeyVer1),
+   *   privateKey     OCTET STRING,
+   *   parameters [0] ECParameters {{ NamedCurve }} OPTIONAL,
+   *   publicKey  [1] BIT STRING OPTIONAL
+   * }
+   * </pre>
+   * <p>
+   * A private key encoded like this will most often be found in a PEM file which will
+   * contain the Base64 encoded DER-encoding of an ECPrivateKey sandwiched between
+   * <pre>
+   * -----BEGIN EC PRIVATE KEY-----
+   * -----END EC PRIVATE KEY-----
+   * </pre>
+   * as described in <a href="https://datatracker.ietf.org/doc/html/rfc5915#section-4">
+   * RFC 5915, Section 4</a>
+   *
+   * @see "https://datatracker.ietf.org/doc/html/rfc5915"
+   * @param keyBytes The encoded key.
+   * @return The spec that can be used to instantiate the private key.
+   * @throws VertxException if the byte array does not represent an ASN.1 ECPrivateKey structure.
+   */
+  public static ECPrivateKeySpec getECKeySpec(byte[] keyBytes) throws VertxException {
+    DerParser parser = new DerParser(keyBytes);
+
+    Asn1Object sequence = parser.read();
+    if (sequence.getType() != DerParser.SEQUENCE) {
+      throw new VertxException("Invalid DER: not a sequence");
+    }
+
+    // Parse inside the sequence
+    parser = sequence.getParser();
+
+    Asn1Object version = parser.read();
+    if (version.getType() != DerParser.INTEGER) {
+      throw new VertxException(String.format(
+          "Invalid DER: 'version' field must be of type INTEGER (2) but found type `%d`",
+          version.getType()));
+    } else if (version.getInteger().intValue() != 1) {
+      throw new VertxException(String.format(
+          "Invalid DER: expected 'version' field to have value '1' but found '%d'",
+          version.getInteger().intValue()));
+    }
+    byte[] privateValue = parser.read().getValue();
+    parser = parser.read().getParser();
+    Asn1Object params = parser.read();
+    // ECParameters are mandatory according to RFC 5915, Section 3
+    if (params.getType() != DerParser.OBJECT_IDENTIFIER) {
+      throw new VertxException(String.format(
+          "Invalid DER: expected to find an OBJECT_IDENTIFIER (6) in 'parameters' but found type '%d'",
+          params.getType()));
+    }
+    byte[] namedCurveOid = params.getValue();
+    ECParameterSpec spec = getECParameterSpec(oidToString(namedCurveOid));
+    return new ECPrivateKeySpec(new BigInteger(1, privateValue), spec);
   }
 
   /**
