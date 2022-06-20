@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -11,32 +11,53 @@
 
 package io.vertx.core.net.impl;
 
-import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.VertxException;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
-
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
-import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.security.*;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
+
+import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.VertxException;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.impl.pkcs1.PrivateKeyParser;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -257,6 +278,14 @@ public class KeyStoreHelper {
     List<PrivateKey> pems = loadPems(keyValue, (delimiter, content) -> {
       try {
         switch (delimiter) {
+          case "EC PRIVATE KEY":
+            if (ecKeyFactory == null) {
+              // ECC is not supported by JVM
+              return Collections.emptyList();
+            } else {
+              // read PEM file as described in https://datatracker.ietf.org/doc/html/rfc5915#section-4
+              return Collections.singletonList(ecKeyFactory.generatePrivate(PrivateKeyParser.getECKeySpec(content)));
+            }
           case "RSA PRIVATE KEY":
             return Collections.singletonList(rsaKeyFactory.generatePrivate(PrivateKeyParser.getRSAKeySpec(content)));
           case "PRIVATE KEY":
@@ -265,10 +294,10 @@ public class KeyStoreHelper {
             String algorithm = PrivateKeyParser.getPKCS8EncodedKeyAlgorithm(content);
             if (rsaKeyFactory.getAlgorithm().equals(algorithm)) {
                 return Collections.singletonList(rsaKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
-            } else if (ecKeyFactory != null &&
-                    ecKeyFactory.getAlgorithm().equals(algorithm)) {
+            } else if (ecKeyFactory != null && ecKeyFactory.getAlgorithm().equals(algorithm)) {
                 return Collections.singletonList(ecKeyFactory.generatePrivate(new PKCS8EncodedKeySpec(content)));
             }
+            // fall through if ECC is not supported by JVM
           default:
             return Collections.emptyList();
         }
@@ -277,7 +306,7 @@ public class KeyStoreHelper {
       }
     });
     if (pems.isEmpty()) {
-      throw new RuntimeException("Missing -----BEGIN PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY----- delimiter");
+      throw new RuntimeException("Missing -----BEGIN PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY----- or -----BEGIN EC PRIVATE KEY----- delimiter");
     }
     return pems.get(0);
   }

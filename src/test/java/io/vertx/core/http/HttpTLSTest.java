@@ -11,24 +11,8 @@
 
 package io.vertx.core.http;
 
-import io.netty.util.internal.PlatformDependent;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-import io.vertx.core.VertxException;
-import io.vertx.core.VertxOptions;
-import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.*;
-import io.vertx.core.net.impl.TrustAllTrustManager;
-import io.vertx.test.core.TestUtils;
-import io.vertx.test.proxy.HAProxy;
-import io.vertx.test.tls.Cert;
-import io.vertx.test.tls.Trust;
-import org.junit.Assume;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import static org.hamcrest.core.StringEndsWith.endsWith;
 
-import javax.net.ssl.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -46,7 +30,39 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-import static org.hamcrest.core.StringEndsWith.endsWith;
+import javax.net.ssl.ManagerFactoryParameters;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.TrustManagerFactorySpi;
+
+import org.junit.Assume;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import io.netty.util.internal.PlatformDependent;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxException;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.KeyStoreOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.ProxyOptions;
+import io.vertx.core.net.ProxyType;
+import io.vertx.core.net.SelfSignedCertificate;
+import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.TrustOptions;
+import io.vertx.core.net.impl.TrustAllTrustManager;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.proxy.HAProxy;
+import io.vertx.test.tls.Cert;
+import io.vertx.test.tls.Trust;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -1384,17 +1400,23 @@ public abstract class HttpTLSTest extends HttpTestBase {
         "",
         "-----BEGIN PRIVATE KEY-----",
         "-----BEGIN RSA PRIVATE KEY-----",
+        "-----BEGIN EC PRIVATE KEY-----",
         "-----BEGIN PRIVATE KEY-----\n-----END PRIVATE KEY-----",
         "-----BEGIN RSA PRIVATE KEY-----\n-----END RSA PRIVATE KEY-----",
+        "-----BEGIN EC PRIVATE KEY-----\n-----END EC PRIVATE KEY-----",
         "-----BEGIN PRIVATE KEY-----\n*\n-----END PRIVATE KEY-----",
-        "-----BEGIN RSA PRIVATE KEY-----\n*\n-----END RSA PRIVATE KEY-----"
+        "-----BEGIN RSA PRIVATE KEY-----\n*\n-----END RSA PRIVATE KEY-----",
+        "-----BEGIN EC PRIVATE KEY-----\n*\n-----END EC PRIVATE KEY-----"
     };
     String[] messages = {
-        "Missing -----BEGIN PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY----- delimiter",
+        "Missing -----BEGIN PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY----- or -----BEGIN EC PRIVATE KEY----- delimiter",
         "Missing -----END PRIVATE KEY----- delimiter",
         "Missing -----END RSA PRIVATE KEY----- delimiter",
+        "Missing -----END EC PRIVATE KEY----- delimiter",
         "Empty pem file",
         "Empty pem file",
+        "Empty pem file",
+        "Input byte[] should at least have 2 bytes for base64 bytes",
         "Input byte[] should at least have 2 bytes for base64 bytes",
         "Input byte[] should at least have 2 bytes for base64 bytes"
     };
