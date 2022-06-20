@@ -460,7 +460,7 @@ public class TimerTest extends VertxTestBase {
     for (int i = 0;i < numThreads;i++) {
       Thread th = new Thread(() -> {
         // We need something more aggressive than a millisecond for this test
-        ((VertxImpl)vertx).scheduleTimeout(((VertxImpl) vertx).getOrCreateContext(), false, 1, TimeUnit.NANOSECONDS, ignore -> {
+        ((VertxImpl)vertx).scheduleTimeout(((VertxImpl) vertx).getOrCreateContext(), false, 1, TimeUnit.NANOSECONDS, false, ignore -> {
           count.decrementAndGet();
         });
       });
@@ -468,5 +468,26 @@ public class TimerTest extends VertxTestBase {
       threads[i] = th;
     }
     waitUntil(() -> count.get() == 0);
+  }
+
+  @Test
+  public void testContextTimer() {
+    waitFor(2);
+    vertx.deployVerticle(new AbstractVerticle() {
+      @Override
+      public void start() throws Exception {
+        ((ContextInternal)context).setTimer(1000, id -> {
+          complete();
+        });
+        context.runOnContext(v -> {
+          vertx.undeploy(context.deploymentID(), onSuccess(ar -> {
+            ((ContextInternal)context).setTimer(1, id -> {
+              complete();
+            });
+          }));
+        });
+      }
+    });
+    await();
   }
 }
