@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -13,9 +13,21 @@
 package io.vertx.core.net.impl.pkcs1;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.interfaces.ECPrivateKey;
+import java.security.spec.ECPrivateKeySpec;
+import java.util.Base64;
+
+import org.junit.Assume;
 import org.junit.Test;
+
+import io.vertx.core.Vertx;
+import io.vertx.test.core.TestUtils;
 
 
 /**
@@ -66,7 +78,30 @@ public class PrivateKeyParserTest {
   }
 
   private void assertKeySpecType(byte[] encodedKey, String expectedAlgorithm) {
-      String keyAlgorithm = PrivateKeyParser.getPKCS8EncodedKeyAlgorithm(encodedKey);
-      assertThat(keyAlgorithm, is(expectedAlgorithm));
+    String keyAlgorithm = PrivateKeyParser.getPKCS8EncodedKeyAlgorithm(encodedKey);
+    assertThat(keyAlgorithm, is(expectedAlgorithm));
+  }
+
+  /**
+   * Verifies that the parser can read a DER encoded ECPrivateKey.
+   *
+   * @throws GeneralSecurityException if the JVM does not support 
+   */
+  @Test
+  public void testGetECKeySpecSucceedsForDEREncodedECPrivateKey() throws GeneralSecurityException {
+
+    Assume.assumeTrue("ECC is not supported by VM's security providers", TestUtils.isECCSupportedByVM());
+    Vertx vertx = Vertx.vertx();
+    String b = vertx.fileSystem().readFileBlocking("tls/server-key-ec-pkcs1.pem")
+        .toString(StandardCharsets.US_ASCII)
+        .replaceAll("-----BEGIN EC PRIVATE KEY-----", "")
+        .replaceAll("-----END EC PRIVATE KEY-----", "")
+        .replaceAll("\\s", "");
+    byte[] derEncoding = Base64.getDecoder().decode(b);
+    ECPrivateKeySpec spec = PrivateKeyParser.getECKeySpec(derEncoding);
+    KeyFactory factory = KeyFactory.getInstance("EC");
+    ECPrivateKey key = (ECPrivateKey) factory.generatePrivate(spec);
+    assertThat(key, notNullValue());
+    assertThat(key.getAlgorithm(), is("EC"));
   }
 }

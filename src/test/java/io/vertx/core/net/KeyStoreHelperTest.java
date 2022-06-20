@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ * Copyright (c) 2011-2022 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -15,7 +15,6 @@ package io.vertx.core.net;
 import static org.hamcrest.CoreMatchers.instanceOf;
 
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
@@ -23,13 +22,12 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Enumeration;
 
-import io.vertx.core.net.impl.KeyStoreHelper;
-import io.vertx.test.core.VertxTestBase;
 import org.junit.Assume;
 import org.junit.Test;
 
-import io.vertx.core.impl.VertxInternal;
-import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.impl.KeyStoreHelper;
+import io.vertx.test.core.TestUtils;
+import io.vertx.test.core.VertxTestBase;
 
 
 /**
@@ -47,8 +45,8 @@ public class KeyStoreHelperTest extends VertxTestBase {
   @Test
   public void testKeyStoreHelperSupportsRSAPrivateKeys() throws Exception {
     PemKeyCertOptions options = new PemKeyCertOptions()
-            .addKeyPath("target/test-classes/tls/server-key.pem")
-            .addCertPath("target/test-classes/tls/server-cert.pem");
+            .addKeyPath("tls/server-key.pem")
+            .addCertPath("tls/server-cert.pem");
     KeyStoreHelper helper = options.getHelper(vertx);
     assertKeyType(helper.store(), RSAPrivateKey.class);
   }
@@ -60,12 +58,29 @@ public class KeyStoreHelperTest extends VertxTestBase {
    * @throws Exception if the key cannot be read.
    */
   @Test
-  public void testKeyStoreHelperSupportsECPrivateKeys() throws Exception {
+  public void testKeyStoreHelperSupportsPKCS8ECPrivateKey() throws Exception {
 
-    Assume.assumeTrue("ECC is not supported by VM's security providers", isECCSupportedByVM());
+    Assume.assumeTrue("ECC is not supported by VM's security providers", TestUtils.isECCSupportedByVM());
     PemKeyCertOptions options = new PemKeyCertOptions()
-            .addKeyPath("target/test-classes/tls/server-key-ec.pem")
-            .addCertPath("target/test-classes/tls/server-cert-ec.pem");
+            .addKeyPath("tls/server-key-ec.pem")
+            .addCertPath("tls/server-cert-ec.pem");
+    KeyStoreHelper helper = options.getHelper(vertx);
+    assertKeyType(helper.store(), ECPrivateKey.class);
+  }
+
+  /**
+   * Verifies that the key store helper can read a DER encoded EC private key
+   * from a PEM file.
+   *
+   * @throws Exception if the key cannot be read.
+   */
+  @Test
+  public void testKeyStoreHelperSupportsReadingECPrivateKeyFromPEMFile() throws Exception {
+
+    Assume.assumeTrue("ECC is not supported by VM's security providers", TestUtils.isECCSupportedByVM());
+    PemKeyCertOptions options = new PemKeyCertOptions()
+            .addKeyPath("tls/server-key-ec-pkcs1.pem")
+            .addCertPath("tls/server-cert-ec.pem");
     KeyStoreHelper helper = options.getHelper(vertx);
     assertKeyType(helper.store(), ECPrivateKey.class);
   }
@@ -78,15 +93,6 @@ public class KeyStoreHelperTest extends VertxTestBase {
       // keys into the internal key store
       assertThat(store.getKey(alias, "dummy".toCharArray()), instanceOf(expectedKeyType));
       assertThat(store.getCertificate(alias), instanceOf(X509Certificate.class));
-    }
-  }
-
-  private boolean isECCSupportedByVM() {
-    try {
-      KeyFactory.getInstance("EC");
-      return true;
-    } catch (GeneralSecurityException e) {
-        return false;
     }
   }
 }
