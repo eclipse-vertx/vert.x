@@ -305,7 +305,9 @@ public abstract class HttpTLSTest extends HttpTestBase {
   @Test
   // Specify some matching TLS protocols
   public void testTLSMatchingProtocolVersions() throws Exception {
-    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll().serverEnabledSecureTransportProtocol(new String[]{"SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2"}).pass();
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+
+      .serverEnabledSecureTransportProtocol(new String[]{"TLSv1", "TLSv1.1", "TLSv1.2"}).pass();
   }
 
   @Test
@@ -428,6 +430,25 @@ public abstract class HttpTLSTest extends HttpTestBase {
   // Client specifies cert and it is required
   public void testTLSClientCertPEMRequiredOpenSSL() throws Exception {
     testTLS(Cert.CLIENT_PEM, Trust.SERVER_JKS, Cert.SERVER_JKS, Trust.CLIENT_JKS).clientOpenSSL().requiresClientAuth().pass();
+  }
+
+  @Test
+  // TLSv1.3
+  public void testTLSv1_3() throws Exception {
+    Assume.assumeFalse(System.getProperty("java.version").startsWith("1.8"));
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+      .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
+      .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"}).pass();
+  }
+
+  @Test
+  // TLSv1.3 with OpenSSL
+  public void testTLSv1_3OpenSSL() throws Exception {
+    testTLS(Cert.NONE, Trust.NONE, Cert.SERVER_JKS, Trust.NONE).clientTrustAll()
+      .clientOpenSSL()
+      .clientEnabledSecureTransportProtocol(new String[]{"TLSv1.3"})
+      .serverOpenSSL()
+      .serverEnabledSecureTransportProtocol(new String[]{"TLSv1.3"}).pass();
   }
 
   // SNI tests
