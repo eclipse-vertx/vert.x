@@ -74,7 +74,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     if (list == null) {
       throw new NullPointerException();
     }
-    this.list = list;
+    this.list = new ArrayList(list);
   }
 
   /**
