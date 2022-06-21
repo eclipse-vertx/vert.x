@@ -70,7 +70,7 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     if (map == null) {
       throw new NullPointerException();
     }
-    this.map = map;
+    this.map = new LinkedHashMap(map);
   }
 
   /**
