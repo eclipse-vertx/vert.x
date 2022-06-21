@@ -377,6 +377,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase removeEnabledCipherSuite(String suite) {
+    return (ClientOptionsBase) super.removeEnabledCipherSuite(suite);
+  }
+
+  @Override
   public ClientOptionsBase addCrlPath(String crlPath) throws NullPointerException {
     return (ClientOptionsBase) super.addCrlPath(crlPath);
   }

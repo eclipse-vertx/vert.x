@@ -279,6 +279,12 @@ public class NetServerOptions extends TCPSSLOptions {
   }
 
   @Override
+  public NetServerOptions removeEnabledCipherSuite(String suite) {
+    super.removeEnabledCipherSuite(suite);
+    return this;
+  }
+
+  @Override
   public NetServerOptions addEnabledSecureTransportProtocol(final String protocol) {
     super.addEnabledSecureTransportProtocol(protocol);
     return this;

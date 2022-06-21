@@ -518,6 +518,12 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions removeEnabledCipherSuite(String suite) {
+    super.removeEnabledCipherSuite(suite);
+    return this;
+  }
+
+  @Override
   public HttpClientOptions addEnabledSecureTransportProtocol(final String protocol) {
     super.addEnabledSecureTransportProtocol(protocol);
     return this;

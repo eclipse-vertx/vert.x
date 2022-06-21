@@ -227,6 +227,12 @@ public class NetClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public NetClientOptions removeEnabledCipherSuite(String suite) {
+    super.removeEnabledCipherSuite(suite);
+    return this;
+  }
+
+  @Override
   public NetClientOptions addEnabledSecureTransportProtocol(final String protocol) {
     super.addEnabledSecureTransportProtocol(protocol);
     return this;

@@ -547,6 +547,17 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   }
 
   /**
+   * Removes an enabled cipher suite from the ordered suites.
+   *
+   * @param suite  the suite
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions removeEnabledCipherSuite(String suite) {
+    enabledCipherSuites.remove(suite);
+    return this;
+  }
+
+  /**
    * Return an ordered set of the cipher suites.
    *
    * <p> The set is initially empty and suite should be added to this set in the desired order.

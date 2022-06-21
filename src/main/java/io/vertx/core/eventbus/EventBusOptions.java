@@ -330,6 +330,12 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
+  public EventBusOptions removeEnabledCipherSuite(String suite) {
+    super.removeEnabledCipherSuite(suite);
+    return this;
+  }
+
+  @Override
   public EventBusOptions setIdleTimeout(int idleTimeout) {
     super.setIdleTimeout(idleTimeout);
     return this;
