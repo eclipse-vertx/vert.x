@@ -79,7 +79,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final SSLEngineOptions DEFAULT_SSL_ENGINE = null;
 
   /**
-   * The default ENABLED_SECURE_TRANSPORT_PROTOCOLS value = { "SSLv2Hello", "TLSv1", "TLSv1.1", "TLSv1.2" }
+   * The default ENABLED_SECURE_TRANSPORT_PROTOCOLS value = { "TLSv1", "TLSv1.1", "TLSv1.2" }
    * <p/>
    * SSLv3 is NOT enabled due to POODLE vulnerability http://en.wikipedia.org/wiki/POODLE
    * <p/>
