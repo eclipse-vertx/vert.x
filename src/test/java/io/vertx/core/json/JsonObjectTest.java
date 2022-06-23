@@ -1973,14 +1973,4 @@ public class JsonObjectTest {
   public void testJsonObjectOfEmpty() {
     assertEquals(new JsonObject(), JsonObject.of());
   }
-
-  @Test
-  public void testJsonObjectOfNull() {
-    assertThrows(
-      NullPointerException.class,
-      () -> {
-        JsonObject.of((Object[]) null);
-      });
-  }
-
 }

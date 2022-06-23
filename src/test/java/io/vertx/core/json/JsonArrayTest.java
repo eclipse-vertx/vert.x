@@ -1449,14 +1449,4 @@ public class JsonArrayTest {
   public void testJsonArrayOfEmpty() {
     assertEquals(new JsonArray(), JsonArray.of());
   }
-
-  @Test
-  public void testJsonArrayOfNull() {
-    assertThrows(
-      NullPointerException.class,
-      () -> {
-        JsonArray.of((Object[]) null);
-      });
-  }
-
 }

@@ -92,19 +92,236 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     }
   }
 
-  /**
-   * Create a JsonArray from a array of objects.
+  /** Create a JsonArray containing zero elements.
    *
-   * @param args The objects into JsonArray.
-   * @throws NullPointerException if the args is null.
+   * @return an empty JsonArray.
    */
-  public static JsonArray of(Object... args) {
-    // implicit nullcheck of args
-    if (args.length == 0) {
-      return new JsonArray();
-    }
+  public static JsonArray of() {
+    return new JsonArray();
+  }
 
-    return new JsonArray(new ArrayList<>(Arrays.asList(args)));
+  /** Create a JsonArray containing one value.
+   *
+   * @param v1 the single value
+   * @return a JsonArray containing the specified value.
+   */
+  public static JsonArray of(Object v1) {
+    List<Object> list = new ArrayList<>(1);
+
+    list.add(v1);
+
+    return new JsonArray(list);
+  }
+
+  /** Create a JsonArray containing two values.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   * @return a JsonArray containing the specified values.
+   */
+  public static JsonArray of(Object v1, Object v2) {
+    List<Object> list = new ArrayList<>(2);
+
+    list.add(v1);
+    list.add(v2);
+
+    return new JsonArray(list);
+  }
+
+  /** Create a JsonArray containing three values.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   * @param v3 the third value
+   * @return a JsonArray containing the specified values.
+   */
+  public static JsonArray of(Object v1, Object v2, Object v3) {
+    List<Object> list = new ArrayList<>(3);
+
+    list.add(v1);
+    list.add(v2);
+    list.add(v3);
+
+    return new JsonArray(list);
+  }
+
+  /** Create a JsonArray containing four values.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   * @param v3 the third value
+   * @param v4 the fourth value
+   * @return a JsonArray containing the specified values.
+   */
+  public static JsonArray of(Object v1, Object v2, Object v3, Object v4) {
+    List<Object> list = new ArrayList<>(4);
+
+    list.add(v1);
+    list.add(v2);
+    list.add(v3);
+    list.add(v4);
+
+    return new JsonArray(list);
+  }
+
+  /** Create a JsonArray containing five values.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   * @param v3 the third value
+   * @param v4 the fourth value
+   * @param v5 the fifth value
+   * @return a JsonArray containing the specified values.
+   */
+  public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5) {
+    List<Object> list = new ArrayList<>(5);
+
+    list.add(v1);
+    list.add(v2);
+    list.add(v3);
+    list.add(v4);
+    list.add(v5);
+
+    return new JsonArray(list);
+  }
+
+  /** Create a JsonArray containing six values.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   * @param v3 the third value
+   * @param v4 the fourth value
+   * @param v5 the fifth value
+   * @param v6 the sixth value
+   * @return a JsonArray containing the specified values.
+   */
+  public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6) {
+    List<Object> list = new ArrayList<>(6);
+
+    list.add(v1);
+    list.add(v2);
+    list.add(v3);
+    list.add(v4);
+    list.add(v5);
+    list.add(v6);
+
+    return new JsonArray(list);
+  }
+
+  /** Create a JsonArray containing seven values.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   * @param v3 the third value
+   * @param v4 the fourth value
+   * @param v5 the fifth value
+   * @param v6 the sixth value
+   * @param v7 the seventh value
+   * @return a JsonArray containing the specified values.
+   */
+  public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6,
+                             Object v7) {
+    List<Object> list = new ArrayList<>(7);
+
+    list.add(v1);
+    list.add(v2);
+    list.add(v3);
+    list.add(v4);
+    list.add(v5);
+    list.add(v6);
+    list.add(v7);
+
+    return new JsonArray(list);
+  }
+
+  /** Create a JsonArray containing eight values.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   * @param v3 the third value
+   * @param v4 the fourth value
+   * @param v5 the fifth value
+   * @param v6 the sixth value
+   * @param v7 the seventh value
+   * @param v8 the eightth value
+   * @return a JsonArray containing the specified values.
+   */
+  public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6,
+                             Object v7, Object v8) {
+    List<Object> list = new ArrayList<>(8);
+
+    list.add(v1);
+    list.add(v2);
+    list.add(v3);
+    list.add(v4);
+    list.add(v5);
+    list.add(v6);
+    list.add(v7);
+    list.add(v8);
+
+    return new JsonArray(list);
+  }
+
+  /** Create a JsonArray containing nine values.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   * @param v3 the third value
+   * @param v4 the fourth value
+   * @param v5 the fifth value
+   * @param v6 the sixth value
+   * @param v7 the seventh value
+   * @param v8 the eightth value
+   * @param v9 the ninth value
+   * @return a JsonArray containing the specified values.
+   */
+  public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6,
+                             Object v7, Object v8, Object v9) {
+    List<Object> list = new ArrayList<>(9);
+
+    list.add(v1);
+    list.add(v2);
+    list.add(v3);
+    list.add(v4);
+    list.add(v5);
+    list.add(v6);
+    list.add(v7);
+    list.add(v8);
+    list.add(v9);
+
+    return new JsonArray(list);
+  }
+
+  /** Create a JsonArray containing ten values.
+   *
+   * @param v1 the first value
+   * @param v2 the second value
+   * @param v3 the third value
+   * @param v4 the fourth value
+   * @param v5 the fifth value
+   * @param v6 the sixth value
+   * @param v7 the seventh value
+   * @param v8 the eightth value
+   * @param v9 the ninth value
+   * @param v10 the tenth value
+   * @return a JsonArray containing the specified values.
+   */
+  public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6,
+                             Object v7, Object v8, Object v9, Object v10) {
+    List<Object> list = new ArrayList<>(10);
+
+    list.add(v1);
+    list.add(v2);
+    list.add(v3);
+    list.add(v4);
+    list.add(v5);
+    list.add(v6);
+    list.add(v7);
+    list.add(v8);
+    list.add(v9);
+    list.add(v10);
+
+    return new JsonArray(list);
   }
 
   /**
