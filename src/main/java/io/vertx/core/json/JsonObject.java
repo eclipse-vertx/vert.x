@@ -105,11 +105,11 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a JsonObject containing the specified mapping.
    */
   public static JsonObject of(String k1, Object v1) {
-    Map<String, Object> map = new LinkedHashMap<>(1);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(1));
 
-    map.put(k1, v1);
+    obj.put(k1, v1);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**
@@ -122,12 +122,12 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a JsonObject containing the specified mappings.
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2) {
-    Map<String, Object> map = new LinkedHashMap<>(2);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(2));
 
-    map.put(k1, v1);
-    map.put(k2, v2);
+    obj.put(k1, v1);
+    obj.put(k2, v2);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**
@@ -142,13 +142,13 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    * @return a JsonObject containing the specified mappings.
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3) {
-    Map<String, Object> map = new LinkedHashMap<>(3);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(3));
 
-    map.put(k1, v1);
-    map.put(k2, v2);
-    map.put(k3, v3);
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**
@@ -166,14 +166,14 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4) {
-    Map<String, Object> map = new LinkedHashMap<>(4);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(4));
 
-    map.put(k1, v1);
-    map.put(k2, v2);
-    map.put(k3, v3);
-    map.put(k4, v4);
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**
@@ -193,15 +193,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5) {
-    Map<String, Object> map = new LinkedHashMap<>(5);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(5));
 
-    map.put(k1, v1);
-    map.put(k2, v2);
-    map.put(k3, v3);
-    map.put(k4, v4);
-    map.put(k5, v5);
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**
@@ -223,16 +223,16 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
    */
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5, String k6, Object v6) {
-    Map<String, Object> map = new LinkedHashMap<>(6);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(6));
 
-    map.put(k1, v1);
-    map.put(k2, v2);
-    map.put(k3, v3);
-    map.put(k4, v4);
-    map.put(k5, v5);
-    map.put(k6, v6);
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**
@@ -257,17 +257,17 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5, String k6, Object v6,
                               String k7, Object v7) {
-    Map<String, Object> map = new LinkedHashMap<>(7);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(7));
 
-    map.put(k1, v1);
-    map.put(k2, v2);
-    map.put(k3, v3);
-    map.put(k4, v4);
-    map.put(k5, v5);
-    map.put(k6, v6);
-    map.put(k7, v7);
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
+    obj.put(k7, v7);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**
@@ -294,18 +294,18 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5, String k6, Object v6,
                               String k7, Object v7, String k8, Object v8) {
-    Map<String, Object> map = new LinkedHashMap<>(8);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(8));
 
-    map.put(k1, v1);
-    map.put(k2, v2);
-    map.put(k3, v3);
-    map.put(k4, v4);
-    map.put(k5, v5);
-    map.put(k6, v6);
-    map.put(k7, v7);
-    map.put(k8, v8);
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
+    obj.put(k7, v7);
+    obj.put(k8, v8);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**
@@ -334,19 +334,19 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   public static JsonObject of(String k1, Object v1, String k2, Object v2, String k3, Object v3,
                               String k4, Object v4, String k5, Object v5, String k6, Object v6,
                               String k7, Object v7, String k8, Object v8, String k9, Object v9) {
-    Map<String, Object> map = new LinkedHashMap<>(9);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(9));
 
-    map.put(k1, v1);
-    map.put(k2, v2);
-    map.put(k3, v3);
-    map.put(k4, v4);
-    map.put(k5, v5);
-    map.put(k6, v6);
-    map.put(k7, v7);
-    map.put(k8, v8);
-    map.put(k9, v9);
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
+    obj.put(k7, v7);
+    obj.put(k8, v8);
+    obj.put(k9, v9);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**
@@ -378,20 +378,20 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
                               String k4, Object v4, String k5, Object v5, String k6, Object v6,
                               String k7, Object v7, String k8, Object v8, String k9, Object v9,
                               String k10, Object v10) {
-    Map<String, Object> map = new LinkedHashMap<>(10);
+    JsonObject obj = new JsonObject(new LinkedHashMap<>(10));
 
-    map.put(k1, v1);
-    map.put(k2, v2);
-    map.put(k3, v3);
-    map.put(k4, v4);
-    map.put(k5, v5);
-    map.put(k6, v6);
-    map.put(k7, v7);
-    map.put(k8, v8);
-    map.put(k9, v9);
-    map.put(k10, v10);
+    obj.put(k1, v1);
+    obj.put(k2, v2);
+    obj.put(k3, v3);
+    obj.put(k4, v4);
+    obj.put(k5, v5);
+    obj.put(k6, v6);
+    obj.put(k7, v7);
+    obj.put(k8, v8);
+    obj.put(k9, v9);
+    obj.put(k10, v10);
 
-    return new JsonObject(map);
+    return obj;
   }
 
   /**

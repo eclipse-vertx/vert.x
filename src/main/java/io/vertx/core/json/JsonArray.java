@@ -92,7 +92,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     }
   }
 
-  /** Create a JsonArray containing zero elements.
+  /** Create a JsonArray containing zero values.
    *
    * @return an empty JsonArray.
    */
@@ -106,11 +106,11 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a JsonArray containing the specified value.
    */
   public static JsonArray of(Object v1) {
-    List<Object> list = new ArrayList<>(1);
+    JsonArray arr = new JsonArray(new ArrayList<>(1));
 
-    list.add(v1);
+    arr.add(v1);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /** Create a JsonArray containing two values.
@@ -120,12 +120,12 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a JsonArray containing the specified values.
    */
   public static JsonArray of(Object v1, Object v2) {
-    List<Object> list = new ArrayList<>(2);
+    JsonArray arr = new JsonArray(new ArrayList<>(2));
 
-    list.add(v1);
-    list.add(v2);
+    arr.add(v1);
+    arr.add(v2);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /** Create a JsonArray containing three values.
@@ -136,13 +136,13 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a JsonArray containing the specified values.
    */
   public static JsonArray of(Object v1, Object v2, Object v3) {
-    List<Object> list = new ArrayList<>(3);
+    JsonArray arr = new JsonArray(new ArrayList<>(3));
 
-    list.add(v1);
-    list.add(v2);
-    list.add(v3);
+    arr.add(v1);
+    arr.add(v2);
+    arr.add(v3);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /** Create a JsonArray containing four values.
@@ -154,14 +154,14 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a JsonArray containing the specified values.
    */
   public static JsonArray of(Object v1, Object v2, Object v3, Object v4) {
-    List<Object> list = new ArrayList<>(4);
+    JsonArray arr = new JsonArray(new ArrayList<>(4));
 
-    list.add(v1);
-    list.add(v2);
-    list.add(v3);
-    list.add(v4);
+    arr.add(v1);
+    arr.add(v2);
+    arr.add(v3);
+    arr.add(v4);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /** Create a JsonArray containing five values.
@@ -174,15 +174,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a JsonArray containing the specified values.
    */
   public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5) {
-    List<Object> list = new ArrayList<>(5);
+    JsonArray arr = new JsonArray(new ArrayList<>(5));
 
-    list.add(v1);
-    list.add(v2);
-    list.add(v3);
-    list.add(v4);
-    list.add(v5);
+    arr.add(v1);
+    arr.add(v2);
+    arr.add(v3);
+    arr.add(v4);
+    arr.add(v5);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /** Create a JsonArray containing six values.
@@ -196,16 +196,16 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    * @return a JsonArray containing the specified values.
    */
   public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6) {
-    List<Object> list = new ArrayList<>(6);
+    JsonArray arr = new JsonArray(new ArrayList<>(6));
 
-    list.add(v1);
-    list.add(v2);
-    list.add(v3);
-    list.add(v4);
-    list.add(v5);
-    list.add(v6);
+    arr.add(v1);
+    arr.add(v2);
+    arr.add(v3);
+    arr.add(v4);
+    arr.add(v5);
+    arr.add(v6);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /** Create a JsonArray containing seven values.
@@ -221,17 +221,17 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    */
   public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6,
                              Object v7) {
-    List<Object> list = new ArrayList<>(7);
+    JsonArray arr = new JsonArray(new ArrayList<>(7));
 
-    list.add(v1);
-    list.add(v2);
-    list.add(v3);
-    list.add(v4);
-    list.add(v5);
-    list.add(v6);
-    list.add(v7);
+    arr.add(v1);
+    arr.add(v2);
+    arr.add(v3);
+    arr.add(v4);
+    arr.add(v5);
+    arr.add(v6);
+    arr.add(v7);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /** Create a JsonArray containing eight values.
@@ -248,18 +248,18 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    */
   public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6,
                              Object v7, Object v8) {
-    List<Object> list = new ArrayList<>(8);
+    JsonArray arr = new JsonArray(new ArrayList<>(8));
 
-    list.add(v1);
-    list.add(v2);
-    list.add(v3);
-    list.add(v4);
-    list.add(v5);
-    list.add(v6);
-    list.add(v7);
-    list.add(v8);
+    arr.add(v1);
+    arr.add(v2);
+    arr.add(v3);
+    arr.add(v4);
+    arr.add(v5);
+    arr.add(v6);
+    arr.add(v7);
+    arr.add(v8);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /** Create a JsonArray containing nine values.
@@ -277,19 +277,19 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    */
   public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6,
                              Object v7, Object v8, Object v9) {
-    List<Object> list = new ArrayList<>(9);
+    JsonArray arr = new JsonArray(new ArrayList<>(9));
 
-    list.add(v1);
-    list.add(v2);
-    list.add(v3);
-    list.add(v4);
-    list.add(v5);
-    list.add(v6);
-    list.add(v7);
-    list.add(v8);
-    list.add(v9);
+    arr.add(v1);
+    arr.add(v2);
+    arr.add(v3);
+    arr.add(v4);
+    arr.add(v5);
+    arr.add(v6);
+    arr.add(v7);
+    arr.add(v8);
+    arr.add(v9);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /** Create a JsonArray containing ten values.
@@ -308,20 +308,20 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
    */
   public static JsonArray of(Object v1, Object v2, Object v3, Object v4, Object v5, Object v6,
                              Object v7, Object v8, Object v9, Object v10) {
-    List<Object> list = new ArrayList<>(10);
+    JsonArray arr = new JsonArray(new ArrayList<>(10));
 
-    list.add(v1);
-    list.add(v2);
-    list.add(v3);
-    list.add(v4);
-    list.add(v5);
-    list.add(v6);
-    list.add(v7);
-    list.add(v8);
-    list.add(v9);
-    list.add(v10);
+    arr.add(v1);
+    arr.add(v2);
+    arr.add(v3);
+    arr.add(v4);
+    arr.add(v5);
+    arr.add(v6);
+    arr.add(v7);
+    arr.add(v8);
+    arr.add(v9);
+    arr.add(v10);
 
-    return new JsonArray(list);
+    return arr;
   }
 
   /**
