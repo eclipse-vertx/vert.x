@@ -37,8 +37,10 @@ import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.impl.HttpClientConnection;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.net.NetServer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.ConnectionBase;
 import io.vertx.core.net.impl.SSLHelper;
 import io.vertx.test.core.AsyncTestBase;
 import io.vertx.test.core.TestUtils;
@@ -2228,5 +2230,24 @@ public class Http2ClientTest extends Http2TestBase {
     } finally {
       s.channel().close().sync();
     }
+  }
+
+  @Test
+  public void testClearTestDirectServerCloseBeforeSettingsRead() {
+    NetServer server = vertx.createNetServer();
+    server.connectHandler(conn -> {
+      conn.handler(buff -> {
+        conn.close();
+      });
+    });
+    server.listen(DEFAULT_HTTPS_PORT, DEFAULT_HTTPS_HOST, onSuccess(s -> {
+      client.close();
+      client = vertx.createHttpClient(new HttpClientOptions().setProtocolVersion(HttpVersion.HTTP_2).setHttp2ClearTextUpgrade(false));
+      client.request(requestOptions).onComplete(onFailure(err -> {
+        assertEquals(err, ConnectionBase.CLOSED_EXCEPTION);
+        testComplete();
+      }));
+    }));
+    await();
   }
 }

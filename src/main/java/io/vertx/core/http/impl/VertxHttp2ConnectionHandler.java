@@ -26,6 +26,7 @@ import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.GoAway;
+import io.vertx.core.net.impl.ConnectionBase;
 
 import java.util.function.Function;
 
@@ -139,8 +140,12 @@ class VertxHttp2ConnectionHandler<C extends Http2ConnectionBase> extends Http2Co
   @Override
   public void channelInactive(ChannelHandlerContext chctx) throws Exception {
     if (connection != null) {
-      if (removeHandler != null) {
-        removeHandler.handle(connection);
+      if (settingsRead) {
+        if (removeHandler != null) {
+          removeHandler.handle(connection);
+        }
+      } else {
+        connectFuture.tryFailure(ConnectionBase.CLOSED_EXCEPTION);
       }
       super.channelInactive(chctx);
       connection.handleClosed();
