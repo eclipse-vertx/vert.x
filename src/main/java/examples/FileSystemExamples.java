@@ -142,6 +142,7 @@ public class FileSystemExamples {
         AsyncFile file = result.result();
         file.pipeTo(output)
           .onComplete(v -> {
+            file.close();
             System.out.println("Copy done");
           });
       } else {
