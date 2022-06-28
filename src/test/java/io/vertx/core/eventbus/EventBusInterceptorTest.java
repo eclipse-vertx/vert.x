@@ -147,7 +147,7 @@ public class EventBusInterceptorTest extends VertxTestBase {
   }
 
   @Test
-  public void testRemoveOutboundInterceptor() {
+  public void testRemoveInterceptor() {
 
     AtomicInteger cnt1 = new AtomicInteger();
     AtomicInteger cnt2 = new AtomicInteger();
@@ -168,25 +168,28 @@ public class EventBusInterceptorTest extends VertxTestBase {
       sc.next();
     };
 
-    eb.addOutboundInterceptor(eb1).addOutboundInterceptor(eb2).addOutboundInterceptor(eb3);
+    eb
+      .addInboundInterceptor(eb1).addOutboundInterceptor(eb1)
+      .addInboundInterceptor(eb2).addOutboundInterceptor(eb2)
+      .addInboundInterceptor(eb3).addOutboundInterceptor(eb3);
 
     eb.consumer("some-address", msg -> {
       if (msg.body().equals("armadillo")) {
-        assertEquals(1, cnt1.get());
-        assertEquals(1, cnt2.get());
-        assertEquals(1, cnt3.get());
-        eb.removeOutboundInterceptor(eb2);
+        assertEquals(2, cnt1.get());
+        assertEquals(2, cnt2.get());
+        assertEquals(2, cnt3.get());
+        eb.removeInboundInterceptor(eb2).removeOutboundInterceptor(eb2);
         eb.send("some-address", "aardvark");
       } else if (msg.body().equals("aardvark")) {
-        assertEquals(2, cnt1.get());
-        assertEquals(1, cnt2.get());
-        assertEquals(2, cnt3.get());
-        eb.removeOutboundInterceptor(eb3);
+        assertEquals(4, cnt1.get());
+        assertEquals(2, cnt2.get());
+        assertEquals(4, cnt3.get());
+        eb.removeInboundInterceptor(eb3).removeOutboundInterceptor(eb3);
         eb.send("some-address", "anteater");
       } else if (msg.body().equals("anteater")) {
-        assertEquals(3, cnt1.get());
-        assertEquals(1, cnt2.get());
-        assertEquals(2, cnt3.get());
+        assertEquals(6, cnt1.get());
+        assertEquals(2, cnt2.get());
+        assertEquals(4, cnt3.get());
         testComplete();
       } else {
         fail("wrong body");

@@ -57,25 +57,25 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
 
   @Override
   public <T> EventBus addOutboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
-    addInterceptor(OUTBOUND_INTERCEPTORS_UPDATER, interceptor);
+    addInterceptor(OUTBOUND_INTERCEPTORS_UPDATER, Objects.requireNonNull(interceptor));
     return this;
   }
 
   @Override
   public <T> EventBus addInboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
-    addInterceptor(INBOUND_INTERCEPTORS_UPDATER, interceptor);
+    addInterceptor(INBOUND_INTERCEPTORS_UPDATER, Objects.requireNonNull(interceptor));
     return this;
   }
 
   @Override
   public <T> EventBus removeOutboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
-    removeInterceptor(OUTBOUND_INTERCEPTORS_UPDATER, interceptor);
+    removeInterceptor(OUTBOUND_INTERCEPTORS_UPDATER, Objects.requireNonNull(interceptor));
     return this;
   }
 
   @Override
   public <T> EventBus removeInboundInterceptor(Handler<DeliveryContext<T>> interceptor) {
-    removeInterceptor(OUTBOUND_INTERCEPTORS_UPDATER, interceptor);
+    removeInterceptor(INBOUND_INTERCEPTORS_UPDATER, Objects.requireNonNull(interceptor));
     return this;
   }
 
@@ -455,7 +455,7 @@ public class EventBusImpl implements EventBusInternal, MetricsProvider {
       Handler[] interceptors = updater.get(this);
       int idx = -1;
       for (int i = 0;i < interceptors.length;i++) {
-        if (interceptors[i] == interceptor) {
+        if (interceptors[i].equals(interceptor)) {
           idx = i;
           break;
         }
