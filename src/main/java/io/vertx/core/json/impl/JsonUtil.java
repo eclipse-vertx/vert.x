@@ -13,6 +13,7 @@ package io.vertx.core.json.impl;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.VertxBase64;
 import io.vertx.core.shareddata.Shareable;
 
 import java.time.Instant;
@@ -31,8 +32,18 @@ import static java.time.format.DateTimeFormatter.ISO_INSTANT;
  */
 public final class JsonUtil {
 
+  /**
+   * @deprecated use {@link this#VERTX_BASE64_ENCODER}
+   */
   public static final Base64.Encoder BASE64_ENCODER;
+
+  /**
+   * @deprecated use {@link this#VERTX_BASE64_DECODER}
+   */
   public static final Base64.Decoder BASE64_DECODER;
+
+  public static final VertxBase64.Encoder VERTX_BASE64_ENCODER;
+  public static final VertxBase64.Decoder VERTX_BASE64_DECODER;
 
   static {
     /*
@@ -40,13 +51,21 @@ public final class JsonUtil {
      * Users who might need to interop with Vert.x 3.x applications should set the system property
      * {@code vertx.json.base64} to {@code legacy}.
      */
-    if ("legacy".equalsIgnoreCase(System.getProperty("vertx.json.base64"))) {
+
+    boolean legacyMode = "legacy".equalsIgnoreCase(System.getProperty("vertx.json.base64"));
+
+    if (legacyMode) {
       BASE64_ENCODER = Base64.getEncoder();
       BASE64_DECODER = Base64.getDecoder();
     } else {
       BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
       BASE64_DECODER = Base64.getUrlDecoder();
     }
+
+    VERTX_BASE64_ENCODER = new VertxBase64.Encoder(legacyMode);
+
+    boolean useApacheBase64Decoder = "apache".equalsIgnoreCase(System.getProperty("vertx.json.base64.decoder"));
+    VERTX_BASE64_DECODER = new VertxBase64.Decoder(legacyMode, useApacheBase64Decoder);
   }
 
   /**
@@ -75,9 +94,9 @@ public final class JsonUtil {
     } else if (val instanceof Instant) {
       val = ISO_INSTANT.format((Instant) val);
     } else if (val instanceof byte[]) {
-      val = BASE64_ENCODER.encodeToString((byte[]) val);
+      val = VERTX_BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Buffer) {
-      val = BASE64_ENCODER.encodeToString(((Buffer) val).getBytes());
+      val = VERTX_BASE64_ENCODER.encodeToString(((Buffer) val).getBytes());
     } else if (val instanceof Enum) {
       val = ((Enum) val).name();
     }

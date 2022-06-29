@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -90,7 +90,7 @@ public class JsonCodecTest {
     jsonObject.putNull("mynull");
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
-    String strBytes = BASE64_ENCODER.encodeToString(bytes);
+    String strBytes = VERTX_BASE64_ENCODER.encodeToString(bytes);
     String expected = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybyte\":255,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}";
     String json = mapper.toString(jsonObject);
@@ -113,7 +113,7 @@ public class JsonCodecTest {
     jsonArray.addNull();
     jsonArray.add(new JsonObject().put("foo", "bar"));
     jsonArray.add(new JsonArray().add("foo").add(123));
-    String strBytes = BASE64_ENCODER.encodeToString(bytes);
+    String strBytes = VERTX_BASE64_ENCODER.encodeToString(bytes);
     String expected = "[\"foo\",123,1234,1.23,2.34,true,124,\"" + strBytes + "\",\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
     String json = mapper.toString(jsonArray);
     assertEquals(expected, json);
@@ -136,7 +136,7 @@ public class JsonCodecTest {
     jsonObject.putNull("mynull");
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
-    String strBytes = BASE64_ENCODER.encodeToString(bytes);
+    String strBytes = VERTX_BASE64_ENCODER.encodeToString(bytes);
 
     Buffer expected = Buffer.buffer("{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
       "myboolean\":true,\"mybinary\":\"" + strBytes + "\",\"mybuffer\":\"" + strBytes + "\",\"myinstant\":\"" + ISO_INSTANT.format(now) + "\",\"mynull\":null,\"myobj\":{\"foo\":\"bar\"},\"myarr\":[\"foo\",123]}", "UTF-8");
@@ -160,7 +160,7 @@ public class JsonCodecTest {
     jsonArray.addNull();
     jsonArray.add(new JsonObject().put("foo", "bar"));
     jsonArray.add(new JsonArray().add("foo").add(123));
-    String strBytes = BASE64_ENCODER.encodeToString(bytes);
+    String strBytes = VERTX_BASE64_ENCODER.encodeToString(bytes);
     Buffer expected = Buffer.buffer("[\"foo\",123,1234,1.23,2.34,true,\"" + strBytes + "\",\"" + strBytes + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]", "UTF-8");
     Buffer json = mapper.toBuffer(jsonArray);
     assertArrayEquals(expected.getBytes(), json.getBytes());
@@ -183,7 +183,7 @@ public class JsonCodecTest {
     jsonObject.put("myinstant", now);
     jsonObject.put("myobj", new JsonObject().put("foo", "bar"));
     jsonObject.put("myarr", new JsonArray().add("foo").add(123));
-    String strBytes = BASE64_ENCODER.encodeToString(bytes);
+    String strBytes = VERTX_BASE64_ENCODER.encodeToString(bytes);
     String strInstant = ISO_INSTANT.format(now);
     String expected = "{" + Utils.LINE_SEPARATOR +
       "  \"mystr\" : \"foo\"," + Utils.LINE_SEPARATOR +
@@ -219,7 +219,7 @@ public class JsonCodecTest {
     jsonArray.addNull();
     jsonArray.add(new JsonObject().put("foo", "bar"));
     jsonArray.add(new JsonArray().add("foo").add(123));
-    String strBytes = BASE64_ENCODER.encodeToString(bytes);
+    String strBytes = VERTX_BASE64_ENCODER.encodeToString(bytes);
     String expected = "[ \"foo\", 123, 1234, 1.23, 2.34, true, \"" + strBytes + "\", \"" + strBytes + "\", null, {" + Utils.LINE_SEPARATOR +
       "  \"foo\" : \"bar\"" + Utils.LINE_SEPARATOR +
       "}, [ \"foo\", 123 ] ]";
@@ -230,7 +230,7 @@ public class JsonCodecTest {
   @Test
   public void testDecodeJsonObject() {
     byte[] bytes = TestUtils.randomByteArray(10);
-    String strBytes = BASE64_ENCODER.encodeToString(bytes);
+    String strBytes = VERTX_BASE64_ENCODER.encodeToString(bytes);
     Instant now = Instant.now();
     String strInstant = ISO_INSTANT.format(now);
     String json = "{\"mystr\":\"foo\",\"myint\":123,\"mylong\":1234,\"myfloat\":1.23,\"mydouble\":2.34,\"" +
@@ -246,8 +246,8 @@ public class JsonCodecTest {
     assertEquals(124, obj.getValue("mybyte"));
     assertArrayEquals(bytes, obj.getBinary("mybinary"));
     assertEquals(Buffer.buffer(bytes), obj.getBuffer("mybuffer"));
-    assertEquals(BASE64_ENCODER.encodeToString(bytes), obj.getValue("mybinary"));
-    assertEquals(BASE64_ENCODER.encodeToString(bytes), obj.getValue("mybuffer"));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bytes), obj.getValue("mybinary"));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bytes), obj.getValue("mybuffer"));
     assertEquals(now, obj.getInstant("myinstant"));
     assertEquals(now.toString(), obj.getValue("myinstant"));
     assertTrue(obj.containsKey("mynull"));
@@ -261,7 +261,7 @@ public class JsonCodecTest {
   @Test
   public void testDecodeJsonArray() {
     byte[] bytes = TestUtils.randomByteArray(10);
-    String strBytes = BASE64_ENCODER.encodeToString(bytes);
+    String strBytes = VERTX_BASE64_ENCODER.encodeToString(bytes);
     Instant now = Instant.now();
     String strInstant = ISO_INSTANT.format(now);
     String json = "[\"foo\",123,1234,1.23,2.34,true,124,\"" + strBytes + "\",\"" + strBytes + "\",\"" + strInstant + "\",null,{\"foo\":\"bar\"},[\"foo\",123]]";
@@ -274,9 +274,9 @@ public class JsonCodecTest {
     assertEquals(true, arr.getBoolean(5));
     assertEquals(124, arr.getValue(6));
     assertArrayEquals(bytes, arr.getBinary(7));
-    assertEquals(BASE64_ENCODER.encodeToString(bytes), arr.getValue(7));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bytes), arr.getValue(7));
     assertEquals(Buffer.buffer(bytes), arr.getBuffer(8));
-    assertEquals(BASE64_ENCODER.encodeToString(bytes), arr.getValue(8));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bytes), arr.getValue(8));
     assertEquals(now, arr.getInstant(9));
     assertEquals(now.toString(), arr.getValue(9));
     assertTrue(arr.hasNull(10));

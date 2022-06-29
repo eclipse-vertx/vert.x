@@ -20,7 +20,8 @@ import io.vertx.core.buffer.Buffer;
 import java.io.IOException;
 import java.time.Instant;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_DECODER;
+
 
 class BufferDeserializer extends JsonDeserializer<Buffer> {
 
@@ -28,7 +29,7 @@ class BufferDeserializer extends JsonDeserializer<Buffer> {
   public Buffer deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
     String text = p.getText();
     try {
-      return Buffer.buffer(BASE64_DECODER.decode(text));
+      return Buffer.buffer(VERTX_BASE64_DECODER.decode(text));
     } catch (IllegalArgumentException e) {
       throw new InvalidFormatException(p, "Expected a base64 encoded byte array", text, Instant.class);
     }

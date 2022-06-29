@@ -27,8 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_DECODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static org.junit.Assert.*;
 
@@ -442,12 +442,12 @@ public class JsonObjectTest {
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
     assertArrayEquals(bytes, jsonObject.getBinary("foo"));
-    assertEquals(BASE64_ENCODER.encodeToString(bytes), jsonObject.getValue("foo"));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bytes), jsonObject.getValue("foo"));
 
     // Can also get as string:
     String val = jsonObject.getString("foo");
     assertNotNull(val);
-    byte[] retrieved = BASE64_DECODER.decode(val);
+    byte[] retrieved = VERTX_BASE64_DECODER.decode(val);
     assertTrue(TestUtils.byteArraysEqual(bytes, retrieved));
 
     jsonObject.put("foo", 123);
@@ -482,12 +482,12 @@ public class JsonObjectTest {
     Buffer bytes = TestUtils.randomBuffer(100);
     jsonObject.put("foo", bytes);
     assertEquals(bytes, jsonObject.getBuffer("foo"));
-    assertEquals(BASE64_ENCODER.encodeToString(bytes.getBytes()), jsonObject.getValue("foo"));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bytes.getBytes()), jsonObject.getValue("foo"));
 
     // Can also get as string:
     String val = jsonObject.getString("foo");
     assertNotNull(val);
-    byte[] retrieved = BASE64_DECODER.decode(val);
+    byte[] retrieved = VERTX_BASE64_DECODER.decode(val);
     assertTrue(TestUtils.byteArraysEqual(bytes.getBytes(), retrieved));
 
     jsonObject.put("foo", 123);
@@ -575,9 +575,9 @@ public class JsonObjectTest {
     byte[] defBytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
     assertArrayEquals(bytes, jsonObject.getBinary("foo", defBytes));
-    assertEquals(BASE64_ENCODER.encodeToString(bytes), jsonObject.getValue("foo", BASE64_ENCODER.encode(defBytes)));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bytes), jsonObject.getValue("foo", VERTX_BASE64_ENCODER.encode(defBytes)));
     assertArrayEquals(bytes, jsonObject.getBinary("foo", null));
-    assertEquals(BASE64_ENCODER.encodeToString(bytes), jsonObject.getValue("foo", null));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bytes), jsonObject.getValue("foo", null));
 
     jsonObject.put("foo", 123);
     try {
@@ -772,7 +772,7 @@ public class JsonObjectTest {
     assertEquals(arr, jsonObject.getValue("foo"));
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, BASE64_DECODER.decode((String) jsonObject.getValue("foo"))));
+    assertTrue(TestUtils.byteArraysEqual(bytes, VERTX_BASE64_DECODER.decode((String) jsonObject.getValue("foo"))));
     jsonObject.putNull("foo");
     assertNull(jsonObject.getValue("foo"));
     assertNull(jsonObject.getValue("absent"));
@@ -827,8 +827,8 @@ public class JsonObjectTest {
     assertEquals(arr, jsonObject.getValue("foo", null));
     byte[] bytes = TestUtils.randomByteArray(100);
     jsonObject.put("foo", bytes);
-    assertTrue(TestUtils.byteArraysEqual(bytes, BASE64_DECODER.decode((String) jsonObject.getValue("foo", "blah"))));
-    assertTrue(TestUtils.byteArraysEqual(bytes, BASE64_DECODER.decode((String)jsonObject.getValue("foo", null))));
+    assertTrue(TestUtils.byteArraysEqual(bytes, VERTX_BASE64_DECODER.decode((String) jsonObject.getValue("foo", "blah"))));
+    assertTrue(TestUtils.byteArraysEqual(bytes, VERTX_BASE64_DECODER.decode((String)jsonObject.getValue("foo", null))));
     jsonObject.putNull("foo");
     assertNull(jsonObject.getValue("foo", "blah"));
     assertNull(jsonObject.getValue("foo", null));
@@ -1084,15 +1084,15 @@ public class JsonObjectTest {
 
     assertSame(jsonObject, jsonObject.put("foo", bin1));
     assertArrayEquals(bin1, jsonObject.getBinary("foo"));
-    assertEquals(BASE64_ENCODER.encodeToString(bin1), jsonObject.getValue("foo"));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bin1), jsonObject.getValue("foo"));
     jsonObject.put("quux", bin2);
     assertArrayEquals(bin2, jsonObject.getBinary("quux"));
-    assertEquals(BASE64_ENCODER.encodeToString(bin2), jsonObject.getValue("quux"));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bin2), jsonObject.getValue("quux"));
     assertArrayEquals(bin1, jsonObject.getBinary("foo"));
-    assertEquals(BASE64_ENCODER.encodeToString(bin1), jsonObject.getValue("foo"));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bin1), jsonObject.getValue("foo"));
     jsonObject.put("foo", bin3);
     assertArrayEquals(bin3, jsonObject.getBinary("foo"));
-    assertEquals(BASE64_ENCODER.encodeToString(bin3), jsonObject.getValue("foo"));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bin3), jsonObject.getValue("foo"));
 
     jsonObject.put("foo", (byte[]) null);
     assertTrue(jsonObject.containsKey("foo"));
@@ -1170,7 +1170,7 @@ public class JsonObjectTest {
     assertEquals(Float.valueOf(1.23f), jsonObject.getFloat("float"));
     assertEquals(Double.valueOf(1.23d), jsonObject.getDouble("double"));
     assertArrayEquals(bytes, jsonObject.getBinary("binary"));
-    assertEquals(BASE64_ENCODER.encodeToString(bytes), jsonObject.getValue("binary"));
+    assertEquals(VERTX_BASE64_ENCODER.encodeToString(bytes), jsonObject.getValue("binary"));
     assertEquals(now, jsonObject.getInstant("instant"));
     assertEquals(now.toString(), jsonObject.getValue("instant"));
     assertEquals(obj, jsonObject.getJsonObject("obj"));

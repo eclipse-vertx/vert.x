@@ -44,8 +44,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
-import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_DECODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -316,10 +316,10 @@ public class JacksonCodec implements JsonCodec {
         generator.writeString((ISO_INSTANT.format((Instant)json)));
       } else if (json instanceof byte[]) {
         // RFC-7493
-        generator.writeString(BASE64_ENCODER.encodeToString((byte[]) json));
+        generator.writeString(VERTX_BASE64_ENCODER.encodeToString((byte[]) json));
       } else if (json instanceof Buffer) {
         // RFC-7493
-        generator.writeString(BASE64_ENCODER.encodeToString(((Buffer) json).getBytes()));
+        generator.writeString(VERTX_BASE64_ENCODER.encodeToString(((Buffer) json).getBytes()));
       } else if (json instanceof Enum) {
         // vert.x extra (non standard but allowed conversion)
         generator.writeString(((Enum<?>) json).name());
@@ -366,9 +366,9 @@ public class JacksonCodec implements JsonCodec {
       if (clazz.isEnum()) {
         o = Enum.valueOf((Class<Enum>) clazz, str);
       } else if (clazz == byte[].class) {
-        o = BASE64_DECODER.decode(str);
+        o = VERTX_BASE64_DECODER.decode(str);
       } else if (clazz == Buffer.class) {
-        o = Buffer.buffer(BASE64_DECODER.decode(str));
+        o = Buffer.buffer(VERTX_BASE64_DECODER.decode(str));
       } else if (clazz == Instant.class) {
         o = Instant.from(ISO_INSTANT.parse(str));
       } else if (!clazz.isAssignableFrom(String.class)) {
