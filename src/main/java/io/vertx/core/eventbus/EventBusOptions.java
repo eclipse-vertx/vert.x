@@ -513,6 +513,11 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
+  public EventBusOptions setTcpUserTimeout(Integer tcpUserTimeout) {
+    return (EventBusOptions) super.setTcpUserTimeout(tcpUserTimeout);
+  }
+
+  @Override
   public EventBusOptions setLogActivity(boolean logEnabled) {
     return (EventBusOptions) super.setLogActivity(logEnabled);
   }
