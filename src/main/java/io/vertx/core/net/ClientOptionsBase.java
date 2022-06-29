@@ -415,4 +415,9 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   public ClientOptionsBase setTcpQuickAck(boolean tcpQuickAck) {
     return (ClientOptionsBase) super.setTcpQuickAck(tcpQuickAck);
   }
+
+  @Override
+  public ClientOptionsBase setTcpUserTimeout(Integer tcpUserTimeout) {
+    return (ClientOptionsBase) super.setTcpUserTimeout(tcpUserTimeout);
+  }
 }
