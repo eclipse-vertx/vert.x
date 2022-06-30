@@ -45,8 +45,8 @@ public abstract class ContextBase implements ContextInternal {
   private static final String DISABLE_TIMINGS_PROP_NAME = "vertx.disableContextTimings";
   static final boolean DISABLE_TIMINGS = Boolean.getBoolean(DISABLE_TIMINGS_PROP_NAME);
 
-  protected final VertxInternal owner;
-  protected final JsonObject config;
+  private final VertxInternal owner;
+  private final JsonObject config;
   private final Deployment deployment;
   private final CloseFuture closeFuture;
   private final ClassLoader tccl;
