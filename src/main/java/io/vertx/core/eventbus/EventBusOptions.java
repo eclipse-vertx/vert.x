@@ -513,7 +513,7 @@ public class EventBusOptions extends TCPSSLOptions {
   }
 
   @Override
-  public EventBusOptions setTcpUserTimeout(Integer tcpUserTimeout) {
+  public EventBusOptions setTcpUserTimeout(int tcpUserTimeout) {
     return (EventBusOptions) super.setTcpUserTimeout(tcpUserTimeout);
   }
 

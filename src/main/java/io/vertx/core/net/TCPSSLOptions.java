@@ -103,9 +103,11 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final boolean DEFAULT_TCP_QUICKACK = false;
 
   /**
-   * The default TCP_USER_TIMEOUT value in milliseconds = null
+   * The default TCP_USER_TIMEOUT value in milliseconds = 0
+   * <p/>
+   * When the default value of 0 is used, TCP will use the system default.
    */
-  public static final Integer DEFAULT_TCP_USER_TIMEOUT = null;
+  public static final int DEFAULT_TCP_USER_TIMEOUT = 0;
 
   /**
    * The default value of SSL handshake timeout = 10
@@ -138,7 +140,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean tcpFastOpen;
   private boolean tcpCork;
   private boolean tcpQuickAck;
-  private Integer tcpUserTimeout;
+  private int tcpUserTimeout;
 
   /**
    * Default constructor
@@ -760,7 +762,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    *
    * @return the {@code TCP_USER_TIMEOUT} value
    */
-  public Integer getTcpUserTimeout() {
+  public int getTcpUserTimeout() {
     return tcpUserTimeout;
   }
 
@@ -769,7 +771,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    *
    * @param tcpUserTimeout the tcp user timeout value
    */
-  public TCPSSLOptions setTcpUserTimeout(Integer tcpUserTimeout) {
+  public TCPSSLOptions setTcpUserTimeout(int tcpUserTimeout) {
     this.tcpUserTimeout = tcpUserTimeout;
     return this;
   }

@@ -550,7 +550,7 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
-  public HttpClientOptions setTcpUserTimeout(Integer tcpUserTimeout) {
+  public HttpClientOptions setTcpUserTimeout(int tcpUserTimeout) {
     return (HttpClientOptions) super.setTcpUserTimeout(tcpUserTimeout);
   }
 

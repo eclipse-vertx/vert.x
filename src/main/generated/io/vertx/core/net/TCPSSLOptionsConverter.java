@@ -235,9 +235,7 @@ public class TCPSSLOptionsConverter {
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("tcpQuickAck", obj.isTcpQuickAck());
-    if (obj.getTcpUserTimeout() != null) {
-      json.put("tcpUserTimeout", obj.getTcpUserTimeout());
-    }
+    json.put("tcpUserTimeout", obj.getTcpUserTimeout());
     if (obj.getTrustStoreOptions() != null) {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }

@@ -417,7 +417,7 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
-  public ClientOptionsBase setTcpUserTimeout(Integer tcpUserTimeout) {
+  public ClientOptionsBase setTcpUserTimeout(int tcpUserTimeout) {
     return (ClientOptionsBase) super.setTcpUserTimeout(tcpUserTimeout);
   }
 }
