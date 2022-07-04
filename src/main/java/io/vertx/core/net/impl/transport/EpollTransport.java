@@ -30,9 +30,7 @@ import io.vertx.core.net.ClientOptionsBase;
 import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.impl.SocketAddressImpl;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 
 /**
