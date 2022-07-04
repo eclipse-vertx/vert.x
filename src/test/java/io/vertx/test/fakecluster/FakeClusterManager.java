@@ -45,7 +45,7 @@ public class FakeClusterManager implements ClusterManager {
   private static LocalAsyncLocks localAsyncLocks = new LocalAsyncLocks();
   private static final ConcurrentMap<String, AtomicLong> counters = new ConcurrentHashMap<>();
 
-  private String nodeID;
+  private volatile String nodeID;
   private NodeListener nodeListener;
   private VertxInternal vertx;
   private NodeSelector nodeSelector;
