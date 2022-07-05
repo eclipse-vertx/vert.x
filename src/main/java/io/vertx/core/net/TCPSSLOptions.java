@@ -103,6 +103,13 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   public static final boolean DEFAULT_TCP_QUICKACK = false;
 
   /**
+   * The default TCP_USER_TIMEOUT value in milliseconds = 0
+   * <p/>
+   * When the default value of 0 is used, TCP will use the system default.
+   */
+  public static final int DEFAULT_TCP_USER_TIMEOUT = 0;
+
+  /**
    * The default value of SSL handshake timeout = 10
    */
   public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10L;
@@ -133,6 +140,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
   private boolean tcpFastOpen;
   private boolean tcpCork;
   private boolean tcpQuickAck;
+  private int tcpUserTimeout;
 
   /**
    * Default constructor
@@ -170,6 +178,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     this.tcpFastOpen = other.isTcpFastOpen();
     this.tcpCork = other.isTcpCork();
     this.tcpQuickAck = other.isTcpQuickAck();
+    this.tcpUserTimeout = other.getTcpUserTimeout();
   }
 
   /**
@@ -214,6 +223,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
     tcpFastOpen = DEFAULT_TCP_FAST_OPEN;
     tcpCork = DEFAULT_TCP_CORK;
     tcpQuickAck = DEFAULT_TCP_QUICKACK;
+    tcpUserTimeout = DEFAULT_TCP_USER_TIMEOUT;
   }
 
   /**
@@ -745,6 +755,24 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    */
   public TCPSSLOptions setTcpQuickAck(boolean tcpQuickAck) {
     this.tcpQuickAck = tcpQuickAck;
+    return this;
+  }
+
+  /**
+   *
+   * @return the {@code TCP_USER_TIMEOUT} value
+   */
+  public int getTcpUserTimeout() {
+    return tcpUserTimeout;
+  }
+
+  /**
+   * Sets the {@code TCP_USER_TIMEOUT} option - only with linux native transport.
+   *
+   * @param tcpUserTimeout the tcp user timeout value
+   */
+  public TCPSSLOptions setTcpUserTimeout(int tcpUserTimeout) {
+    this.tcpUserTimeout = tcpUserTimeout;
     return this;
   }
 

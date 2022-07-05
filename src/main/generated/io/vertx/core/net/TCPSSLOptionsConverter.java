@@ -149,6 +149,11 @@ public class TCPSSLOptionsConverter {
             obj.setTcpQuickAck((Boolean)member.getValue());
           }
           break;
+        case "tcpUserTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setTcpUserTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
         case "trustStoreOptions":
           if (member.getValue() instanceof JsonObject) {
             obj.setTrustStoreOptions(new io.vertx.core.net.JksOptions((io.vertx.core.json.JsonObject)member.getValue()));
@@ -230,6 +235,7 @@ public class TCPSSLOptionsConverter {
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("tcpQuickAck", obj.isTcpQuickAck());
+    json.put("tcpUserTimeout", obj.getTcpUserTimeout());
     if (obj.getTrustStoreOptions() != null) {
       json.put("trustStoreOptions", obj.getTrustStoreOptions().toJson());
     }
