@@ -220,6 +220,9 @@ Set whether TCP no delay is enabled
 |[[tcpQuickAck]]`@tcpQuickAck`|`Boolean`|+++
 Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
+|[[tcpUserTimeout]]`@tcpUserTimeout`|`Number (int)`|+++
+Sets the <code>TCP_USER_TIMEOUT</code> option - only with linux native transport.
++++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
 +++
@@ -577,6 +580,9 @@ Set whether TCP no delay is enabled
 |[[tcpQuickAck]]`@tcpQuickAck`|`Boolean`|+++
 Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
+|[[tcpUserTimeout]]`@tcpUserTimeout`|`Number (int)`|+++
+Sets the <code>TCP_USER_TIMEOUT</code> option - only with linux native transport.
++++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
 +++
@@ -904,6 +910,9 @@ Set whether TCP no delay is enabled
 |[[tcpQuickAck]]`@tcpQuickAck`|`Boolean`|+++
 Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
+|[[tcpUserTimeout]]`@tcpUserTimeout`|`Number (int)`|+++
+Sets the <code>TCP_USER_TIMEOUT</code> option - only with linux native transport.
++++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
 +++
@@ -1178,6 +1187,9 @@ Set whether TCP no delay is enabled
 +++
 |[[tcpQuickAck]]`@tcpQuickAck`|`Boolean`|+++
 Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
++++
+|[[tcpUserTimeout]]`@tcpUserTimeout`|`Number (int)`|+++
+Sets the <code>TCP_USER_TIMEOUT</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
@@ -1463,6 +1475,9 @@ Set whether TCP no delay is enabled
 |[[tcpQuickAck]]`@tcpQuickAck`|`Boolean`|+++
 Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
 +++
+|[[tcpUserTimeout]]`@tcpUserTimeout`|`Number (int)`|+++
+Sets the <code>TCP_USER_TIMEOUT</code> option - only with linux native transport.
++++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
 +++
@@ -1591,6 +1606,9 @@ Set whether TCP no delay is enabled
 +++
 |[[tcpQuickAck]]`@tcpQuickAck`|`Boolean`|+++
 Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
++++
+|[[tcpUserTimeout]]`@tcpUserTimeout`|`Number (int)`|+++
+Sets the <code>TCP_USER_TIMEOUT</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class
@@ -2107,6 +2125,9 @@ Set whether TCP no delay is enabled
 +++
 |[[tcpQuickAck]]`@tcpQuickAck`|`Boolean`|+++
 Enable the <code>TCP_QUICKACK</code> option - only with linux native transport.
++++
+|[[tcpUserTimeout]]`@tcpUserTimeout`|`Number (int)`|+++
+Sets the <code>TCP_USER_TIMEOUT</code> option - only with linux native transport.
 +++
 |[[trafficClass]]`@trafficClass`|`Number (int)`|+++
 Set the value of traffic class

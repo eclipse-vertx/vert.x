@@ -154,6 +154,7 @@ class EpollTransport extends Transport {
       if (options.isTcpFastOpen()) {
         bootstrap.option(EpollChannelOption.TCP_FASTOPEN_CONNECT, options.isTcpFastOpen());
       }
+      bootstrap.option(EpollChannelOption.TCP_USER_TIMEOUT, options.getTcpUserTimeout());
       bootstrap.option(EpollChannelOption.TCP_QUICKACK, options.isTcpQuickAck());
       bootstrap.option(EpollChannelOption.TCP_CORK, options.isTcpCork());
     }

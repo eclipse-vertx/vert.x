@@ -223,6 +223,11 @@ import java.time.format.DateTimeFormatter;
             obj.setTcpQuickAck((Boolean)member.getValue());
           }
           break;
+        case "tcpUserTimeout":
+          if (member.getValue() instanceof Number) {
+            obj.setTcpUserTimeout(((Number)member.getValue()).intValue());
+          }
+          break;
         case "trafficClass":
           if (member.getValue() instanceof Number) {
             obj.setTrafficClass(((Number)member.getValue()).intValue());
@@ -336,6 +341,7 @@ import java.time.format.DateTimeFormatter;
     json.put("tcpKeepAlive", obj.isTcpKeepAlive());
     json.put("tcpNoDelay", obj.isTcpNoDelay());
     json.put("tcpQuickAck", obj.isTcpQuickAck());
+    json.put("tcpUserTimeout", obj.getTcpUserTimeout());
     json.put("trafficClass", obj.getTrafficClass());
     json.put("trustAll", obj.isTrustAll());
     if (obj.getTrustStoreOptions() != null) {

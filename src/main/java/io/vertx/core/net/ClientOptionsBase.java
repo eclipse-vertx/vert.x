@@ -363,6 +363,11 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   }
 
   @Override
+  public ClientOptionsBase setTcpUserTimeout(int tcpUserTimeout) {
+    return (ClientOptionsBase) super.setTcpUserTimeout(tcpUserTimeout);
+  }
+
+  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (!(o instanceof ClientOptionsBase)) return false;
