@@ -544,6 +544,11 @@ public class HttpClientOptions extends ClientOptionsBase {
   }
 
   @Override
+  public HttpClientOptions setTcpUserTimeout(int tcpUserTimeout) {
+    return (HttpClientOptions) super.setTcpUserTimeout(tcpUserTimeout);
+  }
+
+  @Override
   public HttpClientOptions addCrlPath(String crlPath) throws NullPointerException {
     return (HttpClientOptions) super.addCrlPath(crlPath);
   }
