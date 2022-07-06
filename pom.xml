@@ -20,7 +20,7 @@
   </parent>
 
   <artifactId>vertx-core</artifactId>
-  <version>4.3.2</version>
+  <version>4.3.3-SNAPSHOT</version>
 
   <name>Vert.x Core</name>
 
@@ -50,7 +50,7 @@
     <assertj.version>3.4.1</assertj.version>
     <apacheds-protocol-dns.version>1.5.7</apacheds-protocol-dns.version>
     <generated.dir>${project.basedir}/src/main/generated</generated.dir>
-    <stack.version>4.3.2</stack.version>
+    <stack.version>4.3.3-SNAPSHOT</stack.version>
     <jmh.version>1.19</jmh.version>
     <vertx.testNativeTransport>false</vertx.testNativeTransport>
     <vertx.testDomainSockets>false</vertx.testDomainSockets>
