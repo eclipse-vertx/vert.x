@@ -108,9 +108,9 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     if (val instanceof Instant) {
       return ISO_INSTANT.format((Instant) val);
     } else if (val instanceof byte[]) {
-      return BASE64_ENCODER.encodeToString((byte[]) val);
+      return VERTX_BASE64_ENCODER.encodeToString((byte[]) val);
     } else if (val instanceof Buffer) {
-      return BASE64_ENCODER.encodeToString(((Buffer) val).getBytes());
+      return VERTX_BASE64_ENCODER.encodeToString(((Buffer) val).getBytes());
     } else if (val instanceof Enum) {
       return ((Enum) val).name();
     } else {
@@ -270,7 +270,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     // assume that the value is in String format as per RFC
     String encoded = (String) val;
     // parse to proper type
-    return BASE64_DECODER.decode(encoded);
+    return VERTX_BASE64_DECODER.decode(encoded);
   }
 
   /**
@@ -301,7 +301,7 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable, Shareab
     // assume that the value is in String format as per RFC
     String encoded = (String) val;
     // parse to proper type
-    return Buffer.buffer(BASE64_DECODER.decode(encoded));
+    return Buffer.buffer(VERTX_BASE64_DECODER.decode(encoded));
   }
 
   /**

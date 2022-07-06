@@ -16,12 +16,12 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import java.io.IOException;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_ENCODER;
 
 class ByteArraySerializer extends JsonSerializer<byte[]> {
 
   @Override
   public void serialize(byte[] value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-    jgen.writeString(BASE64_ENCODER.encodeToString(value));
+    jgen.writeString(VERTX_BASE64_ENCODER.encodeToString(value));
   }
 }

@@ -17,12 +17,12 @@ import io.vertx.core.buffer.Buffer;
 
 import java.io.IOException;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_ENCODER;
 
 class BufferSerializer extends JsonSerializer<Buffer> {
 
   @Override
   public void serialize(Buffer value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-    jgen.writeString(BASE64_ENCODER.encodeToString(value.getBytes()));
+    jgen.writeString(VERTX_BASE64_ENCODER.encodeToString(value.getBytes()));
   }
 }

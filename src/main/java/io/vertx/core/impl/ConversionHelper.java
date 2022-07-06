@@ -18,7 +18,7 @@ import io.vertx.core.json.JsonObject;
 import java.time.Instant;
 import java.util.*;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -47,7 +47,7 @@ public class ConversionHelper {
     } else if (obj instanceof CharSequence) {
       return obj.toString();
     } else if (obj instanceof Buffer) {
-      return BASE64_ENCODER.encodeToString(((Buffer) obj).getBytes());
+      return VERTX_BASE64_ENCODER.encodeToString(((Buffer) obj).getBytes());
     }
     return obj;
   }
@@ -81,7 +81,7 @@ public class ConversionHelper {
     } else if (obj instanceof Instant) {
       return (T) ISO_INSTANT.format((Instant) obj);
     } else if (obj instanceof byte[]) {
-      return (T) BASE64_ENCODER.encodeToString((byte[]) obj);
+      return (T) VERTX_BASE64_ENCODER.encodeToString((byte[]) obj);
     } else if (obj instanceof Enum) {
       return (T) ((Enum) obj).name();
     }

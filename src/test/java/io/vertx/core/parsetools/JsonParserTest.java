@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_ENCODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_ENCODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 import static junit.framework.TestCase.assertFalse;
 import static org.junit.Assert.*;
@@ -240,7 +240,7 @@ public class JsonParserTest {
   @Test
   public void testBinaryValue() {
     byte[] value = TestUtils.randomByteArray(10);
-    String encoded = BASE64_ENCODER.encodeToString(value);
+    String encoded = VERTX_BASE64_ENCODER.encodeToString(value);
     testValue('"' + encoded + '"', event -> {
       assertEquals(encoded, event.value());
       assertFalse(event.isArray());

@@ -23,7 +23,7 @@ import io.vertx.core.parsetools.JsonEventType;
 
 import java.time.Instant;
 
-import static io.vertx.core.json.impl.JsonUtil.BASE64_DECODER;
+import static io.vertx.core.json.impl.JsonUtil.VERTX_BASE64_DECODER;
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -174,7 +174,7 @@ public class JsonEventImpl implements JsonEvent {
 
   @Override
   public Buffer binaryValue() {
-    return value != null ? Buffer.buffer(BASE64_DECODER.decode((String) value)) : null;
+    return value != null ? Buffer.buffer(VERTX_BASE64_DECODER.decode((String) value)) : null;
   }
 
   @Override
