@@ -35,7 +35,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @State(Scope.Benchmark)
 @Warmup(iterations = 20, time = 200, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 200, timeUnit = MILLISECONDS)
-@Threads(2)
+@Threads(8)
 public class CombinerExecutorBenchmark extends BenchmarkBase {
 
   private Executor<Object> exec;

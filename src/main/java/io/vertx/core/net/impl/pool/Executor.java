@@ -15,6 +15,18 @@ package io.vertx.core.net.impl.pool;
  */
 public interface Executor<S> {
 
+  @FunctionalInterface
+  interface Continuation {
+
+    /**
+     * Resume running {@link Action} accumulated to the belonging {@link Executor}.
+     *
+     * @return {@code not null} requires user to keep on calling it to drain the remaining actions backlog,
+     * {@code null} means no additional actions are needed
+     */
+    Continuation resume();
+  }
+
   /**
    * The action.
    */
@@ -36,6 +48,19 @@ public interface Executor<S> {
    *
    * @param action the action
    */
-  void submit(Action<S> action);
+  default void submit(Action<S> action) {
+    Continuation continuation = submitAndContinue(action);
+    while (continuation != null) {
+      continuation = continuation.resume();
+    }
+  }
 
+  /**
+   * Submit an action, suspending it if the implementors allow it.
+   *
+   * @param action the action
+   * @return if {@code not null}, {@link Continuation#resume} should be called to let the executor be able
+   * to keep on consuming already submitted actions. Otherwise, no further action is required.
+   */
+  Continuation submitAndContinue(Action<S> action);
 }
