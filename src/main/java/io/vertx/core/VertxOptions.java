@@ -412,7 +412,7 @@ public class VertxOptions {
    * @return a reference to this, so the API can be used fluently
    */
   public VertxOptions setQuorumSize(int quorumSize) {
-    if (quorumSize < 1) {
+    if (quorumSize <= 0) {
       throw new IllegalArgumentException("quorumSize should be >= 1");
     }
     this.quorumSize = quorumSize;
