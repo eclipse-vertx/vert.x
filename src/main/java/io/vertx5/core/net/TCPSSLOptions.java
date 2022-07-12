@@ -1,0 +1,870 @@
+/*
+ * Copyright (c) 2011-2019 Contributors to the Eclipse Foundation
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+ */
+
+package io.vertx5.core.net;
+
+import io.vertx.codegen.annotations.DataObject;
+import io.vertx.codegen.annotations.GenIgnore;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.net.JdkSSLEngineOptions;
+import io.vertx.core.net.JksOptions;
+import io.vertx.core.net.KeyCertOptions;
+import io.vertx.core.net.OpenSSLEngineOptions;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
+import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.SSLEngineOptions;
+import io.vertx.core.net.TrustOptions;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Base class. TCP and SSL related options
+ *
+ * @author <a href="http://tfox.org">Tim Fox</a>
+ */
+@DataObject(generateConverter = true, publicConverter = false)
+public abstract class TCPSSLOptions extends NetworkOptions {
+
+  /**
+   * The default value of TCP-no-delay = true (Nagle disabled)
+   */
+  public static final boolean DEFAULT_TCP_NO_DELAY = true;
+
+  /**
+   * The default value of TCP keep alive = false
+   */
+  public static final boolean DEFAULT_TCP_KEEP_ALIVE = false;
+
+  /**
+   * The default value of SO_linger = -1
+   */
+  public static final int DEFAULT_SO_LINGER = -1;
+
+  /**
+   * SSL enable by default = false
+   */
+  public static final boolean DEFAULT_SSL = false;
+
+  /**
+   * Default idle timeout = 0
+   */
+  public static final int DEFAULT_IDLE_TIMEOUT = 0;
+
+  /**
+   * Default idle time unit = SECONDS
+   */
+  public static final TimeUnit DEFAULT_IDLE_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
+
+  /**
+   * Default read idle timeout = 0
+   */
+  public static final int DEFAULT_READ_IDLE_TIMEOUT = 0;
+
+  /**
+   * Default write idle timeout = 0
+   */
+  public static final int DEFAULT_WRITE_IDLE_TIMEOUT = 0;
+
+  /**
+   * Default use alpn = false
+   */
+  public static final boolean DEFAULT_USE_ALPN = false;
+
+  /**
+   * The default SSL engine options = null (autoguess)
+   */
+  public static final SSLEngineOptions DEFAULT_SSL_ENGINE = null;
+
+  /**
+   * The default ENABLED_SECURE_TRANSPORT_PROTOCOLS value = { "TLSv1", "TLSv1.1", "TLSv1.2" }
+   * <p/>
+   * SSLv3 is NOT enabled due to POODLE vulnerability http://en.wikipedia.org/wiki/POODLE
+   * <p/>
+   * "SSLv2Hello" is NOT enabled since it's disabled by default since JDK7
+   */
+  public static final List<String> DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS = Collections.unmodifiableList(Arrays.asList("TLSv1", "TLSv1.1", "TLSv1.2"));
+
+  /**
+   * The default TCP_FASTOPEN value = false
+   */
+  public static final boolean DEFAULT_TCP_FAST_OPEN = false;
+
+  /**
+   * The default TCP_CORK value = false
+   */
+  public static final boolean DEFAULT_TCP_CORK = false;
+
+  /**
+   * The default TCP_QUICKACK value = false
+   */
+  public static final boolean DEFAULT_TCP_QUICKACK = false;
+
+  /**
+   * The default TCP_USER_TIMEOUT value in milliseconds = 0
+   * <p/>
+   * When the default value of 0 is used, TCP will use the system default.
+   */
+  public static final int DEFAULT_TCP_USER_TIMEOUT = 0;
+
+  /**
+   * The default value of SSL handshake timeout = 10
+   */
+  public static final long DEFAULT_SSL_HANDSHAKE_TIMEOUT = 10L;
+
+  /**
+   * Default SSL handshake time unit = SECONDS
+   */
+  public static final TimeUnit DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT = TimeUnit.SECONDS;
+
+  private boolean tcpNoDelay;
+  private boolean tcpKeepAlive;
+  private int soLinger;
+  private int idleTimeout;
+  private int readIdleTimeout;
+  private int writeIdleTimeout;
+  private TimeUnit idleTimeoutUnit;
+  private boolean ssl;
+  private long sslHandshakeTimeout;
+  private TimeUnit sslHandshakeTimeoutUnit;
+  private KeyCertOptions keyCertOptions;
+  private TrustOptions trustOptions;
+  private Set<String> enabledCipherSuites;
+  private ArrayList<String> crlPaths;
+  private ArrayList<Buffer> crlValues;
+  private boolean useAlpn;
+  private SSLEngineOptions sslEngineOptions;
+  private Set<String> enabledSecureTransportProtocols;
+  private boolean tcpFastOpen;
+  private boolean tcpCork;
+  private boolean tcpQuickAck;
+  private int tcpUserTimeout;
+
+  /**
+   * Default constructor
+   */
+  public TCPSSLOptions() {
+    super();
+    init();
+  }
+
+  /**
+   * Copy constructor
+   *
+   * @param other  the options to copy
+   */
+  public TCPSSLOptions(TCPSSLOptions other) {
+    super(other);
+    this.tcpNoDelay = other.isTcpNoDelay();
+    this.tcpKeepAlive = other.isTcpKeepAlive();
+    this.soLinger = other.getSoLinger();
+    this.idleTimeout = other.getIdleTimeout();
+    this.idleTimeoutUnit = other.getIdleTimeoutUnit() != null ? other.getIdleTimeoutUnit() : DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
+    this.readIdleTimeout = other.getReadIdleTimeout();
+    this.writeIdleTimeout = other.getWriteIdleTimeout();
+    this.ssl = other.isSsl();
+    this.sslHandshakeTimeout = other.sslHandshakeTimeout;
+    this.sslHandshakeTimeoutUnit = other.getSslHandshakeTimeoutUnit() != null ? other.getSslHandshakeTimeoutUnit() : DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
+    this.keyCertOptions = other.getKeyCertOptions() != null ? other.getKeyCertOptions().copy() : null;
+    this.trustOptions = other.getTrustOptions() != null ? other.getTrustOptions().copy() : null;
+    this.enabledCipherSuites = other.getEnabledCipherSuites() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledCipherSuites());
+    this.crlPaths = new ArrayList<>(other.getCrlPaths());
+    this.crlValues = new ArrayList<>(other.getCrlValues());
+    this.useAlpn = other.useAlpn;
+    this.sslEngineOptions = other.sslEngineOptions != null ? other.sslEngineOptions.copy() : null;
+    this.enabledSecureTransportProtocols = other.getEnabledSecureTransportProtocols() == null ? new LinkedHashSet<>() : new LinkedHashSet<>(other.getEnabledSecureTransportProtocols());
+    this.tcpFastOpen = other.isTcpFastOpen();
+    this.tcpCork = other.isTcpCork();
+    this.tcpQuickAck = other.isTcpQuickAck();
+    this.tcpUserTimeout = other.getTcpUserTimeout();
+  }
+
+  /**
+   * Create options from JSON
+   *
+   * @param json the JSON
+   */
+  public TCPSSLOptions(JsonObject json) {
+    super(json);
+    init();
+    TCPSSLOptionsConverter.fromJson(json ,this);
+  }
+
+  /**
+   * Convert to JSON
+   *
+   * @return the JSON
+   */
+  public JsonObject toJson() {
+    JsonObject json = super.toJson();
+    TCPSSLOptionsConverter.toJson(this, json);
+    return json;
+  }
+
+  private void init() {
+    tcpNoDelay = DEFAULT_TCP_NO_DELAY;
+    tcpKeepAlive = DEFAULT_TCP_KEEP_ALIVE;
+    soLinger = DEFAULT_SO_LINGER;
+    idleTimeout = DEFAULT_IDLE_TIMEOUT;
+    readIdleTimeout = DEFAULT_READ_IDLE_TIMEOUT;
+    writeIdleTimeout = DEFAULT_WRITE_IDLE_TIMEOUT;
+    idleTimeoutUnit = DEFAULT_IDLE_TIMEOUT_TIME_UNIT;
+    ssl = DEFAULT_SSL;
+    sslHandshakeTimeout = DEFAULT_SSL_HANDSHAKE_TIMEOUT;
+    sslHandshakeTimeoutUnit = DEFAULT_SSL_HANDSHAKE_TIMEOUT_TIME_UNIT;
+    enabledCipherSuites = new LinkedHashSet<>();
+    crlPaths = new ArrayList<>();
+    crlValues = new ArrayList<>();
+    useAlpn = DEFAULT_USE_ALPN;
+    sslEngineOptions = DEFAULT_SSL_ENGINE;
+    enabledSecureTransportProtocols = new LinkedHashSet<>(DEFAULT_ENABLED_SECURE_TRANSPORT_PROTOCOLS);
+    tcpFastOpen = DEFAULT_TCP_FAST_OPEN;
+    tcpCork = DEFAULT_TCP_CORK;
+    tcpQuickAck = DEFAULT_TCP_QUICKACK;
+    tcpUserTimeout = DEFAULT_TCP_USER_TIMEOUT;
+  }
+
+  /**
+   * @return TCP no delay enabled ?
+   */
+  public boolean isTcpNoDelay() {
+    return tcpNoDelay;
+  }
+
+  /**
+   * Set whether TCP no delay is enabled
+   *
+   * @param tcpNoDelay true if TCP no delay is enabled (Nagle disabled)
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTcpNoDelay(boolean tcpNoDelay) {
+    this.tcpNoDelay = tcpNoDelay;
+    return this;
+  }
+
+  /**
+   * @return is TCP keep alive enabled?
+   */
+  public boolean isTcpKeepAlive() {
+    return tcpKeepAlive;
+  }
+
+  /**
+   * Set whether TCP keep alive is enabled
+   *
+   * @param tcpKeepAlive true if TCP keep alive is enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTcpKeepAlive(boolean tcpKeepAlive) {
+    this.tcpKeepAlive = tcpKeepAlive;
+    return this;
+  }
+
+  /**
+   *
+   * @return is SO_linger enabled
+   */
+  public int getSoLinger() {
+    return soLinger;
+  }
+
+  /**
+   * Set whether SO_linger keep alive is enabled
+   *
+   * @param soLinger true if SO_linger is enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSoLinger(int soLinger) {
+    if (soLinger < 0 && soLinger != DEFAULT_SO_LINGER) {
+      throw new IllegalArgumentException("soLinger must be >= 0");
+    }
+    this.soLinger = soLinger;
+    return this;
+  }
+
+  /**
+   * Set the idle timeout, default time unit is seconds. Zero means don't timeout.
+   * This determines if a connection will timeout and be closed if no data is received nor sent within the timeout.
+   *
+   * If you want change default time unit, use {@link #setIdleTimeoutUnit(TimeUnit)}
+   *
+   * @param idleTimeout  the timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setIdleTimeout(int idleTimeout) {
+    if (idleTimeout < 0) {
+      throw new IllegalArgumentException("idleTimeout must be >= 0");
+    }
+    this.idleTimeout = idleTimeout;
+    return this;
+  }
+
+  /**
+   * @return the idle timeout, in time unit specified by {@link #getIdleTimeoutUnit()}.
+   */
+  public int getIdleTimeout() {
+    return idleTimeout;
+  }
+
+  /**
+   * Set the read idle timeout, default time unit is seconds. Zero means don't timeout.
+   * This determines if a connection will timeout and be closed if no data is received within the timeout.
+   *
+   * If you want change default time unit, use {@link #setIdleTimeoutUnit(TimeUnit)}
+   *
+   * @param idleTimeout  the read timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setReadIdleTimeout(int idleTimeout) {
+    if (idleTimeout < 0) {
+      throw new IllegalArgumentException("readIdleTimeout must be >= 0");
+    }
+    this.readIdleTimeout = idleTimeout;
+    return this;
+  }
+
+  /**
+   * @return the read idle timeout, in time unit specified by {@link #getIdleTimeoutUnit()}.
+   */
+  public int getReadIdleTimeout() {
+    return readIdleTimeout;
+  }
+
+  /**
+   * Set the write idle timeout, default time unit is seconds. Zero means don't timeout.
+   * This determines if a connection will timeout and be closed if no data is sent within the timeout.
+   *
+   * If you want change default time unit, use {@link #setIdleTimeoutUnit(TimeUnit)}
+   *
+   * @param idleTimeout  the write timeout
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setWriteIdleTimeout(int idleTimeout) {
+    if (idleTimeout < 0) {
+      throw new IllegalArgumentException("writeIdleTimeout must be >= 0");
+    }
+    this.writeIdleTimeout = idleTimeout;
+    return this;
+  }
+
+  /**
+   * @return the write idle timeout, in time unit specified by {@link #getIdleTimeoutUnit()}.
+   */
+  public int getWriteIdleTimeout() {
+    return writeIdleTimeout;
+  }
+
+  /**
+   * Set the idle timeout unit. If not specified, default is seconds.
+   *
+   * @param idleTimeoutUnit specify time unit.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setIdleTimeoutUnit(TimeUnit idleTimeoutUnit) {
+    this.idleTimeoutUnit = idleTimeoutUnit;
+    return this;
+  }
+
+  /**
+   * @return the idle timeout unit.
+   */
+  public TimeUnit getIdleTimeoutUnit() {
+    return idleTimeoutUnit;
+  }
+
+  /**
+   *
+   * @return is SSL/TLS enabled?
+   */
+  public boolean isSsl() {
+    return ssl;
+  }
+
+  /**
+   * Set whether SSL/TLS is enabled
+   *
+   * @param ssl  true if enabled
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSsl(boolean ssl) {
+    this.ssl = ssl;
+    return this;
+  }
+
+  /**
+   * @return the key/cert options
+   */
+  @GenIgnore
+  public KeyCertOptions getKeyCertOptions() {
+    return keyCertOptions;
+  }
+
+  /**
+   * Set the key/cert options.
+   *
+   * @param options the key store options
+   * @return a reference to this, so the API can be used fluently
+   */
+  @GenIgnore
+  public TCPSSLOptions setKeyCertOptions(KeyCertOptions options) {
+    this.keyCertOptions = options;
+    return this;
+  }
+
+  /**
+   * Get the key/cert options in jks format, aka Java keystore.
+   *
+   * @return the key/cert options in jks format, aka Java keystore.
+   */
+  public JksOptions getKeyStoreOptions() {
+    return keyCertOptions instanceof JksOptions ? (JksOptions) keyCertOptions : null;
+  }
+
+  /**
+   * Set the key/cert options in jks format, aka Java keystore.
+   * @param options the key store in jks format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setKeyStoreOptions(JksOptions options) {
+    this.keyCertOptions = options;
+    return this;
+  }
+
+  /**
+   * Get the key/cert options in pfx format.
+   *
+   * @return the key/cert options in pfx format.
+   */
+  public PfxOptions getPfxKeyCertOptions() {
+    return keyCertOptions instanceof PfxOptions ? (PfxOptions) keyCertOptions : null;
+  }
+
+  /**
+   * Set the key/cert options in pfx format.
+   * @param options the key cert options in pfx format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setPfxKeyCertOptions(PfxOptions options) {
+    this.keyCertOptions = options;
+    return this;
+  }
+
+  /**
+   * Get the key/cert store options in pem format.
+   *
+   * @return the key/cert store options in pem format.
+   */
+  public PemKeyCertOptions getPemKeyCertOptions() {
+    return keyCertOptions instanceof PemKeyCertOptions ? (PemKeyCertOptions) keyCertOptions : null;
+  }
+
+  /**
+   * Set the key/cert store options in pem format.
+   * @param options the options in pem format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setPemKeyCertOptions(PemKeyCertOptions options) {
+    this.keyCertOptions = options;
+    return this;
+  }
+
+  /**
+   * @return the trust options
+   */
+  public TrustOptions getTrustOptions() {
+    return trustOptions;
+  }
+
+  /**
+   * Set the trust options.
+   * @param options the trust options
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTrustOptions(TrustOptions options) {
+    this.trustOptions = options;
+    return this;
+  }
+
+  /**
+   * Get the trust options in jks format, aka Java truststore
+   *
+   * @return the trust options in jks format, aka Java truststore
+   */
+  public JksOptions getTrustStoreOptions() {
+    return trustOptions instanceof JksOptions ? (JksOptions) trustOptions : null;
+  }
+
+  /**
+   * Set the trust options in jks format, aka Java truststore
+   * @param options the trust options in jks format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setTrustStoreOptions(JksOptions options) {
+    this.trustOptions = options;
+    return this;
+  }
+
+  /**
+   * Get the trust options in pfx format
+   *
+   * @return the trust options in pfx format
+   */
+  public PfxOptions getPfxTrustOptions() {
+    return trustOptions instanceof PfxOptions ? (PfxOptions) trustOptions : null;
+  }
+
+  /**
+   * Set the trust options in pfx format
+   * @param options the trust options in pfx format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setPfxTrustOptions(PfxOptions options) {
+    this.trustOptions = options;
+    return this;
+  }
+
+  /**
+   * Get the trust options in pem format
+   *
+   * @return the trust options in pem format
+   */
+  public PemTrustOptions getPemTrustOptions() {
+    return trustOptions instanceof PemTrustOptions ? (PemTrustOptions) trustOptions : null;
+  }
+
+  /**
+   * Set the trust options in pem format
+   * @param options the trust options in pem format
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setPemTrustOptions(PemTrustOptions options) {
+    this.trustOptions = options;
+    return this;
+  }
+
+  /**
+   * Add an enabled cipher suite, appended to the ordered suites.
+   *
+   * @param suite  the suite
+   * @return a reference to this, so the API can be used fluently
+   * @see #getEnabledCipherSuites()
+   */
+  public TCPSSLOptions addEnabledCipherSuite(String suite) {
+    enabledCipherSuites.add(suite);
+    return this;
+  }
+
+  /**
+   * Removes an enabled cipher suite from the ordered suites.
+   *
+   * @param suite  the suite
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions removeEnabledCipherSuite(String suite) {
+    enabledCipherSuites.remove(suite);
+    return this;
+  }
+
+  /**
+   * Return an ordered set of the cipher suites.
+   *
+   * <p> The set is initially empty and suite should be added to this set in the desired order.
+   *
+   * <p> When suites are added and therefore the list is not empty, it takes precedence over the
+   * default suite defined by the {@link SSLEngineOptions} in use.
+   *
+   * @return the enabled cipher suites
+   */
+  public Set<String> getEnabledCipherSuites() {
+    return enabledCipherSuites;
+  }
+
+  /**
+   *
+   * @return the CRL (Certificate revocation list) paths
+   */
+  public List<String> getCrlPaths() {
+    return crlPaths;
+  }
+
+  /**
+   * Add a CRL path
+   * @param crlPath  the path
+   * @return a reference to this, so the API can be used fluently
+   * @throws NullPointerException
+   */
+  public TCPSSLOptions addCrlPath(String crlPath) throws NullPointerException {
+    Objects.requireNonNull(crlPath, "No null crl accepted");
+    crlPaths.add(crlPath);
+    return this;
+  }
+
+  /**
+   * Get the CRL values
+   *
+   * @return the list of values
+   */
+  public List<Buffer> getCrlValues() {
+    return crlValues;
+  }
+
+  /**
+   * Add a CRL value
+   *
+   * @param crlValue  the value
+   * @return a reference to this, so the API can be used fluently
+   * @throws NullPointerException
+   */
+  public TCPSSLOptions addCrlValue(Buffer crlValue) throws NullPointerException {
+    Objects.requireNonNull(crlValue, "No null crl accepted");
+    crlValues.add(crlValue);
+    return this;
+  }
+
+  /**
+   * @return whether to use or not Application-Layer Protocol Negotiation
+   */
+  public boolean isUseAlpn() {
+    return useAlpn;
+  }
+
+  /**
+   * Set the ALPN usage.
+   *
+   * @param useAlpn true when Application-Layer Protocol Negotiation should be used
+   */
+  public TCPSSLOptions setUseAlpn(boolean useAlpn) {
+    this.useAlpn = useAlpn;
+    return this;
+  }
+
+  /**
+   * @return the SSL engine implementation to use
+   */
+  public SSLEngineOptions getSslEngineOptions() {
+    return sslEngineOptions;
+  }
+
+  /**
+   * Set to use SSL engine implementation to use.
+   *
+   * @param sslEngineOptions the ssl engine to use
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSslEngineOptions(SSLEngineOptions sslEngineOptions) {
+    this.sslEngineOptions = sslEngineOptions;
+    return this;
+  }
+
+  public JdkSSLEngineOptions getJdkSslEngineOptions() {
+    return sslEngineOptions instanceof JdkSSLEngineOptions ? (JdkSSLEngineOptions) sslEngineOptions : null;
+  }
+
+  public TCPSSLOptions setJdkSslEngineOptions(JdkSSLEngineOptions sslEngineOptions) {
+    return setSslEngineOptions(sslEngineOptions);
+  }
+
+  public OpenSSLEngineOptions getOpenSslEngineOptions() {
+    return sslEngineOptions instanceof OpenSSLEngineOptions ? (OpenSSLEngineOptions) sslEngineOptions : null;
+  }
+
+  public TCPSSLOptions setOpenSslEngineOptions(OpenSSLEngineOptions sslEngineOptions) {
+    return setSslEngineOptions(sslEngineOptions);
+  }
+
+  /**
+   * Sets the list of enabled SSL/TLS protocols.
+   *
+   * @param enabledSecureTransportProtocols  the SSL/TLS protocols to enable
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setEnabledSecureTransportProtocols(Set<String> enabledSecureTransportProtocols) {
+    this.enabledSecureTransportProtocols = enabledSecureTransportProtocols;
+    return this;
+  }
+
+  /**
+   * Add an enabled SSL/TLS protocols, appended to the ordered protocols.
+   *
+   * @param protocol  the SSL/TLS protocol to enable
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions addEnabledSecureTransportProtocol(String protocol) {
+    enabledSecureTransportProtocols.add(protocol);
+    return this;
+  }
+
+  /**
+   * Removes an enabled SSL/TLS protocol from the ordered protocols.
+   *
+   * @param protocol the SSL/TLS protocol to disable
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions removeEnabledSecureTransportProtocol(String protocol) {
+    enabledSecureTransportProtocols.remove(protocol);
+    return this;
+  }
+
+  /**
+   * @return wether {@code TCP_FASTOPEN} option is enabled
+   */
+  public boolean isTcpFastOpen() {
+    return tcpFastOpen;
+  }
+
+  /**
+   * Enable the {@code TCP_FASTOPEN} option - only with linux native transport.
+   *
+   * @param tcpFastOpen the fast open value
+   */
+  public TCPSSLOptions setTcpFastOpen(boolean tcpFastOpen) {
+    this.tcpFastOpen = tcpFastOpen;
+    return this;
+  }
+
+  /**
+   * @return wether {@code TCP_CORK} option is enabled
+   */
+  public boolean isTcpCork() {
+    return tcpCork;
+  }
+
+  /**
+   * Enable the {@code TCP_CORK} option - only with linux native transport.
+   *
+   * @param tcpCork the cork value
+   */
+  public TCPSSLOptions setTcpCork(boolean tcpCork) {
+    this.tcpCork = tcpCork;
+    return this;
+  }
+
+  /**
+   * @return wether {@code TCP_QUICKACK} option is enabled
+   */
+  public boolean isTcpQuickAck() {
+    return tcpQuickAck;
+  }
+
+  /**
+   * Enable the {@code TCP_QUICKACK} option - only with linux native transport.
+   *
+   * @param tcpQuickAck the quick ack value
+   */
+  public TCPSSLOptions setTcpQuickAck(boolean tcpQuickAck) {
+    this.tcpQuickAck = tcpQuickAck;
+    return this;
+  }
+
+  /**
+   *
+   * @return the {@code TCP_USER_TIMEOUT} value
+   */
+  public int getTcpUserTimeout() {
+    return tcpUserTimeout;
+  }
+
+  /**
+   * Sets the {@code TCP_USER_TIMEOUT} option - only with linux native transport.
+   *
+   * @param tcpUserTimeout the tcp user timeout value
+   */
+  public TCPSSLOptions setTcpUserTimeout(int tcpUserTimeout) {
+    this.tcpUserTimeout = tcpUserTimeout;
+    return this;
+  }
+
+  /**
+   * Returns the enabled SSL/TLS protocols
+   * @return the enabled protocols
+   */
+  public Set<String> getEnabledSecureTransportProtocols() {
+    return new LinkedHashSet<>(enabledSecureTransportProtocols);
+  }
+
+  /**
+   * @return the SSL handshake timeout, in time unit specified by {@link #getSslHandshakeTimeoutUnit()}.
+   */
+  public long getSslHandshakeTimeout() {
+    return sslHandshakeTimeout;
+  }
+
+  /**
+   * Set the SSL handshake timeout, default time unit is seconds.
+   *
+   * @param sslHandshakeTimeout the SSL handshake timeout to set, in milliseconds
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSslHandshakeTimeout(long sslHandshakeTimeout) {
+    if (sslHandshakeTimeout < 0) {
+      throw new IllegalArgumentException("sslHandshakeTimeout must be >= 0");
+    }
+    this.sslHandshakeTimeout = sslHandshakeTimeout;
+    return this;
+  }
+
+  /**
+   * Set the SSL handshake timeout unit. If not specified, default is seconds.
+   *
+   * @param sslHandshakeTimeoutUnit specify time unit.
+   * @return a reference to this, so the API can be used fluently
+   */
+  public TCPSSLOptions setSslHandshakeTimeoutUnit(TimeUnit sslHandshakeTimeoutUnit) {
+    this.sslHandshakeTimeoutUnit = sslHandshakeTimeoutUnit;
+    return this;
+  }
+
+  /**
+   * @return the SSL handshake timeout unit.
+   */
+  public TimeUnit getSslHandshakeTimeoutUnit() {
+    return sslHandshakeTimeoutUnit;
+  }
+
+  @Override
+  public TCPSSLOptions setLogActivity(boolean logEnabled) {
+    return (TCPSSLOptions) super.setLogActivity(logEnabled);
+  }
+
+  @Override
+  public TCPSSLOptions setSendBufferSize(int sendBufferSize) {
+    return (TCPSSLOptions) super.setSendBufferSize(sendBufferSize);
+  }
+
+  @Override
+  public TCPSSLOptions setReceiveBufferSize(int receiveBufferSize) {
+    return (TCPSSLOptions) super.setReceiveBufferSize(receiveBufferSize);
+  }
+
+  @Override
+  public TCPSSLOptions setReuseAddress(boolean reuseAddress) {
+    return (TCPSSLOptions) super.setReuseAddress(reuseAddress);
+  }
+
+  @Override
+  public TCPSSLOptions setTrafficClass(int trafficClass) {
+    return (TCPSSLOptions) super.setTrafficClass(trafficClass);
+  }
+
+  @Override
+  public TCPSSLOptions setReusePort(boolean reusePort) {
+    return (TCPSSLOptions) super.setReusePort(reusePort);
+  }
+
+}
