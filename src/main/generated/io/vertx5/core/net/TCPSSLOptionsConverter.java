@@ -28,14 +28,6 @@ public class TCPSSLOptionsConverter {
             });
           }
           break;
-        case "crlValues":
-          if (member.getValue() instanceof JsonArray) {
-            ((Iterable<Object>)member.getValue()).forEach( item -> {
-              if (item instanceof String)
-                obj.addCrlValue(io.vertx.core.buffer.Buffer.buffer(BASE64_DECODER.decode((String)item)));
-            });
-          }
-          break;
         case "enabledCipherSuites":
           if (member.getValue() instanceof JsonArray) {
             ((Iterable<Object>)member.getValue()).forEach( item -> {
@@ -182,11 +174,6 @@ public class TCPSSLOptionsConverter {
       JsonArray array = new JsonArray();
       obj.getCrlPaths().forEach(item -> array.add(item));
       json.put("crlPaths", array);
-    }
-    if (obj.getCrlValues() != null) {
-      JsonArray array = new JsonArray();
-      obj.getCrlValues().forEach(item -> array.add(BASE64_ENCODER.encodeToString(item.getBytes())));
-      json.put("crlValues", array);
     }
     if (obj.getEnabledCipherSuites() != null) {
       JsonArray array = new JsonArray();

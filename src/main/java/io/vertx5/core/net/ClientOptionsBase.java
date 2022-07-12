@@ -11,9 +11,8 @@
 
 package io.vertx5.core.net;
 
-import io.netty.handler.logging.ByteBufFormat;
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.buffer.Buffer;
+import io.vertx5.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.JksOptions;
@@ -24,7 +23,6 @@ import io.vertx.core.net.PemTrustOptions;
 import io.vertx.core.net.PfxOptions;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.SSLEngineOptions;
-import io.vertx.core.net.TCPSSLOptions;
 import io.vertx.core.net.TrustOptions;
 
 import java.util.ArrayList;
@@ -250,11 +248,6 @@ public abstract class ClientOptionsBase extends TCPSSLOptions {
   @Override
   public ClientOptionsBase setLogActivity(boolean logEnabled) {
     return (ClientOptionsBase) super.setLogActivity(logEnabled);
-  }
-
-  @Override
-  public ClientOptionsBase setActivityLogDataFormat(ByteBufFormat activityLogDataFormat) {
-    return (ClientOptionsBase) super.setActivityLogDataFormat(activityLogDataFormat);
   }
 
   @Override

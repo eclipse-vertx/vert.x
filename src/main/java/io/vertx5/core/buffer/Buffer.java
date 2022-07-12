@@ -18,9 +18,12 @@ import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx5.core.buffer.impl.BufferImpl;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * Most data is shuffled around inside Vert.x using buffers.
@@ -41,7 +44,7 @@ public interface Buffer {
    * @return the buffer
    */
   static Buffer buffer() {
-    throw new UnsupportedOperationException();
+    return new BufferImpl();
   }
 
   /**
@@ -54,7 +57,7 @@ public interface Buffer {
    * @return the buffer
    */
   static Buffer buffer(int initialSizeHint) {
-    throw new UnsupportedOperationException();
+    return new BufferImpl(initialSizeHint);
   }
 
   /**
@@ -64,7 +67,7 @@ public interface Buffer {
    * @return the buffer
    */
   static Buffer buffer(String string) {
-    throw new UnsupportedOperationException();
+    return new BufferImpl(string, StandardCharsets.UTF_8);
   }
 
   /**
@@ -75,7 +78,7 @@ public interface Buffer {
    * @return the buffer
    */
   static Buffer buffer(String string, String enc) {
-    throw new UnsupportedOperationException();
+    return new BufferImpl(string, Charset.forName(enc));
   }
 
   /**
@@ -86,7 +89,7 @@ public interface Buffer {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static Buffer buffer(byte[] bytes) {
-    throw new UnsupportedOperationException();
+    return new BufferImpl(bytes);
   }
 
   /**
@@ -103,12 +106,12 @@ public interface Buffer {
    *   Buffer clone = Buffer.buffer(src.getByteBuf());
    * </pre>
    *
-   * @param byteBuf the Netty ByteBuf
+   * @param buffer the Netty Buffer
    * @return the buffer
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  static Buffer buffer(ByteBuf byteBuf) {
-    throw new UnsupportedOperationException();
+  static Buffer buffer(io.netty5.buffer.api.Buffer buffer) {
+    return new BufferImpl(buffer);
   }
 
   /**
@@ -126,16 +129,6 @@ public interface Buffer {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   String toString(Charset enc);
-
-  /**
-   * Returns a Json object representation of the Buffer.
-   */
-  JsonObject toJsonObject();
-
-  /**
-   * Returns a Json array representation of the Buffer.
-   */
-  JsonArray toJsonArray();
 
   /**
    * Returns a Json representation of the Buffer.
@@ -158,7 +151,7 @@ public interface Buffer {
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 1} is greater than the length of the Buffer.
    */
-  short getUnsignedByte(int pos);
+  int getUnsignedByte(int pos);
 
   /**
    * Returns the {@code int} at position {@code pos} in the Buffer.
@@ -168,13 +161,6 @@ public interface Buffer {
   int getInt(int pos);
 
   /**
-   * Gets a 32-bit integer at the specified absolute {@code index} in this buffer with Little Endian Byte Order.
-   *
-   * @throws IndexOutOfBoundsException if the specified {@code index} is less than {@code 0} or {@code index + 4} is greater than {@code this.capacity}
-   */
-  int getIntLE(int pos);
-
-  /**
    * Returns the unsigned {@code int} at position {@code pos} in the Buffer, as a {@code long}.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
@@ -182,25 +168,11 @@ public interface Buffer {
   long getUnsignedInt(int pos);
 
   /**
-   * Returns the unsigned {@code int} at position {@code pos} in the Buffer, as a {@code long} in Little Endian Byte Order.
-   *
-   * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 4} is greater than the length of the Buffer.
-   */
-  long getUnsignedIntLE(int pos);
-
-  /**
    * Returns the {@code long} at position {@code pos} in the Buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 8} is greater than the length of the Buffer.
    */
   long getLong(int pos);
-
-  /**
-   * Gets a 64-bit long integer at the specified absolute {@code index} in this buffer in Little Endian Byte Order.
-   *
-   * @throws IndexOutOfBoundsException if the specified {@code index} is less than {@code 0} or {@code index + 8} is greater than the length of the Buffer.
-   */
-  long getLongLE(int pos);
 
   /**
    * Returns the {@code double} at position {@code pos} in the Buffer.
@@ -224,25 +196,11 @@ public interface Buffer {
   short getShort(int pos);
 
   /**
-   * Gets a 16-bit short integer at the specified absolute {@code index} in this buffer in Little Endian Byte Order.
-   *
-   * @throws IndexOutOfBoundsException if the specified {@code index} is less than {@code 0} or {@code index + 2} is greater than the length of the Buffer.
-   */
-  short getShortLE(int pos);
-
-  /**
    * Returns the unsigned {@code short} at position {@code pos} in the Buffer, as an {@code int}.
    *
    * @throws IndexOutOfBoundsException if the specified {@code pos} is less than {@code 0} or {@code pos + 2} is greater than the length of the Buffer.
    */
   int getUnsignedShort(int pos);
-
-  /**
-   * Gets an unsigned 16-bit short integer at the specified absolute {@code index} in this buffer in Little Endian Byte Order.
-   *
-   * @throws IndexOutOfBoundsException if the specified {@code index} is less than {@code 0} or {@code index + 2} is greater than the length of the Buffer.
-   */
-  int getUnsignedShortLE(int pos);
 
   /**
    * Gets a 24-bit medium integer at the specified absolute {@code index} in this buffer.
@@ -252,25 +210,11 @@ public interface Buffer {
   int getMedium(int pos);
 
   /**
-   * Gets a 24-bit medium integer at the specified absolute {@code index} in this buffer in the Little Endian Byte Order.
-   *
-   * @throws IndexOutOfBoundsException if the specified {@code index} is less than {@code 0} or {@code index + 3} is greater than the length of the Buffer.
-   */
-  int getMediumLE(int pos);
-
-  /**
    * Gets an unsigned 24-bit medium integer at the specified absolute {@code index} in this buffer.
    *
    * @throws IndexOutOfBoundsException if the specified {@code index} is less than {@code 0} or {@code index + 3} is greater than the length of the Buffer.
    */
   int getUnsignedMedium(int pos);
-
-  /**
-   * Gets an unsigned 24-bit medium integer at the specified absolute {@code index} in this buffer in Little Endian Byte Order.
-   *
-   * @throws IndexOutOfBoundsException if the specified {@code index} is less than {@code 0} or {@code index + 3} is greater than the length of the Buffer.
-   */
-  int getUnsignedMediumLE(int pos);
 
   /**
    * Returns a copy of the entire Buffer as a {@code byte[]}
@@ -400,25 +344,11 @@ public interface Buffer {
   Buffer appendInt(int i);
 
   /**
-   * Appends the specified {@code int} to the end of the Buffer in the Little Endian Byte Order. The buffer will expand as necessary to accommodate any bytes written.<p>
-   * Returns a reference to {@code this} so multiple operations can be appended together.
-   */
-  @Fluent
-  Buffer appendIntLE(int i);
-
-  /**
    * Appends the specified unsigned {@code int} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   @Fluent
   Buffer appendUnsignedInt(long i);
-
-  /**
-   * Appends the specified unsigned {@code int} to the end of the Buffer in the Little Endian Byte Order. The buffer will expand as necessary to accommodate any bytes written.<p>
-   * Returns a reference to {@code this} so multiple operations can be appended together.
-   */
-  @Fluent
-  Buffer appendUnsignedIntLE(long i);
 
   /**
    * Appends the specified 24bit {@code int} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
@@ -428,25 +358,11 @@ public interface Buffer {
   Buffer appendMedium(int i);
 
   /**
-   * Appends the specified 24bit {@code int} to the end of the Buffer in the Little Endian Byte Order. The buffer will expand as necessary to accommodate any bytes written.<p>
-   * Returns a reference to {@code this} so multiple operations can be appended together.
-   */
-  @Fluent
-  Buffer appendMediumLE(int i);
-
-  /**
    * Appends the specified {@code long} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   @Fluent
   Buffer appendLong(long l);
-
-  /**
-   * Appends the specified {@code long} to the end of the Buffer in the Little Endian Byte Order. The buffer will expand as necessary to accommodate any bytes written.<p>
-   * Returns a reference to {@code this} so multiple operations can be appended together.
-   */
-  @Fluent
-  Buffer appendLongLE(long l);
 
   /**
    * Appends the specified {@code short} to the end of the Buffer.The buffer will expand as necessary to accommodate any bytes written.<p>
@@ -456,25 +372,11 @@ public interface Buffer {
   Buffer appendShort(short s);
 
   /**
-   * Appends the specified {@code short} to the end of the Buffer in the Little Endian Byte Order.The buffer will expand as necessary to accommodate any bytes written.<p>
-   * Returns a reference to {@code this} so multiple operations can be appended together.
-   */
-  @Fluent
-  Buffer appendShortLE(short s);
-
-  /**
    * Appends the specified unsigned {@code short} to the end of the Buffer.The buffer will expand as necessary to accommodate any bytes written.<p>
    * Returns a reference to {@code this} so multiple operations can be appended together.
    */
   @Fluent
   Buffer appendUnsignedShort(int s);
-
-  /**
-   * Appends the specified unsigned {@code short} to the end of the Buffer in the Little Endian Byte Order.The buffer will expand as necessary to accommodate any bytes written.<p>
-   * Returns a reference to {@code this} so multiple operations can be appended together.
-   */
-  @Fluent
-  Buffer appendUnsignedShortLE(int s);
 
   /**
    * Appends the specified {@code float} to the end of the Buffer. The buffer will expand as necessary to accommodate any bytes written.<p>
@@ -528,25 +430,11 @@ public interface Buffer {
   Buffer setInt(int pos, int i);
 
   /**
-   * Sets the {@code int} at position {@code pos} in the Buffer to the value {@code i} in the Little Endian Byte Order.<p>
-   * The buffer will expand as necessary to accommodate any value written.
-   */
-  @Fluent
-  Buffer setIntLE(int pos, int i);
-
-  /**
    * Sets the unsigned {@code int} at position {@code pos} in the Buffer to the value {@code i}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
   @Fluent
   Buffer setUnsignedInt(int pos, long i);
-
-  /**
-   * Sets the unsigned {@code int} at position {@code pos} in the Buffer to the value {@code i} in the Little Endian Byte Order.<p>
-   * The buffer will expand as necessary to accommodate any value written.
-   */
-  @Fluent
-  Buffer setUnsignedIntLE(int pos, long i);
 
   /**
    * Sets the 24bit {@code int} at position {@code pos} in the Buffer to the value {@code i}.<p>
@@ -556,25 +444,11 @@ public interface Buffer {
   Buffer setMedium(int pos, int i);
 
   /**
-   * Sets the 24bit {@code int} at position {@code pos} in the Buffer to the value {@code i}. in the Little Endian Byte Order<p>
-   * The buffer will expand as necessary to accommodate any value written.
-   */
-  @Fluent
-  Buffer setMediumLE(int pos, int i);
-
-  /**
    * Sets the {@code long} at position {@code pos} in the Buffer to the value {@code l}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
   @Fluent
   Buffer setLong(int pos, long l);
-
-  /**
-   * Sets the {@code long} at position {@code pos} in the Buffer to the value {@code l} in the Little Endian Byte Order.<p>
-   * The buffer will expand as necessary to accommodate any value written.
-   */
-  @Fluent
-  Buffer setLongLE(int pos, long l);
 
   /**
    * Sets the {@code double} at position {@code pos} in the Buffer to the value {@code d}.<p>
@@ -598,25 +472,11 @@ public interface Buffer {
   Buffer setShort(int pos, short s);
 
   /**
-   * Sets the {@code short} at position {@code pos} in the Buffer to the value {@code s} in the Little Endian Byte Order.<p>
-   * The buffer will expand as necessary to accommodate any value written.
-   */
-  @Fluent
-  Buffer setShortLE(int pos, short s);
-
-  /**
    * Sets the unsigned {@code short} at position {@code pos} in the Buffer to the value {@code s}.<p>
    * The buffer will expand as necessary to accommodate any value written.
    */
   @Fluent
   Buffer setUnsignedShort(int pos, int s);
-
-  /**
-   * Sets the unsigned {@code short} at position {@code pos} in the Buffer to the value {@code s} in the Little Endian Byte Order.<p>
-   * The buffer will expand as necessary to accommodate any value written.
-   */
-  @Fluent
-  Buffer setUnsignedShortLE(int pos, int s);
 
   /**
    * Sets the bytes at position {@code pos} in the Buffer to the bytes represented by the {@code Buffer b}.<p>
@@ -682,25 +542,11 @@ public interface Buffer {
   Buffer copy();
 
   /**
-   * Returns a slice of this buffer. Modifying the content
-   * of the returned buffer or this buffer affects each other's content
-   * while they maintain separate indexes and marks.
-   */
-  Buffer slice();
-
-  /**
-   * Returns a slice of this buffer. Modifying the content
-   * of the returned buffer or this buffer affects each other's content
-   * while they maintain separate indexes and marks.
-   */
-  Buffer slice(int start, int end);
-
-  /**
-   * Returns the Buffer as a Netty {@code ByteBuf}.
+   * Returns the Buffer as a Netty {@code Byffer}.
    *
    * <p> The returned buffer is a duplicate that maintain its own indices.
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  ByteBuf getByteBuf();
+  io.netty5.buffer.api.Buffer getByteBuf();
 
 }

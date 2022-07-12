@@ -12,7 +12,7 @@
 package io.vertx5.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.buffer.Buffer;
+import io.vertx5.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JdkSSLEngineOptions;

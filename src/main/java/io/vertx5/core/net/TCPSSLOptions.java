@@ -13,7 +13,7 @@ package io.vertx5.core.net;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.codegen.annotations.GenIgnore;
-import io.vertx.core.buffer.Buffer;
+import io.vertx5.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.JdkSSLEngineOptions;
 import io.vertx.core.net.JksOptions;
@@ -620,6 +620,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    *
    * @return the list of values
    */
+  @GenIgnore
   public List<Buffer> getCrlValues() {
     return crlValues;
   }
@@ -631,6 +632,7 @@ public abstract class TCPSSLOptions extends NetworkOptions {
    * @return a reference to this, so the API can be used fluently
    * @throws NullPointerException
    */
+  @GenIgnore
   public TCPSSLOptions addCrlValue(Buffer crlValue) throws NullPointerException {
     Objects.requireNonNull(crlValue, "No null crl accepted");
     crlValues.add(crlValue);
