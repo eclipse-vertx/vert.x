@@ -16,6 +16,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -31,6 +32,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
@@ -80,7 +82,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
 
   public NetClientImpl(VertxInternal vertx, TCPMetrics metrics, NetClientOptions options, CloseFuture closeFuture) {
     this.vertx = vertx;
-    this.channelGroup = new DefaultChannelGroup(vertx.getAcceptorEventLoopGroup().next());
+    this.channelGroup = new DefaultChannelGroup(vertx.<EventLoopGroup>getAcceptorEventLoopGroup().next());
     this.options = new NetClientOptions(options);
     this.sslHelper = new SSLHelper(options, options.getKeyCertOptions(), options.getTrustOptions()).setApplicationProtocols(options.getApplicationLayerProtocols());
     this.metrics = metrics;
@@ -245,7 +247,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
       bootstrap.group(eventLoop);
       bootstrap.option(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
 
-      vertx.transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
+      ((VertxImpl)vertx).transport().configure(options, remoteAddress.isDomainSocket(), bootstrap);
 
       ChannelProvider channelProvider = new ChannelProvider(bootstrap, sslHelper, context)
         .proxyOptions(proxyOptions);

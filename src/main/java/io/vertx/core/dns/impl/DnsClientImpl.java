@@ -25,6 +25,7 @@ import io.vertx.core.dns.*;
 import io.vertx.core.dns.DnsResponseCode;
 import io.vertx.core.dns.impl.decoder.RecordDecoder;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
@@ -68,14 +69,14 @@ public final class DnsClientImpl implements DnsClient {
     }
     this.vertx = vertx;
 
-    Transport transport = vertx.transport();
+    Transport transport = ((VertxImpl)vertx).transport();
     actualCtx = vertx.getOrCreateContext();
     channel = transport.datagramChannel(this.dnsServer.getAddress() instanceof Inet4Address ? InternetProtocolFamily.IPv4 : InternetProtocolFamily.IPv6);
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     MaxMessagesRecvByteBufAllocator bufAllocator = channel.config().getRecvByteBufAllocator();
     bufAllocator.maxMessagesPerRead(1);
     channel.config().setAllocator(PartialPooledByteBufAllocator.INSTANCE);
-    actualCtx.nettyEventLoop().register(channel);
+    actualCtx.<EventLoop>nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
       channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogFormat()));
     }
@@ -307,7 +308,7 @@ public final class DnsClientImpl implements DnsClient {
       for (DnsRecordType type: types) {
         msg.addRecord(DnsSection.QUESTION, new DefaultDnsQuestion(name, type, DnsRecord.CLASS_IN));
       }
-      this.promise = actualCtx.nettyEventLoop().newPromise();
+      this.promise = actualCtx.<EventLoop>nettyEventLoop().newPromise();
       this.types = types;
       this.name = name;
     }

@@ -1332,7 +1332,7 @@ public class FileSystemTest extends VertxTestBase {
         Promise<Void> fut = Promise.promise();
         assert flowing.getAndSet(false);
         stream.pause();
-        Vertx.currentContext().owner().setTimer(1, id -> {
+        Vertx.currentContext().<Vertx>owner().setTimer(1, id -> {
           assert !flowing.getAndSet(true);
           stream.resume();
           fut.complete();
@@ -1352,7 +1352,7 @@ public class FileSystemTest extends VertxTestBase {
       Future<Void> handle(ReadStream<Buffer> stream) {
         Promise<Void> fut = Promise.promise();
         assert fetching.getAndSet(false);
-        Vertx.currentContext().owner().setTimer(1, id -> {
+        Vertx.currentContext().<Vertx>owner().setTimer(1, id -> {
           assert !fetching.getAndSet(true);
           stream.fetch(1);
           fut.complete();

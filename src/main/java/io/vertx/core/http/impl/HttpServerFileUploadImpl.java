@@ -14,6 +14,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.FileSystem;
@@ -188,7 +189,7 @@ class HttpServerFileUploadImpl implements HttpServerFileUpload {
       }
       pipe = pipe().endOnComplete(true);
     }
-    FileSystem fs = context.owner().fileSystem();
+    FileSystem fs = context.<Vertx>owner().fileSystem();
     Future<AsyncFile> fut = fs.open(filename, new OpenOptions());
     fut.onFailure(err -> {
       pipe.close();

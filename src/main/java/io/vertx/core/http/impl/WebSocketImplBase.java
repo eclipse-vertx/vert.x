@@ -26,6 +26,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.Message;
@@ -722,7 +723,7 @@ public abstract class WebSocketImplBase<S extends WebSocketBase> implements WebS
   void handleConnectionClosed() {
     synchronized (conn) {
       if (closeTimeoutID != -1L) {
-        context.owner().cancelTimer(closeTimeoutID);
+        context.<Vertx>owner().cancelTimer(closeTimeoutID);
       }
       if (closed) {
         return;

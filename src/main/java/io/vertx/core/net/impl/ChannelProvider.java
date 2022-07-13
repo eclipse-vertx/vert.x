@@ -21,6 +21,7 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import io.vertx.core.Handler;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.ProxyOptions;
 import io.vertx.core.net.ProxyType;
@@ -86,14 +87,14 @@ public final class ChannelProvider {
   }
 
   public Future<Channel> connect(SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn) {
-    Promise<Channel> p = context.nettyEventLoop().newPromise();
+    Promise<Channel> p = context.<EventLoop>nettyEventLoop().newPromise();
     connect(handler, remoteAddress, peerAddress, serverName, ssl, useAlpn, p);
     return p;
   }
 
   private void connect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Promise<Channel> p) {
     try {
-      bootstrap.channelFactory(context.owner().transport().channelFactory(remoteAddress.isDomainSocket()));
+      bootstrap.channelFactory(((VertxImpl)context.owner()).transport().channelFactory(remoteAddress.isDomainSocket()));
     } catch (Exception e) {
       p.setFailure(e);
       return;
@@ -144,14 +145,14 @@ public final class ChannelProvider {
 
   private void handleConnect(Handler<Channel> handler, SocketAddress remoteAddress, SocketAddress peerAddress, String serverName, boolean ssl, boolean useAlpn, Promise<Channel> channelHandler) {
     VertxInternal vertx = context.owner();
-    bootstrap.resolver(vertx.nettyAddressResolverGroup());
+    bootstrap.resolver(((VertxImpl)vertx).nettyAddressResolverGroup());
     bootstrap.handler(new ChannelInitializer<Channel>() {
       @Override
       protected void initChannel(Channel ch) {
         initSSL(handler, peerAddress, serverName, ssl, useAlpn, ch, channelHandler);
       }
     });
-    ChannelFuture fut = bootstrap.connect(vertx.transport().convert(remoteAddress));
+    ChannelFuture fut = bootstrap.connect(((VertxImpl)vertx).transport().convert(remoteAddress));
     fut.addListener(res -> {
       if (res.isSuccess()) {
         connected(handler, fut.channel(), ssl, channelHandler);
@@ -213,7 +214,7 @@ public final class ChannelProvider {
         }
 
         bootstrap.resolver(NoopAddressResolverGroup.INSTANCE);
-        java.net.SocketAddress targetAddress = vertx.transport().convert(remoteAddress);
+        java.net.SocketAddress targetAddress = ((VertxImpl)vertx).transport().convert(remoteAddress);
 
         bootstrap.handler(new ChannelInitializer<Channel>() {
           @Override

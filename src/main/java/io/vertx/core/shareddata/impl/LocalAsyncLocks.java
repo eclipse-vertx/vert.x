@@ -14,6 +14,7 @@ package io.vertx.core.shareddata.impl;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.shareddata.Lock;
 
@@ -67,7 +68,7 @@ public class LocalAsyncLocks {
     }
 
     void acquireLock() {
-      if (timerId == null || context.owner().cancelTimer(timerId)) {
+      if (timerId == null || context.<Vertx>owner().cancelTimer(timerId)) {
         promise.complete(new AsyncLock(lockName));
       } else {
         nextWaiter(lockName);

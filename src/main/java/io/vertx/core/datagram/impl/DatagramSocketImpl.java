@@ -15,6 +15,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoop;
 import io.netty.channel.MaxMessagesRecvByteBufAllocator;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
@@ -27,6 +28,7 @@ import io.vertx.core.Closeable;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -34,6 +36,7 @@ import io.vertx.core.impl.AddressResolver;
 import io.vertx.core.impl.Arguments;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx.core.impl.VertxImpl;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.net.SocketAddress;
@@ -71,14 +74,14 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   private final CloseFuture closeFuture;
 
   private DatagramSocketImpl(VertxInternal vertx, CloseFuture closeFuture, DatagramSocketOptions options) {
-    Transport transport = vertx.transport();
+    Transport transport = ((VertxImpl)vertx).transport();
     DatagramChannel channel = transport.datagramChannel(options.isIpV6() ? InternetProtocolFamily.IPv6 : InternetProtocolFamily.IPv4);
     transport.configure(channel, new DatagramSocketOptions(options));
     ContextInternal context = vertx.getOrCreateContext();
     channel.config().setOption(ChannelOption.DATAGRAM_CHANNEL_ACTIVE_ON_REGISTRATION, true);
     MaxMessagesRecvByteBufAllocator bufAllocator = channel.config().getRecvByteBufAllocator();
     bufAllocator.maxMessagesPerRead(1);
-    context.nettyEventLoop().register(channel);
+    context.<EventLoop>nettyEventLoop().register(channel);
     if (options.getLogActivity()) {
       channel.pipeline().addLast("logging", new LoggingHandler(options.getActivityLogDataFormat()));
     }
@@ -305,7 +308,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
   }
 
   private Future<DatagramSocket> listen(SocketAddress local) {
-    AddressResolver resolver = context.owner().addressResolver();
+    AddressResolver resolver = context.<VertxInternal>owner().addressResolver();
     PromiseInternal<Void> promise = context.promise();
     io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), local.host());
     f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {
@@ -375,7 +378,7 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
     if (port < 0 || port > 65535) {
       throw new IllegalArgumentException("port out of range:" + port);
     }
-    AddressResolver resolver = context.owner().addressResolver();
+    AddressResolver resolver = context.<VertxInternal>owner().addressResolver();
     PromiseInternal<Void> promise = context.promise();
     io.netty.util.concurrent.Future<InetSocketAddress> f1 = resolver.resolveHostname(context.nettyEventLoop(), host);
     f1.addListener((GenericFutureListener<io.netty.util.concurrent.Future<InetSocketAddress>>) res1 -> {
@@ -425,18 +428,18 @@ public class DatagramSocketImpl implements DatagramSocket, MetricsProvider, Clos
 
   @Override
   public SocketAddress localAddress() {
-    return context.owner().transport().convert(channel.localAddress());
+    return ((VertxImpl)context.owner()).transport().convert(channel.localAddress());
   }
 
   @Override
   public void close(Handler<AsyncResult<Void>> handler) {
-    ContextInternal closingCtx = context.owner().getOrCreateContext();
+    ContextInternal closingCtx = context.<VertxInternal>owner().getOrCreateContext();
     closeFuture.close(handler != null ? closingCtx.promise(handler) : null);
   }
 
   @Override
   public synchronized Future<Void> close() {
-    ContextInternal closingCtx = context.owner().getOrCreateContext();
+    ContextInternal closingCtx = context.<VertxInternal>owner().getOrCreateContext();
     PromiseInternal<Void> promise = closingCtx.promise();
     closeFuture.close(promise);
     return promise.future();

@@ -11,7 +11,6 @@
 
 package io.vertx.core;
 
-import io.netty.channel.EventLoopGroup;
 import io.vertx.codegen.annotations.*;
 import io.vertx.core.datagram.DatagramSocket;
 import io.vertx.core.datagram.DatagramSocketOptions;
@@ -25,7 +24,6 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxBuilder;
-import io.vertx.core.impl.resolver.DnsResolverProvider;
 import io.vertx.core.metrics.Measured;
 import io.vertx.core.net.NetClient;
 import io.vertx.core.net.NetClientOptions;
@@ -594,7 +592,7 @@ public interface Vertx extends Measured {
    * @return the EventLoopGroup
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  EventLoopGroup nettyEventLoopGroup();
+  <T> T nettyEventLoopGroup();
 
   /**
    * Like {@link #createSharedWorkerExecutor(String, int)} but with the {@link VertxOptions#setWorkerPoolSize} {@code poolSize}.

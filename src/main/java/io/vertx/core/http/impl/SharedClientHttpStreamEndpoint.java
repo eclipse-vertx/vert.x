@@ -13,6 +13,7 @@ package io.vertx.core.http.impl;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpConnection;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.impl.ContextInternal;
@@ -157,7 +158,7 @@ class SharedClientHttpStreamEndpoint extends ClientHttpEndpointBase<Lease<HttpCl
     @Override
     public void handle(AsyncResult<Lease<HttpClientConnection>> ar) {
       if (timerID >= 0) {
-        context.owner().cancelTimer(timerID);
+        context.<Vertx>owner().cancelTimer(timerID);
       }
       handler.handle(ar);
     }

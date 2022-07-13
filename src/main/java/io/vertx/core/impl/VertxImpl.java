@@ -112,8 +112,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final DeploymentManager deploymentManager;
   private final VerticleManager verticleManager;
   private final FileResolver fileResolver;
-  private final Map<ServerID, HttpServerImpl> sharedHttpServers = new HashMap<>();
-  private final Map<ServerID, NetServerImpl> sharedNetServers = new HashMap<>();
+  private final Map<ServerID, HttpServer> sharedHttpServers = new HashMap<>();
+  private final Map<ServerID, NetServer> sharedNetServers = new HashMap<>();
   final WorkerPool workerPool;
   final WorkerPool internalWorkerPool;
   private final VertxThreadFactory threadFactory;
@@ -311,7 +311,6 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return client;
   }
 
-  @Override
   public Transport transport() {
     return transport;
   }
@@ -429,16 +428,16 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return ctx;
   }
 
-  public Map<ServerID, HttpServerImpl> sharedHttpServers() {
+  public Map<ServerID, HttpServer> sharedHttpServers() {
     return sharedHttpServers;
   }
 
-  public Map<ServerID, NetServerImpl> sharedNetServers() {
+  public Map<ServerID, NetServer> sharedNetServers() {
     return sharedNetServers;
   }
 
   @Override
-  public <S extends TCPServerBase> Map<ServerID, S> sharedTCPServers(Class<S> type) {
+  public <S> Map<ServerID, S> sharedTCPServers(Class<S> type) {
     if (NetServerImpl.class.isAssignableFrom(type)) {
       return (Map<ServerID, S>) sharedNetServers;
     } else if (HttpServerImpl.class.isAssignableFrom(type)) {
@@ -473,8 +472,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   }
 
   @Override
-  public EventLoopContext createEventLoopContext(EventLoop eventLoop, WorkerPool workerPool, ClassLoader tccl) {
-    return new EventLoopContext(this, eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, disableTCCL ? tccl : null);
+  public EventLoopContext createEventLoopContext(Executor eventLoop, WorkerPool workerPool, ClassLoader tccl) {
+    return new EventLoopContext(this, (EventLoop) eventLoop, internalWorkerPool, workerPool != null ? workerPool : this.workerPool, null, closeFuture, disableTCCL ? tccl : null);
   }
 
   @Override
@@ -804,7 +803,9 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
     return addressResolver;
   }
 
-  @Override
+  /**
+   * @return the Netty {@code AddressResolverGroup} to use in a Netty {@code Bootstrap}
+   */
   public AddressResolverGroup<InetSocketAddress> nettyAddressResolverGroup() {
     return addressResolver.nettyAddressResolverGroup();
   }

@@ -11,8 +11,6 @@
 
 package io.vertx.core.impl;
 
-import io.netty.channel.EventLoop;
-import io.netty.util.concurrent.FastThreadLocalThread;
 import io.vertx.core.*;
 import io.vertx.core.impl.future.FailedFuture;
 import io.vertx.core.impl.future.PromiseImpl;
@@ -67,7 +65,7 @@ public interface ContextInternal extends Context {
    *
    * @return the EventLoop
    */
-  EventLoop nettyEventLoop();
+  <T> T nettyEventLoop();
 
   /**
    * @return a {@link Promise} associated with this context
@@ -168,9 +166,6 @@ public interface ContextInternal extends Context {
    * @return the deployment associated with this context or {@code null}
    */
   Deployment getDeployment();
-
-  @Override
-  VertxInternal owner();
 
   boolean inThread();
 

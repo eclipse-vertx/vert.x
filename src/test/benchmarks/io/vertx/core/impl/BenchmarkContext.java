@@ -11,6 +11,7 @@
 
 package io.vertx.core.impl;
 
+import io.netty.channel.EventLoopGroup;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
@@ -32,7 +33,7 @@ public class BenchmarkContext extends ContextBase {
   }
 
   public BenchmarkContext(VertxInternal vertx, WorkerPool internalBlockingPool, WorkerPool workerPool, ClassLoader tccl) {
-    super(vertx, vertx.getEventLoopGroup().next(), internalBlockingPool, workerPool, null, null, tccl);
+    super(vertx, vertx.<EventLoopGroup>getEventLoopGroup().next(), internalBlockingPool, workerPool, null, null, tccl);
   }
 
   @Override

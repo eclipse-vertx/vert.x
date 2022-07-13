@@ -21,6 +21,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpVersion;
 import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.http.WebSocketFrame;
@@ -203,7 +204,7 @@ public class ServerWebSocketImpl extends WebSocketImplBase<ServerWebSocketImpl> 
     if (handler != null) {
       pipeline.remove(handler);
     }
-    registerHandler(conn.getContext().owner().eventBus());
+    registerHandler(conn.getContext().<Vertx>owner().eventBus());
   }
 
   Boolean tryHandshake(int sc) {

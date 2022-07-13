@@ -151,7 +151,7 @@ public class VertxFactoryTest {
     factory.transport(override);
     factory.init();
     Vertx vertx = factory.vertx();
-    assertSame(override, ((VertxInternal)vertx).transport());
+    assertSame(override, ((VertxImpl)vertx).transport());
   }
 
   private void runWithServiceFromMetaInf(Class<?> service, String implementationName, Runnable runnable) {
