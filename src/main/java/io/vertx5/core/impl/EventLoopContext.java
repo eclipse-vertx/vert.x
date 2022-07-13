@@ -14,7 +14,6 @@ import io.vertx.core.impl.WorkerPool;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.spi.tracing.VertxTracer;
 import io.vertx5.core.Vertx;
-import io.vertx5.core.impl.VertxThread;
 
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -154,7 +153,7 @@ public class EventLoopContext implements ContextInternal {
 
   @Override
   public void reportException(Throwable t) {
-    throw new UnsupportedOperationException();
+    t.printStackTrace();
   }
 
   @Override

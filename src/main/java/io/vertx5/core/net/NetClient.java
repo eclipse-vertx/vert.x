@@ -37,7 +37,7 @@ public class NetClient {
           ChannelPipeline p = ch.pipeline();
           NetSocket so = new NetSocket(ctx, ch);
           ch.attr(NETSOCKET_KEY).set(so);
-          p.addLast(so.handler);
+          p.addLast("vertx", so.handler);
         }
       });
     bootstrap.connect(host, port).addListener(future -> {

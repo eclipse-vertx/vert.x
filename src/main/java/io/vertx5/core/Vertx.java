@@ -9,6 +9,8 @@ import io.netty5.util.concurrent.Future;
 import io.netty5.util.concurrent.FutureListener;
 import io.vertx.core.Context;
 import io.vertx.core.impl.ContextInternal;
+import io.vertx5.core.http.HttpClient;
+import io.vertx5.core.http.HttpServer;
 import io.vertx5.core.impl.EventLoopContext;
 import io.vertx5.core.impl.VertxThread;
 import io.vertx5.core.impl.transport.Transport;
@@ -75,6 +77,14 @@ public class Vertx {
 
   public NetClient createNetClient() {
     return new NetClient(this);
+  }
+
+  public HttpServer createHttpServer() {
+    return new HttpServer((ContextInternal) getOrCreateContext());
+  }
+
+  public HttpClient createHttpClient() {
+    return new HttpClient(this);
   }
 
   public void close() throws Exception {

@@ -5,6 +5,8 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx5.core.Vertx;
 import io.vertx5.core.buffer.Buffer;
+import io.vertx5.core.http.HttpClient;
+import io.vertx5.core.http.HttpServer;
 import io.vertx5.core.net.NetClient;
 import io.vertx5.core.net.NetServer;
 import io.vertx5.test.TestResult;
@@ -146,6 +148,102 @@ public class VertxTest {
           test.complete();
         });
       });
+    test.await();
+  }
+
+  @Test
+  public void testHttpServer() throws Exception {
+    TestResult bind = new TestResult();
+    HttpServer httpServer = vertx.createHttpServer();
+    httpServer.streamHandler(stream -> {
+      stream.endHandler(v -> {
+        stream.end(Buffer.buffer("Hello World"));
+      });
+    });
+    bind.assertSuccess(httpServer.listen(1234, "localhost"), addr -> {
+      bind.complete();
+    });
+    bind.await();
+    Socket so = new Socket("localhost", 1234);
+    OutputStream out = so.getOutputStream();
+    out.write((
+      "GET / HTTP/1.1\r\n" +
+      "content-length: 0\r\n" +
+      "\r\n").getBytes());
+    InputStream in = so.getInputStream();
+    byte[] received = new byte[4];
+    Assert.assertEquals(4, in.read(received));
+    Assert.assertEquals("HTTP", new String(received));
+  }
+
+  @Test
+  public void testHttpClient() throws Exception {
+    TestResult bind = new TestResult();
+    HttpServer httpServer = vertx.createHttpServer();
+    httpServer.streamHandler(stream -> {
+      stream.endHandler(v -> {
+        stream.end(Buffer.buffer("Hello World"));
+      });
+    });
+    bind.assertSuccess(httpServer.listen(1234, "localhost"), addr -> {
+      bind.complete();
+    });
+    bind.await();
+    TestResult test = new TestResult();
+    HttpClient client = vertx.createHttpClient();
+    test.assertSuccess(client.connect(1234, "localhost"), conn -> {
+      for (int i = 0;i < 5;i++) {
+        int val = i;
+        test.assertSuccess(conn.createStream(), stream -> {
+          stream.method("GET");
+          stream.uri("/");
+          stream.end(Buffer.buffer("Hello World"));
+          test.assertSuccess(stream.response(), v1 -> {
+            Assert.assertEquals(200, stream.statusCode());
+            stream.endHandler(v2 -> {
+              if (val == 4) {
+                test.complete();
+              }
+            });
+          });
+        });
+      }
+    });
+    test.await();
+  }
+
+  @Test
+  public void testChunked() throws Exception {
+    TestResult bind = new TestResult();
+    HttpServer httpServer = vertx.createHttpServer();
+    httpServer.streamHandler(stream -> {
+      for (int i = 0;i < 5;i++) {
+        stream.write(Buffer.buffer("" + i));
+      }
+      stream.end();
+    });
+    bind.assertSuccess(httpServer.listen(1234, "localhost"), addr -> {
+      bind.complete();
+    });
+    bind.await();
+    TestResult test = new TestResult();
+    HttpClient client = vertx.createHttpClient();
+    test.assertSuccess(client.connect(1234, "localhost"), conn -> {
+      test.assertSuccess(conn.createStream(), stream -> {
+        stream.method("GET");
+        stream.uri("/");
+        stream.end(Buffer.buffer("Hello World"));
+        test.assertSuccess(stream.response(), v1 -> {
+          Assert.assertEquals(200, stream.statusCode());
+          stream.handler(chunk -> {
+
+          });
+          stream.endHandler(v2 -> {
+            test.complete();
+          });
+        });
+      });
+    });
     test.await();
   }
 }
