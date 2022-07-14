@@ -12,7 +12,6 @@
 package io.vertx5.core.buffer.impl;
 
 import io.netty.util.CharsetUtil;
-import io.netty5.buffer.api.BufferAllocator;
 import io.vertx5.core.buffer.Buffer;
 import io.vertx.core.impl.Arguments;
 
@@ -25,28 +24,12 @@ import java.util.Objects;
  */
 public class BufferImpl implements Buffer {
 
-  private static final BufferAllocator UNPOOLED_HEAP_ALLOCATOR = BufferAllocator.onHeapUnpooled();
-  
+  private BufferOwnershipStrategy strategy;
   private io.netty5.buffer.api.Buffer buffer;
 
-  public BufferImpl() {
-    this(0);
-  }
-
-  public BufferImpl(int initialSizeHint) {
-    buffer = UNPOOLED_HEAP_ALLOCATOR.allocate(initialSizeHint);
-  }
-
-  public BufferImpl(byte[] bytes) {
-    buffer = UNPOOLED_HEAP_ALLOCATOR.copyOf(bytes);
-  }
-
-  public BufferImpl(String str, Charset cs) {
-    this(str.getBytes(cs));
-  }
-
-  public BufferImpl(io.netty5.buffer.api.Buffer buffer) {
-    this.buffer = buffer;
+  public BufferImpl(BufferOwnershipStrategy strategy, io.netty5.buffer.api.Buffer buffer) {
+    this.strategy = strategy;
+    this.buffer = strategy.wrap(buffer);
   }
 
   public String toString() {
@@ -159,7 +142,7 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer getBuffer(int start, int end) {
-    return new BufferImpl(getBytes(start, end));
+    return strategy.buffer(getBytes(start, end));
   }
 
   public String getString(int start, int end, String enc) {
@@ -335,6 +318,15 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer setBuffer(int pos, Buffer buff, int offset, int len) {
+    if (len == -1) {
+      throw new IndexOutOfBoundsException();
+    }
+    if (offset == -1) {
+      throw new IndexOutOfBoundsException();
+    }
+    if (pos < 0) {
+      throw new IndexOutOfBoundsException();
+    }
     ensureLength(pos + len);
     BufferImpl impl = (BufferImpl) buff;
     io.netty5.buffer.api.Buffer byteBuf = impl.buffer;
@@ -364,6 +356,15 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer setBytes(int pos, byte[] b, int offset, int len) {
+    if (pos < 0) {
+      throw new IndexOutOfBoundsException();
+    }
+    if (offset < 0) {
+      throw new IndexOutOfBoundsException();
+    }
+    if (len < 0) {
+      throw new IndexOutOfBoundsException();
+    }
     ensureLength(pos + len);
     int writerOffset = buffer.writerOffset();
     buffer.writerOffset(pos);
@@ -388,18 +389,14 @@ public class BufferImpl implements Buffer {
   }
 
   public Buffer copy() {
-    return buffer.readOnly() ? this : new BufferImpl(buffer.copy());
+    return buffer.readOnly() ? this : new BufferImpl(strategy, buffer.copy());
   }
 
   /**
    * @return the buffer as is
    */
-  public io.netty5.buffer.api.Buffer byteBuf() {
-    return buffer;
-  }
-
-  public io.netty5.buffer.api.Buffer getByteBuf() {
-    return buffer.copy();
+  public io.netty5.buffer.api.Buffer unwrap() {
+    return strategy.unwrap(buffer);
   }
 
   private Buffer append(String str, Charset charset) {

@@ -12,18 +12,15 @@
 package io.vertx5.core.buffer;
 
 
-import io.netty.buffer.ByteBuf;
 import io.vertx.codegen.annotations.Fluent;
 import io.vertx.codegen.annotations.GenIgnore;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx5.core.buffer.impl.BufferImpl;
+import io.vertx5.core.buffer.impl.BufferOwnershipStrategy;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 
 /**
  * Most data is shuffled around inside Vert.x using buffers.
@@ -44,7 +41,7 @@ public interface Buffer {
    * @return the buffer
    */
   static Buffer buffer() {
-    return new BufferImpl();
+    return BufferOwnershipStrategy.ownershipStrategy().buffer();
   }
 
   /**
@@ -57,7 +54,7 @@ public interface Buffer {
    * @return the buffer
    */
   static Buffer buffer(int initialSizeHint) {
-    return new BufferImpl(initialSizeHint);
+    return BufferOwnershipStrategy.ownershipStrategy().buffer(initialSizeHint);
   }
 
   /**
@@ -67,7 +64,7 @@ public interface Buffer {
    * @return the buffer
    */
   static Buffer buffer(String string) {
-    return new BufferImpl(string, StandardCharsets.UTF_8);
+    return BufferOwnershipStrategy.ownershipStrategy().buffer(string);
   }
 
   /**
@@ -78,7 +75,7 @@ public interface Buffer {
    * @return the buffer
    */
   static Buffer buffer(String string, String enc) {
-    return new BufferImpl(string, Charset.forName(enc));
+    return BufferOwnershipStrategy.ownershipStrategy().buffer(string, enc);
   }
 
   /**
@@ -89,7 +86,7 @@ public interface Buffer {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static Buffer buffer(byte[] bytes) {
-    return new BufferImpl(bytes);
+    return BufferOwnershipStrategy.ownershipStrategy().buffer(bytes);
   }
 
   /**
@@ -111,7 +108,7 @@ public interface Buffer {
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
   static Buffer buffer(io.netty5.buffer.api.Buffer buffer) {
-    return new BufferImpl(buffer);
+    return BufferOwnershipStrategy.ownershipStrategy().buffer(buffer);
   }
 
   /**
@@ -544,9 +541,9 @@ public interface Buffer {
   /**
    * Returns the Buffer as a Netty {@code Byffer}.
    *
-   * <p> The returned buffer is a duplicate that maintain its own indices.
+   * <p> The returned buffer can be safely used.
    */
   @GenIgnore(GenIgnore.PERMITTED_TYPE)
-  io.netty5.buffer.api.Buffer getByteBuf();
+  io.netty5.buffer.api.Buffer unwrap();
 
 }

@@ -5,6 +5,7 @@ import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx5.core.Vertx;
 import io.vertx5.core.buffer.Buffer;
+import io.vertx5.core.buffer.impl.BufferOwnershipStrategy;
 import io.vertx5.core.http.HttpClient;
 import io.vertx5.core.http.HttpServer;
 import io.vertx5.core.net.NetClient;
@@ -14,25 +15,43 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.Collection;
 
+@RunWith(Parameterized.class)
 public class VertxTest {
 
+  @Parameterized.Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(new Object[][] {
+      { BufferOwnershipStrategy.COPY_ON_TRANSFER }, { BufferOwnershipStrategy.COPY_ON_WRITE }, { BufferOwnershipStrategy.SHARED }
+    });
+  }
+
+  private BufferOwnershipStrategy bufferStrategy;
   Vertx vertx = Vertx.vertx();
 
+  public VertxTest(BufferOwnershipStrategy bufferStrategy) {
+    this.bufferStrategy = bufferStrategy;
+  }
 
   @Before
   public void before() {
     vertx = Vertx.vertx();
+    BufferOwnershipStrategy.ownershipStrategy(bufferStrategy);
   }
 
   @After
   public void after() throws Exception {
     vertx.close();
     vertx = null;
+    BufferOwnershipStrategy.ownershipStrategy(BufferOwnershipStrategy.COPY_ON_TRANSFER);
   }
 
   @Test
@@ -243,6 +262,44 @@ public class VertxTest {
           });
         });
       });
+    });
+    test.await();
+  }
+
+  @Test
+  public void testBufferOwnership() throws Exception {
+    Buffer buffer = Buffer.buffer("Hello World");
+    TestResult bind = new TestResult();
+    HttpServer httpServer = vertx.createHttpServer();
+    httpServer.streamHandler(stream -> {
+      stream.end(buffer);
+    });
+    bind.assertSuccess(httpServer.listen(1234, "localhost"), addr -> {
+      bind.complete();
+    });
+    bind.await();
+    TestResult test = new TestResult();
+    HttpClient client = vertx.createHttpClient();
+    test.assertSuccess(client.connect(1234, "localhost"), conn -> {
+      for (int i = 0;i < 2;i++) {
+        int val = i;
+        test.assertSuccess(conn.createStream(), stream -> {
+          stream.method("GET");
+          stream.uri("/");
+          stream.end();
+          test.assertSuccess(stream.response(), v1 -> {
+            Assert.assertEquals(200, stream.statusCode());
+            stream.handler(test.check(chunk -> {
+              Assert.assertEquals("Hello World", chunk.toString());
+            }));
+            if (val == 1) {
+              stream.endHandler(v2 -> {
+                test.complete();
+              });
+            }
+          });
+        });
+      }
     });
     test.await();
   }

@@ -73,7 +73,7 @@ public abstract class HttpStream {
     }
     BufferImpl vertxBuffer = (BufferImpl) buffer;
     HttpObject obj;
-    io.netty5.buffer.api.Buffer payload = vertxBuffer.getByteBuf();
+    io.netty5.buffer.api.Buffer payload = vertxBuffer.unwrap();
     if (headersSent) {
       if (end) {
         footersSent = true;

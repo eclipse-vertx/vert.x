@@ -38,6 +38,14 @@ public class TestResult {
     });
   }
 
+  public <T> Handler<T> check(Handler<T> cont) {
+    return evt -> {
+      run(() -> {
+        cont.handle(evt);
+      });
+    };
+  }
+
   public void await() {
     try {
       result.get(20, TimeUnit.SECONDS);

@@ -63,7 +63,7 @@ public class NetSocket {
   }
 
   public Future<Void> write(Buffer buffer) {
-    io.netty5.buffer.api.Buffer copy = buffer.getByteBuf();
+    io.netty5.buffer.api.Buffer copy = buffer.unwrap();
     io.netty5.util.concurrent.Future<Void> fut = channel.writeAndFlush(copy);
     PromiseInternal<Void> promise = context.promise();
     fut.addListener(future -> {

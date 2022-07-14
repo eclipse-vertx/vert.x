@@ -12,11 +12,16 @@
 package io.vertx5.core.buffer;
 
 import io.netty5.buffer.api.BufferAllocator;
+import io.vertx5.core.buffer.impl.BufferOwnershipStrategy;
 import io.vertx5.test.core.TestUtils;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.Function;
 
 import static io.vertx.test.core.TestUtils.assertIllegalArgumentException;
@@ -28,10 +33,18 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
+@RunWith(Parameterized.class)
 public class BufferTest {
 
-  private static final BufferAllocator TEST_ALLOCATOR = BufferAllocator.onHeapUnpooled();
+  @Parameterized.Parameters
+  public static Collection<Object[]> data() {
+    return Arrays.asList(new Object[][] {
+      { BufferOwnershipStrategy.COPY_ON_TRANSFER }, { BufferOwnershipStrategy.COPY_ON_WRITE }, { BufferOwnershipStrategy.SHARED }
+    });
+  }
 
+  private static final BufferAllocator TEST_ALLOCATOR = BufferAllocator.onHeapUnpooled();
+  private static final int MEDIUM_MAX_VALUE = 2 << 23;
   private static io.netty5.buffer.api.Buffer paddedByteBuf(int padding, byte[] bytes) {
     byte[] data = new byte[padding + bytes.length];
     System.arraycopy(bytes, 0, data, padding, bytes.length);
@@ -40,24 +53,30 @@ public class BufferTest {
     return buffer;
   }
 
-  private static final int MEDIUM_MAX_VALUE = 2 << 23;
-  private static final Function<byte[], Buffer> PADDED_BUFFER_FACTORY = arr -> Buffer.buffer(paddedByteBuf(5, arr));
+
+  private BufferOwnershipStrategy bufferStrategy;
+
+  public BufferTest(BufferOwnershipStrategy bufferStrategy) {
+    this.bufferStrategy = bufferStrategy;
+  }
+
+  private final Function<byte[], Buffer> PADDED_BUFFER_FACTORY = arr -> bufferStrategy.buffer(paddedByteBuf(5, arr));
 
   @Test
   public void testConstructorArguments() throws Exception {
-//    assertIllegalArgumentException(() -> Buffer.buffer(-1));
-//    assertNullPointerException(() -> Buffer.buffer((byte[]) null));
-//    assertNullPointerException(() -> Buffer.buffer((String) null));
-//    assertNullPointerException(() -> Buffer.buffer((ByteBuf) null));
-//    assertNullPointerException(() -> Buffer.buffer(null, "UTF-8"));
-//    assertNullPointerException(() -> Buffer.buffer("", null));
+//    assertIllegalArgumentException(() -> factory.buffer(-1));
+//    assertNullPointerException(() -> factory.buffer((byte[]) null));
+//    assertNullPointerException(() -> factory.buffer((String) null));
+//    assertNullPointerException(() -> factory.buffer((ByteBuf) null));
+//    assertNullPointerException(() -> factory.buffer(null, "UTF-8"));
+//    assertNullPointerException(() -> factory.buffer("", null));
   }
 
   //https://github.com/vert-x/vert.x/issues/561
   @Test
   public void testSetGetInt() throws Exception {
     final int size = 10;
-    Buffer buffer = Buffer.buffer(size);
+    Buffer buffer = bufferStrategy.buffer(size);
     for (int i = 0; i < size; i++) {
       buffer.setInt(i * 4, (i + 1) * 10);
     }
@@ -82,7 +101,7 @@ public class BufferTest {
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
     Buffer toAppend = bufferFactory.apply(bytes);
 
-    Buffer b = Buffer.buffer();
+    Buffer b = bufferStrategy.buffer();
     b.appendBuffer(toAppend);
     assertEquals(b.length(), bytes.length);
 
@@ -99,7 +118,7 @@ public class BufferTest {
     int bytesLen = 100;
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
 
-    Buffer b = Buffer.buffer();
+    Buffer b = bufferStrategy.buffer();
     b.appendBytes(bytes);
     assertEquals(b.length(), bytes.length);
     assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
@@ -116,7 +135,7 @@ public class BufferTest {
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
     int len = bytesLen - 2;
 
-    Buffer b = Buffer.buffer();
+    Buffer b = bufferStrategy.buffer();
     b.appendBytes(bytes, 1, len);
     assertEquals(b.length(), len);
     byte[] copy = new byte[len];
@@ -145,7 +164,7 @@ public class BufferTest {
     Buffer src = bufferFactory.apply(bytes);
 
     int len = bytes.length - 2;
-    Buffer b = Buffer.buffer();
+    Buffer b = bufferStrategy.buffer();
     b.appendBuffer(src, 1, len);
     assertEquals(b.length(), len);
     byte[] copy = new byte[len];
@@ -163,7 +182,7 @@ public class BufferTest {
     int bytesLen = 100;
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
 
-    Buffer b = Buffer.buffer();
+    Buffer b = bufferStrategy.buffer();
     for (int i = 0; i < bytesLen; i++) {
       b.appendByte(bytes[i]);
     }
@@ -179,56 +198,56 @@ public class BufferTest {
   @Test
   public void testAppendByte2() throws Exception {
     int bytesLen = 100;
-    Buffer b = Buffer.buffer(TestUtils.randomByteArray(bytesLen));
+    Buffer b = bufferStrategy.buffer(TestUtils.randomByteArray(bytesLen));
     b.setByte(b.length(), (byte) 9);
 
   }
 
   @Test
   public void testAppendUnsignedByte() {
-    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    Buffer b = bufferStrategy.buffer(TestUtils.randomByteArray(100));
     b.appendUnsignedByte((short) (Byte.MAX_VALUE + Byte.MAX_VALUE / 2));
     assertEquals(101, b.length());
   }
 
   @Test
   public void testAppendShort() {
-    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    Buffer b = bufferStrategy.buffer(TestUtils.randomByteArray(100));
     b.appendShort(Short.MAX_VALUE);
     assertEquals(102, b.length());
   }
 
   @Test
   public void testAppendUnsignedShort() {
-    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    Buffer b = bufferStrategy.buffer(TestUtils.randomByteArray(100));
     b.appendUnsignedShort(Short.MAX_VALUE + Short.MAX_VALUE / 2);
     assertEquals(102, b.length());
   }
 
   @Test
   public void testAppendInt() {
-    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    Buffer b = bufferStrategy.buffer(TestUtils.randomByteArray(100));
     b.appendInt(Integer.MAX_VALUE);
     assertEquals(104, b.length());
   }
 
   @Test
   public void testAppendUnsignedInt() {
-    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    Buffer b = bufferStrategy.buffer(TestUtils.randomByteArray(100));
     b.appendUnsignedInt(Integer.MAX_VALUE + (long) Integer.MAX_VALUE / 2);
     assertEquals(104, b.length());
   }
 
   @Test
   public void testAppendMedium() {
-    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    Buffer b = bufferStrategy.buffer(TestUtils.randomByteArray(100));
     b.appendMedium(MEDIUM_MAX_VALUE);
     assertEquals(103, b.length());
   }
 
   @Test
   public void testAppendLong() {
-    Buffer b = Buffer.buffer(TestUtils.randomByteArray(100));
+    Buffer b = bufferStrategy.buffer(TestUtils.randomByteArray(100));
     b.appendLong(Long.MAX_VALUE);
     assertEquals(108, b.length());
   }
@@ -239,7 +258,7 @@ public class BufferTest {
     String str = TestUtils.randomUnicodeString(100);
     byte[] sb = str.getBytes("UTF-8");
 
-    Buffer b = Buffer.buffer();
+    Buffer b = bufferStrategy.buffer();
     b.appendString(str);
     assertEquals(b.length(), sb.length);
     assertTrue(str.equals(b.toString("UTF-8")));
@@ -260,7 +279,7 @@ public class BufferTest {
     int bytesLen = 100;
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
 
-    Buffer b = Buffer.buffer(bytes);
+    Buffer b = bufferStrategy.buffer(bytes);
     assertIndexOutOfBoundsException(() -> b.getByte(bytesLen));
     assertIndexOutOfBoundsException(() -> b.getByte(bytesLen + 1));
     assertIndexOutOfBoundsException(() -> b.getByte(bytesLen + 100));
@@ -305,7 +324,7 @@ public class BufferTest {
 
   @Test
   public void testSetOutOfBounds() throws Exception {
-    Buffer b = Buffer.buffer(numSets);
+    Buffer b = bufferStrategy.buffer(numSets);
 
     assertIndexOutOfBoundsException(() -> b.setByte(-1, (byte) 0));
     assertIndexOutOfBoundsException(() -> b.setInt(-1, 0));
@@ -328,7 +347,7 @@ public class BufferTest {
     int bytesLen = 100;
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
 
-    Buffer b = Buffer.buffer(bytes);
+    Buffer b = bufferStrategy.buffer(bytes);
     for (int i = 0; i < bytesLen; i++) {
       assertEquals(bytes[i], b.getByte(i));
     }
@@ -339,7 +358,7 @@ public class BufferTest {
     int bytesLen = 100;
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
 
-    Buffer b = Buffer.buffer(bytes);
+    Buffer b = bufferStrategy.buffer(bytes);
     for (int i = 0; i < bytesLen; i++) {
       assertEquals(Byte.toUnsignedLong(bytes[i]), b.getUnsignedByte(i));
     }
@@ -348,7 +367,7 @@ public class BufferTest {
   @Test
   public void testGetInt() throws Exception {
     int numInts = 100;
-    Buffer b = Buffer.buffer(numInts * 4);
+    Buffer b = bufferStrategy.buffer(numInts * 4);
     for (int i = 0; i < numInts; i++) {
       b.setInt(i * 4, i);
     }
@@ -361,7 +380,7 @@ public class BufferTest {
   @Test
   public void testGetUnsignedInt() throws Exception {
     int numInts = 100;
-    Buffer b = Buffer.buffer(numInts * 4);
+    Buffer b = bufferStrategy.buffer(numInts * 4);
     for (int i = 0; i < numInts; i++) {
       b.setUnsignedInt(i * 4, (int) (Integer.MAX_VALUE + (long) i));
     }
@@ -374,7 +393,7 @@ public class BufferTest {
   @Test
   public void testGetMedium() throws Exception {
     int numInts = 100;
-    Buffer b = Buffer.buffer(numInts * 3);
+    Buffer b = bufferStrategy.buffer(numInts * 3);
     for (int i = 0; i < numInts; i++) {
       b.setMedium(i * 3, MEDIUM_MAX_VALUE + i);
     }
@@ -388,7 +407,7 @@ public class BufferTest {
   public void testGetUnsignedMedium() throws Exception {
     int numInts = 100;
     int MEDIUM_MAX_VALUE = BufferTest.MEDIUM_MAX_VALUE - numInts;
-    Buffer b = Buffer.buffer(numInts * 3);
+    Buffer b = bufferStrategy.buffer(numInts * 3);
     for (int i = 0; i < numInts; i++) {
       b.setMedium(i * 3, (MEDIUM_MAX_VALUE + i));
     }
@@ -401,7 +420,7 @@ public class BufferTest {
   @Test
   public void testGetLong() throws Exception {
     int numLongs = 100;
-    Buffer b = Buffer.buffer(numLongs * 8);
+    Buffer b = bufferStrategy.buffer(numLongs * 8);
     for (int i = 0; i < numLongs; i++) {
       b.setLong(i * 8, i);
     }
@@ -414,7 +433,7 @@ public class BufferTest {
   @Test
   public void testGetFloat() throws Exception {
     int numFloats = 100;
-    Buffer b = Buffer.buffer(numFloats * 4);
+    Buffer b = bufferStrategy.buffer(numFloats * 4);
     for (int i = 0; i < numFloats; i++) {
       b.setFloat(i * 4, i);
     }
@@ -427,7 +446,7 @@ public class BufferTest {
   @Test
   public void testGetDouble() throws Exception {
     int numDoubles = 100;
-    Buffer b = Buffer.buffer(numDoubles * 8);
+    Buffer b = bufferStrategy.buffer(numDoubles * 8);
     for (int i = 0; i < numDoubles; i++) {
       b.setDouble(i * 8, i);
     }
@@ -440,7 +459,7 @@ public class BufferTest {
   @Test
   public void testGetShort() throws Exception {
     int numShorts = 100;
-    Buffer b = Buffer.buffer(numShorts * 2);
+    Buffer b = bufferStrategy.buffer(numShorts * 2);
     for (short i = 0; i < numShorts; i++) {
       b.setShort(i * 2, i);
     }
@@ -453,7 +472,7 @@ public class BufferTest {
   @Test
   public void testGetUnsignedShort() throws Exception {
     int numShorts = 100;
-    Buffer b = Buffer.buffer(numShorts * 2);
+    Buffer b = bufferStrategy.buffer(numShorts * 2);
     for (short i = 0; i < numShorts; i++) {
       b.setUnsignedShort(i * 2, (short) (Short.MAX_VALUE + (int) i));
     }
@@ -466,7 +485,7 @@ public class BufferTest {
   @Test
   public void testGetString() throws Exception {
     String str = TestUtils.randomAlphaString(100);
-    Buffer b = Buffer.buffer(str, "UTF-8"); // encode ascii as UTF-8 so one byte per char
+    Buffer b = bufferStrategy.buffer(str, "UTF-8"); // encode ascii as UTF-8 so one byte per char
     assertEquals(100, b.length());
     String substr = b.getString(10, 20);
     assertEquals(str.substring(10, 20), substr);
@@ -477,7 +496,7 @@ public class BufferTest {
   @Test
   public void testGetBytes() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(100);
-    Buffer b = Buffer.buffer(bytes);
+    Buffer b = bufferStrategy.buffer(bytes);
 
     assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
   }
@@ -485,7 +504,7 @@ public class BufferTest {
   @Test
   public void testGetBytes2() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(100);
-    Buffer b = Buffer.buffer(bytes);
+    Buffer b = bufferStrategy.buffer(bytes);
 
     byte[] sub = new byte[bytes.length / 2];
     System.arraycopy(bytes, bytes.length / 4, sub, 0, bytes.length / 2);
@@ -495,7 +514,7 @@ public class BufferTest {
   @Test
   public void testGetBytesWithByteArray() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(100);
-    Buffer b = Buffer.buffer(bytes);
+    Buffer b = bufferStrategy.buffer(bytes);
 
     byte[] sub = new byte[bytes.length / 2];
     System.arraycopy(bytes, bytes.length / 4, sub, 0, bytes.length / 2);
@@ -509,7 +528,7 @@ public class BufferTest {
   @Test(expected = IndexOutOfBoundsException.class)
   public void testGetBytesWithTooSmallByteArray() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(100);
-    Buffer b = Buffer.buffer(bytes);
+    Buffer b = bufferStrategy.buffer(bytes);
     byte[] result = new byte[bytes.length / 4];
     b.getBytes(bytes.length / 4, bytes.length / 4 + bytes.length / 2, result);
   }
@@ -517,7 +536,7 @@ public class BufferTest {
   @Test
   public void testGetBytesWithByteArrayFull() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(100);
-    Buffer b = Buffer.buffer(bytes);
+    Buffer b = bufferStrategy.buffer(bytes);
 
     byte[] sub = new byte[bytes.length];
     System.arraycopy(bytes, bytes.length / 4, sub, 12, bytes.length / 2);
@@ -531,7 +550,7 @@ public class BufferTest {
   @Test(expected = IndexOutOfBoundsException.class)
   public void testGetBytesWithBadOffset() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(100);
-    Buffer b = Buffer.buffer(bytes);
+    Buffer b = bufferStrategy.buffer(bytes);
     byte[] result = new byte[bytes.length / 2];
     b.getBytes(bytes.length / 4, bytes.length / 4 + bytes.length / 2, result, -1);
   }
@@ -540,12 +559,12 @@ public class BufferTest {
 
   @Test
   public void testSetInt() throws Exception {
-    testSetInt(Buffer.buffer(numSets * 4));
+    testSetInt(bufferStrategy.buffer(numSets * 4));
   }
 
   @Test
   public void testSetIntExpandBuffer() throws Exception {
-    testSetInt(Buffer.buffer());
+    testSetInt(bufferStrategy.buffer());
   }
 
   private void testSetInt(Buffer buff) throws Exception {
@@ -559,12 +578,12 @@ public class BufferTest {
 
   @Test
   public void testSetUnsignedInt() throws Exception {
-    testSetUnsignedInt(Buffer.buffer(numSets * 4));
+    testSetUnsignedInt(bufferStrategy.buffer(numSets * 4));
   }
 
   @Test
   public void testSetUnsignedIntExpandBuffer() throws Exception {
-    testSetUnsignedInt(Buffer.buffer());
+    testSetUnsignedInt(bufferStrategy.buffer());
   }
 
   private void testSetUnsignedInt(Buffer buff) throws Exception {
@@ -580,12 +599,12 @@ public class BufferTest {
 
   @Test
   public void testSetLong() throws Exception {
-    testSetLong(Buffer.buffer(numSets * 8));
+    testSetLong(bufferStrategy.buffer(numSets * 8));
   }
 
   @Test
   public void testSetLongExpandBuffer() throws Exception {
-    testSetLong(Buffer.buffer());
+    testSetLong(bufferStrategy.buffer());
   }
 
   private void testSetLong(Buffer buff) throws Exception {
@@ -599,12 +618,12 @@ public class BufferTest {
 
   @Test
   public void testSetByte() throws Exception {
-    testSetByte(Buffer.buffer(numSets));
+    testSetByte(bufferStrategy.buffer(numSets));
   }
 
   @Test
   public void testSetByteExpandBuffer() throws Exception {
-    testSetByte(Buffer.buffer());
+    testSetByte(bufferStrategy.buffer());
   }
 
   private void testSetByte(Buffer buff) throws Exception {
@@ -618,12 +637,12 @@ public class BufferTest {
 
   @Test
   public void testSetUnsignedByte() throws Exception {
-    testSetUnsignedByte(Buffer.buffer(numSets));
+    testSetUnsignedByte(bufferStrategy.buffer(numSets));
   }
 
   @Test
   public void testSetUnsignedByteExpandBuffer() throws Exception {
-    testSetUnsignedByte(Buffer.buffer());
+    testSetUnsignedByte(bufferStrategy.buffer());
   }
 
   private void testSetUnsignedByte(Buffer buff) throws Exception {
@@ -639,12 +658,12 @@ public class BufferTest {
 
   @Test
   public void testSetFloat() throws Exception {
-    testSetFloat(Buffer.buffer(numSets * 4));
+    testSetFloat(bufferStrategy.buffer(numSets * 4));
   }
 
   @Test
   public void testSetFloatExpandBuffer() throws Exception {
-    testSetFloat(Buffer.buffer());
+    testSetFloat(bufferStrategy.buffer());
   }
 
   private void testSetFloat(Buffer buff) throws Exception {
@@ -658,12 +677,12 @@ public class BufferTest {
 
   @Test
   public void testSetDouble() throws Exception {
-    testSetDouble(Buffer.buffer(numSets * 8));
+    testSetDouble(bufferStrategy.buffer(numSets * 8));
   }
 
   @Test
   public void testSetDoubleExpandBuffer() throws Exception {
-    testSetDouble(Buffer.buffer());
+    testSetDouble(bufferStrategy.buffer());
   }
 
   private void testSetDouble(Buffer buff) throws Exception {
@@ -677,12 +696,12 @@ public class BufferTest {
 
   @Test
   public void testSetShort() throws Exception {
-    testSetShort(Buffer.buffer(numSets * 2));
+    testSetShort(bufferStrategy.buffer(numSets * 2));
   }
 
   @Test
   public void testSetShortExpandBuffer() throws Exception {
-    testSetShort(Buffer.buffer());
+    testSetShort(bufferStrategy.buffer());
   }
 
   private void testSetShort(Buffer buff) throws Exception {
@@ -696,12 +715,12 @@ public class BufferTest {
 
   @Test
   public void testSetUnsignedShort() throws Exception {
-    testSetUnsignedShort(Buffer.buffer(numSets * 2));
+    testSetUnsignedShort(bufferStrategy.buffer(numSets * 2));
   }
 
   @Test
   public void testSetUnsignedShortExpandBuffer() throws Exception {
-    testSetUnsignedShort(Buffer.buffer());
+    testSetUnsignedShort(bufferStrategy.buffer());
   }
 
   private void testSetUnsignedShort(Buffer buff) throws Exception {
@@ -717,31 +736,32 @@ public class BufferTest {
 
   @Test
   public void testSetBytesBuffer() throws Exception {
-    testSetBytesBuffer(Buffer.buffer(150), Buffer::buffer);
-    assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, (ByteBuffer) null));
+    testSetBytesBuffer(bufferStrategy.buffer(150), Buffer::buffer);
+    assertNullPointerException(() -> bufferStrategy.buffer(150).setBytes(0, (ByteBuffer) null));
   }
 
   @Test
   public void testSetBytesBuffer2() throws Exception {
-    testSetBytesBuffer(Buffer.buffer(150), PADDED_BUFFER_FACTORY);
-    assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, (ByteBuffer) null));
+    testSetBytesBuffer(bufferStrategy.buffer(150), PADDED_BUFFER_FACTORY);
+    assertNullPointerException(() -> bufferStrategy.buffer(150).setBytes(0, (ByteBuffer) null));
   }
 
   private void testSetBytesBuffer(Buffer buff, Function<byte[], Buffer> bufferFactory) throws Exception {
-    Buffer b = bufferFactory.apply(TestUtils.randomAlphaString(100).getBytes());
+    byte[] str = TestUtils.randomAlphaString(100).getBytes();
+    Buffer b = bufferFactory.apply(str);
     buff.setBuffer(10, b);
     byte[] b2 = buff.getBytes(10, 110);
-    assertEquals(b, Buffer.buffer(b2));
+    assertEquals(b, bufferStrategy.buffer(b2));
 
     byte[] b3 = TestUtils.randomByteArray(100);
     buff.setBytes(10, b3);
     byte[] b4 = buff.getBytes(10, 110);
-    assertEquals(Buffer.buffer(b3), Buffer.buffer(b4));
+    assertEquals(bufferStrategy.buffer(b3), bufferStrategy.buffer(b4));
   }
 
   @Test
   public void testSetBytesBufferExpandBuffer() throws Exception {
-    testSetShort(Buffer.buffer());
+    testSetShort(bufferStrategy.buffer());
   }
 
   @Test
@@ -750,7 +770,7 @@ public class BufferTest {
     byte[] bytes = TestUtils.randomByteArray(bytesLen);
     int len = bytesLen - 2;
 
-    Buffer b = Buffer.buffer();
+    Buffer b = bufferStrategy.buffer();
     b.setByte(0, (byte) '0');
     b.setBytes(1, bytes, 1, len);
     assertEquals(b.length(), len + 1);
@@ -762,8 +782,8 @@ public class BufferTest {
     b.setBytes(b.length(), bytes, 1, len);
     assertEquals(b.length(), 2 * len + 1);
 
-    assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, (byte[]) null));
-    assertNullPointerException(() -> Buffer.buffer(150).setBytes(0, null, 1, len));
+    assertNullPointerException(() -> bufferStrategy.buffer(150).setBytes(0, (byte[]) null));
+    assertNullPointerException(() -> bufferStrategy.buffer(150).setBytes(0, null, 1, len));
   }
 
   @Test
@@ -782,7 +802,7 @@ public class BufferTest {
     Buffer src = bufferFactory.apply(bytes);
     int len = bytesLen - 2;
 
-    Buffer b = Buffer.buffer();
+    Buffer b = bufferStrategy.buffer();
     b.setByte(0, (byte) '0');
     b.setBuffer(1, src, 1, len);
     assertEquals(b.length(), len + 1);
@@ -800,12 +820,12 @@ public class BufferTest {
 
   @Test
   public void testSetBytesString() throws Exception {
-    testSetBytesString(Buffer.buffer(150));
+    testSetBytesString(bufferStrategy.buffer(150));
   }
 
   @Test
   public void testSetBytesStringExpandBuffer() throws Exception {
-    testSetBytesString(Buffer.buffer());
+    testSetBytesString(bufferStrategy.buffer());
   }
 
   private void testSetBytesString(Buffer buff) throws Exception {
@@ -818,8 +838,8 @@ public class BufferTest {
 
     assertEquals(str, str2);
 
-    assertNullPointerException(() -> Buffer.buffer(150).setString(0, null));
-    assertNullPointerException(() -> Buffer.buffer(150).setString(0, null, "UTF-8"));
+    assertNullPointerException(() -> bufferStrategy.buffer(150).setString(0, null));
+    assertNullPointerException(() -> bufferStrategy.buffer(150).setString(0, null, "UTF-8"));
 
     //TODO setString with encoding
   }
@@ -827,7 +847,7 @@ public class BufferTest {
   @Test
   public void testToString() throws Exception {
     String str = TestUtils.randomUnicodeString(100);
-    Buffer buff = Buffer.buffer(str);
+    Buffer buff = bufferStrategy.buffer(str);
     assertEquals(str, buff.toString());
 
     //TODO toString with encoding
@@ -849,20 +869,20 @@ public class BufferTest {
 
   @Test
   public void testCreateBuffers() throws Exception {
-    Buffer buff = Buffer.buffer(1000);
+    Buffer buff = bufferStrategy.buffer(1000);
     assertEquals(0, buff.length());
 
     String str = TestUtils.randomUnicodeString(100);
-    buff = Buffer.buffer(str);
+    buff = bufferStrategy.buffer(str);
     assertEquals(buff.length(), str.getBytes("UTF-8").length);
     assertEquals(str, buff.toString());
 
     // TODO create with string with encoding
 
     byte[] bytes = TestUtils.randomByteArray(100);
-    buff = Buffer.buffer(bytes);
+    buff = bufferStrategy.buffer(bytes);
     assertEquals(buff.length(), bytes.length);
-    assertEquals(Buffer.buffer(bytes), Buffer.buffer(buff.getBytes()));
+    assertEquals(bufferStrategy.buffer(bytes), bufferStrategy.buffer(buff.getBytes()));
   }
 
 //  @Test
@@ -871,10 +891,10 @@ public class BufferTest {
 //    obj.put("wibble", "wibble_value");
 //    obj.put("foo", 5);
 //    obj.put("bar", true);
-//    Buffer buff = Buffer.buffer(obj.encode());
+//    Buffer buff = factory.buffer(obj.encode());
 //    assertEquals(obj, buff.toJsonObject());
 //
-//    buff = Buffer.buffer(TestUtils.randomAlphaString(10));
+//    buff = factory.buffer(TestUtils.randomAlphaString(10));
 //    try {
 //      buff.toJsonObject();
 //      fail();
@@ -888,10 +908,10 @@ public class BufferTest {
 //    arr.add("wibble");
 //    arr.add(5);
 //    arr.add(true);
-//    Buffer buff = Buffer.buffer(arr.encode());
+//    Buffer buff = factory.buffer(arr.encode());
 //    assertEquals(arr, buff.toJsonArray());
 //
-//    buff = Buffer.buffer(TestUtils.randomAlphaString(10));
+//    buff = factory.buffer(TestUtils.randomAlphaString(10));
 //    try {
 //      buff.toJsonObject();
 //      fail();
@@ -902,14 +922,14 @@ public class BufferTest {
   @Test
   public void testLength() throws Exception {
     byte[] bytes = TestUtils.randomByteArray(100);
-    Buffer buffer = Buffer.buffer(bytes);
-    assertEquals(100, Buffer.buffer(buffer.getByteBuf()).length());
+    Buffer buffer = bufferStrategy.buffer(bytes);
+    assertEquals(100, bufferStrategy.buffer(buffer.unwrap()).length());
   }
 
 //  @Test
 //  public void testLength2() throws Exception {
 //    byte[] bytes = TestUtils.randomByteArray(100);
-//    assertEquals(90, Buffer.buffer(Unpooled.copiedBuffer(bytes).slice(10, 90)).length());
+//    assertEquals(90, factory.buffer(Unpooled.copiedBuffer(bytes).slice(10, 90)).length());
 //  }
 //
 //  @Test
@@ -917,8 +937,8 @@ public class BufferTest {
 //    ByteBuf buf = Unpooled.copiedBuffer("foobar".getBytes());
 //    assertEquals(0, buf.readerIndex());
 //    assertEquals(6, buf.writerIndex());
-//    Buffer buffer = Buffer.buffer(buf);
-//    Buffer other = Buffer.buffer("prefix");
+//    Buffer buffer = factory.buffer(buf);
+//    Buffer other = factory.buffer("prefix");
 //    other.appendBuffer(buffer);
 //    assertEquals(0, buf.readerIndex());
 //    assertEquals(6, buf.writerIndex());
@@ -927,15 +947,16 @@ public class BufferTest {
 //
   @Test
   public void testAppendExpandsBufferWhenMaxCapacityReached() {
-    Buffer buff = Buffer.buffer(TEST_ALLOCATOR.allocate(0));
+    Buffer buff = bufferStrategy.buffer(TEST_ALLOCATOR.allocate(0));
     buff.appendString("Hello World");
   }
+
 //
 //  @Test
 //  public void testWriteExpandsBufferWhenMaxCapacityReached() {
 //    String s = "Hello World";
 //    ByteBuf byteBuf = Unpooled.buffer(0, s.length() - 1);
-//    Buffer buff = Buffer.buffer(byteBuf);
+//    Buffer buff = factory.buffer(byteBuf);
 //    int idx = 0;
 //    for (byte b : s.getBytes()) {
 //      buff.setByte(idx++, b);
@@ -946,7 +967,7 @@ public class BufferTest {
 //  public void testSetByteAfterCurrentWriterIndexWithoutExpandingCapacity() {
 //    ByteBuf byteBuf = Unpooled.buffer(10, Integer.MAX_VALUE);
 //    byteBuf.writerIndex(5);
-//    Buffer buff = Buffer.buffer(byteBuf);
+//    Buffer buff = factory.buffer(byteBuf);
 //    buff.setByte(7, (byte)1);
 //    assertEquals(8, buff.length());
 //  }
@@ -955,7 +976,7 @@ public class BufferTest {
 //  public void testGetByteBuf() {
 //    ByteBuf byteBuf = Unpooled.buffer();
 //    byteBuf.writeCharSequence("Hello World", StandardCharsets.UTF_8);
-//    Buffer buff = Buffer.buffer(byteBuf);
+//    Buffer buff = factory.buffer(byteBuf);
 //    ByteBuf duplicate = buff.getByteBuf();
 //    duplicate.writerIndex(5);
 //    assertEquals(11, byteBuf.writerIndex());
@@ -987,7 +1008,7 @@ public class BufferTest {
 //  }
 //
 //  private <T> void checkGetXXXUpperBound(BiFunction<Buffer, Integer, T> f, int size) {
-//    Buffer buffer = Buffer.buffer();
+//    Buffer buffer = factory.buffer();
 //    for (int i = 0;i < size;i++) {
 //      buffer.appendByte((byte)0);
 //    }
@@ -1000,7 +1021,19 @@ public class BufferTest {
 //  public void testReadOnlyByteBuf() {
 //    String s = "Hello World";
 //    ByteBuf byteBuf = Unpooled.buffer(0, s.length() - 1);
-//    Buffer buff = Buffer.buffer(byteBuf.asReadOnly());
+//    Buffer buff = factory.buffer(byteBuf.asReadOnly());
 //    assertSame(buff, buff.copy());
 //  }
+
+  @Test
+  public void testFoo() {
+    Buffer buff = bufferStrategy.buffer("Hello World");
+    io.netty5.buffer.api.Buffer actual1 = buff.unwrap();
+    io.netty5.buffer.api.Buffer actual2 = buff.unwrap();
+    assertEquals('H', actual1.readByte());
+    assertEquals('H', actual2.readByte());
+
+
+  }
+
 }
