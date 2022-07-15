@@ -26,10 +26,11 @@ public abstract class HttpConnection {
       handleMessage((HttpMessage) obj);
     }
     if (obj instanceof HttpContent) {
-      HttpContent content = (HttpContent) obj;
-      io.netty5.buffer.api.Buffer copy = UNPOOLED_HEAP_ALLOCATOR.allocate(content.payload().readableBytes());
-      copy.writeBytes(content.payload());
-      content.close();
+      io.netty5.buffer.api.Buffer copy;
+      try (HttpContent content = (HttpContent) obj) {
+        copy = UNPOOLED_HEAP_ALLOCATOR.allocate(content.payload().readableBytes());
+        copy.writeBytes(content.payload());
+      }
       Buffer buffer = Buffer.buffer(copy);
       handleContent(buffer);
     }

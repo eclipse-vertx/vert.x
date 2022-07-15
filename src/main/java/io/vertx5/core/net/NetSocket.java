@@ -45,10 +45,11 @@ public class NetSocket {
   public NetSocket handler(Handler<Buffer> handler) {
     if (handler != null) {
       return messageHandler(msg -> {
-        io.netty5.buffer.api.Buffer buf = (io.netty5.buffer.api.Buffer) msg;
-        io.netty5.buffer.api.Buffer copy = UNPOOLED_HEAP_ALLOCATOR.allocate(buf.readableBytes());
-        copy.writeBytes(buf);
-        buf.close();
+        io.netty5.buffer.api.Buffer copy;
+        try (io.netty5.buffer.api.Buffer buf = (io.netty5.buffer.api.Buffer) msg) {
+          copy = UNPOOLED_HEAP_ALLOCATOR.allocate(buf.readableBytes());
+          copy.writeBytes(buf);
+        }
         Buffer buffer = Buffer.buffer(copy);
         handler.handle(buffer);
       });
