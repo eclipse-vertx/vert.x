@@ -2501,16 +2501,6 @@ public abstract class HttpTest extends HttpTestBase {
   }
 
   @Test
-  public void testSetHandlersAfterListening2() {
-    server.requestHandler(noOpHandler());
-
-    server.listen(testAddress, onSuccess(v -> testComplete()));
-    assertIllegalStateException(() -> server.requestHandler(noOpHandler()));
-    assertIllegalStateException(() -> server.webSocketHandler(noOpHandler()));
-    await();
-  }
-
-  @Test
   public void testListenNoHandlers() {
     assertIllegalStateException(() -> server.listen(ar -> {
     }));
@@ -2524,17 +2514,8 @@ public abstract class HttpTest extends HttpTestBase {
   @Test
   public void testListenTwice() {
     server.requestHandler(noOpHandler());
-    server.listen(testAddress, onSuccess(v -> testComplete()));
-    assertIllegalStateException(() -> server.listen());
-    await();
-  }
-
-  @Test
-  public void testListenTwice2() {
-    server.requestHandler(noOpHandler());
     server.listen(testAddress, onSuccess(s -> {
-      assertIllegalStateException(() -> server.listen());
-      testComplete();
+      assertIllegalStateExceptionAsync(server.listen(), () -> testComplete());
     }));
     await();
   }

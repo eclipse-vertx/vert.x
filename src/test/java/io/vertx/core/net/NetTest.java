@@ -2372,15 +2372,7 @@ public class NetTest extends VertxTestBase {
     server.connectHandler(sock -> {
     });
     server.listen(testAddress, onSuccess(s -> {
-      try {
-        server.listen(testAddress, res -> {});
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        // OK
-        testComplete();
-      } catch (Exception e) {
-        fail(e.getMessage());
-      }
+      assertIllegalStateExceptionAsync(server.listen(testAddress), () -> testComplete());
     }));
     await();
   }
@@ -2417,14 +2409,7 @@ public class NetTest extends VertxTestBase {
     });
     server.listen(testAddress, ar -> {
       assertTrue(ar.succeeded());
-      try {
-        server.listen(testAddress, sock -> {
-        });
-        fail("Should throw exception");
-      } catch (IllegalStateException e) {
-        // OK
-      }
-      testComplete();
+      assertIllegalStateExceptionAsync(server.listen(testAddress), () -> testComplete());
     });
     await();
   }

@@ -18,9 +18,7 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -37,12 +35,9 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Base class for TCP servers
@@ -96,17 +91,28 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   public Future<TCPServerBase> bind(SocketAddress address) {
     ContextInternal listenContext = vertx.getOrCreateContext();
-
-    io.netty.util.concurrent.Future<Channel> bindFuture = listen(address, listenContext);
-
     Promise<TCPServerBase> promise = listenContext.promise();
-    bindFuture.addListener(res -> {
-      if (res.isSuccess()) {
-        promise.complete(this);
+
+    vertx.executeBlockingInternal((Promise<io.netty.util.concurrent.Future<Channel>> fut) -> {
+      try {
+        fut.complete(listen(address, listenContext));
+      } catch (Exception e) {
+        fut.fail(e);
+      }
+    }, listenResult -> {
+      if (listenResult.succeeded()) {
+        listenResult.result().addListener(res -> {
+        if (res.isSuccess()) {
+            promise.complete(this);
+          } else {
+            promise.fail(res.cause());
+          }
+        });
       } else {
-        promise.fail(res.cause());
+        promise.fail(listenResult.cause());
       }
     });
+
     return promise.future();
   }
 

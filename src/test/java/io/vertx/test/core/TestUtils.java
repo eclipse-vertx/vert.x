@@ -381,6 +381,14 @@ public class TestUtils {
     assertTrue(fut.cause() instanceof IllegalStateException);
   }
 
+  public static void assertIllegalStateExceptionAsync(Future<?> fut, Runnable runnableWhenExpected) {
+    fut.onSuccess(s -> fail("expected failure"))
+      .onFailure(error -> {
+        assertIllegalStateExceptionAsync(() -> Future.failedFuture(error));
+        runnableWhenExpected.run();
+      });
+  }
+
   /**
    * Asserts that an IndexOutOfBoundsException is thrown by the code block.
    *
