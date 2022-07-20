@@ -43,6 +43,20 @@ public class ReplyException extends VertxException {
    * Create a ReplyException
    *
    * @param failureType  the failure type
+   * @param failureCode  the failure code
+   * @param message  the failure message
+   * @param cause  the cause
+   */
+  public ReplyException(ReplyFailure failureType, int failureCode, String message, Throwable cause) {
+    super(message, cause);
+    this.failureType = failureType;
+    this.failureCode = failureCode;
+  }
+
+  /**
+   * Create a ReplyException
+   *
+   * @param failureType  the failure type
    * @param message  the failure message
    */
   public ReplyException(ReplyFailure failureType, String message) {

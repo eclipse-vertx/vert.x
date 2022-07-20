@@ -141,4 +141,18 @@ public interface Message<T> {
     reply(new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message));
   }
 
+  /**
+   * Signal to the sender that processing of this message failed.
+   * <p>
+   * If the message was sent specifying a result handler
+   * the handler will be called with a failure corresponding to the failure code and message specified here.
+   *
+   * @param failureCode A failure code to pass back to the sender
+   * @param message A message to pass back to the sender
+   * @param cause A cause to pass back to the sender
+   */
+  default void fail(int failureCode, String message, Throwable cause) {
+    reply(new ReplyException(ReplyFailure.RECIPIENT_FAILURE, failureCode, message, cause));
+  }
+
 }
