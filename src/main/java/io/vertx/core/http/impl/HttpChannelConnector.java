@@ -85,7 +85,7 @@ public class HttpChannelConnector {
   }
 
   private void connect(EventLoopContext context, Promise<NetSocket> promise) {
-    netClient.connectInternal(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, false, promise, context, 0);
+    netClient.connect(proxyOptions, server, peerAddress, this.options.isForceSni() ? peerAddress.host() : null, ssl, useAlpn, false, promise, context, 0);
   }
 
   public Future<HttpClientConnection> wrap(EventLoopContext context, NetSocket so_) {

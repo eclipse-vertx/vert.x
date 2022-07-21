@@ -31,8 +31,8 @@ import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.impl.CloseFuture;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetClient;
@@ -91,8 +91,6 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
     this.idleTimeoutUnit = options.getIdleTimeoutUnit();
     this.closeFuture = closeFuture;
     this.proxyFilter = options.getNonProxyHosts() != null ? ProxyFilter.nonProxyHosts(options.getNonProxyHosts()) : ProxyFilter.DEFAULT_PROXY_FILTER;
-
-    sslHelper.validate(vertx);
   }
 
   protected void initChannel(ChannelPipeline pipeline) {
@@ -222,19 +220,39 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
         proxyOptions = null;
       }
     }
-    connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), true, connectHandler, ctx, options.getReconnectAttempts());
+    connect(proxyOptions, remoteAddress, peerAddress, serverName, options.isSsl(), options.isUseAlpn(), true, connectHandler, ctx, options.getReconnectAttempts());
   }
 
-  public void connectInternal(ProxyOptions proxyOptions,
-                              SocketAddress remoteAddress,
-                              SocketAddress peerAddress,
-                              String serverName,
-                              boolean ssl,
-                              boolean useAlpn,
-                              boolean registerWriteHandlers,
-                              Promise<NetSocket> connectHandler,
-                              ContextInternal context,
-                              int remainingAttempts) {
+  public void connect(ProxyOptions proxyOptions,
+                      SocketAddress remoteAddress,
+                      SocketAddress peerAddress,
+                      String serverName,
+                      boolean ssl,
+                      boolean useAlpn,
+                      boolean registerWriteHandlers,
+                      Promise<NetSocket> connectHandler,
+                      ContextInternal context,
+                      int remainingAttempts) {
+    sslHelper.validate(vertx)
+      .onComplete(validateResult -> {
+        if (validateResult.succeeded()) {
+          connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, true, connectHandler, context, remainingAttempts);
+        } else {
+          failed(context, null, validateResult.cause(), connectHandler);
+        }
+      });
+  }
+
+  private void connectInternal(ProxyOptions proxyOptions,
+                               SocketAddress remoteAddress,
+                               SocketAddress peerAddress,
+                               String serverName,
+                               boolean ssl,
+                               boolean useAlpn,
+                               boolean registerWriteHandlers,
+                               Promise<NetSocket> connectHandler,
+                               ContextInternal context,
+                               int remainingAttempts) {
     checkClosed();
 
     EventLoop eventLoop = context.nettyEventLoop();

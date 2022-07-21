@@ -14,10 +14,13 @@ package io.vertx.core.net.impl;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.handler.ssl.*;
 import io.netty.util.Mapping;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.VertxException;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.ClientAuth;
 import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.impl.ContextInternal;
 import io.vertx.core.impl.VertxInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
@@ -99,6 +102,8 @@ public class SSLHelper {
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
   private boolean ssl;
+  private volatile boolean validated = false;
+  private volatile Throwable validationError = null;
   private boolean sni;
   private long sslHandshakeTimeout;
   private TimeUnit sslHandshakeTimeoutUnit;
@@ -502,10 +507,37 @@ public class SSLHelper {
   }
 
   // This is called to validate some of the SSL params as that only happens when the context is created
-  public synchronized void validate(VertxInternal vertx) {
-    if (ssl) {
-      getContext(vertx, null);
+  public synchronized Future<Void> validate(VertxInternal vertx) {
+    if (validated) {
+      if (validationError != null) {
+        return Future.failedFuture(validationError);
+      }
+      return Future.succeededFuture();
     }
+
+    validated = true;
+
+    if (ssl) {
+      ContextInternal validateContext = vertx.getOrCreateContext();
+      Promise<Void> promise = validateContext.promise();
+      validateContext.executeBlockingInternal(future -> {
+        try {
+          getContext(vertx, null);
+          future.complete();
+        } catch (Exception e) {
+          future.fail(e);
+        }
+      })
+      .onSuccess(nothing -> promise.complete())
+      .onFailure(error -> {
+        validationError = error;
+        promise.fail(error);
+      });
+
+      return promise.future();
+    }
+
+    return Future.succeededFuture();
   }
 
   public SSLEngine createEngine(SslContext sslContext) {

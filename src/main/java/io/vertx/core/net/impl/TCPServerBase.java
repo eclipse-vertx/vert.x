@@ -18,17 +18,15 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoop;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Closeable;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.impl.PartialPooledByteBufAllocator;
 import io.vertx.core.impl.ContextInternal;
-import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.VertxInternal;
+import io.vertx.core.impl.future.PromiseInternal;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.NetServerOptions;
@@ -37,12 +35,10 @@ import io.vertx.core.spi.metrics.MetricsProvider;
 import io.vertx.core.spi.metrics.TCPMetrics;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Base class for TCP servers
@@ -61,6 +57,7 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
   // Per server
   private EventLoop eventLoop;
   private Handler<Channel> worker;
+  private volatile CountDownLatch initialization = new CountDownLatch(1);
   private volatile boolean listening;
   private ContextInternal listenContext;
   private TCPServerBase actualServer;
@@ -120,100 +117,157 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     this.eventLoop = context.nettyEventLoop();
 
     SocketAddress bindAddress;
-    Map<ServerID, TCPServerBase> sharedNetServers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
-    synchronized (sharedNetServers) {
-      actualPort = localAddress.port();
-      String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
-      TCPServerBase main;
-      boolean shared;
-      ServerID id;
-      if (actualPort > 0 || localAddress.isDomainSocket()) {
-        id = new ServerID(actualPort, hostOrPath);
-        main = sharedNetServers.get(id);
+    actualPort = localAddress.port();
+    String hostOrPath = localAddress.isInetSocket() ? localAddress.host() : localAddress.path();
+    boolean shared;
+    ServerID id;
+
+    if (actualPort > 0 || localAddress.isDomainSocket()) {
+      id = new ServerID(actualPort, hostOrPath);
+      shared = true;
+      bindAddress = localAddress;
+    } else {
+      if (actualPort < 0) {
+        id = new ServerID(actualPort, hostOrPath + "/" + -actualPort);
         shared = true;
+        bindAddress = SocketAddress.inetSocketAddress(0, localAddress.host());
+      } else {
+        id = new ServerID(actualPort, hostOrPath);
+        shared = false;
         bindAddress = localAddress;
-      } else {
-        if (actualPort < 0) {
-          id = new ServerID(actualPort, hostOrPath + "/" + -actualPort);
-          main = sharedNetServers.get(id);
-          shared = true;
-          bindAddress = SocketAddress.inetSocketAddress(0, localAddress.host());
-        } else {
-          id = new ServerID(actualPort, hostOrPath);
-          main = null;
-          shared = false;
-          bindAddress = localAddress;
-        }
-      }
-      if (main == null) {
-        try {
-          sslHelper = createSSLHelper();
-          sslHelper.validate(vertx);
-          worker =  childHandler(listenContext, localAddress, sslHelper);
-          servers = new HashSet<>();
-          servers.add(this);
-          channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
-          channelBalancer.addWorker(eventLoop, worker);
-
-          ServerBootstrap bootstrap = new ServerBootstrap();
-          bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
-          if (sslHelper.isSSL()) {
-            bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
-          } else {
-            bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
-          }
-
-          bootstrap.childHandler(channelBalancer);
-          applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
-
-          bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
-          bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
-            if (res.isSuccess()) {
-              Channel ch = res.getNow();
-              log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
-              if (shared) {
-                ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
-                  synchronized (sharedNetServers) {
-                    sharedNetServers.remove(id);
-                  }
-                });
-              }
-              // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
-              if (bindAddress.isInetSocket()) {
-                actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
-              }
-              listenContext.addCloseHook(this);
-              metrics = createMetrics(localAddress);
-            } else {
-              if (shared) {
-                synchronized (sharedNetServers) {
-                  sharedNetServers.remove(id);
-                }
-              }
-              listening  = false;
-            }
-          });
-        } catch (Throwable t) {
-          listening = false;
-          return vertx.getAcceptorEventLoopGroup().next().newFailedFuture(t);
-        }
-        if (shared) {
-          sharedNetServers.put(id, this);
-        }
-        actualServer = this;
-      } else {
-        // Server already exists with that host/port - we will use that
-        actualServer = main;
-        metrics = main.metrics;
-        sslHelper = main.sslHelper;
-        worker =  childHandler(listenContext, localAddress, sslHelper);
-        actualServer.servers.add(this);
-        actualServer.channelBalancer.addWorker(eventLoop, worker);
-        listenContext.addCloseHook(this);
       }
     }
 
+    Map<ServerID, TCPServerBase> sharedNetServers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
+
+    if (shared) {
+      TCPServerBase main;
+
+      synchronized (sharedNetServers) {
+        main = sharedNetServers.get(id);
+
+        if (main != null) {
+          try {
+            main.initialization.await();
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return vertx.getAcceptorEventLoopGroup().next().newFailedFuture(e);
+          }
+
+          if (main.isListening()) {
+            // Server already exists with that host/port - we will use that
+            actualServer = main;
+            metrics = main.metrics;
+            sslHelper = main.sslHelper;
+            worker =  childHandler(listenContext, localAddress, sslHelper);
+            actualServer.servers.add(this);
+            actualServer.channelBalancer.addWorker(eventLoop, worker);
+            listenContext.addCloseHook(this);
+            return actualServer.bindFuture;
+          }
+        }
+
+        sharedNetServers.put(id, this);
+      }
+    }
+
+    try {
+      sslHelper = createSSLHelper();
+    } catch (Throwable t) {
+      cancelInitialization();
+      return vertx.getAcceptorEventLoopGroup().next().newFailedFuture(t);
+    }
+
+    io.netty.util.concurrent.Promise<Channel> promise = vertx.getAcceptorEventLoopGroup().next().newPromise();
+
+    sslHelper.validate(vertx)
+      .onComplete(validateResult -> {
+        if (validateResult.succeeded()) {
+          listenValidated(localAddress, bindAddress, shared, hostOrPath, id)
+            .addListener((io.netty.util.concurrent.Future<Channel> listenResult) -> {
+              if (listenResult.isSuccess()) {
+                promise.setSuccess(listenResult.get());
+                initialization.countDown();
+              } else {
+                synchronized (sharedNetServers) {
+                  sharedNetServers.remove(id);
+                }
+                cancelInitialization();
+                promise.setFailure(listenResult.cause());
+              }
+            });
+        } else {
+          synchronized (sharedNetServers) {
+            sharedNetServers.remove(id);
+          }
+          cancelInitialization();
+          promise.setFailure(validateResult.cause());
+        }
+      });
+
+    return promise;
+  }
+
+  private synchronized io.netty.util.concurrent.Future<Channel> listenValidated(SocketAddress localAddress, SocketAddress bindAddress, boolean shared, String hostOrPath, ServerID id) {
+    Map<ServerID, TCPServerBase> sharedNetServers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
+
+    try {
+      worker =  childHandler(listenContext, localAddress, sslHelper);
+      servers = new HashSet<>();
+      servers.add(this);
+      channelBalancer = new ServerChannelLoadBalancer(vertx.getAcceptorEventLoopGroup().next());
+      channelBalancer.addWorker(eventLoop, worker);
+
+      ServerBootstrap bootstrap = new ServerBootstrap();
+      bootstrap.group(vertx.getAcceptorEventLoopGroup(), channelBalancer.workers());
+      if (sslHelper.isSSL()) {
+        bootstrap.childOption(ChannelOption.ALLOCATOR, PartialPooledByteBufAllocator.INSTANCE);
+      } else {
+        bootstrap.childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+      }
+
+      bootstrap.childHandler(channelBalancer);
+      applyConnectionOptions(localAddress.isDomainSocket(), bootstrap);
+
+      bindFuture = AsyncResolveConnectHelper.doBind(vertx, bindAddress, bootstrap);
+      bindFuture.addListener((GenericFutureListener<io.netty.util.concurrent.Future<Channel>>) res -> {
+        if (res.isSuccess()) {
+          Channel ch = res.getNow();
+          log.trace("Net server listening on " + hostOrPath + ":" + ch.localAddress());
+          if (shared) {
+            ch.closeFuture().addListener((ChannelFutureListener) channelFuture -> {
+              synchronized (sharedNetServers) {
+                sharedNetServers.remove(id);
+              }
+            });
+          }
+          // Update port to actual port when it is not a domain socket as wildcard port 0 might have been used
+          if (bindAddress.isInetSocket()) {
+            actualPort = ((InetSocketAddress)ch.localAddress()).getPort();
+          }
+          listenContext.addCloseHook(this);
+          metrics = createMetrics(localAddress);
+        } else {
+          if (shared) {
+            synchronized (sharedNetServers) {
+              sharedNetServers.remove(id);
+            }
+          }
+          listening = false;
+        }
+      });
+    } catch (Throwable t) {
+      return vertx.getAcceptorEventLoopGroup().next().newFailedFuture(t);
+    }
+
+    actualServer = this;
     return actualServer.bindFuture;
+  }
+
+  private void cancelInitialization() {
+    listening = false;
+    initialization.countDown();
+    initialization = new CountDownLatch(1);
   }
 
   public boolean isListening() {

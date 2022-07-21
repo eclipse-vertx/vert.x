@@ -1515,13 +1515,19 @@ public abstract class HttpTLSTest extends HttpTestBase {
     clientOptions.setTrustOptions(Trust.SERVER_PEM_ROOT_CA.get());
     clientOptions.setSsl(true);
     clientOptions.addCrlPath("/invalid.pem");
-    try {
-      vertx.createHttpClient(clientOptions);
-      fail("Was expecting a failure");
-    } catch (VertxException e) {
-      assertNotNull(e.getCause());
-      assertEquals(NoSuchFileException.class, e.getCause().getCause().getClass());
-    }
+    vertx.createHttpClient(clientOptions)
+      .request(HttpMethod.GET, "/index")
+      .onComplete(result -> {
+        if (result.failed()) {
+          Throwable e = result.cause();
+          assertNotNull(e.getCause());
+          assertEquals(NoSuchFileException.class, e.getCause().getCause().getClass());
+          testComplete();
+        } else {
+          fail("Was expecting a failure");
+        }
+      });
+    await();
   }
 
   // Proxy tests
