@@ -129,6 +129,33 @@ public class VertxTest {
   }
 
   @Test
+  public void testNetServerReadInProgressWriteBatching() throws Exception {
+    TestResult connected = new TestResult();
+    TestResult bind = new TestResult();
+    NetServer netServer = vertx.createNetServer();
+    netServer.connectHandler(so -> {
+      connected.complete();
+      so.handler(buff -> {
+        for (int i = 0;i < 10;i++) {
+          so.write(Buffer.buffer("" + i));
+        }
+      });
+    });
+    bind.assertSuccess(netServer.listen(1234, "localhost"), addr -> {
+      bind.complete();
+    });
+    bind.await();
+    Socket so = new Socket("localhost", 1234);
+    connected.await();
+    OutputStream out = so.getOutputStream();
+    out.write("ping".getBytes());
+    InputStream in = so.getInputStream();
+    byte[] received = new byte[10];
+    Assert.assertEquals(10, in.read(received));
+    Assert.assertEquals("0123456789", new String(received));
+  }
+
+  @Test
   public void testCloseVertx() throws Exception {
     Vertx vertx = Vertx.vertx();
     TestResult bind = new TestResult();

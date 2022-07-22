@@ -3,6 +3,7 @@ package io.vertx5.core.net;
 import io.netty5.buffer.api.BufferAllocator;
 import io.netty5.channel.ChannelHandler;
 import io.netty5.channel.ChannelHandlerContext;
+import io.netty5.channel.EventLoop;
 import io.netty5.channel.socket.SocketChannel;
 import io.netty5.util.Resource;
 import io.vertx.core.Context;
@@ -25,6 +26,8 @@ public class NetSocket {
 
   private final ContextInternal context;
   private final SocketChannel channel;
+  private boolean readInProgress;
+  private boolean needsFlush;
   private Handler<Object> messageHandler;
   private Handler<Void> closeHandler;
   private ChannelHandlerContext channelHandlerContext;
@@ -64,9 +67,28 @@ public class NetSocket {
   }
 
   public Future<Void> write(Buffer buffer) {
-    io.netty5.buffer.api.Buffer copy = buffer.unwrap();
-    io.netty5.util.concurrent.Future<Void> fut = channel.writeAndFlush(copy);
+    return writeMessage(buffer.unwrap());
+  }
+
+  public Future<Void> writeMessage(Object msg) {
     PromiseInternal<Void> promise = context.promise();
+    EventLoop eventLoop = context.nettyEventLoop();
+    if (eventLoop.inEventLoop()) {
+      writeMessage(msg, promise);
+    } else {
+      eventLoop.execute(() -> NetSocket.this.writeMessage(msg, promise));
+    }
+    return promise.future();
+  }
+
+  private void writeMessage(Object msg, PromiseInternal<Void> promise) {
+    io.netty5.util.concurrent.Future<Void> fut;
+    if (readInProgress) {
+      needsFlush = true;
+      fut = channelHandlerContext.write(msg);
+    } else {
+      fut = channelHandlerContext.writeAndFlush(msg);
+    }
     fut.addListener(future -> {
       if (future.isSuccess()) {
         promise.complete();
@@ -74,13 +96,8 @@ public class NetSocket {
         promise.fail(future.cause());
       }
     });
-    return promise.future();
   }
 
-  public Future<Void> writeMessage(Object msg) {
-    channel.writeAndFlush(msg);
-    return null;
-  }
 
   public NetSocket closeHandler(Handler<Void> handler) {
     closeHandler = handler;
@@ -97,7 +114,16 @@ public class NetSocket {
       channelHandlerContext = null;
     }
     @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+      readInProgress = false;
+      if (needsFlush) {
+        needsFlush = false;
+        ctx.flush();
+      }
+    }
+    @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+      readInProgress = true;
       Handler<Object> handler = messageHandler;
       if (handler == null) {
         handler = DEFAULT_MSG_HANDLER;
