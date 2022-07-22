@@ -93,21 +93,22 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
 
   public Future<TCPServerBase> bind(SocketAddress address) {
     ContextInternal listenContext = vertx.getOrCreateContext();
-
-    io.netty.util.concurrent.Future<Channel> bindFuture = listen(address, listenContext);
-
     Promise<TCPServerBase> promise = listenContext.promise();
-    bindFuture.addListener(res -> {
-      if (res.isSuccess()) {
-        promise.complete(this);
-      } else {
-        promise.fail(res.cause());
-      }
-    });
+
+    listen(address, listenContext)
+      .onSuccess(bindFuture -> bindFuture.addListener(res -> {
+          if (res.isSuccess()) {
+            promise.complete(this);
+          } else {
+            promise.fail(res.cause());
+          }
+        }))
+      .onFailure(promise::fail);
+
     return promise.future();
   }
 
-  private synchronized io.netty.util.concurrent.Future<Channel> listen(SocketAddress localAddress, ContextInternal context) {
+  private synchronized Future<io.netty.util.concurrent.Future<Channel>> listen(SocketAddress localAddress, ContextInternal context) {
     if (listening) {
       throw new IllegalStateException("Listen already called");
     }
@@ -139,78 +140,100 @@ public abstract class TCPServerBase implements Closeable, MetricsProvider {
     }
 
     Map<ServerID, TCPServerBase> sharedNetServers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
+    Promise<io.netty.util.concurrent.Future<Channel>> promise = listenContext.promise();
 
     if (shared) {
-      TCPServerBase main;
-
       synchronized (sharedNetServers) {
-        main = sharedNetServers.get(id);
+        TCPServerBase main = sharedNetServers.get(id);
 
         if (main != null) {
-          try {
-            main.initialization.await();
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return vertx.getAcceptorEventLoopGroup().next().newFailedFuture(e);
-          }
-
-          if (main.isListening()) {
-            // Server already exists with that host/port - we will use that
-            actualServer = main;
-            metrics = main.metrics;
-            sslHelper = main.sslHelper;
-            worker =  childHandler(listenContext, localAddress, sslHelper);
-            actualServer.servers.add(this);
-            actualServer.channelBalancer.addWorker(eventLoop, worker);
-            listenContext.addCloseHook(this);
-            return actualServer.bindFuture;
-          }
-        }
-
-        sharedNetServers.put(id, this);
-      }
-    }
-
-    try {
-      sslHelper = createSSLHelper();
-    } catch (Throwable t) {
-      cancelInitialization();
-      return vertx.getAcceptorEventLoopGroup().next().newFailedFuture(t);
-    }
-
-    io.netty.util.concurrent.Promise<Channel> promise = vertx.getAcceptorEventLoopGroup().next().newPromise();
-
-    sslHelper.validate(vertx)
-      .onComplete(validateResult -> {
-        if (validateResult.succeeded()) {
-          listenValidated(localAddress, bindAddress, shared, hostOrPath, id)
-            .addListener((io.netty.util.concurrent.Future<Channel> listenResult) -> {
-              if (listenResult.isSuccess()) {
-                promise.setSuccess(listenResult.get());
-                initialization.countDown();
-              } else {
-                synchronized (sharedNetServers) {
-                  sharedNetServers.remove(id);
+          awaitInitialization(context, main)
+            .onComplete(initResult -> {
+              if (initResult.succeeded()) {
+                if (main.isListening()) {
+                  // Server already exists with that host/port - we will use that
+                  actualServer = main;
+                  metrics = main.metrics;
+                  sslHelper = main.sslHelper;
+                  worker =  childHandler(listenContext, localAddress, sslHelper);
+                  actualServer.servers.add(this);
+                  actualServer.channelBalancer.addWorker(eventLoop, worker);
+                  listenContext.addCloseHook(this);
+                  promise.complete(actualServer.bindFuture);
+                } else {
+                  listenNew(localAddress, context, bindAddress, sharedNetServers, shared, hostOrPath, id, promise);
                 }
-                cancelInitialization();
-                promise.setFailure(listenResult.cause());
+              } else {
+                promise.fail(initResult.cause());
               }
             });
         } else {
-          synchronized (sharedNetServers) {
-            sharedNetServers.remove(id);
-          }
-          cancelInitialization();
-          promise.setFailure(validateResult.cause());
+          sharedNetServers.put(id, this);
+          listenNew(localAddress, context, bindAddress, sharedNetServers, shared, hostOrPath, id, promise);
         }
-      });
+      }
+    } else {
+      listenNew(localAddress, context, bindAddress, sharedNetServers, shared, hostOrPath, id, promise);
+    }
 
-    return promise;
+    return promise.future();
   }
 
-  private synchronized io.netty.util.concurrent.Future<Channel> listenValidated(SocketAddress localAddress, SocketAddress bindAddress, boolean shared, String hostOrPath, ServerID id) {
-    Map<ServerID, TCPServerBase> sharedNetServers = vertx.sharedTCPServers((Class<TCPServerBase>) getClass());
+  private Future<Void> awaitInitialization(ContextInternal context, TCPServerBase main) {
+    return context.executeBlocking(initWaitFut -> {
+      try {
+        main.initialization.await();
+        initWaitFut.complete();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        initWaitFut.fail(e);
+      }
+    });
+  }
 
+  private synchronized void listenNew(SocketAddress localAddress,
+                                      ContextInternal context,
+                                      SocketAddress bindAddress,
+                                      Map<ServerID, TCPServerBase> sharedNetServers,
+                                      boolean shared,
+                                      String hostOrPath,
+                                      ServerID id,
+                                      Promise<io.netty.util.concurrent.Future<Channel>> promise) {
+    try {
+      sslHelper = createSSLHelper();
+      sslHelper.validate(vertx, context)
+        .onComplete(validateResult -> {
+          if (validateResult.succeeded()) {
+            try {
+              promise.complete(listenValidated(localAddress, bindAddress, sharedNetServers, shared, hostOrPath, id));
+              initialization.countDown();
+            } catch (Exception e) {
+              promise.fail(e);
+              synchronized (sharedNetServers) {
+                sharedNetServers.remove(id);
+              }
+              cancelInitialization();
+            }
+          } else {
+            synchronized (sharedNetServers) {
+              sharedNetServers.remove(id);
+            }
+            cancelInitialization();
+            promise.fail(validateResult.cause());
+          }
+        });
+    } catch (Throwable t) {
+      cancelInitialization();
+      promise.fail(t);
+    }
+  }
+
+  private synchronized io.netty.util.concurrent.Future<Channel> listenValidated(SocketAddress localAddress,
+                                                                                SocketAddress bindAddress,
+                                                                                Map<ServerID, TCPServerBase> sharedNetServers,
+                                                                                boolean shared,
+                                                                                String hostOrPath,
+                                                                                ServerID id) {
     try {
       worker =  childHandler(listenContext, localAddress, sslHelper);
       servers = new HashSet<>();

@@ -233,7 +233,7 @@ public class NetClientImpl implements MetricsProvider, NetClient, Closeable {
                       Promise<NetSocket> connectHandler,
                       ContextInternal context,
                       int remainingAttempts) {
-    sslHelper.validate(vertx)
+    sslHelper.validate(vertx, context)
       .onComplete(validateResult -> {
         if (validateResult.succeeded()) {
           connectInternal(proxyOptions, remoteAddress, peerAddress, serverName, ssl, useAlpn, true, connectHandler, context, remainingAttempts);

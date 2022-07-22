@@ -102,7 +102,7 @@ public class SSLHelper {
   private static final Logger log = LoggerFactory.getLogger(SSLHelper.class);
 
   private boolean ssl;
-  private volatile boolean validated = false;
+  private boolean validated = false;
   private volatile Throwable validationError = null;
   private boolean sni;
   private long sslHandshakeTimeout;
@@ -507,7 +507,7 @@ public class SSLHelper {
   }
 
   // This is called to validate some of the SSL params as that only happens when the context is created
-  public synchronized Future<Void> validate(VertxInternal vertx) {
+  public synchronized Future<Void> validate(VertxInternal vertx, ContextInternal context) {
     if (validated) {
       if (validationError != null) {
         return Future.failedFuture(validationError);
@@ -518,9 +518,8 @@ public class SSLHelper {
     validated = true;
 
     if (ssl) {
-      ContextInternal validateContext = vertx.getOrCreateContext();
-      Promise<Void> promise = validateContext.promise();
-      validateContext.executeBlockingInternal(future -> {
+      Promise<Void> promise = context.promise();
+      context.executeBlockingInternal(future -> {
         try {
           getContext(vertx, null);
           future.complete();
