@@ -98,14 +98,14 @@ public class BufferTest {
   public void testAppendBuff(Function<byte[], Buffer> bufferFactory) throws Exception {
 
     int bytesLen = 100;
-    byte[] bytes = TestUtils.randomByteArray(bytesLen);
+    byte[] bytes = TestUtils.randomAlphaString(bytesLen).getBytes();
     Buffer toAppend = bufferFactory.apply(bytes);
 
-    Buffer b = bufferStrategy.buffer();
+    Buffer b = bufferStrategy.buffer(256);
     b.appendBuffer(toAppend);
     assertEquals(b.length(), bytes.length);
 
-    assertTrue(TestUtils.byteArraysEqual(bytes, b.getBytes()));
+    assertEquals(new String(bytes), new String(b.getBytes()));
     b.appendBuffer(toAppend);
     assertEquals(b.length(), 2 * bytes.length);
 

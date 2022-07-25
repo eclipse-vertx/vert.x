@@ -26,13 +26,6 @@ public class SharedNettyBuffer implements Buffer {
   private int writerOffset;
   private int access;
 
-  public SharedNettyBuffer() {
-    this.data = ByteBuffer.allocate(1024);
-    this.readerOffset = 0;
-    this.writerOffset = 0;
-    this.access = 0;
-  }
-
   public SharedNettyBuffer(SharedNettyBuffer buffer) {
     this.data = buffer.data;
     this.readerOffset = buffer.readerOffset;
@@ -114,6 +107,7 @@ public class SharedNettyBuffer implements Buffer {
     data.limit(srcPos + length);
     wrapper.put(data);
     data.position(0);
+    data.limit(data.capacity());
   }
 
   @Override
@@ -127,6 +121,8 @@ public class SharedNettyBuffer implements Buffer {
     try {
       dest.put(data);
     } finally {
+      data.position(0);
+      data.limit(data.capacity());
       dest.position(a);
       dest.limit(b);
     }
@@ -141,6 +137,8 @@ public class SharedNettyBuffer implements Buffer {
     try {
       dest.writeBytes(data);
     } finally {
+      data.position(0);
+      data.limit(data.capacity());
       dest.writerOffset(offset);
     }
   }
@@ -544,7 +542,7 @@ public class SharedNettyBuffer implements Buffer {
 
   @Override
   public void close() {
-    
+
   }
 
   @Override

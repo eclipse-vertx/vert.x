@@ -13,8 +13,8 @@ public enum BufferOwnershipStrategy {
     @Override
     public io.netty5.buffer.api.Buffer wrap(io.netty5.buffer.api.Buffer buffer) {
       int len = buffer.readableBytes();
-      ByteBuffer byteBuffer = ByteBuffer.allocate(Math.max(256, len));
-      buffer.copyInto(0, byteBuffer, 0, len);
+      ByteBuffer byteBuffer = ByteBuffer.allocate(len);
+      buffer.copyInto(buffer.readerOffset(), byteBuffer, 0, len);
       buffer = new SharedNettyBuffer(byteBuffer);
       buffer.writerOffset(len);
       return buffer;

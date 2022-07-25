@@ -108,7 +108,7 @@ public class BufferImpl implements Buffer {
 
   public byte[] getBytes() {
     byte[] arr = new byte[buffer.writerOffset()];
-    buffer.copyInto(0, arr, 0, arr.length);
+    buffer.copyInto(buffer.readerOffset(), arr, 0, arr.length);
     return arr;
   }
 

@@ -128,7 +128,7 @@
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty5-all</artifactId>
-      <version>5.0.0.Alpha3</version>
+      <version>5.0.0.Alpha4</version>
     </dependency>
 
     <!-- Jackson -->
