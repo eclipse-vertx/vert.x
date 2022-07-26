@@ -31,13 +31,7 @@ import io.vertx.core.net.NetServerOptions;
 import io.vertx.test.core.TestUtils;
 import io.vertx.test.core.VertxTestBase;
 import io.vertx.test.fakedns.FakeDNSServer;
-import org.apache.directory.server.dns.DnsException;
-import org.apache.directory.server.dns.messages.QuestionRecord;
-import org.apache.directory.server.dns.messages.RecordClass;
-import org.apache.directory.server.dns.messages.RecordType;
 import org.apache.directory.server.dns.messages.ResourceRecord;
-import org.apache.directory.server.dns.store.DnsAttribute;
-import org.apache.directory.server.dns.store.RecordStore;
 import org.junit.Test;
 
 import java.io.File;
@@ -50,6 +44,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:julien@julienviet.com">Julien Viet</a>
@@ -93,14 +88,9 @@ public class HostnameResolutionTest extends VertxTestBase {
   }
 
   @Test
-  public void testAsyncResolveTruncated() throws Exception {
+  public void testAsyncResolveTruncated() {
 
-    dnsServer.store(new RecordStore() {
-      @Override
-      public Set<ResourceRecord> getRecords(QuestionRecord question) throws DnsException {
-        return Collections.singleton(new FakeDNSServer.VertxResourceRecord("vertx.io", "127.0.0.1").setTruncated(true));
-      }
-    });
+    dnsServer.store(question -> Collections.singleton(new FakeDNSServer.VertxResourceRecord("vertx.io", "127.0.0.1").setTruncated(true)));
 
 
     ((VertxImpl) vertx).resolveAddress("vertx.io", onSuccess(resolved -> {
@@ -111,7 +101,7 @@ public class HostnameResolutionTest extends VertxTestBase {
   }
 
   @Test
-  public void testAsyncResolveFail() throws Exception {
+  public void testAsyncResolveFail() {
     ((VertxImpl) vertx).resolveAddress("vertx.com", onFailure(failure -> {
       assertTrue("Was expecting " + failure + " to be an instanceof UnknownHostException", failure instanceof UnknownHostException);
       testComplete();
@@ -811,6 +801,28 @@ public class HostnameResolutionTest extends VertxTestBase {
   }
 
   @Test
+  public void testResolveAll() {
+
+    List<String> expectedIPAddresses = Arrays.asList("127.0.0.2", "127.0.0.3");
+
+    addRecordsToStore(dnsServer, "fakeAddress.com", expectedIPAddresses.toArray(new String[0]));
+
+    AddressResolver resolver = new AddressResolver(vertx, getAddressResolverOptions());
+
+    resolver.resolveHostnameAll("fakeAddress.com", res -> {
+      if (res.succeeded()) {
+        assertEquals(expectedIPAddresses, res.result().stream().map(e -> e.getAddress().getHostAddress().toLowerCase(Locale.ENGLISH)).collect(Collectors.toList()));
+        testComplete();
+      } else {
+        fail(res.cause());
+      }
+    });
+
+    await();
+
+  }
+
+  @Test
   public void testRotationalServerSelection() throws Exception {
     testServerSelection(true, false);
   }
@@ -884,14 +896,22 @@ public class HostnameResolutionTest extends VertxTestBase {
     testAddressSelection(getAddressResolverOptions().setRoundRobinInetAddress(false), 1);
   }
 
+  private void addRecordsToStore(FakeDNSServer server,String domainName,String ...entries){
+
+    final Set<ResourceRecord> records = new LinkedHashSet<>();
+
+    Function<String, ResourceRecord> createRecord = ipAddress -> new FakeDNSServer.VertxResourceRecord(domainName, ipAddress);
+
+    for (String e : entries){
+      records.add(createRecord.apply(e));
+    }
+
+    server.store(x -> records);
+  }
+
   private void testAddressSelection(AddressResolverOptions options, int expected) throws Exception {
-    Function<String, ResourceRecord> createRecord = ipAddress -> new FakeDNSServer.VertxResourceRecord("vertx.io", ipAddress);
 
-    Set<ResourceRecord> records = new LinkedHashSet<>();
-    records.add(createRecord.apply("127.0.0.1"));
-    records.add(createRecord.apply("127.0.0.2"));
-
-    dnsServer.store(question -> records);
+    addRecordsToStore(dnsServer,"vertx.io","127.0.0.1","127.0.0.2");
 
     AddressResolver resolver = new AddressResolver(vertx, options);
     Set<String> resolved = Collections.synchronizedSet(new HashSet<>());
