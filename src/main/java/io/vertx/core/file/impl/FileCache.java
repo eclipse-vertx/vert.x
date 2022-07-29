@@ -216,7 +216,7 @@ class FileCache {
   private void fileNameCheck(File file) throws IOException {
     String fileName = file.getCanonicalPath();
     String cachePath = getCacheDir().getPath();
-    if (fileName.startsWith(cachePath)) {
+    if (file.getCanonicalFile().toPath().startsWith(cachePath)) {
       int cachePathLen = cachePath.length();
       if (fileName.length() == cachePathLen) {
         return;
