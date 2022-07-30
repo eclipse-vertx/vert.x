@@ -67,7 +67,9 @@ public class DeliveryOptions {
   public DeliveryOptions(DeliveryOptions other) {
     this.timeout = other.getSendTimeout();
     this.codecName = other.getCodecName();
-    this.headers = other.getHeaders();
+    if (other.getHeaders() != null) {
+      this.headers = MultiMap.caseInsensitiveMultiMap().addAll(other.getHeaders());
+    }
     this.localOnly = other.localOnly;
     this.tracingPolicy = other.tracingPolicy;
   }
