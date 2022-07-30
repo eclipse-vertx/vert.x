@@ -48,4 +48,18 @@ public class DeliveryOptionsTest {
 
     assertEquals(fullJson, new DeliveryOptions(fullJson).toJson());
   }
+
+  @Test
+  public void ensureClonedHeaders() {
+    DeliveryOptions original = new DeliveryOptions();
+    original.addHeader("foo", "bar");
+    assertEquals(1, original.getHeaders().size());
+
+    DeliveryOptions cloned = new DeliveryOptions(original);
+    assertEquals(1, cloned.getHeaders().size());
+    cloned.addHeader("bar", "foo");
+    assertEquals(2, cloned.getHeaders().size());
+
+    assertEquals(1, original.getHeaders().size());
+  }
 }
