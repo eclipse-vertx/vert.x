@@ -118,13 +118,17 @@ public class NetSocket {
       netSocket.writable = ctx.channel().isWritable();
     }
 
-    @Override
-    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
-      boolean writable = !netSocket.writable;
-      netSocket.writable = writable;
-      if (writable && netSocket.needsFlush) {
+    private void tryFlush(ChannelHandlerContext ctx) {
+      if (netSocket.writable && netSocket.needsFlush) {
+        netSocket.needsFlush = false;
         ctx.flush();
       }
+    }
+
+    @Override
+    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+      netSocket.writable = !netSocket.writable;
+      tryFlush(ctx);
     }
 
     @Override
@@ -140,10 +144,7 @@ public class NetSocket {
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
       netSocket.readInProgress = false;
-      if (netSocket.needsFlush) {
-        netSocket.needsFlush = false;
-        ctx.flush();
-      }
+      tryFlush(ctx);
     }
 
     @Override
